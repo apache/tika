@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika</artifactId>
+  <version>0.1-SNAPSHOT</version>
+
+  <name>Apache Tika</name>
+  <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
+  <description>Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.</description>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <organization>
+    <name>Apache Software Foundation</name>
+    <url>http://www.apache.org/</url>
+  </organization>
+
+  <url>http://incubator.apache.org/tika/</url>
+
+  <mailingLists>
+    <mailingList>
+      <name>Development mailing list</name>
+      <subscribe>tika-dev-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>tika-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>tika-dev@incubator.apache.org</post>
+    </mailingList>
+    <mailingList>
+      <name>Commit mailing list</name>
+      <subscribe>tika-commits-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>tika-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>tika-commits@incubator.apache.org</post>
+    </mailingList>
+  </mailingLists>
+
+  <developers>
+    <developer>
+      <name>Rida Benjelloun</name>
+      <id></id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Doug Cutting</name>
+      <id>cutting</id>
+      <roles>
+        <role>mentor</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Bertrand Delacretaz</name>
+      <id>bdelacretaz</id>
+      <roles>
+        <role>mentor</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Mark Harwood</name>
+      <id>mharwood</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Chris A. Mattmann</name>
+      <id>mattmann</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Sami Siren</name>
+      <id>siren</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Jukka Zitting</name>
+      <id>jukka</id>
+      <roles>
+        <role>mentor</role>
+        <role>committer</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>
+      scm:svn:http://svn.apache.org/repos/asf/incubator/tika/trunk
+    </connection>
+    <developerConnection>
+      scm:svn:https://svn.apache.org/repos/asf/incubator/tika/trunk
+    </developerConnection>
+    <url>http://svn.apache.org/viewvc/incubator/tika/trunk</url>
+  </scm>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+        <!-- Include the project metadata files in META-INF -->
+          <execution>
+            <id>add-project-files</id>
+            <phase>process-resources</phase>
+            <configuration>
+              <tasks>
+                <copy todir="${project.build.outputDirectory}/META-INF">
+                  <fileset dir="${basedir}">
+                    <include name="README.txt"/>
+                    <include name="NOTICE.txt"/>
+                    <include name="LICENSE.txt"/>
+                  </fileset>
+                </copy>
+              </tasks>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
+
