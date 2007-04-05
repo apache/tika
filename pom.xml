@@ -95,6 +95,12 @@
     <developer>
       <name>Chris A. Mattmann</name>
       <id>mattmann</id>
+      <email>mattmann@apache.org</email>
+      <url>http://people.apache.org/~mattmann/</url>
+      <organization>NASA Jet Propulsion Laboratory</organization>
+      <organizationUrl>http://www.jpl.nasa.gov</organizationUrl>
+      <timezone>-8</timezone>
+      <properties/>
       <roles>
         <role>committer</role>
       </roles>
