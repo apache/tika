@@ -1,0 +1,4 @@
+Tika Change Log
+
+Unreleased changes (0.1-dev)
+
