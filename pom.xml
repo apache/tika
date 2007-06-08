@@ -28,6 +28,7 @@
   <groupId>org.apache.tika</groupId>
   <artifactId>tika</artifactId>
   <version>0.1-SNAPSHOT</version>
+  
 
   <name>Apache Tika</name>
   <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
@@ -139,10 +140,39 @@
       <url>file://${basedir}/../site</url>
     </site>
   </distributionManagement>
-  
+
+  <dependencies>
+  	<dependency>
+  		<groupId>commons-lang</groupId>
+  		<artifactId>commons-lang</artifactId>
+  		<version>2.1</version>
+  		<type>jar</type>
+  		<scope/>
+  		<optional/>
+  	</dependency>
+  	<dependency>
+  		<groupId>junit</groupId>
+  		<artifactId>junit</artifactId>
+  		<version>3.8.1</version>
+  		<type>jar</type>
+  		<scope>test</scope>
+  		<optional/>
+  	</dependency>
+  </dependencies>
+
   <build>
-    <plugins>
-      <plugin>
+  <sourceDirectory>${basedir}/src/main/java/</sourceDirectory>
+  <testSourceDirectory>${basedir}/src/main/test/</testSourceDirectory>
+  <plugins>
+        <plugin>
+        	<groupId>org.apache.maven.plugins</groupId>
+        	<artifactId>maven-compiler-plugin</artifactId>
+        	<configuration>
+        		<source>1.5</source>
+        		<target>1.5</target>
+        	</configuration>
+        </plugin>
+        <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
         <!-- Include the project metadata files in META-INF -->
