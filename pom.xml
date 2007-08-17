@@ -142,45 +142,45 @@
   </distributionManagement>
 
   <dependencies>
-  	<dependency>
-  		<groupId>commons-lang</groupId>
-  		<artifactId>commons-lang</artifactId>
-  		<version>2.1</version>
-  		<type>jar</type>
-  		<scope/>
-  		<optional/>
-  	</dependency>
-  	<dependency>
-  		<groupId>junit</groupId>
-  		<artifactId>junit</artifactId>
-  		<version>3.8.1</version>
-  		<type>jar</type>
-  		<scope>test</scope>
-  		<optional/>
-  	</dependency>
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>2.1</version>
+      <type>jar</type>
+      <scope/>
+      <optional/>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <type>jar</type>
+      <scope>test</scope>
+      <optional/>
+    </dependency>
   </dependencies>
 
   <build>
-  <sourceDirectory>${basedir}/src/main/java/</sourceDirectory>
-  <testSourceDirectory>${basedir}/src/main/test/</testSourceDirectory>
-  <plugins>
-        <plugin>
-        	<groupId>org.apache.maven.plugins</groupId>
-        	<artifactId>maven-compiler-plugin</artifactId>
-        	<configuration>
-        		<source>1.5</source>
-        		<target>1.5</target>
-        	</configuration>
+    <sourceDirectory>${basedir}/src/main/java/</sourceDirectory>
+    <testSourceDirectory>${basedir}/src/main/test/</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <configuration>
+            <source>1.5</source>
+            <target>1.5</target>
+          </configuration>
         </plugin>
         <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-        <!-- Include the project metadata files in META-INF -->
-          <execution>
-            <id>add-project-files</id>
-            <phase>process-resources</phase>
-            <configuration>
-              <tasks>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <executions>
+            <!-- Include the project metadata files in META-INF -->
+            <execution>
+              <id>add-project-files</id>
+              <phase>process-resources</phase>
+              <configuration>
+                <tasks>
                 <copy todir="${project.build.outputDirectory}/META-INF">
                   <fileset dir="${basedir}">
                     <include name="README.txt"/>
