@@ -17,10 +17,6 @@
 package org.apache.tika.utils;
 
 import java.io.File;
-import java.io.IOException;
-
-import net.hedges.mimeinfo.MimeInfo;
-import net.hedges.mimeinfo.MimeInfoException;
 
 /**
  * Detect mime type from file
@@ -29,10 +25,32 @@ import net.hedges.mimeinfo.MimeInfoException;
  */
 public class MimeTypesUtils {
 
-    public static String getMimeType(File file) throws MimeInfoException,
-            IOException {
-        MimeInfo mimeInfo = new MimeInfo();
-        return mimeInfo.getMimeType(file);
+    public static String getMimeType(File file) {
+        // FIXME: See TIKA-8
+        String name = file.getName().toLowerCase();
+        if (name.endsWith(".txt")) {
+            return "text/plain";
+        } else if (name.endsWith(".pdf")) {
+            return "application/pdf";
+        } else if (name.endsWith(".htm")) {
+            return "text/html";
+        } else if (name.endsWith(".html")) {
+            return "text/html";
+        } else if (name.endsWith(".xhtml")) {
+            return "application/xhtml+xml";
+        } else if (name.endsWith(".xml")) {
+            return "application/xml";
+        } else if (name.endsWith(".doc")) {
+            return "application/msword";
+        } else if (name.endsWith(".ppt")) {
+            return "application/vnd.ms-powerpoint";
+        } else if (name.endsWith(".xls")) {
+            return "application/vnd.ms-excel";
+        } else if (name.endsWith(".zip")) {
+            return "application/zip";
+        } else {
+            return "application/octet-stream";
+        }
     }
 
 }

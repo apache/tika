@@ -24,7 +24,6 @@ import org.apache.tika.config.LiusConfig;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.exception.LiusException;
 import org.apache.tika.utils.MimeTypesUtils;
-import net.hedges.mimeinfo.MimeInfoException;
 
 import org.apache.log4j.Logger;
 
@@ -41,7 +40,7 @@ public class ParserFactory {
      * Build parser from file and Lius config object
      */
     public static Parser getParser(File file, LiusConfig tc)
-            throws MimeInfoException, IOException, LiusException {
+            throws IOException, LiusException {
         String mimeType = MimeTypesUtils.getMimeType(file);
         ParserConfig pc = tc.getParserConfig(mimeType);
         String className = pc.getParserClass();
@@ -76,7 +75,7 @@ public class ParserFactory {
      * Build parser from string file path and Lius config object
      */
     public static Parser getParser(String str, LiusConfig tc)
-            throws MimeInfoException, IOException, LiusException {
+            throws IOException, LiusException {
         return getParser(new File(str), tc);
     }
 
@@ -84,7 +83,7 @@ public class ParserFactory {
      * Build parser from string file path and Lius config file path
      */
     public static Parser getParser(String str, String tcPath)
-            throws MimeInfoException, IOException, LiusException {
+            throws IOException, LiusException {
         LiusConfig tc = LiusConfig.getInstance(tcPath);
         return getParser(new File(str), tc);
     }
@@ -93,7 +92,7 @@ public class ParserFactory {
      * Build parser from file and Lius config file path
      */
     public static Parser getParser(File file, String tcPath)
-            throws MimeInfoException, IOException, LiusException {
+            throws IOException, LiusException {
         LiusConfig tc = LiusConfig.getInstance(tcPath);
         return getParser(file, tc);
     }
