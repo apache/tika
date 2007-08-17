@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<properties>
+    <parsers>
+        <parser name="text-xml" class="liuslite.parser.xml.XMLParser">            
+                <namespace>http://purl.org/dc/elements/1.1/</namespace>
+                <mime>application/xml</mime>
+                <extract>
+                    <content name="title" xpathSelect="//dc:title"/>
+                    <content name="subject" xpathSelect="//dc:subject"/>
+                    <content name="creator" xpathSelect="//dc:creator"/>
+                    <content name="description" xpathSelect="//dc:description"/>
+                    <content name="publisher" xpathSelect="//dc:publisher"/>
+                    <content name="contributor" xpathSelect="//dc:contributor"/>
+                    <content name="type" xpathSelect="//dc:type"/>
+                    <content name="format" xpathSelect="//dc:format"/>
+                    <content name="identifier" xpathSelect="//dc:identifier"/>
+                    <content name="language" xpathSelect="//dc:language"/>
+                    <content name="rights" xpathSelect="//dc:rights"/>
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>            
+        </parser>
+        <parser name="parse-msword" class="liuslite.parser.msword.MsWordParser">
+            
+                <mime>application/msword</mime>
+                <extract>
+                    <content name="fullText" textSelect="fullText"/>
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>
+            
+        </parser>
+        <parser name="parse-msexcel" class="liuslite.parser.msexcel.MsExcelParser">
+            
+                <mime>application/vnd.ms-excel</mime>
+                <extract>
+                    <content name="fullText" textSelect="fullText"/>
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>
+            
+        </parser>
+        <parser name="parse-mspowerpoint" class="liuslite.parser.mspowerpoint.MsPowerPointParser">
+            
+                <mime>application/vnd.ms-powerpoint</mime>
+                <extract>
+                    <content name="fullText" textSelect="fullText"/>
+                    <content name="title" textSelect="title"/>
+                    <content name="author" textSelect="author"/>
+                    <content name="subject" textSelect="subject"/>                    
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>
+            
+        </parser>
+        <parser name="parse-html" class="liuslite.parser.html.HtmlParser">
+            
+                <mime>text/html</mime>
+                <mime>application/x-asp</mime>
+                <extract>
+                    <content name="fullText" textSelect="fullText"/>
+                    <content name="title" textSelect="title"/>
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>
+            
+        </parser>
+        <!--
+            
+            <parser name="parse-html" class="liuslite.parser.html.NekoHtmlParser">
+            
+                <mime>text/html</mime>
+                <mime>application/x-asp</mime>
+                .....
+                <extract>
+                    <content name="fullText" xpathSelect="//*"/> 
+                    <content name="title" xpathSelect="//title"/> 
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>
+            
+            </parser>
+            
+            -->
+        <parser mame="parse-rtf" class="liuslite.parser.rtf.RTFParser">
+            
+                <mime>application/rtf</mime>
+                <extract>
+                    <content name="fullText" textSelect="fullText"/>
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>
+            
+        </parser>
+        <parser name="parse-pdf" class="liuslite.parser.pdf.PDFParser">
+            
+                <mime>application/pdf</mime>
+                <extract>
+                    <content name="fullText" textSelect="fullText"/>
+                    <content name="title" textSelect="title"/>
+                    <content name="author" textSelect="author"/>
+                    <content name="creator" textSelect="creator"/>
+                    <content name="summary" textSelect="summary"/>
+                    <content name="keywords" textSelect="keywords"/>
+                    <content name="producer" textSelect="producer"/>
+                    <content name="subject" textSelect="subject"/>
+                    <content name="trapped" textSelect="trapped"/>
+                    <content name="creationDate" textSelect="creationDate"/>
+                    <content name="modificationDate" textSelect="modificationDate"/>
+                    <content name="outLinks">
+                        <regexSelect><![CDATA[
+                            ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]></regexSelect>
+                    </content>
+                </extract>
+            
+        </parser>
+        <parser name="parse-txt" class="liuslite.parser.txt.TXTParser">
+            
+                <mime>text/plain</mime>
+                <extract>
+                    <content name="fullText" textSelect="fullText"/>
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>
+            
+        </parser>
+        <parser name="parse-openoffice" class="liuslite.parser.opendocument.OpenOfficeParser">            
+                <mime>application/vnd.sun.xml.writer</mime>
+                <mime>application/vnd.oasis.opendocument.text</mime>
+                <extract>
+                    <content name="title" xpathSelect="//dc:title"/>
+                    <content name="subject" xpathSelect="//dc:subject"/>
+                    <content name="keyword" xpathSelect="//meta:keyword"/>
+                    <content name="creator" xpathSelect="//dc:creator"/>
+                    <content name="description" xpathSelect="//dc:description"/>
+                    <content name="date" xpathSelect="//dc:date"/>
+                    <content name="language" xpathSelect="//dc:language"/>
+                    <content name="nbTab" xpathSelect="//meta:document-statistic/@meta:table-count"/>
+                    <content name="nbObject" xpathSelect="//meta:document-statistic/@meta:object-count"/>
+                    <content name="nbImg" xpathSelect="//meta:document-statistic/@meta:image-count"/>
+                    <content name="nbPage" xpathSelect="//meta:document-statistic/@meta:page-count"/>
+                    <content name="nbPara" xpathSelect="//meta:document-statistic/@meta:paragraph-count"/>
+                    <content name="nbWord" xpathSelect="//meta:document-statistic/@meta:word-count"/>
+                    <content name="nbcharacter" xpathSelect="//meta:document-statistic/@meta:character-count"/>
+                    <content name="fullText" xpathSelect="//office:body//*"/>
+                    <content name="outLinks">
+                        <regexSelect>
+                            <![CDATA[
+                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
+                            ]]>
+                        </regexSelect>
+                    </content>
+                </extract>            
+        </parser>        
+    </parsers>
+</properties>
