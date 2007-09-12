@@ -4,3 +4,4 @@ Unreleased changes (0.1-dev)
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
 
+2. TIKA-11 - Consolidate test classes into a src/test/java directory tree (mattmann)
