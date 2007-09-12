@@ -29,7 +29,6 @@ import org.apache.tika.log.LiusLogger;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
 import org.apache.tika.utils.Utils;
-import net.hedges.mimeinfo.MimeInfoException;
 
 /**
  * Junit test class   
@@ -46,8 +45,7 @@ public class TestParsers extends TestCase {
     public void setUp() {
         String sep = File.separator;
         StringTokenizer st = new StringTokenizer(System.getProperty(
-
-        "java.class.path"), File.pathSeparator);
+                "java.class.path"), File.pathSeparator);
 
         classDir = new File(st.nextToken());
 
@@ -75,8 +73,6 @@ public class TestParsers extends TestCase {
                 + "testFiles" + File.separator + "testPDF.PDF");
         try {
             parser = ParserFactory.getParser(testFile, tc);
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
@@ -91,8 +87,6 @@ public class TestParsers extends TestCase {
                 + "testFiles" + File.separator + "testTXT.txt");
         try {
             parser = ParserFactory.getParser(testFile, tc);
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
@@ -107,9 +101,6 @@ public class TestParsers extends TestCase {
                 + "testFiles" + File.separator + "testRTF.rtf");
         try {
             parser = ParserFactory.getParser(testFile, tc);
-
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
@@ -124,8 +115,6 @@ public class TestParsers extends TestCase {
                 + "testFiles" + File.separator + "testXML.xml");
         try {
             parser = ParserFactory.getParser(testFile, tc);
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
@@ -141,8 +130,6 @@ public class TestParsers extends TestCase {
         try {
             parser = ParserFactory.getParser(testFile, tc);
             System.out.println(parser.getStrContent());
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
@@ -158,8 +145,6 @@ public class TestParsers extends TestCase {
         try {
             parser = ParserFactory.getParser(testFile, tc);
             System.out.println(parser.getStrContent());
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
@@ -176,8 +161,6 @@ public class TestParsers extends TestCase {
             parser = ParserFactory.getParser(testFile, tc);
             // System.out.println(parser.getStrContent());
             printContentsInfo(parser);
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
@@ -194,14 +177,12 @@ public class TestParsers extends TestCase {
             parser = ParserFactory.getParser(testFile, tc);
             // System.out.println(parser.getStrContent());
             printContentsInfo(parser);
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
             e.printStackTrace();
         }
-
+        
     }
 
     public void testHTMLExtraction() {
@@ -213,8 +194,6 @@ public class TestParsers extends TestCase {
             assertEquals("Title : Test Indexation Html", (parser.getContent("title")).getValue());
             // System.out.println(parser.getStrContent());
             printContentsInfo(parser);
-        } catch (MimeInfoException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } catch (LiusException e) {
