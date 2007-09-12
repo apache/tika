@@ -2,7 +2,7 @@
 
 <properties>
     <parsers>
-        <parser name="text-xml" class="liuslite.parser.xml.XMLParser">            
+        <parser name="text-xml" class="org.apache.tika.parser.xml.XMLParser">
                 <namespace>http://purl.org/dc/elements/1.1/</namespace>
                 <mime>application/xml</mime>
                 <extract>
@@ -26,7 +26,7 @@
                     </content>
                 </extract>            
         </parser>
-        <parser name="parse-msword" class="liuslite.parser.msword.MsWordParser">
+        <parser name="parse-msword" class="org.apache.tika.parser.msword.MsWordParser">
             
                 <mime>application/msword</mime>
                 <extract>
@@ -41,7 +41,7 @@
                 </extract>
             
         </parser>
-        <parser name="parse-msexcel" class="liuslite.parser.msexcel.MsExcelParser">
+        <parser name="parse-msexcel" class="org.apache.tika.parser.msexcel.MsExcelParser">
             
                 <mime>application/vnd.ms-excel</mime>
                 <extract>
@@ -56,7 +56,7 @@
                 </extract>
             
         </parser>
-        <parser name="parse-mspowerpoint" class="liuslite.parser.mspowerpoint.MsPowerPointParser">
+        <parser name="parse-mspowerpoint" class="org.apache.tika.parser.mspowerpoint.MsPowerPointParser">
             
                 <mime>application/vnd.ms-powerpoint</mime>
                 <extract>
@@ -74,7 +74,7 @@
                 </extract>
             
         </parser>
-        <parser name="parse-html" class="liuslite.parser.html.HtmlParser">
+        <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">
             
                 <mime>text/html</mime>
                 <mime>application/x-asp</mime>
@@ -93,7 +93,7 @@
         </parser>
         <!--
             
-            <parser name="parse-html" class="liuslite.parser.html.NekoHtmlParser">
+            <parser name="parse-html" class="org.apache.tika.parser.html.NekoHtmlParser">
             
                 <mime>text/html</mime>
                 <mime>application/x-asp</mime>
@@ -113,7 +113,7 @@
             </parser>
             
             -->
-        <parser mame="parse-rtf" class="liuslite.parser.rtf.RTFParser">
+        <parser mame="parse-rtf" class="org.apache.tika.parser.rtf.RTFParser">
             
                 <mime>application/rtf</mime>
                 <extract>
@@ -128,7 +128,7 @@
                 </extract>
             
         </parser>
-        <parser name="parse-pdf" class="liuslite.parser.pdf.PDFParser">
+        <parser name="parse-pdf" class="org.apache.tika.parser.pdf.PDFParser">
             
                 <mime>application/pdf</mime>
                 <extract>
@@ -151,7 +151,7 @@
                 </extract>
             
         </parser>
-        <parser name="parse-txt" class="liuslite.parser.txt.TXTParser">
+        <parser name="parse-txt" class="org.apache.tika.parser.txt.TXTParser">
             
                 <mime>text/plain</mime>
                 <extract>
@@ -166,7 +166,7 @@
                 </extract>
             
         </parser>
-        <parser name="parse-openoffice" class="liuslite.parser.opendocument.OpenOfficeParser">            
+        <parser name="parse-openoffice" class="org.apache.tika.parser.opendocument.OpenOfficeParser">            
                 <mime>application/vnd.sun.xml.writer</mime>
                 <mime>application/vnd.oasis.opendocument.text</mime>
                 <extract>
