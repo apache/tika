@@ -17,17 +17,23 @@
 package org.apache.tika.utils;
 
 import java.io.File;
+import java.net.URL;
 
 /**
- * Detect mime type from file
- * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * Detect the MIME type of a document from file name given as
+ * a String, a File, or a URL.
  */
 public class MimeTypesUtils {
 
-    public static String getMimeType(File file) {
+    /**
+     * Returns the MIME type as specified by the ending of the name.
+     *
+     * @param name the resource name, e.g. "filename.pdf"
+     * @return the MIME type, e.g. "application/pdf"
+     */
+    public static String getMimeType(String name) {
         // FIXME: See TIKA-8
-        String name = file.getName().toLowerCase();
+        name = name.toLowerCase();
         if (name.endsWith(".txt")) {
             return "text/plain";
         } else if (name.endsWith(".pdf")) {
@@ -51,6 +57,27 @@ public class MimeTypesUtils {
         } else {
             return "application/octet-stream";
         }
+    }
+
+    /**
+     * Returns the MIME type as specified by the ending of the file's name.
+     *
+     * @param file the file to test, e.g. new File("filename.pdf")
+     * @return the MIME type, e.g. "application/pdf"
+     */
+    public static String getMimeType(File file) {
+        return getMimeType(file.getName());
+    }
+
+
+    /**
+     * Returns the MIME type as specified by the ending of the URL's file name.
+     *
+     * @param url the url to test, e.g. new URL("http://mydomain.com/filename.pdf")
+     * @return the MIME type, e.g. "application/pdf"
+     */
+    public static String getMimeType(URL url) {
+        return getMimeType(url.getPath());
     }
 
 }
