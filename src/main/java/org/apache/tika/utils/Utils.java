@@ -24,6 +24,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -31,9 +35,8 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.apache.tika.config.Content;
-
 import org.apache.log4j.Logger;
+import org.apache.tika.config.Content;
 import org.jdom.Document;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
@@ -50,26 +53,36 @@ public class Utils {
 
     static Logger logger = Logger.getRootLogger();
 
+    public static String toString(Collection<Content> structuredContent) {
+      final StringWriter sw = new StringWriter();
+      print(structuredContent,sw);
+      return sw.toString();
+    }
+    
     public static void print(Collection<Content> structuredContent) {
+      print(structuredContent,new OutputStreamWriter(System.out));
+    }
+    
+    public static void print(Collection<Content> structuredContent,Writer outputWriter) {
+        final PrintWriter output = new PrintWriter(outputWriter,true);
         for (Iterator<Content> iter = structuredContent.iterator(); iter
                 .hasNext();) {
             Content ct = iter.next();
             if (ct.getValue() != null) {
-                System.out.print(ct.getName() + ": ");
-                System.out.println(ct.getValue());
+                output.print(ct.getName() + ": ");
+                output.println(ct.getValue());
             } else if (ct.getValues() != null) {
 
-                System.out.print(ct.getName() + ": ");
+                output.print(ct.getName() + ": ");
                 for (int j = 0; j < ct.getValues().length; j++) {
                     if (j == 0)
-                        System.out.println(ct.getValues()[j]);
+                        output.println(ct.getValues()[j]);
                     else {
-                        System.out.println("\t" + ct.getValues()[j]);
+                        output.println("\t" + ct.getValues()[j]);
                     }
                 }
             }
         }
-
     }
 
     public static Document parse(InputStream is) {

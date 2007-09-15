@@ -26,6 +26,7 @@ import org.apache.tika.exception.LiusException;
 import org.apache.tika.utils.MimeTypesUtils;
 
 import org.apache.log4j.Logger;
+import org.jdom.JDOMException;
 
 /**
  * Factory class. Build parser from xml config file.
@@ -41,15 +42,27 @@ public class ParserFactory {
      */
     public static Parser getParser(File file, LiusConfig tc)
             throws IOException, LiusException {
+        if(!file.canRead()) {
+          throw new IOException("Cannot read input file " + file.getAbsoluteFile());
+        }
         String mimeType = MimeTypesUtils.getMimeType(file);
         ParserConfig pc = tc.getParserConfig(mimeType);
+        if(pc==null) {
+          throw new LiusException(
+              "No ParserConfig available for mime-type '" + mimeType + "'"
+              + " for file " + file.getName()
+          );
+        }
         String className = pc.getParserClass();
         Parser parser = null;
         Class<?> parserClass = null;
         if (className != null) {
             try {
-                logger.info("Loading parser class = " + className
-                        + " MimeType = " + mimeType);
+                logger.debug(
+                    "Loading parser class = " + className
+                    + " MimeType = " + mimeType
+                    + " for file " + file.getName()
+                );
 
                 parserClass = Class.forName(className);
                 parser = (Parser) parserClass.newInstance();
@@ -83,7 +96,7 @@ public class ParserFactory {
      * Build parser from string file path and Lius config file path
      */
     public static Parser getParser(String str, String tcPath)
-            throws IOException, LiusException {
+            throws IOException, LiusException, JDOMException {
         LiusConfig tc = LiusConfig.getInstance(tcPath);
         return getParser(new File(str), tc);
     }
@@ -92,7 +105,7 @@ public class ParserFactory {
      * Build parser from file and Lius config file path
      */
     public static Parser getParser(File file, String tcPath)
-            throws IOException, LiusException {
+            throws IOException, LiusException, JDOMException {
         LiusConfig tc = LiusConfig.getInstance(tcPath);
         return getParser(file, tc);
     }

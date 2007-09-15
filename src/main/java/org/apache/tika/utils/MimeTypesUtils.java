@@ -54,7 +54,11 @@ public class MimeTypesUtils {
             return "application/vnd.ms-excel";
         } else if (name.endsWith(".zip")) {
             return "application/zip";
-        } else {
+        } else if (name.endsWith(".rtf")) {
+          return "application/rtf";
+        } else if (name.endsWith(".odt")) {
+           return "application/vnd.oasis.opendocument.text";         
+         } else {
             return "application/octet-stream";
         }
     }

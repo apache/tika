@@ -49,7 +49,7 @@ public class LiusConfig {
 
     private static String currentFile;
 
-    public static LiusConfig getInstance(String configFile) {
+    public static LiusConfig getInstance(String configFile) throws JDOMException,IOException {
 
         if (configsCache.containsKey(configFile)) {
             return (LiusConfig) configsCache.get(configFile);
@@ -86,15 +86,17 @@ public class LiusConfig {
         return pc;
     }
 
-    private static Document parse(String file) {
+    private static Document parse(String file) throws JDOMException,IOException {
         org.jdom.Document xmlDoc = new org.jdom.Document();
         try {
             SAXBuilder builder = new SAXBuilder();
             xmlDoc = builder.build(new File(file));
-        } catch (JDOMException e) {
-            logger.error(e.getMessage());
-        } catch (IOException e) {
-            logger.error(e.getMessage());
+        } catch (JDOMException jde) {
+            logger.error(jde.getMessage(),jde);
+            throw jde;
+        } catch(IOException ioe) {
+          logger.error(ioe.getMessage(),ioe);
+          throw ioe;
         }
         return xmlDoc;
 
