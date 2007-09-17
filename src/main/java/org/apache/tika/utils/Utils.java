@@ -72,7 +72,6 @@ public class Utils {
                 output.print(ct.getName() + ": ");
                 output.println(ct.getValue());
             } else if (ct.getValues() != null) {
-
                 output.print(ct.getName() + ": ");
                 for (int j = 0; j < ct.getValues().length; j++) {
                     if (j == 0)
@@ -81,6 +80,9 @@ public class Utils {
                         output.println("\t" + ct.getValues()[j]);
                     }
                 }
+            } else { // there are no values, but there is a Content object
+                System.out.println(
+                        "Content '" + ct.getName() + "' has no values.");
             }
         }
     }
