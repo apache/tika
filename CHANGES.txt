@@ -5,3 +5,22 @@ Unreleased changes (0.1-dev)
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
 
 2. TIKA-11 - Consolidate test classes into a src/test/java directory tree (mattmann)
+
+3. TIKA-15 - Utils.print does not print a Content having no value (jukka)
+
+4. TIKA-19 - org.apache.tika.TestParsers fails (bdelacretaz)
+
+5. TIKA-16 - Issues with data files used for testing by TestParsers (bdelacretaz)
+
+6. TIKA-14 - MimeTypeUtils.getMimeType() returns the default mime type for 
+             .odt (Open Office) file (bdelacretaz)
+
+7. TIKA-12 - Add URL capability to MimeTypesUtils (jukka)
+
+8. TIKA-13 - Fix obsolete package names in config.xml (siren)
+
+9. TIKA-10 - Remove MimeInfoException catch clauses and import from TestParsers (siren)
+
+10. TIKA-8 - Replaced the jmimeinfo dependency with a trivial mime type detector (jukka)
+
+11. TIKA-7 - Added the Lius Lite code. Added missing dependencies to POM (jukka)
