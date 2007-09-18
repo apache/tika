@@ -22,7 +22,7 @@ package org.apache.tika.metadata;
  * @author Chris Mattmann
  * @author J&eacute;r&ocirc;me Charron
  */
-public interface Office {
+public interface MSOffice {
 
   public static final String KEYWORDS = "Keywords";
 

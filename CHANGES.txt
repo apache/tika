@@ -24,3 +24,6 @@ Unreleased changes (0.1-dev)
 10. TIKA-8 - Replaced the jmimeinfo dependency with a trivial mime type detector (jukka)
 
 11. TIKA-7 - Added the Lius Lite code. Added missing dependencies to POM (jukka)
+
+12. TIKA-18 - "Office" interface should be renamed "MSOffice" (mattmann)
+

@@ -30,7 +30,7 @@ import java.util.Properties;
  * 
  */
 public class Metadata implements CreativeCommons, DublinCore, HttpHeaders,
-    Office {
+    MSOffice {
 
   /**
    * A map of all metadata attributes.
