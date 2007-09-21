@@ -20,9 +20,6 @@ import java.io.InputStream;
 import java.util.List;
 
 import org.apache.tika.config.Content;
-import org.apache.tika.config.LiusConfig;
-import org.apache.tika.config.ParserConfig;
-import org.apache.tika.exception.LiusException;
 
 /**
  * Abstract class Parser
@@ -33,9 +30,11 @@ public abstract class Parser {
 
     private InputStream is;
 
-    private ParserConfig pc;
-
     private String mimeType;
+
+    private String namespace;
+
+    private List<Content> contents;
 
     public void setInputStream(InputStream is) {
         this.is = is;
@@ -43,23 +42,6 @@ public abstract class Parser {
 
     public InputStream getInputStream() {
         return is;
-    }
-
-    /**
-     * Configure parsers from mimetypes
-     */
-    public void configure(LiusConfig config) throws LiusException {
-        pc = config.getParserConfig(getMimeType());
-        if (pc.equals(null)) {
-            throw new LiusException("Please Configure your parser ");
-        }
-    }
-
-    /**
-     * Return parser specific config
-     */
-    public ParserConfig getParserConfig() {
-        return pc;
     }
 
     /**
@@ -74,6 +56,14 @@ public abstract class Parser {
      */
     public void setMimeType(String mimeType) {
         this.mimeType = mimeType;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
     }
 
     /**
@@ -93,6 +83,12 @@ public abstract class Parser {
      * LiusConfig Xml file. It could be a document metadata, XPath selection,
      * regex selection or fulltext
      */
-    public abstract List<Content> getContents();
+    public List<Content> getContents() {
+        return contents;
+    }
+
+    public void setContents(List<Content> contents) {
+        this.contents = contents;
+    }
 
 }

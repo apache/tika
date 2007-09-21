@@ -97,7 +97,7 @@ public class OpenOfficeParser extends Parser {
         if (xmlDoc == null)
             xmlDoc = Utils.parse(getInputStream());
         List<String> documentNs = xp.getAllDocumentNs(xmlDoc);
-        List<Content> ctt = getParserConfig().getContents();
+        List<Content> ctt = super.getContents();
         Iterator it = ctt.iterator();
         contentsMap = new HashMap<String, Content>();
 
@@ -117,10 +117,9 @@ public class OpenOfficeParser extends Parser {
                     logger.error(e.getMessage());
                 }
             }
-
         }
-        return getParserConfig().getContents();
 
+        return ctt;
     }
 
     public String getStrContent() {

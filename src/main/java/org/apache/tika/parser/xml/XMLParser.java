@@ -79,10 +79,10 @@ public class XMLParser extends Parser {
         if (xmlDoc == null)
             xmlDoc = Utils.parse(getInputStream());
         List<String> documentNs = getAllDocumentNs(xmlDoc);
-        List<Content> ctt = getParserConfig().getContents();
+        List<Content> ctt = super.getContents();
         Iterator it = ctt.iterator();
         contentsMap = new HashMap<String, Content>();
-        if (exist(documentNs, getParserConfig().getNameSpace())) {
+        if (exist(documentNs, getNamespace())) {
             while (it.hasNext()) {
                 Content content = (Content) it.next();
                 if (content.getXPathSelect() != null) {
@@ -99,10 +99,10 @@ public class XMLParser extends Parser {
                         logger.error(e.getMessage());
                     }
                 }
-
             }
         }
-        return getParserConfig().getContents();
+
+        return ctt;
     }
 
     public String concatOccurance(Object xmlDoc, String xpath, String concatSep) {

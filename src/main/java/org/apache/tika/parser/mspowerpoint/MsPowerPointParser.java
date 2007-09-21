@@ -54,7 +54,7 @@ public class MsPowerPointParser extends Parser {
         if (contentStr == null) {
             contentStr = getStrContent();
         }
-        List<Content> ctt = getParserConfig().getContents();
+        List<Content> ctt = super.getContents();
         contentsMap = new HashMap<String, Content>();
         Iterator i = ctt.iterator();
         while (i.hasNext()) {
@@ -79,8 +79,7 @@ public class MsPowerPointParser extends Parser {
             contentsMap.put(ct.getName(), ct);
         }
 
-        return getParserConfig().getContents();
-
+        return ctt;
     }
 
     /*
@@ -92,7 +91,7 @@ public class MsPowerPointParser extends Parser {
      */
 
     public String getStrContent() {
-        extrator.setContents(getParserConfig().getContents());
+        extrator.setContents(super.getContents());
         try {
             contentStr = extrator.extractText(getInputStream());
         } catch (Exception e) {

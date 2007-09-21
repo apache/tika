@@ -57,7 +57,7 @@ public class RTFParser extends Parser {
         if (contentStr == null) {
             contentStr = getStrContent();
         }
-        List<Content> ctt = getParserConfig().getContents();
+        List<Content> ctt = super.getContents();
         contentsMap = new HashMap<String, Content>();
         Iterator i = ctt.iterator();
         while (i.hasNext()) {
@@ -82,8 +82,7 @@ public class RTFParser extends Parser {
             contentsMap.put(ct.getName(), ct);
         }
 
-        return getParserConfig().getContents();
-
+        return ctt;
     }
 
     @Override

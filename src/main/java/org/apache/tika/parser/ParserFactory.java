@@ -76,9 +76,9 @@ public class ParserFactory {
                 logger.error(e.getMessage());
             }
             parser.setMimeType(mimeType);
-            parser.configure(tc);
+            parser.setNamespace(pc.getNameSpace());
+            parser.setContents(pc.getContents());
             parser.setInputStream(new FileInputStream(file));
-
         }
 
         return parser;
