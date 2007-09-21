@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Licensed to the Apache Software Foundation (ASF) under one or more
+	contributor license agreements.  See the NOTICE file distributed with
+	this work for additional information regarding copyright ownership.
+	The ASF licenses this file to You under the Apache License, Version 2.0
+	(the "License"); you may not use this file except in compliance with
+	the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing, software
+	distributed under the License is distributed on an "AS IS" BASIS,
+	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	See the License for the specific language governing permissions and
+	limitations under the License.
+	
+	Auhtor     : Jerome Charron
+	Description: This xml file defines the valid mime types used by Tika.
+	The mime types within this file are based on the types in the mime-types.xml 
+	file available in Apache Nutch.
+-->
+
+<mime-info>
+
+	<mime-type type="text/plain">
+		<magic priority="50">
+			<match value="This is TeX," type="string" offset="0" />
+			<match value="This is METAFONT," type="string" offset="0" />
+		</magic>
+		<glob pattern="*.txt" />
+		<glob pattern="*.asc" />
+	</mime-type>
+
+	<mime-type type="text/html">
+		<magic priority="50">
+			<match value="&lt;!DOCTYPE HTML" type="string"
+				offset="0:64" />
+			<match value="&lt;!doctype html" type="string"
+				offset="0:64" />
+			<match value="&lt;HEAD" type="string" offset="0:64" />
+			<match value="&lt;head" type="string" offset="0:64" />
+			<match value="&lt;TITLE" type="string" offset="0:64" />
+			<match value="&lt;title" type="string" offset="0:64" />
+			<match value="&lt;html" type="string" offset="0:64" />
+			<match value="&lt;HTML" type="string" offset="0:64" />
+			<match value="&lt;BODY" type="string" offset="0" />
+			<match value="&lt;body" type="string" offset="0" />
+			<match value="&lt;TITLE" type="string" offset="0" />
+			<match value="&lt;title" type="string" offset="0" />
+			<match value="&lt;!--" type="string" offset="0" />
+			<match value="&lt;h1" type="string" offset="0" />
+			<match value="&lt;H1" type="string" offset="0" />
+			<match value="&lt;!doctype HTML" type="string" offset="0" />
+			<match value="&lt;!DOCTYPE html" type="string" offset="0" />
+		</magic>
+		<glob pattern="*.html" />
+		<glob pattern="*.htm" />
+	</mime-type>
+
+	<mime-type type="application/xhtml+xml">
+		<sub-class-of type="text/xml" />
+		<glob pattern="*.xhtml" />
+		<root-XML namespaceURI='http://www.w3.org/1999/xhtml'
+			localName='html' />
+	</mime-type>
+
+	<mime-type type="application/vnd.ms-powerpoint">
+		<glob pattern="*.ppz" />
+		<glob pattern="*.ppt" />
+		<glob pattern="*.pps" />
+		<glob pattern="*.pot" />
+		<magic priority="50">
+			<match value="0xcfd0e011" type="little32" offset="0" />
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.ms-excel">
+		<magic priority="50">
+			<match value="Microsoft Excel 5.0 Worksheet" type="string"
+				offset="2080" />
+		</magic>
+		<glob pattern="*.xls" />
+		<glob pattern="*.xlc" />
+		<glob pattern="*.xll" />
+		<glob pattern="*.xlm" />
+		<glob pattern="*.xlw" />
+		<glob pattern="*.xla" />
+		<glob pattern="*.xlt" />
+		<glob pattern="*.xld" />
+		<alias type="application/msexcel" />
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.text">
+		<glob pattern="*.odt" />
+	</mime-type>
+
+
+	<mime-type type="application/zip">
+		<alias type="application/x-zip-compressed" />
+		<magic priority="40">
+			<match value="PK\003\004" type="string" offset="0" />
+		</magic>
+		<glob pattern="*.zip" />
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.text">
+		<glob pattern="*.oth" />
+	</mime-type>
+
+	<mime-type type="application/msword">
+		<magic priority="50">
+			<match value="\x31\xbe\x00\x00" type="string" offset="0" />
+			<match value="PO^Q`" type="string" offset="0" />
+			<match value="\376\067\0\043" type="string" offset="0" />
+			<match value="\333\245-\0\0\0" type="string" offset="0" />
+			<match value="Microsoft Word 6.0 Document" type="string"
+				offset="2080" />
+			<match value="Microsoft Word document data" type="string"
+				offset="2112" />
+		</magic>
+		<glob pattern="*.doc" />
+		<alias type="application/vnd.ms-word" />
+	</mime-type>
+
+	<mime-type type="application/octet-stream">
+		<magic priority="50">
+			<match value="\037\036" type="string" offset="0" />
+			<match value="017437" type="host16" offset="0" />
+			<match value="0x1fff" type="host16" offset="0" />
+			<match value="\377\037" type="string" offset="0" />
+			<match value="0145405" type="host16" offset="0" />
+		</magic>
+		<glob pattern="*.bin" />
+	</mime-type>
+
+	<mime-type type="application/pdf">
+		<magic priority="50">
+			<match value="%PDF-" type="string" offset="0" />
+		</magic>
+		<glob pattern="*.pdf" />
+		<alias type="application/x-pdf" />
+	</mime-type>
+
+	<mime-type type="application/atom+xml">
+		<root-XML localName="feed"
+			namespaceURI="http://purl.org/atom/ns#" />
+	</mime-type>
+
+	<mime-type type="application/mac-binhex40">
+		<glob pattern="*.hqx" />
+	</mime-type>
+
+	<mime-type type="application/mac-compactpro">
+		<glob pattern="*.cpt" />
+	</mime-type>
+
+	<mime-type type="application/rtf">
+		<alias type="text/rtf" />
+	</mime-type>
+
+	<mime-type type="application/rss+xml">
+		<alias type="text/rss" />
+		<root-XML localName="rss" />
+		<root-XML namespaceURI="http://purl.org/rss/1.0/" />
+		<glob pattern="*.rss" />
+	</mime-type>
+
+	<!--  added in by mattmann -->
+	<mime-type type="application/xml">
+		<alias type="text/xml" />
+		<glob pattern="*.xml" />
+	</mime-type>
+
+	<mime-type type="application/x-mif">
+		<alias type="application/vnd.mif" />
+	</mime-type>
+
+	<mime-type type="application/vnd.wap.wbxml">
+		<glob pattern="*.wbxml" />
+	</mime-type>
+
+	<mime-type type="application/vnd.wap.wmlc">
+		<_comment>Compiled WML Document</_comment>
+		<glob pattern="*.wmlc" />
+	</mime-type>
+
+	<mime-type type="application/vnd.wap.wmlscriptc">
+		<_comment>Compiled WML Script</_comment>
+		<glob pattern="*.wmlsc" />
+	</mime-type>
+
+	<mime-type type="text/vnd.wap.wmlscript">
+		<_comment>WML Script</_comment>
+		<glob pattern="*.wmls" />
+	</mime-type>
+
+	<mime-type type="application/x-bzip">
+		<alias type="application/x-bzip2" />
+	</mime-type>
+
+	<mime-type type="application/x-bzip-compressed-tar">
+		<glob pattern="*.tbz" />
+		<glob pattern="*.tbz2" />
+	</mime-type>
+
+	<mime-type type="application/x-cdlink">
+		<_comment>Virtual CD-ROM CD Image File</_comment>
+		<glob pattern="*.vcd" />
+	</mime-type>
+
+	<mime-type type="application/x-director">
+		<_comment>Shockwave Movie</_comment>
+		<glob pattern="*.dcr" />
+		<glob pattern="*.dir" />
+		<glob pattern="*.dxr" />
+	</mime-type>
+
+	<mime-type type="application/x-futuresplash">
+		<_comment>Macromedia FutureSplash File</_comment>
+		<glob pattern="*.spl" />
+	</mime-type>
+
+	<mime-type type="application/x-java">
+		<alias type="application/java" />
+	</mime-type>
+
+	<mime-type type="application/x-koan">
+		<_comment>SSEYO Koan File</_comment>
+		<glob pattern="*.skp" />
+		<glob pattern="*.skd" />
+		<glob pattern="*.skt" />
+		<glob pattern="*.skm" />
+	</mime-type>
+
+	<mime-type type="application/x-latex">
+		<_comment>LaTeX Source Document</_comment>
+		<glob pattern="*.latex" />
+	</mime-type>
+
+	<!-- JC CHANGED
+		<mime-type type="application/x-mif">
+		<_comment>FrameMaker MIF document</_comment>
+		<glob pattern="*.mif"/>
+		</mime-type> -->
+
+	<mime-type type="application/x-ms-dos-executable">
+		<alias type="application/x-dosexec;exe" />
+	</mime-type>
+
+	<mime-type type="application/ogg">
+		<alias type="application/x-ogg" />
+	</mime-type>
+
+	<mime-type type="application/x-rar">
+		<alias type="application/x-rar-compressed" />
+	</mime-type>
+
+	<mime-type type="application/x-shellscript">
+		<alias type="application/x-sh" />
+	</mime-type>
+
+	<mime-type type="application/xhtml+xml">
+		<glob pattern="*.xht" />
+	</mime-type>
+
+	<mime-type type="audio/midi">
+		<glob pattern="*.kar" />
+	</mime-type>
+
+	<mime-type type="audio/x-pn-realaudio">
+		<alias type="audio/x-realaudio" />
+	</mime-type>
+
+	<mime-type type="image/tiff">
+		<magic priority="50">
+			<match value="0x4d4d2a00" type="string" offset="0" />
+			<match value="0x49492a00" type="string" offset="0" />
+		</magic>
+	</mime-type>
+
+	<mime-type type="message/rfc822">
+		<magic priority="50">
+			<match type="string" value="Relay-Version:" offset="0" />
+			<match type="string" value="#! rnews" offset="0" />
+			<match type="string" value="N#! rnews" offset="0" />
+			<match type="string" value="Forward to" offset="0" />
+			<match type="string" value="Pipe to" offset="0" />
+			<match type="string" value="Return-Path:" offset="0" />
+			<match type="string" value="From:" offset="0" />
+			<match type="string" value="Message-ID:" offset="0" />
+			<match type="string" value="Date:" offset="0" />
+		</magic>
+	</mime-type>
+
+	<mime-type type="image/vnd.wap.wbmp">
+		<_comment>Wireless Bitmap File Format</_comment>
+		<glob pattern="*.wbmp" />
+	</mime-type>
+
+	<mime-type type="image/x-psd">
+		<alias type="image/photoshop" />
+	</mime-type>
+
+	<mime-type type="image/x-xcf">
+		<alias type="image/xcf" />
+		<magic priority="50">
+			<match type="string" value="gimp xcf " offset="0" />
+		</magic>
+	</mime-type>
+
+	<mime-type type="model/iges">
+		<_comment>
+			Initial Graphics Exchange Specification Format
+		</_comment>
+		<glob pattern="*.igs" />
+		<glob pattern="*.iges" />
+	</mime-type>
+
+	<mime-type type="model/mesh">
+		<glob pattern="*.msh" />
+		<glob pattern="*.mesh" />
+		<glob pattern="*.silo" />
+	</mime-type>
+
+	<mime-type type="model/vrml">
+		<glob pattern="*.vrml" />
+	</mime-type>
+
+	<mime-type type="text/x-tcl">
+		<alias type="application/x-tcl" />
+	</mime-type>
+
+	<mime-type type="text/x-tex">
+		<alias type="application/x-tex" />
+	</mime-type>
+
+	<mime-type type="text/x-texinfo">
+		<alias type="application/x-texinfo" />
+	</mime-type>
+
+	<mime-type type="text/x-troff-me">
+		<alias type="application/x-troff-me" />
+	</mime-type>
+
+	<mime-type type="video/vnd.mpegurl">
+		<glob pattern="*.mxu" />
+	</mime-type>
+
+	<mime-type type="x-conference/x-cooltalk">
+		<_comment>Cooltalk Audio</_comment>
+		<glob pattern="*.ice" />
+	</mime-type>
+
+</mime-info>
