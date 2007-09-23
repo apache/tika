@@ -86,7 +86,6 @@ public class OpenOfficeParser extends Parser {
         } catch (IOException e) {
             logger.error(e.getMessage());
         }
-        Utils.saveInXmlFile(xmlDoc, "C:\\oo.xml");
         return xmlDoc;
     }
 
