@@ -27,7 +27,6 @@ import java.net.URL;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.TikaMimeKeys;
-import org.apache.tika.mime.MimeUtils;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
 
@@ -36,14 +35,6 @@ import org.apache.tika.parser.ParserFactory;
  * entry points into the Tika framework.
  */
 public class ParseUtils implements TikaMimeKeys {
-
-    private static final Configuration conf = new Configuration();
-
-    static {
-        conf.set(TIKA_MIME_FILE, "org/apache/tika/mime/tika-mimetypes.xml");
-    }
-
-    private static final MimeUtils mimeUtils = new MimeUtils(conf);
 
     /**
      * Returns a parser that can handle the specified MIME type, and is set to
@@ -117,7 +108,7 @@ public class ParseUtils implements TikaMimeKeys {
     public static Parser getParser(URL documentUrl, TikaConfig config)
             throws TikaException, IOException {
 
-        String mimetype = mimeUtils.getRepository().getMimeType(documentUrl)
+        String mimetype = config.getMimeRepository().getMimeType(documentUrl)
                 .getName();
         return getParser(documentUrl, config, mimetype);
     }
@@ -172,7 +163,7 @@ public class ParseUtils implements TikaMimeKeys {
     public static Parser getParser(File documentFile, TikaConfig config)
             throws TikaException, IOException {
 
-        String mimetype = mimeUtils.getRepository().getMimeType(documentFile)
+        String mimetype = config.getMimeRepository().getMimeType(documentFile)
                 .getName();
         return getParser(documentFile, config, mimetype);
     }

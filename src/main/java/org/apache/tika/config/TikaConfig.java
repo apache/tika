@@ -16,11 +16,17 @@
  */
 package org.apache.tika.config;
 
+//JDK imports
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+//TIKA imports
+import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.mime.MimeUtils;
+
+//JDOM imports
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -34,9 +40,14 @@ public class TikaConfig {
 
     private final Map<String, ParserConfig> configs =
         new HashMap<String, ParserConfig>();
+    
+    private static MimeUtils mimeTypeRepo;
 
     public TikaConfig(String file) throws JDOMException, IOException {
         Document document = new SAXBuilder().build(new File(file));
+        String mimeTypeRepoResource = document.getRootElement().getChild("mimeTypeRepository").getAttributeValue("resource");
+        boolean magic = Boolean.valueOf(document.getRootElement().getChild("mimeTypeRepository").getAttributeValue("magic"));
+        mimeTypeRepo = new MimeUtils(mimeTypeRepoResource, magic);
         for (Object element : XPath.selectNodes(document, "//parser")) {
             ParserConfig pc = new ParserConfig((Element) element);
             for (Object child : ((Element) element).getChildren("mime")) {
@@ -47,6 +58,10 @@ public class TikaConfig {
 
     public ParserConfig getParserConfig(String mimeType) {
         return configs.get(mimeType);
+    }
+    
+    public MimeTypes getMimeRepository(){
+        return mimeTypeRepo.getRepository();
     }
 
 }

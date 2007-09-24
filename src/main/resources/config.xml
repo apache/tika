@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <properties>
+    <mimeTypeRepository resource="org/apache/tika/mime/tika-mimetypes.xml" magic="false"/>
     <parsers>
         <parser name="text-xml" class="org.apache.tika.parser.xml.XMLParser">
                 <namespace>http://purl.org/dc/elements/1.1/</namespace>

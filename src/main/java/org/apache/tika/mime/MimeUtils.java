@@ -25,15 +25,13 @@ import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 // Tika imports
-import org.apache.tika.utils.Configurable;
-import org.apache.tika.utils.Configuration;
 import org.apache.tika.metadata.TikaMimeKeys;
 
 /**
  * 
  * Wrapper external interface around a {@link MimeTypes} repository.
  */
-public class MimeUtils implements Configurable, TikaMimeKeys {
+public class MimeUtils implements TikaMimeKeys {
 
     /** My logger */
     private final static Logger LOG = Logger.getLogger(MimeUtils.class
@@ -42,9 +40,6 @@ public class MimeUtils implements Configurable, TikaMimeKeys {
     /** The key used to cache the mime repository in conf */
     private final static String KEY = MimeUtils.class.getName();
 
-    /** My current configuration */
-    private Configuration conf = null;
-
     /** A flag that tells if magic resolution must be performed */
     private boolean magic = true;
 
@@ -52,33 +47,13 @@ public class MimeUtils implements Configurable, TikaMimeKeys {
     private MimeTypes repository = null;
 
     /** Creates a new instance of MimeUtils */
-    public MimeUtils(Configuration conf) {
-        setConf(conf);
-    }
-
-    /***************************************************************************
-     * ----------------------------- <implementation:Configurable> *
-     * -----------------------------
-     */
-
-    public void setConf(Configuration conf) {
-        this.conf = conf;
-        this.magic = conf.getBoolean(MIME_TYPE_MAGIC, true);
-        this.repository = (MimeTypes) conf.getObject(KEY);
-        if (repository == null) {
-            repository = load(conf.get(TIKA_MIME_FILE));
-            conf.setObject(KEY, repository);
+    public MimeUtils(String resPath, boolean magic) {
+        this.magic = magic;
+        if(repository == null){
+            repository = load(resPath);
         }
     }
 
-    public Configuration getConf() {
-        return this.conf;
-    }
-
-    /***************************************************************************
-     * ----------------------------- </implementation:Configurable> *
-     * -----------------------------
-     */
 
     public final MimeTypes getRepository() {
         return repository;

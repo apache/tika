@@ -24,7 +24,6 @@ import java.net.URL;
 
 //Tika imports
 import org.apache.tika.metadata.TikaMimeKeys;
-import org.apache.tika.utils.Configuration;
 
 //Junit imports
 import junit.framework.TestCase;
@@ -37,8 +36,8 @@ import junit.framework.TestCase;
 public class TestMimeUtils extends TestCase implements TikaMimeKeys {
 
     private static final String tikaMimeFile = "org/apache/tika/mime/tika-mimetypes.xml";
-
-    private Configuration conf;
+    
+    private static final boolean magic = false;
 
     private static URL u;
 
@@ -55,9 +54,7 @@ public class TestMimeUtils extends TestCase implements TikaMimeKeys {
     private MimeUtils utils;
 
     public TestMimeUtils() {
-        Configuration conf = new Configuration();
-        conf.set(TIKA_MIME_FILE, tikaMimeFile);
-        utils = new MimeUtils(conf);
+        utils = new MimeUtils(tikaMimeFile, magic);
         assertNotNull(utils);
     }
 
