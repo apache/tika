@@ -19,9 +19,7 @@ package org.apache.tika.parser.mspowerpoint;
 /**
  * Package protected class for the required internal MS PowerPoint constants.
  * 
- * @author Stephan Strittmatter - http://www.sybit.de
  * 
- * @version 1.0
  */
 class PPTConstants {
 

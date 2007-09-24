@@ -22,8 +22,7 @@ import java.io.StringWriter;
 /**
  * Writes to optimize ASCII output. Not needed chars are filtered (ignored).
  * 
- * @author Stephan Strittmatter - http://www.sybit.de
- * @version 1.0
+ * 
  */
 public class FilteredStringWriter extends StringWriter {
 

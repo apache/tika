@@ -24,7 +24,7 @@ import org.apache.tika.config.Content;
 /**
  * Abstract class Parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public abstract class Parser {
 

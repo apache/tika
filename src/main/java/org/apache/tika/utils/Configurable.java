@@ -17,14 +17,10 @@
 package org.apache.tika.utils;
 
 /**
- * @author mattmann
- * @version $Revision$
- * 
- * <p>
  * An interface allowing a Tika object to be <code>Configured</code> by a
  * {@link Configuration} object. Based on Apache Hadoop's configuration
  * interface.
- * </p>.
+ * 
  */
 public interface Configurable {
 

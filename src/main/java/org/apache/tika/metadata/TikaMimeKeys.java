@@ -18,12 +18,8 @@
 package org.apache.tika.metadata;
 
 /**
- * @author mattmann
- * @version $Revision$
- * 
- * <p>
  * A collection of Tika metadata keys used in Mime Type resolution
- * </p>.
+ * 
  */
 public interface TikaMimeKeys {
 

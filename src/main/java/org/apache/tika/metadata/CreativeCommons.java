@@ -21,8 +21,7 @@ package org.apache.tika.metadata;
  * 
  * @see <a href="http://www.creativecommons.org/">creativecommons.org</a>
  * 
- * @author Chris Mattmann
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 public interface CreativeCommons {
 

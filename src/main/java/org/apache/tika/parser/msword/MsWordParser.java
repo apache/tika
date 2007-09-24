@@ -32,7 +32,7 @@ import org.apache.oro.text.regex.MalformedPatternException;
 /**
  * Word parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class MsWordParser extends Parser {
 

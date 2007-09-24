@@ -24,7 +24,7 @@ import org.xml.sax.InputSource;
 /**
  * OpenOffice entity resolver
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class OpenOfficeEntityResolver
 

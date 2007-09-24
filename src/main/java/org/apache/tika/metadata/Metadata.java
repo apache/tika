@@ -25,8 +25,7 @@ import java.util.Properties;
 /**
  * A multi-valued metadata container.
  * 
- * @author Chris Mattmann
- * @author J&eacute;r&ocirc;me Charron
+ * 
  * 
  */
 public class Metadata implements CreativeCommons, DublinCore, HttpHeaders,

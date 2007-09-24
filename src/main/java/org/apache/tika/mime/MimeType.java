@@ -24,8 +24,7 @@ import org.apache.tika.utils.StringUtil;
 /**
  * Defines a Mime Content Type.
  * 
- * @author J&eacute;r&ocirc;me Charron
- * @author Hari Kodungallur
+ * 
  */
 public final class MimeType {
 

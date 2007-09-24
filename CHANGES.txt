@@ -35,3 +35,6 @@ Unreleased changes (0.1-dev)
 
 16. TIKA-17 - Need to support URL's for input resources. (K. Bennett & mattmann)
 
+17. TIKA-22 - Remove @author tags from the java source (mattmann)
+
+

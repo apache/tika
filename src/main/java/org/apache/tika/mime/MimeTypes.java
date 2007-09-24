@@ -36,7 +36,7 @@ import org.apache.commons.logging.Log;
  * enables to retrieves a content-type from its name, from a file name, or from
  * a magic character sequence.
  * 
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 public final class MimeTypes {
 

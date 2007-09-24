@@ -46,7 +46,7 @@ import org.jdom.output.XMLOutputter;
 /**
  * Class util
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 
 public class Utils {

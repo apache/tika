@@ -30,12 +30,9 @@ import org.apache.tika.utils.Configuration;
 import junit.framework.TestCase;
 
 /**
- * @author mattmann
- * @version $Revision$
  * 
- * <p>
  * Test Suite for the {@link MimeTypes} repository.
- * </p>.
+ * 
  */
 public class TestMimeUtils extends TestCase implements TikaMimeKeys {
 

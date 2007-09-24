@@ -21,7 +21,7 @@ import java.util.Map;
 
 /**
  * Store all the informations regarding specific parser   
- * @author Rida Benjelloun (ridabenjelloun@apache.org)  
+ *   
  */
 public class ParserConfig {
 

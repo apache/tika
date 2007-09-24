@@ -19,7 +19,7 @@ package org.apache.tika.mime;
  * Defines a magic for a MimeType. A magic is made of one or several
  * MagicClause.
  * 
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 class Magic implements Clause {
 

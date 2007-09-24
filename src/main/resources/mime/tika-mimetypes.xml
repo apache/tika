@@ -15,7 +15,6 @@
 	See the License for the specific language governing permissions and
 	limitations under the License.
 	
-	Auhtor     : Jerome Charron
 	Description: This xml file defines the valid mime types used by Tika.
 	The mime types within this file are based on the types in the mime-types.xml 
 	file available in Apache Nutch.

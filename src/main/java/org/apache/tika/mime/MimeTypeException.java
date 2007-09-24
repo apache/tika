@@ -18,8 +18,7 @@ package org.apache.tika.mime;
 /**
  * A class to encapsulate MimeType related exceptions.
  * 
- * @author Hari Kodungallur
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 public class MimeTypeException extends Exception {
 

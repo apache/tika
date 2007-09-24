@@ -22,9 +22,7 @@ import java.util.Vector;
 /**
  * Package protected class for a MS Powerpoint slide.
  * 
- * @author Stephan Strittmatter - http://www.sybit.de
  * 
- * @version 1.0
  */
 class Slide {
 

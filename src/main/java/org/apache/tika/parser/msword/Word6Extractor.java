@@ -28,7 +28,7 @@ import java.util.*;
  * only be called from the org.textmining.text.extraction.WordExtractor because
  * it will automatically determine the version.
  *
- * @author Ryan Ackley
+ *
  */
 class Word6Extractor
 {

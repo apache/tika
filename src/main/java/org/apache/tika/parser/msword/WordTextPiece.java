@@ -20,7 +20,7 @@ package org.apache.tika.parser.msword;
  * in a Word document. Specifically, whether or not a Range of text uses
  * unicode or Cp1252 encoding.
  *
- * @author Ryan Ackley
+ *
  */
 
 class WordTextPiece

@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Defines a MimeType pattern.
  * 
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 class Patterns {
 

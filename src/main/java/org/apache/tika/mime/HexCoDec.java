@@ -17,7 +17,8 @@ package org.apache.tika.mime;
 
 /**
  * 
- * @author J&eacute;r&ocirc;me Charron
+ * A set of Hex encoding and decoding utility methods.
+ * 
  */
 public class HexCoDec {
 

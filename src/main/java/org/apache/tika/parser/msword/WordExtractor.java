@@ -41,9 +41,7 @@ import org.apache.poi.util.LittleEndian;
 /**
  * This class extracts the text from a Word 6.0/95/97/2000/XP word doc
  *
- * @author Ryan Ackley
- * @author Andy Hedges
- * @author J&eacute;r&ocirc;me Charron
+ *
  *
  */
 class WordExtractor extends MSExtractor {

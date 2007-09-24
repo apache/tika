@@ -45,7 +45,7 @@ import org.jdom.Text;
 /**
  * XML parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class XMLParser extends Parser {
     static Logger logger = Logger.getRootLogger();

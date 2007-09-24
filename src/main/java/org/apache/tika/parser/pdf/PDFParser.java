@@ -38,7 +38,7 @@ import org.pdfbox.util.PDFTextStripper;
 /**
  * PDF parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class PDFParser extends Parser {
     static Logger logger = Logger.getRootLogger();

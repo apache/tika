@@ -18,7 +18,7 @@ package org.apache.tika.exception;
 
 /**
  * Lius exception 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)  
+ * 
  */
 public class LiusException extends Exception {
 

@@ -86,7 +86,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * 
  * 
  * @see http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec
- * @author J&eacute;r&ocirs;me Charron
+ * 
  */
 final class MimeTypesReader {
 

@@ -36,7 +36,7 @@ import org.apache.oro.text.regex.MalformedPatternException;
 /**
  * RTF parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class RTFParser extends Parser {
 

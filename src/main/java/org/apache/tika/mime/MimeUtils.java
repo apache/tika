@@ -31,7 +31,7 @@ import org.apache.tika.metadata.TikaMimeKeys;
 
 /**
  * 
- * @author J&eacute;r&ocirc;me Charron
+ * Wrapper external interface around a {@link MimeTypes} repository.
  */
 public class MimeUtils implements Configurable, TikaMimeKeys {
 

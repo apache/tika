@@ -31,7 +31,7 @@ import org.apache.oro.text.regex.MalformedPatternException;
 /**
  * Power point parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class MsPowerPointParser extends Parser {
 

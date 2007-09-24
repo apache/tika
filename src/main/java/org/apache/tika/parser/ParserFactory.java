@@ -27,7 +27,7 @@ import org.apache.tika.exception.LiusException;
 /**
  * Factory class. Build parser from xml config file.
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class ParserFactory {
 

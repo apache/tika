@@ -18,7 +18,7 @@ package org.apache.tika.mime;
 /**
  * Defines a Boolean Binary Operator.
  * 
- * @author Jerome Charron
+ * 
  */
 interface Operator {
 

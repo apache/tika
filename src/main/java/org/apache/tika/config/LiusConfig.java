@@ -31,8 +31,8 @@ import org.jdom.input.SAXBuilder;
 import org.jdom.xpath.XPath;
 
 /**
- * Parse xml config file. Use cache mecanisme to store multiple configs   
- * @author Rida Benjelloun (ridabenjelloun@apache.org)  
+ * Parse xml config file. Use cache mecanisme to store multiple configs
+ *  
  */
 public class LiusConfig {
 

@@ -29,7 +29,7 @@ import org.apache.poi.hwpf.model.*;
  * This class holds all of the character formatting properties from a Word
  * 6.0/95 document.
  *
- * @author Ryan Ackley
+ *
  */
 public class Word6CHPBinTable
 {

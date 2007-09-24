@@ -19,8 +19,7 @@ package org.apache.tika.metadata;
 /**
  * A collection of <i>"Office"</i> documents properties names.
  * 
- * @author Chris Mattmann
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 public interface MSOffice {
 

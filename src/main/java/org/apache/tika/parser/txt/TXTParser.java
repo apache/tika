@@ -35,7 +35,7 @@ import org.apache.oro.text.regex.MalformedPatternException;
 /**
  * Text parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class TXTParser extends Parser {
 

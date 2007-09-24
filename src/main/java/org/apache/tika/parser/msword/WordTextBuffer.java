@@ -18,8 +18,7 @@ package org.apache.tika.parser.msword;
 /**
  * This class acts as a StringBuffer for text from a word document. It allows
  * processing of character before they
- * @author Ryan Ackley
- * @version 1.0
+ * 
  */
 public class WordTextBuffer
 {

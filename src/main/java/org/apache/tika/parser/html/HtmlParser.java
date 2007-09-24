@@ -36,7 +36,7 @@ import org.w3c.tidy.Tidy;
 
 /**
  * Html parser
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class HtmlParser extends Parser {
 

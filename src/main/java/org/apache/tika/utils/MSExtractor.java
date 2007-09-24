@@ -34,7 +34,7 @@ import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
 /**
  * Defines a Microsoft document content extractor.
  * 
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 public abstract class MSExtractor {
 

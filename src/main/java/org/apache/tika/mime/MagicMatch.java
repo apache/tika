@@ -26,7 +26,7 @@ import org.apache.commons.codec.binary.Hex;
 /**
  * Defines a magic match.
  * 
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 class MagicMatch implements Clause {
 

@@ -17,8 +17,9 @@
 package org.apache.tika.config;
 
 /**
- * Content object, used to configure and store data pupulated from XPATH, Regex, Document fulltext, document metadata etc.  
- * @author Rida Benjelloun (ridabenjelloun@apache.org)  
+ * Content object, used to configure and store data pupulated from XPATH, Regex,
+ * Document fulltext, document metadata etc.
+ * 
  */
 public class Content {
     

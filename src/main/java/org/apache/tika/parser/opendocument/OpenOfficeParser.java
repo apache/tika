@@ -46,7 +46,7 @@ import org.jdom.input.SAXBuilder;
 /**
  * OpenOffice parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class OpenOfficeParser extends Parser {
     static Logger logger = Logger.getRootLogger();

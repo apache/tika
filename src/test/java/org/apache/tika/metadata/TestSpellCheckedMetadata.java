@@ -29,8 +29,7 @@ import junit.textui.TestRunner;
  * JUnit based tests of class
  * {@link org.apache.tika.metadata.SpellCheckedMetadata}.
  * 
- * @author Chris Mattmann
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 public class TestSpellCheckedMetadata extends TestCase {
 

@@ -18,7 +18,6 @@ package org.apache.tika.mime;
 /**
  * Defines a MagicClause.
  * 
- * @author J&eacute;r&ocir;me Charron
  */
 class MagicClause implements Clause {
 

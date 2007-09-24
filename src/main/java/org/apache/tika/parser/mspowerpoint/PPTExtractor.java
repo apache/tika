@@ -27,8 +27,7 @@ import org.apache.poi.poifs.eventfilesystem.POIFSReader;
 /**
  * Converts the Powerpoint document content to plain text.
  * 
- * @author Stephan Strittmatter - http://www.sybit.de
- * @author J&eacute;r&ocirc;me Charron
+ * 
  */
 class PPTExtractor extends MSExtractor {
 

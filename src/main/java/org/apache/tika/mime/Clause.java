@@ -18,7 +18,7 @@ package org.apache.tika.mime;
 /**
  * Defines a clause to be evaluated.
  * 
- * @author Jerome Charron
+ * 
  */
 interface Clause {
 

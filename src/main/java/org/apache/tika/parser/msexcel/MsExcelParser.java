@@ -32,7 +32,7 @@ import org.apache.oro.text.regex.MalformedPatternException;
 /**
  * Excel parser
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class MsExcelParser extends Parser {
     private MSExtractor extrator = new ExcelExtractor();

@@ -33,7 +33,7 @@ import org.apache.oro.text.regex.Perl5Matcher;
  * Inspired from Nutch code class OutlinkExtractor. Apply regex to extract
  * content
  * 
- * @author Rida Benjelloun (ridabenjelloun@apache.org)
+ * 
  */
 public class RegexUtils {
 

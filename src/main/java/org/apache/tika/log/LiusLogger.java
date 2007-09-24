@@ -22,7 +22,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 /**
  * Lius Logger  
- * @author Rida Benjelloun (ridabenjelloun@apache.org)  
+ * 
  */
 public class LiusLogger {
     static Logger logger = Logger.getLogger("TikaLogger");

@@ -30,8 +30,7 @@ import org.jdom.JDOMException;
 import junit.framework.TestCase;
 
 /**
- * Junit test class   
- * @author Rida Benjelloun (ridabenjelloun@apache.org)  
+ * Junit test class for Tika {@link Parser}s. 
  */
 public class TestParsers extends TestCase {
 

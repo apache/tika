@@ -33,9 +33,7 @@ import org.apache.poi.util.StringUtil;
  * Listener to read the content of PowerPoint file and transfere it to the
  * passed <code>StringBuffer</code>.
  * 
- * @author Stephan Strittmatter - http://www.sybit.de
  * 
- * @version 1.0
  * 
  */
 class ContentReaderListener implements POIFSReaderListener {

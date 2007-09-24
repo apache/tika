@@ -32,8 +32,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 /**
  * Excel Text and Properties extractor.
  *
- * @author Rohit Kulkarni & Ashish Vaidya
- * @author J&eacute;r&ocirc;me Charron
+ *
  */
 class ExcelExtractor extends MSExtractor {
 
