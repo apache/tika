@@ -55,7 +55,7 @@ public class TestParsers extends TestCase {
          */ 
 
         // FIXME for now, fix filenames according to Maven testing layout
-        final String tikaConfigFilename = "target/classes/config.xml";
+        final String tikaConfigFilename = "target/classes/tika-config.xml";
         final String log4jPropertiesFilename = "target/classes/log4j/log4j.properties";
         testFilesBaseDir = new File("src/test/resources/test-documents");
         
