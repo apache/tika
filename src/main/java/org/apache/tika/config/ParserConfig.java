@@ -16,63 +16,52 @@
  */
 package org.apache.tika.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+
+import org.jdom.Element;
 
 /**
- * Store all the informations regarding specific parser   
- *   
+ * Store all the informations regarding specific parser
  */
 public class ParserConfig {
 
-    private String name;
+    private final String name;
 
-    private String parserClass;
+    private final String parserClass;
 
-    private Map<String, String> mimes;
+    private final String nameSpace;
 
-    private String nameSpace;
+    private final List<Content> contents = new ArrayList<Content>();
+;
 
-    private List<Content> contents;
-
-    public List<Content> getContents() {
-        return contents;
-    }
-
-    public void setContents(List<Content> contents) {
-        this.contents = contents;
-    }
-
-    public Map<String, String> getMimes() {
-        return mimes;
-    }
-
-    public void setMimes(Map<String, String> mimes) {
-        this.mimes = mimes;
+    public ParserConfig(Element element) {
+        name = element.getAttributeValue("name");
+        parserClass = element.getAttributeValue("class");
+        nameSpace = element.getChildTextTrim("namespace");
+        Element extract = element.getChild("extract");
+        if (extract != null) {
+            for (Object child : extract.getChildren()) {
+                contents.add(new Content((Element) child));
+            }
+        }
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getNameSpace() {
         return nameSpace;
-    }
-
-    public void setNameSpace(String nameSpace) {
-        this.nameSpace = nameSpace;
     }
 
     public String getParserClass() {
         return parserClass;
     }
 
-    public void setParserClass(String parserClass) {
-        this.parserClass = parserClass;
+    public List<Content> getContents() {
+        return Collections.unmodifiableList(contents);
     }
 
 }

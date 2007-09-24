@@ -16,57 +16,63 @@
  */
 package org.apache.tika.config;
 
+import org.jdom.Element;
+
 /**
- * Content object, used to configure and store data pupulated from XPATH, Regex,
+ * Content object, used to configure and store data populated from XPATH, Regex,
  * Document fulltext, document metadata etc.
- * 
  */
 public class Content {
-    
-    private String name;
+
+    private final String name;
+
+    private final String textSelect;
+
+    private final String xPathSelect;
+
+    private final String regexSelect;
+
     private String value;
+
     private String[] values;
-    private String textSelect;
-    private String xPathSelect;
-    private String regexSelect;
-    
-    
+
+    public Content(Element element) {
+        name = element.getAttributeValue("name");
+        xPathSelect = element.getAttributeValue("xpathSelect");
+        textSelect = element.getAttributeValue("textSelect");
+        regexSelect = element.getChildTextTrim("regexSelect");
+    }
+
     public String getName() {
         return name;
     }
-    public void setName(String name) {
-        this.name = name;
-    }
+
     public String getRegexSelect() {
         return regexSelect;
     }
-    public void setRegexSelect(String regexSelect) {
-        this.regexSelect = regexSelect;
-    }
+
     public String getTextSelect() {
         return textSelect;
     }
-    public void setTextSelect(String select) {
-        this.textSelect = select;
-    }
-    public String getValue() {
-        return value;
-    }
-    public void setValue(String value) {
-        this.value = value;
-    }
+
     public String getXPathSelect() {
         return xPathSelect;
     }
-    public void setXPathSelect(String pathSelect) {
-        xPathSelect = pathSelect;
+
+    public String getValue() {
+        return value;
     }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
+
     public String[] getValues() {
         return values;
     }
+
     public void setValues(String[] values) {
         this.values = values;
     }
-
 
 }

@@ -37,4 +37,4 @@ Unreleased changes (0.1-dev)
 
 17. TIKA-22 - Remove @author tags from the java source (mattmann)
 
-
+18. TIKA-21 - Simplified configuration code (jukka)

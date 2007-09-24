@@ -59,7 +59,7 @@ public class TestParsers extends TestCase {
         final String log4jPropertiesFilename = "target/classes/log4j/log4j.properties";
         testFilesBaseDir = new File("src/test/resources/test-documents");
         
-        tc = LiusConfig.getInstance(liusConfigFilename);
+        tc = new LiusConfig(liusConfigFilename);
 
         LiusLogger.setLoggerConfigFile(log4jPropertiesFilename);
 
