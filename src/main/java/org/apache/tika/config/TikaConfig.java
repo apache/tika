@@ -19,6 +19,8 @@ package org.apache.tika.config;
 //JDK imports
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -44,14 +46,35 @@ public class TikaConfig {
     private static MimeUtils mimeTypeRepo;
 
     public TikaConfig(String file) throws JDOMException, IOException {
-        Document document = new SAXBuilder().build(new File(file));
-        String mimeTypeRepoResource = document.getRootElement().getChild("mimeTypeRepository").getAttributeValue("resource");
-        boolean magic = Boolean.valueOf(document.getRootElement().getChild("mimeTypeRepository").getAttributeValue("magic"));
+        this(new File(file));
+    }
+
+    public TikaConfig(File file) throws JDOMException, IOException {
+        this(new SAXBuilder().build(file));
+    }
+
+    public TikaConfig(URL url) throws JDOMException, IOException {
+        this(new SAXBuilder().build(url));
+    }
+
+    public TikaConfig(InputStream stream) throws JDOMException, IOException {
+        this(new SAXBuilder().build(stream));
+    }
+
+    public TikaConfig(Document document) throws JDOMException {
+        this(document.getRootElement());
+    }
+
+    public TikaConfig(Element element) throws JDOMException {
+        Element mtr = element.getChild("mimeTypeRepository");
+        String mimeTypeRepoResource = mtr.getAttributeValue("resource");
+        boolean magic = Boolean.valueOf(mtr.getAttributeValue("magic"));
         mimeTypeRepo = new MimeUtils(mimeTypeRepoResource, magic);
-        for (Object element : XPath.selectNodes(document, "//parser")) {
-            ParserConfig pc = new ParserConfig((Element) element);
-            for (Object child : ((Element) element).getChildren("mime")) {
-                configs.put(((Element) child).getTextTrim(), pc);
+
+        for (Object parser : XPath.selectNodes(element, "//parser")) {
+            ParserConfig config = new ParserConfig((Element) parser);
+            for (Object child : ((Element) parser).getChildren("mime")) {
+                configs.put(((Element) child).getTextTrim(), config);
             }
         }
     }
