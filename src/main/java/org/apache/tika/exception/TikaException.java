@@ -17,8 +17,7 @@
 package org.apache.tika.exception;
 
 /**
- * Lius exception 
- * 
+ * Tika exception 
  */
 public class TikaException extends Exception {
 

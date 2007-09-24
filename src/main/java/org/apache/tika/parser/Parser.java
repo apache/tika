@@ -72,7 +72,7 @@ public abstract class Parser {
     public abstract String getStrContent();
 
     /**
-     * Get a content object, this object is configured from the LiusConfig Xml.
+     * Get a content object, this object is configured from the TikaConfig Xml.
      * It could be a document metadata, XPath selection, regex selection or
      * fulltext
      */
@@ -80,7 +80,7 @@ public abstract class Parser {
 
     /**
      * Get a List of contents objects, this objects are configured from the
-     * LiusConfig Xml file. It could be a document metadata, XPath selection,
+     * TikaConfig Xml file. It could be a document metadata, XPath selection,
      * regex selection or fulltext
      */
     public List<Content> getContents() {

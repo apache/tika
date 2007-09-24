@@ -21,8 +21,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 /**
- * Lius Logger  
- * 
+ * Tika Logger  
  */
 public class TikaLogger {
     static Logger logger = Logger.getLogger("TikaLogger");
