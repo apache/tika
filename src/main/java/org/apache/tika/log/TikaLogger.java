@@ -24,7 +24,7 @@ import org.apache.log4j.PropertyConfigurator;
  * Lius Logger  
  * 
  */
-public class LiusLogger {
+public class TikaLogger {
     static Logger logger = Logger.getLogger("TikaLogger");
 
     public static void setLoggerConfigFile(String loggerConfigPath) {

@@ -20,8 +20,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.tika.config.Content;
-import org.apache.tika.config.LiusConfig;
-import org.apache.tika.log.LiusLogger;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.log.TikaLogger;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ParseUtils;
 import org.apache.tika.utils.Utils;
@@ -34,7 +34,7 @@ import junit.framework.TestCase;
  */
 public class TestParsers extends TestCase {
 
-    private LiusConfig tc;
+    private TikaConfig tc;
     private File testFilesBaseDir; 
 
     public void setUp() throws JDOMException, IOException {
@@ -59,9 +59,9 @@ public class TestParsers extends TestCase {
         final String log4jPropertiesFilename = "target/classes/log4j/log4j.properties";
         testFilesBaseDir = new File("src/test/resources/test-documents");
         
-        tc = new LiusConfig(liusConfigFilename);
+        tc = new TikaConfig(liusConfigFilename);
 
-        LiusLogger.setLoggerConfigFile(log4jPropertiesFilename);
+        TikaLogger.setLoggerConfigFile(log4jPropertiesFilename);
 
     }
 

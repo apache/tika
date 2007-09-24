@@ -20,9 +20,9 @@ import java.io.InputStream;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.tika.config.LiusConfig;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.ParserConfig;
-import org.apache.tika.exception.LiusException;
+import org.apache.tika.exception.TikaException;
 
 /**
  * Factory class. Build parser from xml config file.
@@ -36,26 +36,26 @@ public class ParserFactory {
 
 
     public static Parser getParser(
-            InputStream inputStream, String mimeType, LiusConfig tc)
-            throws LiusException {
+            InputStream inputStream, String mimeType, TikaConfig tc)
+            throws TikaException {
 
         // Verify that all passed parameters are (probably) valid.
 
         if (StringUtils.isBlank(mimeType)) {
-            throw new LiusException("Mime type not specified.");
+            throw new TikaException("Mime type not specified.");
         }
 
         if (inputStream == null) {
-            throw new LiusException("Input stream is null.");
+            throw new TikaException("Input stream is null.");
         }
 
         if (tc == null) {
-            throw new LiusException("Configuration object is null.");
+            throw new TikaException("Configuration object is null.");
         }
 
         ParserConfig pc = getParserConfig(mimeType, tc);
         if (pc == null) {
-            throw new LiusException(
+            throw new TikaException(
                     "Could not find parser config for mime type "
                     + mimeType + ".");
         }
@@ -64,7 +64,7 @@ public class ParserFactory {
         Parser parser = null;
 
         if (StringUtils.isBlank(className)) {
-            throw new LiusException(
+            throw new TikaException(
                     "Parser class name missing from ParserConfig.");
         }
 
@@ -80,21 +80,21 @@ public class ParserFactory {
 
         } catch (ClassNotFoundException e) {
             logger.error(e.getMessage());
-            throw new LiusException(e.getMessage());
+            throw new TikaException(e.getMessage());
         } catch (InstantiationException e) {
             logger.error(e.getMessage());
-            throw new LiusException(e.getMessage());
+            throw new TikaException(e.getMessage());
         } catch (IllegalAccessException e) {
             logger.error(e.getMessage());
-            throw new LiusException(e.getMessage());
+            throw new TikaException(e.getMessage());
         }
 
         return parser;
     }
 
 
-    private static ParserConfig getParserConfig(String mimeType, LiusConfig tc)
-            throws LiusException {
+    private static ParserConfig getParserConfig(String mimeType, TikaConfig tc)
+            throws TikaException {
 
         ParserConfig pc = tc.getParserConfig(mimeType);
 
@@ -104,7 +104,7 @@ public class ParserFactory {
                     + mimeType + ".";
 
             logger.error(message);
-            throw new LiusException(message);
+            throw new TikaException(message);
         }
 
         return pc;

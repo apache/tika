@@ -30,12 +30,12 @@ import org.jdom.xpath.XPath;
 /**
  * Parse xml config file.
  */
-public class LiusConfig {
+public class TikaConfig {
 
     private final Map<String, ParserConfig> configs =
         new HashMap<String, ParserConfig>();
 
-    public LiusConfig(String file) throws JDOMException, IOException {
+    public TikaConfig(String file) throws JDOMException, IOException {
         Document document = new SAXBuilder().build(new File(file));
         for (Object element : XPath.selectNodes(document, "//parser")) {
             ParserConfig pc = new ParserConfig((Element) element);

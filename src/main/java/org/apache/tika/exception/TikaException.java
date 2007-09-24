@@ -20,9 +20,9 @@ package org.apache.tika.exception;
  * Lius exception 
  * 
  */
-public class LiusException extends Exception {
+public class TikaException extends Exception {
 
-    public LiusException(String msg) {
+    public TikaException(String msg) {
         super(msg);
     }
 

@@ -24,8 +24,8 @@ import java.io.InputStream;
 import java.net.URL;
 
 // TIKA imports
-import org.apache.tika.config.LiusConfig;
-import org.apache.tika.exception.LiusException;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.apache.tika.mime.MimeUtils;
 import org.apache.tika.parser.Parser;
@@ -57,14 +57,14 @@ public class ParseUtils implements TikaMimeKeys {
      *            the document's MIME type
      * @return a parser appropriate to this MIME type and ready to read input
      *         from the specified document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static Parser getParser(InputStream inputStream, LiusConfig config,
-            String mimeType) throws LiusException, IOException {
+    public static Parser getParser(InputStream inputStream, TikaConfig config,
+            String mimeType) throws TikaException, IOException {
 
         if (inputStream == null) {
-            throw new LiusException("Document input stream not provided.");
+            throw new TikaException("Document input stream not provided.");
         }
 
         return ParserFactory.getParser(inputStream, mimeType, config);
@@ -86,14 +86,14 @@ public class ParseUtils implements TikaMimeKeys {
      *            the document's MIME type
      * @return a parser appropriate to this MIME type and ready to read input
      *         from the specified document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static Parser getParser(URL documentUrl, LiusConfig config,
-            String mimeType) throws LiusException, IOException {
+    public static Parser getParser(URL documentUrl, TikaConfig config,
+            String mimeType) throws TikaException, IOException {
 
         if (documentUrl == null) {
-            throw new LiusException("Document URL not provided.");
+            throw new TikaException("Document URL not provided.");
         }
 
         return ParserFactory.getParser(documentUrl.openStream(), mimeType,
@@ -111,11 +111,11 @@ public class ParseUtils implements TikaMimeKeys {
      * @param config
      * @return a parser appropriate to this MIME type and ready to read input
      *         from the specified document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static Parser getParser(URL documentUrl, LiusConfig config)
-            throws LiusException, IOException {
+    public static Parser getParser(URL documentUrl, TikaConfig config)
+            throws TikaException, IOException {
 
         String mimetype = mimeUtils.getRepository().getMimeType(documentUrl)
                 .getName();
@@ -134,18 +134,18 @@ public class ParseUtils implements TikaMimeKeys {
      *            the document's MIME type
      * @return a parser appropriate to this MIME type and ready to read input
      *         from the specified document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static Parser getParser(File documentFile, LiusConfig config,
-            String mimeType) throws LiusException, IOException {
+    public static Parser getParser(File documentFile, TikaConfig config,
+            String mimeType) throws TikaException, IOException {
 
         if (documentFile == null) {
-            throw new LiusException("Document file not provided.");
+            throw new TikaException("Document file not provided.");
         }
 
         if (!documentFile.canRead()) {
-            throw new LiusException(
+            throw new TikaException(
                     "Document file does not exist or is not readable.");
         }
 
@@ -166,11 +166,11 @@ public class ParseUtils implements TikaMimeKeys {
      * @param config
      * @return a parser appropriate to this MIME type and ready to read input
      *         from the specified document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static Parser getParser(File documentFile, LiusConfig config)
-            throws LiusException, IOException {
+    public static Parser getParser(File documentFile, TikaConfig config)
+            throws TikaException, IOException {
 
         String mimetype = mimeUtils.getRepository().getMimeType(documentFile)
                 .getName();
@@ -186,11 +186,11 @@ public class ParseUtils implements TikaMimeKeys {
      * @param mimeType
      *            MIME type of the data
      * @return the string content parsed from the document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
     public static String getStringContent(InputStream inputStream,
-            LiusConfig config, String mimeType) throws LiusException,
+            TikaConfig config, String mimeType) throws TikaException,
             IOException {
 
         Parser parser = getParser(inputStream, config, mimeType);
@@ -204,11 +204,11 @@ public class ParseUtils implements TikaMimeKeys {
      *            URL pointing to the document to parse
      * @param config
      * @return the string content parsed from the document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static String getStringContent(URL documentUrl, LiusConfig config)
-            throws LiusException, IOException {
+    public static String getStringContent(URL documentUrl, TikaConfig config)
+            throws TikaException, IOException {
 
         Parser parser = getParser(documentUrl, config);
         return getStringContent(parser);
@@ -223,11 +223,11 @@ public class ParseUtils implements TikaMimeKeys {
      * @param mimeType
      *            MIME type of the data
      * @return the string content parsed from the document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static String getStringContent(URL documentUrl, LiusConfig config,
-            String mimeType) throws LiusException, IOException {
+    public static String getStringContent(URL documentUrl, TikaConfig config,
+            String mimeType) throws TikaException, IOException {
 
         Parser parser = getParser(documentUrl, config, mimeType);
         return getStringContent(parser);
@@ -242,11 +242,11 @@ public class ParseUtils implements TikaMimeKeys {
      * @param mimeType
      *            MIME type of the data
      * @return the string content parsed from the document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static String getStringContent(File documentFile, LiusConfig config,
-            String mimeType) throws LiusException, IOException {
+    public static String getStringContent(File documentFile, TikaConfig config,
+            String mimeType) throws TikaException, IOException {
 
         Parser parser = getParser(documentFile, config, mimeType);
         return getStringContent(parser);
@@ -259,11 +259,11 @@ public class ParseUtils implements TikaMimeKeys {
      *            File object pointing to the document to parse
      * @param config
      * @return the string content parsed from the document
-     * @throws LiusException
+     * @throws TikaException
      * @throws IOException
      */
-    public static String getStringContent(File documentFile, LiusConfig config)
-            throws LiusException, IOException {
+    public static String getStringContent(File documentFile, TikaConfig config)
+            throws TikaException, IOException {
 
         Parser parser = getParser(documentFile, config);
         return getStringContent(parser);
