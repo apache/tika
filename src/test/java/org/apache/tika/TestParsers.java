@@ -18,18 +18,16 @@ package org.apache.tika;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.StringTokenizer;
-
-import junit.framework.TestCase;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.config.LiusConfig;
 import org.apache.tika.log.LiusLogger;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserFactory;
+import org.apache.tika.utils.ParseUtils;
 import org.apache.tika.utils.Utils;
 import org.jdom.JDOMException;
+
+import junit.framework.TestCase;
 
 /**
  * Junit test class   
@@ -67,58 +65,97 @@ public class TestParsers extends TestCase {
         LiusLogger.setLoggerConfigFile(log4jPropertiesFilename);
 
     }
-    
-    /*
-     * public void testConfig(){ TikaConfig tc =
-     * TikaConfig.getInstance("C:\\tika\\config\\tikaConfig2.xml"); ParserConfig
-     * pc = tc.getParserConfig("text/html"); assertEquals("parse-html",
-     * pc.getName()); }
-     */
 
     public void testPDFExtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testPDF.pdf"), tc);
+        File file = getTestFile("testPDF.pdf");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/pdf");
+
+        Parser parser = ParseUtils.getParser(file, tc);
+        String s3 = parser.getStrContent();
+
+        assertEquals(s1, s2);
+        assertEquals(s1, s3);
     }
 
     public void testTXTExtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testTXT.txt"), tc);
+        File file = getTestFile("testTXT.txt");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "text/plain");
+        assertEquals(s1, s2);
     }
 
     public void testRTFExtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testRTF.rtf"), tc);
+        File file = getTestFile("testRTF.rtf");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
+        assertEquals(s1, s2);
     }
 
     public void testXMLExtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testXML.xml"), tc);
+        File file = getTestFile("testXML.xml");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/xml");
+        assertEquals(s1, s2);
     }
 
     public void testPPTExtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testPPT.ppt"), tc);
+        File file = getTestFile("testPPT.ppt");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc,
+                "application/vnd.ms-powerpoint");
+        assertEquals(s1, s2);
     }
 
     public void testWORDxtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testWORD.doc"), tc);
+        File file = getTestFile("testWORD.doc");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/msword");
+        assertEquals(s1, s2);
     }
 
     public void testEXCELExtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testEXCEL.xls"), tc);
+        File file = getTestFile("testEXCEL.xls");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc,
+                "application/vnd.ms-excel");
+        assertEquals(s1, s2);
     }
 
     public void testOOExtraction() throws Exception {
-        ParserFactory.getParser(getTestFile("testOpenOffice2.odt"), tc);
+        File file = getTestFile("testOpenOffice2.odt");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc,
+                "application/vnd.oasis.opendocument.text");
+        assertEquals(s1, s2);
     }
 
     public void testHTMLExtraction() throws Exception {
-        Parser parser = ParserFactory.getParser(getTestFile("testHTML.html"), tc);
-        assertEquals("Title : Test Indexation Html", (parser.getContent("title")).getValue());
-        assertEquals("text/html",parser.getMimeType());
-        final String text = Utils.toString(parser.getContents());
+        File file = getTestFile("testHTML.html");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "text/html");
+        assertEquals(s1, s2);
+
+        Parser parser = ParseUtils.getParser(file, tc);
+        assertNotNull(parser);
+        assertEquals("org.apache.tika.parser.html.HtmlParser", parser.getClass().getName());
+
         
+        Content content = parser.getContent("title");
+        assertNotNull(content);
+        assertEquals("Title : Test Indexation Html", content.getValue());
+
+        assertEquals("text/html", parser.getMimeType());
+
+        final String text = Utils.toString(parser.getContents());
         final String expected = "Test Indexation Html";
-        assertTrue("text contains '" + expected + "'",text.indexOf(expected) >= 0);
+        assertTrue("text contains '" + expected + "'",
+                text.contains(expected));
+        parser.getInputStream().close();
     }
 
     private File getTestFile(String filename) {
-      return new File(testFilesBaseDir,filename); 
+      return new File(testFilesBaseDir, filename);
     }
 
 }

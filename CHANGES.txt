@@ -32,3 +32,6 @@ Unreleased changes (0.1-dev)
 14. TIKA-6 - Port Nutch (or better) MimeType detection system into Tika (J. Charron & mattmann)
 
 15. TIKA-25 - Removed hardcoded reference to C:\oo.xml in OpenOfficeParser (K. Bennett & jukka)
+
+16. TIKA-17 - Need to support URL's for input resources. (K. Bennett & mattmann)
+

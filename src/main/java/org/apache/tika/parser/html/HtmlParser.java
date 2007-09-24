@@ -17,17 +17,17 @@
 package org.apache.tika.parser.html;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.tika.config.Content;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.RegexUtils;
-
-import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -61,6 +61,12 @@ public class HtmlParser extends Parser {
         }
         List<Content> ctt = super.getContents();
         contentsMap = new HashMap<String, Content>();
+
+
+        if (ctt == null) {
+            return new ArrayList<Content>(0);
+        }
+
         Iterator i = ctt.iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();

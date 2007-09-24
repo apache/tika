@@ -16,17 +16,13 @@
  */
 package org.apache.tika.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.InputStream;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.tika.config.LiusConfig;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.exception.LiusException;
-import org.apache.tika.utils.MimeTypesUtils;
-
-import org.apache.log4j.Logger;
-import org.jdom.JDOMException;
 
 /**
  * Factory class. Build parser from xml config file.
@@ -37,77 +33,80 @@ public class ParserFactory {
 
     static Logger logger = Logger.getRootLogger();
 
-    /**
-     * Build parser from file and Lius config object
-     */
-    public static Parser getParser(File file, LiusConfig tc)
-            throws IOException, LiusException {
-        if(!file.canRead()) {
-          throw new IOException("Cannot read input file " + file.getAbsoluteFile());
+
+
+    public static Parser getParser(
+            InputStream inputStream, String mimeType, LiusConfig tc)
+            throws LiusException {
+
+        // Verify that all passed parameters are (probably) valid.
+
+        if (StringUtils.isBlank(mimeType)) {
+            throw new LiusException("Mime type not specified.");
         }
-        String mimeType = MimeTypesUtils.getMimeType(file);
-        ParserConfig pc = tc.getParserConfig(mimeType);
-        if(pc==null) {
-          throw new LiusException(
-              "No ParserConfig available for mime-type '" + mimeType + "'"
-              + " for file " + file.getName()
-          );
+
+        if (inputStream == null) {
+            throw new LiusException("Input stream is null.");
         }
+
+        if (tc == null) {
+            throw new LiusException("Configuration object is null.");
+        }
+
+        ParserConfig pc = getParserConfig(mimeType, tc);
+        if (pc == null) {
+            throw new LiusException(
+                    "Could not find parser config for mime type "
+                    + mimeType + ".");
+        }
+
         String className = pc.getParserClass();
         Parser parser = null;
-        Class<?> parserClass = null;
-        if (className != null) {
-            try {
-                logger.debug(
-                    "Loading parser class = " + className
-                    + " MimeType = " + mimeType
-                    + " for file " + file.getName()
-                );
 
-                parserClass = Class.forName(className);
-                parser = (Parser) parserClass.newInstance();
+        if (StringUtils.isBlank(className)) {
+            throw new LiusException(
+                    "Parser class name missing from ParserConfig.");
+        }
 
-            } catch (ClassNotFoundException e) {
-                logger.error(e.getMessage());
+        try {
+            logger.info("Loading parser class = " + className
+                    + " MimeType = " + mimeType);
 
-            } catch (InstantiationException e) {
-                logger.error(e.getMessage());
-            } catch (IllegalAccessException e) {
-                logger.error(e.getMessage());
-            }
+            Class<?> parserClass = Class.forName(className);
+            parser = (Parser) parserClass.newInstance();
             parser.setMimeType(mimeType);
-            parser.setNamespace(pc.getNameSpace());
             parser.setContents(pc.getContents());
-            parser.setInputStream(new FileInputStream(file));
+            parser.setInputStream(inputStream);
+
+        } catch (ClassNotFoundException e) {
+            logger.error(e.getMessage());
+            throw new LiusException(e.getMessage());
+        } catch (InstantiationException e) {
+            logger.error(e.getMessage());
+            throw new LiusException(e.getMessage());
+        } catch (IllegalAccessException e) {
+            logger.error(e.getMessage());
+            throw new LiusException(e.getMessage());
         }
 
         return parser;
     }
 
-    /**
-     * Build parser from string file path and Lius config object
-     */
-    public static Parser getParser(String str, LiusConfig tc)
-            throws IOException, LiusException {
-        return getParser(new File(str), tc);
-    }
 
-    /**
-     * Build parser from string file path and Lius config file path
-     */
-    public static Parser getParser(String str, String tcPath)
-            throws IOException, LiusException, JDOMException {
-        LiusConfig tc = LiusConfig.getInstance(tcPath);
-        return getParser(new File(str), tc);
-    }
+    private static ParserConfig getParserConfig(String mimeType, LiusConfig tc)
+            throws LiusException {
 
-    /**
-     * Build parser from file and Lius config file path
-     */
-    public static Parser getParser(File file, String tcPath)
-            throws IOException, LiusException, JDOMException {
-        LiusConfig tc = LiusConfig.getInstance(tcPath);
-        return getParser(file, tc);
-    }
+        ParserConfig pc = tc.getParserConfig(mimeType);
 
+        if (pc == null) {
+            String message =
+                    "Could not find parser configuration for mime type "
+                    + mimeType + ".";
+
+            logger.error(message);
+            throw new LiusException(message);
+        }
+
+        return pc;
+    }
 }

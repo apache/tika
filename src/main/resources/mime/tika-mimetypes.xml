@@ -156,6 +156,7 @@
 	</mime-type>
 
 	<mime-type type="application/rtf">
+	    <glob pattern="*.rtf"/>
 		<alias type="text/rtf" />
 	</mime-type>
 
