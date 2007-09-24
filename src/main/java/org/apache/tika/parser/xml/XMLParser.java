@@ -54,16 +54,7 @@ public class XMLParser extends Parser {
 
     private SimpleNamespaceContext nsc = new SimpleNamespaceContext();
 
-    private Map<String, Content> contentsMap;
-
     private String contentStr;
-
-    public Content getContent(String name) {
-        if (contentsMap == null || contentsMap.isEmpty()) {
-            getContents();
-        }
-        return contentsMap.get(name);
-    }
 
     public String getStrContent() {
         if (xmlDoc == null)
@@ -81,12 +72,11 @@ public class XMLParser extends Parser {
         List<String> documentNs = getAllDocumentNs(xmlDoc);
         List<Content> ctt = super.getContents();
         Iterator it = ctt.iterator();
-        contentsMap = new HashMap<String, Content>();
         if (exist(documentNs, getNamespace())) {
             while (it.hasNext()) {
                 Content content = (Content) it.next();
                 if (content.getXPathSelect() != null) {
-                    extractContent(xmlDoc, content, contentsMap);
+                    extractContent(xmlDoc, content);
                 } else if (content.getRegexSelect() != null) {
                     try {
                         List<String> valuesLs = RegexUtils.extract(contentStr,
@@ -201,8 +191,7 @@ public class XMLParser extends Parser {
         }
     }
 
-    public void extractContent(Document xmlDoc, Content content,
-            Map<String, Content> contentsMap) {
+    public void extractContent(Document xmlDoc, Content content) {
         try {
             JDOMXPath xp = new JDOMXPath(content.getXPathSelect());
             xp.setNamespaceContext(nsc);
@@ -243,7 +232,6 @@ public class XMLParser extends Parser {
             if (values.length > 0) {
                 content.setValue(values[0]);
                 content.setValues(values);
-                contentsMap.put(content.getName(), content);
             }
         } catch (JaxenException e) {
             logger.error(e.getMessage());

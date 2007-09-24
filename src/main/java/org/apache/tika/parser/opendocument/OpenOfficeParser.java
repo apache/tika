@@ -58,8 +58,6 @@ public class OpenOfficeParser extends Parser {
 
     private org.jdom.Document xmlDoc;
 
-    private Map<String, Content> contentsMap;
-
     private String contentStr;
 
     public org.jdom.Document parse(InputStream is) {
@@ -98,12 +96,10 @@ public class OpenOfficeParser extends Parser {
         List<String> documentNs = xp.getAllDocumentNs(xmlDoc);
         List<Content> ctt = super.getContents();
         Iterator it = ctt.iterator();
-        contentsMap = new HashMap<String, Content>();
-
         while (it.hasNext()) {
             Content content = (Content) it.next();
             if (content.getXPathSelect() != null) {
-                xp.extractContent(xmlDoc, content, contentsMap);
+                xp.extractContent(xmlDoc, content);
             } else if (content.getRegexSelect() != null) {
                 try {
                     List<String> valuesLs = RegexUtils.extract(contentStr,
@@ -152,13 +148,6 @@ public class OpenOfficeParser extends Parser {
             logger.error(e.getMessage());
         }
         return res;
-    }
-
-    public Content getContent(String name) {
-        if (contentsMap == null || contentsMap.isEmpty()) {
-            getContents();
-        }
-        return contentsMap.get(name);
     }
 
     protected void copyInputStream(InputStream in, OutputStream out)

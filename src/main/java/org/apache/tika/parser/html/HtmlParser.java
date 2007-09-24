@@ -46,22 +46,11 @@ public class HtmlParser extends Parser {
 
     private String contentStr;
 
-    private Map<String, Content> contentsMap;
-
-    public Content getContent(String name) {
-        if (contentsMap == null || contentsMap.isEmpty()) {
-            getContents();
-        }
-        return contentsMap.get(name);
-    }
-
     public List<Content> getContents() {
         if (contentStr == null) {
             contentStr = getStrContent();
         }
         List<Content> ctt = super.getContents();
-        contentsMap = new HashMap<String, Content>();
-
 
         if (ctt == null) {
             return new ArrayList<Content>(0);
@@ -91,7 +80,6 @@ public class HtmlParser extends Parser {
                     logger.error(e.getMessage());
                 }
             }
-            contentsMap.put(ct.getName(), ct);
         }
 
         return ctt;

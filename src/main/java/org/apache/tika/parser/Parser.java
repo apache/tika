@@ -76,7 +76,14 @@ public abstract class Parser {
      * It could be a document metadata, XPath selection, regex selection or
      * fulltext
      */
-    public abstract Content getContent(String name);
+    public final Content getContent(String name) {
+        for (Content content : getContents()) {
+            if (name.equals(content.getName())) {
+                return content;
+            }
+        }
+        return null;
+    }
 
     /**
      * Get a List of contents objects, this objects are configured from the

@@ -42,23 +42,13 @@ public class RTFParser extends Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    private Map<String, Content> contentsMap;
-
     private String contentStr;
-
-    public Content getContent(String name) {
-        if (contentsMap == null || contentsMap.isEmpty()) {
-            getContents();
-        }
-        return contentsMap.get(name);
-    }
 
     public List<Content> getContents() {
         if (contentStr == null) {
             contentStr = getStrContent();
         }
         List<Content> ctt = super.getContents();
-        contentsMap = new HashMap<String, Content>();
         Iterator i = ctt.iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
@@ -79,7 +69,6 @@ public class RTFParser extends Parser {
                     logger.error(e.getMessage());
                 }
             }
-            contentsMap.put(ct.getName(), ct);
         }
 
         return ctt;

@@ -39,23 +39,13 @@ public class MsPowerPointParser extends Parser {
 
     private String contentStr;
 
-    private Map<String, Content> contentsMap;
-
     static Logger logger = Logger.getRootLogger();
-
-    public Content getContent(String name) {
-        if (contentsMap == null || contentsMap.isEmpty()) {
-            getContents();
-        }
-        return contentsMap.get(name);
-    }
 
     public List<Content> getContents() {
         if (contentStr == null) {
             contentStr = getStrContent();
         }
         List<Content> ctt = super.getContents();
-        contentsMap = new HashMap<String, Content>();
         Iterator i = ctt.iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
@@ -76,7 +66,6 @@ public class MsPowerPointParser extends Parser {
                     logger.error(e.getMessage());
                 }
             }
-            contentsMap.put(ct.getName(), ct);
         }
 
         return ctt;

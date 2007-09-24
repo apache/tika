@@ -47,8 +47,6 @@ public class PDFParser extends Parser {
 
     private PDDocument pdfDocument = null;
 
-    private Map<String, Content> contentsMap;
-
     public String getStrContent() {
 
         try {
@@ -86,7 +84,6 @@ public class PDFParser extends Parser {
             contentStr = getStrContent();
         }
         List<Content> ctt = super.getContents();
-        contentsMap = new HashMap<String, Content>();
         Iterator i = ctt.iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
@@ -180,17 +177,9 @@ public class PDFParser extends Parser {
                     logger.error(e.getMessage());
                 }
             }
-            contentsMap.put(ct.getName(), ct);
         }
 
         return ctt;
-    }
-
-    public Content getContent(String name) {
-        if (contentsMap == null || contentsMap.isEmpty()) {
-            getContents();
-        }
-        return contentsMap.get(name);
     }
 
 }
