@@ -39,7 +39,7 @@ Unreleased changes (0.1-dev)
 
 18. TIKA-21 - Simplified configuration code (jukka)
 
-19. TIKA-17 - Rename all "Luis" classes to be "Tika" classes (jukka)
+19. TIKA-17 - Rename all "Lius" classes to be "Tika" classes (jukka)
 
 20. TIKA-30 - Added utility constructors to TikaConfig (K. Bennett & jukka)
 
