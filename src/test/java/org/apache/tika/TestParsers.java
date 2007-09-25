@@ -150,7 +150,6 @@ public class TestParsers extends TestCase {
         final String expected = "Test Indexation Html";
         assertTrue("text contains '" + expected + "'",
                 text.contains(expected));
-        parser.getInputStream().close();
     }
 
     private File getTestFile(String filename) {

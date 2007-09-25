@@ -17,78 +17,29 @@
 package org.apache.tika.parser.txt;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.RegexUtils;
-
-import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
 
 /**
  * Text parser
- * 
- * 
  */
 public class TXTParser extends Parser {
 
-    static Logger logger = Logger.getRootLogger();
-
-    public Map<String, Content> getContents() {
-        if (contentStr == null) {
-            StringBuffer sb = new StringBuffer();
-            try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                        getInputStream()));
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    sb.append(line);
-                    sb.append(" ");
-                }
-            } catch (FileNotFoundException ex) {
-                logger.error(ex.getMessage());
-            } catch (IOException ex1) {
-                logger.error(ex1.getMessage());
-            } finally {
-                try {
-                    getInputStream().close();
-                } catch (IOException e) {
-                    logger.error(e.getMessage());
-                }
-            }
-            contentStr = sb.toString();
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        StringBuffer sb = new StringBuffer();
+        BufferedReader br = new BufferedReader(new InputStreamReader(stream));
+        String line = null;
+        while ((line = br.readLine()) != null) {
+            sb.append(line);
+            sb.append(" ");
         }
-        Map<String, Content> ctt = super.getContents();
-        Iterator i = ctt.values().iterator();
-        while (i.hasNext()) {
-            Content ct = (Content) i.next();
-            if (ct.getTextSelect() != null) {
-                if (ct.getTextSelect().equalsIgnoreCase("fulltext")) {
-                    ct.setValue(contentStr);
-                }
-
-            } else if (ct.getRegexSelect() != null) {
-                try {
-                    List<String> valuesLs = RegexUtils.extract(contentStr, ct
-                            .getRegexSelect());
-                    if (valuesLs.size() > 0) {
-                        ct.setValue(valuesLs.get(0));
-                        ct.setValues(valuesLs.toArray(new String[0]));
-                    }
-                } catch (MalformedPatternException e) {
-                    logger.error(e.getMessage());
-                }
-            }
-        }
-
-        return ctt;
-
+        return sb.toString();
     }
 
 }

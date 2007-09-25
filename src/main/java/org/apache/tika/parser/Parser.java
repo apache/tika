@@ -16,15 +16,23 @@
  */
 package org.apache.tika.parser;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.RegexUtils;
 
 /**
  * Abstract class Parser
  */
 public abstract class Parser {
+
+    private static final Logger logger = Logger.getLogger(Parser.class);
 
     private InputStream is;
 
@@ -34,14 +42,12 @@ public abstract class Parser {
 
     private Map<String, Content> contents;
 
-    protected String contentStr;
+    private String contentStr;
+
+    private boolean parsed = false; 
 
     public void setInputStream(InputStream is) {
         this.is = is;
-    }
-
-    public InputStream getInputStream() {
-        return is;
     }
 
     /**
@@ -89,11 +95,53 @@ public abstract class Parser {
      * regex selection or fulltext
      */
     public Map<String, Content> getContents() {
+        if (!parsed) {
+            try {
+                try {
+                    contentStr = parse(is, contents.values());
+                } finally {
+                    is.close();
+                }
+
+                for (Content content : contents.values()) {
+                    if ("fulltext".equalsIgnoreCase(content.getTextSelect())) {
+                        content.setValue(contentStr);
+                    } else if ("summary".equalsIgnoreCase(content.getTextSelect())) {
+                        int length = Math.min(contentStr.length(), 500);
+                        String summary = contentStr.substring(0, length);
+                        content.setValue(summary);
+                    } else if (content.getRegexSelect() != null) {
+                        String regex = content.getRegexSelect();
+                        try {
+                            List<String> values =
+                                RegexUtils.extract(contentStr, regex);
+                            if (values.size() > 0) {
+                                content.setValue(values.get(0));
+                                content.setValues(
+                                        values.toArray(new String[values.size()]));
+                            }
+                        } catch (MalformedPatternException e) {
+                            logger.error(
+                                    "Invalid regular expression: " + regex, e);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Parse error: " + e.getMessage(), e);
+                contentStr = "";
+            } finally {
+                parsed = true;
+            }
+        }
         return contents;
     }
 
     public void setContents(Map<String, Content> contents) {
         this.contents = contents;
     }
+
+    protected abstract String parse(
+            InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException;
 
 }

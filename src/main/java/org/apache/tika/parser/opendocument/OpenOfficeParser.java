@@ -23,19 +23,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.XMLParser;
-import org.apache.tika.utils.RegexUtils;
 
 import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
+import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.Namespace;
@@ -43,8 +41,6 @@ import org.jdom.input.SAXBuilder;
 
 /**
  * OpenOffice parser
- * 
- * 
  */
 public class OpenOfficeParser extends Parser {
     static Logger logger = Logger.getRootLogger();
@@ -52,12 +48,8 @@ public class OpenOfficeParser extends Parser {
     private final Namespace NS_DC = Namespace.getNamespace("dc",
             "http://purl.org/dc/elements/1.1/");
 
-    private XMLParser xp = new XMLParser();
-
-    private org.jdom.Document xmlDoc;
-
     public org.jdom.Document parse(InputStream is) {
-        xmlDoc = new org.jdom.Document();
+        Document xmlDoc = new org.jdom.Document();
         org.jdom.Document xmlMeta = new org.jdom.Document();
         try {
             List files = unzip(is);
@@ -83,34 +75,17 @@ public class OpenOfficeParser extends Parser {
         return xmlDoc;
     }
 
-    public Map<String, Content> getContents() {
-        if (xmlDoc == null)
-            xmlDoc = parse(getInputStream());
-        if (contentStr == null) {
-            contentStr = xp.concatOccurance(xmlDoc, "//*", " ");
-        }
-        List<String> documentNs = xp.getAllDocumentNs(xmlDoc);
-        Map<String, Content> ctt = super.getContents();
-        Iterator it = ctt.values().iterator();
-        while (it.hasNext()) {
-            Content content = (Content) it.next();
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        Document xmlDoc = parse(stream);
+        XMLParser xp = new XMLParser();
+        xp.getAllDocumentNs(xmlDoc);
+        for (Content content : contents) {
             if (content.getXPathSelect() != null) {
                 xp.extractContent(xmlDoc, content);
-            } else if (content.getRegexSelect() != null) {
-                try {
-                    List<String> valuesLs = RegexUtils.extract(contentStr,
-                            content.getRegexSelect());
-                    if (valuesLs.size() > 0) {
-                        content.setValue(valuesLs.get(0));
-                        content.setValues(valuesLs.toArray(new String[0]));
-                    }
-                } catch (MalformedPatternException e) {
-                    logger.error(e.getMessage());
-                }
             }
         }
-
-        return ctt;
+        return xp.concatOccurance(xmlDoc, "//*", " ");
     }
 
     public List unzip(InputStream is) {

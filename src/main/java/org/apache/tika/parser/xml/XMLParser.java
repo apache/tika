@@ -16,18 +16,18 @@
  */
 package org.apache.tika.parser.xml;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.RegexUtils;
 import org.apache.tika.utils.Utils;
 
 import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
 import org.jaxen.JaxenException;
 import org.jaxen.SimpleNamespaceContext;
 import org.jaxen.jdom.JDOMXPath;
@@ -43,48 +43,24 @@ import org.jdom.Text;
 
 /**
  * XML parser
- * 
- * 
  */
 public class XMLParser extends Parser {
-    static Logger logger = Logger.getRootLogger();
 
-    private Document xmlDoc = null;
+    static Logger logger = Logger.getRootLogger();
 
     private SimpleNamespaceContext nsc = new SimpleNamespaceContext();
 
-    public Map<String, Content> getContents() {
-        if (contentStr == null) {
-            if (xmlDoc == null)
-                xmlDoc = Utils.parse(getInputStream());
-            contentStr = concatOccurance(xmlDoc, "//*", " ");
-        }
-        if (xmlDoc == null)
-            xmlDoc = Utils.parse(getInputStream());
-        List<String> documentNs = getAllDocumentNs(xmlDoc);
-        Map<String, Content> ctt = super.getContents();
-        Iterator it = ctt.values().iterator();
-        if (exist(documentNs, getNamespace())) {
-            while (it.hasNext()) {
-                Content content = (Content) it.next();
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        Document xmlDoc = Utils.parse(stream);
+        if (exist(getAllDocumentNs(xmlDoc), getNamespace())) {
+            for (Content content : contents) {
                 if (content.getXPathSelect() != null) {
                     extractContent(xmlDoc, content);
-                } else if (content.getRegexSelect() != null) {
-                    try {
-                        List<String> valuesLs = RegexUtils.extract(contentStr,
-                                content.getRegexSelect());
-                        if (valuesLs.size() > 0) {
-                            content.setValue(valuesLs.get(0));
-                            content.setValues(valuesLs.toArray(new String[0]));
-                        }
-                    } catch (MalformedPatternException e) {
-                        logger.error(e.getMessage());
-                    }
                 }
             }
         }
-
-        return ctt;
+        return concatOccurance(xmlDoc, "//*", " ");
     }
 
     public String concatOccurance(Object xmlDoc, String xpath, String concatSep) {

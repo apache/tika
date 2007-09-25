@@ -17,159 +17,74 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.Calendar;
 
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.RegexUtils;
 
-import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.pdfbox.exceptions.CryptographyException;
-import org.pdfbox.exceptions.InvalidPasswordException;
 import org.pdfbox.pdmodel.PDDocument;
 import org.pdfbox.pdmodel.PDDocumentInformation;
 import org.pdfbox.util.PDFTextStripper;
 
 /**
  * PDF parser
- * 
- * 
  */
 public class PDFParser extends Parser {
-    static Logger logger = Logger.getRootLogger();
 
-    private PDDocument pdfDocument = null;
-
-    public Map<String, Content> getContents() {
-        // String contents = getContent();
-        if (contentStr == null) {
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        try {
+            PDDocument pdfDocument = PDDocument.load(stream);
             try {
-                pdfDocument = PDDocument.load(getInputStream());
                 if (pdfDocument.isEncrypted()) {
                     pdfDocument.decrypt("");
                 }
-                StringWriter writer = new StringWriter();
-                PDFTextStripper stripper = new PDFTextStripper();
-                stripper.writeText(pdfDocument, writer);
-                contentStr = writer.getBuffer().toString();
-            } catch (CryptographyException e) {
-                logger.error(e.getMessage());
-            } catch (IOException e) {
-                e.printStackTrace();
-                logger.error(e.getMessage());
-            } catch (InvalidPasswordException e) {
-                logger.error(e.getMessage());
-            } finally {
-                if (pdfDocument != null) {
-                    try {
-                        pdfDocument.close();
-                    } catch (IOException ex) {
-                        logger.error(ex.getMessage());
-                    }
-                }
-            }
-        }
-        Map<String, Content> ctt = super.getContents();
-        Iterator i = ctt.values().iterator();
-        while (i.hasNext()) {
-            Content ct = (Content) i.next();
 
-            if (ct.getTextSelect() != null) {
-
-                if (ct.getTextSelect().equalsIgnoreCase("fulltext")) {
-                    ct.setValue(contentStr);
-
-                } else {
-                    try {
-                        PDDocumentInformation metaData = pdfDocument
-                                .getDocumentInformation();
-                        if (ct.getTextSelect().equalsIgnoreCase("title")) {
-                            if (metaData.getTitle() != null) {
-                                ct.setValue(metaData.getTitle());
-
-                            }
-                        } else if (ct.getTextSelect()
-                                .equalsIgnoreCase("author")) {
-                            if (metaData.getAuthor() != null) {
-                                ct.setValue(metaData.getAuthor());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "creator")) {
-                            if (metaData.getCreator() != null) {
-                                ct.setValue(metaData.getCreator());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "keywords")) {
-                            if (metaData.getKeywords() != null) {
-                                ct.setValue(metaData.getKeywords());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "producer")) {
-                            if (metaData.getProducer() != null) {
-                                ct.setValue(metaData.getProducer());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "subject")) {
-                            if (metaData.getSubject() != null) {
-                                ct.setValue(metaData.getSubject());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "trapped")) {
-                            if (metaData.getTrapped() != null) {
-                                ct.setValue(metaData.getTrapped());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "creationDate")) {
-                            if (metaData.getCreationDate() != null) {
-                                ct.setValue(metaData.getCreationDate()
-                                        .getTime().toString());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "modificationDate")) {
-                            if (metaData.getModificationDate() != null) {
-                                ct.setValue(metaData.getModificationDate()
-                                        .getTime().toString());
-
-                            }
-                        } else if (ct.getTextSelect().equalsIgnoreCase(
-                                "summary")) {
-                            int summarySize = Math
-                                    .min(contentStr.length(), 500);
-                            String summary = contentStr.substring(0,
-                                    summarySize);
-                            ct.setValue(summary);
+                PDDocumentInformation metaData =
+                    pdfDocument.getDocumentInformation();
+                for (Content content : contents) {
+                    String text = content.getTextSelect();
+                    if ("title".equalsIgnoreCase(text)) {
+                        content.setValue(metaData.getTitle());
+                    } else if ("author".equalsIgnoreCase(text)) {
+                        content.setValue(metaData.getAuthor());
+                    } else if ("creator".equalsIgnoreCase(text)) {
+                        content.setValue(metaData.getCreator());
+                    } else if ("keywords".equalsIgnoreCase(text)) {
+                        content.setValue(metaData.getKeywords());
+                    } else if ("producer".equalsIgnoreCase(text)) {
+                        content.setValue(metaData.getProducer());
+                    } else if ("subject".equalsIgnoreCase(text)) {
+                        content.setValue(metaData.getSubject());
+                    } else if ("trapped".equalsIgnoreCase(text)) {
+                        content.setValue(metaData.getTrapped());
+                    } else if ("creationDate".equalsIgnoreCase(text)) {
+                        Calendar calendar = metaData.getCreationDate();
+                        if (calendar != null) {
+                            content.setValue(calendar.getTime().toString());
                         }
-                    } catch (IOException e) {
-                        logger.error(e.getMessage());
+                    } else if ("modificationDate".equalsIgnoreCase(text)) {
+                        Calendar calendar = metaData.getModificationDate();
+                        if (calendar != null) {
+                            content.setValue(calendar.getTime().toString());
+                        }
                     }
                 }
 
-            } else if (ct.getRegexSelect() != null) {
-                try {
-                    List<String> valuesLs = RegexUtils.extract(contentStr, ct
-                            .getRegexSelect());
-                    if (valuesLs.size() > 0) {
-                        ct.setValue(valuesLs.get(0));
-                        ct.setValues(valuesLs.toArray(new String[0]));
-                    }
-                } catch (MalformedPatternException e) {
-                    logger.error(e.getMessage());
-                }
+                StringWriter writer = new StringWriter();
+                new PDFTextStripper().writeText(pdfDocument, writer);
+                return writer.getBuffer().toString();
+            } finally {
+                pdfDocument.close();
             }
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaException("Error parsing a PDF document", e);
         }
-
-        return ctt;
     }
 
 }

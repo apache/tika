@@ -17,67 +17,31 @@
 package org.apache.tika.parser.rtf;
 
 import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.io.InputStream;
 
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.rtf.RTFEditorKit;
 
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.RegexUtils;
-
-import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
 
 /**
  * RTF parser
- * 
- * 
  */
 public class RTFParser extends Parser {
 
-    static Logger logger = Logger.getRootLogger();
-
-    public Map<String, Content> getContents() {
-        if (contentStr == null) {
-            try {
-                DefaultStyledDocument sd = new DefaultStyledDocument();
-                RTFEditorKit kit = new RTFEditorKit();
-                kit.read(getInputStream(), sd, 0);
-                contentStr = sd.getText(0, sd.getLength());
-            } catch (IOException e) {
-                logger.error(e.getMessage());
-            } catch (BadLocationException j) {
-                logger.error(j.getMessage());
-            }
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        try {
+            DefaultStyledDocument sd = new DefaultStyledDocument();
+            new RTFEditorKit().read(stream, sd, 0);
+            return sd.getText(0, sd.getLength());
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaException("Error parsing an RTF document", e);
         }
-        Map<String, Content> ctt = super.getContents();
-        Iterator i = ctt.values().iterator();
-        while (i.hasNext()) {
-            Content ct = (Content) i.next();
-            if (ct.getTextSelect() != null) {
-                if (ct.getTextSelect().equalsIgnoreCase("fulltext")) {
-                    ct.setValue(contentStr);
-                }
-
-            } else if (ct.getRegexSelect() != null) {
-                try {
-                    List<String> valuesLs = RegexUtils.extract(contentStr, ct
-                            .getRegexSelect());
-                    if (valuesLs.size() > 0) {
-                        ct.setValue(valuesLs.get(0));
-                        ct.setValues(valuesLs.toArray(new String[0]));
-                    }
-                } catch (MalformedPatternException e) {
-                    logger.error(e.getMessage());
-                }
-            }
-        }
-
-        return ctt;
     }
 
 }

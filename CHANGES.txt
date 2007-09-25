@@ -46,3 +46,6 @@ Unreleased changes (0.1-dev)
 21. TIKA-28 - Rename config.xml to tika-config.xml or similar (mattmann)
 
 22. TIKA-26 - Use Map<String, Content> instead of List<Content> (jukka)
+
+23. TIKA-31 - protected Parser.parse(InputStream stream,
+              Iterable<Content> contents) (jukka & K. Bennett)

@@ -16,16 +16,13 @@
  */
 package org.apache.tika.parser.html;
 
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.RegexUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -40,56 +37,23 @@ public class HtmlParser extends Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    private Node root = null;
-
-    public Map<String, Content> getContents() {
-        if (contentStr == null) {
-            if (root == null)
-                root = getRoot(getInputStream());
-            contentStr = getTextContent(root);
-        }
-        Map<String, Content> ctt = super.getContents();
-
-        Iterator i = ctt.values().iterator();
-        while (i.hasNext()) {
-            Content ct = (Content) i.next();
-            if (ct.getTextSelect() != null) {
-                if (ct.getTextSelect().equalsIgnoreCase("fulltext")) {
-                    ct.setValue(contentStr);
-                } else {
-                    extractElementTxt((Element) root, ct);
-                }
-
-            }
-
-            else if (ct.getRegexSelect() != null) {
-                try {
-                    List<String> valuesLs = RegexUtils.extract(contentStr, ct
-                            .getRegexSelect());
-                    if (valuesLs.size() > 0) {
-                        ct.setValue(valuesLs.get(0));
-                        ct.setValues(valuesLs.toArray(new String[0]));
-                    }
-                } catch (MalformedPatternException e) {
-                    logger.error(e.getMessage());
-                }
-            }
-        }
-
-        return ctt;
-
-    }
-
-    private Node getRoot(InputStream is) {
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
         Tidy tidy = new Tidy();
         tidy.setQuiet(true);
         tidy.setShowWarnings(false);
-        org.w3c.dom.Document doc = tidy.parseDOM(is, null);
-        return doc.getDocumentElement();
+        Node root = tidy.parseDOM(stream, null).getDocumentElement();
+        for (Content content : contents) {
+            String text = content.getTextSelect();
+            if (text != null && !text.equalsIgnoreCase("fulltext")
+                    && !text.equalsIgnoreCase("summary")) {
+                extractElementTxt((Element) root, content);
+            }
+        }
+        return getTextContent(root);
     }
 
     private void extractElementTxt(Element root, Content content) {
-
         NodeList children = root.getElementsByTagName(content.getTextSelect());
         if (children != null) {
             if (children.getLength() > 0) {
@@ -116,7 +80,6 @@ public class HtmlParser extends Parser {
                 }
             }
         }
-
     }
 
     private String getTextContent(Node node) {

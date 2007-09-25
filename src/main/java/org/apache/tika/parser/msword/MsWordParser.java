@@ -16,64 +16,27 @@
  */
 package org.apache.tika.parser.msword;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.tika.config.Content;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.MSExtractor;
-import org.apache.tika.utils.RegexUtils;
-
-import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
 
 /**
  * Word parser
- * 
- * 
  */
 public class MsWordParser extends Parser {
 
-    private MSExtractor extractor = new WordExtractor();
-
-    static Logger logger = Logger.getRootLogger();
-
-    public Map<String, Content> getContents() {
-        if (contentStr == null) {
-            // extractor
-            try {
-                contentStr = extractor.extractText(getInputStream());
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        try {
+            return new WordExtractor().extractText(stream);
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaException("Error parsing a Word document", e);
         }
-        Map<String, Content> ctt = super.getContents();
-        Iterator i = ctt.values().iterator();
-        while (i.hasNext()) {
-            Content ct = (Content) i.next();
-            if (ct.getTextSelect() != null) {
-                if (ct.getTextSelect().equalsIgnoreCase("fulltext")) {
-                    ct.setValue(contentStr);
-                }
-
-            } else if (ct.getRegexSelect() != null) {
-                try {
-                    List<String> valuesLs = RegexUtils.extract(contentStr, ct
-                            .getRegexSelect());
-                    if (valuesLs.size() > 0) {
-                        ct.setValue(valuesLs.get(0));
-                        ct.setValues(valuesLs.toArray(new String[0]));
-                    }
-                } catch (MalformedPatternException e) {
-                    logger.error(e.getMessage());
-                }
-            }
-        }
-
-        return ctt;
-
     }
 
 }

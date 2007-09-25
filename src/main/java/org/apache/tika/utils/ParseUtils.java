@@ -261,8 +261,6 @@ public class ParseUtils implements TikaMimeKeys {
     }
 
     private static String getStringContent(Parser parser) throws IOException {
-        String content = parser.getStrContent();
-        parser.getInputStream().close();
-        return content;
+        return parser.getStrContent();
     }
 }

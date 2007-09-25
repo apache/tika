@@ -18,7 +18,6 @@ package org.apache.tika.utils;
 
 // JDK imports
 import java.io.InputStream;
-import java.util.Map;
 
 import org.apache.tika.config.Content;
 // Jakarta POI imports
@@ -42,13 +41,13 @@ public abstract class MSExtractor {
 
     private POIFSReader reader = null;
     
-    private Map<String, Content> contents;
+    private Iterable<Content> contents;
 
     /** Constructs a new Microsoft document extractor. */
     public MSExtractor() {        
     }
     
-    public void setContents(Map<String, Content> contents){
+    public void setContents(Iterable<Content> contents){
         this.contents = contents;
     }
 
@@ -94,7 +93,7 @@ public abstract class MSExtractor {
             try {
                 SummaryInformation si = (SummaryInformation) PropertySetFactory
                         .create(event.getStream());
-                for (Content content : contents.values()) {
+                for (Content content : contents) {
                     if (content.getTextSelect().equalsIgnoreCase("title")) {
                         content.setValue(si.getTitle());
                     }
