@@ -23,10 +23,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -34,7 +32,6 @@ import org.apache.tika.config.Content;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.XMLParser;
 import org.apache.tika.utils.RegexUtils;
-import org.apache.tika.utils.Utils;
 
 import org.apache.log4j.Logger;
 import org.apache.oro.text.regex.MalformedPatternException;
@@ -57,8 +54,6 @@ public class OpenOfficeParser extends Parser {
     private XMLParser xp = new XMLParser();
 
     private org.jdom.Document xmlDoc;
-
-    private String contentStr;
 
     public org.jdom.Document parse(InputStream is) {
         xmlDoc = new org.jdom.Document();
@@ -88,11 +83,11 @@ public class OpenOfficeParser extends Parser {
     }
 
     public List<Content> getContents() {
-        if (contentStr == null) {
-            contentStr = getStrContent();
-        }
         if (xmlDoc == null)
-            xmlDoc = Utils.parse(getInputStream());
+            xmlDoc = parse(getInputStream());
+        if (contentStr == null) {
+            contentStr = xp.concatOccurance(xmlDoc, "//*", " ");
+        }
         List<String> documentNs = xp.getAllDocumentNs(xmlDoc);
         List<Content> ctt = super.getContents();
         Iterator it = ctt.iterator();
@@ -115,13 +110,6 @@ public class OpenOfficeParser extends Parser {
         }
 
         return ctt;
-    }
-
-    public String getStrContent() {
-        if (xmlDoc == null)
-            xmlDoc = parse(getInputStream());
-        contentStr = xp.concatOccurance(xmlDoc, "//*", " ");
-        return contentStr;
     }
 
     public List unzip(InputStream is) {

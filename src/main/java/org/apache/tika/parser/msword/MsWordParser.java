@@ -38,13 +38,17 @@ public class MsWordParser extends Parser {
 
     private MSExtractor extractor = new WordExtractor();
 
-    private String contentStr;
-
     static Logger logger = Logger.getRootLogger();
 
     public List<Content> getContents() {
         if (contentStr == null) {
-            contentStr = getStrContent();
+            // extractor
+            try {
+                contentStr = extractor.extractText(getInputStream());
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         List<Content> ctt = super.getContents();
         Iterator i = ctt.iterator();
@@ -71,17 +75,6 @@ public class MsWordParser extends Parser {
 
         return ctt;
 
-    }
-
-    public String getStrContent() {
-        // extractor
-        try {
-            contentStr = extractor.extractText(getInputStream());
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return contentStr;
     }
 
 }

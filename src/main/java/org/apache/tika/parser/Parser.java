@@ -23,8 +23,6 @@ import org.apache.tika.config.Content;
 
 /**
  * Abstract class Parser
- * 
- * 
  */
 public abstract class Parser {
 
@@ -35,6 +33,8 @@ public abstract class Parser {
     private String namespace;
 
     private List<Content> contents;
+
+    protected String contentStr;
 
     public void setInputStream(InputStream is) {
         this.is = is;
@@ -69,14 +69,17 @@ public abstract class Parser {
     /**
      * Get the string content of the document
      */
-    public abstract String getStrContent();
+    public String getStrContent() {
+        getContents();
+        return contentStr;
+    }
 
     /**
      * Get a content object, this object is configured from the TikaConfig Xml.
      * It could be a document metadata, XPath selection, regex selection or
      * fulltext
      */
-    public final Content getContent(String name) {
+    public Content getContent(String name) {
         for (Content content : getContents()) {
             if (name.equals(content.getName())) {
                 return content;

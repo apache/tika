@@ -16,10 +16,8 @@
  */
 package org.apache.tika.parser.msexcel;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.parser.Parser;
@@ -37,13 +35,17 @@ import org.apache.oro.text.regex.MalformedPatternException;
 public class MsExcelParser extends Parser {
     private MSExtractor extrator = new ExcelExtractor();
 
-    private String contentStr;
-
     static Logger logger = Logger.getRootLogger();
 
     public List<Content> getContents() {
         if (contentStr == null) {
-            contentStr = getStrContent();
+            // extrator.setContents(getParserConfig().getContents());
+            try {
+                contentStr = extrator.extractText(getInputStream());
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         List<Content> ctt = super.getContents();
         Iterator i = ctt.iterator();
@@ -71,14 +73,4 @@ public class MsExcelParser extends Parser {
         return ctt;
     }
 
-    public String getStrContent() {
-        // extrator.setContents(getParserConfig().getContents());
-        try {
-            contentStr = extrator.extractText(getInputStream());
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return contentStr;
-    }
 }

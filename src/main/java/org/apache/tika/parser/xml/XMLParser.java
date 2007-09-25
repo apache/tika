@@ -17,10 +17,8 @@
 package org.apache.tika.parser.xml;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.parser.Parser;
@@ -54,18 +52,11 @@ public class XMLParser extends Parser {
 
     private SimpleNamespaceContext nsc = new SimpleNamespaceContext();
 
-    private String contentStr;
-
-    public String getStrContent() {
-        if (xmlDoc == null)
-            xmlDoc = Utils.parse(getInputStream());
-        contentStr = concatOccurance(xmlDoc, "//*", " ");
-        return contentStr;
-    }
-
     public List<Content> getContents() {
         if (contentStr == null) {
-            contentStr = getStrContent();
+            if (xmlDoc == null)
+                xmlDoc = Utils.parse(getInputStream());
+            contentStr = concatOccurance(xmlDoc, "//*", " ");
         }
         if (xmlDoc == null)
             xmlDoc = Utils.parse(getInputStream());

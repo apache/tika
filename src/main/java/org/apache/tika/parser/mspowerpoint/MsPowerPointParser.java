@@ -37,13 +37,17 @@ public class MsPowerPointParser extends Parser {
 
     private PPTExtractor extrator = new PPTExtractor();
 
-    private String contentStr;
-
     static Logger logger = Logger.getRootLogger();
 
     public List<Content> getContents() {
         if (contentStr == null) {
-            contentStr = getStrContent();
+            extrator.setContents(super.getContents());
+            try {
+                contentStr = extrator.extractText(getInputStream());
+            } catch (Exception e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         List<Content> ctt = super.getContents();
         Iterator i = ctt.iterator();
@@ -78,16 +82,5 @@ public class MsPowerPointParser extends Parser {
      * Auto-generated catch block e.printStackTrace(); } return
      * getParserConfig().getContents(); }
      */
-
-    public String getStrContent() {
-        extrator.setContents(super.getContents());
-        try {
-            contentStr = extrator.extractText(getInputStream());
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        return contentStr;
-    }
 
 }

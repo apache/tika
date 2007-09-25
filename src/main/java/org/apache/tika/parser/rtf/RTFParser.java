@@ -17,10 +17,8 @@
 package org.apache.tika.parser.rtf;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -42,11 +40,18 @@ public class RTFParser extends Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    private String contentStr;
-
     public List<Content> getContents() {
         if (contentStr == null) {
-            contentStr = getStrContent();
+            try {
+                DefaultStyledDocument sd = new DefaultStyledDocument();
+                RTFEditorKit kit = new RTFEditorKit();
+                kit.read(getInputStream(), sd, 0);
+                contentStr = sd.getText(0, sd.getLength());
+            } catch (IOException e) {
+                logger.error(e.getMessage());
+            } catch (BadLocationException j) {
+                logger.error(j.getMessage());
+            }
         }
         List<Content> ctt = super.getContents();
         Iterator i = ctt.iterator();
@@ -72,21 +77,6 @@ public class RTFParser extends Parser {
         }
 
         return ctt;
-    }
-
-    @Override
-    public String getStrContent() {
-        try {
-            DefaultStyledDocument sd = new DefaultStyledDocument();
-            RTFEditorKit kit = new RTFEditorKit();
-            kit.read(getInputStream(), sd, 0);
-            contentStr = sd.getText(0, sd.getLength());
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        } catch (BadLocationException j) {
-            logger.error(j.getMessage());
-        }
-        return contentStr;
     }
 
 }

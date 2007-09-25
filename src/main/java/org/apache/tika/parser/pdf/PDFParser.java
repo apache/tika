@@ -18,10 +18,8 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.parser.Parser;
@@ -43,45 +41,36 @@ import org.pdfbox.util.PDFTextStripper;
 public class PDFParser extends Parser {
     static Logger logger = Logger.getRootLogger();
 
-    private String contentStr = "";
-
     private PDDocument pdfDocument = null;
 
-    public String getStrContent() {
-
-        try {
-            pdfDocument = PDDocument.load(getInputStream());
-            if (pdfDocument.isEncrypted()) {
-                pdfDocument.decrypt("");
-            }
-            StringWriter writer = new StringWriter();
-            PDFTextStripper stripper = new PDFTextStripper();
-            stripper.writeText(pdfDocument, writer);
-            contentStr = writer.getBuffer().toString();
-        } catch (CryptographyException e) {
-            logger.error(e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace();
-            logger.error(e.getMessage());
-        } catch (InvalidPasswordException e) {
-            logger.error(e.getMessage());
-        } finally {
-            if (pdfDocument != null) {
-                try {
-                    pdfDocument.close();
-                } catch (IOException ex) {
-                    logger.error(ex.getMessage());
-                }
-            }
-        }
-        return contentStr;
-    }
-
     public List<Content> getContents() {
-
         // String contents = getContent();
         if (contentStr == null) {
-            contentStr = getStrContent();
+            try {
+                pdfDocument = PDDocument.load(getInputStream());
+                if (pdfDocument.isEncrypted()) {
+                    pdfDocument.decrypt("");
+                }
+                StringWriter writer = new StringWriter();
+                PDFTextStripper stripper = new PDFTextStripper();
+                stripper.writeText(pdfDocument, writer);
+                contentStr = writer.getBuffer().toString();
+            } catch (CryptographyException e) {
+                logger.error(e.getMessage());
+            } catch (IOException e) {
+                e.printStackTrace();
+                logger.error(e.getMessage());
+            } catch (InvalidPasswordException e) {
+                logger.error(e.getMessage());
+            } finally {
+                if (pdfDocument != null) {
+                    try {
+                        pdfDocument.close();
+                    } catch (IOException ex) {
+                        logger.error(ex.getMessage());
+                    }
+                }
+            }
         }
         List<Content> ctt = super.getContents();
         Iterator i = ctt.iterator();

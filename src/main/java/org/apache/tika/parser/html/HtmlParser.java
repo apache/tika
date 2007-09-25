@@ -18,10 +18,8 @@ package org.apache.tika.parser.html;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.oro.text.regex.MalformedPatternException;
@@ -44,11 +42,11 @@ public class HtmlParser extends Parser {
 
     private Node root = null;
 
-    private String contentStr;
-
     public List<Content> getContents() {
         if (contentStr == null) {
-            contentStr = getStrContent();
+            if (root == null)
+                root = getRoot(getInputStream());
+            contentStr = getTextContent(root);
         }
         List<Content> ctt = super.getContents();
 
@@ -84,13 +82,6 @@ public class HtmlParser extends Parser {
 
         return ctt;
 
-    }
-
-    public String getStrContent() {
-        if (root == null)
-            root = getRoot(getInputStream());
-        contentStr = getTextContent(root);
-        return contentStr;
     }
 
     private Node getRoot(InputStream is) {

@@ -41,11 +41,29 @@ public class TXTParser extends Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    private String contentStr;
-
     public List<Content> getContents() {
         if (contentStr == null) {
-            contentStr = getStrContent();
+            StringBuffer sb = new StringBuffer();
+            try {
+                BufferedReader br = new BufferedReader(new InputStreamReader(
+                        getInputStream()));
+                String line = null;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                    sb.append(" ");
+                }
+            } catch (FileNotFoundException ex) {
+                logger.error(ex.getMessage());
+            } catch (IOException ex1) {
+                logger.error(ex1.getMessage());
+            } finally {
+                try {
+                    getInputStream().close();
+                } catch (IOException e) {
+                    logger.error(e.getMessage());
+                }
+            }
+            contentStr = sb.toString();
         }
         List<Content> ctt = super.getContents();
         Iterator i = ctt.iterator();
@@ -72,32 +90,6 @@ public class TXTParser extends Parser {
 
         return ctt;
 
-    }
-
-    @Override
-    public String getStrContent() {
-        StringBuffer sb = new StringBuffer();
-        try {
-            BufferedReader br = new BufferedReader(new InputStreamReader(
-                    getInputStream()));
-            String line = null;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-                sb.append(" ");
-            }
-        } catch (FileNotFoundException ex) {
-            logger.error(ex.getMessage());
-        } catch (IOException ex1) {
-            logger.error(ex1.getMessage());
-        } finally {
-            try {
-                getInputStream().close();
-            } catch (IOException e) {
-                logger.error(e.getMessage());
-            }
-        }
-        contentStr = sb.toString();
-        return contentStr;
     }
 
 }
