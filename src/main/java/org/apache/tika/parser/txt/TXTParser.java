@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,7 @@ public class TXTParser extends Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         if (contentStr == null) {
             StringBuffer sb = new StringBuffer();
             try {
@@ -65,8 +64,8 @@ public class TXTParser extends Parser {
             }
             contentStr = sb.toString();
         }
-        List<Content> ctt = super.getContents();
-        Iterator i = ctt.iterator();
+        Map<String, Content> ctt = super.getContents();
+        Iterator i = ctt.values().iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
             if (ct.getTextSelect() != null) {

@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -82,15 +83,15 @@ public class OpenOfficeParser extends Parser {
         return xmlDoc;
     }
 
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         if (xmlDoc == null)
             xmlDoc = parse(getInputStream());
         if (contentStr == null) {
             contentStr = xp.concatOccurance(xmlDoc, "//*", " ");
         }
         List<String> documentNs = xp.getAllDocumentNs(xmlDoc);
-        List<Content> ctt = super.getContents();
-        Iterator it = ctt.iterator();
+        Map<String, Content> ctt = super.getContents();
+        Iterator it = ctt.values().iterator();
         while (it.hasNext()) {
             Content content = (Content) it.next();
             if (content.getXPathSelect() != null) {

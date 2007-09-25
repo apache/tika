@@ -17,9 +17,9 @@
 package org.apache.tika.parser.html;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.oro.text.regex.MalformedPatternException;
@@ -42,19 +42,15 @@ public class HtmlParser extends Parser {
 
     private Node root = null;
 
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         if (contentStr == null) {
             if (root == null)
                 root = getRoot(getInputStream());
             contentStr = getTextContent(root);
         }
-        List<Content> ctt = super.getContents();
+        Map<String, Content> ctt = super.getContents();
 
-        if (ctt == null) {
-            return new ArrayList<Content>(0);
-        }
-
-        Iterator i = ctt.iterator();
+        Iterator i = ctt.values().iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
             if (ct.getTextSelect() != null) {
@@ -94,7 +90,7 @@ public class HtmlParser extends Parser {
 
     private void extractElementTxt(Element root, Content content) {
 
-        NodeList children = root.getElementsByTagName(content.getName());
+        NodeList children = root.getElementsByTagName(content.getTextSelect());
         if (children != null) {
             if (children.getLength() > 0) {
                 if (children.getLength() == 1) {

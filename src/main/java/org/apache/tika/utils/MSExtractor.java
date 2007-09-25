@@ -18,9 +18,7 @@ package org.apache.tika.utils;
 
 // JDK imports
 import java.io.InputStream;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
 import org.apache.tika.config.Content;
 // Jakarta POI imports
@@ -44,13 +42,13 @@ public abstract class MSExtractor {
 
     private POIFSReader reader = null;
     
-    private List<Content> contents;
+    private Map<String, Content> contents;
 
     /** Constructs a new Microsoft document extractor. */
     public MSExtractor() {        
     }
     
-    public void setContents(List<Content> contents){
+    public void setContents(Map<String, Content> contents){
         this.contents = contents;
     }
 
@@ -61,7 +59,7 @@ public abstract class MSExtractor {
         // First, extract properties
         this.reader = new POIFSReader();
         
-        this.reader.registerListener(new PropertiesReaderListener(contents),
+        this.reader.registerListener(new PropertiesReaderListener(),
                 SummaryInformation.DEFAULT_STREAM_NAME);
         //input.reset();
         if (input.available() > 0) {
@@ -86,11 +84,6 @@ public abstract class MSExtractor {
     }
 
     private class PropertiesReaderListener implements POIFSReaderListener {
-        private List<Content> contents;
-
-        PropertiesReaderListener(List<Content> contents) {
-            this.contents = contents;
-        }
 
         public void processPOIFSReaderEvent(POIFSReaderEvent event) {
             if (!event.getName().startsWith(
@@ -101,9 +94,7 @@ public abstract class MSExtractor {
             try {
                 SummaryInformation si = (SummaryInformation) PropertySetFactory
                         .create(event.getStream());
-
-                for (int i = 0; i < contents.size(); i++) {
-                    Content content = contents.get(i);
+                for (Content content : contents.values()) {
                     if (content.getTextSelect().equalsIgnoreCase("title")) {
                         content.setValue(si.getTitle());
                     }
@@ -137,25 +128,6 @@ public abstract class MSExtractor {
                     else if (content.getTextSelect().equalsIgnoreCase("")) {
                         //content.setValue(si.getCharCount());
                     }
-                    else if (content.getTextSelect().equals("")) {
-
-                    }
-                    else if (content.getTextSelect().equals("")) {
-
-                    }
-                    else if (content.getTextSelect().equals("")) {
-
-                    }
-                    else if (content.getTextSelect().equals("")) {
-
-                    }
-                    else if (content.getTextSelect().equals("")) {
-
-                    }
-                    else if (content.getTextSelect().equals("")) {
-
-                    }
-                    System.out.println(content.getName()+" :"+content.getValue());
                 }
 
             } catch (Exception ex) {

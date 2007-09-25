@@ -19,6 +19,7 @@ package org.apache.tika.parser.xml;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.parser.Parser;
@@ -52,7 +53,7 @@ public class XMLParser extends Parser {
 
     private SimpleNamespaceContext nsc = new SimpleNamespaceContext();
 
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         if (contentStr == null) {
             if (xmlDoc == null)
                 xmlDoc = Utils.parse(getInputStream());
@@ -61,8 +62,8 @@ public class XMLParser extends Parser {
         if (xmlDoc == null)
             xmlDoc = Utils.parse(getInputStream());
         List<String> documentNs = getAllDocumentNs(xmlDoc);
-        List<Content> ctt = super.getContents();
-        Iterator it = ctt.iterator();
+        Map<String, Content> ctt = super.getContents();
+        Iterator it = ctt.values().iterator();
         if (exist(documentNs, getNamespace())) {
             while (it.hasNext()) {
                 Content content = (Content) it.next();

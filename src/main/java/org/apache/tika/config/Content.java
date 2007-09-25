@@ -24,8 +24,6 @@ import org.jdom.Element;
  */
 public class Content {
 
-    private final String name;
-
     private final String textSelect;
 
     private final String xPathSelect;
@@ -37,14 +35,9 @@ public class Content {
     private String[] values;
 
     public Content(Element element) {
-        name = element.getAttributeValue("name");
         xPathSelect = element.getAttributeValue("xpathSelect");
         textSelect = element.getAttributeValue("textSelect");
         regexSelect = element.getChildTextTrim("regexSelect");
-    }
-
-    public String getName() {
-        return name;
     }
 
     public String getRegexSelect() {

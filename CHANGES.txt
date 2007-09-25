@@ -44,3 +44,5 @@ Unreleased changes (0.1-dev)
 20. TIKA-30 - Added utility constructors to TikaConfig (K. Bennett & jukka)
 
 21. TIKA-28 - Rename config.xml to tika-config.xml or similar (mattmann)
+
+22. TIKA-26 - Use Map<String, Content> instead of List<Content> (jukka)

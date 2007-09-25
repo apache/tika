@@ -19,6 +19,7 @@ package org.apache.tika.parser.rtf;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -40,7 +41,7 @@ public class RTFParser extends Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         if (contentStr == null) {
             try {
                 DefaultStyledDocument sd = new DefaultStyledDocument();
@@ -53,8 +54,8 @@ public class RTFParser extends Parser {
                 logger.error(j.getMessage());
             }
         }
-        List<Content> ctt = super.getContents();
-        Iterator i = ctt.iterator();
+        Map<String, Content> ctt = super.getContents();
+        Iterator i = ctt.values().iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
             if (ct.getTextSelect() != null) {

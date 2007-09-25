@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -53,26 +54,25 @@ public class Utils {
 
     static Logger logger = Logger.getRootLogger();
 
-    public static String toString(Collection<Content> structuredContent) {
+    public static String toString(Map<String, Content> structuredContent) {
       final StringWriter sw = new StringWriter();
       print(structuredContent,sw);
       return sw.toString();
     }
     
-    public static void print(Collection<Content> structuredContent) {
+    public static void print(Map<String, Content> structuredContent) {
       print(structuredContent,new OutputStreamWriter(System.out));
     }
     
-    public static void print(Collection<Content> structuredContent,Writer outputWriter) {
+    public static void print(Map<String, Content> structuredContent,Writer outputWriter) {
         final PrintWriter output = new PrintWriter(outputWriter,true);
-        for (Iterator<Content> iter = structuredContent.iterator(); iter
-                .hasNext();) {
-            Content ct = iter.next();
+        for (Map.Entry<String, Content> entry : structuredContent.entrySet()) {
+            Content ct = entry.getValue();
             if (ct.getValue() != null) {
-                output.print(ct.getName() + ": ");
+                output.print(entry.getKey() + ": ");
                 output.println(ct.getValue());
             } else if (ct.getValues() != null) {
-                output.print(ct.getName() + ": ");
+                output.print(entry.getKey() + ": ");
                 for (int j = 0; j < ct.getValues().length; j++) {
                     if (j == 0)
                         output.println(ct.getValues()[j]);
@@ -82,7 +82,7 @@ public class Utils {
                 }
             } else { // there are no values, but there is a Content object
                 System.out.println(
-                        "Content '" + ct.getName() + "' has no values.");
+                        "Content '" + entry.getKey() + "' has no values.");
             }
         }
     }

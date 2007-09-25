@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.parser.Parser;
@@ -43,7 +44,7 @@ public class PDFParser extends Parser {
 
     private PDDocument pdfDocument = null;
 
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         // String contents = getContent();
         if (contentStr == null) {
             try {
@@ -72,8 +73,8 @@ public class PDFParser extends Parser {
                 }
             }
         }
-        List<Content> ctt = super.getContents();
-        Iterator i = ctt.iterator();
+        Map<String, Content> ctt = super.getContents();
+        Iterator i = ctt.values().iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
 

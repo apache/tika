@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.msword;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +39,7 @@ public class MsWordParser extends Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         if (contentStr == null) {
             // extractor
             try {
@@ -50,8 +49,8 @@ public class MsWordParser extends Parser {
                 e.printStackTrace();
             }
         }
-        List<Content> ctt = super.getContents();
-        Iterator i = ctt.iterator();
+        Map<String, Content> ctt = super.getContents();
+        Iterator i = ctt.values().iterator();
         while (i.hasNext()) {
             Content ct = (Content) i.next();
             if (ct.getTextSelect() != null) {

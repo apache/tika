@@ -17,7 +17,7 @@
 package org.apache.tika.parser;
 
 import java.io.InputStream;
-import java.util.List;
+import java.util.Map;
 
 import org.apache.tika.config.Content;
 
@@ -32,7 +32,7 @@ public abstract class Parser {
 
     private String namespace;
 
-    private List<Content> contents;
+    private Map<String, Content> contents;
 
     protected String contentStr;
 
@@ -80,12 +80,7 @@ public abstract class Parser {
      * fulltext
      */
     public Content getContent(String name) {
-        for (Content content : getContents()) {
-            if (name.equals(content.getName())) {
-                return content;
-            }
-        }
-        return null;
+        return getContents().get(name);
     }
 
     /**
@@ -93,11 +88,11 @@ public abstract class Parser {
      * TikaConfig Xml file. It could be a document metadata, XPath selection,
      * regex selection or fulltext
      */
-    public List<Content> getContents() {
+    public Map<String, Content> getContents() {
         return contents;
     }
 
-    public void setContents(List<Content> contents) {
+    public void setContents(Map<String, Content> contents) {
         this.contents = contents;
     }
 

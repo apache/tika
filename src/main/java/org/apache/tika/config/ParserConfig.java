@@ -16,9 +16,9 @@
  */
 package org.apache.tika.config;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.jdom.Element;
 
@@ -33,8 +33,8 @@ public class ParserConfig {
 
     private final String nameSpace;
 
-    private final List<Content> contents = new ArrayList<Content>();
-;
+    private final Map<String, Content> contents =
+        new HashMap<String, Content>();
 
     public ParserConfig(Element element) {
         name = element.getAttributeValue("name");
@@ -43,7 +43,8 @@ public class ParserConfig {
         Element extract = element.getChild("extract");
         if (extract != null) {
             for (Object child : extract.getChildren()) {
-                contents.add(new Content((Element) child));
+                String name = ((Element) child).getAttributeValue("name");
+                contents.put(name, new Content((Element) child));
             }
         }
     }
@@ -60,8 +61,8 @@ public class ParserConfig {
         return parserClass;
     }
 
-    public List<Content> getContents() {
-        return Collections.unmodifiableList(contents);
+    public Map<String, Content> getContents() {
+        return Collections.unmodifiableMap(contents);
     }
 
 }
