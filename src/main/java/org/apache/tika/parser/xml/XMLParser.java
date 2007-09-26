@@ -27,12 +27,12 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.Utils;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.jaxen.JaxenException;
 import org.jaxen.SimpleNamespaceContext;
 import org.jaxen.jdom.JDOMXPath;
 import org.jdom.Attribute;
-import org.jdom.CDATA;
 import org.jdom.Comment;
 import org.jdom.Document;
 import org.jdom.Element;
@@ -60,12 +60,12 @@ public class XMLParser extends Parser {
                 }
             }
         }
-        return concatOccurance(xmlDoc, "//*", " ");
+        return concatOccurrence(xmlDoc, "//*", " ");
     }
 
-    public String concatOccurance(Object xmlDoc, String xpath, String concatSep) {
+    public String concatOccurrence(Object xmlDoc, String xpath, String concatSep) {
 
-        StringBuffer chaineConcat = new StringBuffer();
+        StringBuilder chaineConcat = new StringBuilder();
         try {
             JDOMXPath xp = new JDOMXPath(xpath);
             xp.setNamespaceContext(nsc);
@@ -75,7 +75,7 @@ public class XMLParser extends Parser {
             while (i.hasNext()) {
                 j++;
                 String text = "";
-                Object obj = (Object) i.next();
+                Object obj = i.next();
                 if (obj instanceof Element) {
                     Element elem = (Element) obj;
                     text = elem.getText().trim();
@@ -85,9 +85,6 @@ public class XMLParser extends Parser {
                 } else if (obj instanceof Text) {
                     Text txt = (Text) obj;
                     text = txt.getText().trim();
-                } else if (obj instanceof CDATA) {
-                    CDATA cdata = (CDATA) obj;
-                    text = cdata.getText().trim();
                 } else if (obj instanceof Comment) {
                     Comment com = (Comment) obj;
                     text = com.getText().trim();
@@ -98,15 +95,16 @@ public class XMLParser extends Parser {
                     EntityRef er = (EntityRef) obj;
                     text = er.toString().trim();
                 }
-                if (text != "") {
+                if (StringUtils.isNotEmpty(text)) {
+                    chaineConcat.append(text);
                     if (ls.size() == 1) {
-                        chaineConcat.append(text);
                         return chaineConcat.toString().trim();
                     } else {
-                        if (ls.size() == j)
-                            chaineConcat.append(text);
-                        else
-                            chaineConcat.append(text + " " + concatSep + " ");
+                        if (ls.size() != j) {
+                            chaineConcat.append(' ')
+                                    .append(concatSep)
+                                    .append(' ');
+                        }
                     }
                 }
             }
@@ -125,8 +123,8 @@ public class XMLParser extends Parser {
     private boolean exist(List nsLs, String nsUri) {
         if (nsLs.isEmpty())
             return false;
-        for (int i = 0; i < nsLs.size(); i++) {
-            if (((String) nsLs.get(i)).equals(nsUri)) {
+        for (Object nsL : nsLs) {
+            if (nsL.equals(nsUri)) {
                 return true;
             }
         }
@@ -134,7 +132,7 @@ public class XMLParser extends Parser {
     }
 
     private void processChildren(Element elem, List ns) {
-        Namespace nsCourent = (Namespace) elem.getNamespace();
+        Namespace nsCourent = elem.getNamespace();
         String nsUri = (nsCourent.getURI());
         if (!exist(ns, nsUri)) {
             ns.add(nsUri.trim());
@@ -145,15 +143,15 @@ public class XMLParser extends Parser {
             copyNsList(additionalNs, ns);
         if (elem.getChildren().size() > 0) {
             List elemChildren = elem.getChildren();
-            for (int i = 0; i < elemChildren.size(); i++) {
-                processChildren((Element) elemChildren.get(i), ns);
+            for (Object anElemChildren : elemChildren) {
+                processChildren((Element) anElemChildren, ns);
             }
         }
     }
 
     private void copyNsList(List nsElem, List nsRes) {
-        for (int i = 0; i < nsElem.size(); i++) {
-            Namespace ns = (Namespace) nsElem.get(i);
+        for (Object aNsElem : nsElem) {
+            Namespace ns = (Namespace) aNsElem;
             nsc.addNamespace(ns.getPrefix(), ns.getURI());
             nsRes.add(ns.getURI().trim());
         }
@@ -171,8 +169,7 @@ public class XMLParser extends Parser {
                 Object node = nodes.next();
                 if (node instanceof Element) {
                     Element elem = (Element) node;
-                    if (elem.getText().trim() != null
-                            && elem.getText().trim() != "") {
+                    if (StringUtils.isNotBlank(elem.getText())) {
                         values[i] = elem.getText().trim();
                     }
                 } else if (node instanceof Attribute) {
@@ -181,9 +178,6 @@ public class XMLParser extends Parser {
                 } else if (node instanceof Text) {
                     Text text = (Text) node;
                     values[i] = text.getText();
-                } else if (node instanceof CDATA) {
-                    CDATA cdata = (CDATA) node;
-                    values[i] = cdata.getText();
                 } else if (node instanceof Comment) {
                     Comment com = (Comment) node;
                     values[i] = com.getText();

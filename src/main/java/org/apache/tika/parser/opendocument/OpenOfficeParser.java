@@ -61,8 +61,8 @@ public class OpenOfficeParser extends Parser {
             xmlMeta = builder.build((InputStream) files.get(1));
             Element rootMeta = xmlMeta.getRootElement();
             Element meta = null;
-            List ls = new ArrayList();
-            if ((ls = rootMeta.getChildren()).size() > 0) {
+            List ls = rootMeta.getChildren();
+            if (! ls.isEmpty()) {
                 meta = (Element) ls.get(0);
             }
             xmlDoc.getRootElement().addContent(meta.detach());
@@ -85,7 +85,7 @@ public class OpenOfficeParser extends Parser {
                 xp.extractContent(xmlDoc, content);
             }
         }
-        return xp.concatOccurance(xmlDoc, "//*", " ");
+        return xp.concatOccurrence(xmlDoc, "//*", " ");
     }
 
     public List unzip(InputStream is) {
