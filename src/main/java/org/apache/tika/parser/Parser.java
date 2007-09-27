@@ -90,6 +90,21 @@ public abstract class Parser {
     }
 
     /**
+     * Returns the text associated with the Content named 'name',
+     * or null if such a Content does not exist.
+     *
+     * @param name name of Content the caller wants the value of
+     * @return the found Content's value, or null if not found
+     */
+    public String getContentValue(String name) {
+        Content content = getContent(name);
+
+        return content != null
+                ? content.getValue()
+                : null;
+    }
+
+    /**
      * Get a List of contents objects, this objects are configured from the
      * TikaConfig Xml file. It could be a document metadata, XPath selection,
      * regex selection or fulltext
