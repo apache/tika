@@ -32,13 +32,15 @@ public class TXTParser extends Parser {
 
     protected String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));
-        String line = null;
-        while ((line = br.readLine()) != null) {
-            sb.append(line);
-            sb.append(" ");
+
+        int charAsInt;
+
+        while ((charAsInt = br.read()) != -1) {
+            sb.append((char) charAsInt);
         }
+
         return sb.toString();
     }
 
