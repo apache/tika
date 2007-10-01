@@ -19,8 +19,7 @@ package org.apache.tika.utils;
 // JDK imports
 import java.io.InputStream;
 
-import org.apache.tika.config.Content;
-// Jakarta POI imports
+import org.apache.tika.config.Content; // Jakarta POI imports
 import org.apache.log4j.Logger;
 import org.apache.poi.hpsf.PropertySetFactory;
 import org.apache.poi.hpsf.SummaryInformation;
@@ -35,125 +34,137 @@ import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
  */
 public abstract class MSExtractor {
 
-    static Logger LOG = Logger.getRootLogger();
+	static Logger LOG = Logger.getRootLogger();
 
-    private String text = null;
+	private String text = null;
 
-    private POIFSReader reader = null;
-    
-    private Iterable<Content> contents;
+	private POIFSReader reader = null;
 
-    /** Constructs a new Microsoft document extractor. */
-    public MSExtractor() {        
-    }
-    
-    public void setContents(Iterable<Content> contents){
-        this.contents = contents;
-    }
+	private Iterable<Content> contents;
 
-    /**
-     * Extracts properties and text from an MS Document input stream
-     */
-    public void extract(InputStream input) throws Exception {
-        // First, extract properties
-        this.reader = new POIFSReader();
-        
-        this.reader.registerListener(new PropertiesReaderListener(),
-                SummaryInformation.DEFAULT_STREAM_NAME);
-        //input.reset();
-        if (input.available() > 0) {
-            reader.read(input);
-        }
-        //input.reset();
-        this.text = extractText(input);
-    }
+	/** Constructs a new Microsoft document extractor. */
+	public MSExtractor() {
+	}
 
-    /**
-     * Extracts the text content from a Microsoft document input stream.
-     */
-    public abstract String extractText(InputStream input) throws Exception;
+	public void setContents(Iterable<Content> contents) {
+		this.contents = contents;
+	}
 
-    /**
-     * Get the content text of the Microsoft document.
-     * 
-     * @return the content text of the document
-     */
-    protected String getText() {
-        return this.text;
-    }
+	/**
+	 * Extracts properties and text from an MS Document input stream
+	 */
+	public void extractProperties(InputStream input) throws Exception {
+		// First, extract properties
+		this.reader = new POIFSReader();
 
-    private class PropertiesReaderListener implements POIFSReaderListener {
+		this.reader.registerListener(new PropertiesReaderListener(),
+				SummaryInformation.DEFAULT_STREAM_NAME);
+		// input.reset();
+		if (input.available() > 0) {
+			reader.read(input);
+		}
+		// input.reset();
+		// this.text = extractText(input);
+	}
 
-        public void processPOIFSReaderEvent(POIFSReaderEvent event) {
-            if (!event.getName().startsWith(
-                    SummaryInformation.DEFAULT_STREAM_NAME)) {
-                return;
-            }
+	/**
+	 * Extracts the text content from a Microsoft document input stream.
+	 */
+	public abstract String extractText(InputStream input) throws Exception;
 
-            try {
-                SummaryInformation si = (SummaryInformation) PropertySetFactory
-                        .create(event.getStream());
-                for (Content content : contents) {
-                    if (content.getTextSelect().equalsIgnoreCase("title")) {
-                        content.setValue(si.getTitle());
-                    }
-                    if (content.getTextSelect().equalsIgnoreCase("author")) {
-                        content.setValue(si.getAuthor());
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("keywords")) {
-                        content.setValue(si.getKeywords());
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("subject")) {
-                        content.setValue(si.getSubject());    
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("lastauthor")) {
-                        content.setValue(si.getLastAuthor());    
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("comments")) {
-                        content.setValue(si.getComments());    
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("template")) {
-                        content.setValue(si.getTemplate());    
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("applicationname")) {
-                        content.setValue(si.getApplicationName());
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("revnumber")) {
-                        content.setValue(si.getRevNumber());
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("creationdate")) {
-                        content.setValue(si.getCreateDateTime().toString());
-                    }
-                    else if (content.getTextSelect().equalsIgnoreCase("")) {
-                        //content.setValue(si.getCharCount());
-                    }
-                }
+	/**
+	 * Get the content text of the Microsoft document.
+	 * 
+	 * @return the content text of the document
+	 */
+	protected String getText() {
+		return this.text;
+	}
 
-            } catch (Exception ex) {
-            }
+	private class PropertiesReaderListener implements POIFSReaderListener {
 
-        }
+		public void processPOIFSReaderEvent(POIFSReaderEvent event) {
+			if (!event.getName().startsWith(
+					SummaryInformation.DEFAULT_STREAM_NAME)) {
+				return;
+			}
 
-    }
+			try {
+				SummaryInformation si = (SummaryInformation) PropertySetFactory
+						.create(event.getStream());
+				for (Content content : contents) {
+					if (content.getTextSelect().equalsIgnoreCase("title")) {
+						if (si.getTitle() != null)
+							content.setValue(si.getTitle());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"author")) {
+						if (si.getAuthor() != null)
+							content.setValue(si.getAuthor());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"keywords")) {
+						if (si.getKeywords() != null)
+							content.setValue(si.getKeywords());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"subject")) {
+						if (si.getSubject() != null)
+							content.setValue(si.getSubject());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"lastauthor")) {
+						if (si.getLastAuthor() != null)
+							content.setValue(si.getLastAuthor());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"comments")) {
+						if (si.getComments() != null)
+							content.setValue(si.getComments());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"template")) {
+						if (si.getTemplate() != null)
+							content.setValue(si.getTemplate());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"applicationname")) {
+						if (si.getApplicationName() != null)
+							content.setValue(si.getApplicationName());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"revnumber")) {
+						if (si.getRevNumber() != null)
+							content.setValue(si.getRevNumber());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"creationdate")) {
+						if (si.getCreateDateTime() != null)
+							content.setValue(si.getCreateDateTime().toString());
+					} else if (content.getTextSelect().equalsIgnoreCase(
+							"charcount")) {
+						if (si.getCharCount() > 0)
+							content.setValue("" + si.getCharCount());
+					} else if (content.getTextSelect().equals("edittime")) {
+						if (si.getEditTime() > 0)
+							content.setValue("" + si.getEditTime());
+					} else if (content.getTextSelect().equals(
+							"lastsavedatetime")) {
+						if (si.getLastSaveDateTime() != null)
+							content.setValue(si.getLastSaveDateTime()
+									.toString());
+					} else if (content.getTextSelect().equals("pagecount")) {
+						if (si.getPageCount() > 0)
+							content.setValue("" + si.getPageCount());
+					} else if (content.getTextSelect().equals("security")) {
+						if (si.getSecurity() > 0)
+							content.setValue("" + si.getSecurity());
+					} else if (content.getTextSelect().equals("wordcount")) {
+						if (si.getWordCount() > 0)
+							content.setValue("" + si.getWordCount());
+					} else if (content.getTextSelect().equals("lastprinted")) {
+						if (si.getLastPrinted() != null)
+							content.setValue(si.getLastPrinted().toString());
+					}
+
+				}
+
+			} catch (Exception ex) {
+			}
+
+		}
+
+	}
 
 }
-
-/*
- * setProperty(DublinCore.TITLE, si.getTitle());
- * setProperty(Office.APPLICATION_NAME, si.getApplicationName());
- * setProperty(Office.AUTHOR, si.getAuthor());
- * setProperty(Office.CHARACTER_COUNT, si.getCharCount());
- * setProperty(Office.COMMENTS, si.getComments()); setProperty(DublinCore.DATE,
- * si.getCreateDateTime()); // setProperty(Office.EDIT_TIME, si.getEditTime());
- * setProperty(HttpHeaders.LAST_MODIFIED, si.getLastSaveDateTime());
- * setProperty(Office.KEYWORDS, si.getKeywords());
- * setProperty(Office.LAST_AUTHOR, si.getLastAuthor());
- * setProperty(Office.LAST_PRINTED, si.getLastPrinted());
- * setProperty(Office.LAST_SAVED, si.getLastSaveDateTime());
- * setProperty(Office.PAGE_COUNT, si.getPageCount());
- * setProperty(Office.REVISION_NUMBER, si.getRevNumber());
- * setProperty(DublinCore.RIGHTS, si.getSecurity());
- * setProperty(DublinCore.SUBJECT, si.getSubject());
- * setProperty(Office.TEMPLATE, si.getTemplate());
- * setProperty(Office.WORD_COUNT, si.getWordCount());
- */

@@ -52,110 +52,154 @@ import org.jdom.output.XMLOutputter;
 
 public class Utils {
 
-    static Logger logger = Logger.getRootLogger();
+	static Logger logger = Logger.getRootLogger();
 
-    public static String toString(Map<String, Content> structuredContent) {
-      final StringWriter sw = new StringWriter();
-      print(structuredContent,sw);
-      return sw.toString();
-    }
-    
-    public static void print(Map<String, Content> structuredContent) {
-      print(structuredContent,new OutputStreamWriter(System.out));
-    }
-    
-    public static void print(Map<String, Content> structuredContent,Writer outputWriter) {
-        final PrintWriter output = new PrintWriter(outputWriter,true);
-        for (Map.Entry<String, Content> entry : structuredContent.entrySet()) {
-            Content ct = entry.getValue();
-            if (ct.getValue() != null) {
-                output.print(entry.getKey() + ": ");
-                output.println(ct.getValue());
-            } else if (ct.getValues() != null) {
-                output.print(entry.getKey() + ": ");
-                for (int j = 0; j < ct.getValues().length; j++) {
-                    if (j == 0)
-                        output.println(ct.getValues()[j]);
-                    else {
-                        output.println("\t" + ct.getValues()[j]);
-                    }
-                }
-            } else { // there are no values, but there is a Content object
-                System.out.println(
-                        "Content '" + entry.getKey() + "' has no values.");
-            }
-        }
-    }
+	public static String toString(Map<String, Content> structuredContent) {
+		final StringWriter sw = new StringWriter();
+		print(structuredContent, sw);
+		return sw.toString();
+	}
 
-    public static Document parse(InputStream is) {
-        org.jdom.Document xmlDoc = new org.jdom.Document();
-        try {
-            SAXBuilder builder = new SAXBuilder();
-            builder.setValidation(false);
-            xmlDoc = builder.build(is);
-        } catch (JDOMException e) {
-            logger.error(e.getMessage());
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-        return xmlDoc;
-    }
+	public static void print(Map<String, Content> structuredContent) {
+		print(structuredContent, new OutputStreamWriter(System.out));
+	}
 
-    public static List unzip(InputStream is) {
-        List res = new ArrayList();
-        try {
-            ZipInputStream in = new ZipInputStream(is);
-            ZipEntry entry = null;
-            while ((entry = in.getNextEntry()) != null) {
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                byte[] buf = new byte[1024];
-                int len;
-                while ((len = in.read(buf)) > 0) {
-                    stream.write(buf, 0, len);
-                }
-                InputStream isEntry = new ByteArrayInputStream(stream
-                        .toByteArray());
-                File file = File.createTempFile("tmp", "_" + entry.getName());
-                copyInputStream(isEntry, new BufferedOutputStream(
-                        new FileOutputStream(file)));
-                res.add(file);
-            }
-            in.close();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-        return res;
-    }
+	public static void print(Map<String, Content> structuredContent,
+			Writer outputWriter) {
+		final PrintWriter output = new PrintWriter(outputWriter, true);
+		for (Map.Entry<String, Content> entry : structuredContent.entrySet()) {
+			Content ct = entry.getValue();
+			if (ct.getValue() != null) {
+				output.print(entry.getKey() + ": ");
+				output.println(ct.getValue());
+			} else if (ct.getValues() != null) {
+				output.print(entry.getKey() + ": ");
+				for (int j = 0; j < ct.getValues().length; j++) {
+					if (j == 0)
+						output.println(ct.getValues()[j]);
+					else {
+						output.println("\t" + ct.getValues()[j]);
+					}
+				}
+			} else { // there are no values, but there is a Content object
+				System.out.println("Content '" + entry.getKey()
+						+ "' has no values.");
+			}
+		}
+	}
 
-    private static void copyInputStream(InputStream in, OutputStream out)
-            throws IOException {
-        byte[] buffer = new byte[1024];
-        int len;
+	public static Document parse(InputStream is) {
+		org.jdom.Document xmlDoc = new org.jdom.Document();
+		try {
+			SAXBuilder builder = new SAXBuilder();
+			builder.setValidation(false);
+			xmlDoc = builder.build(is);
+		} catch (JDOMException e) {
+			logger.error(e.getMessage());
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+		return xmlDoc;
+	}
 
-        while ((len = in.read(buffer)) >= 0)
-            out.write(buffer, 0, len);
+	public static List unzip(InputStream is) {
+		List res = new ArrayList();
+		try {
+			ZipInputStream in = new ZipInputStream(is);
+			ZipEntry entry = null;
+			while ((entry = in.getNextEntry()) != null) {
+				ByteArrayOutputStream stream = new ByteArrayOutputStream();
+				byte[] buf = new byte[1024];
+				int len;
+				while ((len = in.read(buf)) > 0) {
+					stream.write(buf, 0, len);
+				}
+				InputStream isEntry = new ByteArrayInputStream(stream
+						.toByteArray());
+				File file = File.createTempFile("tmp", "_" + entry.getName());
+				saveInputStreamInFile(isEntry, new BufferedOutputStream(
+						new FileOutputStream(file)));
+				res.add(file);
+			}
+			in.close();
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+		}
+		return res;
+	}
 
-        in.close();
-        out.close();
-    }
+	private static void saveInputStreamInFile(InputStream in, OutputStream out)
+			throws IOException {
+		byte[] buffer = new byte[1024];
+		int len;
 
-    public static void saveInXmlFile(Document doc, String file) {
-        Format f = Format.getPrettyFormat().setEncoding("UTF-8");
+		while ((len = in.read(buffer)) >= 0)
+			out.write(buffer, 0, len);
 
-        XMLOutputter xop = new XMLOutputter(f);
+		in.close();
+		out.close();
+	}
 
-        try {
+	public static void saveInXmlFile(Document doc, String file) {
+		Format f = Format.getPrettyFormat().setEncoding("UTF-8");
 
-            xop.output(doc, new FileOutputStream(file));
+		XMLOutputter xop = new XMLOutputter(f);
 
-        }
+		try {
 
-        catch (IOException ex) {
+			xop.output(doc, new FileOutputStream(file));
 
-            logger.error(ex.getMessage());
+		}
 
-        }
+		catch (IOException ex) {
 
-    }
+			logger.error(ex.getMessage());
+
+		}
+	}
+
+	/**
+	 * Get the contents of an <code>InputStream</code> as a
+	 * <code>byte[]</code>.
+	 * <p>
+	 * This method buffers the input internally, so there is no need to use a
+	 * 
+	 * <code>BufferedInputStream</code>.
+	 * 
+	 * @param input
+	 *            the <code>InputStream</code> to read from
+	 * @return the requested byte array
+	 * @throws NullPointerException
+	 *             if the input is null
+	 * 
+	 * @throws IOException
+	 *             if an I/O error occurs
+	 */
+	public static byte[] toByteArray(InputStream input) throws IOException {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		copy(input, output);
+		return output.toByteArray();
+	}
+
+	public static long copy(InputStream input, OutputStream output)
+			throws IOException {
+		byte[] buffer = new byte[1024];
+		long count = 0;
+		int n = 0;
+		while (-1 != (n = input.read(buffer))) {
+			output.write(buffer, 0, n);
+			count += n;
+		}
+		return count;
+	}
+	
+	public static InputStream[] copyInputStream(InputStream is, int nbCopies) throws IOException {      
+		InputStream[] isa = new InputStream[nbCopies];
+		byte[] content = toByteArray(is);
+        for (int i = 0; i < nbCopies; i++) {
+			isa[i] = new ByteArrayInputStream(content);
+		}
+        return isa;
+}
 
 }

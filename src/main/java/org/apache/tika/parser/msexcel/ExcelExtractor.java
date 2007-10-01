@@ -39,10 +39,10 @@ class ExcelExtractor extends MSExtractor {
   
   public String extractText(InputStream input) throws Exception {
     
-    String resultText = "";
+    StringBuilder resultText = new StringBuilder();
     HSSFWorkbook wb = new HSSFWorkbook(input);
     if (wb == null) {
-      return resultText;
+      return resultText.toString();
     }
     
     HSSFSheet sheet;
@@ -72,20 +72,19 @@ class ExcelExtractor extends MSExtractor {
               } else
              */
             if (cell.getCellType() == HSSFCell.CELL_TYPE_STRING) {
-              resultText += cell.getStringCellValue() + " ";
+              resultText.append(cell.getRichStringCellValue().getString()).append(" ");
             } else if (cell.getCellType() == HSSFCell.CELL_TYPE_NUMERIC) {
               Double d = new Double(cell.getNumericCellValue());
-              resultText += d.toString() + " ";
-            }
-            /* else if(cell.getCellType() == HSSFCell.CELL_TYPE_FORMULA){
-                 resultText += cell.getCellFormula() + " ";
-               } 
-             */
+              resultText.append(d).append(" ");
+            } else if(cell.getCellType() == HSSFCell.CELL_TYPE_FORMULA){
+              resultText.append(cell.getNumericCellValue()).append(" ");
+            } 
+            
           }
         }
       }
     }
-    return resultText;
+    return resultText.toString();
   }
   
 }

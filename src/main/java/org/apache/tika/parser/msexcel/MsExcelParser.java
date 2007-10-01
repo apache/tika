@@ -22,21 +22,27 @@ import java.io.InputStream;
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.utils.MSExtractor;
+import org.apache.tika.utils.Utils;
 
 /**
  * Excel parser
  */
 public class MsExcelParser extends Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
-            throws IOException, TikaException {
-        try {
-            return new ExcelExtractor().extractText(stream);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TikaException("Error parsing an Excel document", e);
-        }
-    }
+	protected String parse(InputStream stream, Iterable<Content> contents)
+			throws IOException, TikaException {
+		try {
+			MSExtractor extractor = new ExcelExtractor();
+			extractor.setContents(contents);
+			InputStream[] isa = Utils.copyInputStream(stream, 2);
+			extractor.extractProperties(isa[0]);
+			return extractor.extractText(isa[1]);
+		} catch (IOException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new TikaException("Error parsing an Excel document", e);
+		}
+	}
 
 }

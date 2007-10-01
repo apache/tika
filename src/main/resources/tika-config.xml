@@ -32,6 +32,23 @@
                 <mime>application/msword</mime>
                 <extract>
                     <content name="fullText" textSelect="fullText"/>
+                    <content name="title" textSelect="title" type="Text"/>
+					<content name="author" textSelect="author" type="Text"/>
+					<content name="keywords" textSelect="keywords" type="Text"/>
+					<content name="subject" textSelect="subject" type="Text"/>
+					<content name="lastauthor" textSelect="lastauthor" type="Text"/>
+					<content name="comments" textSelect="comments" type="Text"/>
+					<content name="template" textSelect="template" type="Text"/>
+					<content name="applicationname" textSelect="applicationname" type="Text"/>
+					<content name="revnumber" textSelect="revnumber" type="Text"/>
+					<content name="creationdate" textSelect="creationdate"/>
+					<content name="charcount" textSelect="charcount"/>
+					<content name="edittime" textSelect="edittime"/>
+					<content name="lastsavedatetime" textSelect="lastsavedatetime"/>
+					<content name="pagecount" textSelect="pagecount"/>
+					<content name="security" textSelect="security"/>
+					<content name="wordcount" textSelect="wordcount"/>
+					<content name="lastprinted" textSelect="lastprinted"/>		
                     <content name="outLinks">
                         <regexSelect>
                             <![CDATA[
@@ -47,6 +64,23 @@
                 <mime>application/vnd.ms-excel</mime>
                 <extract>
                     <content name="fullText" textSelect="fullText"/>
+                    <content name="title" textSelect="title" type="Text"/>
+					<content name="author" textSelect="author" type="Text"/>
+					<content name="keywords" textSelect="keywords" type="Text"/>
+					<content name="subject" textSelect="subject" type="Text"/>
+					<content name="lastauthor" textSelect="lastauthor" type="Text"/>
+					<content name="comments" textSelect="comments" type="Text"/>
+					<content name="template" textSelect="template" type="Text"/>
+					<content name="applicationname" textSelect="applicationname" type="Text"/>
+					<content name="revnumber" textSelect="revnumber" type="Text"/>
+					<content name="creationdate" textSelect="creationdate"/>
+					<content name="charcount" textSelect="charcount"/>
+					<content name="edittime" textSelect="edittime"/>
+					<content name="lastsavedatetime" textSelect="lastsavedatetime"/>
+					<content name="pagecount" textSelect="pagecount"/>
+					<content name="security" textSelect="security"/>
+					<content name="wordcount" textSelect="wordcount"/>
+					<content name="lastprinted" textSelect="lastprinted"/>		
                     <content name="outLinks">
                         <regexSelect>
                             <![CDATA[
@@ -62,6 +96,23 @@
                 <mime>application/vnd.ms-powerpoint</mime>
                 <extract>
                     <content name="fullText" textSelect="fullText"/>
+                    <content name="title" textSelect="title" type="Text"/>
+					<content name="author" textSelect="author" type="Text"/>
+					<content name="keywords" textSelect="keywords" type="Text"/>
+					<content name="subject" textSelect="subject" type="Text"/>
+					<content name="lastauthor" textSelect="lastauthor" type="Text"/>
+					<content name="comments" textSelect="comments" type="Text"/>
+					<content name="template" textSelect="template" type="Text"/>
+					<content name="applicationname" textSelect="applicationname" type="Text"/>
+					<content name="revnumber" textSelect="revnumber" type="Text"/>
+					<content name="creationdate" textSelect="creationdate"/>
+					<content name="charcount" textSelect="charcount"/>
+					<content name="edittime" textSelect="edittime"/>
+					<content name="lastsavedatetime" textSelect="lastsavedatetime"/>
+					<content name="pagecount" textSelect="pagecount"/>
+					<content name="security" textSelect="security"/>
+					<content name="wordcount" textSelect="wordcount"/>
+					<content name="lastprinted" textSelect="lastprinted"/>		
                     <content name="title" textSelect="title"/>
                     <content name="author" textSelect="author"/>
                     <content name="subject" textSelect="subject"/>                    

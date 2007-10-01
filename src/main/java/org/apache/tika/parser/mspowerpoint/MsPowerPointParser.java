@@ -22,31 +22,35 @@ import java.io.InputStream;
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.utils.MSExtractor;
+import org.apache.tika.utils.Utils;
 
 /**
  * Power point parser
  */
 public class MsPowerPointParser extends Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
-            throws IOException, TikaException {
-        try {
-            PPTExtractor extrator = new PPTExtractor();
-            extrator.setContents(contents);
-            return extrator.extractText(stream);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TikaException("Error parsing a PowerPoint document", e);
-        }
-    }
+	protected String parse(InputStream stream, Iterable<Content> contents)
+			throws IOException, TikaException {
+		try {
+			MSExtractor extractor = new PPTExtractor();
+			extractor.setContents(contents);
+			InputStream[] isa = Utils.copyInputStream(stream, 2);
+			extractor.extractProperties(isa[0]);
+			return extractor.extractText(isa[1]);
+		} catch (IOException e) {
+			throw e;
+		} catch (Exception e) {
+			throw new TikaException("Error parsing a PowerPoint document", e);
+		}
+	}
 
-    /*
-     * public List<Content> getContents() {
-     * extrator.setContents(getParserConfig().getContents()); try {
-     * extrator.extract(getInputStream()); } catch (Exception e) { // TODO
-     * Auto-generated catch block e.printStackTrace(); } return
-     * getParserConfig().getContents(); }
-     */
+	/*
+	 * public List<Content> getContents() {
+	 * extrator.setContents(getParserConfig().getContents()); try {
+	 * extrator.extract(getInputStream()); } catch (Exception e) { // TODO
+	 * Auto-generated catch block e.printStackTrace(); } return
+	 * getParserConfig().getContents(); }
+	 */
 
 }

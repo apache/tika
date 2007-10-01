@@ -55,4 +55,8 @@ Unreleased changes (0.1-dev)
   
 25. TIKA-33 - Stateless parsers (jukka)
 
-26. TIKA-38 - TXTParser adds a space to the content it reads from a file
+26. TIKA-38 - TXTParser adds a space to the content it reads from a file (K. Bennett, Rida)
+
+27. TIKA-35 - Extract MsOffice properties (Rida)
+
+28. Tika-39 - Excel parsing improvements (Sami, Rida)
