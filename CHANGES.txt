@@ -50,6 +50,7 @@ Unreleased changes (0.1-dev)
 23. TIKA-31 - protected Parser.parse(InputStream stream,
               Iterable<Content> contents) (jukka & K. Bennett)
               
-24. TIKA-36 A convenience method for getting a document's content's text 
+24. TIKA-36 - A convenience method for getting a document's content's text 
               would be helpful (K. Bennett & mattmann)
   
+25. TIKA-33 - Stateless parsers (jukka)

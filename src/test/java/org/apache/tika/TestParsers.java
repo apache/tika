@@ -17,12 +17,17 @@
 package org.apache.tika;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.tika.config.Content;
+import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.log.TikaLogger;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserFactory;
 import org.apache.tika.utils.ParseUtils;
 import org.apache.tika.utils.Utils;
 import org.jdom.JDOMException;
@@ -69,12 +74,7 @@ public class TestParsers extends TestCase {
         File file = getTestFile("testPDF.pdf");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/pdf");
-
-        Parser parser = ParseUtils.getParser(file, tc);
-        String s3 = parser.getStrContent();
-
         assertEquals(s1, s2);
-        assertEquals(s1, s3);
     }
 
     public void testTXTExtraction() throws Exception {
@@ -135,25 +135,33 @@ public class TestParsers extends TestCase {
         String s2 = ParseUtils.getStringContent(file, tc, "text/html");
         assertEquals(s1, s2);
 
-        Parser parser = ParseUtils.getParser(file, tc);
+        ParserConfig config = tc.getParserConfig("text/html");
+        Parser parser = ParserFactory.getParser(config);
         assertNotNull(parser);
         assertEquals("org.apache.tika.parser.html.HtmlParser", parser.getClass().getName());
+        parser.setMimeType("text/html");
 
-        
-        Content content = parser.getContent("title");
-        assertNotNull(content);
-        assertEquals("Title : Test Indexation Html", content.getValue());
+        Map<String, Content> contents = config.getContents();
+        assertNotNull(contents);
+        InputStream stream = new FileInputStream(file);
+        try {
+            parser.getContents(stream, contents);
+        } finally {
+            stream.close();
+        }
+        assertEquals(
+                "Title : Test Indexation Html",
+                contents.get("title").getValue());
 
         assertEquals("text/html", parser.getMimeType());
 
-        final String text = Utils.toString(parser.getContents());
+        final String text = Utils.toString(contents);
         final String expected = "Test Indexation Html";
-        assertTrue("text contains '" + expected + "'",
-                text.contains(expected));
+        assertTrue("text contains '" + expected + "'", text.contains(expected));
     }
 
     private File getTestFile(String filename) {
-      return new File(testFilesBaseDir, filename);
+        return new File(testFilesBaseDir, filename);
     }
 
 }

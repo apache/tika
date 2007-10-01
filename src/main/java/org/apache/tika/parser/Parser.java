@@ -34,21 +34,9 @@ public abstract class Parser {
 
     private static final Logger logger = Logger.getLogger(Parser.class);
 
-    private InputStream is;
-
     private String mimeType;
 
     private String namespace;
-
-    private Map<String, Content> contents;
-
-    private String contentStr;
-
-    private boolean parsed = false; 
-
-    public void setInputStream(InputStream is) {
-        this.is = is;
-    }
 
     /**
      * Get document mime type
@@ -72,87 +60,39 @@ public abstract class Parser {
         this.namespace = namespace;
     }
 
-    /**
-     * Get the string content of the document
-     */
-    public String getStrContent() {
-        getContents();
-        return contentStr;
-    }
+    public String getContents(InputStream stream, Map<String, Content> contents) {
+        try {
+            String contentStr = parse(stream, contents.values());
 
-    /**
-     * Get a content object, this object is configured from the TikaConfig Xml.
-     * It could be a document metadata, XPath selection, regex selection or
-     * fulltext
-     */
-    public Content getContent(String name) {
-        return getContents().get(name);
-    }
-
-    /**
-     * Returns the text associated with the Content named 'name',
-     * or null if such a Content does not exist.
-     *
-     * @param name name of Content the caller wants the value of
-     * @return the found Content's value, or null if not found
-     */
-    public String getContentValue(String name) {
-        Content content = getContent(name);
-
-        return content != null
-                ? content.getValue()
-                : null;
-    }
-
-    /**
-     * Get a List of contents objects, this objects are configured from the
-     * TikaConfig Xml file. It could be a document metadata, XPath selection,
-     * regex selection or fulltext
-     */
-    public Map<String, Content> getContents() {
-        if (!parsed) {
-            try {
-                try {
-                    contentStr = parse(is, contents.values());
-                } finally {
-                    is.close();
-                }
-
-                for (Content content : contents.values()) {
-                    if ("fulltext".equalsIgnoreCase(content.getTextSelect())) {
-                        content.setValue(contentStr);
-                    } else if ("summary".equalsIgnoreCase(content.getTextSelect())) {
-                        int length = Math.min(contentStr.length(), 500);
-                        String summary = contentStr.substring(0, length);
-                        content.setValue(summary);
-                    } else if (content.getRegexSelect() != null) {
-                        String regex = content.getRegexSelect();
-                        try {
-                            List<String> values =
-                                RegexUtils.extract(contentStr, regex);
-                            if (values.size() > 0) {
-                                content.setValue(values.get(0));
-                                content.setValues(
-                                        values.toArray(new String[values.size()]));
-                            }
-                        } catch (MalformedPatternException e) {
-                            logger.error(
-                                    "Invalid regular expression: " + regex, e);
+            for (Content content : contents.values()) {
+                if ("fulltext".equalsIgnoreCase(content.getTextSelect())) {
+                    content.setValue(contentStr);
+                } else if ("summary".equalsIgnoreCase(content.getTextSelect())) {
+                    int length = Math.min(contentStr.length(), 500);
+                    String summary = contentStr.substring(0, length);
+                    content.setValue(summary);
+                } else if (content.getRegexSelect() != null) {
+                    String regex = content.getRegexSelect();
+                    try {
+                        List<String> values =
+                            RegexUtils.extract(contentStr, regex);
+                        if (values.size() > 0) {
+                            content.setValue(values.get(0));
+                            content.setValues(
+                                    values.toArray(new String[values.size()]));
                         }
+                    } catch (MalformedPatternException e) {
+                        logger.error(
+                                "Invalid regular expression: " + regex, e);
                     }
                 }
-            } catch (Exception e) {
-                logger.error("Parse error: " + e.getMessage(), e);
-                contentStr = "";
-            } finally {
-                parsed = true;
             }
-        }
-        return contents;
-    }
 
-    public void setContents(Map<String, Content> contents) {
-        this.contents = contents;
+            return contentStr;
+        } catch (Exception e) {
+            logger.error("Parse error: " + e.getMessage(), e);
+            return "";
+        }
     }
 
     protected abstract String parse(

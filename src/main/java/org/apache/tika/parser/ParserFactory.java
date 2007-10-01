@@ -16,11 +16,8 @@
  */
 package org.apache.tika.parser;
 
-import java.io.InputStream;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.exception.TikaException;
 
@@ -33,80 +30,19 @@ public class ParserFactory {
 
     static Logger logger = Logger.getRootLogger();
 
-
-
-    public static Parser getParser(
-            InputStream inputStream, String mimeType, TikaConfig tc)
-            throws TikaException {
-
-        // Verify that all passed parameters are (probably) valid.
-
-        if (StringUtils.isBlank(mimeType)) {
-            throw new TikaException("Mime type not specified.");
-        }
-
-        if (inputStream == null) {
-            throw new TikaException("Input stream is null.");
-        }
-
-        if (tc == null) {
-            throw new TikaException("Configuration object is null.");
-        }
-
-        ParserConfig pc = getParserConfig(mimeType, tc);
-        if (pc == null) {
-            throw new TikaException(
-                    "Could not find parser config for mime type "
-                    + mimeType + ".");
-        }
-
-        String className = pc.getParserClass();
-        Parser parser = null;
-
+    public static Parser getParser(ParserConfig config) throws TikaException {
+        String className = config.getParserClass();
         if (StringUtils.isBlank(className)) {
             throw new TikaException(
                     "Parser class name missing from ParserConfig.");
         }
-
         try {
-            logger.info("Loading parser class = " + className
-                    + " MimeType = " + mimeType);
-
-            Class<?> parserClass = Class.forName(className);
-            parser = (Parser) parserClass.newInstance();
-            parser.setMimeType(mimeType);
-            parser.setContents(pc.getContents());
-            parser.setInputStream(inputStream);
-
-        } catch (ClassNotFoundException e) {
-            logger.error(e.getMessage());
-            throw new TikaException(e.getMessage());
-        } catch (InstantiationException e) {
-            logger.error(e.getMessage());
-            throw new TikaException(e.getMessage());
-        } catch (IllegalAccessException e) {
-            logger.error(e.getMessage());
+            logger.info("Loading parser class = " + className);
+            return (Parser) Class.forName(className).newInstance();
+        } catch (Exception e) {
+            logger.error("Unable to instantiate parser: " + className, e);
             throw new TikaException(e.getMessage());
         }
-
-        return parser;
     }
 
-
-    private static ParserConfig getParserConfig(String mimeType, TikaConfig tc)
-            throws TikaException {
-
-        ParserConfig pc = tc.getParserConfig(mimeType);
-
-        if (pc == null) {
-            String message =
-                    "Could not find parser configuration for mime type "
-                    + mimeType + ".";
-
-            logger.error(message);
-            throw new TikaException(message);
-        }
-
-        return pc;
-    }
 }
