@@ -234,6 +234,8 @@
                     <include name="*"/>
                   </fileset>
                 </copy>
+                <copy todir="${project.build.outputDirectory}/org/apache/tika"
+                      file="${basedir}/src/main/resources/tika-config.xml"/>
               </tasks>
             </configuration>
             <goals>

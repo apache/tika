@@ -60,3 +60,6 @@ Unreleased changes (0.1-dev)
 27. TIKA-35 - Extract MsOffice properties (ridabenjelloun)
 
 28. TIKA-39 - Excel parsing improvements (siren & ridabenjelloun)
+
+29. TIKA-34 - Provide a method that will return a default configuration 
+              (TikaConfig) (K. Bennett & mattmann)

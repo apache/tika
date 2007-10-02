@@ -61,21 +61,30 @@ public class TestParsers extends TestCase {
 		 */
 
 		// FIXME for now, fix filenames according to Maven testing layout
-		final String tikaConfigFilename = "target/classes/tika-config.xml";
-		final String log4jPropertiesFilename = "target/classes/log4j/log4j.properties";
-		testFilesBaseDir = new File("src/test/resources/test-documents");
+        
+  // The file below should be the default configuration for the test of
+  // getDefaultConfig() to be legitimate.
+  final String tikaConfigFilename
+                = "target/classes/org/apache/tika/tika-config.xml";
+
+  final String log4jPropertiesFilename
+                = "target/classes/log4j/log4j.properties";
+
+        testFilesBaseDir = new File("src/test/resources/test-documents");
 
 		tc = new TikaConfig(tikaConfigFilename);
 
 		TikaLogger.setLoggerConfigFile(log4jPropertiesFilename);
-
 	}
 
 	public void testPDFExtraction() throws Exception {
 		File file = getTestFile("testPDF.pdf");
 		String s1 = ParseUtils.getStringContent(file, tc);
 		String s2 = ParseUtils.getStringContent(file, tc, "application/pdf");
-		assertEquals(s1, s2);
+        String s3 = ParseUtils.getStringContent(file,
+                TikaConfig.getDefaultConfig());
+        assertEquals(s1, s2);
+        assertEquals(s1, s3);
 	}
 
 	public void testTXTExtraction() throws Exception {
@@ -139,7 +148,11 @@ public class TestParsers extends TestCase {
 	}
 
 	public void testEXCELExtraction() throws Exception {
-		final String expected = "Numbers and their Squares Number Square 1.0 1.0 2.0 4.0 3.0 9.0 4.0 16.0 5.0 25.0 6.0 36.0 7.0 49.0 8.0 64.0 9.0 81.0 10.0 100.0 11.0 121.0 12.0 144.0 13.0 169.0 14.0 196.0 15.0 225.0 Written and saved in Microsoft Excel X for Mac Service Release 1.";
+		final String expected = "Numbers and their Squares Number Square 1.0 "
+                + "1.0 2.0 4.0 3.0 9.0 4.0 16.0 5.0 25.0 6.0 36.0 7.0 49.0 8.0 "
+                + "64.0 9.0 81.0 10.0 100.0 11.0 121.0 12.0 144.0 13.0 169.0 "
+                + "14.0 196.0 15.0 225.0 Written and saved in Microsoft Excel "
+                + "X for Mac Service Release 1.";
 		File file = getTestFile("testEXCEL.xls");
 		String s1 = ParseUtils.getStringContent(file, tc);
 		String s2 = ParseUtils.getStringContent(file, tc,

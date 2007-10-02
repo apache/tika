@@ -27,6 +27,7 @@ import java.util.Map;
 //TIKA imports
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeUtils;
+import org.apache.tika.utils.Utils;
 
 //JDOM imports
 import org.jdom.Document;
@@ -39,6 +40,9 @@ import org.jdom.xpath.XPath;
  * Parse xml config file.
  */
 public class TikaConfig {
+    
+    public static final String DEFAULT_CONFIG_LOCATION = 
+        "/org/apache/tika/tika-config.xml";
 
     private final Map<String, ParserConfig> configs =
         new HashMap<String, ParserConfig>();
@@ -85,6 +89,22 @@ public class TikaConfig {
     
     public MimeTypes getMimeRepository(){
         return mimeTypeRepo.getRepository();
+    }
+    
+    /**
+     * Provides a default configuration (TikaConfig).  Currently creates a
+     * new instance each time it's called; we may be able to have it
+     * return a shared instance once it is completely immutable.
+     *
+     * @return
+     * @throws IOException
+     * @throws JDOMException
+     */
+    public static TikaConfig getDefaultConfig()
+            throws IOException, JDOMException {
+
+        return new TikaConfig(
+                Utils.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION));
     }
 
 }
