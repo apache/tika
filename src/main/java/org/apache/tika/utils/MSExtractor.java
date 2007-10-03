@@ -19,13 +19,13 @@ package org.apache.tika.utils;
 // JDK imports
 import java.io.InputStream;
 
-import org.apache.tika.config.Content; // Jakarta POI imports
 import org.apache.log4j.Logger;
 import org.apache.poi.hpsf.PropertySetFactory;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.poifs.eventfilesystem.POIFSReader;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
+import org.apache.tika.config.Content;
 
 /**
  * Defines a Microsoft document content extractor.
@@ -56,22 +56,26 @@ public abstract class MSExtractor {
 	 * Extracts properties and text from an MS Document input stream
 	 */
 	public void extract(InputStream input) throws Exception {
-		// First, extract properties
-		this.reader = new POIFSReader();
-
-		this.reader.registerListener(new PropertiesReaderListener(),
-				SummaryInformation.DEFAULT_STREAM_NAME);
-
 		RereadableInputStream ris = new RereadableInputStream(input,
 				MEMORY_THRESHOLD);
-		if (input.available() > 0) {
-			reader.read(ris);
+		try {
+			// First, extract properties
+			this.reader = new POIFSReader();
+
+			this.reader.registerListener(new PropertiesReaderListener(),
+					SummaryInformation.DEFAULT_STREAM_NAME);
+
+			if (input.available() > 0) {
+				reader.read(ris);
+			}
+			while (ris.read() != -1) {
+			}
+			ris.rewind();
+			// Extract document full text
+			this.text = extractText(ris);
+		} finally {
+			ris.close();
 		}
-		while (ris.read() != -1) {
-		}
-		ris.rewind();
-		// Extract document full text
-		this.text = extractText(ris);
 	}
 
 	/**
