@@ -42,6 +42,8 @@ public abstract class MSExtractor {
 
 	private Iterable<Content> contents;
 
+	private final int MEMORY_THRESHOLD = 1024 * 1024;
+
 	/** Constructs a new Microsoft document extractor. */
 	public MSExtractor() {
 	}
@@ -53,18 +55,23 @@ public abstract class MSExtractor {
 	/**
 	 * Extracts properties and text from an MS Document input stream
 	 */
-	public void extractProperties(InputStream input) throws Exception {
+	public void extract(InputStream input) throws Exception {
 		// First, extract properties
 		this.reader = new POIFSReader();
 
 		this.reader.registerListener(new PropertiesReaderListener(),
 				SummaryInformation.DEFAULT_STREAM_NAME);
-		// input.reset();
+
+		RereadableInputStream ris = new RereadableInputStream(input,
+				MEMORY_THRESHOLD);
 		if (input.available() > 0) {
-			reader.read(input);
+			reader.read(ris);
 		}
-		// input.reset();
-		// this.text = extractText(input);
+		while (ris.read() != -1) {
+		}
+		ris.rewind();
+		// Extract document full text
+		this.text = extractText(ris);
 	}
 
 	/**
@@ -77,7 +84,7 @@ public abstract class MSExtractor {
 	 * 
 	 * @return the content text of the document
 	 */
-	protected String getText() {
+	public String getText() {
 		return this.text;
 	}
 

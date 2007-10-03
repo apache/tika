@@ -57,7 +57,7 @@ Unreleased changes (0.1-dev)
 
 26. TIKA-38 - TXTParser adds a space to the content it reads from a file (K. Bennett & ridabenjelloun)
 
-27. TIKA-35 - Extract MsOffice properties (ridabenjelloun)
+27. TIKA-35 - Extract MsOffice properties, use RereadableInputStream devloped by K. Bennett (ridabenjelloun & K. Bennett)
 
 28. TIKA-39 - Excel parsing improvements (siren & ridabenjelloun)
 

@@ -17,6 +17,7 @@
 package org.apache.tika.utils;
 
 // JDK imports
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -171,7 +172,7 @@ public class ParseUtils implements TikaMimeKeys {
     public static String getStringContent(
             File documentFile, TikaConfig config, String mimeType)
             throws TikaException, IOException {
-        InputStream stream = new FileInputStream(documentFile);
+        InputStream stream = new BufferedInputStream(new FileInputStream(documentFile));
         try {
             return getStringContent(stream, config, mimeType);
         } finally {

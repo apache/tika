@@ -23,7 +23,6 @@ import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.MSExtractor;
-import org.apache.tika.utils.Utils;
 
 /**
  * Excel parser
@@ -35,9 +34,8 @@ public class MsExcelParser extends Parser {
 		try {
 			MSExtractor extractor = new ExcelExtractor();
 			extractor.setContents(contents);
-			InputStream[] isa = Utils.copyInputStream(stream, 2);
-			extractor.extractProperties(isa[0]);
-			return extractor.extractText(isa[1]);
+			extractor.extract(stream);
+			return extractor.getText();
 		} catch (IOException e) {
 			throw e;
 		} catch (Exception e) {

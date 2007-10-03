@@ -158,48 +158,4 @@ public class Utils {
 		}
 	}
 
-	/**
-	 * Get the contents of an <code>InputStream</code> as a
-	 * <code>byte[]</code>.
-	 * <p>
-	 * This method buffers the input internally, so there is no need to use a
-	 * 
-	 * <code>BufferedInputStream</code>.
-	 * 
-	 * @param input
-	 *            the <code>InputStream</code> to read from
-	 * @return the requested byte array
-	 * @throws NullPointerException
-	 *             if the input is null
-	 * 
-	 * @throws IOException
-	 *             if an I/O error occurs
-	 */
-	public static byte[] toByteArray(InputStream input) throws IOException {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		copy(input, output);
-		return output.toByteArray();
-	}
-
-	public static long copy(InputStream input, OutputStream output)
-			throws IOException {
-		byte[] buffer = new byte[1024];
-		long count = 0;
-		int n = 0;
-		while (-1 != (n = input.read(buffer))) {
-			output.write(buffer, 0, n);
-			count += n;
-		}
-		return count;
-	}
-	
-	public static InputStream[] copyInputStream(InputStream is, int nbCopies) throws IOException {      
-		InputStream[] isa = new InputStream[nbCopies];
-		byte[] content = toByteArray(is);
-        for (int i = 0; i < nbCopies; i++) {
-			isa[i] = new ByteArrayInputStream(content);
-		}
-        return isa;
-}
-
 }
