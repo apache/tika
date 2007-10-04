@@ -7,6 +7,7 @@
                 <namespace>http://purl.org/dc/elements/1.1/</namespace>
                 <mime>application/xml</mime>
                 <extract>
+                	<content name="fullText" xpathSelect="//*"/>
                     <content name="title" xpathSelect="//dc:title"/>
                     <content name="subject" xpathSelect="//dc:subject"/>
                     <content name="creator" xpathSelect="//dc:creator"/>

@@ -20,10 +20,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.apache.tika.config.Content;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
@@ -40,6 +42,7 @@ import org.jdom.JDOMException;
 public class TestParsers extends TestCase {
 
 	private TikaConfig tc;
+
 	private File testFilesBaseDir;
 
 	public void setUp() throws JDOMException, IOException {
@@ -61,16 +64,13 @@ public class TestParsers extends TestCase {
 		 */
 
 		// FIXME for now, fix filenames according to Maven testing layout
-        
-  // The file below should be the default configuration for the test of
-  // getDefaultConfig() to be legitimate.
-  final String tikaConfigFilename
-                = "target/classes/org/apache/tika/tika-config.xml";
+		// The file below should be the default configuration for the test of
+		// getDefaultConfig() to be legitimate.
+		final String tikaConfigFilename = "target/classes/org/apache/tika/tika-config.xml";
 
-  final String log4jPropertiesFilename
-                = "target/classes/log4j/log4j.properties";
+		final String log4jPropertiesFilename = "target/classes/log4j/log4j.properties";
 
-        testFilesBaseDir = new File("src/test/resources/test-documents");
+		testFilesBaseDir = new File("src/test/resources/test-documents");
 
 		tc = new TikaConfig(tikaConfigFilename);
 
@@ -81,10 +81,10 @@ public class TestParsers extends TestCase {
 		File file = getTestFile("testPDF.pdf");
 		String s1 = ParseUtils.getStringContent(file, tc);
 		String s2 = ParseUtils.getStringContent(file, tc, "application/pdf");
-        String s3 = ParseUtils.getStringContent(file,
-                TikaConfig.getDefaultConfig());
-        assertEquals(s1, s2);
-        assertEquals(s1, s3);
+		String s3 = ParseUtils.getStringContent(file, TikaConfig
+				.getDefaultConfig());
+		assertEquals(s1, s2);
+		assertEquals(s1, s3);
 	}
 
 	public void testTXTExtraction() throws Exception {
@@ -149,10 +149,10 @@ public class TestParsers extends TestCase {
 
 	public void testEXCELExtraction() throws Exception {
 		final String expected = "Numbers and their Squares Number Square 1.0 "
-                + "1.0 2.0 4.0 3.0 9.0 4.0 16.0 5.0 25.0 6.0 36.0 7.0 49.0 8.0 "
-                + "64.0 9.0 81.0 10.0 100.0 11.0 121.0 12.0 144.0 13.0 169.0 "
-                + "14.0 196.0 15.0 225.0 Written and saved in Microsoft Excel "
-                + "X for Mac Service Release 1.";
+				+ "1.0 2.0 4.0 3.0 9.0 4.0 16.0 5.0 25.0 6.0 36.0 7.0 49.0 8.0 "
+				+ "64.0 9.0 81.0 10.0 100.0 11.0 121.0 12.0 144.0 13.0 169.0 "
+				+ "14.0 196.0 15.0 225.0 Written and saved in Microsoft Excel "
+				+ "X for Mac Service Release 1.";
 		File file = getTestFile("testEXCEL.xls");
 		String s1 = ParseUtils.getStringContent(file, tc);
 		String s2 = ParseUtils.getStringContent(file, tc,
@@ -210,6 +210,35 @@ public class TestParsers extends TestCase {
 		final String text = Utils.toString(contents);
 		final String expected = "Test Indexation Html";
 		assertTrue("text contains '" + expected + "'", text.contains(expected));
+	}
+
+	public void testZipExtraction() throws Exception {
+		File zip = getTestFile("test-documents.zip");
+		List<Parser> parsers = ParseUtils.getParsersFromZip(zip, tc);
+		List<File> zipFiles = Utils.unzip(new FileInputStream(zip));
+		for (int i = 0; i < parsers.size(); i++) {
+			Parser zipEntryParser = parsers.get(i);
+			assertNotNull(zipEntryParser);
+			assertNotNull(zipEntryParser.getMimeType());
+			for (int j = 0; j < zipFiles.size(); j++) {
+				if (zipEntryParser.getMimeType().equalsIgnoreCase(
+						tc.getMimeRepository().getMimeType(zipFiles.get(j))
+								.getName())) {
+					ParserConfig config = tc.getParserConfig(zipEntryParser
+							.getMimeType());
+					Map<String, Content> contents = config.getContents();
+					assertNotNull(contents);
+					InputStream stream = new FileInputStream(zipFiles.get(j));
+					try {
+						zipEntryParser.getContents(stream, contents);
+						assertNotNull(contents.get("fullText"));
+					} finally {
+						stream.close();
+					}
+				}
+			}
+
+		}
 	}
 
 	private File getTestFile(String filename) {

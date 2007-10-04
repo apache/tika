@@ -29,8 +29,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -120,6 +118,7 @@ public class Utils {
 				saveInputStreamInFile(isEntry, new BufferedOutputStream(
 						new FileOutputStream(file)));
 				res.add(file);
+				isEntry.close();
 			}
 			in.close();
 		} catch (IOException e) {
