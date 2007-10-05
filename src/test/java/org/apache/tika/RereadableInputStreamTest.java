@@ -29,41 +29,41 @@ import junit.framework.TestCase;
 
 public class RereadableInputStreamTest extends TestCase {
 
-	private final int TEST_SIZE = 3;
+    private final int TEST_SIZE = 3;
 
-	private final int MEMORY_THRESHOLD = 1;
+    private final int MEMORY_THRESHOLD = 1;
 
-	private final int NUM_PASSES = 4;
+    private final int NUM_PASSES = 4;
 
-	public void test() throws IOException {
+    public void test() throws IOException {
 
-		File file = createTestFile();
-		InputStream is = new BufferedInputStream(new FileInputStream(file));
-		RereadableInputStream ris = new RereadableInputStream(is,
-				MEMORY_THRESHOLD);
-		try {
-			for (int pass = 0; pass < NUM_PASSES; pass++) {
-				for (int byteNum = 0; byteNum < TEST_SIZE; byteNum++) {
-					int byteRead = ris.read();
-					assertEquals("Pass = " + pass + ", byte num should be "
-							+ byteNum + " but is " + byteRead + ".", byteNum,
-							byteRead);
-				}
-				ris.rewind();
-			}
-		} finally {
-			is.close();
-			ris.close();
-		}
-	}
+        File file = createTestFile();
+        InputStream is = new BufferedInputStream(new FileInputStream(file));
+        RereadableInputStream ris = new RereadableInputStream(is,
+                MEMORY_THRESHOLD);
+        try {
+            for (int pass = 0; pass < NUM_PASSES; pass++) {
+                for (int byteNum = 0; byteNum < TEST_SIZE; byteNum++) {
+                    int byteRead = ris.read();
+                    assertEquals("Pass = " + pass + ", byte num should be "
+                            + byteNum + " but is " + byteRead + ".", byteNum,
+                            byteRead);
+                }
+                ris.rewind();
+            }
+        } finally {
+            is.close();
+            ris.close();
+        }
+    }
 
-	private File createTestFile() throws IOException {
-		File testfile = File.createTempFile("ris_test", ".tmp");
-		FileOutputStream fos = new FileOutputStream(testfile);
-		for (int i = 0; i < TEST_SIZE; i++) {
-			fos.write(i);
-		}
-		fos.close();
-		return testfile;
-	}
+    private File createTestFile() throws IOException {
+        File testfile = File.createTempFile("ris_test", ".tmp");
+        FileOutputStream fos = new FileOutputStream(testfile);
+        for (int i = 0; i < TEST_SIZE; i++) {
+            fos.write(i);
+        }
+        fos.close();
+        return testfile;
+    }
 }

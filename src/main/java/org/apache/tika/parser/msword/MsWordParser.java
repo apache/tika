@@ -29,18 +29,18 @@ import org.apache.tika.utils.MSExtractor;
  */
 public class MsWordParser extends Parser {
 
-	protected String parse(InputStream stream, Iterable<Content> contents)
-			throws IOException, TikaException {
-		try {
-			MSExtractor extractor = new WordExtractor();
-			extractor.setContents(contents);
-			extractor.extract(stream);
-			return extractor.getText();
-		} catch (IOException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new TikaException("Error parsing a Word document", e);
-		}
-	}
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        try {
+            MSExtractor extractor = new WordExtractor();
+            extractor.setContents(contents);
+            extractor.extract(stream);
+            return extractor.getText();
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaException("Error parsing a Word document", e);
+        }
+    }
 
 }

@@ -28,80 +28,80 @@ import java.io.OutputStream;
 
 public class RereadableInputStream extends InputStream {
 
-	private InputStream inputStream;
+    private InputStream inputStream;
 
-	private int maxBytesInMemory;
+    private int maxBytesInMemory;
 
-	private boolean firstPass = true;
+    private boolean firstPass = true;
 
-	private boolean bufferIsInFile;
+    private boolean bufferIsInFile;
 
-	private byte[] byteBuffer;
+    private byte[] byteBuffer;
 
-	private int size;
+    private int size;
 
-	private File storeFile;
+    private File storeFile;
 
-	private OutputStream storeOutputStream;
+    private OutputStream storeOutputStream;
 
-	public RereadableInputStream(InputStream inputStream, int maxBytesInMemory) {
-		this.inputStream = inputStream;
-		this.maxBytesInMemory = maxBytesInMemory;
-		byteBuffer = new byte[maxBytesInMemory];
-	}
+    public RereadableInputStream(InputStream inputStream, int maxBytesInMemory) {
+        this.inputStream = inputStream;
+        this.maxBytesInMemory = maxBytesInMemory;
+        byteBuffer = new byte[maxBytesInMemory];
+    }
 
-	public int read() throws IOException {
-		int inputByte = inputStream.read();
-		if (firstPass) {
-			saveByte(inputByte);
-		}
-		return inputByte;
-	}
+    public int read() throws IOException {
+        int inputByte = inputStream.read();
+        if (firstPass) {
+            saveByte(inputByte);
+        }
+        return inputByte;
+    }
 
-	private void saveByte(int inputByte) throws IOException {
+    private void saveByte(int inputByte) throws IOException {
 
-		if (!bufferIsInFile) {
-			boolean switchToFile = (size == (maxBytesInMemory));
-			if (switchToFile) {
-				storeFile = File.createTempFile("streamstore_", ".tmp");
-				bufferIsInFile = true;
-				storeOutputStream = new BufferedOutputStream(
-						new FileOutputStream(storeFile));
-				storeOutputStream.write(byteBuffer, 0, size);
-				storeOutputStream.write(inputByte);
-			} else {
-				byteBuffer[size] = (byte) inputByte;
-			}
-		} else {
-			storeOutputStream.write(inputByte);
-		}
-		++size;
-	}
+        if (!bufferIsInFile) {
+            boolean switchToFile = (size == (maxBytesInMemory));
+            if (switchToFile) {
+                storeFile = File.createTempFile("streamstore_", ".tmp");
+                bufferIsInFile = true;
+                storeOutputStream = new BufferedOutputStream(
+                        new FileOutputStream(storeFile));
+                storeOutputStream.write(byteBuffer, 0, size);
+                storeOutputStream.write(inputByte);
+            } else {
+                byteBuffer[size] = (byte) inputByte;
+            }
+        } else {
+            storeOutputStream.write(inputByte);
+        }
+        ++size;
+    }
 
-	public void rewind() throws IOException {
-		closeStream();
-		if (storeOutputStream != null) {
-			storeOutputStream.close();
-			storeOutputStream = null;
-		}
-		firstPass = false;
-		boolean newStreamIsInMemory = (size < maxBytesInMemory);
-		inputStream = newStreamIsInMemory ? new ByteArrayInputStream(byteBuffer)
-				: new BufferedInputStream(new FileInputStream(storeFile));
-	}
+    public void rewind() throws IOException {
+        closeStream();
+        if (storeOutputStream != null) {
+            storeOutputStream.close();
+            storeOutputStream = null;
+        }
+        firstPass = false;
+        boolean newStreamIsInMemory = (size < maxBytesInMemory);
+        inputStream = newStreamIsInMemory ? new ByteArrayInputStream(byteBuffer)
+        : new BufferedInputStream(new FileInputStream(storeFile));
+    }
 
-	public void closeStream() throws IOException {
-		if (inputStream != null) {
-			inputStream.close();
-			inputStream = null;
-		}
-	}
+    public void closeStream() throws IOException {
+        if (inputStream != null) {
+            inputStream.close();
+            inputStream = null;
+        }
+    }
 
-	public void close() throws IOException {
-		closeStream();
-		super.close();
-		if (storeFile != null) {
-			storeFile.delete();
-		}
-	}
+    public void close() throws IOException {
+        closeStream();
+        super.close();
+        if (storeFile != null) {
+            storeFile.delete();
+        }
+    }
 }

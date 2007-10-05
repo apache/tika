@@ -29,18 +29,18 @@ import org.apache.tika.utils.MSExtractor;
  */
 public class MsExcelParser extends Parser {
 
-	protected String parse(InputStream stream, Iterable<Content> contents)
-			throws IOException, TikaException {
-		try {
-			MSExtractor extractor = new ExcelExtractor();
-			extractor.setContents(contents);
-			extractor.extract(stream);
-			return extractor.getText();
-		} catch (IOException e) {
-			throw e;
-		} catch (Exception e) {
-			throw new TikaException("Error parsing an Excel document", e);
-		}
-	}
+    protected String parse(InputStream stream, Iterable<Content> contents)
+            throws IOException, TikaException {
+        try {
+            MSExtractor extractor = new ExcelExtractor();
+            extractor.setContents(contents);
+            extractor.extract(stream);
+            return extractor.getText();
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new TikaException("Error parsing an Excel document", e);
+        }
+    }
 
 }

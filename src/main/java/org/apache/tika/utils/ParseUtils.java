@@ -16,7 +16,7 @@
  */
 package org.apache.tika.utils;
 
-// JDK imports
+//JDK imports
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -40,221 +40,221 @@ import org.apache.tika.parser.ParserFactory;
  */
 public class ParseUtils implements TikaMimeKeys {
 
-	/**
-	 * Returns a parser that can handle the specified MIME type, and is set to
-	 * receive input from a stream opened from the specified URL. NB: Close the
-	 * input stream when it is no longer needed!
-	 * 
-	 * @param config
-	 * @param mimeType
-	 *            the document's MIME type
-	 * @return a parser appropriate to this MIME type
-	 * @throws TikaException
-	 */
-	public static Parser getParser(TikaConfig config, String mimeType)
-			throws TikaException {
-		ParserConfig pc = config.getParserConfig(mimeType);
-		Parser parser = ParserFactory.getParser(pc);
-		parser.setMimeType(mimeType);
-		return parser;
-	}
+    /**
+     * Returns a parser that can handle the specified MIME type, and is set to
+     * receive input from a stream opened from the specified URL. NB: Close the
+     * input stream when it is no longer needed!
+     * 
+     * @param config
+     * @param mimeType
+     *            the document's MIME type
+     * @return a parser appropriate to this MIME type
+     * @throws TikaException
+     */
+    public static Parser getParser(TikaConfig config, String mimeType)
+            throws TikaException {
+        ParserConfig pc = config.getParserConfig(mimeType);
+        Parser parser = ParserFactory.getParser(pc);
+        parser.setMimeType(mimeType);
+        return parser;
+    }
 
-	/**
-	 * Returns a parser that can handle the specified MIME type, and is set to
-	 * receive input from a stream opened from the specified URL. The MIME type
-	 * is determined automatically. NB: Close the input stream when it is no
-	 * longer needed!
-	 * 
-	 * @param documentUrl
-	 *            URL pointing to the document to parse
-	 * @param config
-	 * @return a parser appropriate to this MIME type and ready to read input
-	 *         from the specified document
-	 * @throws TikaException
-	 */
-	public static Parser getParser(URL documentUrl, TikaConfig config)
-			throws TikaException {
-		String mimetype = config.getMimeRepository().getMimeType(documentUrl)
-				.getName();
-		return getParser(config, mimetype);
-	}
+    /**
+     * Returns a parser that can handle the specified MIME type, and is set to
+     * receive input from a stream opened from the specified URL. The MIME type
+     * is determined automatically. NB: Close the input stream when it is no
+     * longer needed!
+     * 
+     * @param documentUrl
+     *            URL pointing to the document to parse
+     * @param config
+     * @return a parser appropriate to this MIME type and ready to read input
+     *         from the specified document
+     * @throws TikaException
+     */
+    public static Parser getParser(URL documentUrl, TikaConfig config)
+            throws TikaException {
+        String mimetype = config.getMimeRepository().getMimeType(documentUrl)
+        .getName();
+        return getParser(config, mimetype);
+    }
 
-	/**
-	 * Returns a parser that can handle the specified MIME type, and is set to
-	 * receive input from a stream opened from the specified URL. NB: Close the
-	 * input stream when it is no longer needed!
-	 * 
-	 * @param documentFile
-	 *            File object pointing to the document to parse
-	 * @param config
-	 * @return a parser appropriate to this MIME type and ready to read input
-	 *         from the specified document
-	 * @throws TikaException
-	 */
-	public static Parser getParser(File documentFile, TikaConfig config)
-			throws TikaException {
-		String mimetype = config.getMimeRepository().getMimeType(documentFile)
-				.getName();
-		return getParser(config, mimetype);
-	}
+    /**
+     * Returns a parser that can handle the specified MIME type, and is set to
+     * receive input from a stream opened from the specified URL. NB: Close the
+     * input stream when it is no longer needed!
+     * 
+     * @param documentFile
+     *            File object pointing to the document to parse
+     * @param config
+     * @return a parser appropriate to this MIME type and ready to read input
+     *         from the specified document
+     * @throws TikaException
+     */
+    public static Parser getParser(File documentFile, TikaConfig config)
+            throws TikaException {
+        String mimetype = config.getMimeRepository().getMimeType(documentFile)
+        .getName();
+        return getParser(config, mimetype);
+    }
 
-	/**
-	 * Returns a list of parsers from zip InputStream
-	 * 
-	 * @param zip
-	 *            InputStream
-	 * @param config
-	 * @return a list of parsers from zip file
-	 * @throws TikaException
-	 */
-	private static List<Parser> getParsersFromZip(InputStream zipIs,
-			TikaConfig config) throws TikaException {
-		List<Parser> parsers = new ArrayList<Parser>();
-		List<File> zipFiles = Utils.unzip(zipIs);
-		for (int i = 0; i < zipFiles.size(); i++) {
-			File zipEntry = zipFiles.get(i);
-			parsers.add(getParser(zipEntry, config));
-		}
-		return parsers;
-	}
+    /**
+     * Returns a list of parsers from zip InputStream
+     * 
+     * @param zip
+     *            InputStream
+     * @param config
+     * @return a list of parsers from zip file
+     * @throws TikaException
+     */
+    private static List<Parser> getParsersFromZip(InputStream zipIs,
+            TikaConfig config) throws TikaException {
+        List<Parser> parsers = new ArrayList<Parser>();
+        List<File> zipFiles = Utils.unzip(zipIs);
+        for (int i = 0; i < zipFiles.size(); i++) {
+            File zipEntry = zipFiles.get(i);
+            parsers.add(getParser(zipEntry, config));
+        }
+        return parsers;
+    }
 
-	/**
-	 * Returns a list of parsers from zip File
-	 * 
-	 * @param zip
-	 *            File
-	 * @param config
-	 * @return a list of parsers from zip file
-	 * @throws TikaException
-	 * @throws FileNotFoundException
-	 */
-	public static List<Parser> getParsersFromZip(File zip, TikaConfig config)
-			throws TikaException, FileNotFoundException {
-		String zipMimeType = config.getMimeRepository().getMimeType(zip)
-				.getName();
-		if (!zipMimeType.equalsIgnoreCase("application/zip")) {
-			throw new TikaException("The file you are using is note a zip file");
-		}
-		return getParsersFromZip(new FileInputStream(zip), config);
-	}
+    /**
+     * Returns a list of parsers from zip File
+     * 
+     * @param zip
+     *            File
+     * @param config
+     * @return a list of parsers from zip file
+     * @throws TikaException
+     * @throws FileNotFoundException
+     */
+    public static List<Parser> getParsersFromZip(File zip, TikaConfig config)
+            throws TikaException, FileNotFoundException {
+        String zipMimeType = config.getMimeRepository().getMimeType(zip)
+        .getName();
+        if (!zipMimeType.equalsIgnoreCase("application/zip")) {
+            throw new TikaException("The file you are using is note a zip file");
+        }
+        return getParsersFromZip(new FileInputStream(zip), config);
+    }
 
-	/**
-	 * Returns a list of parsers from URL
-	 * 
-	 * @param URL
-	 * @param config
-	 * @return a list of parsers from zip file
-	 * @throws TikaException
-	 * @throws IOException
-	 */
-	public static List<Parser> getParsersFromZip(URL zip, TikaConfig config)
-			throws TikaException, IOException {
-		String zipMimeType = config.getMimeRepository().getMimeType(zip)
-				.getName();
-		if (!zipMimeType.equalsIgnoreCase("application/zip")) {
-			throw new TikaException("The file you are using is note a zip file");
-		}
-		return getParsersFromZip(zip.openStream(), config);
-	}
+    /**
+     * Returns a list of parsers from URL
+     * 
+     * @param URL
+     * @param config
+     * @return a list of parsers from zip file
+     * @throws TikaException
+     * @throws IOException
+     */
+    public static List<Parser> getParsersFromZip(URL zip, TikaConfig config)
+            throws TikaException, IOException {
+        String zipMimeType = config.getMimeRepository().getMimeType(zip)
+        .getName();
+        if (!zipMimeType.equalsIgnoreCase("application/zip")) {
+            throw new TikaException("The file you are using is note a zip file");
+        }
+        return getParsersFromZip(zip.openStream(), config);
+    }
 
-	/**
-	 * Gets the string content of a document read from an input stream.
-	 * 
-	 * @param inputStream
-	 *            the stream from which to read document data
-	 * @param config
-	 * @param mimeType
-	 *            MIME type of the data
-	 * @return the string content parsed from the document
-	 * @throws TikaException
-	 * @throws IOException
-	 */
-	public static String getStringContent(InputStream inputStream,
-			TikaConfig config, String mimeType) throws TikaException,
-			IOException {
-		ParserConfig pc = config.getParserConfig(mimeType);
-		Parser parser = ParserFactory.getParser(pc);
-		parser.setMimeType(mimeType);
-		return parser.getContents(inputStream, pc.getContents());
-	}
+    /**
+     * Gets the string content of a document read from an input stream.
+     * 
+     * @param inputStream
+     *            the stream from which to read document data
+     * @param config
+     * @param mimeType
+     *            MIME type of the data
+     * @return the string content parsed from the document
+     * @throws TikaException
+     * @throws IOException
+     */
+    public static String getStringContent(InputStream inputStream,
+            TikaConfig config, String mimeType) throws TikaException,
+            IOException {
+        ParserConfig pc = config.getParserConfig(mimeType);
+        Parser parser = ParserFactory.getParser(pc);
+        parser.setMimeType(mimeType);
+        return parser.getContents(inputStream, pc.getContents());
+    }
 
-	/**
-	 * Gets the string content of a document read from an input stream.
-	 * 
-	 * @param documentUrl
-	 *            URL pointing to the document to parse
-	 * @param config
-	 * @return the string content parsed from the document
-	 * @throws TikaException
-	 * @throws IOException
-	 */
-	public static String getStringContent(URL documentUrl, TikaConfig config)
-			throws TikaException, IOException {
-		String mime = config.getMimeRepository().getMimeType(documentUrl)
-				.getName();
-		return getStringContent(documentUrl, config, mime);
-	}
+    /**
+     * Gets the string content of a document read from an input stream.
+     * 
+     * @param documentUrl
+     *            URL pointing to the document to parse
+     * @param config
+     * @return the string content parsed from the document
+     * @throws TikaException
+     * @throws IOException
+     */
+    public static String getStringContent(URL documentUrl, TikaConfig config)
+            throws TikaException, IOException {
+        String mime = config.getMimeRepository().getMimeType(documentUrl)
+        .getName();
+        return getStringContent(documentUrl, config, mime);
+    }
 
-	/**
-	 * Gets the string content of a document read from an input stream.
-	 * 
-	 * @param documentUrl
-	 *            URL pointing to the document to parse
-	 * @param config
-	 * @param mimeType
-	 *            MIME type of the data
-	 * @return the string content parsed from the document
-	 * @throws TikaException
-	 * @throws IOException
-	 */
-	public static String getStringContent(URL documentUrl, TikaConfig config,
-			String mimeType) throws TikaException, IOException {
-		InputStream stream = documentUrl.openStream();
-		try {
-			return getStringContent(stream, config, mimeType);
-		} finally {
-			stream.close();
-		}
-	}
+    /**
+     * Gets the string content of a document read from an input stream.
+     * 
+     * @param documentUrl
+     *            URL pointing to the document to parse
+     * @param config
+     * @param mimeType
+     *            MIME type of the data
+     * @return the string content parsed from the document
+     * @throws TikaException
+     * @throws IOException
+     */
+    public static String getStringContent(URL documentUrl, TikaConfig config,
+            String mimeType) throws TikaException, IOException {
+        InputStream stream = documentUrl.openStream();
+        try {
+            return getStringContent(stream, config, mimeType);
+        } finally {
+            stream.close();
+        }
+    }
 
-	/**
-	 * Gets the string content of a document read from an input stream.
-	 * 
-	 * @param documentFile
-	 *            File object pointing to the document to parse
-	 * @param config
-	 * @param mimeType
-	 *            MIME type of the data
-	 * @return the string content parsed from the document
-	 * @throws TikaException
-	 * @throws IOException
-	 */
-	public static String getStringContent(File documentFile, TikaConfig config,
-			String mimeType) throws TikaException, IOException {
-		InputStream stream = new BufferedInputStream(new FileInputStream(
-				documentFile));
-		try {
-			return getStringContent(stream, config, mimeType);
-		} finally {
-			stream.close();
-		}
-	}
+    /**
+     * Gets the string content of a document read from an input stream.
+     * 
+     * @param documentFile
+     *            File object pointing to the document to parse
+     * @param config
+     * @param mimeType
+     *            MIME type of the data
+     * @return the string content parsed from the document
+     * @throws TikaException
+     * @throws IOException
+     */
+    public static String getStringContent(File documentFile, TikaConfig config,
+            String mimeType) throws TikaException, IOException {
+        InputStream stream = new BufferedInputStream(new FileInputStream(
+                documentFile));
+        try {
+            return getStringContent(stream, config, mimeType);
+        } finally {
+            stream.close();
+        }
+    }
 
-	/**
-	 * Gets the string content of a document read from an input stream.
-	 * 
-	 * @param documentFile
-	 *            File object pointing to the document to parse
-	 * @param config
-	 * @return the string content parsed from the document
-	 * @throws TikaException
-	 * @throws IOException
-	 */
-	public static String getStringContent(File documentFile, TikaConfig config)
-			throws TikaException, IOException {
-		String mime = config.getMimeRepository().getMimeType(documentFile)
-				.getName();
-		return getStringContent(documentFile, config, mime);
-	}
+    /**
+     * Gets the string content of a document read from an input stream.
+     * 
+     * @param documentFile
+     *            File object pointing to the document to parse
+     * @param config
+     * @return the string content parsed from the document
+     * @throws TikaException
+     * @throws IOException
+     */
+    public static String getStringContent(File documentFile, TikaConfig config)
+            throws TikaException, IOException {
+        String mime = config.getMimeRepository().getMimeType(documentFile)
+        .getName();
+        return getStringContent(documentFile, config, mime);
+    }
 
 }
