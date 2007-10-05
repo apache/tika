@@ -63,3 +63,5 @@ Unreleased changes (0.1-dev)
 
 29. TIKA-34 - Provide a method that will return a default configuration 
               (TikaConfig) (K. Bennett & mattmann)
+
+30. TIKA-42 - Content class needs (String, String, String) constructor (K. Bennett)

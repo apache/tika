@@ -34,6 +34,12 @@ public class Content {
 
     private String[] values;
 
+    public Content(String xPathSelect, String textSelect, String regexSelect) {
+        this.xPathSelect = xPathSelect;
+        this.textSelect = textSelect;
+        this.regexSelect = regexSelect;
+    }
+
     public Content(Element element) {
         xPathSelect = element.getAttributeValue("xpathSelect");
         textSelect = element.getAttributeValue("textSelect");
