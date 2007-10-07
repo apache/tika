@@ -23,6 +23,7 @@ import java.io.InputStreamReader;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 
 /**
@@ -30,7 +31,8 @@ import org.apache.tika.parser.Parser;
  */
 public class TXTParser implements Parser {
 
-    public String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(
+            InputStream stream, Iterable<Content> contents, Metadata metadata)
             throws IOException, TikaException {
         StringBuilder sb = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));

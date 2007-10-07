@@ -69,3 +69,5 @@ Unreleased changes (0.1-dev)
 31. TIKA-43 - Parser interface (jukka)
 
 32. TIKA-47 - Remove TikaLogger (jukka)
+
+33. TIKA-46 - Use Metadata in Parser (jukka & mattmann)

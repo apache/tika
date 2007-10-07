@@ -29,6 +29,7 @@ import java.util.zip.ZipInputStream;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.XMLParser;
 
@@ -75,14 +76,15 @@ public class OpenOfficeParser implements Parser {
         return xmlDoc;
     }
 
-    public String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(
+            InputStream stream, Iterable<Content> contents, Metadata metadata)
             throws IOException, TikaException {
         Document xmlDoc = parse(stream);
         XMLParser xp = new XMLParser();
         xp.getAllDocumentNs(xmlDoc);
         for (Content content : contents) {
             if (content.getXPathSelect() != null) {
-                xp.extractContent(xmlDoc, content);
+                xp.extractContent(xmlDoc, content, metadata);
             }
         }
         return xp.concatOccurrence(xmlDoc, "//*", " ");

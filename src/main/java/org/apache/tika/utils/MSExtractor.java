@@ -26,6 +26,7 @@ import org.apache.poi.poifs.eventfilesystem.POIFSReader;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
 import org.apache.tika.config.Content;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Defines a Microsoft document content extractor.
@@ -55,14 +56,15 @@ public abstract class MSExtractor {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void extract(InputStream input) throws Exception {
+    public void extract(InputStream input, Metadata metadata) throws Exception {
         RereadableInputStream ris = new RereadableInputStream(input,
                 MEMORY_THRESHOLD);
         try {
             // First, extract properties
             this.reader = new POIFSReader();
 
-            this.reader.registerListener(new PropertiesReaderListener(),
+            this.reader.registerListener(
+                    new PropertiesReaderListener(metadata),
                     SummaryInformation.DEFAULT_STREAM_NAME);
 
             if (input.available() > 0) {
@@ -94,6 +96,12 @@ public abstract class MSExtractor {
 
     private class PropertiesReaderListener implements POIFSReaderListener {
 
+        private final Metadata metadata;
+
+        public PropertiesReaderListener(Metadata metadata) {
+            this.metadata = metadata;
+        }
+
         public void processPOIFSReaderEvent(POIFSReaderEvent event) {
             if (!event.getName().startsWith(
                     SummaryInformation.DEFAULT_STREAM_NAME)) {
@@ -106,67 +114,67 @@ public abstract class MSExtractor {
                 for (Content content : contents) {
                     if (content.getTextSelect().equalsIgnoreCase("title")) {
                         if (si.getTitle() != null)
-                            content.setValue(si.getTitle());
+                            metadata.set(content.getName(), si.getTitle());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "author")) {
                         if (si.getAuthor() != null)
-                            content.setValue(si.getAuthor());
+                            metadata.set(content.getName(), si.getAuthor());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "keywords")) {
                         if (si.getKeywords() != null)
-                            content.setValue(si.getKeywords());
+                            metadata.set(content.getName(), si.getKeywords());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "subject")) {
                         if (si.getSubject() != null)
-                            content.setValue(si.getSubject());
+                            metadata.set(content.getName(), si.getSubject());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "lastauthor")) {
                         if (si.getLastAuthor() != null)
-                            content.setValue(si.getLastAuthor());
+                            metadata.set(content.getName(), si.getLastAuthor());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "comments")) {
                         if (si.getComments() != null)
-                            content.setValue(si.getComments());
+                            metadata.set(content.getName(), si.getComments());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "template")) {
                         if (si.getTemplate() != null)
-                            content.setValue(si.getTemplate());
+                            metadata.set(content.getName(), si.getTemplate());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "applicationname")) {
                         if (si.getApplicationName() != null)
-                            content.setValue(si.getApplicationName());
+                            metadata.set(content.getName(), si.getApplicationName());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "revnumber")) {
                         if (si.getRevNumber() != null)
-                            content.setValue(si.getRevNumber());
+                            metadata.set(content.getName(), si.getRevNumber());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "creationdate")) {
                         if (si.getCreateDateTime() != null)
-                            content.setValue(si.getCreateDateTime().toString());
+                            metadata.set(content.getName(), si.getCreateDateTime().toString());
                     } else if (content.getTextSelect().equalsIgnoreCase(
                     "charcount")) {
                         if (si.getCharCount() > 0)
-                            content.setValue("" + si.getCharCount());
+                            metadata.set(content.getName(), "" + si.getCharCount());
                     } else if (content.getTextSelect().equals("edittime")) {
                         if (si.getEditTime() > 0)
-                            content.setValue("" + si.getEditTime());
+                            metadata.set(content.getName(), "" + si.getEditTime());
                     } else if (content.getTextSelect().equals(
                     "lastsavedatetime")) {
                         if (si.getLastSaveDateTime() != null)
-                            content.setValue(si.getLastSaveDateTime()
-                                    .toString());
+                            metadata.set(content.getName(),
+                                    si.getLastSaveDateTime().toString());
                     } else if (content.getTextSelect().equals("pagecount")) {
                         if (si.getPageCount() > 0)
-                            content.setValue("" + si.getPageCount());
+                            metadata.set(content.getName(), "" + si.getPageCount());
                     } else if (content.getTextSelect().equals("security")) {
                         if (si.getSecurity() > 0)
-                            content.setValue("" + si.getSecurity());
+                            metadata.set(content.getName(), "" + si.getSecurity());
                     } else if (content.getTextSelect().equals("wordcount")) {
                         if (si.getWordCount() > 0)
-                            content.setValue("" + si.getWordCount());
+                            metadata.set(content.getName(), "" + si.getWordCount());
                     } else if (content.getTextSelect().equals("lastprinted")) {
                         if (si.getLastPrinted() != null)
-                            content.setValue(si.getLastPrinted().toString());
+                            metadata.set(content.getName(), si.getLastPrinted().toString());
                     }
 
                 }

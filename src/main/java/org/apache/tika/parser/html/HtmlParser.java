@@ -22,6 +22,7 @@ import java.io.InputStream;
 import org.apache.log4j.Logger;
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -37,7 +38,8 @@ public class HtmlParser implements Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    public String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(
+            InputStream stream, Iterable<Content> contents, Metadata metadata)
             throws IOException, TikaException {
         Tidy tidy = new Tidy();
         tidy.setQuiet(true);
@@ -47,13 +49,14 @@ public class HtmlParser implements Parser {
             String text = content.getTextSelect();
             if (text != null && !text.equalsIgnoreCase("fulltext")
                     && !text.equalsIgnoreCase("summary")) {
-                extractElementTxt((Element) root, content);
+                extractElementTxt((Element) root, content, metadata);
             }
         }
         return getTextContent(root);
     }
 
-    private void extractElementTxt(Element root, Content content) {
+    private void extractElementTxt(
+            Element root, Content content, Metadata metadata) {
         NodeList children = root.getElementsByTagName(content.getTextSelect());
         if (children != null) {
             if (children.getLength() > 0) {
@@ -61,21 +64,15 @@ public class HtmlParser implements Parser {
                     Element node = (Element) children.item(0);
                     Text txt = (Text) node.getFirstChild();
                     if (txt != null) {
-                        content.setValue(txt.getData());
-
+                        metadata.set(content.getName(), txt.getData());
                     }
                 } else {
-                    String[] values = new String[100];
                     for (int i = 0; i < children.getLength(); i++) {
                         Element node = (Element) children.item(i);
                         Text txt = (Text) node.getFirstChild();
                         if (txt != null) {
-                            values[i] = txt.getData();
+                            metadata.add(content.getName(), txt.getData());
                         }
-                    }
-                    if (values.length > 0) {
-                        content.setValue(values[0]);
-                        content.setValues(values);
                     }
                 }
             }

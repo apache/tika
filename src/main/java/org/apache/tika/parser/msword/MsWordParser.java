@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.MSExtractor;
 
@@ -29,12 +30,13 @@ import org.apache.tika.utils.MSExtractor;
  */
 public class MsWordParser implements Parser {
 
-    public String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(
+            InputStream stream, Iterable<Content> contents, Metadata metadata)
             throws IOException, TikaException {
         try {
             MSExtractor extractor = new WordExtractor();
             extractor.setContents(contents);
-            extractor.extract(stream);
+            extractor.extract(stream, metadata);
             return extractor.getText();
         } catch (IOException e) {
             throw e;

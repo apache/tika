@@ -30,6 +30,7 @@ import java.util.List;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
@@ -172,7 +173,7 @@ public class ParseUtils implements TikaMimeKeys {
             IOException {
         ParserConfig pc = config.getParserConfig(mimeType);
         Parser parser = ParserFactory.getParser(pc);
-        return parser.parse(inputStream, pc.getContents().values());
+        return parser.parse(inputStream, pc.getContents(), new Metadata());
     }
 
     /**

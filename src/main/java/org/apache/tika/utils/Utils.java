@@ -24,18 +24,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.log4j.Logger;
-import org.apache.tika.config.Content;
 import org.jdom.Document;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
@@ -51,40 +45,6 @@ import org.jdom.output.XMLOutputter;
 public class Utils {
 
     static Logger logger = Logger.getRootLogger();
-
-    public static String toString(Map<String, Content> structuredContent) {
-        final StringWriter sw = new StringWriter();
-        print(structuredContent, sw);
-        return sw.toString();
-    }
-
-    public static void print(Map<String, Content> structuredContent) {
-        print(structuredContent, new OutputStreamWriter(System.out));
-    }
-
-    public static void print(Map<String, Content> structuredContent,
-            Writer outputWriter) {
-        final PrintWriter output = new PrintWriter(outputWriter, true);
-        for (Map.Entry<String, Content> entry : structuredContent.entrySet()) {
-            Content ct = entry.getValue();
-            if (ct.getValue() != null) {
-                output.print(entry.getKey() + ": ");
-                output.println(ct.getValue());
-            } else if (ct.getValues() != null) {
-                output.print(entry.getKey() + ": ");
-                for (int j = 0; j < ct.getValues().length; j++) {
-                    if (j == 0)
-                        output.println(ct.getValues()[j]);
-                    else {
-                        output.println("\t" + ct.getValues()[j]);
-                    }
-                }
-            } else { // there are no values, but there is a Content object
-                System.out.println("Content '" + entry.getKey()
-                        + "' has no values.");
-            }
-        }
-    }
 
     public static Document parse(InputStream is) {
         org.jdom.Document xmlDoc = new org.jdom.Document();

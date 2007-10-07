@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.Utils;
 
@@ -60,13 +61,14 @@ public class XMLParser implements Parser {
         this.namespace = namespace;
     }
 
-    public String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(
+            InputStream stream, Iterable<Content> contents, Metadata metadata)
             throws IOException, TikaException {
         Document xmlDoc = Utils.parse(stream);
         if (exist(getAllDocumentNs(xmlDoc), getNamespace())) {
             for (Content content : contents) {
                 if (content.getXPathSelect() != null) {
-                    extractContent(xmlDoc, content);
+                    extractContent(xmlDoc, content, metadata);
                 }
             }
         }
@@ -167,43 +169,36 @@ public class XMLParser implements Parser {
         }
     }
 
-    public void extractContent(Document xmlDoc, Content content) {
+    public void extractContent(
+            Document xmlDoc, Content content, Metadata metadata) {
         try {
             JDOMXPath xp = new JDOMXPath(content.getXPathSelect());
             xp.setNamespaceContext(nsc);
             List selectNodes = xp.selectNodes(xmlDoc);
             Iterator nodes = selectNodes.iterator();
-            String[] values = new String[selectNodes.size()];
-            int i = 0;
             while (nodes.hasNext()) {
                 Object node = nodes.next();
                 if (node instanceof Element) {
                     Element elem = (Element) node;
                     if (StringUtils.isNotBlank(elem.getText())) {
-                        values[i] = elem.getText().trim();
+                        metadata.add(content.getName(), elem.getText().trim());
                     }
                 } else if (node instanceof Attribute) {
                     Attribute att = (Attribute) node;
-                    values[i] = att.getValue();
+                    metadata.add(content.getName(), att.getValue());
                 } else if (node instanceof Text) {
                     Text text = (Text) node;
-                    values[i] = text.getText();
+                    metadata.add(content.getName(), text.getText());
                 } else if (node instanceof Comment) {
                     Comment com = (Comment) node;
-                    values[i] = com.getText();
+                    metadata.add(content.getName(), com.getText());
                 } else if (node instanceof ProcessingInstruction) {
                     ProcessingInstruction pi = (ProcessingInstruction) node;
-                    values[i] = pi.getData();
+                    metadata.add(content.getName(), pi.getData());
                 } else if (node instanceof EntityRef) {
                     EntityRef er = (EntityRef) node;
-                    values[i] = er.toString();
-
+                    metadata.add(content.getName(), er.toString());
                 }
-                i++;
-            }
-            if (values.length > 0) {
-                content.setValue(values[0]);
-                content.setValues(values);
             }
         } catch (JaxenException e) {
             logger.error(e.getMessage());

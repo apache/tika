@@ -23,6 +23,7 @@ import java.util.Calendar;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 
 import org.pdfbox.pdmodel.PDDocument;
@@ -34,7 +35,8 @@ import org.pdfbox.util.PDFTextStripper;
  */
 public class PDFParser implements Parser {
 
-    public String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(
+            InputStream stream, Iterable<Content> contents, Metadata metadata)
             throws IOException, TikaException {
         try {
             PDDocument pdfDocument = PDDocument.load(stream);
@@ -48,28 +50,30 @@ public class PDFParser implements Parser {
                 for (Content content : contents) {
                     String text = content.getTextSelect();
                     if ("title".equalsIgnoreCase(text)) {
-                        content.setValue(metaData.getTitle());
+                        metadata.set(content.getName(), metaData.getTitle());
                     } else if ("author".equalsIgnoreCase(text)) {
-                        content.setValue(metaData.getAuthor());
+                        metadata.set(content.getName(), metaData.getAuthor());
                     } else if ("creator".equalsIgnoreCase(text)) {
-                        content.setValue(metaData.getCreator());
+                        metadata.set(content.getName(), metaData.getCreator());
                     } else if ("keywords".equalsIgnoreCase(text)) {
-                        content.setValue(metaData.getKeywords());
+                        metadata.set(content.getName(), metaData.getKeywords());
                     } else if ("producer".equalsIgnoreCase(text)) {
-                        content.setValue(metaData.getProducer());
+                        metadata.set(content.getName(), metaData.getProducer());
                     } else if ("subject".equalsIgnoreCase(text)) {
-                        content.setValue(metaData.getSubject());
+                        metadata.set(content.getName(), metaData.getSubject());
                     } else if ("trapped".equalsIgnoreCase(text)) {
-                        content.setValue(metaData.getTrapped());
+                        metadata.set(content.getName(), metaData.getTrapped());
                     } else if ("creationDate".equalsIgnoreCase(text)) {
                         Calendar calendar = metaData.getCreationDate();
                         if (calendar != null) {
-                            content.setValue(calendar.getTime().toString());
+                            metadata.set(content.getName(),
+                                    calendar.getTime().toString());
                         }
                     } else if ("modificationDate".equalsIgnoreCase(text)) {
                         Calendar calendar = metaData.getModificationDate();
                         if (calendar != null) {
-                            content.setValue(calendar.getTime().toString());
+                            metadata.set(content.getName(),
+                                    calendar.getTime().toString());
                         }
                     }
                 }

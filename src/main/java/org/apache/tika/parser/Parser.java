@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Tika parser interface
@@ -36,12 +37,14 @@ public interface Parser {
      * The responsibility to close the stream remains on the caller.
      *
      * @param stream the document to be parsed
-     * @param contents set of metadata information to extract
+     * @param contents configuration of metadata information to extract
+     * @param metadata document metadata
      * @return full text content of the document
      * @throws IOException if the document could not be read
      * @throws TikaException if the document could not be parsed
      */
-    String parse(InputStream stream, Iterable<Content> contents)
+    String parse(
+            InputStream stream, Iterable<Content> contents, Metadata metadata)
             throws IOException, TikaException;
 
 }

@@ -19,10 +19,12 @@ package org.apache.tika.config;
 import org.jdom.Element;
 
 /**
- * Content object, used to configure and store data populated from XPATH, Regex,
- * Document fulltext, document metadata etc.
+ * Content object, used to configure the metadata to be extracted using
+ * XPath, Regex, and other means.
  */
 public class Content {
+
+    private final String name;
 
     private final String textSelect;
 
@@ -30,20 +32,24 @@ public class Content {
 
     private final String regexSelect;
 
-    private String value;
-
-    private String[] values;
-
-    public Content(String xPathSelect, String textSelect, String regexSelect) {
+    public Content(
+            String name,
+            String xPathSelect, String textSelect, String regexSelect) {
+        this.name = name;
         this.xPathSelect = xPathSelect;
         this.textSelect = textSelect;
         this.regexSelect = regexSelect;
     }
 
     public Content(Element element) {
+        name = element.getAttributeValue("name");
         xPathSelect = element.getAttributeValue("xpathSelect");
         textSelect = element.getAttributeValue("textSelect");
         regexSelect = element.getChildTextTrim("regexSelect");
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getRegexSelect() {
@@ -56,22 +62,6 @@ public class Content {
 
     public String getXPathSelect() {
         return xPathSelect;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
-
-    public String[] getValues() {
-        return values;
-    }
-
-    public void setValues(String[] values) {
-        this.values = values;
     }
 
 }

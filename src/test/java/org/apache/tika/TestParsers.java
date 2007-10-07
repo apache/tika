@@ -20,14 +20,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import junit.framework.TestCase;
 
 import org.apache.tika.config.Content;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
 import org.apache.tika.utils.ParseUtils;
@@ -105,22 +106,22 @@ public class TestParsers extends TestCase {
     public void testPPTExtraction() throws Exception {
         File file = getTestFile("testPPT.ppt");
         String s1 = ParseUtils.getStringContent(file, tc);
-        String s2 = ParseUtils.getStringContent(file, tc,
-        "application/vnd.ms-powerpoint");
+        String s2 = ParseUtils.getStringContent(
+                file, tc, "application/vnd.ms-powerpoint");
         assertEquals(s1, s2);
-        ParserConfig config = tc
-        .getParserConfig("application/vnd.ms-powerpoint");
+        ParserConfig config =
+            tc.getParserConfig("application/vnd.ms-powerpoint");
         Parser parser = ParserFactory.getParser(config);
-        Map<String, Content> contents = config.getContents();
+        Collection<Content> contents = config.getContents();
         assertNotNull(contents);
+        Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents.values());
+            parser.parse(stream, contents, metadata);
         } finally {
             stream.close();
         }
-        assertEquals("Sample Powerpoint Slide", contents.get("title")
-                .getValue());
+        assertEquals("Sample Powerpoint Slide", metadata.get("title"));
     }
 
     public void testWORDxtraction() throws Exception {
@@ -130,15 +131,16 @@ public class TestParsers extends TestCase {
         assertEquals(s1, s2);
         ParserConfig config = tc.getParserConfig("application/msword");
         Parser parser = ParserFactory.getParser(config);
-        Map<String, Content> contents = config.getContents();
+        Collection<Content> contents = config.getContents();
         assertNotNull(contents);
+        Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents.values());
+            parser.parse(stream, contents, metadata);
         } finally {
             stream.close();
         }
-        assertEquals("Sample Word Document", contents.get("title").getValue());
+        assertEquals("Sample Word Document", metadata.get("title"));
     }
 
     public void testEXCELExtraction() throws Exception {
@@ -156,15 +158,16 @@ public class TestParsers extends TestCase {
                 .contains(expected));
         ParserConfig config = tc.getParserConfig("application/vnd.ms-excel");
         Parser parser = ParserFactory.getParser(config);
-        Map<String, Content> contents = config.getContents();
+        Collection<Content> contents = config.getContents();
         assertNotNull(contents);
+        Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents.values());
+            parser.parse(stream, contents, metadata);
         } finally {
             stream.close();
         }
-        assertEquals("Simple Excel document", contents.get("title").getValue());
+        assertEquals("Simple Excel document", metadata.get("title"));
     }
 
     public void testOOExtraction() throws Exception {
@@ -185,18 +188,18 @@ public class TestParsers extends TestCase {
         Parser parser = ParserFactory.getParser(config);
         assertNotNull(parser);
 
-        Map<String, Content> contents = config.getContents();
+        Collection<Content> contents = config.getContents();
         assertNotNull(contents);
+        Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents.values());
+            parser.parse(stream, contents, metadata);
         } finally {
             stream.close();
         }
-        assertEquals("Title : Test Indexation Html", contents.get("title")
-                .getValue());
+        assertEquals("Title : Test Indexation Html", metadata.get("title"));
 
-        final String text = Utils.toString(contents);
+        final String text = metadata.toString();
         final String expected = "Test Indexation Html";
         assertTrue("text contains '" + expected + "'", text.contains(expected));
     }
