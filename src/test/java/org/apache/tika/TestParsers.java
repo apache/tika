@@ -121,7 +121,7 @@ public class TestParsers extends TestCase {
         } finally {
             stream.close();
         }
-        assertEquals("Sample Powerpoint Slide", metadata.get("title"));
+        assertEquals("Sample Powerpoint Slide", metadata.get(Metadata.TITLE));
     }
 
     public void testWORDxtraction() throws Exception {
@@ -140,7 +140,7 @@ public class TestParsers extends TestCase {
         } finally {
             stream.close();
         }
-        assertEquals("Sample Word Document", metadata.get("title"));
+        assertEquals("Sample Word Document", metadata.get(Metadata.TITLE));
     }
 
     public void testEXCELExtraction() throws Exception {
@@ -167,7 +167,7 @@ public class TestParsers extends TestCase {
         } finally {
             stream.close();
         }
-        assertEquals("Simple Excel document", metadata.get("title"));
+        assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));
     }
 
     public void testOOExtraction() throws Exception {
@@ -197,7 +197,7 @@ public class TestParsers extends TestCase {
         } finally {
             stream.close();
         }
-        assertEquals("Title : Test Indexation Html", metadata.get("title"));
+        assertEquals("Title : Test Indexation Html", metadata.get(Metadata.TITLE));
 
         final String text = metadata.toString();
         final String expected = "Test Indexation Html";
