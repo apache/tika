@@ -32,9 +32,9 @@ import org.pdfbox.util.PDFTextStripper;
 /**
  * PDF parser
  */
-public class PDFParser extends Parser {
+public class PDFParser implements Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         try {
             PDDocument pdfDocument = PDDocument.load(stream);

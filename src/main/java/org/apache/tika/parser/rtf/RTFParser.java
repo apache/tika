@@ -29,9 +29,9 @@ import org.apache.tika.parser.Parser;
 /**
  * RTF parser
  */
-public class RTFParser extends Parser {
+public class RTFParser implements Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         try {
             DefaultStyledDocument sd = new DefaultStyledDocument();

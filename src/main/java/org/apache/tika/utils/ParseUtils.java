@@ -54,9 +54,7 @@ public class ParseUtils implements TikaMimeKeys {
     public static Parser getParser(TikaConfig config, String mimeType)
             throws TikaException {
         ParserConfig pc = config.getParserConfig(mimeType);
-        Parser parser = ParserFactory.getParser(pc);
-        parser.setMimeType(mimeType);
-        return parser;
+        return ParserFactory.getParser(pc);
     }
 
     /**
@@ -174,8 +172,7 @@ public class ParseUtils implements TikaMimeKeys {
             IOException {
         ParserConfig pc = config.getParserConfig(mimeType);
         Parser parser = ParserFactory.getParser(pc);
-        parser.setMimeType(mimeType);
-        return parser.getContents(inputStream, pc.getContents());
+        return parser.parse(inputStream, pc.getContents().values());
     }
 
     /**

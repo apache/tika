@@ -27,9 +27,9 @@ import org.apache.tika.utils.MSExtractor;
 /**
  * Excel parser
  */
-public class MsExcelParser extends Parser {
+public class MsExcelParser implements Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         try {
             MSExtractor extractor = new ExcelExtractor();

@@ -44,13 +44,23 @@ import org.jdom.Text;
 /**
  * XML parser
  */
-public class XMLParser extends Parser {
+public class XMLParser implements Parser {
 
     static Logger logger = Logger.getRootLogger();
 
     private SimpleNamespaceContext nsc = new SimpleNamespaceContext();
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    private String namespace;
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public void setNamespace(String namespace) {
+        this.namespace = namespace;
+    }
+
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         Document xmlDoc = Utils.parse(stream);
         if (exist(getAllDocumentNs(xmlDoc), getNamespace())) {

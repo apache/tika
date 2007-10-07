@@ -27,9 +27,9 @@ import org.apache.tika.utils.MSExtractor;
 /**
  * Power point parser
  */
-public class MsPowerPointParser extends Parser {
+public class MsPowerPointParser implements Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         try {
             MSExtractor extractor = new PPTExtractor();

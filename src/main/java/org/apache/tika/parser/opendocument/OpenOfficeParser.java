@@ -42,7 +42,7 @@ import org.jdom.input.SAXBuilder;
 /**
  * OpenOffice parser
  */
-public class OpenOfficeParser extends Parser {
+public class OpenOfficeParser implements Parser {
     static Logger logger = Logger.getRootLogger();
 
     private final Namespace NS_DC = Namespace.getNamespace("dc",
@@ -75,7 +75,7 @@ public class OpenOfficeParser extends Parser {
         return xmlDoc;
     }
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         Document xmlDoc = parse(stream);
         XMLParser xp = new XMLParser();

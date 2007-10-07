@@ -18,85 +18,30 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.Map;
 
-import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.utils.RegexUtils;
 
 /**
- * Abstract class Parser
+ * Tika parser interface
  */
-public abstract class Parser {
-
-    private static final Logger logger = Logger.getLogger(Parser.class);
-
-    private String mimeType;
-
-    private String namespace;
+public interface Parser {
 
     /**
-     * Get document mime type
+     * Parses a document from the given input stream and returns the
+     * extracted full text content of the document. Fills in selected
+     * metadata information in the given set of {@link Content} instances.
+     * <p>
+     * The given stream is consumed but not closed by this method.
+     * The responsibility to close the stream remains on the caller.
+     *
+     * @param stream the document to be parsed
+     * @param contents set of metadata information to extract
+     * @return full text content of the document
+     * @throws IOException if the document could not be read
+     * @throws TikaException if the document could not be parsed
      */
-    public String getMimeType() {
-        return mimeType;
-    }
-
-    /**
-     * Set document mime type
-     */
-    public void setMimeType(String mimeType) {
-        this.mimeType = mimeType;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-
-    public String getContents(InputStream stream, Map<String, Content> contents) {
-        try {
-            String contentStr = parse(stream, contents.values());
-
-            for (Content content : contents.values()) {
-                if ("fulltext".equalsIgnoreCase(content.getTextSelect())) {
-                    content.setValue(contentStr);
-                } else if ("summary".equalsIgnoreCase(content.getTextSelect())) {
-                    int length = Math.min(contentStr.length(), 500);
-                    String summary = contentStr.substring(0, length);
-                    content.setValue(summary);
-                } else if (content.getRegexSelect() != null) {
-                    String regex = content.getRegexSelect();
-                    try {
-                        List<String> values =
-                            RegexUtils.extract(contentStr, regex);
-                        if (values.size() > 0) {
-                            content.setValue(values.get(0));
-                            content.setValues(
-                                    values.toArray(new String[values.size()]));
-                        }
-                    } catch (MalformedPatternException e) {
-                        logger.error(
-                                "Invalid regular expression: " + regex, e);
-                    }
-                }
-            }
-
-            return contentStr;
-        } catch (Exception e) {
-            logger.error("Parse error: " + e.getMessage(), e);
-            return "";
-        }
-    }
-
-    protected abstract String parse(
-            InputStream stream, Iterable<Content> contents)
+    String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException;
 
 }

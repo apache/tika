@@ -33,11 +33,11 @@ import org.w3c.tidy.Tidy;
  * Html parser
  * 
  */
-public class HtmlParser extends Parser {
+public class HtmlParser implements Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         Tidy tidy = new Tidy();
         tidy.setQuiet(true);

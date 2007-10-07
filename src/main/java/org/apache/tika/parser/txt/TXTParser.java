@@ -28,9 +28,9 @@ import org.apache.tika.parser.Parser;
 /**
  * Text parser
  */
-public class TXTParser extends Parser {
+public class TXTParser implements Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         StringBuilder sb = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(stream));

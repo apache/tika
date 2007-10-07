@@ -27,9 +27,9 @@ import org.apache.tika.utils.MSExtractor;
 /**
  * Word parser
  */
-public class MsWordParser extends Parser {
+public class MsWordParser implements Parser {
 
-    protected String parse(InputStream stream, Iterable<Content> contents)
+    public String parse(InputStream stream, Iterable<Content> contents)
             throws IOException, TikaException {
         try {
             MSExtractor extractor = new WordExtractor();
