@@ -37,8 +37,7 @@ public class RereadableInputStreamTest extends TestCase {
 
     public void test() throws IOException {
 
-        File file = createTestFile();
-        InputStream is = new BufferedInputStream(new FileInputStream(file));
+        InputStream is = createTestInputStream();
         RereadableInputStream ris = new RereadableInputStream(is,
                 MEMORY_THRESHOLD);
         try {
@@ -52,13 +51,54 @@ public class RereadableInputStreamTest extends TestCase {
                 ris.rewind();
             }
         } finally {
-            is.close();
+            // The RereadableInputStream should close the original input
+            // stream (if it hasn't already).
             ris.close();
         }
     }
 
+    /**
+     * Test that the constructor's readToEndOfStreamOnFirstRewind parameter
+     * correctly determines the behavior.
+     * 
+     * @throws IOException
+     */
+    public void testRewind() throws IOException {
+        doTestRewind(true);
+        doTestRewind(false);
+    }
+
+    private void doTestRewind(boolean readToEndOnRewind) throws IOException {
+
+        RereadableInputStream ris = null;
+
+        try {
+            InputStream s1 = createTestInputStream();
+            ris = new RereadableInputStream(s1, 5, readToEndOnRewind);
+            ris.read();
+            assertEquals(1, ris.getSize());
+            ris.rewind();
+            boolean moreBytesWereRead = (ris.getSize() > 1);
+            if (readToEndOnRewind) {
+                assertTrue(moreBytesWereRead);
+            } else {
+                assertFalse(moreBytesWereRead);
+            }
+        } finally {
+            if (ris != null) {
+                ris.close();
+            }
+        }
+
+    }
+
+    private InputStream createTestInputStream() throws IOException {
+        return new BufferedInputStream(new FileInputStream(createTestFile()));
+    }
+
     private File createTestFile() throws IOException {
         File testfile = File.createTempFile("ris_test", ".tmp");
+        testfile.deleteOnExit();
         FileOutputStream fos = new FileOutputStream(testfile);
         for (int i = 0; i < TEST_SIZE; i++) {
             fos.write(i);

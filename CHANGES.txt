@@ -73,3 +73,6 @@ Unreleased changes (0.1-dev)
 33. TIKA-46 - Use Metadata in Parser (jukka & mattmann)
 
 34. TIKA-48 - Merge MS Extractors and Parsers (jukka)
+
+35. TIKA-45 - RereadableInputStream needs to be able to read to
+              the end of the original stream on first rewind. (K. Bennett)
