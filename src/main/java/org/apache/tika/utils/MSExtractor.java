@@ -25,7 +25,6 @@ import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.poifs.eventfilesystem.POIFSReader;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
 import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
-import org.apache.tika.config.Content;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -37,26 +36,14 @@ public abstract class MSExtractor {
 
     static Logger LOG = Logger.getRootLogger();
 
-    private String text = null;
-
     private POIFSReader reader = null;
 
-    private Iterable<Content> contents;
-
     private final int MEMORY_THRESHOLD = 1024 * 1024;
-
-    /** Constructs a new Microsoft document extractor. */
-    public MSExtractor() {
-    }
-
-    public void setContents(Iterable<Content> contents) {
-        this.contents = contents;
-    }
 
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public void extract(InputStream input, Metadata metadata) throws Exception {
+    public String extract(InputStream input, Metadata metadata) throws Exception {
         RereadableInputStream ris = new RereadableInputStream(input,
                 MEMORY_THRESHOLD);
         try {
@@ -74,7 +61,7 @@ public abstract class MSExtractor {
             }
             ris.rewind();
             // Extract document full text
-            this.text = extractText(ris);
+            return extractText(ris);
         } finally {
             ris.close();
         }
@@ -84,15 +71,6 @@ public abstract class MSExtractor {
      * Extracts the text content from a Microsoft document input stream.
      */
     public abstract String extractText(InputStream input) throws Exception;
-
-    /**
-     * Get the content text of the Microsoft document.
-     * 
-     * @return the content text of the document
-     */
-    public String getText() {
-        return this.text;
-    }
 
     private class PropertiesReaderListener implements POIFSReaderListener {
 
@@ -109,79 +87,72 @@ public abstract class MSExtractor {
             }
 
             try {
-                SummaryInformation si = (SummaryInformation) PropertySetFactory
-                .create(event.getStream());
-                for (Content content : contents) {
-                    if (content.getTextSelect().equalsIgnoreCase("title")) {
-                        if (si.getTitle() != null)
-                            metadata.set(content.getName(), si.getTitle());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "author")) {
-                        if (si.getAuthor() != null)
-                            metadata.set(content.getName(), si.getAuthor());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "keywords")) {
-                        if (si.getKeywords() != null)
-                            metadata.set(content.getName(), si.getKeywords());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "subject")) {
-                        if (si.getSubject() != null)
-                            metadata.set(content.getName(), si.getSubject());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "lastauthor")) {
-                        if (si.getLastAuthor() != null)
-                            metadata.set(content.getName(), si.getLastAuthor());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "comments")) {
-                        if (si.getComments() != null)
-                            metadata.set(content.getName(), si.getComments());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "template")) {
-                        if (si.getTemplate() != null)
-                            metadata.set(content.getName(), si.getTemplate());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "applicationname")) {
-                        if (si.getApplicationName() != null)
-                            metadata.set(content.getName(), si.getApplicationName());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "revnumber")) {
-                        if (si.getRevNumber() != null)
-                            metadata.set(content.getName(), si.getRevNumber());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "creationdate")) {
-                        if (si.getCreateDateTime() != null)
-                            metadata.set(content.getName(), si.getCreateDateTime().toString());
-                    } else if (content.getTextSelect().equalsIgnoreCase(
-                    "charcount")) {
-                        if (si.getCharCount() > 0)
-                            metadata.set(content.getName(), "" + si.getCharCount());
-                    } else if (content.getTextSelect().equals("edittime")) {
-                        if (si.getEditTime() > 0)
-                            metadata.set(content.getName(), "" + si.getEditTime());
-                    } else if (content.getTextSelect().equals(
-                    "lastsavedatetime")) {
-                        if (si.getLastSaveDateTime() != null)
-                            metadata.set(content.getName(),
-                                    si.getLastSaveDateTime().toString());
-                    } else if (content.getTextSelect().equals("pagecount")) {
-                        if (si.getPageCount() > 0)
-                            metadata.set(content.getName(), "" + si.getPageCount());
-                    } else if (content.getTextSelect().equals("security")) {
-                        if (si.getSecurity() > 0)
-                            metadata.set(content.getName(), "" + si.getSecurity());
-                    } else if (content.getTextSelect().equals("wordcount")) {
-                        if (si.getWordCount() > 0)
-                            metadata.set(content.getName(), "" + si.getWordCount());
-                    } else if (content.getTextSelect().equals("lastprinted")) {
-                        if (si.getLastPrinted() != null)
-                            metadata.set(content.getName(), si.getLastPrinted().toString());
-                    }
-
+                SummaryInformation si = (SummaryInformation)
+                    PropertySetFactory.create(event.getStream());
+                if (si.getTitle() != null) {
+                    metadata.set(Metadata.TITLE, si.getTitle());
                 }
-
+                if (si.getAuthor() != null) {
+                    metadata.set(Metadata.AUTHOR, si.getAuthor());
+                }
+                if (si.getKeywords() != null) {
+                    metadata.set(Metadata.KEYWORDS, si.getKeywords());
+                }
+                if (si.getSubject() != null) {
+                    metadata.set(Metadata.SUBJECT, si.getSubject());
+                }
+                if (si.getLastAuthor() != null) {
+                    metadata.set(Metadata.LAST_AUTHOR, si.getLastAuthor());
+                }
+                if (si.getComments() != null) {
+                    metadata.set(Metadata.COMMENTS, si.getComments());
+                }
+                if (si.getTemplate() != null) {
+                    metadata.set(Metadata.TEMPLATE, si.getTemplate());
+                }
+                if (si.getApplicationName() != null) {
+                    metadata.set(Metadata.APPLICATION_NAME, si.getApplicationName());
+                }
+                if (si.getRevNumber() != null) {
+                    metadata.set(Metadata.REVISION_NUMBER, si.getRevNumber());
+                }
+                if (si.getCreateDateTime() != null) {
+                    metadata.set("creationdate", si.getCreateDateTime().toString());
+                }
+                if (si.getCharCount() > 0) {
+                    metadata.set(
+                            Metadata.CHARACTER_COUNT,
+                            Integer.toString(si.getCharCount()));
+                }
+                if (si.getEditTime() > 0) {
+                    metadata.set("edittime", Long.toString(si.getEditTime()));
+                }
+                if (si.getLastSaveDateTime() != null) {
+                    metadata.set(
+                            Metadata.LAST_SAVED,
+                            si.getLastSaveDateTime().toString());
+                }
+                if (si.getPageCount() > 0) {
+                    metadata.set(
+                            Metadata.PAGE_COUNT,
+                            Integer.toString(si.getPageCount()));
+                }
+                if (si.getSecurity() > 0) {
+                    metadata.set(
+                            "security", Integer.toString(si.getSecurity()));
+                }
+                if (si.getWordCount() > 0) {
+                    metadata.set(
+                            Metadata.WORD_COUNT,
+                            Integer.toString(si.getWordCount()));
+                }
+                if (si.getLastPrinted() != null) {
+                    metadata.set(
+                            Metadata.LAST_PRINTED,
+                            si.getLastPrinted().toString());
+                }
             } catch (Exception ex) {
             }
-
         }
 
     }

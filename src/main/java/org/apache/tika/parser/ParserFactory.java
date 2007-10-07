@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.xml.XMLParser;
 
 /**
  * Factory class. Build parser from xml config file.
@@ -40,10 +39,6 @@ public class ParserFactory {
         try {
             logger.info("Loading parser class = " + className);
             Parser parser = (Parser) Class.forName(className).newInstance();
-            // FIXME: Replace with proper JavaBean dependency/config injection
-            if (parser instanceof XMLParser) {
-                ((XMLParser) parser).setNamespace(config.getNameSpace());
-            }
             return new ParserPostProcessor(parser);
         } catch (Exception e) {
             logger.error("Unable to instantiate parser: " + className, e);

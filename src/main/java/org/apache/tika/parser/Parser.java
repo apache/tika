@@ -19,7 +19,6 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
@@ -44,7 +43,7 @@ public interface Parser {
      * @throws TikaException if the document could not be parsed
      */
     String parse(
-            InputStream stream, Iterable<Content> contents, Metadata metadata)
+            InputStream stream, Metadata metadata)
             throws IOException, TikaException;
 
 }

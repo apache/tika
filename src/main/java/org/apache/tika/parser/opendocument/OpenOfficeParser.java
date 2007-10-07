@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
@@ -76,17 +75,25 @@ public class OpenOfficeParser implements Parser {
         return xmlDoc;
     }
 
-    public String parse(
-            InputStream stream, Iterable<Content> contents, Metadata metadata)
+    public String parse(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
         Document xmlDoc = parse(stream);
         XMLParser xp = new XMLParser();
         xp.getAllDocumentNs(xmlDoc);
-        for (Content content : contents) {
-            if (content.getXPathSelect() != null) {
-                xp.extractContent(xmlDoc, content, metadata);
-            }
-        }
+        xp.extractContent(xmlDoc, Metadata.TITLE, "//dc:title", metadata);
+        xp.extractContent(xmlDoc, Metadata.SUBJECT, "//dc:subject", metadata);
+        xp.extractContent(xmlDoc, Metadata.CREATOR, "//dc:creator", metadata);
+        xp.extractContent(xmlDoc, Metadata.DESCRIPTION, "//dc:description", metadata);
+        xp.extractContent(xmlDoc, Metadata.LANGUAGE, "//dc:language", metadata);
+        xp.extractContent(xmlDoc, Metadata.KEYWORDS, "//meta:keyword", metadata);
+        xp.extractContent(xmlDoc, Metadata.DATE, "//dc:date", metadata);
+        xp.extractContent(xmlDoc, "nbTab", "//meta:document-statistic/@meta:table-count", metadata);
+        xp.extractContent(xmlDoc, "nbObject", "//meta:document-statistic/@meta:object-count", metadata);
+        xp.extractContent(xmlDoc, "nbImg", "//meta:document-statistic/@meta:image-count", metadata);
+        xp.extractContent(xmlDoc, "nbPage", "//meta:document-statistic/@meta:page-count", metadata);
+        xp.extractContent(xmlDoc, "nbPara", "//meta:document-statistic/@meta:paragraph-count", metadata);
+        xp.extractContent(xmlDoc, "nbWord", "//meta:document-statistic/@meta:word-count", metadata);
+        xp.extractContent(xmlDoc, "nbcharacter", "//meta:document-statistic/@meta:character-count", metadata);
         return xp.concatOccurrence(xmlDoc, "//*", " ");
     }
 

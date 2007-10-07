@@ -19,25 +19,19 @@ package org.apache.tika.parser.msword;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.MSExtractor;
 
 /**
  * Word parser
  */
 public class MsWordParser implements Parser {
 
-    public String parse(
-            InputStream stream, Iterable<Content> contents, Metadata metadata)
+    public String parse(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
         try {
-            MSExtractor extractor = new WordExtractor();
-            extractor.setContents(contents);
-            extractor.extract(stream, metadata);
-            return extractor.getText();
+            return new WordExtractor().extract(stream, metadata);
         } catch (IOException e) {
             throw e;
         } catch (Exception e) {

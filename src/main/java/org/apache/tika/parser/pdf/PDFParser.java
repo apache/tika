@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Calendar;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
@@ -35,8 +34,7 @@ import org.pdfbox.util.PDFTextStripper;
  */
 public class PDFParser implements Parser {
 
-    public String parse(
-            InputStream stream, Iterable<Content> contents, Metadata metadata)
+    public String parse(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
         try {
             PDDocument pdfDocument = PDDocument.load(stream);
@@ -45,37 +43,40 @@ public class PDFParser implements Parser {
                     pdfDocument.decrypt("");
                 }
 
-                PDDocumentInformation metaData =
+                PDDocumentInformation info =
                     pdfDocument.getDocumentInformation();
-                for (Content content : contents) {
-                    String text = content.getTextSelect();
-                    if ("title".equalsIgnoreCase(text)) {
-                        metadata.set(content.getName(), metaData.getTitle());
-                    } else if ("author".equalsIgnoreCase(text)) {
-                        metadata.set(content.getName(), metaData.getAuthor());
-                    } else if ("creator".equalsIgnoreCase(text)) {
-                        metadata.set(content.getName(), metaData.getCreator());
-                    } else if ("keywords".equalsIgnoreCase(text)) {
-                        metadata.set(content.getName(), metaData.getKeywords());
-                    } else if ("producer".equalsIgnoreCase(text)) {
-                        metadata.set(content.getName(), metaData.getProducer());
-                    } else if ("subject".equalsIgnoreCase(text)) {
-                        metadata.set(content.getName(), metaData.getSubject());
-                    } else if ("trapped".equalsIgnoreCase(text)) {
-                        metadata.set(content.getName(), metaData.getTrapped());
-                    } else if ("creationDate".equalsIgnoreCase(text)) {
-                        Calendar calendar = metaData.getCreationDate();
-                        if (calendar != null) {
-                            metadata.set(content.getName(),
-                                    calendar.getTime().toString());
-                        }
-                    } else if ("modificationDate".equalsIgnoreCase(text)) {
-                        Calendar calendar = metaData.getModificationDate();
-                        if (calendar != null) {
-                            metadata.set(content.getName(),
-                                    calendar.getTime().toString());
-                        }
-                    }
+                if (info.getTitle() != null) {
+                    metadata.set(Metadata.TITLE, info.getTitle());
+                }
+                if (info.getAuthor() != null) {
+                    metadata.set(Metadata.AUTHOR, info.getAuthor());
+                }
+                if (info.getCreator() != null) {
+                    metadata.set(Metadata.CREATOR, info.getCreator());
+                }
+                if (info.getKeywords() != null) {
+                    metadata.set(Metadata.KEYWORDS, info.getKeywords());
+                }
+                if (info.getProducer() != null) {
+                    // TODO: Need a Metadata key for producer
+                    metadata.set("producer", info.getProducer());
+                }
+                if (info.getSubject() != null) {
+                    metadata.set(Metadata.SUBJECT, info.getSubject());
+                }
+                if (info.getTrapped() != null) {
+                    // TODO: Need a Metadata key for producer
+                    metadata.set("trapped", info.getTrapped());
+                }
+                Calendar created = info.getCreationDate();
+                if (created != null) {
+                    metadata.set("created", created.getTime().toString());
+                }
+                Calendar modified = info.getModificationDate();
+                if (modified != null) {
+                    metadata.set(
+                            Metadata.LAST_MODIFIED,
+                            modified.getTime().toString());
                 }
 
                 StringWriter writer = new StringWriter();

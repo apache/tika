@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
@@ -49,29 +48,20 @@ public class XMLParser implements Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    private SimpleNamespaceContext nsc = new SimpleNamespaceContext();
-
-    private String namespace;
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public void setNamespace(String namespace) {
-        this.namespace = namespace;
-    }
-
-    public String parse(
-            InputStream stream, Iterable<Content> contents, Metadata metadata)
+    public String parse(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
         Document xmlDoc = Utils.parse(stream);
-        if (exist(getAllDocumentNs(xmlDoc), getNamespace())) {
-            for (Content content : contents) {
-                if (content.getXPathSelect() != null) {
-                    extractContent(xmlDoc, content, metadata);
-                }
-            }
-        }
+        extractContent(xmlDoc, Metadata.TITLE, "//dc:title", metadata);
+        extractContent(xmlDoc, Metadata.SUBJECT, "//dc:subject", metadata);
+        extractContent(xmlDoc, Metadata.CREATOR, "//dc:creator", metadata);
+        extractContent(xmlDoc, Metadata.DESCRIPTION, "//dc:description", metadata);
+        extractContent(xmlDoc, Metadata.PUBLISHER, "//dc:publisher", metadata);
+        extractContent(xmlDoc, Metadata.CONTRIBUTOR, "//dc:contributor", metadata);
+        extractContent(xmlDoc, Metadata.TYPE, "//dc:type", metadata);
+        extractContent(xmlDoc, Metadata.FORMAT, "//dc:format", metadata);
+        extractContent(xmlDoc, Metadata.IDENTIFIER, "//dc:identifier", metadata);
+        extractContent(xmlDoc, Metadata.LANGUAGE, "//dc:language", metadata);
+        extractContent(xmlDoc, Metadata.RIGHTS, "//dc:rights", metadata);
         return concatOccurrence(xmlDoc, "//*", " ");
     }
 
@@ -80,7 +70,6 @@ public class XMLParser implements Parser {
         StringBuilder chaineConcat = new StringBuilder();
         try {
             JDOMXPath xp = new JDOMXPath(xpath);
-            xp.setNamespaceContext(nsc);
             List ls = xp.selectNodes(xmlDoc);
             Iterator i = ls.iterator();
             int j = 0;
@@ -148,7 +137,6 @@ public class XMLParser implements Parser {
         String nsUri = (nsCourent.getURI());
         if (!exist(ns, nsUri)) {
             ns.add(nsUri.trim());
-            nsc.addNamespace(nsCourent.getPrefix(), nsCourent.getURI());
         }
         List additionalNs = elem.getAdditionalNamespaces();
         if (!additionalNs.isEmpty())
@@ -163,17 +151,18 @@ public class XMLParser implements Parser {
 
     private void copyNsList(List nsElem, List nsRes) {
         for (Object aNsElem : nsElem) {
-            Namespace ns = (Namespace) aNsElem;
-            nsc.addNamespace(ns.getPrefix(), ns.getURI());
-            nsRes.add(ns.getURI().trim());
+            nsRes.add(((Namespace) aNsElem).getURI().trim());
         }
     }
 
     public void extractContent(
-            Document xmlDoc, Content content, Metadata metadata) {
+            Document xmlDoc, String name, String xpath, Metadata metadata) {
         try {
-            JDOMXPath xp = new JDOMXPath(content.getXPathSelect());
-            xp.setNamespaceContext(nsc);
+            JDOMXPath xp = new JDOMXPath(xpath);
+            SimpleNamespaceContext context = new SimpleNamespaceContext();
+            context.addNamespace("dc", "http://purl.org/dc/elements/1.1/");
+            context.addNamespace("meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
+            xp.setNamespaceContext(context);
             List selectNodes = xp.selectNodes(xmlDoc);
             Iterator nodes = selectNodes.iterator();
             while (nodes.hasNext()) {
@@ -181,35 +170,27 @@ public class XMLParser implements Parser {
                 if (node instanceof Element) {
                     Element elem = (Element) node;
                     if (StringUtils.isNotBlank(elem.getText())) {
-                        metadata.add(content.getName(), elem.getText().trim());
+                        metadata.add(name, elem.getText().trim());
                     }
                 } else if (node instanceof Attribute) {
                     Attribute att = (Attribute) node;
-                    metadata.add(content.getName(), att.getValue());
+                    metadata.add(name, att.getValue());
                 } else if (node instanceof Text) {
                     Text text = (Text) node;
-                    metadata.add(content.getName(), text.getText());
+                    metadata.add(name, text.getText());
                 } else if (node instanceof Comment) {
                     Comment com = (Comment) node;
-                    metadata.add(content.getName(), com.getText());
+                    metadata.add(name, com.getText());
                 } else if (node instanceof ProcessingInstruction) {
                     ProcessingInstruction pi = (ProcessingInstruction) node;
-                    metadata.add(content.getName(), pi.getData());
+                    metadata.add(name, pi.getData());
                 } else if (node instanceof EntityRef) {
                     EntityRef er = (EntityRef) node;
-                    metadata.add(content.getName(), er.toString());
+                    metadata.add(name, er.toString());
                 }
             }
         } catch (JaxenException e) {
             logger.error(e.getMessage());
-        }
-
-    }
-
-    public void setDocNs(List ns) {
-        for (int i = 0; i < ns.size(); i++) {
-
-            // nsc.addNamespace((String)ns.get(i);
         }
 
     }

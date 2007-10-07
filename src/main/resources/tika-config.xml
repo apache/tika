@@ -1,251 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <properties>
+
     <mimeTypeRepository resource="org/apache/tika/mime/tika-mimetypes.xml" magic="false"/>
+
     <parsers>
+
         <parser name="text-xml" class="org.apache.tika.parser.xml.XMLParser">
-                <namespace>http://purl.org/dc/elements/1.1/</namespace>
                 <mime>application/xml</mime>
-                <extract>
-                	<content name="fullText" xpathSelect="//*"/>
-                    <content name="title" xpathSelect="//dc:title"/>
-                    <content name="subject" xpathSelect="//dc:subject"/>
-                    <content name="creator" xpathSelect="//dc:creator"/>
-                    <content name="description" xpathSelect="//dc:description"/>
-                    <content name="publisher" xpathSelect="//dc:publisher"/>
-                    <content name="contributor" xpathSelect="//dc:contributor"/>
-                    <content name="type" xpathSelect="//dc:type"/>
-                    <content name="format" xpathSelect="//dc:format"/>
-                    <content name="identifier" xpathSelect="//dc:identifier"/>
-                    <content name="language" xpathSelect="//dc:language"/>
-                    <content name="rights" xpathSelect="//dc:rights"/>
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>            
         </parser>
+
         <parser name="parse-msword" class="org.apache.tika.parser.msword.MsWordParser">
-            
                 <mime>application/msword</mime>
-                <extract>
-                    <content name="fullText" textSelect="fullText"/>
-                    <content name="title" textSelect="title" type="Text"/>
-					<content name="author" textSelect="author" type="Text"/>
-					<content name="keywords" textSelect="keywords" type="Text"/>
-					<content name="subject" textSelect="subject" type="Text"/>
-					<content name="lastauthor" textSelect="lastauthor" type="Text"/>
-					<content name="comments" textSelect="comments" type="Text"/>
-					<content name="template" textSelect="template" type="Text"/>
-					<content name="applicationname" textSelect="applicationname" type="Text"/>
-					<content name="revnumber" textSelect="revnumber" type="Text"/>
-					<content name="creationdate" textSelect="creationdate"/>
-					<content name="charcount" textSelect="charcount"/>
-					<content name="edittime" textSelect="edittime"/>
-					<content name="lastsavedatetime" textSelect="lastsavedatetime"/>
-					<content name="pagecount" textSelect="pagecount"/>
-					<content name="security" textSelect="security"/>
-					<content name="wordcount" textSelect="wordcount"/>
-					<content name="lastprinted" textSelect="lastprinted"/>		
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>
-            
         </parser>
+
         <parser name="parse-msexcel" class="org.apache.tika.parser.msexcel.MsExcelParser">
-            
                 <mime>application/vnd.ms-excel</mime>
-                <extract>
-                    <content name="fullText" textSelect="fullText"/>
-                    <content name="title" textSelect="title" type="Text"/>
-					<content name="author" textSelect="author" type="Text"/>
-					<content name="keywords" textSelect="keywords" type="Text"/>
-					<content name="subject" textSelect="subject" type="Text"/>
-					<content name="lastauthor" textSelect="lastauthor" type="Text"/>
-					<content name="comments" textSelect="comments" type="Text"/>
-					<content name="template" textSelect="template" type="Text"/>
-					<content name="applicationname" textSelect="applicationname" type="Text"/>
-					<content name="revnumber" textSelect="revnumber" type="Text"/>
-					<content name="creationdate" textSelect="creationdate"/>
-					<content name="charcount" textSelect="charcount"/>
-					<content name="edittime" textSelect="edittime"/>
-					<content name="lastsavedatetime" textSelect="lastsavedatetime"/>
-					<content name="pagecount" textSelect="pagecount"/>
-					<content name="security" textSelect="security"/>
-					<content name="wordcount" textSelect="wordcount"/>
-					<content name="lastprinted" textSelect="lastprinted"/>		
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>
-            
         </parser>
+
         <parser name="parse-mspowerpoint" class="org.apache.tika.parser.mspowerpoint.MsPowerPointParser">
-            
                 <mime>application/vnd.ms-powerpoint</mime>
-                <extract>
-                    <content name="fullText" textSelect="fullText"/>
-                    <content name="title" textSelect="title" type="Text"/>
-					<content name="author" textSelect="author" type="Text"/>
-					<content name="keywords" textSelect="keywords" type="Text"/>
-					<content name="subject" textSelect="subject" type="Text"/>
-					<content name="lastauthor" textSelect="lastauthor" type="Text"/>
-					<content name="comments" textSelect="comments" type="Text"/>
-					<content name="template" textSelect="template" type="Text"/>
-					<content name="applicationname" textSelect="applicationname" type="Text"/>
-					<content name="revnumber" textSelect="revnumber" type="Text"/>
-					<content name="creationdate" textSelect="creationdate"/>
-					<content name="charcount" textSelect="charcount"/>
-					<content name="edittime" textSelect="edittime"/>
-					<content name="lastsavedatetime" textSelect="lastsavedatetime"/>
-					<content name="pagecount" textSelect="pagecount"/>
-					<content name="security" textSelect="security"/>
-					<content name="wordcount" textSelect="wordcount"/>
-					<content name="lastprinted" textSelect="lastprinted"/>		
-                    <content name="title" textSelect="title"/>
-                    <content name="author" textSelect="author"/>
-                    <content name="subject" textSelect="subject"/>                    
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>
-            
         </parser>
+
         <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">
-            
                 <mime>text/html</mime>
                 <mime>application/x-asp</mime>
-                <extract>
-                    <content name="fullText" textSelect="fullText"/>
-                    <content name="title" textSelect="title"/>
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>
-            
         </parser>
-        <!--
-            
-            <parser name="parse-html" class="org.apache.tika.parser.html.NekoHtmlParser">
-            
-                <mime>text/html</mime>
-                <mime>application/x-asp</mime>
-                .....
-                <extract>
-                    <content name="fullText" xpathSelect="//*"/> 
-                    <content name="title" xpathSelect="//title"/> 
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>
-            
-            </parser>
-            
-            -->
+
         <parser mame="parse-rtf" class="org.apache.tika.parser.rtf.RTFParser">
-            
                 <mime>application/rtf</mime>
-                <extract>
-                    <content name="fullText" textSelect="fullText"/>
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>
-            
         </parser>
+
         <parser name="parse-pdf" class="org.apache.tika.parser.pdf.PDFParser">
-            
                 <mime>application/pdf</mime>
-                <extract>
-                    <content name="fullText" textSelect="fullText"/>
-                    <content name="title" textSelect="title"/>
-                    <content name="author" textSelect="author"/>
-                    <content name="creator" textSelect="creator"/>
-                    <content name="summary" textSelect="summary"/>
-                    <content name="keywords" textSelect="keywords"/>
-                    <content name="producer" textSelect="producer"/>
-                    <content name="subject" textSelect="subject"/>
-                    <content name="trapped" textSelect="trapped"/>
-                    <content name="creationDate" textSelect="creationDate"/>
-                    <content name="modificationDate" textSelect="modificationDate"/>
-                    <content name="outLinks">
-                        <regexSelect><![CDATA[
-                            ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]></regexSelect>
-                    </content>
-                </extract>
-            
         </parser>
+
         <parser name="parse-txt" class="org.apache.tika.parser.txt.TXTParser">
-            
                 <mime>text/plain</mime>
-                <extract>
-                    <content name="fullText" textSelect="fullText"/>
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>
-            
         </parser>
+
         <parser name="parse-openoffice" class="org.apache.tika.parser.opendocument.OpenOfficeParser">            
                 <mime>application/vnd.sun.xml.writer</mime>
                 <mime>application/vnd.oasis.opendocument.text</mime>
-                <extract>
-                    <content name="title" xpathSelect="//dc:title"/>
-                    <content name="subject" xpathSelect="//dc:subject"/>
-                    <content name="keyword" xpathSelect="//meta:keyword"/>
-                    <content name="creator" xpathSelect="//dc:creator"/>
-                    <content name="description" xpathSelect="//dc:description"/>
-                    <content name="date" xpathSelect="//dc:date"/>
-                    <content name="language" xpathSelect="//dc:language"/>
-                    <content name="nbTab" xpathSelect="//meta:document-statistic/@meta:table-count"/>
-                    <content name="nbObject" xpathSelect="//meta:document-statistic/@meta:object-count"/>
-                    <content name="nbImg" xpathSelect="//meta:document-statistic/@meta:image-count"/>
-                    <content name="nbPage" xpathSelect="//meta:document-statistic/@meta:page-count"/>
-                    <content name="nbPara" xpathSelect="//meta:document-statistic/@meta:paragraph-count"/>
-                    <content name="nbWord" xpathSelect="//meta:document-statistic/@meta:word-count"/>
-                    <content name="nbcharacter" xpathSelect="//meta:document-statistic/@meta:character-count"/>
-                    <content name="fullText" xpathSelect="//office:body//*"/>
-                    <content name="outLinks">
-                        <regexSelect>
-                            <![CDATA[
-                                ([A-Za-z][A-Za-z0-9+.-]{1,120}:[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)
-                            ]]>
-                        </regexSelect>
-                    </content>
-                </extract>            
-        </parser>        
+        </parser>
+
     </parsers>
+
 </properties>

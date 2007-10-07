@@ -22,7 +22,6 @@ import java.io.InputStream;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.rtf.RTFEditorKit;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
@@ -32,8 +31,7 @@ import org.apache.tika.parser.Parser;
  */
 public class RTFParser implements Parser {
 
-    public String parse(
-            InputStream stream, Iterable<Content> contents, Metadata metadata)
+    public String parse(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
         try {
             DefaultStyledDocument sd = new DefaultStyledDocument();

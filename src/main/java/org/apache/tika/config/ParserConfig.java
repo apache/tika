@@ -16,10 +16,6 @@
  */
 package org.apache.tika.config;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-
 import org.jdom.Element;
 
 /**
@@ -31,36 +27,17 @@ public class ParserConfig {
 
     private final String parserClass;
 
-    private final String nameSpace;
-
-    private final Collection<Content> contents = new ArrayList<Content>();
-
     public ParserConfig(Element element) {
         name = element.getAttributeValue("name");
         parserClass = element.getAttributeValue("class");
-        nameSpace = element.getChildTextTrim("namespace");
-        Element extract = element.getChild("extract");
-        if (extract != null) {
-            for (Object child : extract.getChildren()) {
-                contents.add(new Content((Element) child));
-            }
-        }
     }
 
     public String getName() {
         return name;
     }
 
-    public String getNameSpace() {
-        return nameSpace;
-    }
-
     public String getParserClass() {
         return parserClass;
-    }
-
-    public Collection<Content> getContents() {
-        return Collections.unmodifiableCollection(contents);
     }
 
 }

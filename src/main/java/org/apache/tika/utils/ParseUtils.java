@@ -173,7 +173,7 @@ public class ParseUtils implements TikaMimeKeys {
             IOException {
         ParserConfig pc = config.getParserConfig(mimeType);
         Parser parser = ParserFactory.getParser(pc);
-        return parser.parse(inputStream, pc.getContents(), new Metadata());
+        return parser.parse(inputStream, new Metadata());
     }
 
     /**

@@ -19,7 +19,6 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
@@ -50,10 +49,9 @@ public class ParserDecorator implements Parser {
      * override this method (and use <code>super.parse()</code> to invoke
      * the decorated parser) to implement extra decoration.
      */
-    public String parse(
-            InputStream stream, Iterable<Content> contents, Metadata metadata)
+    public String parse(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
-        return parser.parse(stream, contents, metadata);
+        return parser.parse(stream, metadata);
     }
 
 }

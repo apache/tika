@@ -20,12 +20,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.tika.config.Content;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -112,12 +110,10 @@ public class TestParsers extends TestCase {
         ParserConfig config =
             tc.getParserConfig("application/vnd.ms-powerpoint");
         Parser parser = ParserFactory.getParser(config);
-        Collection<Content> contents = config.getContents();
-        assertNotNull(contents);
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents, metadata);
+            parser.parse(stream,  metadata);
         } finally {
             stream.close();
         }
@@ -131,12 +127,10 @@ public class TestParsers extends TestCase {
         assertEquals(s1, s2);
         ParserConfig config = tc.getParserConfig("application/msword");
         Parser parser = ParserFactory.getParser(config);
-        Collection<Content> contents = config.getContents();
-        assertNotNull(contents);
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents, metadata);
+            parser.parse(stream, metadata);
         } finally {
             stream.close();
         }
@@ -158,12 +152,10 @@ public class TestParsers extends TestCase {
                 .contains(expected));
         ParserConfig config = tc.getParserConfig("application/vnd.ms-excel");
         Parser parser = ParserFactory.getParser(config);
-        Collection<Content> contents = config.getContents();
-        assertNotNull(contents);
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents, metadata);
+            parser.parse(stream, metadata);
         } finally {
             stream.close();
         }
@@ -188,12 +180,10 @@ public class TestParsers extends TestCase {
         Parser parser = ParserFactory.getParser(config);
         assertNotNull(parser);
 
-        Collection<Content> contents = config.getContents();
-        assertNotNull(contents);
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, contents, metadata);
+            parser.parse(stream, metadata);
         } finally {
             stream.close();
         }
