@@ -16,27 +16,24 @@
  */
 package org.apache.tika.parser.mspowerpoint;
 
-import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
+import org.apache.poi.poifs.eventfilesystem.POIFSReader;
+import org.apache.tika.ms.MSParser;
 
 /**
  * Power point parser
  */
-public class MsPowerPointParser implements Parser {
+public class MsPowerPointParser extends MSParser {
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        try {
-            return new PPTExtractor().extract(stream, metadata);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TikaException("Error parsing a PowerPoint document", e);
-        }
+    protected String extractText(InputStream input) throws Exception {
+        StringBuilder builder = new StringBuilder();
+        POIFSReader reader = new POIFSReader();
+        reader.registerListener(
+                new ContentReaderListener(builder),
+                PPTConstants.POWERPOINT_DOCUMENT);
+        reader.read(input);
+        return builder.toString();
     }
 
 }

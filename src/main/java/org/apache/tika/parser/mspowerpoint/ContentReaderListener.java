@@ -30,27 +30,21 @@ import org.apache.poi.util.LittleEndian;
 import org.apache.poi.util.StringUtil;
 
 /**
- * Listener to read the content of PowerPoint file and transfere it to the
- * passed <code>StringBuffer</code>.
- * 
- * 
- * 
+ * Listener to read the content of PowerPoint file and transfers it to the
+ * passed <code>StringBuilder</code>.
  */
 class ContentReaderListener implements POIFSReaderListener {
 
     static Logger LOG = Logger.getRootLogger();
 
     /** Buffer holding the content of the file */
-    protected final transient StringBuffer buf;
+    private final StringBuilder builder;
 
     /**
      * Constructs Listener to get content of PowerPoint file.
-     * 
-     * @param content
-     *            StringBuffer refereing the content of the PowerPoint file.
      */
-    public ContentReaderListener(final StringBuffer content) {
-        this.buf = content;
+    public ContentReaderListener(StringBuilder builder) {
+        this.builder = builder;
     }
 
     /**
@@ -160,13 +154,13 @@ class ContentReaderListener implements POIFSReaderListener {
 
                     for (int j = 0; j < scontent.size(); j++) {
                         contentText = scontent.get(j).toString();
-                        this.buf.append(contentText);
+                        builder.append(contentText);
 
                         // to avoid concatinated words we add a blank additional
                         if (contentText.length() > 0
                                 && !(contentText.endsWith("\r") || contentText
                                         .endsWith("\n"))) {
-                            this.buf.append(" ");
+                            builder.append(" ");
                         }
                     }
                 }

@@ -16,26 +16,68 @@
  */
 package org.apache.tika.parser.msexcel;
 
-import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.tika.ms.MSParser;
 
 /**
  * Excel parser
  */
-public class MsExcelParser implements Parser {
+public class MsExcelParser extends MSParser {
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        try {
-            return new ExcelExtractor().extract(stream, metadata);
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new TikaException("Error parsing an Excel document", e);
+    protected String extractText(InputStream input) throws Exception {
+        StringBuilder builder = new StringBuilder();
+        extractText(new HSSFWorkbook(input), builder);
+        return builder.toString();
+    }
+
+    private void extractText(HSSFWorkbook book, StringBuilder builder) {
+        for (int i = 0; book != null && i < book.getNumberOfSheets(); i++) {
+            extractText(book.getSheetAt(i), builder);
+        }
+    }
+
+    private void extractText(HSSFSheet sheet, StringBuilder builder) {
+        for (int i = 0; sheet != null && i <= sheet.getLastRowNum(); i++) {
+            extractText(sheet.getRow(i), builder);
+        }
+    }
+
+    private void extractText(HSSFRow row, StringBuilder builder) {
+        for (short i = 0; row != null && i < row.getLastCellNum(); i++) {
+            extractText(row.getCell(i), builder);
+        }
+    }
+
+    private void extractText(HSSFCell cell, StringBuilder builder) {
+        if (cell != null) {
+            switch (cell.getCellType()) {
+            case HSSFCell.CELL_TYPE_STRING:
+                addText(cell.getRichStringCellValue().getString(), builder);
+                break;
+            case HSSFCell.CELL_TYPE_NUMERIC:
+            case HSSFCell.CELL_TYPE_FORMULA:
+                addText(Double.toString(cell.getNumericCellValue()), builder);
+                break;
+            default:
+                // ignore
+            } 
+        }
+    }
+
+    private void addText(String text, StringBuilder builder) {
+        if (text != null) {
+            text = text.trim();
+            if (text.length() > 0) {
+                if (builder.length() > 0) {
+                    builder.append(' ');
+                }
+                builder.append(text);
+            }
         }
     }
 
