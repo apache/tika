@@ -25,11 +25,9 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.config.Content;
 import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.log.TikaLogger;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
 import org.apache.tika.utils.ParseUtils;
@@ -68,13 +66,9 @@ public class TestParsers extends TestCase {
         // getDefaultConfig() to be legitimate.
         final String tikaConfigFilename = "target/classes/org/apache/tika/tika-config.xml";
 
-        final String log4jPropertiesFilename = "target/classes/log4j/log4j.properties";
-
         testFilesBaseDir = new File("src/test/resources/test-documents");
 
         tc = new TikaConfig(tikaConfigFilename);
-
-        TikaLogger.setLoggerConfigFile(log4jPropertiesFilename);
     }
 
     public void testPDFExtraction() throws Exception {

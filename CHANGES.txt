@@ -67,3 +67,5 @@ Unreleased changes (0.1-dev)
 30. TIKA-42 - Content class needs (String, String, String) constructor (K. Bennett)
 
 31. TIKA-43 - Parser interface (jukka)
+
+32. TIKA-47 - Remove TikaLogger (jukka)
