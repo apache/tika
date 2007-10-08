@@ -204,6 +204,12 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <targetPath>org/apache/tika</targetPath>
+        <directory>${basedir}/src/main/resources</directory>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -240,13 +246,6 @@
                     <include name="LICENSE.txt"/>
                   </fileset>
                 </copy>
-                <copy todir="${project.build.outputDirectory}/org/apache/tika/mime">
-                  <fileset dir="${basedir}/src/main/resources/mime">
-                    <include name="*"/>
-                  </fileset>
-                </copy>
-                <copy todir="${project.build.outputDirectory}/org/apache/tika"
-                      file="${basedir}/src/main/resources/tika-config.xml"/>
               </tasks>
             </configuration>
             <goals>
