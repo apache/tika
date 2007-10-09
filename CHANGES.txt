@@ -76,3 +76,5 @@ Unreleased changes (0.1-dev)
 
 35. TIKA-45 - RereadableInputStream needs to be able to read to
               the end of the original stream on first rewind. (K. Bennett)
+
+36. TIKA-41 - Resource files occur twice in jar file. (jukka)
