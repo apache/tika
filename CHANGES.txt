@@ -78,3 +78,5 @@ Unreleased changes (0.1-dev)
               the end of the original stream on first rewind. (K. Bennett)
 
 36. TIKA-41 - Resource files occur twice in jar file. (jukka)
+
+37. TIKA-49 - Some files have old-style license headers, fixed (Robert Burrell Donkin & bdelacretaz)
