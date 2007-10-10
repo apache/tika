@@ -97,7 +97,7 @@ public class RereadableInputStreamTest extends TestCase {
     }
 
     private File createTestFile() throws IOException {
-        File testfile = File.createTempFile("ris_test", ".tmp");
+        File testfile = File.createTempFile("TIKA_ris_test", ".tmp");
         testfile.deleteOnExit();
         FileOutputStream fos = new FileOutputStream(testfile);
         for (int i = 0; i < TEST_SIZE; i++) {

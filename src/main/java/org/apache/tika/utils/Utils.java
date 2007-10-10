@@ -74,7 +74,11 @@ public class Utils {
                 }
                 InputStream isEntry = new ByteArrayInputStream(stream
                         .toByteArray());
-                File file = File.createTempFile("tmp", "_" + entry.getName());
+                File file = File.createTempFile("TIKA_unzip_", "_" + entry.getName());
+                
+                // TODO we might want to delete the file earlier than on exit,
+                // in case Tika is used inside a long-running app
+                file.deleteOnExit();
                 saveInputStreamInFile(isEntry, new BufferedOutputStream(
                         new FileOutputStream(file)));
                 res.add(file);

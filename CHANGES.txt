@@ -80,3 +80,5 @@ Unreleased changes (0.1-dev)
 36. TIKA-41 - Resource files occur twice in jar file. (jukka)
 
 37. TIKA-49 - Some files have old-style license headers, fixed (Robert Burrell Donkin & bdelacretaz)
+
+38. TIKA-51 - Leftover temp files after running Tika tests, fixed (bdelacretaz)

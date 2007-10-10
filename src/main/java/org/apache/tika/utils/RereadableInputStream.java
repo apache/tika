@@ -241,7 +241,7 @@ public class RereadableInputStream extends InputStream {
         if (!bufferIsInFile) {
             boolean switchToFile = (size == (maxBytesInMemory));
             if (switchToFile) {
-                storeFile = File.createTempFile("streamstore_", ".tmp");
+                storeFile = File.createTempFile("TIKA_streamstore_", ".tmp");
                 bufferIsInFile = true;
                 storeOutputStream = new BufferedOutputStream(
                         new FileOutputStream(storeFile));
