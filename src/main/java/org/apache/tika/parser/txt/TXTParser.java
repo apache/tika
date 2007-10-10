@@ -16,14 +16,16 @@
  */
 package org.apache.tika.parser.txt;
 
-import java.io.BufferedReader;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+
+import com.ibm.icu.text.CharsetDetector;
+import com.ibm.icu.text.CharsetMatch;
 
 /**
  * Text parser
@@ -32,16 +34,35 @@ public class TXTParser implements Parser {
 
     public String parse(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
-        StringBuilder sb = new StringBuilder();
-        BufferedReader br = new BufferedReader(new InputStreamReader(stream));
+        CharsetDetector detector = new CharsetDetector();
 
-        int charAsInt;
-
-        while ((charAsInt = br.read()) != -1) {
-            sb.append((char) charAsInt);
+        // Use the declared character encoding, if available
+        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
+        if (encoding != null) {
+            detector.setDeclaredEncoding(encoding);
         }
 
-        return sb.toString();
+        // CharsetDetector expects a stream to support marks
+        if (!stream.markSupported()) {
+            stream = new BufferedInputStream(stream);
+        }
+
+        detector.setText(stream);
+
+        CharsetMatch match = detector.detect();
+        if (match == null) {
+            throw new TikaException("Unable to detect character encoding");
+        }
+
+        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
+        metadata.set(Metadata.CONTENT_ENCODING, match.getName());
+        String language = match.getLanguage();
+        if (language != null) {
+            metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
+            metadata.set(Metadata.LANGUAGE, match.getLanguage());
+        }
+
+        return match.getString();
     }
 
 }
