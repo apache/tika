@@ -52,7 +52,7 @@ public class ParseUtils implements TikaMimeKeys {
      * @return a parser appropriate to this MIME type
      * @throws TikaException
      */
-    public static Parser getParser(TikaConfig config, String mimeType)
+    public static Parser getParser(String mimeType, TikaConfig config)
             throws TikaException {
         ParserConfig pc = config.getParserConfig(mimeType);
         return ParserFactory.getParser(pc);
@@ -75,7 +75,7 @@ public class ParseUtils implements TikaMimeKeys {
             throws TikaException {
         String mimetype = config.getMimeRepository().getMimeType(documentUrl)
         .getName();
-        return getParser(config, mimetype);
+        return getParser(mimetype, config);
     }
 
     /**
@@ -94,7 +94,7 @@ public class ParseUtils implements TikaMimeKeys {
             throws TikaException {
         String mimetype = config.getMimeRepository().getMimeType(documentFile)
         .getName();
-        return getParser(config, mimetype);
+        return getParser(mimetype, config);
     }
 
     /**

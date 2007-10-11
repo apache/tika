@@ -84,3 +84,7 @@ Unreleased changes (0.1-dev)
 38. TIKA-51 - Leftover temp files after running Tika tests, fixed (bdelacretaz)
 
 39. TIKA-40 - Tika needs to support diverse character encodings (jukka)
+
+40. TIKA-55 - ParseUtils.getParser() method variants should have consistent parameter orders
+              (K. Bennett)
+
