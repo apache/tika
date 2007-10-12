@@ -22,7 +22,7 @@ import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.tika.ms.MSParser;
+import org.apache.tika.parser.ms.MSParser;
 
 /**
  * Excel parser

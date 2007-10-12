@@ -92,3 +92,5 @@ Unreleased changes (0.1-dev)
               (K. Bennett via bdelacretaz)
 
 42. TIKA-53 - XHTML SAX events from parsers (jukka)
+
+43. TIKA-57 - Rename org.apache.tika.ms to org.apache.tika.parser.ms (jukka)

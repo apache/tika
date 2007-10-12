@@ -19,7 +19,7 @@ package org.apache.tika.parser.mspowerpoint;
 import java.io.InputStream;
 
 import org.apache.poi.poifs.eventfilesystem.POIFSReader;
-import org.apache.tika.ms.MSParser;
+import org.apache.tika.parser.ms.MSParser;
 
 /**
  * Power point parser

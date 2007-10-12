@@ -31,7 +31,7 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
-import org.apache.tika.ms.MSParser;
+import org.apache.tika.parser.ms.MSParser;
 
 /**
  * Word parser
