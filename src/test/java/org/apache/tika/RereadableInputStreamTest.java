@@ -39,7 +39,7 @@ public class RereadableInputStreamTest extends TestCase {
 
         InputStream is = createTestInputStream();
         RereadableInputStream ris = new RereadableInputStream(is,
-                MEMORY_THRESHOLD);
+                MEMORY_THRESHOLD, true, true);
         try {
             for (int pass = 0; pass < NUM_PASSES; pass++) {
                 for (int byteNum = 0; byteNum < TEST_SIZE; byteNum++) {
@@ -74,16 +74,12 @@ public class RereadableInputStreamTest extends TestCase {
 
         try {
             InputStream s1 = createTestInputStream();
-            ris = new RereadableInputStream(s1, 5, readToEndOnRewind);
+            ris = new RereadableInputStream(s1, 5, readToEndOnRewind, true);
             ris.read();
             assertEquals(1, ris.getSize());
             ris.rewind();
             boolean moreBytesWereRead = (ris.getSize() > 1);
-            if (readToEndOnRewind) {
-                assertTrue(moreBytesWereRead);
-            } else {
-                assertFalse(moreBytesWereRead);
-            }
+            assertEquals(readToEndOnRewind, moreBytesWereRead);
         } finally {
             if (ris != null) {
                 ris.close();
@@ -92,8 +88,10 @@ public class RereadableInputStreamTest extends TestCase {
 
     }
 
-    private InputStream createTestInputStream() throws IOException {
-        return new BufferedInputStream(new FileInputStream(createTestFile()));
+    private TestInputStream createTestInputStream() throws IOException {
+        return new TestInputStream(
+                new BufferedInputStream(
+                        new FileInputStream(createTestFile())));
     }
 
     private File createTestFile() throws IOException {
@@ -106,4 +104,46 @@ public class RereadableInputStreamTest extends TestCase {
         fos.close();
         return testfile;
     }
+
+
+    public void testCloseBehavior() throws IOException {
+        doACloseBehaviorTest(true);
+        doACloseBehaviorTest(false);
+    }
+
+    private void doACloseBehaviorTest(boolean wantToClose) throws IOException {
+
+        TestInputStream tis = createTestInputStream();
+        RereadableInputStream ris =
+                new RereadableInputStream(tis, 5, true, wantToClose);
+        ris.close();
+        assertEquals(wantToClose, tis.isClosed());
+
+        if (! tis.isClosed()) {
+            tis.close();
+        }
+    }
+
+
+    /**
+     * Adds isClosed() to a BufferedInputStream.
+     */
+    class TestInputStream extends BufferedInputStream {
+
+        private boolean closed;
+
+        public TestInputStream(InputStream inputStream) {
+            super(inputStream);
+        }
+
+        public void close() throws IOException {
+            super.close();
+            closed = true;
+        }
+
+        public boolean isClosed() {
+            return closed;
+        }
+    }
+
 }

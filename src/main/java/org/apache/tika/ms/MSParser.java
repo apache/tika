@@ -40,7 +40,7 @@ public abstract class MSParser implements Parser {
     public String parse(InputStream input, Metadata metadata)
             throws IOException, TikaException {
         RereadableInputStream ris =
-            new RereadableInputStream(input, MEMORY_THRESHOLD);
+            new RereadableInputStream(input, MEMORY_THRESHOLD, true, false);
         try {
             // First, extract properties
             POIFSReader reader = new POIFSReader();

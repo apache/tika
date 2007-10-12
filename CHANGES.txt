@@ -88,3 +88,6 @@ Unreleased changes (0.1-dev)
 40. TIKA-55 - ParseUtils.getParser() method variants should have consistent parameter orders
               (K. Bennett)
 
+41. TIKA-52 - RereadableInputStream needs to support not closing the input stream it wraps.
+              (K. Bennett via bdelacretaz)
+
