@@ -19,32 +19,47 @@ package org.apache.tika.parser.html;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.log4j.Logger;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXResult;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.w3c.tidy.Tidy;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Html parser
- * 
  */
 public class HtmlParser implements Parser {
 
-    static Logger logger = Logger.getRootLogger();
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        try {
+            Tidy tidy = new Tidy();
+            tidy.setQuiet(true);
+            tidy.setShowWarnings(false);
+            tidy.setXHTML(true);
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        Tidy tidy = new Tidy();
-        tidy.setQuiet(true);
-        tidy.setShowWarnings(false);
-        Node root = tidy.parseDOM(stream, null).getDocumentElement();
-        extractElementTxt((Element) root, Metadata.TITLE, "title", metadata);
-        return getTextContent(root);
+            Element root = tidy.parseDOM(stream, null).getDocumentElement();
+
+            metadata.set(Metadata.CONTENT_TYPE, "text/html");
+            extractElementTxt(root, Metadata.TITLE, "title", metadata);
+
+            TransformerFactory factory = TransformerFactory.newInstance();
+            Transformer transformer = factory.newTransformer();
+            transformer.transform(new DOMSource(root), new SAXResult(handler));
+        } catch (TransformerException e) {
+            throw new TikaException("Failed to transform DOM to SAX", e);
+        }
     }
 
     private void extractElementTxt(
@@ -69,24 +84,6 @@ public class HtmlParser implements Parser {
                 }
             }
         }
-    }
-
-    private String getTextContent(Node node) {
-        NodeList children = node.getChildNodes();
-        StringBuffer sb = new StringBuffer();
-        for (int i = 0; i < children.getLength(); i++) {
-            Node child = children.item(i);
-            switch (child.getNodeType()) {
-            case Node.ELEMENT_NODE:
-                sb.append(getTextContent(child));
-                sb.append(" ");
-                break;
-            case Node.TEXT_NODE:
-                sb.append(((Text) child).getData());
-                break;
-            }
-        }
-        return sb.toString();
     }
 
 }

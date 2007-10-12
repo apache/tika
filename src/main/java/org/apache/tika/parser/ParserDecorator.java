@@ -21,6 +21,8 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Decorator base class for the {@link Parser} interface. This class
@@ -49,9 +51,10 @@ public class ParserDecorator implements Parser {
      * override this method (and use <code>super.parse()</code> to invoke
      * the decorated parser) to implement extra decoration.
      */
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        return parser.parse(stream, metadata);
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        parser.parse(stream, handler, metadata);
     }
 
 }

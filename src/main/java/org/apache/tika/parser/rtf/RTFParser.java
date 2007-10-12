@@ -19,27 +19,35 @@ package org.apache.tika.parser.rtf;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.rtf.RTFEditorKit;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * RTF parser
  */
 public class RTFParser implements Parser {
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         try {
             DefaultStyledDocument sd = new DefaultStyledDocument();
             new RTFEditorKit().read(stream, sd, 0);
-            return sd.getText(0, sd.getLength());
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
+
+            XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            xhtml.element("p", sd.getText(0, sd.getLength()));
+            xhtml.endDocument();
+        } catch (BadLocationException e) {
             throw new TikaException("Error parsing an RTF document", e);
         }
     }

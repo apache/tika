@@ -23,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +35,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserFactory;
+import org.apache.tika.parser.WriteOutContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Contains utility methods for parsing documents. Intended to provide simple
@@ -159,21 +162,24 @@ public class ParseUtils implements TikaMimeKeys {
     /**
      * Gets the string content of a document read from an input stream.
      * 
-     * @param inputStream
-     *            the stream from which to read document data
+     * @param stream the stream from which to read document data
      * @param config
-     * @param mimeType
-     *            MIME type of the data
+     * @param mimeType MIME type of the data
      * @return the string content parsed from the document
-     * @throws TikaException
-     * @throws IOException
      */
-    public static String getStringContent(InputStream inputStream,
-            TikaConfig config, String mimeType) throws TikaException,
-            IOException {
-        ParserConfig pc = config.getParserConfig(mimeType);
-        Parser parser = ParserFactory.getParser(pc);
-        return parser.parse(inputStream, new Metadata());
+    public static String getStringContent(
+            InputStream stream, TikaConfig config, String mimeType)
+            throws TikaException, IOException {
+        try {
+            ParserConfig pc = config.getParserConfig(mimeType);
+            Parser parser = ParserFactory.getParser(pc);
+            StringWriter writer = new StringWriter();
+            parser.parse(
+                    stream, new WriteOutContentHandler(writer), new Metadata());
+            return writer.toString();
+        } catch (SAXException e) {
+            throw new TikaException("Unexpected SAX error", e);
+        }
     }
 
     /**
@@ -183,8 +189,6 @@ public class ParseUtils implements TikaMimeKeys {
      *            URL pointing to the document to parse
      * @param config
      * @return the string content parsed from the document
-     * @throws TikaException
-     * @throws IOException
      */
     public static String getStringContent(URL documentUrl, TikaConfig config)
             throws TikaException, IOException {
@@ -202,11 +206,10 @@ public class ParseUtils implements TikaMimeKeys {
      * @param mimeType
      *            MIME type of the data
      * @return the string content parsed from the document
-     * @throws TikaException
-     * @throws IOException
      */
-    public static String getStringContent(URL documentUrl, TikaConfig config,
-            String mimeType) throws TikaException, IOException {
+    public static String getStringContent(
+            URL documentUrl, TikaConfig config, String mimeType)
+            throws TikaException, IOException {
         InputStream stream = documentUrl.openStream();
         try {
             return getStringContent(stream, config, mimeType);
@@ -224,11 +227,10 @@ public class ParseUtils implements TikaMimeKeys {
      * @param mimeType
      *            MIME type of the data
      * @return the string content parsed from the document
-     * @throws TikaException
-     * @throws IOException
      */
-    public static String getStringContent(File documentFile, TikaConfig config,
-            String mimeType) throws TikaException, IOException {
+    public static String getStringContent(
+            File documentFile, TikaConfig config, String mimeType)
+            throws TikaException, IOException {
         InputStream stream = new BufferedInputStream(new FileInputStream(
                 documentFile));
         try {
@@ -245,13 +247,11 @@ public class ParseUtils implements TikaMimeKeys {
      *            File object pointing to the document to parse
      * @param config
      * @return the string content parsed from the document
-     * @throws TikaException
-     * @throws IOException
      */
     public static String getStringContent(File documentFile, TikaConfig config)
             throws TikaException, IOException {
-        String mime = config.getMimeRepository().getMimeType(documentFile)
-        .getName();
+        String mime =
+            config.getMimeRepository().getMimeType(documentFile).getName();
         return getStringContent(documentFile, config, mime);
     }
 

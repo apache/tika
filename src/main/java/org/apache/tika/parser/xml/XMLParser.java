@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.XHTMLContentHandler;
 import org.apache.tika.utils.Utils;
 
 import org.apache.commons.lang.StringUtils;
@@ -40,6 +41,8 @@ import org.jdom.EntityRef;
 import org.jdom.Namespace;
 import org.jdom.ProcessingInstruction;
 import org.jdom.Text;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * XML parser
@@ -48,9 +51,11 @@ public class XMLParser implements Parser {
 
     static Logger logger = Logger.getRootLogger();
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         Document xmlDoc = Utils.parse(stream);
+
         extractContent(xmlDoc, Metadata.TITLE, "//dc:title", metadata);
         extractContent(xmlDoc, Metadata.SUBJECT, "//dc:subject", metadata);
         extractContent(xmlDoc, Metadata.CREATOR, "//dc:creator", metadata);
@@ -62,7 +67,11 @@ public class XMLParser implements Parser {
         extractContent(xmlDoc, Metadata.IDENTIFIER, "//dc:identifier", metadata);
         extractContent(xmlDoc, Metadata.LANGUAGE, "//dc:language", metadata);
         extractContent(xmlDoc, Metadata.RIGHTS, "//dc:rights", metadata);
-        return concatOccurrence(xmlDoc, "//*", " ");
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.element("p", concatOccurrence(xmlDoc, "//*", " "));
+        xhtml.endDocument();
     }
 
     public String concatOccurrence(Object xmlDoc, String xpath, String concatSep) {

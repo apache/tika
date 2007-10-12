@@ -32,6 +32,7 @@ import org.apache.tika.parser.ParserFactory;
 import org.apache.tika.utils.ParseUtils;
 import org.apache.tika.utils.Utils;
 import org.jdom.JDOMException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Junit test class for Tika {@link Parser}s.
@@ -113,7 +114,7 @@ public class TestParsers extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream,  metadata);
+            parser.parse(stream, new DefaultHandler(), metadata);
         } finally {
             stream.close();
         }
@@ -130,7 +131,7 @@ public class TestParsers extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, metadata);
+            parser.parse(stream, new DefaultHandler(), metadata);
         } finally {
             stream.close();
         }
@@ -155,7 +156,7 @@ public class TestParsers extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, metadata);
+            parser.parse(stream, new DefaultHandler(), metadata);
         } finally {
             stream.close();
         }
@@ -183,7 +184,7 @@ public class TestParsers extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
-            parser.parse(stream, metadata);
+            parser.parse(stream, new DefaultHandler(), metadata);
         } finally {
             stream.close();
         }

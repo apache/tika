@@ -21,6 +21,8 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Tika parser interface
@@ -28,22 +30,20 @@ import org.apache.tika.metadata.Metadata;
 public interface Parser {
 
     /**
-     * Parses a document from the given input stream and returns the
-     * extracted full text content of the document. Fills in selected
-     * metadata information in the given set of {@link Content} instances.
+     * Parses a document stream into a sequence of XHTML SAX events.
+     * Fills in related document metadata in the given metadata object.
      * <p>
-     * The given stream is consumed but not closed by this method.
+     * The given document stream is consumed but not closed by this method.
      * The responsibility to close the stream remains on the caller.
      *
-     * @param stream the document to be parsed
-     * @param contents configuration of metadata information to extract
-     * @param metadata document metadata
-     * @return full text content of the document
-     * @throws IOException if the document could not be read
+     * @param stream the document stream (input)
+     * @param handler handler for the XHTML SAX events (output)
+     * @param metadata document metadata (input and output)
+     * @throws IOException if the document stream could not be read
+     * @throws SAXException if the SAX events could not be processed
      * @throws TikaException if the document could not be parsed
      */
-    String parse(
-            InputStream stream, Metadata metadata)
-            throws IOException, TikaException;
+    void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException;
 
 }

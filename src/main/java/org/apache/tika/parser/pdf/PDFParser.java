@@ -24,18 +24,22 @@ import java.util.Calendar;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.XHTMLContentHandler;
 
 import org.pdfbox.pdmodel.PDDocument;
 import org.pdfbox.pdmodel.PDDocumentInformation;
 import org.pdfbox.util.PDFTextStripper;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * PDF parser
  */
 public class PDFParser implements Parser {
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         try {
             PDDocument pdfDocument = PDDocument.load(stream);
             try {
@@ -81,7 +85,12 @@ public class PDFParser implements Parser {
 
                 StringWriter writer = new StringWriter();
                 new PDFTextStripper().writeText(pdfDocument, writer);
-                return writer.getBuffer().toString();
+
+                XHTMLContentHandler xhtml =
+                    new XHTMLContentHandler(handler, metadata);
+                xhtml.startDocument();
+                xhtml.element("p", writer.getBuffer().toString());
+                xhtml.endDocument();
             } finally {
                 pdfDocument.close();
             }

@@ -25,7 +25,10 @@ import org.apache.poi.poifs.eventfilesystem.POIFSReader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.XHTMLContentHandler;
 import org.apache.tika.utils.RereadableInputStream;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Defines a Microsoft document content extractor.
@@ -37,10 +40,11 @@ public abstract class MSParser implements Parser {
     /**
      * Extracts properties and text from an MS Document input stream
      */
-    public String parse(InputStream input, Metadata metadata)
-            throws IOException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         RereadableInputStream ris =
-            new RereadableInputStream(input, MEMORY_THRESHOLD, true, false);
+            new RereadableInputStream(stream, MEMORY_THRESHOLD, true, false);
         try {
             // First, extract properties
             POIFSReader reader = new POIFSReader();
@@ -48,14 +52,18 @@ public abstract class MSParser implements Parser {
                     new PropertiesReaderListener(metadata),
                     SummaryInformation.DEFAULT_STREAM_NAME);
 
-            if (input.available() > 0) {
+            if (stream.available() > 0) {
                 reader.read(ris);
             }
             while (ris.read() != -1) {
             }
             ris.rewind();
             // Extract document full text
-            return extractText(ris);
+            XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            xhtml.element("p", extractText(ris));
+            xhtml.endDocument();
         } catch (IOException e) {
             throw e;
         } catch (TikaException e) {

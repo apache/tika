@@ -19,10 +19,14 @@ package org.apache.tika.parser.txt;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
@@ -32,8 +36,9 @@ import com.ibm.icu.text.CharsetMatch;
  */
 public class TXTParser implements Parser {
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         CharsetDetector detector = new CharsetDetector();
 
         // Use the declared character encoding, if available
@@ -62,7 +67,16 @@ public class TXTParser implements Parser {
             metadata.set(Metadata.LANGUAGE, match.getLanguage());
         }
 
-        return match.getString();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.startElement("p");
+        Reader reader = match.getReader();
+        char[] buffer = new char[4096];
+        for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
+            xhtml.characters(buffer, 0, n);
+        }
+        xhtml.endElement("p");
+        xhtml.endDocument();
     }
 
 }

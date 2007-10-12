@@ -30,6 +30,7 @@ import java.util.zip.ZipInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.XHTMLContentHandler;
 import org.apache.tika.parser.xml.XMLParser;
 
 import org.apache.log4j.Logger;
@@ -38,6 +39,8 @@ import org.jdom.Element;
 import org.jdom.JDOMException;
 import org.jdom.Namespace;
 import org.jdom.input.SAXBuilder;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * OpenOffice parser
@@ -75,8 +78,9 @@ public class OpenOfficeParser implements Parser {
         return xmlDoc;
     }
 
-    public String parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         Document xmlDoc = parse(stream);
         XMLParser xp = new XMLParser();
         xp.getAllDocumentNs(xmlDoc);
@@ -94,7 +98,11 @@ public class OpenOfficeParser implements Parser {
         xp.extractContent(xmlDoc, "nbPara", "//meta:document-statistic/@meta:paragraph-count", metadata);
         xp.extractContent(xmlDoc, "nbWord", "//meta:document-statistic/@meta:word-count", metadata);
         xp.extractContent(xmlDoc, "nbcharacter", "//meta:document-statistic/@meta:character-count", metadata);
-        return xp.concatOccurrence(xmlDoc, "//*", " ");
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.element("p", xp.concatOccurrence(xmlDoc, "//*", " "));
+        xhtml.endDocument();
     }
 
     public List unzip(InputStream is) {

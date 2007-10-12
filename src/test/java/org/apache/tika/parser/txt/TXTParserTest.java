@@ -17,9 +17,11 @@
 package org.apache.tika.parser.txt;
 
 import java.io.ByteArrayInputStream;
+import java.io.StringWriter;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.WriteOutContentHandler;
 
 import junit.framework.TestCase;
 
@@ -34,8 +36,12 @@ public class TXTParserTest extends TestCase {
             + " encoding and the language of the input stream.";
 
         Metadata metadata = new Metadata();
-        String content = parser.parse(
-                new ByteArrayInputStream(text.getBytes("UTF-8")), metadata);
+        StringWriter writer = new StringWriter();
+        parser.parse(
+                new ByteArrayInputStream(text.getBytes("UTF-8")),
+                new WriteOutContentHandler(writer),
+                metadata);
+        String content = writer.toString();
 
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("en", metadata.get(Metadata.CONTENT_LANGUAGE));
@@ -54,8 +60,12 @@ public class TXTParserTest extends TestCase {
         String text = "I\u00F1t\u00EBrn\u00E2ti\u00F4n\u00E0liz\u00E6ti\u00F8n";
 
         Metadata metadata = new Metadata();
-        String content = parser.parse(
-                new ByteArrayInputStream(text.getBytes("UTF-8")), metadata);
+        StringWriter writer = new StringWriter();
+        parser.parse(
+                new ByteArrayInputStream(text.getBytes("UTF-8")),
+                new WriteOutContentHandler(writer),
+                metadata);
+        String content = writer.toString();
 
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
@@ -65,8 +75,12 @@ public class TXTParserTest extends TestCase {
 
     public void testEmptyText() throws Exception {
         Metadata metadata = new Metadata();
-        String content = parser.parse(
-                new ByteArrayInputStream(new byte[0]), metadata);
+        StringWriter writer = new StringWriter();
+        parser.parse(
+                new ByteArrayInputStream(new byte[0]),
+                new WriteOutContentHandler(writer),
+                metadata);
+        String content = writer.toString();
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("", content);
     }
