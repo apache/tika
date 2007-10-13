@@ -61,14 +61,9 @@ public class TestParsers extends TestCase {
          * sep + "log4j.properties";
          */
 
-        // FIXME for now, fix filenames according to Maven testing layout
-        // The file below should be the default configuration for the test of
-        // getDefaultConfig() to be legitimate.
-        final String tikaConfigFilename = "target/classes/org/apache/tika/tika-config.xml";
-
         testFilesBaseDir = new File("src/test/resources/test-documents");
 
-        tc = new TikaConfig(tikaConfigFilename);
+        tc = TikaConfig.getDefaultConfig();
     }
 
     public void testPDFExtraction() throws Exception {
