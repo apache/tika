@@ -26,7 +26,7 @@ import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 /**
  * Excel parser
  */
-public class ExcelParser extends MSParser {
+public class ExcelParser extends OfficeParser {
 
     protected String extractText(InputStream input) throws Exception {
         StringBuilder builder = new StringBuilder();

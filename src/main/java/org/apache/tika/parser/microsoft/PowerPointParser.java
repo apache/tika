@@ -23,7 +23,7 @@ import org.apache.poi.poifs.eventfilesystem.POIFSReader;
 /**
  * Power point parser
  */
-public class PowerPointParser extends MSParser {
+public class PowerPointParser extends OfficeParser {
 
     protected String extractText(InputStream input) throws Exception {
         StringBuilder builder = new StringBuilder();

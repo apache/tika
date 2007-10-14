@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
 /**
  * Defines a Microsoft document content extractor.
  */
-public abstract class MSParser implements Parser {
+public abstract class OfficeParser implements Parser {
 
     private final int MEMORY_THRESHOLD = 1024 * 1024;
 

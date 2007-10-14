@@ -35,7 +35,7 @@ import org.apache.poi.util.LittleEndian;
 /**
  * Word parser
  */
-public class WordParser extends MSParser {
+public class WordParser extends OfficeParser {
 
     /**
      * Gets the text from a Word document.
