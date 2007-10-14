@@ -14,17 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.mspowerpoint;
+package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
 
 import org.apache.poi.poifs.eventfilesystem.POIFSReader;
-import org.apache.tika.parser.ms.MSParser;
 
 /**
  * Power point parser
  */
-public class MsPowerPointParser extends MSParser {
+public class PowerPointParser extends MSParser {
 
     protected String extractText(InputStream input) throws Exception {
         StringBuilder builder = new StringBuilder();

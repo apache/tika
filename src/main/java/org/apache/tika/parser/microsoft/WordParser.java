@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.msword;
+package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
 import java.util.Iterator;
@@ -31,12 +31,11 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
-import org.apache.tika.parser.ms.MSParser;
 
 /**
  * Word parser
  */
-public class MsWordParser extends MSParser {
+public class WordParser extends MSParser {
 
     /**
      * Gets the text from a Word document.

@@ -13,10 +13,9 @@
  *  limitations under the License.
  */
 
-package org.apache.tika.parser.msword;
+package org.apache.tika.parser.microsoft;
 
 
-import org.apache.tika.parser.msword.chp.Word6CHPBinTable;
 
 import org.apache.poi.util.LittleEndian;
 import org.apache.poi.hwpf.model.*;

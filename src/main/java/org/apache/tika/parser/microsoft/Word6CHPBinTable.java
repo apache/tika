@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package org.apache.tika.parser.msword.chp;
+package org.apache.tika.parser.microsoft;
 
 import java.util.List;
 import java.util.ArrayList;

@@ -12,7 +12,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.apache.tika.parser.msword;
+package org.apache.tika.parser.microsoft;
 
 
 public class PasswordProtectedException extends Exception {

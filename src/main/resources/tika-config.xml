@@ -9,15 +9,15 @@
                 <mime>application/xml</mime>
         </parser>
 
-        <parser name="parse-msword" class="org.apache.tika.parser.msword.MsWordParser">
+        <parser name="parse-msword" class="org.apache.tika.parser.microsoft.WordParser">
                 <mime>application/msword</mime>
         </parser>
 
-        <parser name="parse-msexcel" class="org.apache.tika.parser.msexcel.MsExcelParser">
+        <parser name="parse-msexcel" class="org.apache.tika.parser.microsoft.ExcelParser">
                 <mime>application/vnd.ms-excel</mime>
         </parser>
 
-        <parser name="parse-mspowerpoint" class="org.apache.tika.parser.mspowerpoint.MsPowerPointParser">
+        <parser name="parse-mspowerpoint" class="org.apache.tika.parser.microsoft.PowerPointParser">
                 <mime>application/vnd.ms-powerpoint</mime>
         </parser>
 

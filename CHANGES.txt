@@ -99,3 +99,5 @@ Unreleased changes (0.1-dev)
               config path in TestParsers (jukka)
 
 45. TIKA-58 - Replace jtidy html parser with nekohtml based parser (siren)
+
+46. TIKA-60 - Rename Microsoft parser classes (jukka)

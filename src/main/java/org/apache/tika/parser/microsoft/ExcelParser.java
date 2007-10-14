@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.msexcel;
+package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
 
@@ -22,12 +22,11 @@ import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.tika.parser.ms.MSParser;
 
 /**
  * Excel parser
  */
-public class MsExcelParser extends MSParser {
+public class ExcelParser extends MSParser {
 
     protected String extractText(InputStream input) throws Exception {
         StringBuilder builder = new StringBuilder();

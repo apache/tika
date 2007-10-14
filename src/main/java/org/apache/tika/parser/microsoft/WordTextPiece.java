@@ -13,7 +13,7 @@
  *  limitations under the License.
  */
 
-package org.apache.tika.parser.msword;
+package org.apache.tika.parser.microsoft;
 
 /**
  * This class stores info about the data structure describing a chunk of text

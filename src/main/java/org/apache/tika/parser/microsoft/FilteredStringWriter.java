@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.parser.mspowerpoint;
+package org.apache.tika.parser.microsoft;
 
 import java.io.StringWriter;
 
