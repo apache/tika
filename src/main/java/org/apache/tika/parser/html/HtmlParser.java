@@ -19,71 +19,107 @@ package org.apache.tika.parser.html;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.sax.SAXResult;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ContentHandlerDecorator;
 import org.apache.tika.parser.Parser;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Text;
-import org.w3c.tidy.Tidy;
+import org.cyberneko.html.parsers.SAXParser;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Html parser
+ * Simple HTML parser implemented with NekoHTML.
  */
 public class HtmlParser implements Parser {
 
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        try {
-            Tidy tidy = new Tidy();
-            tidy.setQuiet(true);
-            tidy.setShowWarnings(false);
-            tidy.setXHTML(true);
-
-            Element root = tidy.parseDOM(stream, null).getDocumentElement();
-
-            metadata.set(Metadata.CONTENT_TYPE, "text/html");
-            extractElementTxt(root, Metadata.TITLE, "title", metadata);
-
-            TransformerFactory factory = TransformerFactory.newInstance();
-            Transformer transformer = factory.newTransformer();
-            transformer.transform(new DOMSource(root), new SAXResult(handler));
-        } catch (TransformerException e) {
-            throw new TikaException("Failed to transform DOM to SAX", e);
-        }
+    public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata) throws IOException, SAXException, TikaException {
+        final SAXParser parser = new SAXParser();
+        final InputSource source = new InputSource(stream);
+        parser.setContentHandler(new TitleExtractingContentHandler(handler,
+                metadata));
+        parser.parse(source);
     }
 
-    private void extractElementTxt(
-            Element root, String name, String tag, Metadata metadata) {
-        NodeList children = root.getElementsByTagName(tag);
-        if (children != null) {
-            if (children.getLength() > 0) {
-                if (children.getLength() == 1) {
-                    Element node = (Element) children.item(0);
-                    Text txt = (Text) node.getFirstChild();
-                    if (txt != null) {
-                        metadata.set(name, txt.getData());
-                    }
-                } else {
-                    for (int i = 0; i < children.getLength(); i++) {
-                        Element node = (Element) children.item(i);
-                        Text txt = (Text) node.getFirstChild();
-                        if (txt != null) {
-                            metadata.add(name, txt.getData());
-                        }
-                    }
+    private static class TitleExtractingContentHandler extends
+            ContentHandlerDecorator {
+
+        private static final String TAG_TITLE = "TITLE";
+
+        private static final String TAG_HEAD = "HEAD";
+
+        private static final String TAG_HTML = "HTML";
+
+        private Phase phase = Phase.START;
+
+        private Metadata metadata;
+
+        private StringBuilder title = new StringBuilder();
+
+        private static enum Phase {
+            START, HTML, HEAD, TITLE, IGNORE;
+        }
+
+        public TitleExtractingContentHandler(final ContentHandler handler,
+                final Metadata metadata) {
+            super(handler);
+            this.metadata = metadata;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String name,
+                Attributes atts) throws SAXException {
+
+            switch (phase) {
+            case START:
+                if (TAG_HTML.equals(localName)) {
+                    phase = Phase.HTML;
                 }
+                break;
+            case HTML:
+                if (TAG_HEAD.equals(localName)) {
+                    phase = Phase.HEAD;
+                }
+                break;
+            case HEAD:
+                if (TAG_TITLE.equals(localName)) {
+                    phase = Phase.TITLE;
+                }
+                break;
             }
+            super.startElement(uri, localName, name, atts);
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length)
+                throws SAXException {
+            switch (phase) {
+            case TITLE:
+                title.append(ch, start, length);
+                break;
+            }
+            super.characters(ch, start, length);
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String name)
+                throws SAXException {
+            switch (phase) {
+            case TITLE:
+                if (TAG_TITLE.equals(localName)) {
+                    phase = Phase.IGNORE;
+                }
+                break;
+            }
+            super.endElement(uri, localName, name);
+        }
+
+        @Override
+        public void endDocument() throws SAXException {
+            metadata.set(Metadata.TITLE, title.toString());
+            super.endDocument();
         }
     }
-
 }

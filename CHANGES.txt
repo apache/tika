@@ -97,3 +97,5 @@ Unreleased changes (0.1-dev)
 
 44. TIKA-62 - Use TikaConfig.getDefaultConfig() instead of a hardcoded
               config path in TestParsers (jukka)
+
+45. TIKA-58 - Replace jtidy html parser with nekohtml based parser (siren)
