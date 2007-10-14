@@ -27,7 +27,7 @@ import org.apache.tika.utils.RereadableInputStream;
 
 import junit.framework.TestCase;
 
-public class RereadableInputStreamTest extends TestCase {
+public class TestRereadableInputStream extends TestCase {
 
     private final int TEST_SIZE = 3;
 
