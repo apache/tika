@@ -167,7 +167,7 @@ public final class MimeTypes {
      *         <code>null</code> if none is found.
      */
     public MimeType getMimeType(String name) {
-        MimeType type = patterns.matches(name);
+        MimeType type = patterns.matches(name.toLowerCase());
         if (type != null)
             return type;
         // if it's null here, then return the default type

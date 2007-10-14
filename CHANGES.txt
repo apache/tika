@@ -106,3 +106,6 @@ Unreleased changes (0.1-dev)
               (jukka)
 
 48. TIKA-66 - Use Java 5 features in org.apache.tika.mime (jukka)
+
+49. TIKA-56 - Mime type detection fails with upper case file extensions such as "PDF"
+             (mattmann)
