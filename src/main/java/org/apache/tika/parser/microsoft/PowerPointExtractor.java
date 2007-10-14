@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
@@ -23,17 +24,10 @@ import java.util.Vector;
 
 import org.apache.log4j.Logger;
 import org.apache.poi.hdf.extractor.Utils;
-import org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent;
-import org.apache.poi.poifs.eventfilesystem.POIFSReaderListener;
-import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.util.LittleEndian;
 import org.apache.poi.util.StringUtil;
 
-/**
- * Listener to read the content of PowerPoint file and transfers it to the
- * passed <code>StringBuilder</code>.
- */
-class ContentReaderListener implements POIFSReaderListener {
+class PowerPointExtractor {
 
     static Logger LOG = Logger.getRootLogger();
 
@@ -43,31 +37,15 @@ class ContentReaderListener implements POIFSReaderListener {
     /**
      * Constructs Listener to get content of PowerPoint file.
      */
-    public ContentReaderListener(StringBuilder builder) {
+    public PowerPointExtractor(StringBuilder builder) {
         this.builder = builder;
     }
 
     /**
      * Reads the internal PowerPoint document stream.
-     * 
-     * @see org.apache.poi.poifs.eventfilesystem.POIFSReaderListener#processPOIFSReaderEvent(org.apache.poi.poifs.eventfilesystem.POIFSReaderEvent)
      */
-    public void processPOIFSReaderEvent(final POIFSReaderEvent event) {
-
-        if (event == null
-                || event.getName() == null
-                || !event.getName()
-                        .startsWith(PPTConstants.POWERPOINT_DOCUMENT)) {
-
-            LOG
-                    .warn("Stream not processed. It is not a PowerPoint document: : "
-                            + event.getName());
-
-            return;
-        }
-
+    public void extract(InputStream dis) {
         try {
-            final DocumentInputStream dis = event.getStream();
             final byte pptdata[] = new byte[dis.available()];
             dis.read(pptdata, 0, dis.available());
             int offset = 0;
@@ -457,4 +435,5 @@ class ContentReaderListener implements POIFSReaderListener {
 
         return slides;
     }
+
 }

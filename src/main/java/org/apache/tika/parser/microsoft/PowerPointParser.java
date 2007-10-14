@@ -16,22 +16,35 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.poi.poifs.eventfilesystem.POIFSReader;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
 /**
  * Power point parser
  */
 public class PowerPointParser extends OfficeParser {
 
-    protected String extractText(InputStream input) throws Exception {
+    /**
+     *  Name of a PowerPoint document within a POIFS file system
+     */
+    private  static final String POWERPOINT = "PowerPoint Document";
+
+    protected String getContentType() {
+        return "application/vnd.ms-powerpoint";
+    }
+
+    protected String extractText(POIFSFileSystem filesystem) throws IOException {
         StringBuilder builder = new StringBuilder();
-        POIFSReader reader = new POIFSReader();
-        reader.registerListener(
-                new ContentReaderListener(builder),
-                PPTConstants.POWERPOINT_DOCUMENT);
-        reader.read(input);
+
+        InputStream stream = filesystem.createDocumentInputStream(POWERPOINT);
+        try {
+            new PowerPointExtractor(builder).extract(stream);
+        } finally {
+            stream.close();
+        }
+
         return builder.toString();
     }
 

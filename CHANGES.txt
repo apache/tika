@@ -101,3 +101,6 @@ Unreleased changes (0.1-dev)
 45. TIKA-58 - Replace jtidy html parser with nekohtml based parser (siren)
 
 46. TIKA-60 - Rename Microsoft parser classes (jukka)
+
+47. TIKA-63 - Avoid multiple passes over the input stream in Microsoft parsers
+              (jukka)

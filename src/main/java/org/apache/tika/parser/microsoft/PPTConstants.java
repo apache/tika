@@ -47,11 +47,6 @@ class PPTConstants {
   /** ATOM ID of drawing group area */
   public static final long PPT_ATOM_DRAWINGGROUP = 61448L;
 
-  /** Name for PowerPoint Documents within the file */
-  public static final String POWERPOINT_DOCUMENT = "PowerPoint Document";
-
-
-
   /**
    * Protected constructor to prevent instantiation.
    */

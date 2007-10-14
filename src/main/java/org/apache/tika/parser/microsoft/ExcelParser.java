@@ -16,21 +16,26 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.InputStream;
+import java.io.IOException;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 
 /**
  * Excel parser
  */
 public class ExcelParser extends OfficeParser {
 
-    protected String extractText(InputStream input) throws Exception {
+    protected String getContentType() {
+        return "application/vnd.ms-excel";
+    }
+
+    protected String extractText(POIFSFileSystem filesystem) throws IOException{
         StringBuilder builder = new StringBuilder();
-        extractText(new HSSFWorkbook(input), builder);
+        extractText(new HSSFWorkbook(filesystem), builder);
         return builder.toString();
     }
 

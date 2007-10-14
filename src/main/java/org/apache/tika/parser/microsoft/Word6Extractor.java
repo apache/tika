@@ -20,6 +20,7 @@ package org.apache.tika.parser.microsoft;
 import org.apache.poi.util.LittleEndian;
 import org.apache.poi.hwpf.model.*;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -44,8 +45,7 @@ class Word6Extractor
    * @return The text from the document
    * @throws Exception If there are any unexpected exceptions.
    */
-  public String extractText(byte[] mainStream) throws Exception
-  {
+  public String extractText(byte[] mainStream) throws IOException {
     int fcMin = LittleEndian.getInt(mainStream, 0x18);
     int fcMax = LittleEndian.getInt(mainStream, 0x1C);
 

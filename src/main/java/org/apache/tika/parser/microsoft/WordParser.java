@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -31,20 +31,24 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
+import org.apache.tika.exception.TikaException;
 
 /**
  * Word parser
  */
 public class WordParser extends OfficeParser {
 
+    protected String getContentType() {
+        return "application/msword";
+    }
+
     /**
      * Gets the text from a Word document.
      *
      * @param in The InputStream representing the Word file.
      */
-    public String extractText(InputStream in) throws Exception {
-        POIFSFileSystem fsys = new POIFSFileSystem(in);
-
+    public String extractText(POIFSFileSystem fsys)
+            throws IOException, TikaException {
         // load our POIFS document streams.
         DocumentEntry headerProps =
             (DocumentEntry) fsys.getRoot().getEntry("WordDocument");
@@ -56,12 +60,10 @@ public class WordParser extends OfficeParser {
 
         int info = LittleEndian.getShort(header, 0xa);
         if ((info & 0x4) != 0) {
-            throw new FastSavedException(
-                    "Fast-saved files are unsupported at this time");
+            throw new TikaException("Fast-saved files are unsupported");
         }
         if ((info & 0x100) != 0) {
-            throw new PasswordProtectedException(
-                    "This document is password protected");
+            throw new TikaException("This document is password protected");
         }
 
         // determine the version of Word this document came from.
