@@ -19,50 +19,45 @@ package org.apache.tika.mime;
 // JDK imports
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * Defines a MimeType pattern.
- * 
- * 
  */
 class Patterns {
 
-    private static Map escapeMap = new HashMap();
+    private static Map<Character, String> escapeMap =
+        new HashMap<Character, String>();
+
     static {
-        escapeMap.put("\\", "\\\\");
-        escapeMap.put("?", "\\?");
-        escapeMap.put("[", "\\[");
-        escapeMap.put("]", "\\]");
-        escapeMap.put("^", "\\^");
-        escapeMap.put(".", "\\.");
-        escapeMap.put("-", "\\-");
-        escapeMap.put("$", "\\$");
-        escapeMap.put("+", "\\+");
-        escapeMap.put("(", "\\(");
-        escapeMap.put(")", "\\)");
-        escapeMap.put("{", "\\{");
-        escapeMap.put("}", "\\}");
-        escapeMap.put("|", "\\|");
-        escapeMap.put("*", ".*");
+        escapeMap.put('\\', "\\\\");
+        escapeMap.put('?', "\\?");
+        escapeMap.put('[', "\\[");
+        escapeMap.put(']', "\\]");
+        escapeMap.put('^', "\\^");
+        escapeMap.put('.', "\\.");
+        escapeMap.put('-', "\\-");
+        escapeMap.put('$', "\\$");
+        escapeMap.put('+', "\\+");
+        escapeMap.put('(', "\\(");
+        escapeMap.put(')', "\\)");
+        escapeMap.put('{', "\\{");
+        escapeMap.put('}', "\\}");
+        escapeMap.put('|', "\\|");
+        escapeMap.put('*', ".*");
     }
 
     /** Gathers all the patterns */
-    private ArrayList patterns = new ArrayList();
+    private ArrayList<String> patterns = new ArrayList<String>();
 
     /** An index of exact matching patterns */
-    private Map exactIdx = new HashMap();
+    private Map<String, MimeType> exactIdx = new HashMap<String, MimeType>();
 
     /** An index of the patterns of the form "*.ext" */
-    private Map extIdx = new HashMap();
+    private Map<String, MimeType> extIdx = new HashMap<String, MimeType>();
 
     /** A list of other patterns */
-    private Map others = new HashMap();
-
-    /** Creates a new instance of Patterns */
-    Patterns() {
-    }
+    private Map<String, MimeType> others = new HashMap<String, MimeType>();
 
     void add(String[] patterns, MimeType type) {
         // Some preliminary checks
@@ -70,8 +65,8 @@ class Patterns {
             return;
         }
         // All is ok, so add the patterns
-        for (int i = 0; i < patterns.length; i++) {
-            add(patterns[i], type);
+        for (String pattern : patterns) {
+            add(pattern, type);
         }
     }
 
@@ -85,10 +80,8 @@ class Patterns {
         if ((pattern.indexOf('*') == -1) && (pattern.indexOf('?') == -1)
                 && (pattern.indexOf('[') == -1)) {
             exactIdx.put(pattern, type);
-
         } else if (pattern.startsWith("*.")) {
             extIdx.put(pattern.substring(2), type);
-
         } else {
             others.put(escape(pattern), type);
         }
@@ -97,7 +90,7 @@ class Patterns {
     }
 
     String[] getPatterns() {
-        return (String[]) patterns.toArray(new String[patterns.size()]);
+        return patterns.toArray(new String[patterns.size()]);
     }
 
     /**
@@ -122,7 +115,7 @@ class Patterns {
         }
 
         // First, try exact match of the provided filename
-        MimeType type = (MimeType) exactIdx.get(filename);
+        MimeType type = exactIdx.get(filename);
         if (type != null) {
             return type;
         }
@@ -130,14 +123,14 @@ class Patterns {
         // Then try exact match with only the filename
         String str = last(filename, '/');
         if (str != null) {
-            type = (MimeType) exactIdx.get(str);
+            type = exactIdx.get(str);
             if (type != null) {
                 return type;
             }
         }
         str = last(filename, '\\');
         if (str != null) {
-            type = (MimeType) exactIdx.get(str);
+            type = exactIdx.get(str);
             if (type != null) {
                 return type;
             }
@@ -146,7 +139,7 @@ class Patterns {
         // Then try "extension" (*.xxx) matching
         int idx = filename.indexOf('.', 0);
         while (idx != -1) {
-            type = (MimeType) extIdx.get(filename.substring(idx + 1));
+            type = extIdx.get(filename.substring(idx + 1));
             if (type != null) {
                 return type;
             }
@@ -155,16 +148,14 @@ class Patterns {
 
         // And finally, try complex regexp matching
         String longest = null;
-        Iterator iter = others.keySet().iterator();
-        while (iter.hasNext()) {
-            String pattern = (String) iter.next();
+        for (String pattern : others.keySet()) {
             if ((filename.matches(pattern))
                     && (pattern.length() > longest.length())) {
                 longest = pattern;
             }
         }
         if (longest != null) {
-            type = (MimeType) others.get(longest);
+            type = others.get(longest);
         }
         return type;
     }
@@ -181,11 +172,10 @@ class Patterns {
     }
 
     private final static String escape(String str) {
-        char[] chars = str.toCharArray();
         StringBuffer result = new StringBuffer(str.length());
         for (int i = 0; i < str.length(); i++) {
             String charAt = String.valueOf(str.charAt(i));
-            String replace = (String) escapeMap.get(charAt);
+            String replace = escapeMap.get(charAt);
             result.append((replace != null) ? replace : charAt);
         }
         return result.toString();

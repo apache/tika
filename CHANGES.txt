@@ -104,3 +104,5 @@ Unreleased changes (0.1-dev)
 
 47. TIKA-63 - Avoid multiple passes over the input stream in Microsoft parsers
               (jukka)
+
+48. TIKA-66 - Use Java 5 features in org.apache.tika.mime (jukka)

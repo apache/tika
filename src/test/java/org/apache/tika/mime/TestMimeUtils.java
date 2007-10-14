@@ -37,8 +37,6 @@ public class TestMimeUtils extends TestCase implements TikaMimeKeys {
 
     private static final String tikaMimeFile = "org/apache/tika/mime/tika-mimetypes.xml";
     
-    private static final boolean magic = false;
-
     private static URL u;
 
     static {
@@ -54,7 +52,7 @@ public class TestMimeUtils extends TestCase implements TikaMimeKeys {
     private MimeUtils utils;
 
     public TestMimeUtils() {
-        utils = new MimeUtils(tikaMimeFile, magic);
+        utils = new MimeUtils(tikaMimeFile);
         assertNotNull(utils);
     }
 

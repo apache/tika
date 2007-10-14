@@ -38,18 +38,11 @@ public class MimeUtils implements TikaMimeKeys {
     private final static Logger LOG = Logger.getLogger(MimeUtils.class
             .getName());
 
-    /** The key used to cache the mime repository in conf */
-    private final static String KEY = MimeUtils.class.getName();
-
-    /** A flag that tells if magic resolution must be performed */
-    private boolean magic = true;
-
     /** The MimeTypes repository instance */
     private MimeTypes repository = null;
 
     /** Creates a new instance of MimeUtils */
-    public MimeUtils(String resPath, boolean magic) {
-        this.magic = magic;
+    public MimeUtils(String resPath) {
         if(repository == null){
             repository = load(resPath);
         }

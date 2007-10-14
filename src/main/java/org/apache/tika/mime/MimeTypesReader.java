@@ -130,17 +130,17 @@ final class MimeTypesReader {
 
     MimeType[] read(Document document) {
         // printDOM(document);
-        MimeType[] types = null;
         Element element = document.getDocumentElement();
-        if ((element != null) && element.getTagName().equals("mime-info")) {
-            types = readMimeInfo(element);
+        if (element != null && element.getTagName().equals("mime-info")) {
+            return readMimeInfo(element);
+        } else {
+            return new MimeType[0];
         }
-        return (types == null) ? (new MimeType[0]) : types;
     }
 
     /** Read Element named mime-info. */
     private MimeType[] readMimeInfo(Element element) {
-        ArrayList types = new ArrayList();
+        ArrayList<MimeType> types = new ArrayList<MimeType>();
         NodeList nodes = element.getChildNodes();
         for (int i = 0; i < nodes.getLength(); i++) {
             Node node = nodes.item(i);
@@ -154,7 +154,7 @@ final class MimeTypesReader {
                 }
             }
         }
-        return (MimeType[]) types.toArray(new MimeType[types.size()]);
+        return types.toArray(new MimeType[types.size()]);
     }
 
     /** Read Element named mime-type. */

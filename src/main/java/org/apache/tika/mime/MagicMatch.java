@@ -155,8 +155,6 @@ class MagicMatch implements Clause {
     }
 
     public boolean eval(byte[] data) {
-
-        boolean ok = false;
         for (int i = offsetStart; i <= offsetEnd; i++) {
             if (data.length < (this.length + i)) {
                 // Not enough data...
@@ -181,37 +179,8 @@ class MagicMatch implements Clause {
     }
 
     public String toString() {
-        return new StringBuffer().append("[").append(offsetStart).append(":")
-                .append(offsetEnd).append("(").append(type).append(")").append(
-                        "-").append(mask).append("#").append(value).append("]")
-                .toString();
+        return "[" + offsetStart + ":" + offsetEnd
+            + "(" + type + ")-" + mask + "#" + value + "]";
     }
 
-    private final static boolean equals(byte[] b1, byte[] b2) {
-        if ((b1 != null) && (b2 != null)) {
-            if (b1.length != b2.length) {
-                return false;
-            }
-            for (int i = 0; i < b1.length; i++) {
-                if (b1[i] != b2[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        if ((b1 == null) && (b2 == null)) {
-            return true;
-        }
-        return false;
-    }
-
-    private final static String toHexString(byte[] bytes) {
-        StringBuffer buf = new StringBuffer();
-        for (int i = 0; i < bytes.length; i++) {
-            String str = Integer.toHexString(bytes[i]);
-            buf.append((str.length() > 2) ? str.substring(str.length() - 2)
-                    : str);
-        }
-        return buf.toString();
-    }
 }

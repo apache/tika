@@ -72,8 +72,7 @@ public class TikaConfig {
     public TikaConfig(Element element) throws JDOMException {
         Element mtr = element.getChild("mimeTypeRepository");
         String mimeTypeRepoResource = mtr.getAttributeValue("resource");
-        boolean magic = Boolean.valueOf(mtr.getAttributeValue("magic"));
-        mimeTypeRepo = new MimeUtils(mimeTypeRepoResource, magic);
+        mimeTypeRepo = new MimeUtils(mimeTypeRepoResource);
 
         for (Object parser : XPath.selectNodes(element, "//parser")) {
             ParserConfig config = new ParserConfig((Element) parser);

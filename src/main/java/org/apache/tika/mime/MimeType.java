@@ -54,16 +54,16 @@ public final class MimeType {
     private Patterns patterns = null;
 
     /** The magics associated to this Mime-Type */
-    private ArrayList magics = null;
+    private ArrayList<Magic> magics = null;
 
     /** The aliases Mime-Types for this one */
-    private ArrayList aliases = null;
+    private ArrayList<String> aliases = null;
 
     /** The root-XML associated to this Mime-Type */
-    private ArrayList rootXML = null;
+    private ArrayList<RootXML> rootXML = null;
 
     /** The sub-class-of associated to this Mime-Type */
-    private ArrayList superTypes = null;
+    private ArrayList<String> superTypes = null;
 
     /** The mime-type level (regarding its subTypes) */
     private int level = 0;
@@ -127,10 +127,10 @@ public final class MimeType {
         this.sub = clearedSub.toLowerCase().trim();
         this.name = this.primary + SEPARATOR + this.sub;
         this.patterns = new Patterns();
-        this.magics = new ArrayList();
-        this.aliases = new ArrayList();
-        this.rootXML = new ArrayList();
-        this.superTypes = new ArrayList();
+        this.magics = new ArrayList<Magic>();
+        this.aliases = new ArrayList<String>();
+        this.rootXML = new ArrayList<RootXML>();
+        this.superTypes = new ArrayList<String>();
     }
 
     /**
@@ -186,7 +186,7 @@ public final class MimeType {
         }
         buf.append("\n");
         for (int i = 0; i < aliases.size(); i++) {
-            buf.append("\t").append((String) aliases.get(i)).append("\n");
+            buf.append("\t").append(aliases.get(i)).append("\n");
         }
         buf.append("Patterns:");
         String[] patterns = this.patterns.getPatterns();
@@ -203,7 +203,7 @@ public final class MimeType {
         }
         buf.append("\n");
         for (int i = 0; i < magics.size(); i++) {
-            buf.append("\t").append((Magic) magics.get(i)).append("\n");
+            buf.append("\t").append(magics.get(i)).append("\n");
         }
 
         return buf.toString();
@@ -294,7 +294,7 @@ public final class MimeType {
         RootXML xml = null;
         String content = new String(data);
         for (int i = 0; i < rootXML.size(); i++) {
-            xml = (RootXML) rootXML.get(i);
+            xml = rootXML.get(i);
             if (xml.matches(content)) {
                 return true;
             }
@@ -307,7 +307,7 @@ public final class MimeType {
     }
 
     RootXML[] getRootXMLs() {
-        return (RootXML[]) rootXML.toArray(new RootXML[rootXML.size()]);
+        return rootXML.toArray(new RootXML[rootXML.size()]);
     }
 
     void addSuperType(String type) {
@@ -324,7 +324,7 @@ public final class MimeType {
      * the first.
      */
     public String[] getSuperTypes() {
-        return (String[]) superTypes.toArray(new String[superTypes.size()]);
+        return superTypes.toArray(new String[superTypes.size()]);
     }
 
     int getLevel() {
@@ -341,11 +341,11 @@ public final class MimeType {
      * @return the recoginition patterns associated to this mime-type.
      */
     public String[] getAliases() {
-        return (String[]) aliases.toArray(new String[aliases.size()]);
+        return aliases.toArray(new String[aliases.size()]);
     }
 
     Magic[] getMagics() {
-        return (Magic[]) magics.toArray(new Magic[magics.size()]);
+        return magics.toArray(new Magic[magics.size()]);
     }
 
     void addMagic(Magic magic) {
@@ -370,7 +370,7 @@ public final class MimeType {
 
     public boolean matchesMagic(byte[] data) {
         for (int i = 0; i < magics.size(); i++) {
-            Magic magic = (Magic) magics.get(i);
+            Magic magic = magics.get(i);
             if (magic.eval(data)) {
                 return true;
             }

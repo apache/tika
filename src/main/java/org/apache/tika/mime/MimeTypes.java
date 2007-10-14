@@ -19,14 +19,13 @@ package org.apache.tika.mime;
 // JDK imports
 import java.io.File;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
-import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Document;
 
 // Commons Logging imports
@@ -44,31 +43,27 @@ public final class MimeTypes {
     /** The default <code>application/octet-stream</code> MimeType */
     public final static String DEFAULT = "application/octet-stream";
 
-    /** My logger */
-    private Log logger = null;
-
     /** All the registered MimeTypes indexed on their name */
-    private Map types = new HashMap();
+    private Map<String, MimeInfo> types = new HashMap<String, MimeInfo>();
 
     /** The patterns matcher */
     private Patterns patterns = new Patterns();
 
     /** List of all registered magics */
-    private ArrayList magics = new ArrayList();
+    private ArrayList<Magic> magics = new ArrayList<Magic>();
 
     /** List of all registered rootXML */
-    private ArrayList xmls = new ArrayList();
+    private ArrayList<MimeInfo> xmls = new ArrayList<MimeInfo>();
 
-    private Map unsolvedDeps = new HashMap();
+    private Map<String, List<MimeInfo>> unsolvedDeps =
+        new HashMap<String, List<MimeInfo>>();
 
     /**
      * A comparator used to sort the mime types based on their magics (it is
      * sorted first on the magic's priority, then on the magic's size).
      */
-    final static Comparator MAGICS_COMPARATOR = new Comparator() {
-        public int compare(Object o1, Object o2) {
-            Magic m1 = (Magic) o1;
-            Magic m2 = (Magic) o2;
+    final static Comparator<Magic> MAGICS_COMPARATOR = new Comparator<Magic>() {
+        public int compare(Magic m1, Magic m2) {
             int p1 = m1.getPriority();
             int p2 = m2.getPriority();
             if (p1 != p2) {
@@ -82,11 +77,12 @@ public final class MimeTypes {
      * A comparator used to sort the mime types based on their level (the level
      * is the number of super-types for a type)
      */
-    private final static Comparator LEVELS_COMPARATOR = new Comparator() {
-        public int compare(Object o1, Object o2) {
-            return ((MimeInfo) o2).getLevel() - ((MimeInfo) o1).getLevel();
-        }
-    };
+    private final static Comparator<MimeInfo> LEVELS_COMPARATOR =
+        new Comparator<MimeInfo>() {
+            public int compare(MimeInfo o1, MimeInfo o2) {
+                return o2.getLevel() - o1.getLevel();
+            }
+        };
 
     /** The minimum length of data to provide to check all MimeTypes */
     private int minLength = 0;
@@ -100,11 +96,6 @@ public final class MimeTypes {
      *            is it Logger to uses for ouput messages.
      */
     public MimeTypes(String filepath, Log logger) {
-        if (logger == null) {
-            this.logger = LogFactory.getLog(this.getClass());
-        } else {
-            this.logger = logger;
-        }
         MimeTypesReader reader = new MimeTypesReader(logger);
         add(reader.read(filepath));
     }
@@ -129,11 +120,6 @@ public final class MimeTypes {
      *            is it Logger to uses for ouput messages.
      */
     public MimeTypes(Document doc, Log logger) {
-        if (logger == null) {
-            this.logger = LogFactory.getLog(this.getClass());
-        } else {
-            this.logger = logger;
-        }
         MimeTypesReader reader = new MimeTypesReader(logger);
         add(reader.read(doc));
     }
@@ -211,20 +197,20 @@ public final class MimeTypes {
         }
 
         // First, check for XML descriptions (level by level)
-        for (int i = 0; i < xmls.size(); i++) {
-            MimeType type = ((MimeInfo) xmls.get(i)).getType();
+        for (MimeInfo info : xmls) {
+            MimeType type = info.getType();
             if (type.matchesXML(data)) {
                 return type;
             }
         }
 
         // Then, check for magic bytes
-        for (int i = 0; i < magics.size(); i++) {
-            Magic magic = (Magic) magics.get(i);
+        for (Magic magic : magics) {
             if (magic.eval(data)) {
                 return magic.getType();
             }
         }
+
         return null;
     }
 
@@ -246,7 +232,6 @@ public final class MimeTypes {
      * @see #getMinLength()
      */
     public MimeType getMimeType(String name, byte[] data) {
-
         // First, try to get the mime-type from the content
         MimeType mimeType = getMimeType(data);
 
@@ -255,6 +240,7 @@ public final class MimeTypes {
         if (mimeType == null) {
             mimeType = getMimeType(name);
         }
+
         return mimeType;
     }
 
@@ -267,7 +253,7 @@ public final class MimeTypes {
      *         MimeType is registered for this name.
      */
     public MimeType forName(String name) {
-        MimeInfo info = (MimeInfo) types.get(name);
+        MimeInfo info = types.get(name);
         return (info == null) ? null : info.getType();
     }
 
@@ -306,36 +292,32 @@ public final class MimeTypes {
      *            is the mime-type to add.
      */
     void add(MimeType type) {
-
         if (type == null) {
             return;
         }
 
         // Add the new type in the repository
         MimeInfo info = new MimeInfo(type);
-        types.put(info.getName(), info);
+        types.put(type.getName(), info);
 
         // Checks for some unsolved dependencies on this new type
-        List deps = (List) unsolvedDeps.get(info.getName());
+        List<MimeInfo> deps = unsolvedDeps.get(type.getName());
         if (deps != null) {
             int level = info.getLevel();
-            for (int i = 0; i < deps.size(); i++) {
-                level = Math
-                        .max(level, ((MimeInfo) deps.get(i)).getLevel() + 1);
+            for (MimeInfo dep : deps) {
+                level = Math.max(level, dep.getLevel() + 1);
             }
             info.setLevel(level);
-            unsolvedDeps.remove(info.getName());
+            unsolvedDeps.remove(type.getName());
         }
 
-        // Checks if some of my super-types are not already solved
-        String[] superTypes = type.getSuperTypes();
-        for (int i = 0; i < superTypes.length; i++) {
-            MimeInfo superType = (MimeInfo) types.get(superTypes[i]);
+        for (String name : type.getSuperTypes()) {
+            MimeInfo superType = types.get(name);
             if (superType == null) {
-                deps = (List) unsolvedDeps.get(superTypes[i]);
+                deps = unsolvedDeps.get(name);
                 if (deps == null) {
-                    deps = new ArrayList();
-                    unsolvedDeps.put(superTypes[i], deps);
+                    deps = new ArrayList<MimeInfo>();
+                    unsolvedDeps.put(name, deps);
                 }
                 deps.add(info);
             }
@@ -347,10 +329,7 @@ public final class MimeTypes {
         patterns.add(type.getPatterns(), type);
         // Update the magics index...
         if (type.hasMagic()) {
-            Magic[] magics = type.getMagics();
-            for (int i = 0; i < magics.length; i++) {
-                this.magics.add(magics[i]);
-            }
+            magics.addAll(Arrays.asList(type.getMagics()));
         }
         Collections.sort(magics, MAGICS_COMPARATOR);
 
@@ -363,20 +342,18 @@ public final class MimeTypes {
 
     // Inherited Javadoc
     public String toString() {
-        StringBuffer buf = new StringBuffer();
-        Iterator iter = types.values().iterator();
-        while (iter.hasNext()) {
-            MimeType type = ((MimeInfo) iter.next()).getType();
-            buf.append(type).append("\n");
+        StringBuilder builder = new StringBuilder();
+        for (MimeInfo info : types.values()) {
+            builder.append(info.getType()).append("\n");
         }
-        return buf.toString();
+        return builder.toString();
     }
 
     private final class MimeInfo {
 
-        private MimeType type = null;
+        private final MimeType type;
 
-        private int level = 0;
+        private int level;
 
         MimeInfo(MimeType type) {
             this.type = type;
@@ -392,23 +369,18 @@ public final class MimeTypes {
         }
 
         void setLevel(int level) {
-            if (level <= this.level) {
-                return;
-            }
+            if (level > this.level) {
+                this.level = level;
 
-            this.level = level;
-            // Update all my super-types
-            String[] supers = type.getSuperTypes();
-            for (int i = 0; i < supers.length; i++) {
-                MimeInfo sup = (MimeInfo) types.get(supers[i]);
-                if (sup != null) {
-                    sup.setLevel(level + 1);
+                // Update all my super-types
+                for (String name : type.getSuperTypes()) {
+                    MimeInfo info = types.get(name);
+                    if (info != null) {
+                        info.setLevel(level + 1);
+                    }
                 }
             }
         }
 
-        String getName() {
-            return type.getName();
-        }
     }
 }
