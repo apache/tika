@@ -18,6 +18,7 @@ package org.apache.tika.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -30,14 +31,33 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Simple HTML parser implemented with NekoHTML.
+ * Simple HTML parser that extracts title.
  */
 public class HtmlParser implements Parser {
 
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata) throws IOException, SAXException, TikaException {
+
         final SAXParser parser = new SAXParser();
-        final InputSource source = new InputSource(stream);
+
+        final InputSource source;
+
+        Reader utf8Reader;
+        
+        try {
+            utf8Reader = org.apache.tika.utils.Utils.getUTF8Reader(
+                    stream, metadata);
+        } catch (TikaException ex) {
+            utf8Reader = null;
+        }
+
+        if (utf8Reader == null) {
+            source = new InputSource(stream);
+        } else {
+            source = new InputSource(utf8Reader);
+        }
+
+        
         parser.setContentHandler(new TitleExtractingContentHandler(handler,
                 metadata));
         parser.parse(source);

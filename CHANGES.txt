@@ -109,3 +109,5 @@ Unreleased changes (0.1-dev)
 
 49. TIKA-56 - Mime type detection fails with upper case file extensions such as "PDF"
              (mattmann)
+
+50. TIKA-65 - Add encode detection support for HTML parser (siren)

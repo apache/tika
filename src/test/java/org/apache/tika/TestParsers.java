@@ -175,19 +175,6 @@ public class TestParsers extends TestCase {
         ParserConfig config = tc.getParserConfig("text/html");
         Parser parser = ParserFactory.getParser(config);
         assertNotNull(parser);
-
-        Metadata metadata = new Metadata();
-        InputStream stream = new FileInputStream(file);
-        try {
-            parser.parse(stream, new DefaultHandler(), metadata);
-        } finally {
-            stream.close();
-        }
-        assertEquals("Title : Test Indexation Html", metadata.get(Metadata.TITLE));
-
-        final String text = metadata.toString();
-        final String expected = "Test Indexation Html";
-        assertTrue("text contains '" + expected + "'", text.contains(expected));
     }
 
     public void testZipExtraction() throws Exception {

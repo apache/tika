@@ -16,6 +16,7 @@
  */
 package org.apache.tika.utils;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,17 +25,24 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.log4j.Logger;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Metadata;
 import org.jdom.Document;
 import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.Format;
 import org.jdom.output.XMLOutputter;
+
+import com.ibm.icu.text.CharsetDetector;
+import com.ibm.icu.text.CharsetMatch;
 
 /**
  * Class util
@@ -119,6 +127,47 @@ public class Utils {
             logger.error(ex.getMessage());
 
         }
+    }
+
+    /**
+     * Try to detect encoding from inputstream and return a UTF-8
+     * Reader. A metadata hint can be submitted as part of {@link Metadata}
+     * under key {@link HttpHeaders#CONTENT_ENCODING}.
+     * 
+     * After succesfull detection, fills Metadata with detected content encoding
+     * and content language ({@link HttpHeaders#CONTENT_LANGUAGE}).
+     * 
+     * @return Reader to utf8 encoded reader.
+     */
+    public static Reader getUTF8Reader(InputStream stream, Metadata metadata) throws TikaException, IOException{
+        CharsetDetector detector = new CharsetDetector();
+    
+        // Use the declared character encoding, if available
+        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
+        if (encoding != null) {
+            detector.setDeclaredEncoding(encoding);
+        }
+    
+        // CharsetDetector expects a stream to support marks
+        if (!stream.markSupported()) {
+            stream = new BufferedInputStream(stream);
+        }
+    
+        detector.setText(stream);
+    
+        CharsetMatch match = detector.detect();
+        if (match == null) {
+            throw new TikaException("Unable to detect character encoding");
+        }
+        
+        metadata.set(Metadata.CONTENT_ENCODING, match.getName());
+        String language = match.getLanguage();
+        if (language != null) {
+            metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
+            metadata.set(Metadata.LANGUAGE, match.getLanguage());
+        }
+        
+        return match.getReader();
     }
 
 }
