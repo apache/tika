@@ -39,7 +39,6 @@ public class AutoDetectParserTest extends TestCase {
             new AutoDetectParser().parse(input, handler, metadata);
 
             assertEquals(type, metadata.get(Metadata.CONTENT_TYPE));
-            System.out.println(writer.toString());
             assertTrue(writer.toString().contains(content));
         } finally {
             input.close();
