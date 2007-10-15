@@ -111,3 +111,5 @@ Unreleased changes (0.1-dev)
              (mattmann)
 
 50. TIKA-65 - Add encode detection support for HTML parser (siren)
+
+51. TIKA-68 - Add dummy parser classes to be used as sentinels (jukka)
