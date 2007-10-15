@@ -113,3 +113,5 @@ Unreleased changes (0.1-dev)
 50. TIKA-65 - Add encode detection support for HTML parser (siren)
 
 51. TIKA-68 - Add dummy parser classes to be used as sentinels (jukka)
+
+52. TIKA-67 - Add an auto-detecting Parser implementation (jukka)
