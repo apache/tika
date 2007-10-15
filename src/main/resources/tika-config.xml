@@ -41,6 +41,37 @@
         <parser name="parse-openoffice" class="org.apache.tika.parser.opendocument.OpenOfficeParser">            
                 <mime>application/vnd.sun.xml.writer</mime>
                 <mime>application/vnd.oasis.opendocument.text</mime>
+                <mime>application/vnd.oasis.opendocument.graphics</mime>
+                <mime>application/vnd.oasis.opendocument.presentation</mime>
+                <mime>application/vnd.oasis.opendocument.spreadsheet</mime>
+                <mime>application/vnd.oasis.opendocument.chart</mime>
+                <mime>application/vnd.oasis.opendocument.image</mime>
+                <mime>application/vnd.oasis.opendocument.formula</mime>
+                <mime>application/vnd.oasis.opendocument.text-master</mime>
+                <mime>application/vnd.oasis.opendocument.text-web</mime>
+                <mime>application/vnd.oasis.opendocument.text-template</mime>
+                <mime>application/vnd.oasis.opendocument.graphics-template</mime>
+                <mime>application/vnd.oasis.opendocument.presentation-template</mime>
+                <mime>application/vnd.oasis.opendocument.spreadsheet-template</mime>
+                <mime>application/vnd.oasis.opendocument.chart-template</mime>
+                <mime>application/vnd.oasis.opendocument.image-template</mime>
+                <mime>application/vnd.oasis.opendocument.formula-template</mime>
+                <mime>application/x-vnd.oasis.opendocument.text</mime>
+                <mime>application/x-vnd.oasis.opendocument.graphics</mime>
+                <mime>application/x-vnd.oasis.opendocument.presentation</mime>
+                <mime>application/x-vnd.oasis.opendocument.spreadsheet</mime>
+                <mime>application/x-vnd.oasis.opendocument.chart</mime>
+                <mime>application/x-vnd.oasis.opendocument.image</mime>
+                <mime>application/x-vnd.oasis.opendocument.formula</mime>
+                <mime>application/x-vnd.oasis.opendocument.text-master</mime>
+                <mime>application/x-vnd.oasis.opendocument.text-web</mime>
+                <mime>application/x-vnd.oasis.opendocument.text-template</mime>
+                <mime>application/x-vnd.oasis.opendocument.graphics-template</mime>
+                <mime>application/x-vnd.oasis.opendocument.presentation-template</mime>
+                <mime>application/x-vnd.oasis.opendocument.spreadsheet-template</mime>
+                <mime>application/x-vnd.oasis.opendocument.chart-template</mime>
+                <mime>application/x-vnd.oasis.opendocument.image-template</mime>
+                <mime>application/x-vnd.oasis.opendocument.formula-template</mime>
         </parser>
 
     </parsers>

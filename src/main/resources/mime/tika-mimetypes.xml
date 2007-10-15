@@ -263,14 +263,14 @@
 		</magic>
 	</mime-type>
 
-	<mime-type type="application/vnd.oasis.opendocument.textmaster">
+	<mime-type type="application/vnd.oasis.opendocument.text-master">
 		<comment>OpenDocument v1.0: Global Text document</comment>
-		<alias type="application/x-vnd.oasis.opendocument.textmaster" />
+		<alias type="application/x-vnd.oasis.opendocument.text-master" />
 		<glob pattern="*.odm" />
 		<magic>
 			<match type="string" offset="0" value="PK">
 				<match type="string" offset="30"
-					value="mimetypeapplication/vnd.oasis.opendocument.textmaster" />
+					value="mimetypeapplication/vnd.oasis.opendocument.text-master" />
 			</match>
 		</magic>
 	</mime-type>
