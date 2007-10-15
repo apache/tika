@@ -55,12 +55,10 @@ public class AutoDetectParserTest extends TestCase {
                 "/test-documents/testHTML.html",
                 "text/html",
                 "Test Indexation Html");
-        /* FIXME: OpenDocument autodetection doesn't work
         assertAutoDetect(
                 "/test-documents/testOpenOffice2.odt",
                 "application/vnd.oasis.opendocument.text",
                 "This is a sample Open Office document");
-         */
         assertAutoDetect(
                 "/test-documents/testPDF.pdf",
                 "application/pdf",
@@ -84,7 +82,7 @@ public class AutoDetectParserTest extends TestCase {
         assertAutoDetect(
                 "/test-documents/testXML.xml",
                 "application/xml",
-                "ArchimÃ¨de et Lius");
+                "Lius");
     }
 
 }

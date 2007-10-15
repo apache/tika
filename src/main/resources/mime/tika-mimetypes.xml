@@ -90,10 +90,202 @@
 		<alias type="application/msexcel" />
 	</mime-type>
 
+<!-- ===================================================================== -->
+<!-- Open Document Format for Office Applications (OpenDocument) v1.0      -->
+<!-- http://www.oasis-open.org/specs/index.php#opendocumentv1.0            -->
+<!-- ===================================================================== -->
+
 	<mime-type type="application/vnd.oasis.opendocument.text">
+		<comment>OpenDocument v1.0: Text document</comment>
+		<alias type="application/x-vnd.oasis.opendocument.text" />
 		<glob pattern="*.odt" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.text" />
+			</match>
+		</magic>
 	</mime-type>
 
+	<mime-type type="application/vnd.oasis.opendocument.text-template">
+		<comment>OpenDocument v1.0: Text document used as template</comment>
+		<alias type="application/x-vnd.oasis.opendocument.text-template" />
+		<glob pattern="*.ott" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.text-template" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.graphics">
+		<comment>OpenDocument v1.0: Graphics document (Drawing)</comment>
+		<alias type="application/x-vnd.oasis.opendocument.graphics" />
+		<glob pattern="*.odg" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.graphics" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.graphics-template">
+		<comment>OpenDocument v1.0: Graphics document used as template</comment>
+		<alias type="application/x-vnd.oasis.opendocument.graphics-template" />
+		<glob pattern="*.otg" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.graphics-template" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.presentation">
+		<comment>OpenDocument v1.0: Presentation document</comment>
+		<alias type="application/x-vnd.oasis.opendocument.presentation" />
+		<glob pattern="*.odp" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.presentation" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.presentation-template">
+		<comment>OpenDocument v1.0: Presentation document used as template</comment>
+		<alias type="application/x-vnd.oasis.opendocument.presentation-template" />
+		<glob pattern="*.otp" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.presentation-template" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.spreadsheet">
+		<comment>OpenDocument v1.0: Spreadsheet document</comment>
+		<alias type="application/x-vnd.oasis.opendocument.spreadsheet" />
+		<glob pattern="*.ods" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.spreadsheet" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.spreadsheet-template">
+		<comment>OpenDocument v1.0: Spreadsheet document used as template</comment>
+		<alias type="application/x-vnd.oasis.opendocument.spreadsheet-template" />
+		<glob pattern="*.ots" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.spreadsheet-template" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.chart">
+		<comment>OpenDocument v1.0: Chart document</comment>
+		<alias type="application/x-vnd.oasis.opendocument.chart" />
+		<glob pattern="*.odc" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.chart" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.chart-template">
+		<comment>OpenDocument v1.0: Chart document used as template</comment>
+		<alias type="application/x-vnd.oasis.opendocument.chart-template" />
+		<glob pattern="*.otc" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.chart-template" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.image">
+		<comment>OpenDocument v1.0: Image document</comment>
+		<alias type="application/x-vnd.oasis.opendocument.image" />
+		<glob pattern="*.odi" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.image" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.image-template">
+		<comment>OpenDocument v1.0: Image document used as template</comment>
+		<alias type="application/x-vnd.oasis.opendocument.image-template" />
+		<glob pattern="*.oti" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.image-template" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.formula">
+		<comment>OpenDocument v1.0: Formula document</comment>
+		<alias type="application/x-vnd.oasis.opendocument.formula" />
+		<glob pattern="*.odf" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.formula" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.formula-template">
+		<comment>OpenDocument v1.0: Formula document used as template</comment>
+		<alias type="application/x-vnd.oasis.opendocument.formula-template" />
+		<glob pattern="*.otf" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.formula-template" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.textmaster">
+		<comment>OpenDocument v1.0: Global Text document</comment>
+		<alias type="application/x-vnd.oasis.opendocument.textmaster" />
+		<glob pattern="*.odm" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.textmaster" />
+			</match>
+		</magic>
+	</mime-type>
+
+	<mime-type type="application/vnd.oasis.opendocument.text-web">
+		<comment>OpenDocument v1.0: Text document used as template for HTML documents</comment>
+		<alias type="application/x-vnd.oasis.opendocument.text-web" />
+		<glob pattern="*.oth" />
+		<magic>
+			<match type="string" offset="0" value="PK">
+				<match type="string" offset="30"
+					value="mimetypeapplication/vnd.oasis.opendocument.text-web" />
+			</match>
+		</magic>
+	</mime-type>
 
 	<mime-type type="application/zip">
 		<alias type="application/x-zip-compressed" />
@@ -101,10 +293,6 @@
 			<match value="PK\003\004" type="string" offset="0" />
 		</magic>
 		<glob pattern="*.zip" />
-	</mime-type>
-
-	<mime-type type="application/vnd.oasis.opendocument.text">
-		<glob pattern="*.oth" />
 	</mime-type>
 
 	<mime-type type="application/msword">
