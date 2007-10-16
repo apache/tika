@@ -117,3 +117,5 @@ Unreleased changes (0.1-dev)
 52. TIKA-67 - Add an auto-detecting Parser implementation (jukka)
 
 53. TIKA-70 - Better MIME information for the Open Document formats (jukka)
+
+54. TIKA-71 - Remove ParserConfig and ParserFactory (jukka)

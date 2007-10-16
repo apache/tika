@@ -28,13 +28,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserFactory;
 import org.apache.tika.parser.WriteOutContentHandler;
 import org.xml.sax.SAXException;
 
@@ -57,8 +55,7 @@ public class ParseUtils implements TikaMimeKeys {
      */
     public static Parser getParser(String mimeType, TikaConfig config)
             throws TikaException {
-        ParserConfig pc = config.getParserConfig(mimeType);
-        return ParserFactory.getParser(pc);
+        return config.getParser(mimeType);
     }
 
     /**
@@ -171,8 +168,7 @@ public class ParseUtils implements TikaMimeKeys {
             InputStream stream, TikaConfig config, String mimeType)
             throws TikaException, IOException {
         try {
-            ParserConfig pc = config.getParserConfig(mimeType);
-            Parser parser = ParserFactory.getParser(pc);
+            Parser parser = config.getParser(mimeType);
             StringWriter writer = new StringWriter();
             parser.parse(
                     stream, new WriteOutContentHandler(writer), new Metadata());

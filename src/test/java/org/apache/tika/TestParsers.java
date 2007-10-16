@@ -24,11 +24,9 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserFactory;
 import org.apache.tika.utils.ParseUtils;
 import org.apache.tika.utils.Utils;
 import org.jdom.JDOMException;
@@ -103,9 +101,7 @@ public class TestParsers extends TestCase {
         String s2 = ParseUtils.getStringContent(
                 file, tc, "application/vnd.ms-powerpoint");
         assertEquals(s1, s2);
-        ParserConfig config =
-            tc.getParserConfig("application/vnd.ms-powerpoint");
-        Parser parser = ParserFactory.getParser(config);
+        Parser parser = tc.getParser("application/vnd.ms-powerpoint");
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
@@ -121,8 +117,7 @@ public class TestParsers extends TestCase {
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/msword");
         assertEquals(s1, s2);
-        ParserConfig config = tc.getParserConfig("application/msword");
-        Parser parser = ParserFactory.getParser(config);
+        Parser parser = tc.getParser("application/msword");
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
@@ -146,8 +141,7 @@ public class TestParsers extends TestCase {
         assertEquals(s1, s2);
         assertTrue("Text does not contain '" + expected + "'", s1
                 .contains(expected));
-        ParserConfig config = tc.getParserConfig("application/vnd.ms-excel");
-        Parser parser = ParserFactory.getParser(config);
+        Parser parser = tc.getParser("application/vnd.ms-excel");
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
@@ -172,8 +166,7 @@ public class TestParsers extends TestCase {
         String s2 = ParseUtils.getStringContent(file, tc, "text/html");
         assertEquals(s1, s2);
 
-        ParserConfig config = tc.getParserConfig("text/html");
-        Parser parser = ParserFactory.getParser(config);
+        Parser parser = tc.getParser("text/html");
         assertNotNull(parser);
     }
 

@@ -21,7 +21,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.config.ParserConfig;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -76,17 +75,16 @@ public class AutoDetectParser implements Parser {
         MimeType type = getMimeType(stream, metadata);
         metadata.set(Metadata.CONTENT_TYPE, type.getName());
 
-        // Get the parser configuration for the detected MIME type
-        ParserConfig pc = config.getParserConfig(type.getName());
-        if (pc == null) {
-            pc = config.getParserConfig(MimeTypes.DEFAULT);
+        // Get the parser configured for the detected MIME type
+        Parser parser = config.getParser(type.getName());
+        if (parser == null) {
+            parser = config.getParser(MimeTypes.DEFAULT);
         }
-        if (pc == null) {
-            throw new TikaException("No parsers available for this document");
+        if (parser == null) {
+            throw new TikaException("No parsers available: " + type.getName());
         }
 
-        // Instantiate the configured parser and use it to parse the document
-        Parser parser = ParserFactory.getParser(pc);
+        // Parse the document
         parser.parse(stream, handler, metadata);
     }
 

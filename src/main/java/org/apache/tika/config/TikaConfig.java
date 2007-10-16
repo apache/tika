@@ -27,6 +27,8 @@ import java.util.Map;
 //TIKA imports
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeUtils;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserPostProcessor;
 import org.apache.tika.utils.Utils;
 
 //JDOM imports
@@ -40,12 +42,11 @@ import org.jdom.xpath.XPath;
  * Parse xml config file.
  */
 public class TikaConfig {
-    
+
     public static final String DEFAULT_CONFIG_LOCATION = 
         "/org/apache/tika/tika-config.xml";
 
-    private final Map<String, ParserConfig> configs =
-        new HashMap<String, ParserConfig>();
+    private final Map<String, Parser> parsers = new HashMap<String, Parser>();
     
     private static MimeUtils mimeTypeRepo;
 
@@ -74,16 +75,30 @@ public class TikaConfig {
         String mimeTypeRepoResource = mtr.getAttributeValue("resource");
         mimeTypeRepo = new MimeUtils(mimeTypeRepoResource);
 
-        for (Object parser : XPath.selectNodes(element, "//parser")) {
-            ParserConfig config = new ParserConfig((Element) parser);
-            for (Object child : ((Element) parser).getChildren("mime")) {
-                configs.put(((Element) child).getTextTrim(), config);
+        for (Object node : XPath.selectNodes(element, "//parser")) {
+            String className = ((Element) node).getAttributeValue("class");
+            try {
+                Parser parser = new ParserPostProcessor(
+                        (Parser) Class.forName(className).newInstance());
+                for (Object child : ((Element) node).getChildren("mime")) {
+                    parsers.put(((Element) child).getTextTrim(), parser);
+                }
+            } catch (Exception e) {
+                throw new JDOMException(
+                        "Invalid parser configuration: " + className, e);
             }
         }
     }
 
-    public ParserConfig getParserConfig(String mimeType) {
-        return configs.get(mimeType);
+    /**
+     * Returns the parser instance configured for the given MIME type.
+     * Returns <code>null</code> if the given MIME type is unknown.
+     *
+     * @param mimeType MIME type
+     * @return configured Parser instance, or <code>null</code>
+     */
+    public Parser getParser(String mimeType) {
+        return parsers.get(mimeType);
     }
     
     public MimeTypes getMimeRepository(){
