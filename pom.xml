@@ -127,6 +127,13 @@
         <role>committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Keith Bennett</name>
+      <id>kbennett</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
   </developers>
 
   <scm>
