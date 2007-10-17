@@ -29,10 +29,8 @@ import java.util.Properties;
  * 
  */
 public class Metadata implements CreativeCommons, DublinCore, HttpHeaders,
-    MSOffice, TikaMimeKeys {
+    MSOffice, TikaMetadataKeys, TikaMimeKeys {
 
-
-  public static final String RESOURCE_NAME_KEY = "resourceName";
 
   /**
    * A map of all metadata attributes.
