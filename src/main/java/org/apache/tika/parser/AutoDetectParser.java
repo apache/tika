@@ -118,7 +118,7 @@ public class AutoDetectParser implements Parser {
         }
 
         // Get (or verify) type based on filename hint (if available)
-        String filename = metadata.get("filename");
+        String filename = metadata.get(Metadata.RESOURCE_NAME_KEY);
         if (filename != null) {
             MimeType match = types.getMimeType(filename);
             if (match != null && (type == null || !type.matches(filename))) {

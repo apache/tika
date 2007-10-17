@@ -32,7 +32,7 @@ public class AutoDetectParserTest extends TestCase {
             AutoDetectParserTest.class.getResourceAsStream(resource);
         try {
             Metadata metadata = new Metadata();
-            metadata.set("filename", resource);
+            metadata.set(Metadata.RESOURCE_NAME_KEY, resource);
             metadata.set(Metadata.CONTENT_TYPE, type);
             StringWriter writer = new StringWriter();
             ContentHandler handler = new WriteOutContentHandler(writer);
