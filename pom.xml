@@ -79,6 +79,13 @@
       </roles>
     </developer>
     <developer>
+      <name>Keith Bennett</name>
+      <id>kbennett</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
       <name>Doug Cutting</name>
       <id>cutting</id>
       <roles>
@@ -124,13 +131,6 @@
       <id>jukka</id>
       <roles>
         <role>mentor</role>
-        <role>committer</role>
-      </roles>
-    </developer>
-    <developer>
-      <name>Keith Bennett</name>
-      <id>kbennett</id>
-      <roles>
         <role>committer</role>
       </roles>
     </developer>
