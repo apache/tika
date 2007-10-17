@@ -30,6 +30,11 @@ public class AutoDetectParserTest extends TestCase {
             String resource, String type, String content) throws Exception {
         InputStream input =
             AutoDetectParserTest.class.getResourceAsStream(resource);
+
+        if (input == null) {
+            fail("Could not open stream from specified resource: " + resource);
+        }
+        
         try {
             Metadata metadata = new Metadata();
             metadata.set(Metadata.RESOURCE_NAME_KEY, resource);
