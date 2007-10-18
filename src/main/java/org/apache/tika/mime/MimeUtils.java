@@ -22,13 +22,20 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.tika.metadata.TikaMimeKeys;
+import org.jdom.JDOMException;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
 // Tika imports
-import org.apache.tika.metadata.TikaMimeKeys;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
+
+
 
 /**
  * 
@@ -50,6 +57,19 @@ public class MimeUtils implements TikaMimeKeys {
         }
     }
 
+
+    /** Creates a new instance of MimeUtils */
+    public MimeUtils() throws TikaException {
+        try {
+            repository = TikaConfig.getDefaultConfig().getMimeRepository();
+        } catch (IOException e) {
+            throw new TikaException(
+                    "Unable to load default MIME type repository.", e);
+        } catch (JDOMException e) {
+            throw new TikaException(
+                    "Unable to load default MIME type repository.", e);
+        }
+    }
 
     public final MimeTypes getRepository() {
         return repository;
