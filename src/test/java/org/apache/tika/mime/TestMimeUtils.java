@@ -19,13 +19,12 @@ package org.apache.tika.mime;
 
 //JDK imports
 import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-//Tika imports
 import org.apache.tika.metadata.TikaMimeKeys;
 
-//Junit imports
 import junit.framework.TestCase;
 
 /**
@@ -61,6 +60,10 @@ public class TestMimeUtils extends TestCase implements TikaMimeKeys {
         assertNotNull(utils.getRepository().forName("text/x-tex"));
     }
 
+
+    /**
+     * Tests MIME type determination based solely on the URL's extension.
+     */
     public void testGuessMimeTypes() {
 
         assertEquals("application/pdf", utils.getRepository().getMimeType(
@@ -93,4 +96,40 @@ public class TestMimeUtils extends TestCase implements TikaMimeKeys {
                 .getMimeType("x.xyz").getName());
     }
 
+
+    /**
+     * Tests MimeUtils.getMimeType(URL), which examines both the byte header
+     * and, if necessary, the URL's extension.
+     */
+    public void testMimeDeterminationForTestDocuments() {
+
+        assertEquals("text/html", getMimeType("testHTML.html"));
+        assertEquals("application/zip", getMimeType("test-documents.zip"));
+        assertEquals("application/vnd.ms-excel", getMimeType("testEXCEL.xls"));
+        assertEquals("text/html", getMimeType("testHTML_utf8.html"));
+        assertEquals("application/vnd.oasis.opendocument.text",
+                getMimeType("testOpenOffice2.odt"));
+        assertEquals("application/pdf", getMimeType("testPDF.pdf"));
+        assertEquals("application/vnd.ms-powerpoint", getMimeType("testPPT.ppt"));
+        assertEquals("application/rtf", getMimeType("testRTF.rtf"));
+        assertEquals("text/plain", getMimeType("testTXT.txt"));
+        assertEquals("application/msword", getMimeType("testWORD.doc"));
+        assertEquals("application/xml", getMimeType("testXML.xml"));
+    }
+
+    private String getMimeType(String filename) {
+
+        String type = null;
+
+        try {
+            URL url = getClass().getResource("/test-documents/" + filename);
+            type = utils.getType(url);
+        } catch (MalformedURLException e) {
+            fail(e.getMessage());
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+
+        return type;
+    }
 }

@@ -18,6 +18,8 @@ package org.apache.tika.mime;
 
 // JDK imports
 import java.io.InputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
@@ -80,6 +82,26 @@ public class MimeUtils implements TikaMimeKeys {
         return typeName;
     }
 
+
+    /**
+     * Determines the MIME type of the resource pointed to by the specified URL.
+     * Examines the file's header, and if it cannot determine the MIME type
+     * from the header, guesses the MIME type from the URL extension
+     * (e.g. "pdf).
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    public String getType(URL url) throws IOException {
+        InputStream stream = url.openStream();
+        try {
+            return getType(null, url.toString(), getHeader(stream));
+        } finally {
+            stream.close();
+        }
+    }
+
     private final MimeTypes load(String tikaMimeFile) {
         LOG.info("Loading [" + tikaMimeFile + "]");
         Document document = getDocumentRoot(MimeUtils.class.getClassLoader()
@@ -111,4 +133,23 @@ public class MimeUtils implements TikaMimeKeys {
         return document;
     }
 
+
+    /**
+     * Read the resource's header for use in determination of the MIME type.
+     */
+    private byte[] getHeader(InputStream stream) throws IOException {
+        byte[] bytes = new byte[repository.getMinLength()];
+        int totalRead = 0;
+        int lastRead = stream.read(bytes);
+        while (lastRead != -1) {
+            totalRead += lastRead;
+            if (totalRead == bytes.length) {
+                return bytes;
+            }
+            lastRead = stream.read(bytes, totalRead, bytes.length - totalRead);
+        }
+        byte[] shorter = new byte[totalRead];
+        System.arraycopy(bytes, 0, shorter, 0, totalRead);
+        return shorter;
+    }
 }
