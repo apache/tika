@@ -128,26 +128,44 @@ public class AutoDetectParserTest extends TestCase {
 //        assertAutoDetect(resource, badResource, type, wrongMimeType, content);
     }
 
-    /**
-     * This is where the data to the test comes from.  Each triplet will be
-     * passed to a method that will try different combinations of valid and
-     * invalid values.
-     *
-     * @throws Exception
-     */
-    public void testAutoDetect() throws Exception {
+
+    public void testExcel() throws Exception {
         assertAutoDetect("testEXCEL.xls", EXCEL, "Sample Excel Worksheet");
-        assertAutoDetect("testHTML.html", HTML, "Test Indexation Html");
-        assertAutoDetect("testOpenOffice2.odt", OPENOFFICE,
-                "This is a sample Open Office document");
-        assertAutoDetect("testPDF.pdf", PDF, "Content Analysis Toolkit");
-        assertAutoDetect("testPPT.ppt", POWERPOINT, "Sample Powerpoint Slide");
-        assertAutoDetect("testRTF.rtf", RTF, "indexation Word");
-        assertAutoDetect("testTXT.txt", PLAINTEXT, "indexation de Txt");
-        assertAutoDetect("testWORD.doc", WORD, "Sample Word Document");
-        assertAutoDetect("testXML.xml", XML, "Lius");
     }
 
+    public void testHTML() throws Exception {
+        assertAutoDetect("testHTML.html", HTML, "Test Indexation Html");
+    }
+
+    public void testOpenOffice() throws Exception {
+        assertAutoDetect("testOpenOffice2.odt", OPENOFFICE,
+                "This is a sample Open Office document");
+    }
+
+    public void testPDF() throws Exception {
+        assertAutoDetect("testPDF.pdf", PDF, "Content Analysis Toolkit");
+
+    }
+
+    public void testPowerpoint() throws Exception {
+        assertAutoDetect("testPPT.ppt", POWERPOINT, "Sample Powerpoint Slide");
+    }
+
+    public void testRTF() throws Exception {
+        assertAutoDetect("testRTF.rtf", RTF, "indexation Word");
+    }
+
+    public void testText() throws Exception {
+        assertAutoDetect("testTXT.txt", PLAINTEXT, "indexation de Txt");
+    }
+
+    public void testWord() throws Exception {
+        assertAutoDetect("testWORD.doc", WORD, "Sample Word Document");
+    }
+
+    public void testXML() throws Exception {
+        assertAutoDetect("testXML.xml", XML, "Lius");
+    }
 
     /**
      * Minimal class to encapsulate all parameters -- the main reason for
