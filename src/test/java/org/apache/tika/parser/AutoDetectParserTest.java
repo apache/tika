@@ -16,9 +16,12 @@
  */
 package org.apache.tika.parser;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 
+import org.apache.commons.lang.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 
@@ -26,67 +29,171 @@ import junit.framework.TestCase;
 
 public class AutoDetectParserTest extends TestCase {
 
-    private void assertAutoDetect(
-            String resource, String type, String content) throws Exception {
+    // Easy to read constants for the MIME types:
+    private static final String RAW        = "application/octet-stream";
+    private static final String EXCEL      = "application/vnd.ms-excel";
+    private static final String HTML       = "text/html";
+    private static final String PDF        = "application/pdf";
+    private static final String POWERPOINT = "application/vnd.ms-powerpoint";
+    private static final String RTF        = "application/rtf";
+    private static final String PLAINTEXT  = "text/plain";
+    private static final String WORD       = "application/msword";
+    private static final String XML        = "application/xml";
+    private static final String OPENOFFICE
+            = "application/vnd.oasis.opendocument.text";
+
+
+    /**
+     * This is where a single test is done.
+     * @param tp the parameters encapsulated in a TestParams instance
+     * @throws IOException
+     */
+    private void assertAutoDetect(TestParams tp) throws IOException {
+
         InputStream input =
-            AutoDetectParserTest.class.getResourceAsStream(resource);
+            AutoDetectParserTest.class.getResourceAsStream(tp.resourceRealName);
 
         if (input == null) {
-            fail("Could not open stream from specified resource: " + resource);
+            fail("Could not open stream from specified resource: "
+                    + tp.resourceRealName);
         }
-        
+
         try {
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.RESOURCE_NAME_KEY, resource);
-            metadata.set(Metadata.CONTENT_TYPE, type);
+            metadata.set(Metadata.RESOURCE_NAME_KEY, tp.resourceStatedName);
+            metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
             StringWriter writer = new StringWriter();
             ContentHandler handler = new WriteOutContentHandler(writer);
             new AutoDetectParser().parse(input, handler, metadata);
 
-            assertEquals(type, metadata.get(Metadata.CONTENT_TYPE));
-            assertTrue(writer.toString().contains(content));
+            assertEquals("Bad content type: " + tp,
+                    tp.realType, metadata.get(Metadata.CONTENT_TYPE));
+
+            assertTrue("Expected content not found: " + tp,
+                    writer.toString().contains(tp.expectedContentFragment));
+        } catch (Throwable t) {
+            fail("Test error asserting auto detect for parameters: " + t
+                    + "\nParameters: " + tp);
         } finally {
             input.close();
         }
     }
 
-    public void testAutoDetect() throws Exception {
-        assertAutoDetect(
-                "/test-documents/testEXCEL.xls",
-                "application/vnd.ms-excel",
-                "Sample Excel Worksheet");
-        assertAutoDetect(
-                "/test-documents/testHTML.html",
-                "text/html",
-                "Test Indexation Html");
-        assertAutoDetect(
-                "/test-documents/testOpenOffice2.odt",
-                "application/vnd.oasis.opendocument.text",
-                "This is a sample Open Office document");
-        assertAutoDetect(
-                "/test-documents/testPDF.pdf",
-                "application/pdf",
-                "Content Analysis Toolkit");
-        assertAutoDetect(
-                "/test-documents/testPPT.ppt",
-                "application/vnd.ms-powerpoint",
-                "Sample Powerpoint Slide");
-        assertAutoDetect(
-                "/test-documents/testRTF.rtf",
-                "application/rtf",
-                "indexation Word");
-        assertAutoDetect(
-                "/test-documents/testTXT.txt",
-                "text/plain",
-                "indexation de Txt");
-        assertAutoDetect(
-                "/test-documents/testWORD.doc",
-                "application/msword",
-                "Sample Word Document");
-        assertAutoDetect(
-                "/test-documents/testXML.xml",
-                "application/xml",
-                "Lius");
+    /**
+     * Convenience method -- its sole purpose of existence is to make the
+     * call to it more readable than it would be if a TestParams instance
+     * would need to be instantiated there.
+     *
+     * @param resourceRealName real name of resource
+     * @param resourceStatedName stated name -- will a bad name fool us?
+     * @param realType - the real MIME type
+     * @param statedType - stated MIME type - will a wrong one fool us?
+     * @param expectedContentFragment - something expected in the text
+     * @throws Exception
+     */
+    private void assertAutoDetect(String resourceRealName,
+                                  String resourceStatedName,
+                                  String realType,
+                                  String statedType,
+                                  String expectedContentFragment)
+            throws Exception {
+
+        assertAutoDetect(new TestParams(resourceRealName, resourceStatedName,
+                realType, statedType, expectedContentFragment));
     }
 
+    private void assertAutoDetect(
+            String resource, String type, String content) throws Exception {
+
+        resource = "/test-documents/" + resource;
+
+        // TODO !!!!  The disabled tests below should work!
+        // The correct MIME type should be determined regardless of the
+        // stated type (ContentType hint) and the stated URL name.
+
+
+        // Try different combinations of correct and incorrect arguments:
+        final String wrongMimeType = RAW;
+        assertAutoDetect(resource, resource, type, type,          content);
+        assertAutoDetect(resource, resource, type, null,          content);
+        assertAutoDetect(resource, resource, type, wrongMimeType, content);
+
+        assertAutoDetect(resource, null, type, type,          content);
+//        assertAutoDetect(resource, null, type, null,          content);
+//        assertAutoDetect(resource, null, type, wrongMimeType, content);
+
+        final String badResource = "a.xyz";
+//        assertAutoDetect(resource, badResource, type, type,          content);
+//        assertAutoDetect(resource, badResource, type, null,          content);
+//        assertAutoDetect(resource, badResource, type, wrongMimeType, content);
+    }
+
+    /**
+     * This is where the data to the test comes from.  Each triplet will be
+     * passed to a method that will try different combinations of valid and
+     * invalid values.
+     *
+     * @throws Exception
+     */
+    public void testAutoDetect() throws Exception {
+        assertAutoDetect("testEXCEL.xls", EXCEL, "Sample Excel Worksheet");
+        assertAutoDetect("testHTML.html", HTML, "Test Indexation Html");
+        assertAutoDetect("testOpenOffice2.odt", OPENOFFICE,
+                "This is a sample Open Office document");
+        assertAutoDetect("testPDF.pdf", PDF, "Content Analysis Toolkit");
+        assertAutoDetect("testPPT.ppt", POWERPOINT, "Sample Powerpoint Slide");
+        assertAutoDetect("testRTF.rtf", RTF, "indexation Word");
+        assertAutoDetect("testTXT.txt", PLAINTEXT, "indexation de Txt");
+        assertAutoDetect("testWORD.doc", WORD, "Sample Word Document");
+        assertAutoDetect("testXML.xml", XML, "Lius");
+    }
+
+
+    /**
+     * Minimal class to encapsulate all parameters -- the main reason for
+     * its existence is to aid in debugging via its toString() method.
+     *
+     * Getters and setters intentionally not provided.
+     */
+    private static class TestParams {
+
+        public String resourceRealName;
+        public String resourceStatedName;
+        public String realType;
+        public String statedType;
+        public String expectedContentFragment;
+
+
+        private TestParams(String resourceRealName,
+                           String resourceStatedName,
+                           String realType,
+                           String statedType,
+                           String expectedContentFragment) {
+            this.resourceRealName = resourceRealName;
+            this.resourceStatedName = resourceStatedName;
+            this.realType = realType;
+            this.statedType = statedType;
+            this.expectedContentFragment = expectedContentFragment;
+        }
+
+
+        /**
+         * Produces a string like the following:
+         *
+         * org.apache.tika.parser.AutoDetectParserTest$TestParams@8fff06[
+         *   resourceRealName=/test-documents/testEXCEL.xls
+         *   resourceStatedName=<null>
+         *   realType=application/vnd.ms-excel
+         *   statedType=<null>
+         *   expectedContentFragment=Sample Excel Worksheet
+         * ]
+         *
+         * @return
+         */
+
+        public String toString() {
+            return ReflectionToStringBuilder.toString(
+                    this, ToStringStyle.MULTI_LINE_STYLE);
+        }
+    }
 }
