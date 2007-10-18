@@ -28,7 +28,6 @@ import java.util.Map;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeUtils;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserPostProcessor;
 import org.apache.tika.utils.Utils;
 
 //JDOM imports
@@ -78,8 +77,8 @@ public class TikaConfig {
         for (Object node : XPath.selectNodes(element, "//parser")) {
             String className = ((Element) node).getAttributeValue("class");
             try {
-                Parser parser = new ParserPostProcessor(
-                        (Parser) Class.forName(className).newInstance());
+                Parser parser =
+                        (Parser) Class.forName(className).newInstance();
                 for (Object child : ((Element) node).getChildren("mime")) {
                     parsers.put(((Element) child).getTextTrim(), parser);
                 }
