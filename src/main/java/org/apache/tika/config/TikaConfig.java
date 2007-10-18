@@ -117,7 +117,7 @@ public class TikaConfig {
             throws IOException, JDOMException {
 
         return new TikaConfig(
-                Utils.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION));
+                TikaConfig.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION));
     }
 
 }
