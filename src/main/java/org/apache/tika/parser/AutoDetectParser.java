@@ -117,11 +117,11 @@ public class AutoDetectParser implements Parser {
             }
         }
 
-        // Get (or verify) type based on filename hint (if available)
-        String filename = metadata.get(Metadata.RESOURCE_NAME_KEY);
-        if (filename != null) {
-            MimeType match = types.getMimeType(filename);
-            if (match != null && (type == null || !type.matches(filename))) {
+        // Get (or verify) type based on resourceName hint (if available)
+        String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        if (resourceName != null) {
+            MimeType match = types.getMimeType(resourceName);
+            if (match != null && (type == null || !type.matches(resourceName))) {
                 type = match;
             }
         }

@@ -94,11 +94,11 @@ class Patterns {
     }
 
     /**
-     * Find the MimeType corresponding to a filename.
+     * Find the MimeType corresponding to a resource name.
      * 
-     * It applies the recommandations detailed in FreeDesktop Shared MIME-info
-     * Database for guessing MimeType from a filename: It first try a
-     * case-sensitive match, then try again with the filename converted to
+     * It applies the recommendations detailed in FreeDesktop Shared MIME-info
+     * Database for guessing MimeType from a resource name: It first tries a
+     * case-sensitive match, then try again with the resource name converted to
      * lower-case if that fails. If several patterns match then the longest
      * pattern is used. In particular, files with multiple extensions (such as
      * Data.tar.gz) match the longest sequence of extensions (eg '*.tar.gz' in
@@ -107,28 +107,28 @@ class Patterns {
      * special characters (`*?[') are matched before other wildcarded patterns
      * (since this covers the majority of the patterns).
      */
-    MimeType matches(String filename) {
+    MimeType matches(String resourceName) {
 
         // Preliminary check...
-        if (filename == null) {
+        if (resourceName == null) {
             return null;
         }
 
-        // First, try exact match of the provided filename
-        MimeType type = exactIdx.get(filename);
+        // First, try exact match of the provided resource name
+        MimeType type = exactIdx.get(resourceName);
         if (type != null) {
             return type;
         }
 
-        // Then try exact match with only the filename
-        String str = last(filename, '/');
+        // Then try exact match with only the resource name
+        String str = last(resourceName, '/');
         if (str != null) {
             type = exactIdx.get(str);
             if (type != null) {
                 return type;
             }
         }
-        str = last(filename, '\\');
+        str = last(resourceName, '\\');
         if (str != null) {
             type = exactIdx.get(str);
             if (type != null) {
@@ -137,19 +137,19 @@ class Patterns {
         }
 
         // Then try "extension" (*.xxx) matching
-        int idx = filename.indexOf('.', 0);
+        int idx = resourceName.indexOf('.', 0);
         while (idx != -1) {
-            type = extIdx.get(filename.substring(idx + 1));
+            type = extIdx.get(resourceName.substring(idx + 1));
             if (type != null) {
                 return type;
             }
-            idx = filename.indexOf('.', idx + 1);
+            idx = resourceName.indexOf('.', idx + 1);
         }
 
         // And finally, try complex regexp matching
         String longest = null;
         for (String pattern : others.keySet()) {
-            if ((filename.matches(pattern))
+            if ((resourceName.matches(pattern))
                     && (pattern.length() > longest.length())) {
                 longest = pattern;
             }
