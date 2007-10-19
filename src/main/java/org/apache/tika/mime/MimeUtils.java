@@ -123,7 +123,9 @@ public class MimeUtils implements TikaMimeKeys {
     }
 
     private final MimeTypes load(String tikaMimeFile) {
-        LOG.info("Loading [" + tikaMimeFile + "]");
+        // The line below is disabled  until we can implement a
+        // way of restricting this output by default. (see TIKA-82)
+        //  LOG.info("Loading [" + tikaMimeFile + "]");
         Document document = getDocumentRoot(MimeUtils.class.getClassLoader()
                 .getResourceAsStream(tikaMimeFile));
 
