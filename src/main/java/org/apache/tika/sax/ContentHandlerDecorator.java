@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
+package org.apache.tika.sax;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -22,77 +22,75 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 /**
- * Content handler decorator that forwards the received SAX events to two
- * underlying content handlers.
+ * Decorator base class for the {@link ContentHandler} interface. This class
+ * simply delegates all SAX events calls to an underlying decorated handler
+ * instance. Subclasses can provide extra decoration by overriding one or more
+ * of the SAX event methods.
  */
-public class TeeContentHandler extends ContentHandlerDecorator {
+public class ContentHandlerDecorator implements ContentHandler {
 
-    private final ContentHandler branch;
+    /**
+     * Decorated SAX event handler.
+     */
+    private final ContentHandler handler;
 
-    public TeeContentHandler(ContentHandler handler, ContentHandler branch) {
-        super(handler);
-        this.branch = branch;
+    /**
+     * Creates a decorator for the given SAX event handler.
+     *
+     * @param handler SAX event handler to be decorated
+     */
+    public ContentHandlerDecorator(ContentHandler handler) {
+        this.handler = handler;
     }
 
     public void startPrefixMapping(String prefix, String uri)
             throws SAXException {
-        super.startPrefixMapping(prefix, uri);
-        branch.startPrefixMapping(prefix, uri);
+        handler.startPrefixMapping(prefix, uri);
     }
 
     public void endPrefixMapping(String prefix) throws SAXException {
-        super.endPrefixMapping(prefix);
-        branch.endPrefixMapping(prefix);
+        handler.endPrefixMapping(prefix);
     }
 
     public void processingInstruction(String target, String data)
             throws SAXException {
-        super.processingInstruction(target, data);
-        branch.processingInstruction(target, data);
+        handler.processingInstruction(target, data);
     }
 
     public void setDocumentLocator(Locator locator) {
-        super.setDocumentLocator(locator);
-        branch.setDocumentLocator(locator);
+        handler.setDocumentLocator(locator);
     }
 
     public void startDocument() throws SAXException {
-        super.startDocument();
-        branch.startDocument();
+        handler.startDocument();
     }
 
     public void endDocument() throws SAXException {
-        super.endDocument();
-        branch.endDocument();
+        handler.endDocument();
     }
 
     public void startElement(String uri, String localName, String name,
             Attributes atts) throws SAXException {
-        super.startElement(uri, localName, name, atts);
-        branch.startElement(uri, localName, name, atts);
+        handler.startElement(uri, localName, name, atts);
     }
 
     public void endElement(String uri, String localName, String name)
             throws SAXException {
-        super.endElement(uri, localName, name);
-        branch.endElement(uri, localName, name);
+        handler.endElement(uri, localName, name);
     }
 
     public void characters(char[] ch, int start, int length)
             throws SAXException {
-        super.characters(ch, start, length);
-        branch.characters(ch, start, length);
+        handler.characters(ch, start, length);
     }
 
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
-        super.ignorableWhitespace(ch, start, length);
-        branch.ignorableWhitespace(ch, start, length);
+        handler.ignorableWhitespace(ch, start, length);
     }
 
     public void skippedEntity(String name) throws SAXException {
-        super.skippedEntity(name);
-        branch.skippedEntity(name);
+        handler.skippedEntity(name);
     }
 
 }

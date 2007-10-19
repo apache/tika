@@ -30,8 +30,8 @@ import java.util.zip.ZipInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.XHTMLContentHandler;
 import org.apache.tika.parser.xml.XMLParser;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 import org.apache.log4j.Logger;
 import org.jdom.Document;

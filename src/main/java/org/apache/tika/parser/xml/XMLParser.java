@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.XHTMLContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.Utils;
 
 import org.apache.commons.lang.StringUtils;

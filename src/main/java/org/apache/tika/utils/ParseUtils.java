@@ -33,7 +33,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.WriteOutContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.SAXException;
 
 /**

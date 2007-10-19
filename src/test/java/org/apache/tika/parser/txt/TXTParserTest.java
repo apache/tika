@@ -21,7 +21,7 @@ import java.io.StringWriter;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.WriteOutContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 
 import junit.framework.TestCase;
 

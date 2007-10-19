@@ -119,3 +119,5 @@ Unreleased changes (0.1-dev)
 53. TIKA-70 - Better MIME information for the Open Document formats (jukka)
 
 54. TIKA-71 - Remove ParserConfig and ParserFactory (jukka)
+
+55. TIKA-83 - Create a org.apache.tika.sax package for SAX utilities (jukka)

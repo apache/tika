@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.WriteOutContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.ContentHandler;
 
 import junit.framework.TestCase;

@@ -22,8 +22,8 @@ import java.io.Reader;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ContentHandlerDecorator;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.cyberneko.html.parsers.SAXParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;

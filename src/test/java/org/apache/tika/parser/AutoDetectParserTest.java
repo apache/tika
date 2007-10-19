@@ -23,6 +23,7 @@ import java.io.StringWriter;
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.ContentHandler;
 
 import junit.framework.TestCase;

@@ -24,7 +24,7 @@ import java.util.Calendar;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.XHTMLContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 import org.pdfbox.pdmodel.PDDocument;
 import org.pdfbox.pdmodel.PDDocumentInformation;

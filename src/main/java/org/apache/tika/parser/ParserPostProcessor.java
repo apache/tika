@@ -23,6 +23,8 @@ import java.io.StringWriter;
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.utils.RegexUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
