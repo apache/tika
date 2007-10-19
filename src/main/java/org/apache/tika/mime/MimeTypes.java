@@ -18,6 +18,8 @@ package org.apache.tika.mime;
 
 // JDK imports
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
@@ -175,26 +177,18 @@ public final class MimeTypes {
     }
 
     /**
-     * Find the Mime Content Type of a stream from its content.
-     * 
-     * @param data
-     *            are the first bytes of data of the content to analyze.
-     *            Depending on the length of provided data, all known MimeTypes
-     *            are checked. If the length of provided data is greater or
-     *            egals to the value returned by {@link #getMinLength()}, then
-     *            all known MimeTypes are checked, otherwise only the MimeTypes
-     *            that could be analyzed with the length of provided data are
-     *            analyzed.
-     * 
-     * @return The Mime Content Type found for the specified data, or
-     *         <code>null</code> if none is found.
-     * @see #getMinLength()
+     * Returns the MIME type that best matches the given first few bytes
+     * of a document stream. Returns <code>null</code> if no matching type
+     * is found.
+     * <p>
+     * The given byte array is expected to be at least {@link #getMinLength()}
+     * long, or shorter only if the document stream itself is shorter.
+     *
+     * @param data first few bytes of a document stream
+     * @return matching MIME type, or <code>null</code>
      */
     public MimeType getMimeType(byte[] data) {
-        // Preliminary checks
-        if ((data == null) || (data.length < 1)) {
-            return null;
-        }
+        assert data != null;
 
         // First, check for XML descriptions (level by level)
         for (MimeInfo info : xmls) {
@@ -212,6 +206,41 @@ public final class MimeTypes {
         }
 
         return null;
+    }
+
+    /**
+     * Returns the MIME type that best matches the first few bytes of the
+     * given document stream.
+     * <p>
+     * If the given stream supports the mark feature (and doesn't throw an
+     * exception during this method call), then it is safe to use
+     * <code>stream.mark({@link #getMinLength()})</code> before and
+     * <code>stream.reset()</code> after this method call to restore the
+     * stream to the state it was in before this method call.
+     *
+     * @see #getMimeType(byte[])
+     * @param stream document stream
+     * @return matching MIME type
+     * @throws IOException if the stream can be read
+     */
+    public MimeType getMimeType(InputStream stream) throws IOException {
+        assert stream != null;
+
+        byte[] bytes = new byte[getMinLength()];
+        int totalRead = 0;
+
+        int lastRead = stream.read(bytes);
+        while (lastRead != -1) {
+            totalRead += lastRead;
+            if (totalRead == bytes.length) {
+                return getMimeType(bytes);
+            }
+            lastRead = stream.read(bytes, totalRead, bytes.length - totalRead);
+        }
+
+        byte[] shorter = new byte[totalRead];
+        System.arraycopy(bytes, 0, shorter, 0, totalRead);
+        return getMimeType(shorter);
     }
 
     /**

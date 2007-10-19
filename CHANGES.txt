@@ -121,3 +121,5 @@ Unreleased changes (0.1-dev)
 54. TIKA-71 - Remove ParserConfig and ParserFactory (jukka)
 
 55. TIKA-83 - Create a org.apache.tika.sax package for SAX utilities (jukka)
+
+56. TIKA-84 - Add MimeTypes.getMimeType(InputStream) (jukka)
