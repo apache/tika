@@ -37,8 +37,15 @@ import org.apache.commons.logging.Log;
  * This class is a MimeType repository. It gathers a set of MimeTypes and
  * enables to retrieves a content-type from its name, from a file name, or from
  * a magic character sequence.
- * 
- * 
+ * <p>
+ * The MIME type detection methods that take an {@link InputStream} as
+ * an argument will never reads more than {@link #getMinLength()} bytes
+ * from the stream. Also the given stream is never
+ * {@link InputStream#close() closed}, {@link InputStream#mark(int) marked},
+ * or {@link InputStream#reset() reset} by the methods. Thus a client can
+ * use the {@link InputStream#markSupported() mark feature} of the stream
+ * (if available) to restore the stream back to the state it was before type
+ * detection if it wants to process the stream based on the detected type.
  */
 public final class MimeTypes {
 
@@ -178,14 +185,13 @@ public final class MimeTypes {
 
     /**
      * Returns the MIME type that best matches the given first few bytes
-     * of a document stream. Returns <code>null</code> if no matching type
-     * is found.
+     * of a document stream.
      * <p>
      * The given byte array is expected to be at least {@link #getMinLength()}
      * long, or shorter only if the document stream itself is shorter.
      *
      * @param data first few bytes of a document stream
-     * @return matching MIME type, or <code>null</code>
+     * @return matching MIME type, or <code>null</code> if no match is found
      */
     public MimeType getMimeType(byte[] data) {
         assert data != null;
@@ -211,19 +217,30 @@ public final class MimeTypes {
     /**
      * Returns the MIME type that best matches the first few bytes of the
      * given document stream.
-     * <p>
-     * If the given stream supports the mark feature (and doesn't throw an
-     * exception during this method call), then it is safe to use
-     * <code>stream.mark({@link #getMinLength()})</code> before and
-     * <code>stream.reset()</code> after this method call to restore the
-     * stream to the state it was in before this method call.
      *
      * @see #getMimeType(byte[])
      * @param stream document stream
-     * @return matching MIME type
+     * @return matching MIME type, or <code>null</code> if no match is found
      * @throws IOException if the stream can be read
      */
     public MimeType getMimeType(InputStream stream) throws IOException {
+        return getMimeType(readMagicHeader(stream));
+    }
+
+    /**
+     * Reads the first {@link #getMinLength()} bytes from the given stream.
+     * If the stream is shorter, then the entire content of the stream is
+     * returned.
+     * <p>
+     * The given stream is never {@link InputStream#close() closed},
+     * {@link InputStream#mark(int) marked}, or
+     * {@link InputStream#reset() reset} by this method.
+     *
+     * @param stream stream to be read
+     * @return first {@link #getMinLength()} (or fewer) bytes of the stream
+     * @throws IOException if the stream can not be read
+     */
+    private byte[] readMagicHeader(InputStream stream) throws IOException {
         assert stream != null;
 
         byte[] bytes = new byte[getMinLength()];
@@ -233,14 +250,14 @@ public final class MimeTypes {
         while (lastRead != -1) {
             totalRead += lastRead;
             if (totalRead == bytes.length) {
-                return getMimeType(bytes);
+                return bytes;
             }
             lastRead = stream.read(bytes, totalRead, bytes.length - totalRead);
         }
 
         byte[] shorter = new byte[totalRead];
         System.arraycopy(bytes, 0, shorter, 0, totalRead);
-        return getMimeType(shorter);
+        return shorter;
     }
 
     /**
@@ -271,6 +288,21 @@ public final class MimeTypes {
         }
 
         return mimeType;
+    }
+
+    /**
+     * Returns the MIME type that best matches the given document name and
+     * the first few bytes of the given document stream.
+     *
+     * @see #getMimeType(String, byte[])
+     * @param name document name
+     * @param stream document stream
+     * @return matching MIME type, or <code>null</code> if no match is found
+     * @throws IOException if the stream can not be read
+     */
+    public MimeType getMimeType(String name, InputStream stream)
+            throws IOException {
+        return getMimeType(name, readMagicHeader(stream));
     }
 
     /**
