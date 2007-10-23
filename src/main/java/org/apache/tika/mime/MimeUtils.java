@@ -20,16 +20,9 @@ package org.apache.tika.mime;
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.jdom.JDOMException;
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 
 // Tika imports
 import org.apache.tika.config.TikaConfig;
@@ -43,18 +36,12 @@ import org.apache.tika.exception.TikaException;
  */
 public class MimeUtils implements TikaMimeKeys {
 
-    /** My logger */
-    private final static Logger LOG = Logger.getLogger(MimeUtils.class
-            .getName());
-
     /** The MimeTypes repository instance */
-    private MimeTypes repository = null;
+    private MimeTypes repository =  new MimeTypes();
 
     /** Creates a new instance of MimeUtils */
     public MimeUtils(String resPath) {
-        if(repository == null){
-            repository = load(resPath);
-        }
+        new MimeTypesReader(repository).read(resPath);
     }
 
 
@@ -121,40 +108,6 @@ public class MimeUtils implements TikaMimeKeys {
             stream.close();
         }
     }
-
-    private final MimeTypes load(String tikaMimeFile) {
-        // The line below is disabled  until we can implement a
-        // way of restricting this output by default. (see TIKA-82)
-        //  LOG.info("Loading [" + tikaMimeFile + "]");
-        Document document = getDocumentRoot(MimeUtils.class.getClassLoader()
-                .getResourceAsStream(tikaMimeFile));
-
-        MimeTypes types = new MimeTypes(document);
-        return types;
-    }
-
-    private final Document getDocumentRoot(InputStream is) {
-        // open up the XML file
-        DocumentBuilderFactory factory = null;
-        DocumentBuilder parser = null;
-        Document document = null;
-        InputSource inputSource = null;
-
-        inputSource = new InputSource(is);
-
-        try {
-            factory = DocumentBuilderFactory.newInstance();
-            parser = factory.newDocumentBuilder();
-            document = parser.parse(inputSource);
-        } catch (Exception e) {
-            LOG.log(Level.WARNING, "Unable to parse xml stream"
-                    + ": Reason is [" + e + "]");
-            return null;
-        }
-
-        return document;
-    }
-
 
     /**
      * Read the resource's header for use in determination of the MIME type.

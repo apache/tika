@@ -28,10 +28,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import org.w3c.dom.Document;
-
-// Commons Logging imports
-import org.apache.commons.logging.Log;
 
 /**
  * This class is a MimeType repository. It gathers a set of MimeTypes and
@@ -95,53 +91,6 @@ public final class MimeTypes {
 
     /** The minimum length of data to provide to check all MimeTypes */
     private int minLength = 0;
-
-    /**
-     * Creates a new MimeTypes instance.
-     * 
-     * @param filepath
-     *            is the mime-types definitions xml file.
-     * @param logger
-     *            is it Logger to uses for ouput messages.
-     */
-    public MimeTypes(String filepath, Log logger) {
-        MimeTypesReader reader = new MimeTypesReader(logger);
-        add(reader.read(filepath));
-    }
-
-    /**
-     * Creates a new MimeTypes instance.
-     * 
-     * @param filepath
-     *            is the mime-types definitions xml file.
-     * @return A MimeTypes instance for the specified filepath xml file.
-     */
-    public MimeTypes(String filepath) {
-        this(filepath, (Log) null);
-    }
-
-    /**
-     * Creates a new MimeTypes instance.
-     * 
-     * @param is
-     *            the document of the mime types definition file.
-     * @param logger
-     *            is it Logger to uses for ouput messages.
-     */
-    public MimeTypes(Document doc, Log logger) {
-        MimeTypesReader reader = new MimeTypesReader(logger);
-        add(reader.read(doc));
-    }
-
-    /**
-     * Creates a new MimeTypes instance.
-     * 
-     * @param is
-     *            the document of the mime types definition file.
-     */
-    public MimeTypes(Document doc) {
-        this(doc, (Log) null);
-    }
 
     /**
      * Find the Mime Content Type of a file.

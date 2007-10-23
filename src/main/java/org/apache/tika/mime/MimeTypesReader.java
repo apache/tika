@@ -94,11 +94,14 @@ final class MimeTypesReader {
     /** The logger to use */
     private Log logger = null;
 
-    MimeTypesReader() {
-        this(null);
+    private final MimeTypes types;
+
+    MimeTypesReader(MimeTypes types) {
+        this(types, null);
     }
 
-    MimeTypesReader(Log logger) {
+    MimeTypesReader(MimeTypes types, Log logger) {
+        this.types = types;
         if (logger == null) {
             this.logger = LogFactory.getLog(this.getClass());
         } else {
@@ -106,35 +109,28 @@ final class MimeTypesReader {
         }
     }
 
-    MimeType[] read(String filepath) {
-        return read(MimeTypesReader.class.getClassLoader().getResourceAsStream(
-                filepath));
+    void read(String filepath) {
+        read(MimeTypesReader.class.getClassLoader().getResourceAsStream(filepath));
     }
 
-    MimeType[] read(InputStream stream) {
-        MimeType[] types = null;
+    void read(InputStream stream) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory
                     .newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document = builder.parse(new InputSource(stream));
-            types = read(document);
+            read(document);
         } catch (Exception e) {
             if (logger.isWarnEnabled()) {
                 logger.warn(e.toString() + " while loading mime-types");
             }
-            types = new MimeType[0];
         }
-        return types;
     }
 
-    MimeType[] read(Document document) {
-        // printDOM(document);
+    void read(Document document) {
         Element element = document.getDocumentElement();
         if (element != null && element.getTagName().equals("mime-info")) {
-            return readMimeInfo(element);
-        } else {
-            return new MimeType[0];
+            readMimeInfo(element);
         }
     }
 
@@ -147,10 +143,7 @@ final class MimeTypesReader {
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element nodeElement = (Element) node;
                 if (nodeElement.getTagName().equals("mime-type")) {
-                    MimeType type = readMimeType(nodeElement);
-                    if (type != null) {
-                        types.add(type);
-                    }
+                    readMimeType(nodeElement);
                 }
             }
         }
@@ -158,7 +151,7 @@ final class MimeTypesReader {
     }
 
     /** Read Element named mime-type. */
-    private MimeType readMimeType(Element element) {
+    private void readMimeType(Element element) {
 
         MimeType type = null;
 
@@ -169,7 +162,7 @@ final class MimeTypesReader {
             if (logger.isInfoEnabled()) {
                 logger.info(mte.toString() + " ... Ignoring!");
             }
-            return null;
+            return;
         }
 
         NodeList nodes = element.getChildNodes();
@@ -193,7 +186,8 @@ final class MimeTypesReader {
                 }
             }
         }
-        return type;
+
+        types.add(type);
     }
 
     /** Read Element named glob. */
