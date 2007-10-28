@@ -17,6 +17,8 @@
 package org.apache.tika.config;
 
 //JDK imports
+
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,13 +26,9 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-//TIKA imports
 import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.mime.MimeUtils;
+import org.apache.tika.mime.MimeTypesFactory;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.utils.Utils;
-
-//JDOM imports
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -47,7 +45,7 @@ public class TikaConfig {
 
     private final Map<String, Parser> parsers = new HashMap<String, Parser>();
     
-    private static MimeUtils mimeTypeRepo;
+    private static MimeTypes mimeTypes;
 
     public TikaConfig(String file) throws JDOMException, IOException {
         this(new File(file));
@@ -65,14 +63,14 @@ public class TikaConfig {
         this(new SAXBuilder().build(stream));
     }
 
-    public TikaConfig(Document document) throws JDOMException {
+    public TikaConfig(Document document) throws JDOMException, IOException {
         this(document.getRootElement());
     }
 
-    public TikaConfig(Element element) throws JDOMException {
+    public TikaConfig(Element element) throws JDOMException, IOException {
         Element mtr = element.getChild("mimeTypeRepository");
         String mimeTypeRepoResource = mtr.getAttributeValue("resource");
-        mimeTypeRepo = new MimeUtils(mimeTypeRepoResource);
+        mimeTypes = MimeTypesFactory.create(mimeTypeRepoResource);
 
         for (Object node : XPath.selectNodes(element, "//parser")) {
             String className = ((Element) node).getAttributeValue("class");
@@ -101,7 +99,7 @@ public class TikaConfig {
     }
     
     public MimeTypes getMimeRepository(){
-        return mimeTypeRepo.getRepository();
+        return mimeTypes;
     }
     
     /**

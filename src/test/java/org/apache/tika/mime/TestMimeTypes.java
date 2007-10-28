@@ -18,6 +18,11 @@
 package org.apache.tika.mime;
 
 // Junit imports
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.io.File;
+import java.io.IOException;
+
 import junit.framework.TestCase;
 
 // Tika imports
@@ -31,6 +36,20 @@ import org.apache.tika.config.TikaConfig;
 public class TestMimeTypes extends TestCase {
 
     private MimeTypes repo;
+
+    private static URL u;
+
+    static {
+        try {
+            u = new URL("http://mydomain.com/x.pdf?x=y");
+        } catch (MalformedURLException e) {
+            fail(e.getMessage());
+        }
+    }
+
+    private static final File f = new File("/a/b/c/x.pdf");
+
+
 
     public TestMimeTypes() {
         try {
@@ -48,5 +67,75 @@ public class TestMimeTypes extends TestCase {
         assertEquals(repo.getMimeType("test.PdF"), type);
         assertEquals(repo.getMimeType("test.pdF"), type);
     }
+
+    public void testLoadMimeTypes() {
+        assertNotNull(repo.forName("application/octet-stream"));
+        assertNotNull(repo.forName("text/x-tex"));
+    }
+
+    /**
+     * Tests MIME type determination based solely on the URL's extension.
+     */
+    public void testGuessMimeTypes() {
+
+        assertEquals("application/pdf", repo.getMimeType("x.pdf").getName());
+        assertEquals("application/pdf", repo.getMimeType(u).getName());
+        assertEquals("application/pdf", repo.getMimeType(f).getName());
+        assertEquals("text/plain", repo.getMimeType("x.txt").getName());
+        assertEquals("text/html", repo.getMimeType("x.htm").getName());
+        assertEquals("text/html", repo.getMimeType("x.html").getName());
+        assertEquals("application/xhtml+xml",
+                repo.getMimeType("x.xhtml").getName());
+        assertEquals("application/xml", repo.getMimeType("x.xml").getName());
+        assertEquals("application/msword", repo.getMimeType("x.doc").getName());
+        assertEquals("application/vnd.ms-powerpoint",
+                repo.getMimeType("x.ppt").getName());
+        assertEquals("application/vnd.ms-excel",
+                repo.getMimeType("x.xls").getName());
+        assertEquals("application/zip", repo.getMimeType("x.zip").getName());
+        assertEquals("application/vnd.oasis.opendocument.text",
+                repo.getMimeType("x.odt").getName());
+        assertEquals("application/octet-stream",
+                repo.getMimeType("x.xyz").getName());
+    }
+
+    /**
+     * Tests MimeTypes.getMimeType(URL), which examines both the byte header
+     * and, if necessary, the URL's extension.
+     */
+    public void testMimeDeterminationForTestDocuments() {
+
+        assertEquals("text/html", getMimeType("testHTML.html"));
+        assertEquals("application/zip", getMimeType("test-documents.zip"));
+        assertEquals("application/vnd.ms-excel", getMimeType("testEXCEL.xls"));
+        assertEquals("text/html", getMimeType("testHTML_utf8.html"));
+        assertEquals("application/vnd.oasis.opendocument.text",
+                getMimeType("testOpenOffice2.odt"));
+        assertEquals("application/pdf", getMimeType("testPDF.pdf"));
+        assertEquals("application/vnd.ms-powerpoint",
+                getMimeType("testPPT.ppt"));
+        assertEquals("application/rtf", getMimeType("testRTF.rtf"));
+        assertEquals("text/plain", getMimeType("testTXT.txt"));
+        assertEquals("application/msword", getMimeType("testWORD.doc"));
+        assertEquals("application/xml", getMimeType("testXML.xml"));
+    }
+
+
+    private String getMimeType(String filename) {
+
+        String type = null;
+
+        try {
+            URL url = getClass().getResource("/test-documents/" + filename);
+            type = repo.getType(url);
+        } catch (MalformedURLException e) {
+            fail(e.getMessage());
+        } catch (IOException e) {
+            fail(e.getMessage());
+        }
+
+        return type;
+    }
+
 
 }

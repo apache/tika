@@ -209,6 +209,52 @@ public final class MimeTypes {
         return shorter;
     }
 
+    public String getType(String typeName, String url, byte[] data) {
+        MimeType type = null;
+        try {
+            typeName = MimeType.clean(typeName);
+            type = typeName == null ? null : forName(typeName);
+        } catch (MimeTypeException mte) {
+            // Seems to be a malformed mime type name...
+        }
+
+        if (typeName == null || type == null || !type.matches(url)) {
+            // If no mime-type header, or cannot find a corresponding registered
+            // mime-type, or the one found doesn't match the url pattern
+            // it shouldbe, then guess a mime-type from the url pattern
+            type = getMimeType(url);
+            typeName = type == null ? typeName : type.getName();
+        }
+        // if (typeName == null || type == null ||
+        // (this.magic && type.hasMagic() && !type.matches(data))) {
+        // If no mime-type already found, or the one found doesn't match
+        // the magic bytes it should be, then, guess a mime-type from the
+        // document content (magic bytes)
+        type = getMimeType(data);
+        typeName = type == null ? typeName : type.getName();
+        // }
+        return typeName;
+    }
+
+    /**
+     * Determines the MIME type of the resource pointed to by the specified URL.
+     * Examines the file's header, and if it cannot determine the MIME type
+     * from the header, guesses the MIME type from the URL extension
+     * (e.g. "pdf).
+     *
+     * @param url
+     * @return
+     * @throws IOException
+     */
+    public String getType(URL url) throws IOException {
+        InputStream stream = url.openStream();
+        try {
+            return getType(null, url.toString(), readMagicHeader(stream));
+        } finally {
+            stream.close();
+        }
+    }
+
     /**
      * Find the Mime Content Type of a document from its name and its content.
      * The policy used to guess the Mime Content Type is:

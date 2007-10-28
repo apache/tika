@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <properties>
 
-    <mimeTypeRepository resource="org/apache/tika/mime/tika-mimetypes.xml" magic="false"/>
+    <mimeTypeRepository resource="/org/apache/tika/mime/tika-mimetypes.xml" magic="false"/>
 
     <parsers>
 
