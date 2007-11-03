@@ -20,6 +20,7 @@ package org.apache.tika.mime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Pattern;
+
 import org.apache.tika.utils.StringUtil;
 
 /**
@@ -27,7 +28,7 @@ import org.apache.tika.utils.StringUtil;
  * 
  * 
  */
-public final class MimeType {
+public final class MimeType implements Comparable<MimeType> {
 
     /** The primary and sub types separator */
     private final static String SEPARATOR = "/";
@@ -331,8 +332,8 @@ public final class MimeType {
         return level;
     }
 
-    void incLevel() {
-        this.level++;
+    void setLevel(int level) {
+        this.level = level;
     }
 
     /**
@@ -467,4 +468,13 @@ public final class MimeType {
                     .toString();
         }
     }
+
+    public int compareTo(MimeType o) {
+        int diff = level - o.level;
+        if (diff == 0) {
+            diff = name.compareTo(o.name);
+        }
+        return diff;
+    }
+
 }

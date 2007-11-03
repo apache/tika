@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * This class is a MimeType repository. It gathers a set of MimeTypes and
@@ -49,7 +51,7 @@ public final class MimeTypes {
     public final static String DEFAULT = "application/octet-stream";
 
     /** All the registered MimeTypes indexed on their name */
-    private Map<String, MimeInfo> types = new HashMap<String, MimeInfo>();
+    private Map<String, MimeType> types = new HashMap<String, MimeType>();
 
     /** The patterns matcher */
     private Patterns patterns = new Patterns();
@@ -58,10 +60,10 @@ public final class MimeTypes {
     private ArrayList<Magic> magics = new ArrayList<Magic>();
 
     /** List of all registered rootXML */
-    private ArrayList<MimeInfo> xmls = new ArrayList<MimeInfo>();
+    private SortedSet<MimeType> xmls = new TreeSet<MimeType>();
 
-    private Map<String, List<MimeInfo>> unsolvedDeps =
-        new HashMap<String, List<MimeInfo>>();
+    private Map<String, List<MimeType>> unsolvedDeps =
+        new HashMap<String, List<MimeType>>();
 
     /**
      * A comparator used to sort the mime types based on their magics (it is
@@ -77,17 +79,6 @@ public final class MimeTypes {
             return m2.size() - m1.size();
         }
     };
-
-    /**
-     * A comparator used to sort the mime types based on their level (the level
-     * is the number of super-types for a type)
-     */
-    private final static Comparator<MimeInfo> LEVELS_COMPARATOR =
-        new Comparator<MimeInfo>() {
-            public int compare(MimeInfo o1, MimeInfo o2) {
-                return o2.getLevel() - o1.getLevel();
-            }
-        };
 
     /** The minimum length of data to provide to check all MimeTypes */
     private int minLength = 0;
@@ -146,8 +137,7 @@ public final class MimeTypes {
         assert data != null;
 
         // First, check for XML descriptions (level by level)
-        for (MimeInfo info : xmls) {
-            MimeType type = info.getType();
+        for (MimeType type : xmls) {
             if (type.matchesXML(data)) {
                 return type;
             }
@@ -309,8 +299,7 @@ public final class MimeTypes {
      *         MimeType is registered for this name.
      */
     public MimeType forName(String name) {
-        MimeInfo info = types.get(name);
-        return (info == null) ? null : info.getType();
+        return types.get(name);
     }
 
     /**
@@ -353,29 +342,27 @@ public final class MimeTypes {
         }
 
         // Add the new type in the repository
-        MimeInfo info = new MimeInfo(type);
-        types.put(type.getName(), info);
+        types.put(type.getName(), type);
 
         // Checks for some unsolved dependencies on this new type
-        List<MimeInfo> deps = unsolvedDeps.get(type.getName());
+        List<MimeType> deps = unsolvedDeps.remove(type.getName());
         if (deps != null) {
-            int level = info.getLevel();
-            for (MimeInfo dep : deps) {
+            int level = type.getLevel();
+            for (MimeType dep : deps) {
                 level = Math.max(level, dep.getLevel() + 1);
             }
-            info.setLevel(level);
-            unsolvedDeps.remove(type.getName());
+            type.setLevel(level);
         }
 
         for (String name : type.getSuperTypes()) {
-            MimeInfo superType = types.get(name);
+            MimeType superType = types.get(name);
             if (superType == null) {
                 deps = unsolvedDeps.get(name);
                 if (deps == null) {
-                    deps = new ArrayList<MimeInfo>();
+                    deps = new ArrayList<MimeType>();
                     unsolvedDeps.put(name, deps);
                 }
-                deps.add(info);
+                deps.add(type);
             }
         }
 
@@ -391,52 +378,8 @@ public final class MimeTypes {
 
         // Update the xml (xmlRoot) index...
         if (type.hasRootXML()) {
-            this.xmls.add(info);
+            xmls.add(type);
         }
-        Collections.sort(xmls, LEVELS_COMPARATOR);
     }
 
-    // Inherited Javadoc
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        for (MimeInfo info : types.values()) {
-            builder.append(info.getType()).append("\n");
-        }
-        return builder.toString();
-    }
-
-    private final class MimeInfo {
-
-        private final MimeType type;
-
-        private int level;
-
-        MimeInfo(MimeType type) {
-            this.type = type;
-            this.level = 0;
-        }
-
-        MimeType getType() {
-            return type;
-        }
-
-        int getLevel() {
-            return level;
-        }
-
-        void setLevel(int level) {
-            if (level > this.level) {
-                this.level = level;
-
-                // Update all my super-types
-                for (String name : type.getSuperTypes()) {
-                    MimeInfo info = types.get(name);
-                    if (info != null) {
-                        info.setLevel(level + 1);
-                    }
-                }
-            }
-        }
-
-    }
 }
