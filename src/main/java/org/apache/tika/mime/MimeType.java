@@ -354,7 +354,6 @@ public final class MimeType implements Comparable<MimeType> {
             return;
         }
         magics.add(magic);
-        Collections.sort(magics, MimeTypes.MAGICS_COMPARATOR);
     }
 
     int getMinLength() {

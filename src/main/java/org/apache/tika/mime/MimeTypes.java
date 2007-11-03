@@ -25,8 +25,6 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -57,28 +55,13 @@ public final class MimeTypes {
     private Patterns patterns = new Patterns();
 
     /** List of all registered magics */
-    private ArrayList<Magic> magics = new ArrayList<Magic>();
+    private SortedSet<Magic> magics = new TreeSet<Magic>();
 
     /** List of all registered rootXML */
     private SortedSet<MimeType> xmls = new TreeSet<MimeType>();
 
     private Map<String, List<MimeType>> unsolvedDeps =
         new HashMap<String, List<MimeType>>();
-
-    /**
-     * A comparator used to sort the mime types based on their magics (it is
-     * sorted first on the magic's priority, then on the magic's size).
-     */
-    final static Comparator<Magic> MAGICS_COMPARATOR = new Comparator<Magic>() {
-        public int compare(Magic m1, Magic m2) {
-            int p1 = m1.getPriority();
-            int p2 = m2.getPriority();
-            if (p1 != p2) {
-                return p2 - p1;
-            }
-            return m2.size() - m1.size();
-        }
-    };
 
     /** The minimum length of data to provide to check all MimeTypes */
     private int minLength = 0;
@@ -374,7 +357,6 @@ public final class MimeTypes {
         if (type.hasMagic()) {
             magics.addAll(Arrays.asList(type.getMagics()));
         }
-        Collections.sort(magics, MAGICS_COMPARATOR);
 
         // Update the xml (xmlRoot) index...
         if (type.hasRootXML()) {

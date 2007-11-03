@@ -22,7 +22,7 @@ package org.apache.tika.mime;
  * 
  * 
  */
-class Magic implements Clause {
+class Magic implements Clause, Comparable<Magic> {
 
     private MimeType type = null;
 
@@ -67,4 +67,13 @@ class Magic implements Clause {
         buf.append("[").append(priority).append("/").append(clause).append("]");
         return buf.toString();
     }
+
+    public int compareTo(Magic o) {
+        int diff = priority - o.priority;
+        if (diff == 0) {
+            diff = size() - o.size();
+        }
+        return diff;
+    }
+
 }
