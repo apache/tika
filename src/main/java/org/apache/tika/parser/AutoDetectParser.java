@@ -110,7 +110,6 @@ public class AutoDetectParser implements Parser {
         String typename = metadata.get(Metadata.CONTENT_TYPE);
         if (typename != null) {
             try {
-                typename = MimeType.clean(typename);
                 type = types.forName(typename);
             } catch (MimeTypeException e) {
                 // Malformed type name, ignore
@@ -140,7 +139,11 @@ public class AutoDetectParser implements Parser {
 
         // Finally, use the default type if no matches found
         if (type == null) {
-            type = types.forName(MimeTypes.DEFAULT);
+            try {
+                type = types.forName(MimeTypes.DEFAULT);
+            } catch (MimeTypeException e) {
+                // Should never happen
+            }
         }
 
         return type;

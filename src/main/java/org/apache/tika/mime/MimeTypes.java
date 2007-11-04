@@ -48,8 +48,10 @@ public final class MimeTypes {
     /** The default <code>application/octet-stream</code> MimeType */
     public final static String DEFAULT = "application/octet-stream";
 
+    private final MimeType root;
+
     /** All the registered MimeTypes indexed on their name */
-    private Map<String, MimeType> types = new HashMap<String, MimeType>();
+    private final Map<String, MimeType> types = new HashMap<String, MimeType>();
 
     /** The patterns matcher */
     private Patterns patterns = new Patterns();
@@ -65,6 +67,11 @@ public final class MimeTypes {
 
     /** The minimum length of data to provide to check all MimeTypes */
     private int minLength = 0;
+
+    public MimeTypes() {
+        root = new MimeType(this, DEFAULT);
+        types.put(root.getName(), root);
+    }
 
     /**
      * Find the Mime Content Type of a file.
@@ -103,7 +110,7 @@ public final class MimeTypes {
         if (type != null)
             return type;
         // if it's null here, then return the default type
-        return forName(DEFAULT);
+        return root;
     }
 
     /**
@@ -183,30 +190,21 @@ public final class MimeTypes {
     }
 
     public String getType(String typeName, String url, byte[] data) {
-        MimeType type = null;
-        try {
-            typeName = MimeType.clean(typeName);
-            type = typeName == null ? null : forName(typeName);
-        } catch (MimeTypeException mte) {
-            // Seems to be a malformed mime type name...
+        MimeType type = getMimeType(url, data);
+
+        if (type == null && typeName != null) {
+            try {
+                type = forName(typeName);
+            } catch (MimeTypeException e) {
+                // Invalid type name hint
+            }
         }
 
-        if (typeName == null || type == null || !type.matches(url)) {
-            // If no mime-type header, or cannot find a corresponding registered
-            // mime-type, or the one found doesn't match the url pattern
-            // it shouldbe, then guess a mime-type from the url pattern
-            type = getMimeType(url);
-            typeName = type == null ? typeName : type.getName();
+        if (type == null) {
+            type = root;
         }
-        // if (typeName == null || type == null ||
-        // (this.magic && type.hasMagic() && !type.matches(data))) {
-        // If no mime-type already found, or the one found doesn't match
-        // the magic bytes it should be, then, guess a mime-type from the
-        // document content (magic bytes)
-        type = getMimeType(data);
-        typeName = type == null ? typeName : type.getName();
-        // }
-        return typeName;
+
+        return type.getName();
     }
 
     /**
@@ -274,15 +272,56 @@ public final class MimeTypes {
     }
 
     /**
-     * Find a Mime Content Type from its name.
-     * 
-     * @param name
-     *            is the content type name
-     * @return the MimeType for the specified name, or <code>null</code> if no
-     *         MimeType is registered for this name.
+     * Returns the registered media type with the given name (or alias).
+     * The named media type is automatically registered (and returned) if
+     * it doesn't already exist.
+     *
+     * @param name media type name (case-insensitive)
+     * @return the registered media type with the given name or alias
+     * @throws MimeTypeException if the given media type name is invalid
      */
-    public MimeType forName(String name) {
-        return types.get(name);
+    public synchronized MimeType forName(String name)
+            throws MimeTypeException {
+        if (MimeType.isValid(name)) {
+            name = name.toLowerCase();
+            MimeType type = types.get(name);
+            if (type == null) {
+                type = new MimeType(this, name);
+                types.put(name, type);
+            }
+            return type;
+        } else {
+            throw new MimeTypeException("Invalid media type name: " + name);
+        }
+    }
+
+    /**
+     * Adds an alias for the given media type. This method should only
+     * be called from {@link MimeType#addAlias(String)}.
+     *
+     * @param type media type
+     * @param alias media type alias (normalized to lower case)
+     * @throws MimeTypeException if the alias already exists
+     */
+    synchronized void addAlias(MimeType type, String alias)
+            throws MimeTypeException {
+        if (!types.containsKey(alias)) {
+            types.put(alias, type);
+        } else {
+            throw new MimeTypeException(
+                    "Media type alias already exists: " + alias);
+        }
+    }
+
+    /**
+     * Adds a file name pattern for the given media type. This method should
+     * only be called from {@link MimeType#addPattern(String)}.
+     *
+     * @param type media type
+     * @param pattern file name pattern
+     */
+    synchronized void addPattern(MimeType type, String pattern) {
+        patterns.add(pattern, type);
     }
 
     /**
@@ -351,8 +390,6 @@ public final class MimeTypes {
 
         // Update minLentgth
         minLength = Math.max(minLength, type.getMinLength());
-        // Update the extensions index...
-        patterns.add(type.getPatterns(), type);
         // Update the magics index...
         if (type.hasMagic()) {
             magics.addAll(Arrays.asList(type.getMagics()));

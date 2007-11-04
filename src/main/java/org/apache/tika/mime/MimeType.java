@@ -18,53 +18,82 @@ package org.apache.tika.mime;
 
 // JDK imports
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import org.apache.tika.utils.StringUtil;
 
 /**
- * Defines a Mime Content Type.
- * 
- * 
+ * Internet media type.
  */
 public final class MimeType implements Comparable<MimeType> {
 
-    /** The primary and sub types separator */
-    private final static String SEPARATOR = "/";
+    /**
+     * Checks that the given string is a valid Internet media type name
+     * based on rules from RFC 2054 section 5.3. For validation purposes the
+     * rules can be simplified to the following:
+     * <pre>
+     * name := token "/" token
+     * token := 1*&lt;any (US-ASCII) CHAR except SPACE, CTLs, or tspecials&gt;
+     * tspecials :=  "(" / ")" / "&lt;" / "&gt;" / "@" / "," / ";" / ":" /
+     *               "\" / <"> / "/" / "[" / "]" / "?" / "="
+     * </pre>
+     *
+     * @param name name string
+     * @return <code>true</code> if the string is a valid media type name,
+     *         <code>false</code> otherwise
+     */
+    public static boolean isValid(String name) {
+        assert name != null;
 
-    /** The parameters separator */
-    private final static String PARAMS_SEP = ";";
+        boolean slash = false;
+        for (int i = 0; i < name.length(); i++) {
+            char ch = name.charAt(i);
+            if (ch <= ' ' || ch >= 127 || ch == '(' || ch == ')' ||
+                    ch == '<' || ch == '>' || ch == '@' || ch == ',' ||
+                    ch == ';' || ch == ':' || ch == '\\' || ch == '"' ||
+                    ch == '[' || ch == ']' || ch == '?' || ch == '=') {
+                return false;
+            } else if (ch == '/') {
+                if (slash || i == 0 || i + 1 == name.length()) {
+                    return false;
+                }
+                slash = true;
+            }
+        }
+        return slash;
+    }
 
-    /** Special characters not allowed in content types. */
-    private final static String SPECIALS = "()<>@,;:\\\"/[]?=";
+    /**
+     * The media type registry that contains this type.
+     */
+    private final MimeTypes registry;
 
-    /** The Mime-Type full name */
-    private String name = null;
-
-    /** The Mime-Type primary type */
-    private String primary = null;
-
-    /** The Mime-Type sub type */
-    private String sub = null;
+    /**
+     * Lower case name of this media type.
+     */
+    private final String name;
 
     /** The Mime-Type description */
     private String description = null;
 
     /** The Mime-Type associated recognition patterns */
-    private Patterns patterns = null;
+    private final Patterns patterns = new Patterns();
 
     /** The magics associated to this Mime-Type */
-    private ArrayList<Magic> magics = null;
+    private final ArrayList<Magic> magics = new ArrayList<Magic>();
 
-    /** The aliases Mime-Types for this one */
-    private ArrayList<String> aliases = null;
+    /**
+     * Lower case alias names of this media type.
+     */
+    private final SortedSet<String> aliases = new TreeSet<String>();
 
     /** The root-XML associated to this Mime-Type */
-    private ArrayList<RootXML> rootXML = null;
+    private final ArrayList<RootXML> rootXML = new ArrayList<RootXML>();
 
     /** The sub-class-of associated to this Mime-Type */
-    private ArrayList<String> superTypes = null;
+    private final ArrayList<String> superTypes = new ArrayList<String>();
 
     /** The mime-type level (regarding its subTypes) */
     private int level = 0;
@@ -73,164 +102,29 @@ public final class MimeType implements Comparable<MimeType> {
     private int minLength = 0;
 
     /**
-     * Creates a MimeType from a String.
-     * 
-     * @param name
-     *            the MIME content type String.
+     * Creates a media type with the give name and containing media type
+     * registry. The name is expected to be valid and normalized to lower
+     * case. This constructor should only be called by
+     * {@link MimeTypes#forName(String)} to keep the media type mapping
+     * up to date.
+     *
+     * @param registry the media type registry that contains this type
+     * @param name media type name
      */
-    public MimeType(String name) throws MimeTypeException {
-
-        if (name == null || name.length() <= 0) {
-            throw new MimeTypeException("The type can not be null or empty");
-        }
-
-        // Split the two parts of the Mime Content Type
-        String[] parts = name.split(SEPARATOR, 2);
-
-        // Checks validity of the parts
-        if (parts.length != 2) {
-            throw new MimeTypeException("Invalid Content Type " + name);
-        }
-        init(parts[0], parts[1]);
+    MimeType(MimeTypes registry, String name) {
+        assert registry != null;
+        assert isValid(name) && name.equals(name.toLowerCase());
+        this.registry = registry;
+        this.name = name;
     }
 
     /**
-     * Creates a MimeType with the given primary type and sub type.
+     * Returns the name of this Internet media type.
      * 
-     * @param primary
-     *            the content type primary type.
-     * @param sub
-     *            the content type sub type.
-     */
-    public MimeType(String primary, String sub) throws MimeTypeException {
-        init(primary, sub);
-    }
-
-    /** Init method used by constructors. */
-    private void init(String primary, String sub) throws MimeTypeException {
-
-        // Preliminary checks...
-        if ((primary == null) || (primary.length() <= 0) || (!isValid(primary))) {
-            throw new MimeTypeException("Invalid Primary Type " + primary);
-        }
-        // Remove optional parameters from the sub type
-        String clearedSub = null;
-        if (sub != null) {
-            clearedSub = sub.split(PARAMS_SEP)[0];
-        }
-        if ((clearedSub == null) || (clearedSub.length() <= 0)
-                || (!isValid(clearedSub))) {
-            throw new MimeTypeException("Invalid Sub Type " + clearedSub);
-        }
-
-        // All is ok, assign values
-        this.primary = primary.toLowerCase().trim();
-        this.sub = clearedSub.toLowerCase().trim();
-        this.name = this.primary + SEPARATOR + this.sub;
-        this.patterns = new Patterns();
-        this.magics = new ArrayList<Magic>();
-        this.aliases = new ArrayList<String>();
-        this.rootXML = new ArrayList<RootXML>();
-        this.superTypes = new ArrayList<String>();
-    }
-
-    /**
-     * Cleans a content-type. This method cleans a content-type by removing its
-     * optional parameters and returning only its
-     * <code>primary-type/sub-type</code>.
-     * 
-     * @param type
-     *            is the content-type to clean.
-     * @return the cleaned version of the specified content-type.
-     * @throws MimeTypeException
-     *             if something wrong occurs during the parsing/cleaning of the
-     *             specified type.
-     */
-    public final static String clean(String type) throws MimeTypeException {
-        return (new MimeType(type)).getName();
-    }
-
-    /**
-     * Return the name of this mime-type.
-     * 
-     * @return the name of this mime-type.
+     * @return media type name (lower case)
      */
     public String getName() {
         return name;
-    }
-
-    /**
-     * Return the primary type of this mime-type.
-     * 
-     * @return the primary type of this mime-type.
-     */
-    public String getPrimaryType() {
-        return primary;
-    }
-
-    /**
-     * Return the sub type of this mime-type.
-     * 
-     * @return the sub type of this mime-type.
-     */
-    public String getSubType() {
-        return sub;
-    }
-
-    // Inherited Javadoc
-    public String toString() {
-        StringBuffer buf = new StringBuffer();
-        buf.append(name).append(" -- ").append(getDescription()).append("\n")
-                .append("Aliases: ");
-        if (aliases.size() < 1) {
-            buf.append(" NONE");
-        }
-        buf.append("\n");
-        for (int i = 0; i < aliases.size(); i++) {
-            buf.append("\t").append(aliases.get(i)).append("\n");
-        }
-        buf.append("Patterns:");
-        String[] patterns = this.patterns.getPatterns();
-        if (patterns.length < 1) {
-            buf.append(" NONE");
-        }
-        buf.append("\n");
-        for (int i = 0; i < patterns.length; i++) {
-            buf.append("\t").append(patterns[i]).append("\n");
-        }
-        buf.append("Magics:  ");
-        if (magics.size() < 1) {
-            buf.append(" NONE");
-        }
-        buf.append("\n");
-        for (int i = 0; i < magics.size(); i++) {
-            buf.append("\t").append(magics.get(i)).append("\n");
-        }
-
-        return buf.toString();
-    }
-
-    /**
-     * Indicates if an object is equal to this mime-type. The specified object
-     * is equal to this mime-type if it is not null, and it is an instance of
-     * MimeType and its name is equals to this mime-type.
-     * 
-     * @param object
-     *            the reference object with which to compare.
-     * @return <code>true</code> if this mime-type is equal to the object
-     *         argument; <code>false</code> otherwise.
-     */
-    public boolean equals(Object object) {
-        try {
-            return ((MimeType) object).getName().equals(this.name);
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    // Inherited Javadoc
-    public int hashCode() {
-        return name.hashCode();
     }
 
     /**
@@ -253,32 +147,51 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     /**
-     * Add a supported file-naming pattern.
-     * 
-     * @param pattern
-     *            to add to the list of recognition pattern for this mime-type.
+     * Adds a file name pattern for this media type.
+     *
+     * @param pattern file name pattern
      */
-    void addPattern(String pattern) {
+    public synchronized void addPattern(String pattern) {
+        registry.addPattern(this, pattern);
         patterns.add(pattern, this);
     }
 
     /**
-     * Return the recogition patterns for this mime-type
+     * Returns the file name patterns for this media type.
      * 
-     * @return the recoginition patterns associated to this mime-type.
+     * @return file name patterns
      */
-    String[] getPatterns() {
+    public synchronized String[] getPatterns() {
         return patterns.getPatterns();
     }
 
     /**
-     * Add an alias to this mime-type
-     * 
-     * @param alias
-     *            to add to this mime-type.
+     * Returns the aliases of this media type. The returned set is
+     * newly allocated and can be freely modified by the client.
+     *
+     * @return media type aliases
      */
-    void addAlias(String alias) {
-        aliases.add(alias);
+    public synchronized SortedSet<String> getAliases() {
+        return new TreeSet<String>(aliases);
+    }
+
+    /**
+     * Adds an alias name for this media type.
+     *
+     * @param alias media type alias (case insensitive)
+     * @throws MimeTypeException if the alias is invalid
+     *                           or already registered for another media type
+     */
+    public synchronized void addAlias(String alias) throws MimeTypeException {
+        if (isValid(alias)) {
+            alias = alias.toLowerCase();
+            if (!name.equals(alias) && !aliases.contains(alias)) {
+                registry.addAlias(this, alias);
+                aliases.add(alias);
+            }
+        } else {
+            throw new MimeTypeException("Invalid media type alias: " + alias);
+        }
     }
 
     /**
@@ -336,15 +249,6 @@ public final class MimeType implements Comparable<MimeType> {
         this.level = level;
     }
 
-    /**
-     * Return the recogition patterns for this mime-type
-     * 
-     * @return the recoginition patterns associated to this mime-type.
-     */
-    public String[] getAliases() {
-        return aliases.toArray(new String[aliases.size()]);
-    }
-
     Magic[] getMagics() {
         return magics.toArray(new Magic[magics.size()]);
     }
@@ -380,26 +284,6 @@ public final class MimeType implements Comparable<MimeType> {
 
     public boolean matches(byte[] data) {
         return matchesXML(data) || matchesMagic(data);
-    }
-
-    /** Checks if the specified primary or sub type is valid. */
-    private boolean isValid(String type) {
-        return (type != null) && (type.trim().length() > 0)
-                && !hasCtrlOrSpecials(type);
-    }
-
-    /** Checks if the specified string contains some special characters. */
-    private boolean hasCtrlOrSpecials(String type) {
-        int len = type.length();
-        int i = 0;
-        while (i < len) {
-            char c = type.charAt(i);
-            if (c <= '\032' || SPECIALS.indexOf(c) > 0) {
-                return true;
-            }
-            i++;
-        }
-        return false;
     }
 
     /**
@@ -468,12 +352,25 @@ public final class MimeType implements Comparable<MimeType> {
         }
     }
 
+    //----------------------------------------------------------< Comparable >
+
     public int compareTo(MimeType o) {
         int diff = level - o.level;
         if (diff == 0) {
             diff = name.compareTo(o.name);
         }
         return diff;
+    }
+
+    //--------------------------------------------------------------< Object >
+
+    /**
+     * Returns the name of this Internet media type.
+     *
+     * @return media type name
+     */
+    public String toString() {
+        return name;
     }
 
 }

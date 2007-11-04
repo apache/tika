@@ -68,7 +68,7 @@ public class TestMimeTypes extends TestCase {
         assertEquals(repo.getMimeType("test.pdF"), type);
     }
 
-    public void testLoadMimeTypes() {
+    public void testLoadMimeTypes() throws MimeTypeException {
         assertNotNull(repo.forName("application/octet-stream"));
         assertNotNull(repo.forName("text/x-tex"));
     }
@@ -136,6 +136,5 @@ public class TestMimeTypes extends TestCase {
 
         return type;
     }
-
 
 }

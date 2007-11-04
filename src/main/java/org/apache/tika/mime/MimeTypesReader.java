@@ -130,79 +130,60 @@ final class MimeTypesReader {
     void read(Document document) {
         Element element = document.getDocumentElement();
         if (element != null && element.getTagName().equals("mime-info")) {
-            readMimeInfo(element);
-        }
-    }
-
-    /** Read Element named mime-info. */
-    private MimeType[] readMimeInfo(Element element) {
-        ArrayList<MimeType> types = new ArrayList<MimeType>();
-        NodeList nodes = element.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Node node = nodes.item(i);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
-                Element nodeElement = (Element) node;
-                if (nodeElement.getTagName().equals("mime-type")) {
-                    readMimeType(nodeElement);
+            NodeList nodes = element.getChildNodes();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Node node = nodes.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    Element child = (Element) node;
+                    if (child.getTagName().equals("mime-type")) {
+                        readMimeType(child);
+                    }
                 }
             }
+        } else {
+            logger.warn("Not a <mime-info/> configuration document");
         }
-        return types.toArray(new MimeType[types.size()]);
     }
 
     /** Read Element named mime-type. */
     private void readMimeType(Element element) {
-
-        MimeType type = null;
-
+        String name = element.getAttribute("type");
         try {
-            type = new MimeType(element.getAttribute("type"));
-        } catch (MimeTypeException mte) {
-            // Mime Type not valid... just ignore it
-            if (logger.isInfoEnabled()) {
-                logger.info(mte.toString() + " ... Ignoring!");
-            }
-            return;
-        }
+            MimeType type = types.forName(name);
 
-        NodeList nodes = element.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Node node = nodes.item(i);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
-                Element nodeElement = (Element) node;
-                if (nodeElement.getTagName().equals("_comment")) {
-                    type.setDescription(nodeElement.getFirstChild()
-                            .getNodeValue());
-                } else if (nodeElement.getTagName().equals("glob")) {
-                    readGlob(nodeElement, type);
-                } else if (nodeElement.getTagName().equals("magic")) {
-                    readMagic(nodeElement, type);
-                } else if (nodeElement.getTagName().equals("alias")) {
-                    readAlias(nodeElement, type);
-                } else if (nodeElement.getTagName().equals("root-XML")) {
-                    readRootXML(nodeElement, type);
-                } else if (nodeElement.getTagName().equals("sub-class-of")) {
-                    readSubClassOf(nodeElement, type);
+            NodeList nodes = element.getChildNodes();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Node node = nodes.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    Element nodeElement = (Element) node;
+                    if (nodeElement.getTagName().equals("_comment")) {
+                        type.setDescription(
+                                nodeElement.getFirstChild().getNodeValue());
+                    } else if (nodeElement.getTagName().equals("glob")) {
+                        type.addPattern(nodeElement.getAttribute("pattern"));
+                    } else if (nodeElement.getTagName().equals("magic")) {
+                        readMagic(nodeElement, type);
+                    } else if (nodeElement.getTagName().equals("alias")) {
+                        String alias = nodeElement.getAttribute("type");
+                        try {
+                            type.addAlias(alias);
+                        } catch (MimeTypeException e) {
+                            logger.warn("Invalid media type alias: " + alias, e);
+                        }
+                    } else if (nodeElement.getTagName().equals("root-XML")) {
+                        readRootXML(nodeElement, type);
+                    } else if (nodeElement.getTagName().equals("sub-class-of")) {
+                        readSubClassOf(nodeElement, type);
+                    }
                 }
             }
+        } catch (MimeTypeException e) {
+            logger.warn("Invalid media type configuration entry: " + name, e);
         }
-
-        types.add(type);
-    }
-
-    /** Read Element named glob. */
-    private void readGlob(Element element, MimeType type) {
-        type.addPattern(element.getAttribute("pattern"));
-    }
-
-    /** Read Element named alias. */
-    private void readAlias(Element element, MimeType type) {
-        type.addAlias(element.getAttribute("type"));
     }
 
     /** Read Element named magic. */
     private void readMagic(Element element, MimeType mimeType) {
-
         Magic magic = null;
         try {
             magic = new Magic(Integer
@@ -296,83 +277,6 @@ final class MimeTypesReader {
     private void readSubClassOf(Element element, MimeType mimeType) {
 
         mimeType.addSuperType(element.getAttribute("type"));
-    }
-
-    /** Prints the specified node, then prints all of its children. */
-    public static void printDOM(Node node) {
-        int type = node.getNodeType();
-        switch (type) {
-        // print the document element
-        case Node.DOCUMENT_NODE: {
-            System.out.println("&lt;?xml version=\"1.0\" ?>");
-            printDOM(((Document) node).getDocumentElement());
-            break;
-        }
-
-            // print element with attributes
-        case Node.ELEMENT_NODE: {
-            System.out.print("<");
-            System.out.print(node.getNodeName());
-            NamedNodeMap attrs = node.getAttributes();
-            for (int i = 0; i < attrs.getLength(); i++) {
-                Node attr = attrs.item(i);
-                System.out.print(" " + attr.getNodeName().trim() + "=\""
-                        + attr.getNodeValue().trim() + "\"");
-            }
-            System.out.println(">");
-
-            NodeList children = node.getChildNodes();
-            if (children != null) {
-                int len = children.getLength();
-                for (int i = 0; i < len; i++)
-                    printDOM(children.item(i));
-            }
-
-            break;
-        }
-
-            // handle entity reference nodes
-        case Node.ENTITY_REFERENCE_NODE: {
-            System.out.print("&");
-            System.out.print(node.getNodeName().trim());
-            System.out.print(";");
-            break;
-        }
-
-            // print cdata sections
-        case Node.CDATA_SECTION_NODE: {
-            System.out.print("<![CDATA[");
-            System.out.print(node.getNodeValue().trim());
-            System.out.print("]]>");
-            break;
-        }
-
-            // print text
-        case Node.TEXT_NODE: {
-            System.out.print(node.getNodeValue().trim());
-            break;
-        }
-
-            // print processing instruction
-        case Node.PROCESSING_INSTRUCTION_NODE: {
-            System.out.print("<?");
-            System.out.print(node.getNodeName().trim());
-            String data = node.getNodeValue().trim();
-            {
-                System.out.print(" ");
-                System.out.print(data);
-            }
-            System.out.print("?>");
-            break;
-        }
-        }
-
-        if (type == Node.ELEMENT_NODE) {
-            System.out.println();
-            System.out.print("</");
-            System.out.print(node.getNodeName().trim());
-            System.out.print('>');
-        }
     }
 
 }

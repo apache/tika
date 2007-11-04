@@ -523,7 +523,7 @@
 		</mime-type> -->
 
 	<mime-type type="application/x-ms-dos-executable">
-		<alias type="application/x-dosexec;exe" />
+		<alias type="application/x-dosexec" />
 	</mime-type>
 
 	<mime-type type="application/ogg">
