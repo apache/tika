@@ -148,7 +148,7 @@
 	</mime-type>
 
 	<mime-type type="application/xhtml+xml">
-		<sub-class-of type="text/xml" />
+		<sub-class-of type="application/xml" />
 		<glob pattern="*.xhtml" />
 		<root-XML namespaceURI='http://www.w3.org/1999/xhtml'
 			localName='html' />

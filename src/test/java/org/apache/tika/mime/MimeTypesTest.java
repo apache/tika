@@ -22,14 +22,24 @@ public class MimeTypesTest extends TestCase {
 
     private MimeTypes types;
 
-    protected void setUp() {
+    private MimeType binary;
+
+    private MimeType text;
+
+    private MimeType html;
+
+    protected void setUp() throws MimeTypeException {
         types = new MimeTypes();
+        binary = types.forName("application/octet-stream");
+        text = types.forName("text/plain");
+        text.addAlias("text/x-plain");
+        html = types.forName("text/html");
+        html.setSuperType(text);
     }
 
     public void testForName() throws MimeTypeException {
-        assertNotNull(types.forName("text/plain"));
-        assertEquals("text/plain", types.forName("text/plain").getName());
-        assertEquals("text/plain", types.forName("TEXT/PLAIN").getName());
+        assertEquals(text, types.forName("text/plain"));
+        assertEquals(text, types.forName("TEXT/PLAIN"));
 
         try {
             types.forName("invalid");
@@ -39,16 +49,61 @@ public class MimeTypesTest extends TestCase {
         }
     }
 
-    public void addAlias() throws MimeTypeException {
-        types.addAlias(types.forName("text/plain"), "foo/bar");
-        assertNotNull(types.forName("foo/bar"));
-        assertEquals("text/plain", types.forName("foo/bar").getName());
-
+    public void testAddAlias() throws MimeTypeException {
+        assertEquals(text, types.forName("text/x-plain"));
         try {
-            types.addAlias(types.forName("text/plain"), "invalid");
+            text.addAlias("invalid");
             fail("MimeTypeException not thrown on invalid alias name");
         } catch (MimeTypeException e) {
             // expected
         }
     }
+
+    public void testSuperType() throws MimeTypeException {
+        assertNull(binary.getSuperType());
+        assertEquals(binary, text.getSuperType());
+        assertEquals(text, html.getSuperType());
+   }
+
+    public void testSubTypes() {
+        assertEquals(1, binary.getSubTypes().size());
+        assertEquals(
+                "text/plain",
+                binary.getSubTypes().iterator().next().getName());
+        assertEquals(1, text.getSubTypes().size());
+        assertEquals(
+                "text/html",
+                text.getSubTypes().iterator().next().getName());
+        assertEquals(0, html.getSubTypes().size());
+    }
+
+    public void testIsDescendantOf() {
+        assertFalse(binary.isDescendantOf(binary));
+        assertFalse(text.isDescendantOf(text));
+        assertFalse(html.isDescendantOf(html));
+
+        assertTrue(text.isDescendantOf(binary));
+        assertFalse(binary.isDescendantOf(text));
+        
+        assertTrue(html.isDescendantOf(binary));
+        assertFalse(binary.isDescendantOf(html));
+
+        assertTrue(html.isDescendantOf(text));
+        assertFalse(text.isDescendantOf(html));
+    }
+
+    public void testCompareTo() {
+        assertTrue(binary.compareTo(binary) == 0);
+        assertTrue(binary.compareTo(text) < 0);
+        assertTrue(binary.compareTo(html) < 0);
+
+        assertTrue(text.compareTo(binary) > 0);
+        assertTrue(text.compareTo(text) == 0);
+        assertTrue(text.compareTo(html) < 0);
+
+        assertTrue(html.compareTo(binary) > 0);
+        assertTrue(html.compareTo(text) > 0);
+        assertTrue(html.compareTo(html) == 0);
+    }
+
 }

@@ -31,7 +31,6 @@ import org.xml.sax.InputSource;
 
 // JDK imports
 import java.io.InputStream;
-import java.util.ArrayList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -173,10 +172,17 @@ final class MimeTypesReader {
                     } else if (nodeElement.getTagName().equals("root-XML")) {
                         readRootXML(nodeElement, type);
                     } else if (nodeElement.getTagName().equals("sub-class-of")) {
-                        readSubClassOf(nodeElement, type);
+                        String parent = nodeElement.getAttribute("type");
+                        try {
+                            type.setSuperType(types.forName(parent));
+                        } catch (MimeTypeException e) {
+                            logger.warn("Invalid parent type: " + parent, e);
+                        }
                     }
                 }
             }
+
+            types.add(type);
         } catch (MimeTypeException e) {
             logger.warn("Invalid media type configuration entry: " + name, e);
         }
@@ -268,15 +274,8 @@ final class MimeTypesReader {
 
     /** Read Element named root-XML. */
     private void readRootXML(Element element, MimeType mimeType) {
-
         mimeType.addRootXML(element.getAttribute("namespaceURI"), element
                 .getAttribute("localName"));
-    }
-
-    /** Read Element named sub-class-of. */
-    private void readSubClassOf(Element element, MimeType mimeType) {
-
-        mimeType.addSuperType(element.getAttribute("type"));
     }
 
 }

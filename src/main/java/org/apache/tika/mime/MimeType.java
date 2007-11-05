@@ -18,6 +18,7 @@ package org.apache.tika.mime;
 
 // JDK imports
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
@@ -75,8 +76,21 @@ public final class MimeType implements Comparable<MimeType> {
      */
     private final String name;
 
-    /** The Mime-Type description */
-    private String description = null;
+    /**
+     * Description of this media type.
+     */
+    private String description = "";
+
+    /**
+     * The parent type of this media type, or <code>null</code> if this
+     * is a top-level type.
+     */
+    private MimeType superType = null;
+
+    /**
+     * The child types of this media type.
+     */
+    private final SortedSet<MimeType> subTypes = new TreeSet<MimeType>();
 
     /** The Mime-Type associated recognition patterns */
     private final Patterns patterns = new Patterns();
@@ -92,12 +106,6 @@ public final class MimeType implements Comparable<MimeType> {
     /** The root-XML associated to this Mime-Type */
     private final ArrayList<RootXML> rootXML = new ArrayList<RootXML>();
 
-    /** The sub-class-of associated to this Mime-Type */
-    private final ArrayList<String> superTypes = new ArrayList<String>();
-
-    /** The mime-type level (regarding its subTypes) */
-    private int level = 0;
-
     /** The minimum length of data to provides for magic analyzis */
     private int minLength = 0;
 
@@ -105,7 +113,7 @@ public final class MimeType implements Comparable<MimeType> {
      * Creates a media type with the give name and containing media type
      * registry. The name is expected to be valid and normalized to lower
      * case. This constructor should only be called by
-     * {@link MimeTypes#forName(String)} to keep the media type mapping
+     * {@link MimeTypes#forName(String)} to keep the media type registry
      * up to date.
      *
      * @param registry the media type registry that contains this type
@@ -119,7 +127,7 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     /**
-     * Returns the name of this Internet media type.
+     * Returns the name of this media type.
      * 
      * @return media type name (lower case)
      */
@@ -128,21 +136,69 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     /**
-     * Return the description of this mime-type.
+     * Returns the parent of this media type.
+     *
+     * @return parent media type, or <code>null</code>
+     */
+    public MimeType getSuperType() {
+        return superType;
+    }
+
+    public void setSuperType(MimeType type) throws MimeTypeException {
+        assert type != null && type.registry == registry;
+        if (this.isDescendantOf(type)) {
+            // ignore, already a descendant of the given type
+        } else if (this == type) {
+            throw new MimeTypeException(
+                    "Media type can not inherit itself: " + type);
+        } else if (type.isDescendantOf(this)) {
+            throw new MimeTypeException(
+                    "Media type can not inherit its descendant: " + type);
+        } else if (superType == null) {
+            superType = type;
+            superType.subTypes.add(this);
+        } else if (type.isDescendantOf(superType)) {
+            superType.subTypes.remove(this);
+            superType = type;
+            superType.subTypes.add(this);
+        } else {
+            throw new MimeTypeException(
+                    "Conflicting media type inheritance: " + type);
+        }
+    }
+
+    public SortedSet<MimeType> getSubTypes() {
+        return Collections.unmodifiableSortedSet(subTypes);
+    }
+
+    public boolean isDescendantOf(MimeType type) {
+        assert type != null;
+        synchronized (registry) {
+            for (MimeType t = superType; t != null; t = t.superType) {
+                if (t == type) {
+                    return true;
+                }
+            }
+            return false; 
+        }
+    }
+
+    /**
+     * Returns the description of this media type.
      * 
-     * @return the description of this mime-type.
+     * @return media type description
      */
     public String getDescription() {
         return description;
     }
 
     /**
-     * Set the description of this mime-type.
+     * Set the description of this media type.
      * 
-     * @param description
-     *            the description of this mime-type.
+     * @param description media type description
      */
-    void setDescription(String description) {
+    public void setDescription(String description) {
+        assert description != null;
         this.description = description;
     }
 
@@ -151,7 +207,7 @@ public final class MimeType implements Comparable<MimeType> {
      *
      * @param pattern file name pattern
      */
-    public synchronized void addPattern(String pattern) {
+    public void addPattern(String pattern) {
         registry.addPattern(this, pattern);
         patterns.add(pattern, this);
     }
@@ -161,7 +217,7 @@ public final class MimeType implements Comparable<MimeType> {
      * 
      * @return file name patterns
      */
-    public synchronized String[] getPatterns() {
+    public String[] getPatterns() {
         return patterns.getPatterns();
     }
 
@@ -171,18 +227,18 @@ public final class MimeType implements Comparable<MimeType> {
      *
      * @return media type aliases
      */
-    public synchronized SortedSet<String> getAliases() {
-        return new TreeSet<String>(aliases);
+    public SortedSet<String> getAliases() {
+        return Collections.unmodifiableSortedSet(aliases);
     }
 
     /**
      * Adds an alias name for this media type.
      *
      * @param alias media type alias (case insensitive)
-     * @throws MimeTypeException if the alias is invalid
-     *                           or already registered for another media type
+     * @throws MimeTypeException if the alias is invalid or
+     *                           already registered for another media type
      */
-    public synchronized void addAlias(String alias) throws MimeTypeException {
+    public void addAlias(String alias) throws MimeTypeException {
         if (isValid(alias)) {
             alias = alias.toLowerCase();
             if (!name.equals(alias) && !aliases.contains(alias)) {
@@ -222,31 +278,6 @@ public final class MimeType implements Comparable<MimeType> {
 
     RootXML[] getRootXMLs() {
         return rootXML.toArray(new RootXML[rootXML.size()]);
-    }
-
-    void addSuperType(String type) {
-        superTypes.add(type);
-    }
-
-    boolean hasSuperType() {
-        return (superTypes.size() > 0);
-    }
-
-    /**
-     * Returns the super types of this mime-type. A type is a super type of
-     * another type if any instance of the second type is also an instance of
-     * the first.
-     */
-    public String[] getSuperTypes() {
-        return superTypes.toArray(new String[superTypes.size()]);
-    }
-
-    int getLevel() {
-        return level;
-    }
-
-    void setLevel(int level) {
-        this.level = level;
     }
 
     Magic[] getMagics() {
@@ -354,18 +385,27 @@ public final class MimeType implements Comparable<MimeType> {
 
     //----------------------------------------------------------< Comparable >
 
-    public int compareTo(MimeType o) {
-        int diff = level - o.level;
-        if (diff == 0) {
-            diff = name.compareTo(o.name);
+    public int compareTo(MimeType type) {
+        assert type != null;
+        if (type == this) {
+            return 0;
+        } else if (this.isDescendantOf(type)) {
+            return 1;
+        } else if (type.isDescendantOf(this)) {
+            return -1;
+        } else if (superType != null) {
+            return superType.compareTo(type);
+        } else if (type.superType != null) {
+            return compareTo(type.superType);
+        } else {
+            return name.compareTo(type.name);
         }
-        return diff;
     }
 
     //--------------------------------------------------------------< Object >
 
     /**
-     * Returns the name of this Internet media type.
+     * Returns the name of this media type.
      *
      * @return media type name
      */

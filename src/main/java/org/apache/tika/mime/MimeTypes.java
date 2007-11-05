@@ -24,8 +24,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -61,12 +59,6 @@ public final class MimeTypes {
 
     /** List of all registered rootXML */
     private SortedSet<MimeType> xmls = new TreeSet<MimeType>();
-
-    private Map<String, List<MimeType>> unsolvedDeps =
-        new HashMap<String, List<MimeType>>();
-
-    /** The minimum length of data to provide to check all MimeTypes */
-    private int minLength = 0;
 
     public MimeTypes() {
         root = new MimeType(this, DEFAULT);
@@ -287,6 +279,7 @@ public final class MimeTypes {
             MimeType type = types.get(name);
             if (type == null) {
                 type = new MimeType(this, name);
+                type.setSuperType(root);
                 types.put(name, type);
             }
             return type;
@@ -320,7 +313,7 @@ public final class MimeTypes {
      * @param type media type
      * @param pattern file name pattern
      */
-    synchronized void addPattern(MimeType type, String pattern) {
+    void addPattern(MimeType type, String pattern) {
         patterns.add(pattern, type);
     }
 
@@ -359,37 +352,6 @@ public final class MimeTypes {
      *            is the mime-type to add.
      */
     void add(MimeType type) {
-        if (type == null) {
-            return;
-        }
-
-        // Add the new type in the repository
-        types.put(type.getName(), type);
-
-        // Checks for some unsolved dependencies on this new type
-        List<MimeType> deps = unsolvedDeps.remove(type.getName());
-        if (deps != null) {
-            int level = type.getLevel();
-            for (MimeType dep : deps) {
-                level = Math.max(level, dep.getLevel() + 1);
-            }
-            type.setLevel(level);
-        }
-
-        for (String name : type.getSuperTypes()) {
-            MimeType superType = types.get(name);
-            if (superType == null) {
-                deps = unsolvedDeps.get(name);
-                if (deps == null) {
-                    deps = new ArrayList<MimeType>();
-                    unsolvedDeps.put(name, deps);
-                }
-                deps.add(type);
-            }
-        }
-
-        // Update minLentgth
-        minLength = Math.max(minLength, type.getMinLength());
         // Update the magics index...
         if (type.hasMagic()) {
             magics.addAll(Arrays.asList(type.getMagics()));

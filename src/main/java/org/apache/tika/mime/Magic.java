@@ -69,9 +69,9 @@ class Magic implements Clause, Comparable<Magic> {
     }
 
     public int compareTo(Magic o) {
-        int diff = priority - o.priority;
+        int diff = o.priority - priority;
         if (diff == 0) {
-            diff = size() - o.size();
+            diff = o.size() - size();
         }
         return diff;
     }
