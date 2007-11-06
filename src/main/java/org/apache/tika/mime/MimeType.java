@@ -92,9 +92,6 @@ public final class MimeType implements Comparable<MimeType> {
      */
     private final SortedSet<MimeType> subTypes = new TreeSet<MimeType>();
 
-    /** The Mime-Type associated recognition patterns */
-    private final Patterns patterns = new Patterns();
-
     /** The magics associated to this Mime-Type */
     private final ArrayList<Magic> magics = new ArrayList<Magic>();
 
@@ -203,25 +200,6 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     /**
-     * Adds a file name pattern for this media type.
-     *
-     * @param pattern file name pattern
-     */
-    public void addPattern(String pattern) {
-        registry.addPattern(this, pattern);
-        patterns.add(pattern, this);
-    }
-
-    /**
-     * Returns the file name patterns for this media type.
-     * 
-     * @return file name patterns
-     */
-    public String[] getPatterns() {
-        return patterns.getPatterns();
-    }
-
-    /**
      * Returns the aliases of this media type. The returned set is
      * newly allocated and can be freely modified by the client.
      *
@@ -297,10 +275,6 @@ public final class MimeType implements Comparable<MimeType> {
 
     public boolean hasMagic() {
         return (magics.size() > 0);
-    }
-
-    public boolean matches(String url) {
-        return (patterns.matches(url) == this);
     }
 
     public boolean matchesMagic(byte[] data) {

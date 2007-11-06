@@ -104,49 +104,45 @@ public class AutoDetectParser implements Parser {
     private MimeType getMimeType(InputStream stream, Metadata metadata)
             throws IOException {
         MimeTypes types = config.getMimeRepository();
-        MimeType type = null;
 
-        // Get type based on metadata hint (if available)
-        String typename = metadata.get(Metadata.CONTENT_TYPE);
-        if (typename != null) {
-            try {
-                type = types.forName(typename);
-            } catch (MimeTypeException e) {
-                // Malformed type name, ignore
-            }
-        }
-
-        // Get (or verify) type based on resourceName hint (if available)
-        String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
-        if (resourceName != null) {
-            MimeType match = types.getMimeType(resourceName);
-            if (match != null && (type == null || !type.matches(resourceName))) {
-                type = match;
-            }
-        }
-
-        // Get (or verify) type based on magic prefix
+        // Get type based on magic prefix
         stream.mark(types.getMinLength());
         try {
             byte[] prefix = getPrefix(stream, types.getMinLength());
-            MimeType match = types.getMimeType(prefix);
-            if (match != null && (type == null || !type.matches(prefix))) {
-                type = match;
+            MimeType type = types.getMimeType(prefix);
+            if (type != null) {
+                return type;
             }
         } finally {
             stream.reset();
         }
 
-        // Finally, use the default type if no matches found
-        if (type == null) {
-            try {
-                type = types.forName(MimeTypes.DEFAULT);
-            } catch (MimeTypeException e) {
-                // Should never happen
+        // Get type based on resourceName hint (if available)
+        String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        if (resourceName != null) {
+            MimeType type = types.getMimeType(resourceName);
+            if (type != null) {
+                return type;
             }
         }
 
-        return type;
+        // Get type based on metadata hint (if available)
+        String typename = metadata.get(Metadata.CONTENT_TYPE);
+        if (typename != null) {
+            try {
+                return types.forName(typename);
+            } catch (MimeTypeException e) {
+                // Malformed type name, ignore
+            }
+        }
+
+        // Finally, use the default type if no matches found
+        try {
+            return types.forName(MimeTypes.DEFAULT);
+        } catch (MimeTypeException e) {
+            // Should never happen
+            return null;
+        }
     }
 
     /**

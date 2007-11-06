@@ -49,7 +49,7 @@ public class AutoDetectParserTest extends TestCase {
      * @param tp the parameters encapsulated in a TestParams instance
      * @throws IOException
      */
-    private void assertAutoDetect(TestParams tp) throws IOException {
+    private void assertAutoDetect(TestParams tp) throws Exception {
 
         InputStream input =
             AutoDetectParserTest.class.getResourceAsStream(tp.resourceRealName);
@@ -72,9 +72,6 @@ public class AutoDetectParserTest extends TestCase {
 
             assertTrue("Expected content not found: " + tp,
                     writer.toString().contains(tp.expectedContentFragment));
-        } catch (Throwable t) {
-            fail("Test error asserting auto detect for parameters: " + t
-                    + "\nParameters: " + tp);
         } finally {
             input.close();
         }

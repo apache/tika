@@ -159,7 +159,7 @@ final class MimeTypesReader {
                         type.setDescription(
                                 nodeElement.getFirstChild().getNodeValue());
                     } else if (nodeElement.getTagName().equals("glob")) {
-                        type.addPattern(nodeElement.getAttribute("pattern"));
+                        types.addPattern(type, nodeElement.getAttribute("pattern"));
                     } else if (nodeElement.getTagName().equals("magic")) {
                         readMagic(nodeElement, type);
                     } else if (nodeElement.getTagName().equals("alias")) {

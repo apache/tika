@@ -17,80 +17,100 @@
 package org.apache.tika.mime;
 
 // JDK imports
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Defines a MimeType pattern.
  */
 class Patterns {
 
-    private static Map<Character, String> escapeMap =
-        new HashMap<Character, String>();
+    /**
+     * Index of exact name patterns.
+     */
+    private final Map<String, MimeType> names = new HashMap<String, MimeType>();
 
-    static {
-        escapeMap.put('\\', "\\\\");
-        escapeMap.put('?', "\\?");
-        escapeMap.put('[', "\\[");
-        escapeMap.put(']', "\\]");
-        escapeMap.put('^', "\\^");
-        escapeMap.put('.', "\\.");
-        escapeMap.put('-', "\\-");
-        escapeMap.put('$', "\\$");
-        escapeMap.put('+', "\\+");
-        escapeMap.put('(', "\\(");
-        escapeMap.put(')', "\\)");
-        escapeMap.put('{', "\\{");
-        escapeMap.put('}', "\\}");
-        escapeMap.put('|', "\\|");
-        escapeMap.put('*', ".*");
-    }
+    /**
+     * Index of extension patterns of the form "*extension".
+     */
+    private final Map<String, MimeType> extensions =
+        new HashMap<String, MimeType>();
 
-    /** Gathers all the patterns */
-    private ArrayList<String> patterns = new ArrayList<String>();
+    private int minExtensionLength = Integer.MAX_VALUE;
 
-    /** An index of exact matching patterns */
-    private Map<String, MimeType> exactIdx = new HashMap<String, MimeType>();
+    private int maxExtensionLength = 0;
 
-    /** An index of the patterns of the form "*.ext" */
-    private Map<String, MimeType> extIdx = new HashMap<String, MimeType>();
+    /**
+     * Index of generic glob patterns, sorted by length.
+     */
+    private final SortedMap<String, MimeType> globs =
+        new TreeMap<String, MimeType>(new Comparator<String>() {
+            public int compare(String a, String b) {
+                int diff = b.length() - a.length();
+                if (diff == 0) {
+                    diff = a.compareTo(b);
+                }
+                return diff;
+            }
+        });
 
-    /** A list of other patterns */
-    private Map<String, MimeType> others = new HashMap<String, MimeType>();
+    public void add(String pattern, MimeType type) throws MimeTypeException {
+        assert pattern != null && type != null;
 
-    void add(String[] patterns, MimeType type) {
-        // Some preliminary checks
-        if ((patterns == null) || (type == null)) {
-            return;
-        }
-        // All is ok, so add the patterns
-        for (String pattern : patterns) {
-            add(pattern, type);
-        }
-    }
-
-    void add(String pattern, MimeType type) {
-        // Some preliminary checks
-        if ((pattern == null) || (type == null)) {
-            return;
-        }
-
-        // Add the pattern in the good index
-        if ((pattern.indexOf('*') == -1) && (pattern.indexOf('?') == -1)
-                && (pattern.indexOf('[') == -1)) {
-            exactIdx.put(pattern, type);
-        } else if (pattern.startsWith("*.")) {
-            extIdx.put(pattern.substring(2), type);
+        if (pattern.indexOf('*') == -1
+                && pattern.indexOf('?') == -1
+                && pattern.indexOf('[') == -1) {
+            addName(pattern, type);
+        } else if (pattern.startsWith("*")
+                && pattern.indexOf('*', 1) == -1
+                && pattern.indexOf('?') == -1
+                && pattern.indexOf('[') == -1) {
+            addExtension(pattern.substring(1), type);
         } else {
-            others.put(escape(pattern), type);
+            addGlob(compile(pattern), type);
         }
-        // Add the pattern in the list of patterns
-        patterns.add(pattern);
     }
 
-    String[] getPatterns() {
-        return patterns.toArray(new String[patterns.size()]);
+    private void addName(String name, MimeType type) throws MimeTypeException {
+        MimeType previous = names.get(name);
+        if (previous == null || previous.isDescendantOf(type)) {
+            names.put(name, type);
+        } else if (previous == type || type.isDescendantOf(previous)) {
+            // do nothing
+        } else {
+            throw new MimeTypeException("Conflicting name pattern: " + name);
+        }
+    }
+
+    private void addExtension(String extension, MimeType type)
+            throws MimeTypeException {
+        MimeType previous = extensions.get(extension);
+        if (previous == null || previous.isDescendantOf(type)) {
+            extensions.put(extension, type);
+            int length = extension.length();
+            minExtensionLength = Math.min(minExtensionLength, length);
+            maxExtensionLength = Math.max(maxExtensionLength, length);
+        } else if (previous == type || type.isDescendantOf(previous)) {
+            // do nothing
+        } else {
+            throw new MimeTypeException(
+                    "Conflicting extension pattern: " + extension);
+        }
+    }
+
+    private void addGlob(String glob, MimeType type)
+            throws MimeTypeException {
+        MimeType previous = globs.get(glob);
+        if (previous == null || previous.isDescendantOf(type)) {
+            extensions.put(glob, type);
+        } else if (previous == type || type.isDescendantOf(previous)) {
+            // do nothing
+        } else {
+            throw new MimeTypeException("Conflicting glob pattern: " + glob);
+        }
     }
 
     /**
@@ -107,78 +127,51 @@ class Patterns {
      * special characters (`*?[') are matched before other wildcarded patterns
      * (since this covers the majority of the patterns).
      */
-    MimeType matches(String resourceName) {
-
-        // Preliminary check...
-        if (resourceName == null) {
-            return null;
-        }
+    public MimeType matches(String name) {
+        assert name != null;
 
         // First, try exact match of the provided resource name
-        MimeType type = exactIdx.get(resourceName);
-        if (type != null) {
-            return type;
-        }
-
-        // Then try exact match with only the resource name
-        String str = last(resourceName, '/');
-        if (str != null) {
-            type = exactIdx.get(str);
-            if (type != null) {
-                return type;
-            }
-        }
-        str = last(resourceName, '\\');
-        if (str != null) {
-            type = exactIdx.get(str);
-            if (type != null) {
-                return type;
-            }
+        if (names.containsKey(name)) {
+            return names.get(name);
         }
 
         // Then try "extension" (*.xxx) matching
-        int idx = resourceName.indexOf('.', 0);
-        while (idx != -1) {
-            type = extIdx.get(resourceName.substring(idx + 1));
-            if (type != null) {
-                return type;
+        int maxLength = Math.min(maxExtensionLength, name.length());
+        for (int n = maxLength; n >= minExtensionLength; n--) {
+            String extension = name.substring(name.length() - n);
+            if (extensions.containsKey(extension)) {
+                return extensions.get(extension);
             }
-            idx = resourceName.indexOf('.', idx + 1);
         }
 
         // And finally, try complex regexp matching
-        String longest = null;
-        for (String pattern : others.keySet()) {
-            if ((resourceName.matches(pattern))
-                    && (pattern.length() > longest.length())) {
-                longest = pattern;
+        for (Map.Entry<String, MimeType> entry : globs.entrySet()) {
+            if (name.matches(entry.getKey())) {
+                return entry.getValue();
             }
         }
-        if (longest != null) {
-            type = others.get(longest);
-        }
-        return type;
+
+        return null;
     }
 
-    private final static String last(String str, char c) {
-        if (str == null) {
-            return null;
+    private String compile(String glob) {
+        StringBuilder pattern = new StringBuilder();
+        pattern.append("\\A");
+        for (int i = 0; i < glob.length(); i++) {
+            char ch = glob.charAt(i);
+            if (ch == '?') {
+                pattern.append('.');
+            } else if (ch == '*') {
+                pattern.append(".*");
+            } else if ("\\[]^.-$+(){}|".indexOf(ch) != -1) {
+                pattern.append('\\');
+                pattern.append(ch);
+            } else {
+                pattern.append(ch);
+            }
         }
-        int idx = str.lastIndexOf(c);
-        if ((idx < 0) || (idx >= (str.length() - 1))) {
-            return null;
-        }
-        return str.substring(idx + 1);
-    }
-
-    private final static String escape(String str) {
-        StringBuffer result = new StringBuffer(str.length());
-        for (int i = 0; i < str.length(); i++) {
-            String charAt = String.valueOf(str.charAt(i));
-            String replace = escapeMap.get(charAt);
-            result.append((replace != null) ? replace : charAt);
-        }
-        return result.toString();
+        pattern.append("\\z");
+        return pattern.toString();
     }
 
 }

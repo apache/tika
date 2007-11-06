@@ -94,15 +94,19 @@ public final class MimeTypes {
      * 
      * @param name
      *            of the document to analyze.
-     * @return the Mime Content Type of the specified document name, or
-     *         <code>null</code> if none is found.
+     * @return the Mime Content Type of the specified document name
      */
     public MimeType getMimeType(String name) {
-        MimeType type = patterns.matches(name.toLowerCase());
-        if (type != null)
+        MimeType type = patterns.matches(name);
+        if (type != null) {
             return type;
-        // if it's null here, then return the default type
-        return root;
+        }
+        type = patterns.matches(name.toLowerCase());
+        if (type != null) {
+            return type;
+        } else {
+            return root;
+        }
     }
 
     /**
@@ -307,13 +311,14 @@ public final class MimeTypes {
     }
 
     /**
-     * Adds a file name pattern for the given media type. This method should
-     * only be called from {@link MimeType#addPattern(String)}.
+     * Adds a file name pattern for the given media type.
      *
      * @param type media type
      * @param pattern file name pattern
+     * @throws MimeTypeException if the pattern conflicts with existing ones
      */
-    void addPattern(MimeType type, String pattern) {
+    public void addPattern(MimeType type, String pattern)
+            throws MimeTypeException {
         patterns.add(pattern, type);
     }
 
@@ -328,21 +333,6 @@ public final class MimeTypes {
     public int getMinLength() {
         return 1024;
         // return minLength;
-    }
-
-    /**
-     * Add the specified mime-types in the repository.
-     * 
-     * @param types
-     *            are the mime-types to add.
-     */
-    void add(MimeType[] types) {
-        if (types == null) {
-            return;
-        }
-        for (int i = 0; i < types.length; i++) {
-            add(types[i]);
-        }
     }
 
     /**

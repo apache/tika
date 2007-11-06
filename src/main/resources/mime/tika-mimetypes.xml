@@ -92,7 +92,6 @@
 		<glob pattern="*.rng" />
 		<glob pattern="*.rnx" />
 		<glob pattern="*.roles" />
-		<glob pattern="*.rss" />
 		<glob pattern="*.sh" />
 		<glob pattern="*.sql" />
 		<glob pattern="*.svg" />
