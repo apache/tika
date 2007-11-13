@@ -125,3 +125,5 @@ Unreleased changes (0.1-dev)
 56. TIKA-84 - Add MimeTypes.getMimeType(InputStream) (jukka)
 
 57. TIKA-85 - Add glob patterns from the ASF svn:eol-style documentation (jukka)
+
+58. TIKA-100 - Structured PDF parsing (jukka)
