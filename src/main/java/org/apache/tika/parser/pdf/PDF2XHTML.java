@@ -70,7 +70,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.startDocument();
         } catch (SAXException e) {
-            throw new IOException("Unable to start a document", e);
+            throw new IOException("Unable to start a document: reason: "+e.getMessage());
         }
     }
 
@@ -78,7 +78,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.endDocument();
         } catch (SAXException e) {
-            throw new IOException("Unable to end a document", e);
+            throw new IOException("Unable to end a document: reason: "+e.getMessage());
         }
     }
 
@@ -86,7 +86,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.startElement("div");
         } catch (SAXException e) {
-            throw new IOException("Unable to start a page", e);
+            throw new IOException("Unable to start a page: reason: "+e.getMessage());
         }
     }
 
@@ -94,7 +94,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.endElement("div");
         } catch (SAXException e) {
-            throw new IOException("Unable to end a page", e);
+            throw new IOException("Unable to end a page: reason: "+e.getMessage());
         }
     }
 
@@ -102,7 +102,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.startElement("p");
         } catch (SAXException e) {
-            throw new IOException("Unable to start a paragraph", e);
+            throw new IOException("Unable to start a paragraph: reason: "+e.getMessage());
         }
     }
 
@@ -110,7 +110,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.endElement("p");
         } catch (SAXException e) {
-            throw new IOException("Unable to end a paragraph", e);
+            throw new IOException("Unable to end a paragraph: reason: "+e.getMessage());
         }
     }
 
@@ -118,7 +118,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.characters(text.getCharacter());
         } catch (SAXException e) {
-            throw new IOException("Unable to write a newline", e);
+            throw new IOException("Unable to write a newline: reason: "+e.getMessage());
         }
     }
 
@@ -126,7 +126,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.characters("\n");
         } catch (SAXException e) {
-            throw new IOException("Unable to write a newline", e);
+            throw new IOException("Unable to write a newline: reason: "+e.getMessage());
         }
     }
 
@@ -135,7 +135,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             handler.characters(" ");
         } catch (SAXException e) {
-            throw new IOException("Unable to write a space", e);
+            throw new IOException("Unable to write a space: reason: "+e.getMessage());
         }
     }
 
