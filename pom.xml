@@ -25,6 +25,12 @@
                              http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>4</version>
+  </parent>
+
   <groupId>org.apache.tika</groupId>
   <artifactId>tika</artifactId>
   <version>0.1-SNAPSHOT</version>
@@ -33,19 +39,6 @@
   <name>Apache Tika</name>
   <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
   <description>Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.</description>
-
-  <licenses>
-    <license>
-      <name>The Apache Software License, Version 2.0</name>
-      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-
-  <organization>
-    <name>Apache Software Foundation</name>
-    <url>http://www.apache.org/</url>
-  </organization>
 
   <url>http://incubator.apache.org/tika/</url>
 
@@ -60,12 +53,23 @@
       <subscribe>tika-dev-subscribe@incubator.apache.org</subscribe>
       <unsubscribe>tika-dev-unsubscribe@incubator.apache.org</unsubscribe>
       <post>tika-dev@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-tika-dev/</archive>
+      <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-dev@incubator.apache.org/</otherArchive>
+        <otherArchive>http://www.nabble.com/Apache-Tika---Development-f20913.html</otherArchive>
+        <otherArchive>http://news.gmane.org/gmane.comp.apache.tika.devel</otherArchive>
+        <otherArchive>http://tika.markmail.org/</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Commit mailing list</name>
       <subscribe>tika-commits-subscribe@incubator.apache.org</subscribe>
       <unsubscribe>tika-commits-unsubscribe@incubator.apache.org</unsubscribe>
       <post>tika-commits@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-tika-commits/</archive>
+      <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-commits@incubator.apache.org/</otherArchive>
+      </otherArchives>
     </mailingList>
   </mailingLists>
 
@@ -226,7 +230,25 @@
         <targetPath>org/apache/tika</targetPath>
         <directory>${basedir}/src/main/resources</directory>
       </resource>
+      <resource>
+        <targetPath>META-INF</targetPath>
+        <directory>${basedir}</directory>
+        <includes>
+          <include>README.txt</include>
+          <include>NOTICE.txt</include>
+          <include>LICENSE.txt</include>
+        </includes>
+      </resource>
     </resources>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <version>2.2-beta-1</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -247,32 +269,97 @@
             </systemProperties>
           </configuration>
         </plugin>
-        <plugin>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <executions>
-            <!-- Include the project metadata files in META-INF -->
-            <execution>
-              <id>add-project-files</id>
-              <phase>process-resources</phase>
-              <configuration>
-                <tasks>
-                <copy todir="${project.build.outputDirectory}/META-INF">
-                  <fileset dir="${basedir}">
-                    <include name="README.txt"/>
-                    <include name="NOTICE.txt"/>
-                    <include name="LICENSE.txt"/>
-                  </fileset>
-                </copy>
-              </tasks>
-            </configuration>
-            <goals>
-              <goal>run</goal>
-            </goals>
-          </execution>
-        </executions>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifestEntries>
+              <Specification-Title>${project.name}</Specification-Title>
+              <Specification-Version>${project.version}</Specification-Version>
+              <Specification-Vendor>${project.organization.name}</Specification-Vendor>
+              <Implementation-Title>${project.name}</Implementation-Title>
+              <Implementation-Version>${project.version}</Implementation-Version>
+              <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+              <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/bin.xml</descriptor>
+            <descriptor>src/main/assembly/src.xml</descriptor>
+          </descriptors>
+          <tarLongFileMode>gnu</tarLongFileMode>
+        </configuration>
       </plugin>
     </plugins>
   </build>
+
+  <reporting>
+    <plugins>
+
+      <!-- Produce JavaDoc -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.2</version>
+        <configuration> 
+          <aggregate>true</aggregate>
+          <source>1.5</source>
+        </configuration> 
+      </plugin>
+
+      <!-- Produce Source cross references -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jxr-plugin</artifactId>
+        <version>2.1</version>
+        <configuration> 
+          <aggregate>true</aggregate>
+        </configuration> 
+      </plugin>
+
+      <!-- Unit tests report -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>2.3</version>
+      </plugin>
+
+      <!-- "Release Audit" report (checks license headers etc.) -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>rat-maven-plugin</artifactId>
+        <version>1.0-alpha-3</version>
+      </plugin>
+
+      <!-- FindBugs Report -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <configuration>
+          <threshold>Normal</threshold>
+          <effort>Default</effort>
+       </configuration>
+      </plugin>
+
+      <!-- Checkstyle report -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.1</version>
+        <configuration>
+          <!--configLocation>checkstyle.xml</configLocation-->
+          <enableRulesSummary>false</enableRulesSummary>
+        </configuration>
+      </plugin>
+
+    </plugins>
+  </reporting>
 
 </project>
 

@@ -127,3 +127,6 @@ Unreleased changes (0.1-dev)
 57. TIKA-85 - Add glob patterns from the ASF svn:eol-style documentation (jukka)
 
 58. TIKA-100 - Structured PDF parsing (jukka)
+
+59. TIKA-101 - Improve site and build (mattmann)
+
