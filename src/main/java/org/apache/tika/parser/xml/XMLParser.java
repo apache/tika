@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.AppendableAdaptor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.Utils;
 
@@ -70,13 +71,14 @@ public class XMLParser implements Parser {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        xhtml.element("p", concatOccurrence(xmlDoc, "//*", " "));
+        xhtml.startElement("p");
+        concatOccurrence(xmlDoc, "//*", " ", new AppendableAdaptor(xhtml));
+        xhtml.endElement("p");
         xhtml.endDocument();
     }
 
-    public String concatOccurrence(Object xmlDoc, String xpath, String concatSep) {
+    public void concatOccurrence(Object xmlDoc, String xpath, String concatSep, Appendable chaineConcat) throws IOException {
 
-        StringBuilder chaineConcat = new StringBuilder();
         try {
             JDOMXPath xp = new JDOMXPath(xpath);
             List ls = xp.selectNodes(xmlDoc);
@@ -108,7 +110,7 @@ public class XMLParser implements Parser {
                 if (StringUtils.isNotEmpty(text)) {
                     chaineConcat.append(text);
                     if (ls.size() == 1) {
-                        return chaineConcat.toString().trim();
+                        return;
                     } else {
                         if (ls.size() != j) {
                             chaineConcat.append(' ')
@@ -121,7 +123,6 @@ public class XMLParser implements Parser {
         } catch (JaxenException j) {
             logger.error(j.getMessage());
         }
-        return chaineConcat.toString().trim();
     }
 
     public List getAllDocumentNs(org.jdom.Document doc) {

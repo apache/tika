@@ -35,8 +35,7 @@ public class PowerPointParser extends OfficeParser {
         return "application/vnd.ms-powerpoint";
     }
 
-    protected String extractText(POIFSFileSystem filesystem) throws IOException {
-        StringBuilder builder = new StringBuilder();
+    protected void extractText(POIFSFileSystem filesystem, Appendable builder) throws IOException {
 
         InputStream stream = filesystem.createDocumentInputStream(POWERPOINT);
         try {
@@ -44,8 +43,6 @@ public class PowerPointParser extends OfficeParser {
         } finally {
             stream.close();
         }
-
-        return builder.toString();
     }
 
 }

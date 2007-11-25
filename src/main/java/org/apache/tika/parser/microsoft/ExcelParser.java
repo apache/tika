@@ -33,31 +33,29 @@ public class ExcelParser extends OfficeParser {
         return "application/vnd.ms-excel";
     }
 
-    protected String extractText(POIFSFileSystem filesystem) throws IOException{
-        StringBuilder builder = new StringBuilder();
+    protected void extractText(POIFSFileSystem filesystem, Appendable builder) throws IOException{
         extractText(new HSSFWorkbook(filesystem), builder);
-        return builder.toString();
     }
 
-    private void extractText(HSSFWorkbook book, StringBuilder builder) {
+    private void extractText(HSSFWorkbook book, Appendable builder) throws IOException {
         for (int i = 0; book != null && i < book.getNumberOfSheets(); i++) {
             extractText(book.getSheetAt(i), builder);
         }
     }
 
-    private void extractText(HSSFSheet sheet, StringBuilder builder) {
+    private void extractText(HSSFSheet sheet, Appendable builder) throws IOException {
         for (int i = 0; sheet != null && i <= sheet.getLastRowNum(); i++) {
             extractText(sheet.getRow(i), builder);
         }
     }
 
-    private void extractText(HSSFRow row, StringBuilder builder) {
+    private void extractText(HSSFRow row, Appendable builder) throws IOException {
         for (short i = 0; row != null && i < row.getLastCellNum(); i++) {
             extractText(row.getCell(i), builder);
         }
     }
 
-    private void extractText(HSSFCell cell, StringBuilder builder) {
+    private void extractText(HSSFCell cell, Appendable builder) throws IOException {
         if (cell != null) {
             switch (cell.getCellType()) {
             case HSSFCell.CELL_TYPE_STRING:
@@ -73,14 +71,11 @@ public class ExcelParser extends OfficeParser {
         }
     }
 
-    private void addText(String text, StringBuilder builder) {
+    private void addText(String text, Appendable builder) throws IOException {
         if (text != null) {
             text = text.trim();
             if (text.length() > 0) {
-                if (builder.length() > 0) {
-                    builder.append(' ');
-                }
-                builder.append(text);
+                builder.append(text).append(' ');
             }
         }
     }

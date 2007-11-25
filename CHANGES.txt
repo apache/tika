@@ -130,3 +130,5 @@ Unreleased changes (0.1-dev)
 
 59. TIKA-101 - Improve site and build (mattmann)
 
+60. TIKA-102 - Parser implementations loading a large amount of content
+               into a single String could be problematic (Niall Pemberton)

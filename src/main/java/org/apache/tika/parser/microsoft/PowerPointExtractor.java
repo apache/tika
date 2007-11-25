@@ -32,12 +32,12 @@ class PowerPointExtractor {
     static Logger LOG = Logger.getRootLogger();
 
     /** Buffer holding the content of the file */
-    private final StringBuilder builder;
+    private final Appendable builder;
 
     /**
      * Constructs Listener to get content of PowerPoint file.
      */
-    public PowerPointExtractor(StringBuilder builder) {
+    public PowerPointExtractor(Appendable builder) {
         this.builder = builder;
     }
 

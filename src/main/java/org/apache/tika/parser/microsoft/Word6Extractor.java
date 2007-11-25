@@ -33,8 +33,11 @@ import java.util.*;
 class Word6Extractor
 {
 
-  public Word6Extractor()
+    private final Appendable appendable;
+
+  public Word6Extractor(Appendable appendable)
   {
+      this.appendable = appendable;
   }
 
   /**
@@ -45,7 +48,7 @@ class Word6Extractor
    * @return The text from the document
    * @throws Exception If there are any unexpected exceptions.
    */
-  public String extractText(byte[] mainStream) throws IOException {
+  public void extractText(byte[] mainStream) throws IOException {
     int fcMin = LittleEndian.getInt(mainStream, 0x18);
     int fcMax = LittleEndian.getInt(mainStream, 0x1C);
 
@@ -58,7 +61,7 @@ class Word6Extractor
     List textRuns = chpTable.getTextRuns();
 
     // iterate through the
-    WordTextBuffer finalTextBuf = new WordTextBuffer();
+    WordTextBuffer finalTextBuf = new WordTextBuffer(appendable);
     Iterator runsIt = textRuns.iterator();
     while(runsIt.hasNext())
     {
@@ -76,8 +79,6 @@ class Word6Extractor
         }
       }
     }
-
-    return finalTextBuf.toString();
   }
 
   /**

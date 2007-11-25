@@ -31,6 +31,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.XMLParser;
+import org.apache.tika.sax.AppendableAdaptor;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 import org.apache.log4j.Logger;
@@ -101,7 +102,9 @@ public class OpenOfficeParser implements Parser {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        xhtml.element("p", xp.concatOccurrence(xmlDoc, "//*", " "));
+        xhtml.startElement("p");
+        xp.concatOccurrence(xmlDoc, "//*", " ", new AppendableAdaptor(xhtml));
+        xhtml.endElement("p");
         xhtml.endDocument();
     }
 

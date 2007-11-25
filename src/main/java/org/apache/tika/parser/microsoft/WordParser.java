@@ -47,7 +47,7 @@ public class WordParser extends OfficeParser {
      *
      * @param in The InputStream representing the Word file.
      */
-    public String extractText(POIFSFileSystem fsys)
+    public void extractText(POIFSFileSystem fsys, Appendable appendable)
             throws IOException, TikaException {
         // load our POIFS document streams.
         DocumentEntry headerProps =
@@ -74,8 +74,8 @@ public class WordParser extends OfficeParser {
         case 103:
         case 104:
             // this is a Word 6.0 doc send it to the extractor for that version.
-            Word6Extractor oldExtractor = new Word6Extractor();
-            return oldExtractor.extractText(header);
+            Word6Extractor oldExtractor = new Word6Extractor(appendable);
+            oldExtractor.extractText(header);
         }
 
         //get the location of the piece table
@@ -123,7 +123,7 @@ public class WordParser extends OfficeParser {
         int currentTextStart = currentPiece.getStart();
         int currentTextEnd = currentPiece.getEnd();
 
-        WordTextBuffer finalTextBuf = new WordTextBuffer();
+        WordTextBuffer finalTextBuf = new WordTextBuffer(appendable);
 
         // iterate through all text runs extract the text only if they haven't been
         // deleted
@@ -157,7 +157,7 @@ public class WordParser extends OfficeParser {
                         runStart = currentTextStart;
                         currentTextEnd = currentPiece.getEnd ();
                     } else {
-                        return finalTextBuf.toString();
+                        return;
                     }
                 }
                 String str = currentPiece.substring(0, runEnd - currentTextStart);
@@ -172,7 +172,6 @@ public class WordParser extends OfficeParser {
                 finalTextBuf.append(str);
             }
         }
-        return finalTextBuf.toString();
     }
 
     /**

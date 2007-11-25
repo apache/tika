@@ -22,16 +22,16 @@ package org.apache.tika.parser.microsoft;
  */
 public class WordTextBuffer
 {
-  StringBuffer _buf;
+  Appendable _buf;
   boolean _hold;
 
-  public WordTextBuffer()
+  public WordTextBuffer(Appendable appendable)
   {
-    _buf = new StringBuffer();
+    _buf = appendable;
     _hold = false;
   }
 
-  public void append(String text)
+  public void append(String text) throws java.io.IOException
   {
     char[] letters = text.toCharArray();
     for (int x = 0; x < letters.length; x++)
@@ -55,11 +55,6 @@ public class WordTextBuffer
           break;
       }
     }
-  }
-
-  public String toString()
-  {
-    return _buf.toString();
   }
 
 }
