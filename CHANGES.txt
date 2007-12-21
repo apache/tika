@@ -133,5 +133,7 @@ Unreleased changes (0.1-dev)
 60. TIKA-102 - Parser implementations loading a large amount of content
                into a single String could be problematic (Niall Pemberton)
 
- 61. TIKA-107 - Remove use of assertions for argument checking (Niall Pemberton)
+61. TIKA-107 - Remove use of assertions for argument checking (Niall Pemberton)
  
+62. TIKA-104 - Add utility methods to throw IOException with the caused
+               intialized (jukka & Niall Pemberton)
