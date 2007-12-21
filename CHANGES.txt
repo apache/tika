@@ -137,3 +137,6 @@ Unreleased changes (0.1-dev)
  
 62. TIKA-104 - Add utility methods to throw IOException with the caused
                intialized (jukka & Niall Pemberton)
+
+63. TIKA-106 - Remove dependency on Jakarta ORO - use JDK 1.4 Regex
+               (Niall Pemberton)

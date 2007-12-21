@@ -17,17 +17,10 @@
 package org.apache.tika.utils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-
-import org.apache.log4j.Logger;
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.apache.oro.text.regex.MatchResult;
-import org.apache.oro.text.regex.Pattern;
-import org.apache.oro.text.regex.PatternCompiler;
-import org.apache.oro.text.regex.PatternMatcher;
-import org.apache.oro.text.regex.PatternMatcherInput;
-import org.apache.oro.text.regex.Perl5Compiler;
-import org.apache.oro.text.regex.Perl5Matcher;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Inspired from Nutch code class OutlinkExtractor. Apply regex to extract
@@ -37,32 +30,37 @@ import org.apache.oro.text.regex.Perl5Matcher;
  */
 public class RegexUtils {
 
-    static Logger logger = Logger.getRootLogger();
+    /**
+     * Regex pattern to get URLs within a plain text.
+     * 
+     * @see <a
+     *      href="http://www.truerwords.net/articles/ut/urlactivation.html">http://www.truerwords.net/articles/ut/urlactivation.html
+     *      </a>
+     */
+    private static final String LINKS_REGEX =
+        "([A-Za-z][A-Za-z0-9+.-]{1,120}:"
+        + "[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}"
+        + "(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)";
+    
+    private static final Pattern LINKS_PATTERN = Pattern.compile(LINKS_REGEX, Pattern.CASE_INSENSITIVE + Pattern.MULTILINE);
 
-    public static List<String> extract(String content, String regex)
-            throws MalformedPatternException {
-
-        List<String> extractions = new ArrayList<String>();
-        final PatternCompiler cp = new Perl5Compiler();
-        final Pattern pattern = cp.compile(regex,
-                Perl5Compiler.CASE_INSENSITIVE_MASK
-                        | Perl5Compiler.READ_ONLY_MASK
-                        | Perl5Compiler.MULTILINE_MASK);
-        final PatternMatcher matcher = new Perl5Matcher();
-
-        final PatternMatcherInput input = new PatternMatcherInput(content);
-
-        MatchResult result;
-        String extractedContent;
-
-        while (matcher.contains(input, pattern)) {
-            result = matcher.getMatch();
-            extractedContent = result.group(0);
-            extractions.add(extractedContent);
+    /**
+     * Extract urls from plain text.
+     *
+     * @param content The plain text content to examine
+     * @return List of urls within found in the plain text
+     */
+    public static List<String> extractLinks(String content) {
+        if (content == null || content.length() == 0) {
+            return Collections.emptyList();
         }
 
+        List<String> extractions = new ArrayList<String>();
+        final Matcher matcher = LINKS_PATTERN.matcher(content);
+        while (matcher.find()) {
+            extractions.add(matcher.group());
+        }
         return extractions;
 
     }
-
 }

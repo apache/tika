@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 
-import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.TeeContentHandler;
@@ -37,11 +36,6 @@ import org.xml.sax.SAXException;
  * exceptions thrown by the decorated parser.
  */
 public class ParserPostProcessor extends ParserDecorator {
-
-    private static final String LINK_PATTERN =
-        "([A-Za-z][A-Za-z0-9+.-]{1,120}:"
-        + "[A-Za-z0-9/](([A-Za-z0-9$_.+!*,;/?:@&~=-])|%[A-Fa-f0-9]{2}){1,333}"
-        + "(#([a-zA-Z0-9][a-zA-Z0-9$_.+!*,;/?:@&~=%-]{0,1000}))?)";
 
     /**
      * Creates a post-processing decorator for the given parser.
@@ -70,12 +64,8 @@ public class ParserPostProcessor extends ParserDecorator {
         int length = Math.min(content.length(), 500);
         metadata.set("summary", content.substring(0, length));
 
-        try {
-            for (String link : RegexUtils.extract(content, LINK_PATTERN)) {
-                metadata.add("outlinks", link);
-            }
-        } catch (MalformedPatternException e) {
-            throw new TikaException("Malformed URL pattern", e);
+        for (String link : RegexUtils.extractLinks(content)) {
+            metadata.add("outlinks", link);
         }
     }
 
