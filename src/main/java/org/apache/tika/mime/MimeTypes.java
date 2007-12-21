@@ -120,7 +120,9 @@ public final class MimeTypes {
      * @return matching MIME type, or <code>null</code> if no match is found
      */
     public MimeType getMimeType(byte[] data) {
-        assert data != null;
+        if (data == null) {
+            throw new IllegalArgumentException("Data is missing");
+        }
 
         // First, check for XML descriptions (level by level)
         for (MimeType type : xmls) {
@@ -166,7 +168,9 @@ public final class MimeTypes {
      * @throws IOException if the stream can not be read
      */
     private byte[] readMagicHeader(InputStream stream) throws IOException {
-        assert stream != null;
+        if (stream == null) {
+            throw new IllegalArgumentException("InputStream is missing");
+        }
 
         byte[] bytes = new byte[getMinLength()];
         int totalRead = 0;

@@ -58,7 +58,9 @@ class Patterns {
         });
 
     public void add(String pattern, MimeType type) throws MimeTypeException {
-        assert pattern != null && type != null;
+        if (pattern == null || type == null) {
+            throw new IllegalArgumentException("Pattern and/or mime type is missing");
+        }
 
         if (pattern.indexOf('*') == -1
                 && pattern.indexOf('?') == -1
@@ -128,7 +130,9 @@ class Patterns {
      * (since this covers the majority of the patterns).
      */
     public MimeType matches(String name) {
-        assert name != null;
+        if (name == null) {
+            throw new IllegalArgumentException("Name is missing");
+        }
 
         // First, try exact match of the provided resource name
         if (names.containsKey(name)) {

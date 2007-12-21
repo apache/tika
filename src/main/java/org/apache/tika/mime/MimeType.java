@@ -46,7 +46,9 @@ public final class MimeType implements Comparable<MimeType> {
      *         <code>false</code> otherwise
      */
     public static boolean isValid(String name) {
-        assert name != null;
+        if (name == null) {
+            throw new IllegalArgumentException("Name is missing");
+        }
 
         boolean slash = false;
         for (int i = 0; i < name.length(); i++) {
@@ -117,8 +119,12 @@ public final class MimeType implements Comparable<MimeType> {
      * @param name media type name
      */
     MimeType(MimeTypes registry, String name) {
-        assert registry != null;
-        assert isValid(name) && name.equals(name.toLowerCase());
+        if (registry == null) {
+            throw new IllegalArgumentException("Registry is missing");
+        }
+        if (!MimeType.isValid(name) || !name.equals(name.toLowerCase())) {
+            throw new IllegalArgumentException("Media type name is invalid");
+        }
         this.registry = registry;
         this.name = name;
     }
@@ -142,7 +148,12 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     public void setSuperType(MimeType type) throws MimeTypeException {
-        assert type != null && type.registry == registry;
+        if (type == null) {
+            throw new IllegalArgumentException("MimeType is missing");
+        }
+        if (type.registry != registry) {
+            throw new IllegalArgumentException("MimeType is from a different registry");
+        }
         if (this.isDescendantOf(type)) {
             // ignore, already a descendant of the given type
         } else if (this == type) {
@@ -169,7 +180,9 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     public boolean isDescendantOf(MimeType type) {
-        assert type != null;
+        if (type == null) {
+            throw new IllegalArgumentException("MimeType is missing");
+        }
         synchronized (registry) {
             for (MimeType t = superType; t != null; t = t.superType) {
                 if (t == type) {
@@ -195,7 +208,9 @@ public final class MimeType implements Comparable<MimeType> {
      * @param description media type description
      */
     public void setDescription(String description) {
-        assert description != null;
+        if (description == null) {
+            throw new IllegalArgumentException("Description is missing");
+        }
         this.description = description;
     }
 
@@ -360,7 +375,9 @@ public final class MimeType implements Comparable<MimeType> {
     //----------------------------------------------------------< Comparable >
 
     public int compareTo(MimeType type) {
-        assert type != null;
+        if (type == null) {
+            throw new IllegalArgumentException("MimeType is missing");
+        }
         if (type == this) {
             return 0;
         } else if (this.isDescendantOf(type)) {

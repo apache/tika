@@ -20,6 +20,50 @@ import junit.framework.TestCase;
 
 public class MimeTypeTest extends TestCase {
 
+    private MimeTypes types;
+    private MimeType text;
+
+    protected void setUp() throws MimeTypeException {
+        types = new MimeTypes();
+        text = types.forName("text/plain");
+    }
+
+    /** Test MimeType constructor */
+    public void testConstrctor() {
+
+        // Missing registry
+        try {
+            new MimeType(null, "text/plain");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+
+        // Missing name
+        try {
+            new MimeType(types, null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+
+        // Invalid name (no slash)
+        try {
+            new MimeType(types, "application");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+
+        // Invalid name (not lower case)
+        try {
+            new MimeType(types, "TEXT/PLAIN");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+    }
+
     public void testIsValidName() {
         assertTrue(MimeType.isValid("application/octet-stream"));
         assertTrue(MimeType.isValid("text/plain"));
@@ -35,6 +79,32 @@ public class MimeTypeTest extends TestCase {
         assertFalse(MimeType.isValid("application/\u00f6ctet-stream"));
         assertFalse(MimeType.isValid("text/plain;"));
         assertFalse(MimeType.isValid("text/plain; charset=UTF-8"));
+        try {
+            MimeType.isValid(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+    }
+
+    /** Test MimeType setDescription() */
+    public void testSetDescription() {
+        try {
+            text.setDescription(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+    }
+
+    /** Test MimeType setSuperType() */
+    public void testSetSuperType() throws MimeTypeException {
+        try {
+            text.setSuperType(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
     }
 
 }

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.mime;
 
+import java.io.IOException;
+import java.io.InputStream;
 import junit.framework.TestCase;
 
 public class MimeTypesTest extends TestCase {
@@ -90,6 +92,13 @@ public class MimeTypesTest extends TestCase {
 
         assertTrue(html.isDescendantOf(text));
         assertFalse(text.isDescendantOf(html));
+
+        try {
+            binary.isDescendantOf(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
     }
 
     public void testCompareTo() {
@@ -104,6 +113,33 @@ public class MimeTypesTest extends TestCase {
         assertTrue(html.compareTo(binary) > 0);
         assertTrue(html.compareTo(text) > 0);
         assertTrue(html.compareTo(html) == 0);
+
+        try {
+            binary.compareTo(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+    }
+
+    /** Test getMimeType(byte[]) */
+    public void testGetMimeType_byteArray() {
+        try {
+            types.getMimeType((byte[])null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+    }
+
+    /** Test getMimeType(InputStream) */
+    public void testGetMimeType_InputStream() throws IOException {
+        try {
+            types.getMimeType((InputStream)null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
     }
 
 }
