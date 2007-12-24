@@ -33,7 +33,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika</artifactId>
-  <version>0.1-SNAPSHOT</version>
+  <version>0.1-incubating</version>
   
 
   <name>Apache Tika</name>
