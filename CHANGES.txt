@@ -1,6 +1,6 @@
 Tika Change Log
 
-Unreleased changes (0.1-incubating)
+Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
 
@@ -140,3 +140,5 @@ Unreleased changes (0.1-incubating)
 
 63. TIKA-106 - Remove dependency on Jakarta ORO - use JDK 1.4 Regex
                (Niall Pemberton)
+
+64. TIKA-111 - Missing license headers (jukka)
