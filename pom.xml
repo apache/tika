@@ -33,8 +33,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika</artifactId>
-  <version>0.1-incubating</version>
-  
+  <version>0.2-SNAPSHOT</version>
 
   <name>Apache Tika</name>
   <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
