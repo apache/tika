@@ -37,6 +37,7 @@
     </links>
     <menu name="Apache Tika">
       <item name="Introduction" href="index.html"/>
+      <item name="Download" href="http://www.apache.org/dyn/closer.cgi/incubator/tika"/>
     </menu>
     <menu ref="reports"/>
   </body>
