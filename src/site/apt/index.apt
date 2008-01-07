@@ -39,6 +39,12 @@ Tika - Content Analysis Toolkit
 
 Latest News
 
+   [December 27th, 2007: Tika 0.1-incubating Released!]
+     Tika has made its first official release, titled 0.1-incubating. See
+     the {{{http://www.apache.org/dist/incubator/tika/CHANGES-0.1-incubating.txt}CHANGES.txt}}
+     file for more information on the list of updates in this initial release. Thanks to all
+     who contributed! You can download the official source tarball {{{http://www.apache.org/dyn/closer.cgi/incubator/tika}here}}.
+   
    [October 8th, 2007: Welcome Keith Bennett!]
      The Tika PPMC has {{{http://www.nabble.com/Please-welcome-Keith-Bennett-as-a-Tika-committer%21-tf4586151.html#a13107428}elected}}
      Keith Bennett as our new committer. Welcome!
