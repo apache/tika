@@ -17,19 +17,13 @@
 package org.apache.tika.parser.xml;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.AppendableAdaptor;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.Utils;
 import org.jaxen.JaxenException;
 import org.jaxen.SimpleNamespaceContext;
 import org.jaxen.jdom.JDOMXPath;
@@ -41,8 +35,6 @@ import org.jdom.EntityRef;
 import org.jdom.Namespace;
 import org.jdom.ProcessingInstruction;
 import org.jdom.Text;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * XML parser utils
