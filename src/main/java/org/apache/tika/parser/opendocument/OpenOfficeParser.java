@@ -27,14 +27,14 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.xml.XMLParser;
+import org.apache.tika.parser.xml.XMLParserUtils;
 import org.apache.tika.sax.AppendableAdaptor;
 import org.apache.tika.sax.XHTMLContentHandler;
-
-import org.apache.log4j.Logger;
+import org.jaxen.SimpleNamespaceContext;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
 /**
  * OpenOffice parser
  */
-public class OpenOfficeParser implements Parser {
+public class OpenOfficeParser extends XMLParserUtils implements Parser {
     static Logger logger = Logger.getRootLogger();
 
     private final Namespace NS_DC = Namespace.getNamespace("dc",
@@ -66,7 +66,7 @@ public class OpenOfficeParser implements Parser {
             Element rootMeta = xmlMeta.getRootElement();
             Element meta = null;
             List ls = rootMeta.getChildren();
-            if (! ls.isEmpty()) {
+            if (!ls.isEmpty()) {
                 meta = (Element) ls.get(0);
             }
             xmlDoc.getRootElement().addContent(meta.detach());
@@ -79,31 +79,46 @@ public class OpenOfficeParser implements Parser {
         return xmlDoc;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata) throws IOException, SAXException, TikaException {
         Document xmlDoc = parse(stream);
-        XMLParser xp = new XMLParser();
-        xp.getAllDocumentNs(xmlDoc);
-        xp.extractContent(xmlDoc, Metadata.TITLE, "//dc:title", metadata);
-        xp.extractContent(xmlDoc, Metadata.SUBJECT, "//dc:subject", metadata);
-        xp.extractContent(xmlDoc, Metadata.CREATOR, "//dc:creator", metadata);
-        xp.extractContent(xmlDoc, Metadata.DESCRIPTION, "//dc:description", metadata);
-        xp.extractContent(xmlDoc, Metadata.LANGUAGE, "//dc:language", metadata);
-        xp.extractContent(xmlDoc, Metadata.KEYWORDS, "//meta:keyword", metadata);
-        xp.extractContent(xmlDoc, Metadata.DATE, "//dc:date", metadata);
-        xp.extractContent(xmlDoc, "nbTab", "//meta:document-statistic/@meta:table-count", metadata);
-        xp.extractContent(xmlDoc, "nbObject", "//meta:document-statistic/@meta:object-count", metadata);
-        xp.extractContent(xmlDoc, "nbImg", "//meta:document-statistic/@meta:image-count", metadata);
-        xp.extractContent(xmlDoc, "nbPage", "//meta:document-statistic/@meta:page-count", metadata);
-        xp.extractContent(xmlDoc, "nbPara", "//meta:document-statistic/@meta:paragraph-count", metadata);
-        xp.extractContent(xmlDoc, "nbWord", "//meta:document-statistic/@meta:word-count", metadata);
-        xp.extractContent(xmlDoc, "nbcharacter", "//meta:document-statistic/@meta:character-count", metadata);
+        // Set NameSpaceContext for OpenDocument
+        SimpleNamespaceContext context = new SimpleNamespaceContext();
+        context.addNamespace("dc", "http://purl.org/dc/elements/1.1/");
+        context.addNamespace("meta",
+                "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
+        context.addNamespace("office",
+                "urn:oasis:names:tc:opendocument:xmlns:office:1.0");
+        setXmlParserNameSpaceContext(context);
+
+        extractContent(xmlDoc, Metadata.TITLE, "//dc:title", metadata);
+        extractContent(xmlDoc, Metadata.SUBJECT, "//dc:subject", metadata);
+        extractContent(xmlDoc, Metadata.CREATOR, "//dc:creator", metadata);
+        extractContent(xmlDoc, Metadata.DESCRIPTION, "//dc:description",
+                metadata);
+        extractContent(xmlDoc, Metadata.LANGUAGE, "//dc:language", metadata);
+        extractContent(xmlDoc, Metadata.KEYWORDS, "//meta:keyword", metadata);
+        extractContent(xmlDoc, Metadata.DATE, "//dc:date", metadata);
+        extractContent(xmlDoc, "nbTab",
+                "//meta:document-statistic/@meta:table-count", metadata);
+        extractContent(xmlDoc, "nbObject",
+                "//meta:document-statistic/@meta:object-count", metadata);
+        extractContent(xmlDoc, "nbImg",
+                "//meta:document-statistic/@meta:image-count", metadata);
+        extractContent(xmlDoc, "nbPage",
+                "//meta:document-statistic/@meta:page-count", metadata);
+        extractContent(xmlDoc, "nbPara",
+                "//meta:document-statistic/@meta:paragraph-count", metadata);
+        extractContent(xmlDoc, "nbWord",
+                "//meta:document-statistic/@meta:word-count", metadata);
+        extractContent(xmlDoc, "nbcharacter",
+                "//meta:document-statistic/@meta:character-count", metadata);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.startElement("p");
-        xp.concatOccurrence(xmlDoc, "//*", " ", new AppendableAdaptor(xhtml));
+        concatOccurrence(xmlDoc, "//office:body//*", " ",
+                new AppendableAdaptor(xhtml));
         xhtml.endElement("p");
         xhtml.endDocument();
     }

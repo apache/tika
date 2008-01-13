@@ -22,15 +22,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.AppendableAdaptor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.Utils;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.jaxen.JaxenException;
 import org.jaxen.SimpleNamespaceContext;
 import org.jaxen.jdom.JDOMXPath;
@@ -46,41 +45,22 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * XML parser
+ * XML parser utils
  */
-public class XMLParser implements Parser {
+public class XMLParserUtils {
 
     static Logger logger = Logger.getRootLogger();
+    private SimpleNamespaceContext nsContext;
 
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        Document xmlDoc = Utils.parse(stream);
-
-        extractContent(xmlDoc, Metadata.TITLE, "//dc:title", metadata);
-        extractContent(xmlDoc, Metadata.SUBJECT, "//dc:subject", metadata);
-        extractContent(xmlDoc, Metadata.CREATOR, "//dc:creator", metadata);
-        extractContent(xmlDoc, Metadata.DESCRIPTION, "//dc:description", metadata);
-        extractContent(xmlDoc, Metadata.PUBLISHER, "//dc:publisher", metadata);
-        extractContent(xmlDoc, Metadata.CONTRIBUTOR, "//dc:contributor", metadata);
-        extractContent(xmlDoc, Metadata.TYPE, "//dc:type", metadata);
-        extractContent(xmlDoc, Metadata.FORMAT, "//dc:format", metadata);
-        extractContent(xmlDoc, Metadata.IDENTIFIER, "//dc:identifier", metadata);
-        extractContent(xmlDoc, Metadata.LANGUAGE, "//dc:language", metadata);
-        extractContent(xmlDoc, Metadata.RIGHTS, "//dc:rights", metadata);
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.startElement("p");
-        concatOccurrence(xmlDoc, "//*", " ", new AppendableAdaptor(xhtml));
-        xhtml.endElement("p");
-        xhtml.endDocument();
-    }
-
-    public void concatOccurrence(Object xmlDoc, String xpath, String concatSep, Appendable chaineConcat) throws IOException {
+  
+    public void concatOccurrence(Object xmlDoc, String xpath, String concatSep,
+            Appendable chaineConcat) throws IOException {
 
         try {
             JDOMXPath xp = new JDOMXPath(xpath);
+            if (nsContext != null) {
+                xp.setNamespaceContext(nsContext);
+            }
             List ls = xp.selectNodes(xmlDoc);
             Iterator i = ls.iterator();
             int j = 0;
@@ -113,9 +93,8 @@ public class XMLParser implements Parser {
                         return;
                     } else {
                         if (ls.size() != j) {
-                            chaineConcat.append(' ')
-                                    .append(concatSep)
-                                    .append(' ');
+                            chaineConcat.append(' ').append(concatSep).append(
+                                    ' ');
                         }
                     }
                 }
@@ -165,14 +144,13 @@ public class XMLParser implements Parser {
         }
     }
 
-    public void extractContent(
-            Document xmlDoc, String name, String xpath, Metadata metadata) {
+    public void extractContent(Document xmlDoc, String name, String xpath,
+            Metadata metadata) {
         try {
             JDOMXPath xp = new JDOMXPath(xpath);
-            SimpleNamespaceContext context = new SimpleNamespaceContext();
-            context.addNamespace("dc", "http://purl.org/dc/elements/1.1/");
-            context.addNamespace("meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
-            xp.setNamespaceContext(context);
+            if (nsContext != null) {
+                xp.setNamespaceContext(nsContext);
+            }
             List selectNodes = xp.selectNodes(xmlDoc);
             Iterator nodes = selectNodes.iterator();
             while (nodes.hasNext()) {
@@ -205,4 +183,7 @@ public class XMLParser implements Parser {
 
     }
 
+    public void setXmlParserNameSpaceContext(SimpleNamespaceContext nsContext) {
+        this.nsContext = nsContext;
+    }
 }

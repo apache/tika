@@ -23,7 +23,7 @@
 
     <parsers>
 
-        <parser name="text-xml" class="org.apache.tika.parser.xml.XMLParser">
+        <parser name="text-xml" class="org.apache.tika.parser.xml.DcXMLParser">
                 <mime>application/xml</mime>
         </parser>
 
