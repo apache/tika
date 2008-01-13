@@ -146,3 +146,5 @@ Release 0.1-incubating - 12/27/2007
                (Niall Pemberton)
 
 64. TIKA-111 - Missing license headers (jukka)
+
+65. TIKA-112 - XMLParser improvement (ridabenjelloun)
