@@ -16,22 +16,16 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.poi.hwpf.model.CHPBinTable;
-import org.apache.poi.hwpf.model.CHPX;
-import org.apache.poi.hwpf.model.ComplexFileTable;
-import org.apache.poi.hwpf.model.TextPiece;
-import org.apache.poi.hwpf.model.TextPieceTable;
-import org.apache.poi.hwpf.sprm.SprmIterator;
-import org.apache.poi.hwpf.sprm.SprmOperation;
+import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.usermodel.CharacterRun;
+import org.apache.poi.hwpf.usermodel.Range;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
 import org.apache.tika.exception.TikaException;
+
+import java.io.IOException;
 
 /**
  * Word parser
@@ -45,7 +39,8 @@ public class WordParser extends OfficeParser {
     /**
      * Gets the text from a Word document.
      *
-     * @param in The InputStream representing the Word file.
+     * @param fsys the <code>POIFSFileSystem</code> to read the word document from.
+     * @param appendable the <code>Appendable</code> to add the text content to.
      */
     public void extractText(POIFSFileSystem fsys, Appendable appendable)
             throws IOException, TikaException {
@@ -76,120 +71,31 @@ public class WordParser extends OfficeParser {
             // this is a Word 6.0 doc send it to the extractor for that version.
             Word6Extractor oldExtractor = new Word6Extractor(appendable);
             oldExtractor.extractText(header);
+
+            // Set POI values to null
+            headerProps = null;
+            header = null;
+            din = null;
+            fsys = null;
+            return;
         }
-
-        //get the location of the piece table
-        int complexOffset = LittleEndian.getInt(header, 0x1a2);
-
-        // determine which table stream we must use.
-        //Get the information we need from the header
-        String tableName = null;
-        boolean useTable1 = (info & 0x200) != 0;
-        if (useTable1) {
-            tableName = "1Table";
-        } else {
-            tableName = "0Table";
-        }
-
-        DocumentEntry table = (DocumentEntry)fsys.getRoot().getEntry(tableName);
-        byte[] tableStream = new byte[table.getSize()];
-
-        din = fsys.createDocumentInputStream(tableName);
-
-        din.read(tableStream);
-        din.close();
-
-        int chpOffset = LittleEndian.getInt(header, 0xfa);
-        int chpSize = LittleEndian.getInt(header, 0xfe);
-        int fcMin = LittleEndian.getInt(header, 0x18);
-        CHPBinTable cbt = new CHPBinTable(header, tableStream, chpOffset, chpSize, fcMin);
-
-        // load our text pieces and our character runs
-        ComplexFileTable cft = new ComplexFileTable(header, tableStream, complexOffset, fcMin);
-        TextPieceTable tpt = cft.getTextPieceTable();
-        List textPieces = tpt.getTextPieces();
-
-        // make the POIFS objects available for garbage collection
-        din = null;
-        fsys = null;
-        table = null;
-        headerProps = null;
-
-        List textRuns = cbt.getTextRuns();
-        Iterator runIt = textRuns.iterator();
-        Iterator textIt = textPieces.iterator();
-
-        TextPiece currentPiece = (TextPiece)textIt.next();
-        int currentTextStart = currentPiece.getStart();
-        int currentTextEnd = currentPiece.getEnd();
 
         WordTextBuffer finalTextBuf = new WordTextBuffer(appendable);
 
-        // iterate through all text runs extract the text only if they haven't been
-        // deleted
-        while (runIt.hasNext()) {
-            CHPX chpx = (CHPX)runIt.next();
-            boolean deleted = isDeleted(chpx.getGrpprl());
-            if (deleted) {
-                continue;
-            }
-
-            int runStart = chpx.getStart();
-            int runEnd = chpx.getEnd();
-
-            while (runStart >= currentTextEnd) {
-                currentPiece = (TextPiece) textIt.next ();
-                currentTextStart = currentPiece.getStart ();
-                currentTextEnd = currentPiece.getEnd ();
-            }
-
-            if (runEnd < currentTextEnd) {
-                String str = currentPiece.substring(runStart - currentTextStart, runEnd - currentTextStart);
-                finalTextBuf.append(str);
-            } else if (runEnd > currentTextEnd) {
-                while (runEnd > currentTextEnd) {
-                    String str = currentPiece.substring(runStart - currentTextStart,
-                            currentTextEnd - currentTextStart);
-                    finalTextBuf.append(str);
-                    if (textIt.hasNext()) {
-                        currentPiece = (TextPiece) textIt.next ();
-                        currentTextStart = currentPiece.getStart ();
-                        runStart = currentTextStart;
-                        currentTextEnd = currentPiece.getEnd ();
-                    } else {
-                        return;
-                    }
-                }
-                String str = currentPiece.substring(0, runEnd - currentTextStart);
-                finalTextBuf.append(str);
-            } else {
-                String str = currentPiece.substring(runStart - currentTextStart, runEnd - currentTextStart);
-                if (textIt.hasNext()) {
-                    currentPiece = (TextPiece) textIt.next();
-                    currentTextStart = currentPiece.getStart();
-                    currentTextEnd = currentPiece.getEnd();
-                }
-                finalTextBuf.append(str);
+        HWPFDocument doc = new HWPFDocument(fsys);
+        Range range = doc.getRange();
+        for (int i = 0; i < range.numCharacterRuns(); i++) {
+            CharacterRun cr = range.getCharacterRun(i);
+            if (!cr.isMarkedDeleted()) {
+                finalTextBuf.append(cr.text());
             }
         }
-    }
 
-    /**
-     * Used to determine if a run of text has been deleted.
-     *
-     * @param grpprl The list of sprms for a particular run of text.
-     * @return true if this run of text has been deleted.
-     */
-    private boolean isDeleted(byte[] grpprl) {
-        SprmIterator iterator = new SprmIterator(grpprl,0);
-        while (iterator.hasNext()) {
-            SprmOperation op = iterator.next();
-            // 0 is the operation that signals a FDelRMark operation
-            if (op.getOperation() == 0 && op.getOperand() != 0) {
-                return true;
-            }
-        }
-        return false;
+        // Set POI values to null
+        headerProps = null;
+        header = null;
+        din = null;
+        doc = null;
+        fsys = null;
     }
-
 }

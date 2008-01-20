@@ -2,7 +2,7 @@ Tika Change Log
 
 Unreleased changes (0.2-incubating)
 
-
+1. TIKA-109 - WordParser fails on some Word files (Mats Norén)
 
 Release 0.1-incubating - 12/27/2007
 
