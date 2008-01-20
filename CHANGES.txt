@@ -4,6 +4,9 @@ Unreleased changes (0.2-incubating)
 
 1. TIKA-109 - WordParser fails on some Word files (Mats Norén)
 
+2. TIKA-105 - Excel parser implementation based on POI's Event API
+              (Niall Pemberton)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
