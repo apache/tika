@@ -16,51 +16,49 @@
  */
 package org.apache.tika.parser.xml;
 
-import java.io.IOException;
-import java.io.InputStream;
-
-import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.AppendableAdaptor;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.Utils;
-import org.jaxen.SimpleNamespaceContext;
-import org.jdom.Document;
+import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.xpath.CompositeMatcher;
+import org.apache.tika.sax.xpath.Matcher;
+import org.apache.tika.sax.xpath.MatchingContentHandler;
+import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Dublin core metadata parser
+ * Dublin Core metadata parser
  */
-public class DcXMLParser extends XMLParserUtils implements Parser {
+public class DcXMLParser extends XMLParser {
 
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-        Document xmlDoc = Utils.parse(stream);
-        // Set NameSpaceContext for Dublin Core metadata
-        SimpleNamespaceContext context = new SimpleNamespaceContext();
-        context.addNamespace("dc", "http://purl.org/dc/elements/1.1/");
-        setXmlParserNameSpaceContext(context);
-        extractContent(xmlDoc, Metadata.TITLE, "//dc:title", metadata);
-        extractContent(xmlDoc, Metadata.SUBJECT, "//dc:subject", metadata);
-        extractContent(xmlDoc, Metadata.CREATOR, "//dc:creator", metadata);
-        extractContent(xmlDoc, Metadata.DESCRIPTION, "//dc:description",
-                metadata);
-        extractContent(xmlDoc, Metadata.PUBLISHER, "//dc:publisher", metadata);
-        extractContent(xmlDoc, Metadata.CONTRIBUTOR, "//dc:contributor",
-                metadata);
-        extractContent(xmlDoc, Metadata.TYPE, "//dc:type", metadata);
-        extractContent(xmlDoc, Metadata.FORMAT, "//dc:format", metadata);
-        extractContent(xmlDoc, Metadata.IDENTIFIER, "//dc:identifier", metadata);
-        extractContent(xmlDoc, Metadata.LANGUAGE, "//dc:language", metadata);
-        extractContent(xmlDoc, Metadata.RIGHTS, "//dc:rights", metadata);
+    private static final XPathParser DC_XPATH = new XPathParser(
+            "dc", "http://purl.org/dc/elements/1.1/");
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.startElement("p");
-        concatOccurrence(xmlDoc, "//*", " ", new AppendableAdaptor(xhtml));
-        xhtml.endElement("p");
-        xhtml.endDocument();
+    private static DefaultHandler getDublinCore(
+            ContentHandler ch, Metadata md, String name, String element) {
+        Matcher matcher = new CompositeMatcher(
+                DC_XPATH.parse("//dc:" + element),
+                DC_XPATH.parse("//dc:" + element + "//text()"));
+        ContentHandler branch =
+            new MatchingContentHandler(new MetadataHandler(md, name), matcher);
+        return new TeeContentHandler(ch, branch);
     }
+
+    protected DefaultHandler getDefaultHandler(ContentHandler ch, Metadata md) {
+        DefaultHandler dh = super.getDefaultHandler(ch, md);
+        dh = getDublinCore(dh, md, DublinCore.TITLE, "title");
+        dh = getDublinCore(dh, md, DublinCore.SUBJECT, "subject");
+        dh = getDublinCore(dh, md, DublinCore.CREATOR, "creator");
+        dh = getDublinCore(dh, md, DublinCore.DESCRIPTION, "description");
+        dh = getDublinCore(dh, md, DublinCore.PUBLISHER, "publisher");
+        dh = getDublinCore(dh, md, DublinCore.CONTRIBUTOR, "contributor");
+        dh = getDublinCore(dh, md, DublinCore.DATE, "date");
+        dh = getDublinCore(dh, md, DublinCore.TYPE, "type");
+        dh = getDublinCore(dh, md, DublinCore.FORMAT, "format");
+        dh = getDublinCore(dh, md, DublinCore.IDENTIFIER, "identifier");
+        dh = getDublinCore(dh, md, DublinCore.LANGUAGE, "language");
+        dh = getDublinCore(dh, md, DublinCore.RIGHTS, "rights");
+        return dh;
+    }
+
 }

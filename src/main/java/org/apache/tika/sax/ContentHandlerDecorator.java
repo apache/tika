@@ -20,6 +20,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Decorator base class for the {@link ContentHandler} interface. This class
@@ -27,7 +28,7 @@ import org.xml.sax.SAXException;
  * instance. Subclasses can provide extra decoration by overriding one or more
  * of the SAX event methods.
  */
-public class ContentHandlerDecorator implements ContentHandler {
+public class ContentHandlerDecorator extends DefaultHandler {
 
     /**
      * Decorated SAX event handler.
