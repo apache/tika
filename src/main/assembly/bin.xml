@@ -21,6 +21,12 @@
         <format>zip</format>
     </formats>
     <includeSiteDirectory>false</includeSiteDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>lib</outputDirectory>
+            <scope>runtime</scope>
+        </dependencySet>
+    </dependencySets>
     <fileSets>
         <fileSet>
             <includes>
@@ -32,7 +38,7 @@
         </fileSet>
         <fileSet>
             <directory>target</directory>
-            <outputDirectory/>
+            <outputDirectory>lib</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>

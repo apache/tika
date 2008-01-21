@@ -1,10 +1,33 @@
 Apache Tika
-Copyright 2007 The Apache Software Foundation
+Copyright 2007-2008 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
+This software contains code written by Ryan Ackley. Please go to
+http://www.textmining.org for the latest version.
+
+    Copyright 2004 Ryan Ackley
+
+This product includes software developed by The Legion Of The Bouncy Castle:
+
+    Copyright (c) 2000-2006 The Legion Of The Bouncy Castle
+    (http://www.bouncycastle.org)
+
+This product includes software developed by the PDFBox project:
+
+    Copyright (c) 2003-2005, www.pdfbox.org
+
+This product includes software developed by the FontBox and JempBox projects:
+
+    Copyright (c) 2003-2005, www.fontbox.org
+
+This product includes software developed by the International Business
+Machines Corporation and others:
+
+    Copyright (c) 1995-2005 International Business Machines Corporation
+    and others
+
 This product includes software developed by Andy Clark.
 
-This software contains code written by Ryan Ackley.
-Please go to http://www.textmining.org for the latest version.
+    (C) Copyright 2002-2005, Andy Clark.

@@ -21,7 +21,7 @@ incubation status of the Apache Tika project.
 License (see also LICENSE.txt)
 ==============================
 
-Collective work: Copyright 2007 The Apache Software Foundation.
+Collective work: Copyright 2007-2008 The Apache Software Foundation.
 
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
@@ -37,6 +37,10 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+
+Apache Tika includes a number of subcomponents with separate copyright
+notices and license terms. Your use of these subcomponents is subject to
+the terms and conditions of the licenses listed in the LICENSE.txt file.
 
 Building Tika
 =============
