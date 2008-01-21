@@ -18,7 +18,6 @@ package org.apache.tika;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -29,7 +28,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ParseUtils;
 import org.apache.tika.utils.Utils;
-import org.jdom.JDOMException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -41,7 +39,7 @@ public class TestParsers extends TestCase {
 
     private File testFilesBaseDir;
 
-    public void setUp() throws JDOMException, IOException {
+    public void setUp() throws Exception {
         /*
          * FIXME the old mechanism does not work anymore when running the tests
          * with Maven - need a resource-based one, but this means more changes

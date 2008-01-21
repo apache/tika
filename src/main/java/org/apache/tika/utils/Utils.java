@@ -35,11 +35,6 @@ import org.apache.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.jdom.Document;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
 
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
@@ -53,20 +48,6 @@ import com.ibm.icu.text.CharsetMatch;
 public class Utils {
 
     static Logger logger = Logger.getRootLogger();
-
-    public static Document parse(InputStream is) {
-        org.jdom.Document xmlDoc = new org.jdom.Document();
-        try {
-            SAXBuilder builder = new SAXBuilder();
-            builder.setValidation(false);
-            xmlDoc = builder.build(is);
-        } catch (JDOMException e) {
-            logger.error(e.getMessage());
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-        }
-        return xmlDoc;
-    }
 
     public static List unzip(InputStream is) {
         List res = new ArrayList();
@@ -109,24 +90,6 @@ public class Utils {
 
         in.close();
         out.close();
-    }
-
-    public static void saveInXmlFile(Document doc, String file) {
-        Format f = Format.getPrettyFormat().setEncoding("UTF-8");
-
-        XMLOutputter xop = new XMLOutputter(f);
-
-        try {
-
-            xop.output(doc, new FileOutputStream(file));
-
-        }
-
-        catch (IOException ex) {
-
-            logger.error(ex.getMessage());
-
-        }
     }
 
     /**

@@ -27,7 +27,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
-import org.jdom.JDOMException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -42,10 +41,7 @@ public class AutoDetectParser implements Parser {
     public AutoDetectParser() {
         try {
             config = TikaConfig.getDefaultConfig();
-        } catch (IOException e) {
-            // FIXME: This should never happen
-            throw new RuntimeException(e);
-        } catch (JDOMException e) {
+        } catch (TikaException e) {
             // FIXME: This should never happen
             throw new RuntimeException(e);
         }

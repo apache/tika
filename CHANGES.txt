@@ -9,6 +9,8 @@ Unreleased changes (0.2-incubating)
 
 3. TIKA-116 - Streaming parser for OpenDocument files (Jukka Zitting)
 
+4. TIKA-117 - Drop JDOM and Jaxen dependencies (Jukka Zitting)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)

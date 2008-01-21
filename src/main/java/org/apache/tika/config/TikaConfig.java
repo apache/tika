@@ -16,9 +16,6 @@
  */
 package org.apache.tika.config;
 
-//JDK imports
-
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,14 +23,19 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
 import org.apache.tika.parser.Parser;
-import org.jdom.Document;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.xpath.XPath;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  * Parse xml config file.
@@ -47,42 +49,50 @@ public class TikaConfig {
     
     private static MimeTypes mimeTypes;
 
-    public TikaConfig(String file) throws JDOMException, IOException {
+    public TikaConfig(String file)
+            throws TikaException, IOException, SAXException {
         this(new File(file));
     }
 
-    public TikaConfig(File file) throws JDOMException, IOException {
-        this(new SAXBuilder().build(file));
+    public TikaConfig(File file)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(file));
     }
 
-    public TikaConfig(URL url) throws JDOMException, IOException {
-        this(new SAXBuilder().build(url));
+    public TikaConfig(URL url)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(url.toString()));
     }
 
-    public TikaConfig(InputStream stream) throws JDOMException, IOException {
-        this(new SAXBuilder().build(stream));
+    public TikaConfig(InputStream stream)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(stream));
     }
 
-    public TikaConfig(Document document) throws JDOMException, IOException {
-        this(document.getRootElement());
+    public TikaConfig(Document document) throws TikaException, IOException {
+        this(document.getDocumentElement());
     }
 
-    public TikaConfig(Element element) throws JDOMException, IOException {
-        Element mtr = element.getChild("mimeTypeRepository");
-        String mimeTypeRepoResource = mtr.getAttributeValue("resource");
-        mimeTypes = MimeTypesFactory.create(mimeTypeRepoResource);
+    public TikaConfig(Element element) throws TikaException, IOException {
+        Element mtr = getChild(element, "mimeTypeRepository");
+        if (mtr != null) {
+            mimeTypes = MimeTypesFactory.create(mtr.getAttribute("resource"));
+        }
 
-        for (Object node : XPath.selectNodes(element, "//parser")) {
-            String className = ((Element) node).getAttributeValue("class");
+        NodeList nodes = element.getElementsByTagName("parser");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element node = (Element) nodes.item(i);
+            String name = node.getAttribute("class");
             try {
-                Parser parser =
-                        (Parser) Class.forName(className).newInstance();
-                for (Object child : ((Element) node).getChildren("mime")) {
-                    parsers.put(((Element) child).getTextTrim(), parser);
+                Parser parser = (Parser) Class.forName(name).newInstance();
+                NodeList mimes = node.getElementsByTagName("mime");
+                for (int j = 0; j < mimes.getLength(); j++) {
+                    Element mime = (Element) mimes.item(j);
+                    parsers.put(mime.getTextContent().trim(), parser);
                 }
             } catch (Exception e) {
-                throw new JDOMException(
-                        "Invalid parser configuration: " + className, e);
+                throw new TikaException(
+                        "Invalid parser configuration: " + name, e);
             }
         }
     }
@@ -101,21 +111,45 @@ public class TikaConfig {
     public MimeTypes getMimeRepository(){
         return mimeTypes;
     }
-    
+
     /**
      * Provides a default configuration (TikaConfig).  Currently creates a
      * new instance each time it's called; we may be able to have it
      * return a shared instance once it is completely immutable.
      *
-     * @return
-     * @throws IOException
-     * @throws JDOMException
+     * @return default configuration
+     * @throws TikaException if the default configuration is not available
      */
-    public static TikaConfig getDefaultConfig()
-            throws IOException, JDOMException {
+    public static TikaConfig getDefaultConfig() throws TikaException {
+        try {
+            InputStream stream =
+                TikaConfig.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION);
+            return new TikaConfig(stream);
+        } catch (IOException e) {
+            throw new TikaException("Unable to read default configuration", e);
+        } catch (SAXException e) {
+            throw new TikaException("Unable to parse default configuration", e);
+        }
+    }
 
-        return new TikaConfig(
-                TikaConfig.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION));
+    private static DocumentBuilder getBuilder() throws TikaException {
+        try {
+            return DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        } catch (ParserConfigurationException e) {
+            throw new TikaException("XML parser not available", e);
+        }
+    }
+
+    private static Element getChild(Element element, String name) {
+        Node child = element.getFirstChild();
+        while (child != null) {
+            if (child.getNodeType() == Node.ELEMENT_NODE
+                    && name.equals(child.getNodeName())) {
+                return (Element) child;
+            }
+            child = child.getNextSibling();
+        }
+        return null;
     }
 
 }
