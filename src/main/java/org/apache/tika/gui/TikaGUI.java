@@ -48,7 +48,6 @@ public class TikaGUI implements Runnable {
                 new Object[][] { { "", "" } },
                 new Object[] { "Name", "Value" });
         JTable table = new JTable(model);
-        table.setFillsViewportHeight(true);
         tabs.addTab("Metadata", new JScrollPane(table));
 
         table.setTransferHandler(new ParsingTransferHandler(
