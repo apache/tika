@@ -42,7 +42,7 @@ public class TikaGUI implements Runnable {
         JEditorPane editor = new JEditorPane();
         editor.setContentType("text/html");
         editor.setText("<center>Drop file here</center>");
-        tabs.add("Text content", editor);
+        tabs.add("Text content", new JScrollPane(editor));
 
         DefaultTableModel model = new DefaultTableModel(
                 new Object[][] { { "", "" } },
