@@ -58,10 +58,6 @@ public class ParsingTransferHandler extends TransferHandler {
         this.editor = editor;
     }
 
-    public boolean canImport(TransferSupport support) {
-        return canImport(null, support.getDataFlavors());
-    }
-
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
             if (flavor.equals(DataFlavor.javaFileListFlavor)) {
@@ -69,10 +65,6 @@ public class ParsingTransferHandler extends TransferHandler {
             }
         }
         return false;
-    }
-
-    public boolean importData(TransferSupport support) {
-        return importData(null, support.getTransferable());
     }
 
     public boolean importData(
