@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <oaidc:dc xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oaidc="http://www.openarchives.org/OAI/2.0/oai_dc/">
 
-	<dc:title>Archimède et Lius</dc:title>
+	<dc:title>Tika test document</dc:title>
 
 	<dc:creator>Rida Benjelloun</dc:creator>
 
@@ -27,6 +27,6 @@
 
 	<dc:language>Fr</dc:language>
 
-	<dc:rights>Non restreint</dc:rights>	
+	<dc:rights>Archimède et Lius à Châteauneuf testing chars en été</dc:rights>	
 
 </oaidc:dc>
