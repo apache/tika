@@ -65,8 +65,13 @@ public class DcXMLParserTest extends TestCase {
     public void testXMLParserNonAsciiChars() throws Exception {
         InputStream input = DcXMLParserTest.class.getResourceAsStream("/test-documents/testXML.xml");
         try {
-            // TODO non-ascii chars test currently fails 
-            // assertEquals("Non restreint", metadata.get(Metadata.RIGHTS));
+            Metadata metadata = new Metadata();
+            StringWriter writer = new StringWriter();
+            ContentHandler handler = new WriteOutContentHandler(writer);
+            new DcXMLParser().parse(input, handler, metadata);
+            
+            final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
+            assertEquals(expected,metadata.get(Metadata.RIGHTS));
         } finally {
             input.close();
         }
