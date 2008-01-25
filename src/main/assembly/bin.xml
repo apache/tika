@@ -48,4 +48,20 @@
             <outputDirectory>apidocs</outputDirectory>
         </fileSet>
     </fileSets>
+    <files>
+        <file>
+            <source>src/main/shell/tika.sh</source>
+            <outputDirectory>bin</outputDirectory>
+            <destName>tika</destName>
+            <fileMode>0755</fileMode>
+            <lineEnding>unix</lineEnding>
+            <filtered>true</filtered>
+        </file>
+        <file>
+            <source>src/main/shell/tika.bat</source>
+            <outputDirectory>bin</outputDirectory>
+            <lineEnding>dos</lineEnding>
+            <filtered>true</filtered>
+        </file>
+    </files>
 </assembly>

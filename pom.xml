@@ -266,6 +266,10 @@
               <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
               <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
             </manifestEntries>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <mainClass>org.apache.tika.cli.TikaCLI</mainClass>
+            </manifest>
           </archive>
         </configuration>
       </plugin>
