@@ -61,7 +61,7 @@ public class PowerPointParser extends OfficeParser {
             xhtml.startDocument();
             xhtml.startElement("p");
             parse(stream, xhtml);
-            xhtml.startElement("e");
+            xhtml.endElement("p");
             xhtml.endDocument();
         } finally {
             stream.close();
