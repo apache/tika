@@ -88,6 +88,13 @@ public class XHTMLContentHandler extends ContentHandlerDecorator {
         startElement(XHTML, name, name, new AttributesImpl());
     }
 
+    public void startElement(String name, String attribute, String value)
+            throws SAXException {
+        AttributesImpl attributes = new AttributesImpl();
+        attributes.addAttribute(XHTML, attribute, attribute, "CDATA", value);
+        startElement(XHTML, name, name, attributes);
+    }
+
     public void endElement(String name) throws SAXException {
         endElement(XHTML, name, name);
     }
