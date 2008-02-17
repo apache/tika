@@ -29,8 +29,6 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.AppendableAdaptor;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -54,13 +52,7 @@ public abstract class OfficeParser implements Parser {
                 filesystem, DocumentSummaryInformation.DEFAULT_STREAM_NAME,
                 metadata);
 
-        XHTMLContentHandler xhtml =
-            new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.startElement("p");
-        extractText(filesystem, new AppendableAdaptor(xhtml));
-        xhtml.endElement("p");
-        xhtml.endDocument();
+        parse(filesystem, handler, metadata);
     }
 
     /**
@@ -73,8 +65,9 @@ public abstract class OfficeParser implements Parser {
     /**
      * Extracts the text content from a Microsoft document input stream.
      */
-    protected abstract void extractText(POIFSFileSystem filesystem, Appendable appendable)
-        throws IOException, TikaException;
+    protected abstract void parse(
+            POIFSFileSystem filesystem, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException;
 
     private void getMetadata(
             POIFSFileSystem filesystem, String name, Metadata metadata) {

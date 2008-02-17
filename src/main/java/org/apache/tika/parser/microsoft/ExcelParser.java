@@ -19,10 +19,10 @@ package org.apache.tika.parser.microsoft;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
@@ -41,11 +41,12 @@ import org.apache.poi.hssf.record.NumberRecord;
 import org.apache.poi.hssf.record.RKRecord;
 import org.apache.poi.hssf.record.Record;
 import org.apache.poi.hssf.record.SSTRecord;
-import org.apache.poi.hssf.record.UnicodeString;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Excel parser implementation which uses POI's Event API
@@ -115,16 +116,18 @@ public class ExcelParser extends OfficeParser implements Serializable {
      * to the specified {@link Appendable}.
      *
      * @param filesystem POI file system
-     * @param appendable Where to output the parsed contents
      * @throws IOException if an error occurs processing the workbook
      * or writing the extracted content
      */
-    protected void extractText(final POIFSFileSystem filesystem,
-            final Appendable appendable) throws IOException {
+    protected void parse(
+            POIFSFileSystem filesystem, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException {
         log.debug("Starting listenForAllRecords=" + listenForAllRecords);
 
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+
         // Set up listener and register the records we want to process
-        TikaHSSFListener listener = new TikaHSSFListener(appendable);
+        TikaHSSFListener listener = new TikaHSSFListener(xhtml);
         HSSFRequest hssfRequest = new HSSFRequest();
         if (listenForAllRecords) {
             hssfRequest.addListenerForAllRecords(listener);
@@ -147,9 +150,11 @@ public class ExcelParser extends OfficeParser implements Serializable {
         // Create event factory and process Workbook (fire events)
         DocumentInputStream documentInputStream = filesystem.createDocumentInputStream("Workbook");
         HSSFEventFactory eventFactory = new HSSFEventFactory();
-        eventFactory.processEvents(hssfRequest, documentInputStream);
 
-        log.debug("Processed " + listener.getRecordCount() + " records");
+        xhtml.startDocument();
+        eventFactory.processEvents(hssfRequest, documentInputStream);
+        listener.throwStoredException();
+        xhtml.endDocument();
     }
 
     // ======================================================================
@@ -162,38 +167,29 @@ public class ExcelParser extends OfficeParser implements Serializable {
         /** Logging instance */
         private static Log log = LogFactory.getLog(ExcelParser.class);
 
-        private final Appendable appendable;
-        private int recordCount;
+        private final XHTMLContentHandler handler;
+
+        private SAXException exception;
+
         private SSTRecord sstRecord;
-        private Map<Short, String> formats        = new HashMap<Short, String>();
-        private Map<Short, Short> extendedFormats = new HashMap<Short, Short>();
         private List<String> sheetNames = new ArrayList<String>();
-        private short bofRecordType;
-        private short defualtCountry;
-        private short currentCountry;
-        private short currentXFormatIdx;
         private short currentSheetIndex;
-        private String currentSheetName;
-        private boolean firstElement = true;
-        private boolean use1904windowing = false;
+
+        private boolean insideWorksheet = false;
+
+        private int currentRow;
+
+        private short currentColumn;
 
         /**
          * Contstruct a new listener instance outputting parsed data to
-         * the specified Appendable.
+         * the specified XHTML content handler.
          *
-         * @param appendable Destination to write the parsed output to
+         * @param handler Destination to write the parsed output to
          */
-        private TikaHSSFListener(final Appendable appendable) {
-            this.appendable = appendable;
-        }
-
-        /**
-         * Return a count of the number of records processed.
-         *
-         * @return The number of records processed by this listener
-         */
-        private int getRecordCount() {
-            return recordCount;
+        private TikaHSSFListener(XHTMLContentHandler handler) {
+            this.handler = handler;
+            this.exception = null;
         }
 
         /**
@@ -201,64 +197,70 @@ public class ExcelParser extends OfficeParser implements Serializable {
          *
          * @param record HSSF Record
          */
-        public void processRecord(final Record record) {
-            recordCount++;
-            final short sid = record.getSid();
-            switch (sid) {
+        public void processRecord(Record record) {
+            try {
+                if (log.isDebugEnabled()) {
+                    log.debug(record.toString());
+                }
+                internalProcessRecord(record);
+            } catch (SAXException e) {
+                if (exception == null) {
+                    exception = e;
+                }
+            }
+        }
+
+        public void throwStoredException() throws SAXException {
+            if (exception != null) {
+                throw exception;
+            }
+        }
+
+        private void internalProcessRecord(Record record) throws SAXException {
+            switch (record.getSid()) {
 
                 /* BOFRecord: indicates start of workbook, worksheet etc. records */
                 case BOFRecord.sid:
-                    BOFRecord bofRecord = (BOFRecord)record;
-                    bofRecordType = bofRecord.getType();
-                    switch (bofRecordType) {
+                    switch (((BOFRecord) record).getType()) {
                         case BOFRecord.TYPE_WORKBOOK:
                             currentSheetIndex = -1;
-                            debug(record, ".Workbook");
                             break;
                         case BOFRecord.TYPE_WORKSHEET:
                             currentSheetIndex++;
-                            currentSheetName = null;
+                            String currentSheetName = "";
                             if (currentSheetIndex < sheetNames.size()) {
                                 currentSheetName = sheetNames.get(currentSheetIndex);
                             }
-                            debug(record,
-                                    ".Worksheet[" + currentSheetIndex
-                                    + "], Name=[" + currentSheetName + "]");
-                            addText(currentSheetName);
-                            break;
-                        default:
-                            debug(record, "[" + bofRecordType + "]");
+                            handler.startElement("div", "class", "page");
+                            handler.element("h1", currentSheetName);
+                            handler.characters("\n");
+                            handler.startElement("table");
+                            handler.startElement("tbody");
+                            handler.startElement("tr");
+                            handler.startElement("td");
+                            insideWorksheet = true;
+                            currentRow = 0;
+                            currentColumn = 0;
                             break;
                     }
                     break;
 
-                /* BOFRecord: indicates end of workbook, worksheet etc. records */
+                /* EOFRecord: indicates end of workbook, worksheet etc. records */
                 case EOFRecord.sid:
-                    debug(record, "");
-                    bofRecordType = 0;
-                    break;
-
-                /* Indicates whether to use 1904 Date Windowing or not */
-                case DateWindow1904Record.sid:
-                    DateWindow1904Record dw1904Rec = (DateWindow1904Record)record;
-                    use1904windowing = (dw1904Rec.getWindowing() == 1);
-                    debug(record, "[" + use1904windowing + "]");
-                    break;
-
-                /* CountryRecord: holds all the strings for LabelSSTRecords */
-                case CountryRecord.sid:
-                    CountryRecord countryRecord = (CountryRecord)record;
-                    defualtCountry = countryRecord.getDefaultCountry();
-                    currentCountry = countryRecord.getCurrentCountry();
-                    debug(record,
-                            " default=[" + defualtCountry
-                            + "], current=[" + currentCountry + "]");
+                    if (insideWorksheet) {
+                        handler.endElement("td");
+                        handler.endElement("tr");
+                        handler.endElement("tbody");
+                        handler.endElement("table");
+                        handler.endElement("div");
+                        handler.characters("\n");
+                        insideWorksheet = false;
+                    }
                     break;
 
                 /* SSTRecord: holds all the strings for LabelSSTRecords */
                 case SSTRecord.sid:
                     sstRecord = (SSTRecord)record;
-                    debug(record, "");
                     break;
 
                 /* BoundSheetRecord: Worksheet index record */
@@ -266,41 +268,14 @@ public class ExcelParser extends OfficeParser implements Serializable {
                     BoundSheetRecord boundSheetRecord = (BoundSheetRecord)record;
                     String sheetName = boundSheetRecord.getSheetname();
                     sheetNames.add(sheetName);
-                    debug(record,
-                            "[" + sheetNames.size()
-                            + "], Name=[" + sheetName + "]");
-                    break;
-
-                /* FormatRecord */
-                case FormatRecord.sid:
-                    FormatRecord formatRecord = (FormatRecord)record;
-                    String dataFormat = formatRecord.getFormatString();
-                    short formatIdx = formatRecord.getIndexCode();
-                    formats.put(formatIdx, dataFormat);
-                    debug(record, "[" + formatIdx + "]=[" + dataFormat + "]");
-                    break;
-
-                /* ExtendedFormatRecord */
-                case ExtendedFormatRecord.sid:
-                    ExtendedFormatRecord xFormatRecord = (ExtendedFormatRecord)record;
-                    if (xFormatRecord.getXFType() == ExtendedFormatRecord.XF_CELL) {
-                        short dataFormatIdx = xFormatRecord.getFormatIndex();
-                        if (dataFormatIdx > 0) {
-                            extendedFormats.put(currentXFormatIdx, dataFormatIdx);
-                            debug(record,
-                                    "[" + currentXFormatIdx
-                                    + "]=FormatRecord[" + dataFormatIdx + "]");
-                        }
-                    }
-                    currentXFormatIdx++;
                     break;
 
                 default:
-                    if (bofRecordType == BOFRecord.TYPE_WORKSHEET
+                    if (insideWorksheet
                             && record instanceof CellValueRecordInterface) {
-                        processCellValue(sid, (CellValueRecordInterface)record);
-                    } else {
-                        debug(record, "");
+                        processCellValue(
+                                record.getSid(),
+                                (CellValueRecordInterface)record);
                     }
                     break;
             }
@@ -312,102 +287,57 @@ public class ExcelParser extends OfficeParser implements Serializable {
          * @param sid record type identifier
          * @param record The cell value record
          */
-        private void processCellValue(final short sid,
-                final CellValueRecordInterface record) {
+        private void processCellValue(
+                short sid, CellValueRecordInterface record)
+                throws SAXException {
+            while (currentRow < record.getRow()) {
+                handler.endElement("td");
+                handler.endElement("tr");
+                handler.characters("\n");
+                handler.startElement("tr");
+                handler.startElement("td");
+                currentRow++;
+                currentColumn = 0;
+            }
+            while (currentColumn < record.getColumn()) {
+                handler.endElement("td");
+                handler.characters("\t");
+                handler.startElement("td");
+                currentColumn++;
+            }
 
-            short xfIdx = record.getXFIndex();
-            Short dfIdx = extendedFormats.get(xfIdx);
-            String dataFormat = dfIdx != null ? formats.get(dfIdx) : null;
-            String str = null;
             switch (sid) {
-
                 /* FormulaRecord: Cell value from a formula */
                 case FormulaRecord.sid:
                     FormulaRecord formulaRecord = (FormulaRecord)record;
                     double fmlValue = formulaRecord.getValue();
-                    str = toString(fmlValue, dfIdx, dataFormat);
-                    str = addText(str);
+                    addText(Double.toString(fmlValue));
                     break;
 
                 /* LabelRecord: strings stored directly in the cell */
                 case LabelRecord.sid:
-                    LabelRecord labelRecord = (LabelRecord)record;
-                    str = addText(labelRecord.getValue());
+                    addText(((LabelRecord) record).getValue());
                     break;
 
                 /* LabelSSTRecord: Ref. a string in the shared string table */
                 case LabelSSTRecord.sid:
-                    LabelSSTRecord labelSSTRecord = (LabelSSTRecord)record;
+                    LabelSSTRecord labelSSTRecord = (LabelSSTRecord) record;
                     int sstIndex = labelSSTRecord.getSSTIndex();
-                    UnicodeString unicodeStr = sstRecord.getString(sstIndex);
-                    str = addText(unicodeStr.getString());
+                    addText(sstRecord.getString(sstIndex).getString());
                     break;
 
                 /* NumberRecord: Contains a numeric cell value */
                 case NumberRecord.sid:
                     double numValue = ((NumberRecord)record).getValue();
-                    if (!Double.isNaN(numValue)) {
-                        str = Double.toString(numValue);
-                    }
-                    str = toString(numValue, dfIdx, dataFormat);
-                    str = addText(str);
+                    addText(Double.toString(numValue));
                     break;
 
                 /* RKRecord: Excel internal number record */
                 case RKRecord.sid:
                     double rkValue = ((RKRecord)record).getRKNumber();
-                    str = toString(rkValue, dfIdx, dataFormat);
-                    str = addText(str);
+                    addText(Double.toString(rkValue));
                     break;
             }
-
-            // =========== Debug Mess: START ===========
-            if (log.isDebugEnabled()) {
-                StringBuilder builder = new StringBuilder();
-                builder.append('[');
-                // builder.append(ExcelUtils.columnIndexToLabel(record.getColumn()));
-                builder.append(record.getColumn());
-                builder.append(":");
-                builder.append((record.getRow() + 1));
-                builder.append(']');
-                if (dfIdx != null) {
-                    builder.append(" xfIdx[");
-                    builder.append(xfIdx).append(']');
-                    builder.append("=dfIdx[");
-                    builder.append(dfIdx);
-                    builder.append(']');
-                    if (dataFormat != null) {
-                        builder.append("=[");
-                        builder.append(dataFormat);
-                        builder.append(']');
-                    }
-                }
-                builder.append(", value=[");
-                if (str != null && str.length() > 0) {
-                    builder.append(str);
-                }
-                builder.append(']');
-                debug((Record)record, builder.toString());
-            }
-            // =========== Debug Mess: END =============
-        }
-
-        /**
-         * Converts a numeric excel cell value to a String.
-         *
-         * @param value The cell value
-         * @param dfIdx The data format index
-         * @param dataFormat The data format
-         * @return Formatted string value
-         */
-        private String toString(double value, Short dfIdx, String dataFormat) {
-            if (Double.isNaN(value)) {
-                return null;
-            }
-
-            // **** TODO: Data Format parsing ****
-            // return ExcelUtils.format(value, dfIdx, dataFormat, use1904windowing);
-            return Double.toString(value);
         }
 
         /**
@@ -416,43 +346,15 @@ public class ExcelParser extends OfficeParser implements Serializable {
          * Null and zero length values are ignored.
          *
          * @param text The text value
-         * @return the added text
          */
-        private String addText(String text) {
+        private void addText(String text) throws SAXException {
             if (text != null) {
                 text = text.trim();
                 if (text.length() > 0) {
-                    try {
-                        if (!firstElement) {
-                            appendable.append(" ");
-                        }
-                        appendable.append(text);
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                    firstElement = false;
+                    handler.characters(text);
                 }
             }
-            return text;
         }
 
-        /**
-         * Record debugging.
-         *
-         * @param record The Record
-         * @param msg Debug Message
-         */
-        private void debug(Record record, String msg) {
-            if (log.isDebugEnabled()) {
-                String className = record.getClass().getSimpleName();
-                String text = (msg == null ? className :  className + msg);
-                if (record.getSid() == BOFRecord.sid ||
-                    record.getSid() == EOFRecord.sid) {
-                    log.debug(text);
-                } else {
-                    log.debug("    " + text);
-                }
-            }
-        }
     }
 }

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import org.apache.log4j.xml.SAXErrorHandler;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.usermodel.CharacterRun;
 import org.apache.poi.hwpf.usermodel.Range;
@@ -24,6 +25,11 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LittleEndian;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.AppendableAdaptor;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 
@@ -42,8 +48,14 @@ public class WordParser extends OfficeParser {
      * @param fsys the <code>POIFSFileSystem</code> to read the word document from.
      * @param appendable the <code>Appendable</code> to add the text content to.
      */
-    public void extractText(POIFSFileSystem fsys, Appendable appendable)
-            throws IOException, TikaException {
+    public void parse(
+            POIFSFileSystem fsys, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.startElement("p");
+        Appendable appendable = new AppendableAdaptor(xhtml);
+
         // load our POIFS document streams.
         DocumentEntry headerProps =
             (DocumentEntry) fsys.getRoot().getEntry("WordDocument");
@@ -91,11 +103,7 @@ public class WordParser extends OfficeParser {
             }
         }
 
-        // Set POI values to null
-        headerProps = null;
-        header = null;
-        din = null;
-        doc = null;
-        fsys = null;
+        xhtml.endElement("p");
+        xhtml.endDocument();
     }
 }
