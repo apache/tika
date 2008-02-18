@@ -16,22 +16,15 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.log4j.xml.SAXErrorHandler;
-import org.apache.poi.hwpf.HWPFDocument;
-import org.apache.poi.hwpf.usermodel.CharacterRun;
-import org.apache.poi.hwpf.usermodel.Range;
-import org.apache.poi.poifs.filesystem.DocumentEntry;
-import org.apache.poi.poifs.filesystem.DocumentInputStream;
+import java.io.IOException;
+
+import org.apache.poi.hwpf.extractor.WordExtractor;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.poi.util.LittleEndian;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.AppendableAdaptor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import java.io.IOException;
 
 /**
  * Word parser
@@ -42,68 +35,14 @@ public class WordParser extends OfficeParser {
         return "application/msword";
     }
 
-    /**
-     * Gets the text from a Word document.
-     *
-     * @param fsys the <code>POIFSFileSystem</code> to read the word document from.
-     * @param appendable the <code>Appendable</code> to add the text content to.
-     */
     public void parse(
-            POIFSFileSystem fsys, ContentHandler handler, Metadata metadata)
+            POIFSFileSystem poifs, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        xhtml.startElement("p");
-        Appendable appendable = new AppendableAdaptor(xhtml);
-
-        // load our POIFS document streams.
-        DocumentEntry headerProps =
-            (DocumentEntry) fsys.getRoot().getEntry("WordDocument");
-        DocumentInputStream din = fsys.createDocumentInputStream("WordDocument");
-        byte[] header = new byte[headerProps.getSize()];
-
-        din.read(header);
-        din.close();
-
-        int info = LittleEndian.getShort(header, 0xa);
-        if ((info & 0x4) != 0) {
-            throw new TikaException("Fast-saved files are unsupported");
+        for (String paragraph : new WordExtractor(poifs).getParagraphText()) {
+            xhtml.element("p", paragraph);
         }
-        if ((info & 0x100) != 0) {
-            throw new TikaException("This document is password protected");
-        }
-
-        // determine the version of Word this document came from.
-        int nFib = LittleEndian.getShort(header, 0x2);
-        switch (nFib) {
-        case 101:
-        case 102:
-        case 103:
-        case 104:
-            // this is a Word 6.0 doc send it to the extractor for that version.
-            Word6Extractor oldExtractor = new Word6Extractor(appendable);
-            oldExtractor.extractText(header);
-
-            // Set POI values to null
-            headerProps = null;
-            header = null;
-            din = null;
-            fsys = null;
-            return;
-        }
-
-        WordTextBuffer finalTextBuf = new WordTextBuffer(appendable);
-
-        HWPFDocument doc = new HWPFDocument(fsys);
-        Range range = doc.getRange();
-        for (int i = 0; i < range.numCharacterRuns(); i++) {
-            CharacterRun cr = range.getCharacterRun(i);
-            if (!cr.isMarkedDeleted()) {
-                finalTextBuf.append(cr.text());
-            }
-        }
-
-        xhtml.endElement("p");
         xhtml.endDocument();
     }
 }
