@@ -19,11 +19,10 @@ package org.apache.tika.parser.opendocument;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
@@ -63,12 +62,8 @@ public class OpenOfficeParser implements Parser {
         ZipEntry entry = zip.getNextEntry();
         while (entry != null) {
             if (entry.getName().equals("mimetype")) {
-                StringBuilder buffer = new StringBuilder();
-                Reader reader = new InputStreamReader(zip, "UTF-8");
-                for (int ch = reader.read(); ch != -1; ch = reader.read()) {
-                    buffer.append((char) ch);
-                }
-                metadata.set(Metadata.CONTENT_TYPE, buffer.toString());
+                String type = IOUtils.toString(zip, "UTF-8");
+                metadata.set(Metadata.CONTENT_TYPE, type);
             } else if (entry.getName().equals("meta.xml")) {
                 meta.parse(zip, new DefaultHandler(), metadata);
             } else if (entry.getName().equals("content.xml")) {

@@ -18,7 +18,7 @@ package org.apache.tika.sax;
 
 import java.io.IOException;
 
-import org.apache.tika.exception.CauseIOException;
+import org.apache.commons.io.IOExceptionWithCause;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -99,7 +99,7 @@ public class AppendableAdaptor implements Appendable {
                 char[] chars = charSeq.toString().toCharArray();
                 handler.characters(chars, start, (end - start));
             } catch (SAXException e) {
-                throw new CauseIOException(
+                throw new IOExceptionWithCause(
                         "Error processing character content: "
                         + charSeq.subSequence(start, end), e);
             }

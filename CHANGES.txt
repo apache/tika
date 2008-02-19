@@ -17,6 +17,8 @@ Unreleased changes (0.2-incubating)
 
 7. TIKA-96  - Tika CLI (Jukka Zitting)
 
+8. TIKA-112 - Use Commons IO 1.4 (Jukka Zitting)
+
 
 Release 0.1-incubating - 12/27/2007
 

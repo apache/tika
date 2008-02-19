@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.xml;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -24,6 +23,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
@@ -54,10 +54,9 @@ public class XMLParser implements Parser {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(true);
             SAXParser parser = factory.newSAXParser();
-            stream = new BufferedInputStream(stream) {
-                public void close() {}
-            };
-            parser.parse(stream, getDefaultHandler(handler, metadata));
+            parser.parse(
+                    new CloseShieldInputStream(stream),
+                    getDefaultHandler(handler, metadata));
         } catch (ParserConfigurationException e) {
             throw new TikaException("XML parser configuration error", e);
         }

@@ -63,15 +63,11 @@ public class MimeTypesFactory {
      * InputStream from the URL.
      */
     public static MimeTypes create(URL url) throws IOException {
-        InputStream inputStream = null;
-
+        InputStream stream = url.openStream();
         try {
-            inputStream = url.openStream();
-            return create(inputStream);
+            return create(stream);
         } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
+            stream.close();
         }
     }
 
