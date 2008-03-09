@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Iterator;
 
+import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hpsf.MarkUnsupportedException;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
@@ -72,6 +73,8 @@ public class OfficeParser implements Parser {
                 setType(metadata, "application/vnd.ms-powerpoint");
             } else if ("Workbook".equals(name)) {
                 setType(metadata, "application/vnd.ms-excel");
+            } else if ("VisioDocument".equals(name)) {
+                setType(metadata, "application/vnd.visio");
             }
         }
     }
@@ -109,6 +112,13 @@ public class OfficeParser implements Parser {
             } else if ("Workbook".equals(name)) {
                 setType(metadata, "application/vnd.ms-excel");
                 new ExcelExtractor().parse(filesystem, xhtml);
+            } else if ("VisioDocument".equals(name)) {
+                setType(metadata, "application/vnd.visio");
+                VisioTextExtractor extractor =
+                    new VisioTextExtractor(filesystem);
+                for (String text : extractor.getAllText()) {
+                    xhtml.element("p", text);
+                }
             }
         }
 

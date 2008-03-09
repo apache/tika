@@ -32,6 +32,7 @@
                 <mime>application/msword</mime>
                 <mime>application/vnd.ms-excel</mime>
                 <mime>application/vnd.ms-powerpoint</mime>
+                <mime>application/vnd.visio</mime>
         </parser>
 
         <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">

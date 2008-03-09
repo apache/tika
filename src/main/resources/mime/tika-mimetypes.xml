@@ -160,6 +160,14 @@
                 </magic>
         </mime-type>
 
+        <!-- http://www.iana.org/assignments/media-types/application/vnd.visio -->
+        <mime-type type="application/vnd.visio">
+                <glob pattern="*.vsd"/>
+                <glob pattern="*.vst"/>
+                <glob pattern="*.vsw"/>
+                <glob pattern="*.vss"/>
+        </mime-type>
+
 	<mime-type type="application/vnd.ms-powerpoint">
 		<glob pattern="*.ppz" />
 		<glob pattern="*.ppt" />

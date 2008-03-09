@@ -2,25 +2,27 @@ Tika Change Log
 
 Unreleased changes (0.2-incubating)
 
-1. TIKA-109 - WordParser fails on some Word files (Dave Meikle)
+1.  TIKA-109 - WordParser fails on some Word files (Dave Meikle)
 
-2. TIKA-105 - Excel parser implementation based on POI's Event API
-              (Niall Pemberton)
+2.  TIKA-105 - Excel parser implementation based on POI's Event API
+               (Niall Pemberton)
 
-3. TIKA-116 - Streaming parser for OpenDocument files (Jukka Zitting)
+3.  TIKA-116 - Streaming parser for OpenDocument files (Jukka Zitting)
 
-4. TIKA-117 - Drop JDOM and Jaxen dependencies (Jukka Zitting)
+4.  TIKA-117 - Drop JDOM and Jaxen dependencies (Jukka Zitting)
 
-5. TIKA-115 - Tika package with all the dependencies (Jukka Zitting)
+5.  TIKA-115 - Tika package with all the dependencies (Jukka Zitting)
 
-6. TIKA-97  - Tika GUI (Jukka Zitting)
+6.  TIKA-97  - Tika GUI (Jukka Zitting)
 
-7. TIKA-96  - Tika CLI (Jukka Zitting)
+7.  TIKA-96  - Tika CLI (Jukka Zitting)
 
-8. TIKA-112 - Use Commons IO 1.4 (Jukka Zitting)
+8.  TIKA-112 - Use Commons IO 1.4 (Jukka Zitting)
 
-9. TIKA-126 - Add Parser.parse(InputStream, Metadata) for metadata extraction
+9.  TIKA-126 - Add Parser.parse(InputStream, Metadata) for metadata extraction
               (Jukka Zitting)
+
+10. TIKA-127 - Add support for Visio files (Jukka Zitting)
 
 
 Release 0.1-incubating - 12/27/2007
