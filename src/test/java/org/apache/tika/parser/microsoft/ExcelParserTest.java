@@ -34,7 +34,7 @@ public class ExcelParserTest extends TestCase {
             Metadata metadata = new Metadata();
             StringWriter writer = new StringWriter();
             ContentHandler handler = new WriteOutContentHandler(writer);
-            new ExcelParser().parse(input, handler, metadata);
+            new OfficeParser().parse(input, handler, metadata);
 
             assertEquals(
                     "application/vnd.ms-excel",

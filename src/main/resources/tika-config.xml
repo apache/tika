@@ -27,15 +27,10 @@
                 <mime>application/xml</mime>
         </parser>
 
-        <parser name="parse-msword" class="org.apache.tika.parser.microsoft.WordParser">
+        <parser name="parse-office" class="org.apache.tika.parser.microsoft.OfficeParser">
+                <mime>application/x-tika-msoffice</mime>
                 <mime>application/msword</mime>
-        </parser>
-
-        <parser name="parse-msexcel" class="org.apache.tika.parser.microsoft.ExcelParser">
                 <mime>application/vnd.ms-excel</mime>
-        </parser>
-
-        <parser name="parse-mspowerpoint" class="org.apache.tika.parser.microsoft.PowerPointParser">
                 <mime>application/vnd.ms-powerpoint</mime>
         </parser>
 

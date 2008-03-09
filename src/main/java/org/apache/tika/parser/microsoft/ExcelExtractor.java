@@ -43,9 +43,7 @@ import org.apache.poi.hssf.record.Record;
 import org.apache.poi.hssf.record.SSTRecord;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -65,10 +63,10 @@ import org.xml.sax.SAXException;
  * @see <a href="http://poi.apache.org/hssf/how-to.html#event_api">
  * POI Event API How To</a>
  */
-public class ExcelParser extends OfficeParser implements Serializable {
+public class ExcelExtractor {
 
     /** Logging instance */
-    private static Log log = LogFactory.getLog(ExcelParser.class);
+    private static final Log log = LogFactory.getLog(ExcelExtractor.class);
 
     /**
      * <code>true</code> if the HSSFListener should be registered
@@ -103,15 +101,6 @@ public class ExcelParser extends OfficeParser implements Serializable {
     }
 
     /**
-     * Return the content type handled by this parser.
-     *
-     * @return The content type handled
-     */
-    protected String getContentType() {
-        return "application/vnd.ms-excel";
-    }
-
-    /**
      * Extracts text from an Excel Workbook writing the extracted content
      * to the specified {@link Appendable}.
      *
@@ -119,12 +108,9 @@ public class ExcelParser extends OfficeParser implements Serializable {
      * @throws IOException if an error occurs processing the workbook
      * or writing the extracted content
      */
-    protected void parse(
-            POIFSFileSystem filesystem, ContentHandler handler, Metadata metadata)
+    protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
         log.debug("Starting listenForAllRecords=" + listenForAllRecords);
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         // Set up listener and register the records we want to process
         TikaHSSFListener listener = new TikaHSSFListener(xhtml);
@@ -151,10 +137,8 @@ public class ExcelParser extends OfficeParser implements Serializable {
         DocumentInputStream documentInputStream = filesystem.createDocumentInputStream("Workbook");
         HSSFEventFactory eventFactory = new HSSFEventFactory();
 
-        xhtml.startDocument();
         eventFactory.processEvents(hssfRequest, documentInputStream);
         listener.throwStoredException();
-        xhtml.endDocument();
     }
 
     // ======================================================================
@@ -163,9 +147,6 @@ public class ExcelParser extends OfficeParser implements Serializable {
      * HSSF Listener implementation which processes the HSSF records.
      */
     private static class TikaHSSFListener implements HSSFListener, Serializable {
-
-        /** Logging instance */
-        private static Log log = LogFactory.getLog(ExcelParser.class);
 
         private final XHTMLContentHandler handler;
 

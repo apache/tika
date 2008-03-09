@@ -153,21 +153,21 @@
 			localName='html' />
 	</mime-type>
 
+
+        <mime-type type="application/x-tika-msoffice">
+                <magic>
+                        <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8"/>
+                </magic>
+        </mime-type>
+
 	<mime-type type="application/vnd.ms-powerpoint">
 		<glob pattern="*.ppz" />
 		<glob pattern="*.ppt" />
 		<glob pattern="*.pps" />
 		<glob pattern="*.pot" />
-		<magic priority="50">
-			<match value="0xcfd0e011" type="little32" offset="0" />
-		</magic>
 	</mime-type>
 
 	<mime-type type="application/vnd.ms-excel">
-		<magic priority="50">
-			<match value="Microsoft Excel 5.0 Worksheet" type="string"
-				offset="2080" />
-		</magic>
 		<glob pattern="*.xls" />
 		<glob pattern="*.xlc" />
 		<glob pattern="*.xll" />
@@ -385,16 +385,6 @@
 	</mime-type>
 
 	<mime-type type="application/msword">
-		<magic priority="50">
-			<match value="\x31\xbe\x00\x00" type="string" offset="0" />
-			<match value="PO^Q`" type="string" offset="0" />
-			<match value="\376\067\0\043" type="string" offset="0" />
-			<match value="\333\245-\0\0\0" type="string" offset="0" />
-			<match value="Microsoft Word 6.0 Document" type="string"
-				offset="2080" />
-			<match value="Microsoft Word document data" type="string"
-				offset="2112" />
-		</magic>
 		<glob pattern="*.doc" />
 		<alias type="application/vnd.ms-word" />
 	</mime-type>
@@ -432,6 +422,9 @@
 	</mime-type>
 
 	<mime-type type="application/rtf">
+                <magic priority="50">
+                        <match value="{\rtf" type="string" offset="0" />
+                </magic>
 	    <glob pattern="*.rtf"/>
 		<alias type="text/rtf" />
 	</mime-type>

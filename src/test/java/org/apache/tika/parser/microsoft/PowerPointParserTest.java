@@ -34,7 +34,7 @@ public class PowerPointParserTest extends TestCase {
             Metadata metadata = new Metadata();
             StringWriter writer = new StringWriter();
             ContentHandler handler = new WriteOutContentHandler(writer);
-            new PowerPointParser().parse(input, handler, metadata);
+            new OfficeParser().parse(input, handler, metadata);
 
             assertEquals(
                     "application/vnd.ms-powerpoint",
