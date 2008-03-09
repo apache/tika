@@ -30,7 +30,7 @@ import org.apache.tika.mime.MimeTypes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class AutoDetectParser implements Parser {
+public class AutoDetectParser extends AbstractParser {
 
     private TikaConfig config;
 

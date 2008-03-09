@@ -52,6 +52,31 @@ public class OfficeParser implements Parser {
         DocumentSummaryInformation.DEFAULT_STREAM_NAME;
 
     /**
+     * Extracts properties from an MS Document input stream
+     */
+    public void parse(InputStream stream, Metadata metadata)
+            throws IOException, TikaException {
+        POIFSFileSystem filesystem = new POIFSFileSystem(stream);
+        Iterator<?> entries = filesystem.getRoot().getEntries();
+        while (entries.hasNext()) {
+            Entry entry = (Entry) entries.next();
+            String name = entry.getName();
+            if (!(entry instanceof DocumentEntry)) {
+                // Skip directory entries
+            } else if (SUMMARY_INFORMATION.equals(name)
+                    || DOCUMENT_SUMMARY_INFORMATION.equals(name)) {
+                parse((DocumentEntry) entry, metadata);
+            } else if ("WordDocument".equals(name)) {
+                setType(metadata, "application/msword");
+            } else if ("PowerPoint Document".equals(name)) {
+                setType(metadata, "application/vnd.ms-powerpoint");
+            } else if ("Workbook".equals(name)) {
+                setType(metadata, "application/vnd.ms-excel");
+            }
+        }
+    }
+
+    /**
      * Extracts properties and text from an MS Document input stream
      */
     public void parse(

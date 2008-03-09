@@ -28,7 +28,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * OpenOffice parser
@@ -55,6 +54,21 @@ public class OpenOfficeParser implements Parser {
         this.content = content;
     }
 
+    public void parse(InputStream stream, Metadata metadata)
+            throws IOException, TikaException {
+        ZipInputStream zip = new ZipInputStream(stream);
+        ZipEntry entry = zip.getNextEntry();
+        while (entry != null) {
+            if (entry.getName().equals("mimetype")) {
+                String type = IOUtils.toString(zip, "UTF-8");
+                metadata.set(Metadata.CONTENT_TYPE, type);
+            } else if (entry.getName().equals("meta.xml")) {
+                meta.parse(zip, metadata);
+            }
+            entry = zip.getNextEntry();
+        }
+    }
+
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
@@ -65,7 +79,7 @@ public class OpenOfficeParser implements Parser {
                 String type = IOUtils.toString(zip, "UTF-8");
                 metadata.set(Metadata.CONTENT_TYPE, type);
             } else if (entry.getName().equals("meta.xml")) {
-                meta.parse(zip, new DefaultHandler(), metadata);
+                meta.parse(zip, metadata);
             } else if (entry.getName().equals("content.xml")) {
                 content.parse(zip, handler, metadata);
             }

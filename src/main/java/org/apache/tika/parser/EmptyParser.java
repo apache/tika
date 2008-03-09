@@ -16,10 +16,8 @@
  */
 package org.apache.tika.parser;
 
-import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -32,9 +30,12 @@ import org.xml.sax.SAXException;
  */
 public class EmptyParser implements Parser {
 
+    public void parse(InputStream stream, Metadata metadata) {
+    }
+
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
+            throws SAXException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();

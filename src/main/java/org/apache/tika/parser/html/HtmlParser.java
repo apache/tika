@@ -18,12 +18,13 @@ package org.apache.tika.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.utils.Utils;
 import org.cyberneko.html.parsers.SAXParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -33,34 +34,16 @@ import org.xml.sax.SAXException;
 /**
  * Simple HTML parser that extracts title.
  */
-public class HtmlParser implements Parser {
+public class HtmlParser extends AbstractParser {
 
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-
-        final SAXParser parser = new SAXParser();
-
-        final InputSource source;
-
-        Reader utf8Reader;
-        
-        try {
-            utf8Reader = org.apache.tika.utils.Utils.getUTF8Reader(
-                    stream, metadata);
-        } catch (TikaException ex) {
-            utf8Reader = null;
-        }
-
-        if (utf8Reader == null) {
-            source = new InputSource(stream);
-        } else {
-            source = new InputSource(utf8Reader);
-        }
-
-        
-        parser.setContentHandler(new TitleExtractingContentHandler(handler,
-                metadata));
-        parser.parse(source);
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        SAXParser parser = new SAXParser();
+        parser.setContentHandler(
+                new TitleExtractingContentHandler(handler, metadata));
+        parser.parse(new InputSource(Utils.getUTF8Reader(
+                new CloseShieldInputStream(stream), metadata)));
     }
 
     private static class TitleExtractingContentHandler extends

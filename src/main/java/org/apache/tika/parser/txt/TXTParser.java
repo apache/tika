@@ -22,7 +22,7 @@ import java.io.Reader;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.Utils;
 import org.xml.sax.ContentHandler;
@@ -31,12 +31,11 @@ import org.xml.sax.SAXException;
 /**
  * Text parser
  */
-public class TXTParser implements Parser {
+public class TXTParser extends AbstractParser {
 
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        
         Reader reader = Utils.getUTF8Reader(stream, metadata);
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
 

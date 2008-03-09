@@ -26,7 +26,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -36,7 +36,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * XML parser
  */
-public class XMLParser implements Parser {
+public class XMLParser extends AbstractParser {
 
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
