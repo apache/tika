@@ -16,14 +16,11 @@
  */
 package org.apache.tika.parser.microsoft;
 
-// JDK imports
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.poi.hpsf.DocumentSummaryInformation;
-import org.apache.poi.hpsf.HPSFException;
-import org.apache.poi.hpsf.PropertySet;
-import org.apache.poi.hpsf.PropertySetFactory;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
@@ -31,6 +28,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Defines a Microsoft document content extractor.
@@ -70,106 +68,17 @@ public abstract class OfficeParser implements Parser {
             throws IOException, SAXException, TikaException;
 
     private void getMetadata(
-            POIFSFileSystem filesystem, String name, Metadata metadata) {
+            POIFSFileSystem filesystem, String name, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         try {
             InputStream stream = filesystem.createDocumentInputStream(name);
             try {
-                getMetadata(stream, metadata);
+                new PropertyParser().parse(stream, new DefaultHandler(), metadata);
             } finally {
                 stream.close();
             }
-        } catch (Exception e) {
+        } catch (FileNotFoundException e) {
             // summary information not available, ignore
-        }
-    }
-
-    private void getMetadata(InputStream stream, Metadata metadata)
-            throws HPSFException, IOException {
-        PropertySet set = PropertySetFactory.create(stream);
-        if (set instanceof SummaryInformation) {
-            getMetadata((SummaryInformation) set, metadata);
-        } else if (set instanceof DocumentSummaryInformation) {
-            getMetadata((DocumentSummaryInformation) set, metadata);
-        }
-    }
-
-    private void getMetadata(
-            SummaryInformation information, Metadata metadata) {
-        if (information.getTitle() != null) {
-            metadata.set(Metadata.TITLE, information.getTitle());
-        }
-        if (information.getAuthor() != null) {
-            metadata.set(Metadata.AUTHOR, information.getAuthor());
-        }
-        if (information.getKeywords() != null) {
-            metadata.set(Metadata.KEYWORDS, information.getKeywords());
-        }
-        if (information.getSubject() != null) {
-            metadata.set(Metadata.SUBJECT, information.getSubject());
-        }
-        if (information.getLastAuthor() != null) {
-            metadata.set(Metadata.LAST_AUTHOR, information.getLastAuthor());
-        }
-        if (information.getComments() != null) {
-            metadata.set(Metadata.COMMENTS, information.getComments());
-        }
-        if (information.getTemplate() != null) {
-            metadata.set(Metadata.TEMPLATE, information.getTemplate());
-        }
-        if (information.getApplicationName() != null) {
-            metadata.set(
-                    Metadata.APPLICATION_NAME,
-                    information.getApplicationName());
-        }
-        if (information.getRevNumber() != null) {
-            metadata.set(Metadata.REVISION_NUMBER, information.getRevNumber());
-        }
-        if (information.getCreateDateTime() != null) {
-            metadata.set(
-                    "creationdate",
-                    information.getCreateDateTime().toString());
-        }
-        if (information.getCharCount() > 0) {
-            metadata.set(
-                    Metadata.CHARACTER_COUNT,
-                    Integer.toString(information.getCharCount()));
-        }
-        if (information.getEditTime() > 0) {
-            metadata.set("edittime", Long.toString(information.getEditTime()));
-        }
-        if (information.getLastSaveDateTime() != null) {
-            metadata.set(
-                    Metadata.LAST_SAVED,
-                    information.getLastSaveDateTime().toString());
-        }
-        if (information.getPageCount() > 0) {
-            metadata.set(
-                    Metadata.PAGE_COUNT,
-                    Integer.toString(information.getPageCount()));
-        }
-        if (information.getSecurity() > 0) {
-            metadata.set(
-                    "security", Integer.toString(information.getSecurity()));
-        }
-        if (information.getWordCount() > 0) {
-            metadata.set(
-                    Metadata.WORD_COUNT,
-                    Integer.toString(information.getWordCount()));
-        }
-        if (information.getLastPrinted() != null) {
-            metadata.set(
-                    Metadata.LAST_PRINTED,
-                    information.getLastPrinted().toString());
-        }
-    }
-
-    private void getMetadata(
-            DocumentSummaryInformation information, Metadata metadata) {
-        if (information.getCompany() != null) {
-            metadata.set("company", information.getCompany());
-        }
-        if (information.getManager() != null) {
-            metadata.set("manager", information.getManager());
         }
     }
 
