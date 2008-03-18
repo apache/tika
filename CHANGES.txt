@@ -26,6 +26,8 @@ Unreleased changes (0.2-incubating)
 
 11. TIKA-129 - node() support for the streaming XPath utility (Jukka Zitting)
 
+12. TIKA-130 - self-or-descendant axis does not match self in streaming XPath
+               (Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
 

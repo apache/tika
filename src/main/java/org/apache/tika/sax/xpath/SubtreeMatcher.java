@@ -28,6 +28,7 @@ public class SubtreeMatcher extends Matcher {
         this.then = then;
     }
 
+    @Override
     public Matcher descend(String namespace, String name) {
         Matcher next = then.descend(namespace, name);
         if (next == FAIL || next == then) {
@@ -37,10 +38,17 @@ public class SubtreeMatcher extends Matcher {
         }
     }
 
+    @Override
+    public boolean matchesElement() {
+        return then.matchesElement();
+    }
+
+    @Override
     public boolean matchesAttribute(String namespace, String name) {
         return then.matchesAttribute(namespace, name);
     }
 
+    @Override
     public boolean matchesText() {
         return then.matchesText();
     }
