@@ -58,6 +58,8 @@ public class XPathParser {
     public Matcher parse(String xpath) {
         if (xpath.equals("/text()")) {
             return TextMatcher.INSTANCE;
+        } else if (xpath.equals("/node()")) {
+            return NodeMatcher.INSTANCE;
         } else if (xpath.equals("/@*")) {
             return AttributeMatcher.INSTANCE;
         } else if (xpath.length() == 0) {

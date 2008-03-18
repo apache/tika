@@ -24,6 +24,8 @@ Unreleased changes (0.2-incubating)
 
 10. TIKA-127 - Add support for Visio files (Jukka Zitting)
 
+11. TIKA-129 - node() support for the streaming XPath utility (Jukka Zitting)
+
 
 Release 0.1-incubating - 12/27/2007
 
