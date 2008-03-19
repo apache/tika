@@ -17,6 +17,7 @@
 package org.apache.tika.sax;
 
 import org.apache.tika.metadata.Metadata;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -38,14 +39,29 @@ public class XHTMLContentHandler extends ContentHandlerDecorator {
      */
     private final Metadata metadata;
 
+    /**
+     * Flag to indicate whether the document element has been started.
+     */
+    private boolean started = false;
+
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         super(handler);
         this.metadata = metadata;
     }
 
     /**
-     * Starts an XHTML document by setting up the namespace mappings and
-     * writing following header:
+     * Starts an XHTML document by setting up the namespace mappings.
+     * The standard XHTML prefix is generated lazily when the first
+     * element is started.
+     */
+    @Override
+    public void startDocument() throws SAXException {
+        super.startDocument();
+        startPrefixMapping("", XHTML);
+    }
+
+    /**
+     * Generates the following XHTML prefix when called for the first time:
      * <pre>
      * &lt;html&gt;
      *   &lt;head&gt;
@@ -54,19 +70,20 @@ public class XHTMLContentHandler extends ContentHandlerDecorator {
      *   &lt;body&gt;
      * </pre>
      */
-    public void startDocument() throws SAXException {
-        super.startDocument();
-        startPrefixMapping("", XHTML);
-        startElement("html");
-        startElement("head");
-        startElement("title");
-        String title = metadata.get(Metadata.TITLE);
-        if (title != null && title.length() > 0) {
-            characters(title);
+    private void lazyStartDocument() throws SAXException {
+        if (!started) {
+            started = true;
+            startElement("html");
+            startElement("head");
+            startElement("title");
+            String title = metadata.get(Metadata.TITLE);
+            if (title != null && title.length() > 0) {
+                characters(title);
+            }
+            endElement("title");
+            endElement("head");
+            startElement("body");
         }
-        endElement("title");
-        endElement("head");
-        startElement("body");
     }
 
     /**
@@ -77,11 +94,21 @@ public class XHTMLContentHandler extends ContentHandlerDecorator {
      * &lt;/html&gt;
      * </pre>
      */
+    @Override
     public void endDocument() throws SAXException {
+        lazyStartDocument();
         endElement("body");
         endElement("html");
         endPrefixMapping("");
         super.endDocument();
+    }
+
+    @Override
+    public void startElement(
+            String uri, String local, String name, Attributes attributes)
+            throws SAXException {
+        lazyStartDocument();
+        super.startElement(uri, local, name, attributes);
     }
 
     public void startElement(String name) throws SAXException {
