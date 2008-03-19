@@ -31,6 +31,8 @@ Unreleased changes (0.2-incubating)
 
 13. TIKA-131 - Lazy XHTML prefix generation (Jukka Zitting)
 
+14. TIKA-128 - HTML parser should produce XHTML SAX events (Jukka Zitting)
+
 
 Release 0.1-incubating - 12/27/2007
 

@@ -27,6 +27,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 public class HtmlParserTest extends TestCase {
@@ -38,24 +39,38 @@ public class HtmlParserTest extends TestCase {
                 .getResourceAsStream(name);
     }
 
-    public void testParseAscii() throws IOException, SAXException,
-            TikaException {
-
+    public void testParseAscii() throws Exception {
         StringWriter writer = new StringWriter();
+        final StringWriter href = new StringWriter();
+
         Metadata metadata = new Metadata();
+        parser.parse(
+                getStream("test-documents/testHTML.html"),
+                new WriteOutContentHandler(writer) {
+                    @Override
+                    public void startElement(
+                            String uri, String local, String name,
+                            Attributes attributes) {
+                        if ("a".equals(local)) {
+                            href.append(attributes.getValue("href"));
+                        }
+                    }
+                },
+                metadata);
 
-        parser.parse(getStream("test-documents/testHTML.html"),
-                new WriteOutContentHandler(writer), metadata);
+        assertEquals(
+                "Title : Test Indexation Html", metadata.get(Metadata.TITLE));
+        assertEquals("http://www.apache.org/", href.toString());
+
         String content = writer.toString();
-
-        assertTrue("Did not contain expected text:"
-                + "Title : Test Indexation Html", content
-                .contains("Title : Test Indexation Html"));
-
-        assertTrue("Did not contain expected text:" + "Test Indexation Html",
+        assertTrue(
+                "Did not contain expected text: Title : Test Indexation Html",
+                content.contains("Title : Test Indexation Html"));
+        assertTrue(
+                "Did not contain expected text:" + "Test Indexation Html",
                 content.contains("Test Indexation Html"));
-
-        assertTrue("Did not contain expected text:" + "Indexation du fichier",
+        assertTrue(
+                "Did not contain expected text:" + "Indexation du fichier",
                 content.contains("Indexation du fichier"));
 
     }

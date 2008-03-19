@@ -18,12 +18,21 @@ package org.apache.tika.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.TextContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.sax.xpath.Matcher;
+import org.apache.tika.sax.xpath.MatchingContentHandler;
+import org.apache.tika.sax.xpath.XPathParser;
 import org.apache.tika.utils.Utils;
 import org.cyberneko.html.parsers.SAXParser;
 import org.xml.sax.Attributes;
@@ -32,97 +41,102 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * Simple HTML parser that extracts title.
+ * HTML parser. Uses CyberNeko to turn the input document to HTML SAX events,
+ * and post-processes the events to produce XHTML and metadata expected by
+ * Tika clients.
  */
 public class HtmlParser extends AbstractParser {
+
+    /**
+     * Set of safe mappings from incoming HTML elements to outgoing
+     * XHTML elements. Ensures that the output is valid XHTML 1.0 Strict.
+     */
+    private static final Map<String, String> SAFE_ELEMENTS =
+        new HashMap<String, String>();
+
+    static {
+        // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
+        SAFE_ELEMENTS.put("P", "p");
+        SAFE_ELEMENTS.put("H1", "h1");
+        SAFE_ELEMENTS.put("H2", "h2");
+        SAFE_ELEMENTS.put("H3", "h3");
+        SAFE_ELEMENTS.put("H4", "h4");
+        SAFE_ELEMENTS.put("H5", "h5");
+        SAFE_ELEMENTS.put("H6", "h6");
+        SAFE_ELEMENTS.put("UL", "ul");
+        SAFE_ELEMENTS.put("OL", "ol");
+        SAFE_ELEMENTS.put("LI", "li");
+        SAFE_ELEMENTS.put("DL", "dl");
+        SAFE_ELEMENTS.put("DT", "dt");
+        SAFE_ELEMENTS.put("DD", "dd");
+        SAFE_ELEMENTS.put("PRE", "pre");
+        SAFE_ELEMENTS.put("BLOCKQUOTE", "blockquote");
+        SAFE_ELEMENTS.put("TABLE", "p"); // TODO colspan/rowspan issues
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
+        // Protect the stream from being closed by CyberNeko
+        stream = new CloseShieldInputStream(stream);
+
+        // Prepare the HTML content handler that generates proper
+        // XHTML events to records relevant document metadata
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        XPathParser xpath = new XPathParser(null, "");
+        Matcher body = xpath.parse("/HTML/BODY//node()");
+        Matcher title = xpath.parse("/HTML/HEAD/TITLE//node()");
+        handler = new TeeContentHandler(
+                new MatchingContentHandler(getBodyHandler(xhtml), body),
+                new MatchingContentHandler(getTitleHandler(metadata), title));
+
+        // Parse the HTML document
+        xhtml.startDocument();
         SAXParser parser = new SAXParser();
-        parser.setContentHandler(
-                new TitleExtractingContentHandler(handler, metadata));
-        parser.parse(new InputSource(Utils.getUTF8Reader(
-                new CloseShieldInputStream(stream), metadata)));
+        parser.setContentHandler(handler);
+        parser.parse(new InputSource(Utils.getUTF8Reader(stream, metadata)));
+        xhtml.endDocument();
     }
 
-    private static class TitleExtractingContentHandler extends
-            ContentHandlerDecorator {
-
-        private static final String TAG_TITLE = "TITLE";
-
-        private static final String TAG_HEAD = "HEAD";
-
-        private static final String TAG_HTML = "HTML";
-
-        private Phase phase = Phase.START;
-
-        private Metadata metadata;
-
-        private StringBuilder title = new StringBuilder();
-
-        private static enum Phase {
-            START, HTML, HEAD, TITLE, IGNORE;
-        }
-
-        public TitleExtractingContentHandler(final ContentHandler handler,
-                final Metadata metadata) {
-            super(handler);
-            this.metadata = metadata;
-        }
-
-        @Override
-        public void startElement(String uri, String localName, String name,
-                Attributes atts) throws SAXException {
-
-            switch (phase) {
-            case START:
-                if (TAG_HTML.equals(localName)) {
-                    phase = Phase.HTML;
-                }
-                break;
-            case HTML:
-                if (TAG_HEAD.equals(localName)) {
-                    phase = Phase.HEAD;
-                }
-                break;
-            case HEAD:
-                if (TAG_TITLE.equals(localName)) {
-                    phase = Phase.TITLE;
-                }
-                break;
+    private ContentHandler getTitleHandler(final Metadata metadata) {
+        final StringWriter writer = new StringWriter();
+        return new WriteOutContentHandler(writer) {
+            @Override
+            public void endElement(String u, String l, String n) {
+                metadata.set(Metadata.TITLE, writer.toString());
             }
-            super.startElement(uri, localName, name, atts);
-        }
-
-        @Override
-        public void characters(char[] ch, int start, int length)
-                throws SAXException {
-            switch (phase) {
-            case TITLE:
-                title.append(ch, start, length);
-                break;
-            }
-            super.characters(ch, start, length);
-        }
-
-        @Override
-        public void endElement(String uri, String localName, String name)
-                throws SAXException {
-            switch (phase) {
-            case TITLE:
-                if (TAG_TITLE.equals(localName)) {
-                    phase = Phase.IGNORE;
-                }
-                break;
-            }
-            super.endElement(uri, localName, name);
-        }
-
-        @Override
-        public void endDocument() throws SAXException {
-            metadata.set(Metadata.TITLE, title.toString());
-            super.endDocument();
-        }
+        };
     }
+
+    private ContentHandler getBodyHandler(final XHTMLContentHandler xhtml) {
+        return new TextContentHandler(xhtml) {
+            @Override
+            public void startElement(
+                    String uri, String local, String name, Attributes atts)
+                    throws SAXException {
+                String safe = SAFE_ELEMENTS.get(name);
+                if (safe != null) {
+                    xhtml.startElement(safe);
+                } else if ("A".equals(name)) {
+                    String href = atts.getValue("href");
+                    if (href == null) {
+                        href = "";
+                    }
+                    xhtml.startElement("a", "href", href);
+                }
+            }
+
+            @Override
+            public void endElement(
+                    String uri, String local, String name) throws SAXException {
+                String safe = SAFE_ELEMENTS.get(name);
+                if (safe != null) {
+                    xhtml.endElement(safe);
+                } else if ("A".equals(name)) {
+                    xhtml.endElement("a");
+                }
+            }
+        };
+    }
+
 }
