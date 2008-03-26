@@ -268,9 +268,14 @@ public class ExcelExtractor {
                 default:
                     if (insideWorksheet
                             && record instanceof CellValueRecordInterface) {
-                        processCellValue(
-                                record.getSid(),
-                                (CellValueRecordInterface)record);
+                        CellValueRecordInterface value =
+                            (CellValueRecordInterface) record;
+                        Cell cell = getCellValue(record.getSid(), value);
+                        if (cell != null) {
+                            Point point =
+                                new Point(value.getColumn(), value.getRow());
+                            currentSheet.put(point, cell);
+                        }
                     }
                     break;
             }
@@ -282,7 +287,7 @@ public class ExcelExtractor {
          * @param sid record type identifier
          * @param record The cell value record
          */
-        private void processCellValue(
+        private Cell getCellValue(
                 short sid, CellValueRecordInterface record)
                 throws SAXException {
 
@@ -323,10 +328,9 @@ public class ExcelExtractor {
                 text = text.trim();
             }
             if (text != null && text.length() > 0) {
-                currentSheet.put(
-                        new Point(record.getColumn(), record.getRow()),
-                        new TextCell(text));
+                return new TextCell(text);
             }
+            return null;
         }
 
         /**
