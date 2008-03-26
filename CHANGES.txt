@@ -33,6 +33,7 @@ Unreleased changes (0.2-incubating)
 
 14. TIKA-128 - HTML parser should produce XHTML SAX events (Jukka Zitting)
 
+15. TIKA-133 - TeeContentHandler constructor should use varargs (Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
 

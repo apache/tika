@@ -20,79 +20,102 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Content handler decorator that forwards the received SAX events to two
- * underlying content handlers.
+ * Content handler proxy that forwards the received SAX events to zero or
+ * more underlying content handlers.
  */
-public class TeeContentHandler extends ContentHandlerDecorator {
+public class TeeContentHandler extends DefaultHandler {
 
-    private final ContentHandler branch;
+    private final ContentHandler[] handlers;
 
-    public TeeContentHandler(ContentHandler handler, ContentHandler branch) {
-        super(handler);
-        this.branch = branch;
+    public TeeContentHandler(ContentHandler... handlers) {
+        this.handlers = handlers;
     }
 
+    @Override
     public void startPrefixMapping(String prefix, String uri)
             throws SAXException {
-        super.startPrefixMapping(prefix, uri);
-        branch.startPrefixMapping(prefix, uri);
+        for (ContentHandler handler : handlers) {
+            handler.startPrefixMapping(prefix, uri);
+        }
     }
 
+    @Override
     public void endPrefixMapping(String prefix) throws SAXException {
-        super.endPrefixMapping(prefix);
-        branch.endPrefixMapping(prefix);
+        for (ContentHandler handler : handlers) {
+            handler.endPrefixMapping(prefix);
+        }
     }
 
+    @Override
     public void processingInstruction(String target, String data)
             throws SAXException {
-        super.processingInstruction(target, data);
-        branch.processingInstruction(target, data);
+        for (ContentHandler handler : handlers) {
+            handler.processingInstruction(target, data);
+        }
     }
 
+    @Override
     public void setDocumentLocator(Locator locator) {
-        super.setDocumentLocator(locator);
-        branch.setDocumentLocator(locator);
+        for (ContentHandler handler : handlers) {
+            handler.setDocumentLocator(locator);
+        }
     }
 
+    @Override
     public void startDocument() throws SAXException {
-        super.startDocument();
-        branch.startDocument();
+        for (ContentHandler handler : handlers) {
+            handler.startDocument();
+        }
     }
 
+    @Override
     public void endDocument() throws SAXException {
-        super.endDocument();
-        branch.endDocument();
+        for (ContentHandler handler : handlers) {
+            handler.endDocument();
+        }
     }
 
-    public void startElement(String uri, String localName, String name,
-            Attributes atts) throws SAXException {
-        super.startElement(uri, localName, name, atts);
-        branch.startElement(uri, localName, name, atts);
+    @Override
+    public void startElement(
+            String uri, String localName, String name, Attributes atts)
+            throws SAXException {
+        for (ContentHandler handler : handlers) {
+            handler.startElement(uri, localName, name, atts);
+        }
     }
 
+    @Override
     public void endElement(String uri, String localName, String name)
             throws SAXException {
-        super.endElement(uri, localName, name);
-        branch.endElement(uri, localName, name);
+        for (ContentHandler handler : handlers) {
+            handler.endElement(uri, localName, name);
+        }
     }
 
+    @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
-        super.characters(ch, start, length);
-        branch.characters(ch, start, length);
+        for (ContentHandler handler : handlers) {
+            handler.characters(ch, start, length);
+        }
     }
 
+    @Override
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
-        super.ignorableWhitespace(ch, start, length);
-        branch.ignorableWhitespace(ch, start, length);
+        for (ContentHandler handler : handlers) {
+            handler.ignorableWhitespace(ch, start, length);
+        }
     }
 
+    @Override
     public void skippedEntity(String name) throws SAXException {
-        super.skippedEntity(name);
-        branch.skippedEntity(name);
+        for (ContentHandler handler : handlers) {
+            handler.skippedEntity(name);
+        }
     }
 
 }
