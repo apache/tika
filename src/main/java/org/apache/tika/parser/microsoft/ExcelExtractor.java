@@ -165,8 +165,8 @@ public class ExcelExtractor {
 
         private boolean insideWorksheet = false;
 
-        private SortedMap<Point, TikaExcelCell> currentSheet =
-            new TreeMap<Point, TikaExcelCell>(new Comparator<Point> () {
+        private SortedMap<Point, Cell> currentSheet =
+            new TreeMap<Point, Cell>(new Comparator<Point> () {
                 public int compare(Point a, Point b) {
                     int diff = a.y - b.y;
                     if (diff == 0) {
@@ -256,9 +256,11 @@ public class ExcelExtractor {
                 //    if (insideWorksheet) {
                 //        int row = hyperlinkRecord.getFirstRow();
                 //        short column =  hyperlinkRecord.getFirstColumn();
-                //        TikaExcelCell cell = currentSheet.findCell(row, column);
+                //        Point point = new Point(column, row);
+                //        Cell cell = currentSheet.get(point);
                 //        if (cell != null) {
-                //            cell.setHyperlink(hyperlinkRecord.getAddress());
+                //            cell = new LinkedCell(cell, hyperlinkRecord.getAddress());
+                //            currentSheet.put(point, cell);
                 //        }
                 //    }
                 //    break;
@@ -323,7 +325,7 @@ public class ExcelExtractor {
             if (text != null && text.length() > 0) {
                 currentSheet.put(
                         new Point(record.getColumn(), record.getRow()),
-                        new TikaExcelCell(text));
+                        new TextCell(text));
             }
         }
 
@@ -347,7 +349,7 @@ public class ExcelExtractor {
             int currentColumn = 1;
             handler.startElement("tr");
             handler.startElement("td");
-            for (Map.Entry<Point, TikaExcelCell> entry : currentSheet.entrySet()) {
+            for (Map.Entry<Point, Cell> entry : currentSheet.entrySet()) {
                 while (currentRow < entry.getKey().y) {
                     handler.endElement("td");
                     handler.endElement("tr");
@@ -365,14 +367,7 @@ public class ExcelExtractor {
                     currentColumn++;
                 }
 
-                TikaExcelCell cell = entry.getValue();
-                if (cell.getHyperlink() != null) {
-                    handler.startElement("a", "href", cell.getHyperlink());
-                    handler.characters(cell.getText());
-                    handler.endElement("a");
-                } else {
-                    handler.characters(cell.getText());
-                }
+                entry.getValue().render(handler);
             }
             handler.endElement("td");
             handler.endElement("tr");
@@ -383,54 +378,6 @@ public class ExcelExtractor {
             handler.endElement("div");
             handler.characters("\n");
         }
-    }
-
-    // ======================================================================
-
-    /**
-     * Tika's excel cell representation. 
-     */
-    private static class TikaExcelCell {
-        private String text;
-        private String hyperlink;
-
-        /**
-         * Construct a new cell.
-         *
-         * @param column The cell's column number
-         * @param text The cell's text
-         */
-        TikaExcelCell(String text) {
-            this.text = text;
-        }
-
-        /**
-         * Return the cell's text.
-         *
-         * @return the cell's text
-         */
-        String getText() {
-            return text;
-        }
-
-        /**
-         * Return hyperlink address, if any
-         *
-         * @return the hyperlink address
-         */
-        String getHyperlink() {
-            return hyperlink;
-        }
-
-        /**
-         * Set the hyperlink address
-         *
-         * @param hyperlink the hyperlink address to set
-         */
-        void setHyperlink(String hyperlink) {
-            this.hyperlink = hyperlink;
-        }
-
     }
 
 }
