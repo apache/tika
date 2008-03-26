@@ -270,12 +270,7 @@ public class ExcelExtractor {
                             && record instanceof CellValueRecordInterface) {
                         CellValueRecordInterface value =
                             (CellValueRecordInterface) record;
-                        Cell cell = getCellValue(record.getSid(), value);
-                        if (cell != null) {
-                            Point point =
-                                new Point(value.getColumn(), value.getRow());
-                            currentSheet.put(point, cell);
-                        }
+                        addCell(record, getCellValue(record.getSid(), value));
                     }
                     break;
             }
@@ -290,8 +285,6 @@ public class ExcelExtractor {
         private Cell getCellValue(
                 short sid, CellValueRecordInterface record)
                 throws SAXException {
-
-            String text = null;
             switch (sid) {
                 /* FormulaRecord: Cell value from a formula */
                 case FormulaRecord.sid:
@@ -299,15 +292,13 @@ public class ExcelExtractor {
 
                 /* LabelRecord: strings stored directly in the cell */
                 case LabelRecord.sid:
-                    text = ((LabelRecord)record).getValue();
-                    break;
+                    return getTextCell(((LabelRecord) record).getValue());
 
                 /* LabelSSTRecord: Ref. a string in the shared string table */
                 case LabelSSTRecord.sid:
                     LabelSSTRecord labelSSTRecord = (LabelSSTRecord) record;
                     int sstIndex = labelSSTRecord.getSSTIndex();
-                    text = sstRecord.getString(sstIndex).getString();
-                    break;
+                    return getTextCell(sstRecord.getString(sstIndex).getString());
 
                 /* NumberRecord: Contains a numeric cell value */
                 case NumberRecord.sid:
@@ -317,11 +308,42 @@ public class ExcelExtractor {
                 case RKRecord.sid:
                     return new NumberCell(((RKRecord)record).getRKNumber());
             }
+            return null;
+        }
+
+        /**
+         * Adds the given cell (unless <code>null</code>) to the current
+         * worksheet (if any) at the position (if any) of the given record.
+         *
+         * @param record record that holds the cell value
+         * @param cell cell value (or <code>null</code>)
+         */
+        private void addCell(Record record, Cell cell) {
+            if (!insideWorksheet) {
+                // Ignore cells outside sheets
+            } else if (cell == null) {
+                // Ignore empty cells
+            } else if (record instanceof CellValueRecordInterface) {
+                CellValueRecordInterface value =
+                    (CellValueRecordInterface) record;
+                Point point = new Point(value.getColumn(), value.getRow());
+                currentSheet.put(point, cell);
+            }
+        }
+
+        /**
+         * Returns a text cell with the given text comment. The given text
+         * is trimmed, and ignored if <code>null</code> or empty.
+         *
+         * @param text text content, may be <code>null</code>
+         * @return text cell, or <code>null</code>
+         */
+        private Cell getTextCell(String text) {
             if (text != null) {
                 text = text.trim();
-            }
-            if (text != null && text.length() > 0) {
-                return new TextCell(text);
+                if (text.length() > 0) {
+                    return new TextCell(text);
+                }
             }
             return null;
         }
