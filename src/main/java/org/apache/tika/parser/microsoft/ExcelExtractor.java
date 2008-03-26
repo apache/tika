@@ -265,50 +265,38 @@ public class ExcelExtractor {
                 //    }
                 //    break;
 
-                default:
-                    if (insideWorksheet
-                            && record instanceof CellValueRecordInterface) {
-                        CellValueRecordInterface value =
-                            (CellValueRecordInterface) record;
-                        addCell(record, getCellValue(record.getSid(), value));
-                    }
-                    break;
-            }
-        }
-
-        /**
-         * Process a Cell Value record.
-         *
-         * @param sid record type identifier
-         * @param record The cell value record
-         */
-        private Cell getCellValue(
-                short sid, CellValueRecordInterface record)
-                throws SAXException {
-            switch (sid) {
                 /* FormulaRecord: Cell value from a formula */
                 case FormulaRecord.sid:
-                    return new NumberCell(((FormulaRecord) record).getValue());
+                    FormulaRecord formula = (FormulaRecord) record;
+                    addCell(record, new NumberCell(formula.getValue()));
+                    break;
 
                 /* LabelRecord: strings stored directly in the cell */
                 case LabelRecord.sid:
-                    return getTextCell(((LabelRecord) record).getValue());
+                    LabelRecord label = (LabelRecord) record;
+                    addCell(record, getTextCell(label.getValue()));
+                    break;
 
                 /* LabelSSTRecord: Ref. a string in the shared string table */
                 case LabelSSTRecord.sid:
                     LabelSSTRecord labelSSTRecord = (LabelSSTRecord) record;
                     int sstIndex = labelSSTRecord.getSSTIndex();
-                    return getTextCell(sstRecord.getString(sstIndex).getString());
+                    String sstLabel = sstRecord.getString(sstIndex).getString();
+                    addCell(record, getTextCell(sstLabel));
+                    break;
 
                 /* NumberRecord: Contains a numeric cell value */
                 case NumberRecord.sid:
-                    return new NumberCell(((NumberRecord) record).getValue());
+                    NumberRecord number = (NumberRecord) record;
+                    addCell(record, new NumberCell(number.getValue()));
+                    break;
 
                 /* RKRecord: Excel internal number record */
                 case RKRecord.sid:
-                    return new NumberCell(((RKRecord)record).getRKNumber());
+                    RKRecord rk = (RKRecord) record;
+                    addCell(record, new NumberCell(rk.getRKNumber()));
+                    break;
             }
-            return null;
         }
 
         /**
