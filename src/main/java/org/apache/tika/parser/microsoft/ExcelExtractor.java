@@ -16,10 +16,15 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.awt.Point;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -160,7 +165,16 @@ public class ExcelExtractor {
 
         private boolean insideWorksheet = false;
 
-        private TikaExcelSheet currentSheet;
+        private SortedMap<Point, TikaExcelCell> currentSheet =
+            new TreeMap<Point, TikaExcelCell>(new Comparator<Point> () {
+                public int compare(Point a, Point b) {
+                    int diff = a.y - b.y;
+                    if (diff == 0) {
+                        diff = a.x - b.x;
+                    }
+                    return diff;
+                }
+            });
 
         /**
          * Contstruct a new listener instance outputting parsed data to
@@ -208,11 +222,7 @@ public class ExcelExtractor {
                             break;
                         case BOFRecord.TYPE_WORKSHEET:
                             currentSheetIndex++;
-                            String currentSheetName = "";
-                            if (currentSheetIndex < sheetNames.size()) {
-                                currentSheetName = sheetNames.get(currentSheetIndex);
-                            }
-                            currentSheet = new TikaExcelSheet(currentSheetName);
+                            currentSheet.clear();
                             insideWorksheet = true;
                             break;
                     }
@@ -220,10 +230,11 @@ public class ExcelExtractor {
 
                 /* EOFRecord: indicates end of workbook, worksheet etc. records */
                 case EOFRecord.sid:
-                    if (insideWorksheet) {
+                    // ignore empty sheets
+                    if (insideWorksheet && !currentSheet.isEmpty()) {
                         processSheet();
-                        insideWorksheet = false;
                     }
+                    insideWorksheet = false;
                     break;
 
                 /* SSTRecord: holds all the strings for LabelSSTRecords */
@@ -310,7 +321,9 @@ public class ExcelExtractor {
                 text = text.trim();
             }
             if (text != null && text.length() > 0) {
-                currentSheet.addCell(record.getRow(), record.getColumn(), text);
+                currentSheet.put(
+                        new Point(record.getColumn(), record.getRow()),
+                        new TikaExcelCell(text));
             }
         }
 
@@ -320,58 +333,49 @@ public class ExcelExtractor {
          * @throws SAXException if an error occurs
          */
         private void processSheet() throws SAXException {
-
-            // ignore empty sheets
-            if (currentSheet.getCellCount() == 0) {
-                return;
-            }
-            
             // Sheet Start
             handler.startElement("div", "class", "page");
-            handler.element("h1", currentSheet.getName());
+            if (currentSheetIndex < sheetNames.size()) {
+                handler.element("h1", sheetNames.get(currentSheetIndex));
+            }
             handler.characters("\n");
             handler.startElement("table");
             handler.startElement("tbody");
 
             // Process Rows
-            int currentRow = 0;
-            TikaExcelRow row = currentSheet.getFirstRow();
-            while (row != null) {
-                while (currentRow < row.getRow()) {
-                    handler.startElement("tr");
-                    handler.startElement("td");
+            int currentRow = 1;
+            int currentColumn = 1;
+            handler.startElement("tr");
+            handler.startElement("td");
+            for (Map.Entry<Point, TikaExcelCell> entry : currentSheet.entrySet()) {
+                while (currentRow < entry.getKey().y) {
                     handler.endElement("td");
                     handler.endElement("tr");
                     handler.characters("\n");
-                    currentRow++;
-                }
-                handler.startElement("tr");
-
-                // Process Cells
-                short currentColumn = 0;
-                TikaExcelCell cell = row.getFirstCell();
-                while (cell != null) {
-                    while (currentColumn < cell.getColumn()) {
-                        handler.startElement("td");
-                        handler.endElement("td");
-                        handler.characters("\t");
-                        currentColumn++;
-                    }
+                    handler.startElement("tr");
                     handler.startElement("td");
-                    if (cell.getHyperlink() != null) {
-                        handler.startElement("a", "href", cell.getHyperlink());
-                        handler.characters(cell.getText());
-                        handler.endElement("a");
-                    } else {
-                        handler.characters(cell.getText());
-                    }
-                    handler.endElement("td");
-                    cell = cell.getNextCell();
+                    currentRow++;
+                    currentColumn = 1;
                 }
 
-                handler.endElement("tr");
-                row = row.getNextRow();
+                while (currentColumn < entry.getKey().x) {
+                    handler.endElement("td");
+                    handler.characters("\t");
+                    handler.startElement("td");
+                    currentColumn++;
+                }
+
+                TikaExcelCell cell = entry.getValue();
+                if (cell.getHyperlink() != null) {
+                    handler.startElement("a", "href", cell.getHyperlink());
+                    handler.characters(cell.getText());
+                    handler.endElement("a");
+                } else {
+                    handler.characters(cell.getText());
+                }
             }
+            handler.endElement("td");
+            handler.endElement("tr");
             
             // Sheet End
             handler.endElement("tbody");
@@ -384,197 +388,11 @@ public class ExcelExtractor {
     // ======================================================================
 
     /**
-     * Tika's excel sheet representation.
-     */
-    private static class TikaExcelSheet {
-        private String name;
-        private TikaExcelRow firstRow;
-        private TikaExcelRow lastRow;
-        private int rowCount;
-        private int cellCount;
-
-        /**
-         * Construct a new sheet instance.
-         *
-         * @param name The name of the sheet
-         */
-        TikaExcelSheet(String name) {
-            this.name = name;
-        }
-
-        /**
-         * Add a cell to the sheet.
-         *
-         * @param row The cell's row number
-         * @param column The cell's column number
-         * @param text The cell's text
-         */
-        void addCell(int row, short column, String text) {
-
-            // Create row if required
-            if (lastRow == null || lastRow.row != row) {
-                TikaExcelRow newRow = new TikaExcelRow(row);
-                rowCount++;
-                if (lastRow == null) {
-                    firstRow = newRow;
-                } else {
-                    lastRow.setNextRow(newRow);
-                }
-                lastRow = newRow;
-            }
-
-            cellCount++;
-
-            // Add a cell
-            lastRow.addCell(new TikaExcelCell(column, text));
-        }
-
-        /**
-         * Find a cell in a sheet.
-         *
-         * @param row The cell's row number
-         * @param column The cell's column number
-         * @return The cell or null if not found
-         */
-        TikaExcelCell findCell(int row, short column) {
-
-            TikaExcelRow currentRow = firstRow;
-            while (currentRow != null && currentRow.getRow() < row) {
-                currentRow = currentRow.getNextRow();
-            }
-            if (currentRow != null && currentRow.getRow() == row) {
-                TikaExcelCell currentCell = currentRow.getFirstCell();
-                while (currentCell != null && currentCell.getColumn() < column) {
-                    currentCell = currentCell.getNextCell();
-                }
-                if (currentCell != null && currentCell.getColumn() == column) {
-                    return currentCell;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Return the number of cells in the sheet.
-         *
-         * @return the number of cells in the sheet
-         */
-        int getCellCount() {
-            return cellCount;
-        }
-
-        /**
-         * Return the number of rows in the sheet.
-         *
-         * @return the number of cells in the sheet
-         */
-        int getRowCount() {
-            return rowCount;
-        }
-
-        /**
-         * Return the first row.
-         *
-         * @return the first row
-         */
-        TikaExcelRow getFirstRow() {
-            return firstRow;
-        }
-
-        /**
-         * Return the name of the sheet.
-         *
-         * @return the name of the sheet
-         */
-        String getName() {
-            return name;
-        }
-        
-    }
-
-    // ======================================================================
-
-    /**
-     * Tika's excel row representation. 
-     */
-    private static class TikaExcelRow {
-        private final int row;
-        private TikaExcelRow nextRow;
-        private TikaExcelCell firstCell;
-        private TikaExcelCell lastCell;
-
-        /**
-         * Construct a new Row instance.
-         *
-         * @param row The row number
-         */
-        TikaExcelRow(int row) {
-            this.row = row;
-        }
-
-        /**
-         * Add a cell to the row.
-         *
-         * @param newCell the new cell to add
-         */
-        void addCell(TikaExcelCell newCell) {
-            if (lastCell != null) {
-                lastCell.setNextCell(newCell);
-            }
-            this.lastCell = newCell;
-            if (firstCell == null) {
-                firstCell = newCell;
-            }
-        }
-
-        /**
-         * Return the first cell in the row.
-         *
-         * @return the first cell in the row
-         */
-        TikaExcelCell getFirstCell() {
-            return firstCell;
-        }
-
-        /**
-         * Return the row number.
-         *
-         * @return the row number
-         */
-        int getRow() {
-            return row;
-        }
-        
-        /**
-         * Return the next row in the sheet.
-         *
-         * @return the next row in the sheet
-         */
-        TikaExcelRow getNextRow() {
-            return nextRow;
-        }
-
-        /**
-         * Set the next row in the sheet.
-         *
-         * @param nextRow the next row in the sheet
-         */
-        void setNextRow(TikaExcelRow nextRow) {
-            this.nextRow = nextRow;
-        }
-        
-    }
-
-    // ======================================================================
-
-    /**
      * Tika's excel cell representation. 
      */
     private static class TikaExcelCell {
-        private final short column;
         private String text;
         private String hyperlink;
-        private TikaExcelCell nextCell;
 
         /**
          * Construct a new cell.
@@ -582,27 +400,8 @@ public class ExcelExtractor {
          * @param column The cell's column number
          * @param text The cell's text
          */
-        TikaExcelCell(short column, String text) {
-            this.column = column;
+        TikaExcelCell(String text) {
             this.text = text;
-        }
-
-        /**
-         * Return the cell's column number
-         *
-         * @return the cell's column number
-         */
-        short getColumn() {
-            return column;
-        }
-
-        /**
-         * Return the next cell in the row.
-         *
-         * @return the next cell in the row
-         */
-        TikaExcelCell getNextCell() {
-            return nextCell;
         }
 
         /**
@@ -632,14 +431,6 @@ public class ExcelExtractor {
             this.hyperlink = hyperlink;
         }
 
-        /**
-         * Set the next cell in the row.
-         *
-         * @param nextCell next cell in the row
-         */
-        void setNextCell(TikaExcelCell nextCell) {
-            this.nextCell = nextCell;
-        }
-        
     }
+
 }
