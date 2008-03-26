@@ -156,9 +156,18 @@ public class ExcelExtractor {
      */
     private static class TikaHSSFListener implements HSSFListener, Serializable {
 
+        /**
+         * XHTML content handler to which the document content is rendered.
+         */
         private final XHTMLContentHandler handler;
 
-        private SAXException exception;
+        /**
+         * Potential exception thrown by the content handler. When set to
+         * non-<code>null</code>, causes all subsequent HSSF records to be
+         * ignored and the stored exception to be thrown when
+         * {@link #throwStoredException()} is invoked.
+         */
+        private SAXException exception = null;
 
         private SSTRecord sstRecord;
         private List<String> sheetNames = new ArrayList<String>();
@@ -185,7 +194,6 @@ public class ExcelExtractor {
          */
         private TikaHSSFListener(XHTMLContentHandler handler) {
             this.handler = handler;
-            this.exception = null;
         }
 
         /**
@@ -194,13 +202,13 @@ public class ExcelExtractor {
          * @param record HSSF Record
          */
         public void processRecord(Record record) {
-            try {
-                if (log.isDebugEnabled()) {
-                    log.debug(record.toString());
-                }
-                internalProcessRecord(record);
-            } catch (SAXException e) {
-                if (exception == null) {
+            if (exception == null) {
+                try {
+                    if (log.isDebugEnabled()) {
+                        log.debug(record.toString());
+                    }
+                    internalProcessRecord(record);
+                } catch (SAXException e) {
                     exception = e;
                 }
             }
