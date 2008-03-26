@@ -295,10 +295,7 @@ public class ExcelExtractor {
             switch (sid) {
                 /* FormulaRecord: Cell value from a formula */
                 case FormulaRecord.sid:
-                    FormulaRecord formulaRecord = (FormulaRecord)record;
-                    double fmlValue = formulaRecord.getValue();
-                    text = Double.toString(fmlValue);
-                    break;
+                    return new NumberCell(((FormulaRecord) record).getValue());
 
                 /* LabelRecord: strings stored directly in the cell */
                 case LabelRecord.sid:
@@ -314,15 +311,11 @@ public class ExcelExtractor {
 
                 /* NumberRecord: Contains a numeric cell value */
                 case NumberRecord.sid:
-                    double numValue = ((NumberRecord)record).getValue();
-                    text = Double.toString(numValue);
-                    break;
+                    return new NumberCell(((NumberRecord) record).getValue());
 
                 /* RKRecord: Excel internal number record */
                 case RKRecord.sid:
-                    double rkValue = ((RKRecord)record).getRKNumber();
-                    text = Double.toString(rkValue);
-                    break;
+                    return new NumberCell(((RKRecord)record).getRKNumber());
             }
             if (text != null) {
                 text = text.trim();
