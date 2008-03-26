@@ -21,41 +21,24 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.TransferHandler;
-import javax.swing.table.DefaultTableModel;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
-
-public class ParsingTransferHandler extends TransferHandler {
-
-    private final Parser parser = new AutoDetectParser();
+/**
+ * Utility class that turns drag-and-drop events into Tika parse requests.
+ */
+class ParsingTransferHandler extends TransferHandler {
 
     private final TransferHandler delegate;
 
-    private final DefaultTableModel table;
+    private final TikaGUI tika;
 
-    private final JEditorPane editor;
-
-    public ParsingTransferHandler(
-            TransferHandler delegate,
-            DefaultTableModel table, JEditorPane editor) {
+    public ParsingTransferHandler(TransferHandler delegate, TikaGUI tika) {
         this.delegate = delegate;
-        this.table = table;
-        this.editor = editor;
+        this.tika = tika;
     }
 
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
@@ -73,37 +56,11 @@ public class ParsingTransferHandler extends TransferHandler {
             List<?> files = (List<?>)
                 transferable.getTransferData(DataFlavor.javaFileListFlavor);
             for (Object file : files) {
-                importFile((File) file);
+                tika.importFile((File) file);
             }
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
-        }
-    }
-
-    private void importFile(File file) throws Exception {
-        InputStream input = new FileInputStream(file);
-        try {
-            StringWriter writer = new StringWriter();
-            Metadata metadata = new Metadata();
-            metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
-
-            SAXTransformerFactory factory = (SAXTransformerFactory)
-                SAXTransformerFactory.newInstance();
-            TransformerHandler handler = factory.newTransformerHandler();
-            handler.getTransformer().setOutputProperty(
-                    OutputKeys.METHOD, "html");
-            handler.setResult(new StreamResult(writer));
-            parser.parse(input, handler, metadata);
-
-            table.setRowCount(0);
-            for (String name : metadata.names()) {
-                table.addRow(new Object[] { name, metadata.get(name) });
-            }
-            editor.setText(writer.toString());
-        } finally {
-            input.close();
         }
     }
 
