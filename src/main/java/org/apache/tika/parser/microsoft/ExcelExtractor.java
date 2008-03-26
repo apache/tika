@@ -40,6 +40,7 @@ import org.apache.poi.hssf.record.EOFRecord;
 import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FormatRecord;
 import org.apache.poi.hssf.record.FormulaRecord;
+import org.apache.poi.hssf.record.UnicodeString;
 //import org.apache.poi.hssf.record.HyperlinkRecord;  // FIXME - requires POI release
 import org.apache.poi.hssf.record.LabelRecord;
 import org.apache.poi.hssf.record.LabelSSTRecord;
@@ -213,89 +214,69 @@ public class ExcelExtractor {
 
         private void internalProcessRecord(Record record) throws SAXException {
             switch (record.getSid()) {
+            case BOFRecord.sid: // start of workbook, worksheet etc. records
+                BOFRecord bof = (BOFRecord) record;
+                if (bof.getType() == BOFRecord.TYPE_WORKBOOK) {
+                    currentSheetIndex = -1;
+                } else if (bof.getType() == BOFRecord.TYPE_WORKSHEET) {
+                    currentSheetIndex++;
+                    currentSheet.clear();
+                    insideWorksheet = true;
+                }
+                break;
 
-                /* BOFRecord: indicates start of workbook, worksheet etc. records */
-                case BOFRecord.sid:
-                    switch (((BOFRecord) record).getType()) {
-                        case BOFRecord.TYPE_WORKBOOK:
-                            currentSheetIndex = -1;
-                            break;
-                        case BOFRecord.TYPE_WORKSHEET:
-                            currentSheetIndex++;
-                            currentSheet.clear();
-                            insideWorksheet = true;
-                            break;
-                    }
-                    break;
+            case EOFRecord.sid: // end of workbook, worksheet etc. records
+                if (insideWorksheet && !currentSheet.isEmpty()) {
+                    processSheet();
+                }
+                insideWorksheet = false;
+                break;
 
-                /* EOFRecord: indicates end of workbook, worksheet etc. records */
-                case EOFRecord.sid:
-                    // ignore empty sheets
-                    if (insideWorksheet && !currentSheet.isEmpty()) {
-                        processSheet();
-                    }
-                    insideWorksheet = false;
-                    break;
+            case BoundSheetRecord.sid: // Worksheet index record
+                BoundSheetRecord boundSheetRecord = (BoundSheetRecord) record;
+                sheetNames.add(boundSheetRecord.getSheetname());
+                break;
 
-                /* SSTRecord: holds all the strings for LabelSSTRecords */
-                case SSTRecord.sid:
-                    sstRecord = (SSTRecord)record;
-                    break;
+            case SSTRecord.sid: // holds all the strings for LabelSSTRecords
+                sstRecord = (SSTRecord) record;
+                break;
 
-                /* BoundSheetRecord: Worksheet index record */
-                case BoundSheetRecord.sid:
-                    BoundSheetRecord boundSheetRecord = (BoundSheetRecord)record;
-                    String sheetName = boundSheetRecord.getSheetname();
-                    sheetNames.add(sheetName);
-                    break;
+            case FormulaRecord.sid: // Cell value from a formula
+                FormulaRecord formula = (FormulaRecord) record;
+                addCell(record, new NumberCell(formula.getValue()));
+                break;
 
-                // FIXME - requires POI release
-                ///* HyperlinkRecord: holds a URL associated with a cell */
-                //case HyperlinkRecord.sid:
-                //    HyperlinkRecord hyperlinkRecord = (HyperlinkRecord)record;
-                //    if (insideWorksheet) {
-                //        int row = hyperlinkRecord.getFirstRow();
-                //        short column =  hyperlinkRecord.getFirstColumn();
-                //        Point point = new Point(column, row);
-                //        Cell cell = currentSheet.get(point);
-                //        if (cell != null) {
-                //            cell = new LinkedCell(cell, hyperlinkRecord.getAddress());
-                //            currentSheet.put(point, cell);
-                //        }
-                //    }
-                //    break;
+            case LabelRecord.sid: // strings stored directly in the cell
+                LabelRecord label = (LabelRecord) record;
+                addTextCell(record, label.getValue());
+                break;
 
-                /* FormulaRecord: Cell value from a formula */
-                case FormulaRecord.sid:
-                    FormulaRecord formula = (FormulaRecord) record;
-                    addCell(record, new NumberCell(formula.getValue()));
-                    break;
+            case LabelSSTRecord.sid: // Ref. a string in the shared string table
+                LabelSSTRecord sst = (LabelSSTRecord) record;
+                UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
+                addTextCell(record, unicode.getString());
+                break;
 
-                /* LabelRecord: strings stored directly in the cell */
-                case LabelRecord.sid:
-                    LabelRecord label = (LabelRecord) record;
-                    addCell(record, getTextCell(label.getValue()));
-                    break;
+            case NumberRecord.sid: // Contains a numeric cell value
+                NumberRecord number = (NumberRecord) record;
+                addCell(record, new NumberCell(number.getValue()));
+                break;
 
-                /* LabelSSTRecord: Ref. a string in the shared string table */
-                case LabelSSTRecord.sid:
-                    LabelSSTRecord labelSSTRecord = (LabelSSTRecord) record;
-                    int sstIndex = labelSSTRecord.getSSTIndex();
-                    String sstLabel = sstRecord.getString(sstIndex).getString();
-                    addCell(record, getTextCell(sstLabel));
-                    break;
+            case RKRecord.sid: // Excel internal number record
+                RKRecord rk = (RKRecord) record;
+                addCell(record, new NumberCell(rk.getRKNumber()));
+                break;
 
-                /* NumberRecord: Contains a numeric cell value */
-                case NumberRecord.sid:
-                    NumberRecord number = (NumberRecord) record;
-                    addCell(record, new NumberCell(number.getValue()));
-                    break;
-
-                /* RKRecord: Excel internal number record */
-                case RKRecord.sid:
-                    RKRecord rk = (RKRecord) record;
-                    addCell(record, new NumberCell(rk.getRKNumber()));
-                    break;
+            // FIXME - requires POI release
+            // case HyperlinkRecord.sid: // holds a URL associated with a cell
+            //     HyperlinkRecord link = (HyperlinkRecord) record;
+            //     Point point =
+            //         new Point(link.getFirstColumn(), link.getFirstRow());
+            //     Cell cell = currentSheet.get(point);
+            //     if (cell != null) {
+            //         addCell(record, new LinkedCell(cell, link.getAddress()));
+            //     }
+            //     break;
             }
         }
 
@@ -320,20 +301,19 @@ public class ExcelExtractor {
         }
 
         /**
-         * Returns a text cell with the given text comment. The given text
+         * Adds a text cell with the given text comment. The given text
          * is trimmed, and ignored if <code>null</code> or empty.
          *
+         * @param record record that holds the text value
          * @param text text content, may be <code>null</code>
-         * @return text cell, or <code>null</code>
          */
-        private Cell getTextCell(String text) {
+        private void addTextCell(Record record, String text) {
             if (text != null) {
                 text = text.trim();
                 if (text.length() > 0) {
-                    return new TextCell(text);
+                    addCell(record, new TextCell(text));
                 }
             }
-            return null;
         }
 
         /**
