@@ -170,21 +170,23 @@ public class ExcelExtractor {
         private SAXException exception = null;
 
         private SSTRecord sstRecord;
+
+        /**
+         * List of worksheet names.
+         */
         private List<String> sheetNames = new ArrayList<String>();
+
+        /**
+         * Index of the current worksheet within the workbook.
+         * Used to find the worksheet name in the {@link #sheetNames} list.
+         */
         private short currentSheetIndex;
 
-        private boolean insideWorksheet = false;
-
-        private SortedMap<Point, Cell> currentSheet =
-            new TreeMap<Point, Cell>(new Comparator<Point> () {
-                public int compare(Point a, Point b) {
-                    int diff = a.y - b.y;
-                    if (diff == 0) {
-                        diff = a.x - b.x;
-                    }
-                    return diff;
-                }
-            });
+        /**
+         * Content of the current worksheet, or <code>null</code> if no
+         * worksheet is currently active.
+         */
+        private SortedMap<Point, Cell> currentSheet = null;
 
         /**
          * Contstruct a new listener instance outputting parsed data to
@@ -228,16 +230,16 @@ public class ExcelExtractor {
                     currentSheetIndex = -1;
                 } else if (bof.getType() == BOFRecord.TYPE_WORKSHEET) {
                     currentSheetIndex++;
-                    currentSheet.clear();
-                    insideWorksheet = true;
+                    currentSheet =
+                        new TreeMap<Point, Cell>(new PointComparator());
                 }
                 break;
 
             case EOFRecord.sid: // end of workbook, worksheet etc. records
-                if (insideWorksheet && !currentSheet.isEmpty()) {
+                if (currentSheet != null && !currentSheet.isEmpty()) {
                     processSheet();
                 }
-                insideWorksheet = false;
+                currentSheet = null;
                 break;
 
             case BoundSheetRecord.sid: // Worksheet index record
@@ -277,12 +279,14 @@ public class ExcelExtractor {
 
             // FIXME - requires POI release
             // case HyperlinkRecord.sid: // holds a URL associated with a cell
-            //     HyperlinkRecord link = (HyperlinkRecord) record;
-            //     Point point =
-            //         new Point(link.getFirstColumn(), link.getFirstRow());
-            //     Cell cell = currentSheet.get(point);
-            //     if (cell != null) {
-            //         addCell(record, new LinkedCell(cell, link.getAddress()));
+            //     if (currentSheet != null) {
+            //         HyperlinkRecord link = (HyperlinkRecord) record;
+            //         Point point =
+            //             new Point(link.getFirstColumn(), link.getFirstRow());
+            //         Cell cell = currentSheet.get(point);
+            //         if (cell != null) {
+            //             addCell(record, new LinkedCell(cell, link.getAddress()));
+            //         }
             //     }
             //     break;
             }
@@ -296,7 +300,7 @@ public class ExcelExtractor {
          * @param cell cell value (or <code>null</code>)
          */
         private void addCell(Record record, Cell cell) {
-            if (!insideWorksheet) {
+            if (currentSheet == null) {
                 // Ignore cells outside sheets
             } else if (cell == null) {
                 // Ignore empty cells
@@ -373,6 +377,21 @@ public class ExcelExtractor {
             handler.endElement("div");
             handler.characters("\n");
         }
+    }
+
+    /**
+     * Utility comparator for points.
+     */
+    private static class PointComparator implements Comparator<Point> {
+
+        public int compare(Point a, Point b) {
+            int diff = a.y - b.y;
+            if (diff == 0) {
+                diff = a.x - b.x;
+            }
+            return diff;
+        }
+
     }
 
 }
