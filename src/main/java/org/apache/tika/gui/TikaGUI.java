@@ -43,12 +43,15 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Simple Swing GUI for Apache Tika. You can drag and drop files on top
@@ -196,6 +199,24 @@ public class TikaGUI extends JFrame {
         editor.setCaretPosition(0);
     }
 
+    /**
+     * Creates and returns a content handler that turns XHTML input to
+     * simplified HTML output that can be correctly parsed and displayed
+     * by {@link JEditorPane}.
+     * <p>
+     * The returned content handler is set to output <code>html</code>
+     * to the given writer. The XHTML namespace is removed from the output
+     * to prevent the serializer from using the &lt;tag/&gt; empty element
+     * syntax that causes extra "&gt;" characters to be displayed.
+     * The &lt;head&gt; tags are dropped to prevent the serializer from
+     * generating a &lt;META&gt; content type tag that makes
+     * {@link JEditorPane} fail thinking that the document character set
+     * is inconsistent.
+     *
+     * @param writer output writer
+     * @return HTML content handler
+     * @throws TransformerConfigurationException if an error occurs
+     */
     private ContentHandler getHtmlHandler(Writer writer)
             throws TransformerConfigurationException {
         SAXTransformerFactory factory = (SAXTransformerFactory)
@@ -203,7 +224,35 @@ public class TikaGUI extends JFrame {
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
         handler.setResult(new StreamResult(writer));
-        return handler;
+        return new ContentHandlerDecorator(handler) {
+            @Override
+            public void startElement(
+                    String uri, String localName, String name, Attributes atts)
+                    throws SAXException {
+                if (XHTMLContentHandler.XHTML.equals(uri)) {
+                    uri = null;
+                }
+                if (!"head".equals(localName)) {
+                    super.startElement(uri, localName, name, atts);
+                }
+            }
+            @Override
+            public void endElement(String uri, String localName, String name)
+                    throws SAXException {
+                if (XHTMLContentHandler.XHTML.equals(uri)) {
+                    uri = null;
+                }
+                if (!"head".equals(localName)) {
+                    super.endElement(uri, localName, name);
+                }
+            }
+            @Override
+            public void startPrefixMapping(String prefix, String uri) {
+            }
+            @Override
+            public void endPrefixMapping(String prefix) {
+            }
+        };
     }
 
     private ContentHandler getTextContentHandler(Writer writer) {
