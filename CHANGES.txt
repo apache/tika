@@ -35,8 +35,11 @@ Unreleased changes (0.2-incubating)
 
 15. TIKA-133 - TeeContentHandler constructor should use varargs (Jukka Zitting)
 
-15. TIKA-132 - Refactor Excel extractor to parse per sheet and add
+16. TIKA-132 - Refactor Excel extractor to parse per sheet and add
                hyperlink support (Niall Pemberton)
+
+17. TIKA-134 - mvn package does not produce packages for bin/src
+               (Karl Heinz Marbaise)
 
 Release 0.1-incubating - 12/27/2007
 

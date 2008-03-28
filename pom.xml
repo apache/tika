@@ -292,6 +292,14 @@
           </descriptors>
           <tarLongFileMode>gnu</tarLongFileMode>
         </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
