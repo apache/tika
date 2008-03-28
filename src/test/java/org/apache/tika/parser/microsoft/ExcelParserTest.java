@@ -44,8 +44,10 @@ public class ExcelParserTest extends TestCase {
             String content = writer.toString();
             assertTrue(content.contains("Sample Excel Worksheet"));
             assertTrue(content.contains("Numbers and their Squares"));
-            assertTrue(content.contains("9.0"));
-            assertTrue(content.contains("196.0"));
+            assertTrue(content.contains("9"));
+            assertFalse(content.contains("9.0"));
+            assertTrue(content.contains("196"));
+            assertFalse(content.contains("196.0"));
         } finally {
             input.close();
         }
