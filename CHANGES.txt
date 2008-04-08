@@ -41,6 +41,9 @@ Unreleased changes (0.2-incubating)
 17. TIKA-134 - mvn package does not produce packages for bin/src
                (Karl Heinz Marbaise)
 
+18. TIKA-138 - Ignore HTML style and script content (Jukka Zitting)
+
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)

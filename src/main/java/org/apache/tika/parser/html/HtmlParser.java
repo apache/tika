@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
@@ -54,6 +56,11 @@ public class HtmlParser extends AbstractParser {
     private static final Map<String, String> SAFE_ELEMENTS =
         new HashMap<String, String>();
 
+    /**
+     * Set of HTML elements whose content will be discarded.
+     */
+    private static final Set<String> DISCARD_ELEMENTS = new HashSet<String>();
+
     static {
         // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
         SAFE_ELEMENTS.put("P", "p");
@@ -72,6 +79,9 @@ public class HtmlParser extends AbstractParser {
         SAFE_ELEMENTS.put("PRE", "pre");
         SAFE_ELEMENTS.put("BLOCKQUOTE", "blockquote");
         SAFE_ELEMENTS.put("TABLE", "p"); // TODO colspan/rowspan issues
+
+        DISCARD_ELEMENTS.add("STYLE");
+        DISCARD_ELEMENTS.add("SCRIPT");
     }
 
     public void parse(
@@ -110,13 +120,19 @@ public class HtmlParser extends AbstractParser {
 
     private ContentHandler getBodyHandler(final XHTMLContentHandler xhtml) {
         return new TextContentHandler(xhtml) {
+
+            private int discardLevel = 0;
+
             @Override
             public void startElement(
                     String uri, String local, String name, Attributes atts)
                     throws SAXException {
-                String safe = SAFE_ELEMENTS.get(name);
-                if (safe != null) {
-                    xhtml.startElement(safe);
+                if (discardLevel != 0) {
+                    discardLevel++;
+                } else if (DISCARD_ELEMENTS.contains(name)) {
+                    discardLevel = 1;
+                } else if (SAFE_ELEMENTS.containsKey(name)) {
+                    xhtml.startElement(SAFE_ELEMENTS.get(name));
                 } else if ("A".equals(name)) {
                     String href = atts.getValue("href");
                     if (href == null) {
@@ -129,13 +145,31 @@ public class HtmlParser extends AbstractParser {
             @Override
             public void endElement(
                     String uri, String local, String name) throws SAXException {
-                String safe = SAFE_ELEMENTS.get(name);
-                if (safe != null) {
-                    xhtml.endElement(safe);
+                if (discardLevel != 0) {
+                    discardLevel--;
+                } else if (SAFE_ELEMENTS.containsKey(name)) {
+                    xhtml.endElement(SAFE_ELEMENTS.get(name));
                 } else if ("A".equals(name)) {
                     xhtml.endElement("a");
                 }
             }
+
+            @Override
+            public void characters(char[] ch, int start, int length)
+                    throws SAXException {
+                if (discardLevel == 0) {
+                    super.characters(ch, start, length);
+                }
+            }
+
+            @Override
+            public void ignorableWhitespace(char[] ch, int start, int length)
+                    throws SAXException {
+                if (discardLevel == 0) {
+                    super.ignorableWhitespace(ch, start, length);
+                }
+            }
+
         };
     }
 
