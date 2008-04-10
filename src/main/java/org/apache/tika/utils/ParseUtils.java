@@ -23,7 +23,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +32,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -169,10 +169,9 @@ public class ParseUtils implements TikaMimeKeys {
             throws TikaException, IOException {
         try {
             Parser parser = config.getParser(mimeType);
-            StringWriter writer = new StringWriter();
-            parser.parse(
-                    stream, new WriteOutContentHandler(writer), new Metadata());
-            return writer.toString();
+            ContentHandler handler = new BodyContentHandler();
+            parser.parse(stream, handler, new Metadata());
+            return handler.toString();
         } catch (SAXException e) {
             throw new TikaException("Unexpected SAX error", e);
         }

@@ -17,13 +17,12 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
-import java.io.StringWriter;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.WriteOutContentHandler;
-import org.xml.sax.ContentHandler;
 
 import junit.framework.TestCase;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
 
 public class ExcelParserTest extends TestCase {
 
@@ -32,8 +31,7 @@ public class ExcelParserTest extends TestCase {
                 "/test-documents/testEXCEL.xls");
         try {
             Metadata metadata = new Metadata();
-            StringWriter writer = new StringWriter();
-            ContentHandler handler = new WriteOutContentHandler(writer);
+            ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(input, handler, metadata);
 
             assertEquals(
@@ -41,7 +39,7 @@ public class ExcelParserTest extends TestCase {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
-            String content = writer.toString();
+            String content = handler.toString();
             assertTrue(content.contains("Sample Excel Worksheet"));
             assertTrue(content.contains("Numbers and their Squares"));
             assertTrue(content.contains("9"));

@@ -94,4 +94,8 @@ public class ContentHandlerDecorator extends DefaultHandler {
         handler.skippedEntity(name);
     }
 
+    public String toString() {
+        return handler.toString();
+    }
+
 }

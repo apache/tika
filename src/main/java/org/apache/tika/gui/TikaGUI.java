@@ -43,12 +43,10 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.sax.xpath.MatchingContentHandler;
-import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -256,11 +254,7 @@ public class TikaGUI extends JFrame {
     }
 
     private ContentHandler getTextContentHandler(Writer writer) {
-        XPathParser parser =
-            new XPathParser("xhtml", XHTMLContentHandler.XHTML);
-        return new MatchingContentHandler(
-                new WriteOutContentHandler(writer),
-                parser.parse("/xhtml:html/xhtml:body//text()"));
+        return new BodyContentHandler(writer);
     }
 
     private ContentHandler getXmlContentHandler(Writer writer)

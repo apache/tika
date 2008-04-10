@@ -17,13 +17,13 @@
 package org.apache.tika.parser.xml;
 
 import java.io.InputStream;
-import java.io.StringWriter;
 
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class DcXMLParserTest extends TestCase {
 
@@ -32,8 +32,7 @@ public class DcXMLParserTest extends TestCase {
                 "/test-documents/testXML.xml");
         try {
             Metadata metadata = new Metadata();
-            StringWriter writer = new StringWriter();
-            ContentHandler handler = new WriteOutContentHandler(writer);
+            ContentHandler handler = new BodyContentHandler();
             new DcXMLParser().parse(input, handler, metadata);
 
             assertEquals(
@@ -55,7 +54,7 @@ public class DcXMLParserTest extends TestCase {
             assertEquals("Fr", metadata.get(Metadata.LANGUAGE));
             assertTrue(metadata.get(Metadata.RIGHTS).contains("testing chars"));
 
-            String content = writer.toString();
+            String content = handler.toString();
             assertTrue(content.contains("Tika test document"));
         } finally {
             input.close();
@@ -66,9 +65,7 @@ public class DcXMLParserTest extends TestCase {
         InputStream input = DcXMLParserTest.class.getResourceAsStream("/test-documents/testXML.xml");
         try {
             Metadata metadata = new Metadata();
-            StringWriter writer = new StringWriter();
-            ContentHandler handler = new WriteOutContentHandler(writer);
-            new DcXMLParser().parse(input, handler, metadata);
+            new DcXMLParser().parse(input, new DefaultHandler(), metadata);
             
             final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
             assertEquals(expected,metadata.get(Metadata.RIGHTS));

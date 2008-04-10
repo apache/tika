@@ -18,11 +18,8 @@ package org.apache.tika.cli;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.io.Writer;
 import java.net.URL;
 import java.util.Arrays;
 
@@ -41,12 +38,8 @@ import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.WriteOutContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.sax.xpath.MatchingContentHandler;
-import org.apache.tika.sax.xpath.XPathParser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -176,17 +169,7 @@ public class TikaCLI {
     }
 
     private ContentHandler getTextContentHandler() {
-        final Writer writer = new OutputStreamWriter(System.out);
-        XPathParser parser =
-            new XPathParser("xhtml", XHTMLContentHandler.XHTML);
-        return new MatchingContentHandler(
-                new WriteOutContentHandler(writer),
-                parser.parse("/xhtml:html/xhtml:body//text()")) {
-            public void endDocument() throws SAXException {
-                super.endDocument();
-                try { writer.flush(); } catch (IOException e) {}
-            }
-        };
+        return new BodyContentHandler(System.out);
     }
 
     private ContentHandler getMetadataContentHandler() {

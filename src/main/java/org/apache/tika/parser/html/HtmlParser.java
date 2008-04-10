@@ -18,7 +18,6 @@ package org.apache.tika.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -109,11 +108,10 @@ public class HtmlParser extends AbstractParser {
     }
 
     private ContentHandler getTitleHandler(final Metadata metadata) {
-        final StringWriter writer = new StringWriter();
-        return new WriteOutContentHandler(writer) {
+        return new WriteOutContentHandler() {
             @Override
             public void endElement(String u, String l, String n) {
-                metadata.set(Metadata.TITLE, writer.toString());
+                metadata.set(Metadata.TITLE, toString());
             }
         };
     }

@@ -26,9 +26,12 @@ import junit.framework.TestCase;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class HtmlParserTest extends TestCase {
 
@@ -40,32 +43,32 @@ public class HtmlParserTest extends TestCase {
     }
 
     public void testParseAscii() throws Exception {
-        StringWriter writer = new StringWriter();
         final StringWriter href = new StringWriter();
-
+        
+        ContentHandler body = new BodyContentHandler();
+        ContentHandler link = new DefaultHandler() {
+            @Override
+            public void startElement(
+                    String u, String l, String n, Attributes a)
+                    throws SAXException {
+                if ("a".equals(l)) {
+                    href.append(a.getValue("href"));
+                }
+            }
+        };
         Metadata metadata = new Metadata();
-        parser.parse(
-                getStream("test-documents/testHTML.html"),
-                new WriteOutContentHandler(writer) {
-                    @Override
-                    public void startElement(
-                            String uri, String local, String name,
-                            Attributes attributes) {
-                        if ("a".equals(local)) {
-                            href.append(attributes.getValue("href"));
-                        }
-                    }
-                },
-                metadata);
+        InputStream stream = getStream("test-documents/testHTML.html");
+        try {
+            parser.parse(stream, new TeeContentHandler(body, link), metadata);
+        } finally {
+            stream.close();
+        }
 
         assertEquals(
                 "Title : Test Indexation Html", metadata.get(Metadata.TITLE));
         assertEquals("http://www.apache.org/", href.toString());
 
-        String content = writer.toString();
-        assertTrue(
-                "Did not contain expected text: Title : Test Indexation Html",
-                content.contains("Title : Test Indexation Html"));
+        String content = body.toString();
         assertTrue(
                 "Did not contain expected text:" + "Test Indexation Html",
                 content.contains("Test Indexation Html"));
@@ -76,13 +79,13 @@ public class HtmlParserTest extends TestCase {
     }
 
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
-
-        StringWriter writer = new StringWriter();
+        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        parser.parse(getStream("test-documents/testHTML_utf8.html"),
-                new WriteOutContentHandler(writer), metadata);
-        String content = writer.toString();
+        parser.parse(
+                getStream("test-documents/testHTML_utf8.html"),
+                handler, metadata);
+        String content = handler.toString();
 
         assertTrue("Did not contain expected text:"
                 + "Title : Tilte with UTF-8 chars öäå", content
@@ -100,8 +103,9 @@ public class HtmlParserTest extends TestCase {
     public void testParseEmpty() throws Exception {
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
-        parser.parse(new ByteArrayInputStream(new byte[0]),
-                new WriteOutContentHandler(writer), metadata);
+        parser.parse(
+                new ByteArrayInputStream(new byte[0]),
+                new BodyContentHandler(writer), metadata);
         String content = writer.toString();
         assertEquals("", content);
     }

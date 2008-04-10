@@ -17,10 +17,9 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
-import java.io.StringWriter;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 import junit.framework.TestCase;
@@ -31,9 +30,8 @@ public class WordParserTest extends TestCase {
         InputStream input = WordParserTest.class.getResourceAsStream(
                 "/test-documents/testWORD.doc");
         try {
+            ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            StringWriter writer = new StringWriter();
-            ContentHandler handler = new WriteOutContentHandler(writer);
             new OfficeParser().parse(input, handler, metadata);
 
             assertEquals(
@@ -41,8 +39,7 @@ public class WordParserTest extends TestCase {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Sample Word Document", metadata.get(Metadata.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
-            String content = writer.toString();
-            assertTrue(content.contains("Sample Word Document"));
+            assertTrue(handler.toString().contains("Sample Word Document"));
         } finally {
             input.close();
         }

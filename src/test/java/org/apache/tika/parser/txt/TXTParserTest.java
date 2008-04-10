@@ -21,7 +21,9 @@ import java.io.StringWriter;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.xml.sax.ContentHandler;
 
 import junit.framework.TestCase;
 
@@ -59,30 +61,24 @@ public class TXTParserTest extends TestCase {
     public void testUTF8Text() throws Exception {
         String text = "I\u00F1t\u00EBrn\u00E2ti\u00F4n\u00E0liz\u00E6ti\u00F8n";
 
+        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        StringWriter writer = new StringWriter();
         parser.parse(
                 new ByteArrayInputStream(text.getBytes("UTF-8")),
-                new WriteOutContentHandler(writer),
-                metadata);
-        String content = writer.toString();
-
+                handler, metadata);
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
 
-        assertTrue(content.contains(text));
+        assertTrue(handler.toString().contains(text));
     }
 
     public void testEmptyText() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        StringWriter writer = new StringWriter();
         parser.parse(
-                new ByteArrayInputStream(new byte[0]),
-                new WriteOutContentHandler(writer),
-                metadata);
-        String content = writer.toString();
+                new ByteArrayInputStream(new byte[0]), handler, metadata);
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("", content);
+        assertEquals("", handler.toString());
     }
 
 }

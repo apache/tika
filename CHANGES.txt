@@ -43,6 +43,8 @@ Unreleased changes (0.2-incubating)
 
 18. TIKA-138 - Ignore HTML style and script content (Jukka Zitting)
 
+19. TIKA-113 - Metadata (such as title) should not be part of content
+               (Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
 

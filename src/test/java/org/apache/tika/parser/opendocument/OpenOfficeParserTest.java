@@ -17,12 +17,11 @@
 package org.apache.tika.parser.opendocument;
 
 import java.io.InputStream;
-import java.io.StringWriter;
 
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class OpenOfficeParserTest extends TestCase {
@@ -32,8 +31,7 @@ public class OpenOfficeParserTest extends TestCase {
                 "/test-documents/testOpenOffice2.odt");
         try {
             Metadata metadata = new Metadata();
-            StringWriter writer = new StringWriter();
-            ContentHandler handler = new WriteOutContentHandler(writer);
+            ContentHandler handler = new BodyContentHandler();
             new OpenOfficeParser().parse(input, handler, metadata);
 
             assertEquals(
@@ -52,7 +50,7 @@ public class OpenOfficeParserTest extends TestCase {
             assertEquals("14", metadata.get("nbWord"));
             assertEquals("78", metadata.get("nbCharacter"));
 
-            String content = writer.toString();
+            String content = handler.toString();
             assertTrue(content.contains(
                     "This is a sample Open Office document,"
                     + " written in NeoOffice 2.2.1 for the Mac."));

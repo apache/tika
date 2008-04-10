@@ -18,12 +18,11 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.WriteOutContentHandler;
+import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 import junit.framework.TestCase;
@@ -63,15 +62,14 @@ public class AutoDetectParserTest extends TestCase {
             Metadata metadata = new Metadata();
             metadata.set(Metadata.RESOURCE_NAME_KEY, tp.resourceStatedName);
             metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
-            StringWriter writer = new StringWriter();
-            ContentHandler handler = new WriteOutContentHandler(writer);
+            ContentHandler handler = new BodyContentHandler();
             new AutoDetectParser().parse(input, handler, metadata);
 
             assertEquals("Bad content type: " + tp,
                     tp.realType, metadata.get(Metadata.CONTENT_TYPE));
 
             assertTrue("Expected content not found: " + tp,
-                    writer.toString().contains(tp.expectedContentFragment));
+                    handler.toString().contains(tp.expectedContentFragment));
         } finally {
             input.close();
         }

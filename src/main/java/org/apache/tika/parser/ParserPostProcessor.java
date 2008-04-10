@@ -18,12 +18,11 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.utils.RegexUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -53,12 +52,10 @@ public class ParserPostProcessor extends ParserDecorator {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        StringWriter writer = new StringWriter();
-        handler = new TeeContentHandler(
-                handler, new WriteOutContentHandler(writer));
-        super.parse(stream, handler, metadata);
+        ContentHandler body = new BodyContentHandler();
+        super.parse(stream, new TeeContentHandler(handler, body), metadata);
 
-        String content = writer.toString();
+        String content = body.toString();
         metadata.set("fulltext", content);
 
         int length = Math.min(content.length(), 500);
