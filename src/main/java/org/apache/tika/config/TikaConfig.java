@@ -107,7 +107,11 @@ public class TikaConfig {
     public Parser getParser(String mimeType) {
         return parsers.get(mimeType);
     }
-    
+
+    public Map<String, Parser> getParsers() {
+        return parsers;
+    }
+
     public MimeTypes getMimeRepository(){
         return mimeTypes;
     }

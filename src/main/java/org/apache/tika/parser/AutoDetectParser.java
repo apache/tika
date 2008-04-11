@@ -30,9 +30,9 @@ import org.apache.tika.mime.MimeTypes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class AutoDetectParser extends AbstractParser {
+public class AutoDetectParser extends CompositeParser {
 
-    private TikaConfig config;
+    private MimeTypes types;
 
     /**
      * Creates an auto-detecting parser instance using the default Tika
@@ -40,7 +40,7 @@ public class AutoDetectParser extends AbstractParser {
      */
     public AutoDetectParser() {
         try {
-            config = TikaConfig.getDefaultConfig();
+            setConfig(TikaConfig.getDefaultConfig());
         } catch (TikaException e) {
             // FIXME: This should never happen
             throw new RuntimeException(e);
@@ -48,15 +48,20 @@ public class AutoDetectParser extends AbstractParser {
     }
 
     public AutoDetectParser(TikaConfig config) {
-        this.config = config;
-    }
-
-    public TikaConfig getConfig() {
-        return config;
+        setConfig(config);
     }
 
     public void setConfig(TikaConfig config) {
-        this.config = config;
+        setParsers(config.getParsers());
+        setMimeTypes(config.getMimeRepository());
+    }
+
+    public MimeTypes getMimeTypes() {
+        return types;
+    }
+
+    public void setMimeTypes(MimeTypes types) {
+        this.types = types;
     }
 
     public void parse(
@@ -71,17 +76,8 @@ public class AutoDetectParser extends AbstractParser {
         MimeType type = getMimeType(stream, metadata);
         metadata.set(Metadata.CONTENT_TYPE, type.getName());
 
-        // Get the parser configured for the detected MIME type
-        Parser parser = config.getParser(type.getName());
-        if (parser == null) {
-            parser = config.getParser(MimeTypes.DEFAULT);
-        }
-        if (parser == null) {
-            throw new TikaException("No parsers available: " + type.getName());
-        }
-
         // Parse the document
-        parser.parse(stream, handler, metadata);
+        super.parse(stream, handler, metadata);
     }
 
     /**
@@ -99,8 +95,6 @@ public class AutoDetectParser extends AbstractParser {
      */
     private MimeType getMimeType(InputStream stream, Metadata metadata)
             throws IOException {
-        MimeTypes types = config.getMimeRepository();
-
         // Get type based on magic prefix
         stream.mark(types.getMinLength());
         try {
