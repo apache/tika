@@ -254,14 +254,6 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <configuration>
-            <systemProperties>
-              <property>
-                <name>log4j.configuration</name>
-                <value>log4j/log4j.properties</value>
-              </property>
-            </systemProperties>
-          </configuration>
         </plugin>
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
