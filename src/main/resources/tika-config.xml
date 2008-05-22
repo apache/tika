@@ -23,8 +23,9 @@
 
     <parsers>
 
-        <parser name="text-xml" class="org.apache.tika.parser.xml.DcXMLParser">
+        <parser name="parse-dcxml" class="org.apache.tika.parser.xml.DcXMLParser">
                 <mime>application/xml</mime>
+                <mime>application/xhtml+xml</mime>
         </parser>
 
         <parser name="parse-office" class="org.apache.tika.parser.microsoft.OfficeParser">
