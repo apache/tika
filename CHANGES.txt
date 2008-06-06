@@ -48,7 +48,10 @@ Unreleased changes (0.2-incubating)
 
 20. TIKA-139 - Add a composite parser (Jukka Zitting)
 
-21. TIKA-142 - Include application/xhtml+xml as valid mime type for XMLParser (mattmann)
+21. TIKA-142 - Include application/xhtml+xml as valid mime type for XMLParser
+               (mattmann)
+
+22. TIKA-143 - Add ParsingReader (Jukka Zitting)
 
 
 Release 0.1-incubating - 12/27/2007
