@@ -55,6 +55,9 @@ Unreleased changes (0.2-incubating)
 
 23. TIKA-144 - Upgrade nekohtml dependency (Jukka Zitting)
 
+24. TIKA-145 - Separate NOTICEs and LICENSEs for binary and source packages
+               (Jukka Zitting)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)

@@ -22,9 +22,9 @@
   <includeBaseDirectory>false</includeBaseDirectory>
   <fileSets>
     <fileSet>
+      <directory>src/main/assembly</directory>
       <outputDirectory>META-INF</outputDirectory>
       <includes>
-        <include>README.txt</include>
         <include>LICENSE.txt</include>
         <include>NOTICE.txt</include>
       </includes>
