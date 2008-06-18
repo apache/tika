@@ -53,6 +53,7 @@ Unreleased changes (0.2-incubating)
 
 22. TIKA-143 - Add ParsingReader (Jukka Zitting)
 
+23. TIKA-144 - Upgrade nekohtml dependency (Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
 

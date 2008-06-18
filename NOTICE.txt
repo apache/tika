@@ -14,5 +14,3 @@ Copyright (c) 2003-2005, www.pdfbox.org
 Copyright (c) 2003-2005, www.fontbox.org
 
 Copyright (c) 1995-2005 International Business Machines Corporation and others
-
-(C) Copyright 2002-2005, Andy Clark.
