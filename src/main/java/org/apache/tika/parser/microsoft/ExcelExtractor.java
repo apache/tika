@@ -40,6 +40,7 @@ import org.apache.poi.hssf.record.EOFRecord;
 import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FormatRecord;
 import org.apache.poi.hssf.record.FormulaRecord;
+import org.apache.poi.hssf.record.HyperlinkRecord;
 import org.apache.poi.hssf.record.UnicodeString;
 //import org.apache.poi.hssf.record.HyperlinkRecord;  // FIXME - requires POI release
 import org.apache.poi.hssf.record.LabelRecord;
@@ -138,7 +139,7 @@ public class ExcelExtractor {
             hssfRequest.addListener(listener, LabelSSTRecord.sid);
             hssfRequest.addListener(listener, NumberRecord.sid);
             hssfRequest.addListener(listener, RKRecord.sid);
-            //hssfRequest.addListener(listener, HyperlinkRecord.sid); // FIXME - requires POI release
+            hssfRequest.addListener(listener, HyperlinkRecord.sid);
         }
 
         // Create event factory and process Workbook (fire events)
@@ -277,18 +278,17 @@ public class ExcelExtractor {
                 addCell(record, new NumberCell(rk.getRKNumber()));
                 break;
 
-            // FIXME - requires POI release
-            // case HyperlinkRecord.sid: // holds a URL associated with a cell
-            //     if (currentSheet != null) {
-            //         HyperlinkRecord link = (HyperlinkRecord) record;
-            //         Point point =
-            //             new Point(link.getFirstColumn(), link.getFirstRow());
-            //         Cell cell = currentSheet.get(point);
-            //         if (cell != null) {
-            //             addCell(record, new LinkedCell(cell, link.getAddress()));
-            //         }
-            //     }
-            //     break;
+            case HyperlinkRecord.sid: // holds a URL associated with a cell
+                if (currentSheet != null) {
+                    HyperlinkRecord link = (HyperlinkRecord) record;
+                    Point point =
+                        new Point(link.getFirstColumn(), link.getFirstRow());
+                    Cell cell = currentSheet.get(point);
+                    if (cell != null) {
+                        addCell(record, new LinkedCell(cell, link.getAddress()));
+                    }
+                }
+                break;
             }
         }
 
