@@ -58,6 +58,8 @@ Unreleased changes (0.2-incubating)
 24. TIKA-145 - Separate NOTICEs and LICENSEs for binary and source packages
                (Jukka Zitting)
 
+25. TIKA-146 - Upgrade to POI 3.1 (Jukka Zitting)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
