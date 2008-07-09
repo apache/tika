@@ -184,6 +184,10 @@
     <alias type="application/msexcel" />
   </mime-type>
 
+  <mime-type type="application/vnd.ms-outlook">
+    <glob pattern="*.msg" />
+  </mime-type>
+
   <!-- ===================================================================== -->
   <!-- Open Document Format for Office Applications (OpenDocument) v1.0      -->
   <!-- http://www.oasis-open.org/specs/index.php#opendocumentv1.0            -->

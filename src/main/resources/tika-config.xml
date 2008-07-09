@@ -36,6 +36,10 @@
                 <mime>application/vnd.visio</mime>
         </parser>
 
+        <parser name="parse-outlook" class="org.apache.tika.parser.microsoft.OutlookMessageParser">
+                <mime>application/vnd.ms-outlook</mime>
+        </parser>
+
         <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">
                 <mime>text/html</mime>
                 <mime>application/x-asp</mime>

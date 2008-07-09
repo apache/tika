@@ -153,6 +153,14 @@ public class TestParsers extends TestCase {
         assertEquals(s1, s2);
     }
 
+    public void testOutlookExtraction() throws Exception {
+        File file = getTestFile("test-outlook.msg");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc,
+        "application/vnd.ms-outlook");
+        assertEquals(s1, s2);
+    }
+
     public void testHTMLExtraction() throws Exception {
         File file = getTestFile("testHTML.html");
         String s1 = ParseUtils.getStringContent(file, tc);
