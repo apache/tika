@@ -44,15 +44,15 @@ public class TestParsers extends TestCase {
          * FIXME the old mechanism does not work anymore when running the tests
          * with Maven - need a resource-based one, but this means more changes
          * to classes which rely on filenames.
-         * 
+         *
          * String sep = File.separator; StringTokenizer st = new
          * StringTokenizer(System.getProperty( "java.class.path"),
          * File.pathSeparator);
-         * 
+         *
          * classDir = new File(st.nextToken());
-         * 
+         *
          * config = classDir.getParent() + sep + "config" + sep + "config.xml";
-         * 
+         *
          * String log4j = classDir.getParent() + sep + "Config" + sep + "log4j" +
          * sep + "log4j.properties";
          */
@@ -168,6 +168,16 @@ public class TestParsers extends TestCase {
         assertEquals(s1, s2);
 
         Parser parser = tc.getParser("text/html");
+        assertNotNull(parser);
+    }
+
+    public void testZipFileExtraction() throws Exception {
+        File file = getTestFile("test-documents.zip");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/zip");
+        assertEquals(s1, s2);
+
+        Parser parser = tc.getParser("application/zip");
         assertNotNull(parser);
     }
 

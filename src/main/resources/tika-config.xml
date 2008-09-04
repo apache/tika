@@ -57,7 +57,7 @@
                 <mime>text/plain</mime>
         </parser>
 
-        <parser name="parse-openoffice" class="org.apache.tika.parser.opendocument.OpenOfficeParser">            
+        <parser name="parse-openoffice" class="org.apache.tika.parser.opendocument.OpenOfficeParser">
                 <mime>application/vnd.sun.xml.writer</mime>
                 <mime>application/vnd.oasis.opendocument.text</mime>
                 <mime>application/vnd.oasis.opendocument.graphics</mime>
@@ -103,6 +103,10 @@
                 <mime>image/x-icon</mime>
                 <mime>image/x-psd</mime>
                 <mime>image/x-xcf</mime>
+        </parser>
+
+        <parser name="parse-zip" class="org.apache.tika.parser.zip.ZipParser">
+                <mime>application/zip</mime>
         </parser>
 
     </parsers>
