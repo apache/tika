@@ -83,6 +83,7 @@ public class ZipParser extends AbstractParser {
             throws IOException, SAXException {
         xhtml.startElement("div", "class", "file");
         xhtml.element("h1", entry.getName());
+        xhtml.characters("\n");
 
         try {
             Metadata metadata = new Metadata();
@@ -95,6 +96,7 @@ public class ZipParser extends AbstractParser {
             // Could not parse the entry, just skip the content
         }
 
+        xhtml.characters("\n");
         xhtml.endElement("div");
     }
 
