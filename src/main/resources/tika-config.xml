@@ -113,6 +113,14 @@
                 <mime>application/x-tar</mime>
         </parser>
 
+        <parser name="parse-gzip" class="org.apache.tika.parser.pkg.GzipParser">
+                <mime>application/x-gzip</mime>
+        </parser>
+
+        <parser name="parse-gzip" class="org.apache.tika.parser.pkg.Bzip2Parser">
+                <mime>application/x-bzip</mime>
+        </parser>
+
     </parsers>
 
 </properties>

@@ -66,6 +66,8 @@ Unreleased changes (0.2-incubating)
 
 28. TIKA-150 - Parser for tar files (Jukka Zitting)
 
+29. TIKA-151 - Stream compression support (Jukka Zitting)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
