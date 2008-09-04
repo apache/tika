@@ -41,26 +41,33 @@ public class ZipParser extends AbstractParser {
 
     public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, TikaException, SAXException {
-
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
         ZipInputStream zis = new ZipInputStream(stream);
         ZipEntry ze;
         while ((ze = zis.getNextEntry()) != null) {
-            xhtml.startElement("div", "class", "file");
-            xhtml.element("h1", ze.getName());
-
-            ContentHandler content = new BodyContentHandler();
-            getParser().parse(new CloseShieldInputStream(zis), content, new Metadata());
-
-            xhtml.element("content", content.toString());
-            xhtml.endElement("div");
-
+            parseEntry(xhtml, ze, zis);
             zis.closeEntry();
         }
         zis.close();
+
         xhtml.endDocument();
+    }
+
+    private void parseEntry(
+            XHTMLContentHandler xhtml, ZipEntry entry, InputStream stream)
+            throws IOException, TikaException, SAXException {
+        xhtml.startElement("div", "class", "file");
+        xhtml.element("h1", entry.getName());
+
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
+        ContentHandler content = new BodyContentHandler();
+        getParser().parse(new CloseShieldInputStream(stream), content, metadata);
+        xhtml.element("content", content.toString());
+
+        xhtml.endElement("div");
     }
 
     public Parser getParser() {
