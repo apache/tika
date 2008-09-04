@@ -395,6 +395,16 @@
     <glob pattern="*.zip" />
   </mime-type>
 
+  <mime-type type="application/x-tar">
+    <magic priority="40">
+      <!-- POSIX tar archive -->
+      <match value="ustar\0" type="string" offset="257" />
+      <!-- GNU tar archive -->
+      <match value="ustar  \0" type="string" offset="257" />
+    </magic>
+    <glob pattern="*.tar" />
+  </mime-type>
+
   <mime-type type="application/msword">
     <glob pattern="*.doc" />
     <alias type="application/vnd.ms-word" />

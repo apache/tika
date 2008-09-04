@@ -109,6 +109,10 @@
                 <mime>application/zip</mime>
         </parser>
 
+        <parser name="parse-tar" class="org.apache.tika.parser.pkg.TarParser">
+                <mime>application/x-tar</mime>
+        </parser>
+
     </parsers>
 
 </properties>
