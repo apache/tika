@@ -87,9 +87,10 @@ public class ZipParser extends AbstractParser {
         try {
             Metadata metadata = new Metadata();
             metadata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
-            ContentHandler content = new BodyContentHandler();
-            getParser().parse(new CloseShieldInputStream(stream), content, metadata);
-            xhtml.element("p", content.toString());
+            getParser().parse(
+                    new CloseShieldInputStream(stream),
+                    new BodyContentHandler(xhtml),
+                    metadata);
         } catch (TikaException e) {
             // Could not parse the entry, just skip the content
         }

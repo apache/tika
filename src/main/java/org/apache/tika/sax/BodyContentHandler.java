@@ -25,8 +25,9 @@ import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
 
 /**
- * Content handler decorator that only passes the XHTML &lt;body/&gt;
- * tag and everything inside it to the underlying handler.
+ * Content handler decorator that only passes everything inside
+ * the XHTML &lt;body/&gt; tag to the underlying handler. Note that
+ * the &lt;body/&gt; tag itself is <em>not</em> passed on.
  */
 public class BodyContentHandler extends ContentHandlerDecorator {
 
@@ -40,7 +41,7 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      * The XPath matcher used to select the XHTML body contents.
      */
     private static final Matcher MATCHER =
-        PARSER.parse("/xhtml:html/xhtml:body//node()");
+        PARSER.parse("/xhtml:html/xhtml:body/*//node()");
 
     /**
      * Creates a content handler that passes all XHTML body events to the
