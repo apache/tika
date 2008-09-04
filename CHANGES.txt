@@ -60,7 +60,9 @@ Unreleased changes (0.2-incubating)
 
 25. TIKA-146 - Upgrade to POI 3.1 (Jukka Zitting)
 
-26. TIKA-99 - Support external parser programs (Jukka Zitting)
+26. TIKA-99  - Support external parser programs (Jukka Zitting)
+
+27. TIKA-149 - Parser for Zip files (Dave Meikle & Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
 

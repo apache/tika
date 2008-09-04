@@ -39,33 +39,60 @@ public class ZipParser extends AbstractParser {
 
     private Parser parser;
 
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+    /**
+     * Parses the given stream as a Zip file.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, TikaException, SAXException {
+        metadata.set(Metadata.CONTENT_TYPE, "application/zip");
+
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        ZipInputStream zis = new ZipInputStream(stream);
-        ZipEntry ze;
-        while ((ze = zis.getNextEntry()) != null) {
-            parseEntry(xhtml, ze, zis);
-            zis.closeEntry();
+        // At the end we want to close the Zip stream to release any associated
+        // resources, but the underlying document stream should not be closed
+        ZipInputStream zip =
+            new ZipInputStream(new CloseShieldInputStream(stream));
+        try {
+            ZipEntry entry = zip.getNextEntry();
+            while (entry != null) {
+                parseEntry(xhtml, entry, zip);
+                entry = zip.getNextEntry();
+            }
+        } finally {
+            zip.close();
         }
-        zis.close();
 
         xhtml.endDocument();
     }
 
+    /**
+     * Parses the given Zip entry using the underlying parser instance.
+     * It is not an error if the entry can not be parsed, in that case
+     * just the entry name is emitted.
+     *
+     * @param xhtml XHTML event handler
+     * @param entry zip entry
+     * @param stream zip stream
+     * @throws IOException if an IO error occurs
+     * @throws SAXException if a SAX error occurs
+     */
     private void parseEntry(
             XHTMLContentHandler xhtml, ZipEntry entry, InputStream stream)
-            throws IOException, TikaException, SAXException {
+            throws IOException, SAXException {
         xhtml.startElement("div", "class", "file");
         xhtml.element("h1", entry.getName());
 
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
-        ContentHandler content = new BodyContentHandler();
-        getParser().parse(new CloseShieldInputStream(stream), content, metadata);
-        xhtml.element("content", content.toString());
+        try {
+            Metadata metadata = new Metadata();
+            metadata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
+            ContentHandler content = new BodyContentHandler();
+            getParser().parse(new CloseShieldInputStream(stream), content, metadata);
+            xhtml.element("p", content.toString());
+        } catch (TikaException e) {
+            // Could not parse the entry, just skip the content
+        }
 
         xhtml.endElement("div");
     }
