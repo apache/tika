@@ -232,7 +232,7 @@ public class TestSpellCheckedMetadata extends TestCase {
      * IO Test method, usable only when you plan to do changes in metadata to
      * measure relative performance impact.
      */
-    public final void testHandlingSpeed() {
+    public final void disabledTestHandlingSpeed() {
         SpellCheckedMetadata result;
         long start = System.currentTimeMillis();
         for (int i = 0; i < NUM_ITERATIONS; i++) {
