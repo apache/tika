@@ -64,6 +64,7 @@ class XHTMLClassVisitor implements ClassVisitor {
 
         try {
             xhtml.startDocument();
+            xhtml.startElement("pre");
 
             if (packageName != null) {
                 writeKeyword("package");
@@ -121,6 +122,7 @@ class XHTMLClassVisitor implements ClassVisitor {
     public void visitEnd() {
         try {
             xhtml.characters("}\n");
+            xhtml.endElement("pre");
             xhtml.endDocument();
         } catch (SAXException e) {
             throw new RuntimeException(e);
