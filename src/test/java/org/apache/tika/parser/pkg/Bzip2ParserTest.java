@@ -46,7 +46,6 @@ public class Bzip2ParserTest extends TestCase {
 
         assertEquals("application/x-bzip", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
-        System.out.println(content);
         assertTrue(content.contains("test-documents/testEXCEL.xls"));
         assertTrue(content.contains("Sample Excel Worksheet"));
         assertTrue(content.contains("test-documents/testHTML.html"));
