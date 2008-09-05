@@ -14,3 +14,5 @@ Copyright (c) 2003-2005, www.pdfbox.org
 Copyright (c) 2003-2005, www.fontbox.org
 
 Copyright (c) 1995-2005 International Business Machines Corporation and others
+
+Copyright (c) 2000-2005 INRIA, France Telecom

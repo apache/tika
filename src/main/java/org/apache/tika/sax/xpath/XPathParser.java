@@ -60,6 +60,10 @@ public class XPathParser {
             return TextMatcher.INSTANCE;
         } else if (xpath.equals("/node()")) {
             return NodeMatcher.INSTANCE;
+        } else if (xpath.equals("/descendant:node()")) {
+            return new CompositeMatcher(
+                    NodeMatcher.INSTANCE,
+                    new ChildMatcher(new SubtreeMatcher(NodeMatcher.INSTANCE)));
         } else if (xpath.equals("/@*")) {
             return AttributeMatcher.INSTANCE;
         } else if (xpath.length() == 0) {

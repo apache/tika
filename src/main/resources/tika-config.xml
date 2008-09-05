@@ -121,6 +121,10 @@
                 <mime>application/x-bzip</mime>
         </parser>
 
+        <parser name="parse-class" class="org.apache.tika.parser.asm.ClassParser">
+                <mime>application/x-tika-java-class</mime>
+        </parser>
+
     </parsers>
 
 </properties>

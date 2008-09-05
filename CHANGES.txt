@@ -68,6 +68,11 @@ Unreleased changes (0.2-incubating)
 
 29. TIKA-151 - Stream compression support (Jukka Zitting)
 
+30. TIKA-156 - Some MIME magic patterns are ignored by MimeTypes
+               (Jukka Zitting)
+
+31. TIKA-155 - Java class file parser (Dave Brosius & Jukka Zitting)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
