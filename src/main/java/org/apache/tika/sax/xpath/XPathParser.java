@@ -62,7 +62,7 @@ public class XPathParser {
             return NodeMatcher.INSTANCE;
         } else if (xpath.equals("/descendant:node()")) {
             return new CompositeMatcher(
-                    NodeMatcher.INSTANCE,
+                    TextMatcher.INSTANCE,
                     new ChildMatcher(new SubtreeMatcher(NodeMatcher.INSTANCE)));
         } else if (xpath.equals("/@*")) {
             return AttributeMatcher.INSTANCE;
