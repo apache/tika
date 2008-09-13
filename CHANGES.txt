@@ -73,6 +73,8 @@ Unreleased changes (0.2-incubating)
 
 31. TIKA-155 - Java class file parser (Dave Brosius & Jukka Zitting)
 
+32. TIKA-108 - New Tika logos (Yongqian Li & Jukka Zitting)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
