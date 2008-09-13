@@ -38,6 +38,7 @@
     <menu name="Apache Tika">
       <item name="Introduction" href="index.html"/>
       <item name="Download" href="download.html"/>
+      <item name="Documentation" href="documentation.html"/>
     </menu>
     <menu ref="reports"/>
   </body>
