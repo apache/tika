@@ -35,7 +35,6 @@ public class Mp3ParserTest extends TestCase {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "testMP3.mp3");
 
         InputStream stream = Mp3ParserTest.class.getResourceAsStream(
                 "/test-documents/testMP3.mp3");
