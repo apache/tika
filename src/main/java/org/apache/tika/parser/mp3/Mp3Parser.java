@@ -178,29 +178,42 @@ public class Mp3Parser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        byte[] buffer = getSuffix(stream, 128);
-        if (buffer.length == 128
-               && buffer[0] == 'T' && buffer[1] == 'A' && buffer[2] == 'G') {
-            String title = getString(buffer, 3, 33);
-            String artist = getString(buffer, 33, 63);
-            String album = getString(buffer, 63, 93);
-            String year = getString(buffer, 93, 97);
-            String comment = getString(buffer, 97, 127);
-            int genre = (int) buffer[127] & 0xff; // unsigned byte
+        byte[] tag = getSuffix(stream, 128);
+        if (tag.length == 128
+                && tag[0] == 'T' && tag[1] == 'A' && tag[2] == 'G') {
+            String title = getString(tag, 3, 33);
+            String artist = getString(tag, 33, 63);
+            String album = getString(tag, 63, 93);
+            String year = getString(tag, 93, 97);
+            String comment = getString(tag, 97, 127);
+            int genre = (int) tag[127] & 0xff; // unsigned byte
 
             metadata.set(Metadata.TITLE, title);
             metadata.set(Metadata.AUTHOR, artist);
 
             xhtml.element("h1", title);
             xhtml.characters("\n");
+
             xhtml.element("p", artist);
             xhtml.characters("\n");
-            xhtml.element("p", album);
+
+            // ID3v1.1 Track addition
+            // If the last two bytes of the comment field are zero and
+            // non-zero, then the last byte is the track number
+            if (tag[125] == 0 && tag[126] != 0) {
+                int track = (int) tag[126] & 0xff;
+                xhtml.element("p", album + ", track " + track);
+            } else {
+                xhtml.element("p", album);
+            }
             xhtml.characters("\n");
+
             xhtml.element("p", year);
             xhtml.characters("\n");
+
             xhtml.element("p", comment);
             xhtml.characters("\n");
+
             xhtml.element("p", GENRES[Math.min(genre, GENRES.length - 1)]);
             xhtml.characters("\n");
         }
