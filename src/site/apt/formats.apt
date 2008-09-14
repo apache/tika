@@ -47,7 +47,7 @@ Supported Document Formats
     {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
     Word documents. Support for Microsoft Word was added in Tika 0.1.
 
-    The Word parser in Tika simply the POI
+    The Word parser in Tika simply uses the POI
     {{{http://poi.apache.org/apidocs/org/apache/poi/hwpf/extractor/WordExtractor.html}WordExtractor}}
     class to extract text paragraphs from Word documents. Support for more
     complex content structures is not yet implemented; see
@@ -98,7 +98,7 @@ Supported Document Formats
     PowerPoint presentations. Support for Microsoft PowerPoint was added
     in Tika 0.1.
 
-    The PowerPoint parser in Tika simply the POI
+    The PowerPoint parser in Tika simply uses the POI
     {{{http://poi.apache.org/apidocs/org/apache/poi/hslf/extractor/PowerPointExtractor.html}PowerPointExtractor}}
     class to extract all text as a single paragraph from a PowerPoint document.
     Support for more complex content structures is not yet implemented; see
@@ -121,7 +121,7 @@ Supported Document Formats
     {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
     Visio diagrams. Support for Microsoft Visio was added in Tika 0.2.
 
-    The Visio parser in Tika simply the POI
+    The Visio parser in Tika simply uses the POI
     {{{http://poi.apache.org/apidocs/org/apache/poi/hdgf/extractor/VisioTextExtractor.html}VisioExtractor}}
     class to extract all text entries from Visio documents.
     Support for more complex content structures is not yet implemented; see
