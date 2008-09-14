@@ -81,6 +81,10 @@ Unreleased changes (0.2-incubating)
 34. TIKA-54  - Outlook msg parser
                (Rida Benjelloun, Dave Meikle & Jukka Zitting)
 
+35. TIKA-114 - PDFParser : Getting content of the document using
+               "writer.ToString ()" , some words are stuck together
+               (Dave Meikle)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)

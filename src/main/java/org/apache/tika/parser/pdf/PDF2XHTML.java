@@ -39,7 +39,7 @@ class PDF2XHTML extends PDFTextStripper {
     /**
      * Converts the given PDF document (and related metadata) to a stream
      * of XHTML SAX events sent to the given content handler.
-     * 
+     *
      * @param document PDF document
      * @param handler SAX content handler
      * @param metadata PDF metadata
@@ -124,21 +124,45 @@ class PDF2XHTML extends PDFTextStripper {
         }
     }
 
-    protected void processLineSeparator(TextPosition p) throws IOException {
-        try {
-            handler.characters("\n");
-        } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to write a newline", e);
+    // Two methods added to work around lack of support for processWordSeparator
+    // and processLineSeparator in PDFBox-0.7.3. This is fixed in CVS Head (PDFBox-0.7.4)
+    public String getWordSeparator()
+    {
+        try
+        {
+            handler.characters(" ");
+        } catch(SAXException e) {
+
         }
+        return super.getWordSeparator();    //To change body of overridden methods use File | Settings | File Templates.
     }
 
-    protected void processWordSeparator(TextPosition a, TextPosition b)
-            throws IOException {
-        try {
-            handler.characters(" ");
-        } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to write a space", e);
+    public String getLineSeparator()
+    {
+        try
+        {
+            handler.characters("\n");
+        } catch(SAXException e) {
+
         }
+        return super.getLineSeparator();
     }
+
+//    protected void processLineSeparator(TextPosition p) throws IOException {
+//        try {
+//            handler.characters("\n");
+//        } catch (SAXException e) {
+//            throw new IOExceptionWithCause("Unable to write a newline", e);
+//        }
+//    }
+//
+//    protected void processWordSeparator(TextPosition a, TextPosition b)
+//            throws IOException {
+//        try {
+//            handler.characters(" ");
+//        } catch (SAXException e) {
+//            throw new IOExceptionWithCause("Unable to write a space", e);
+//        }
+//    }
 
 }
