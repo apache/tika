@@ -1,0 +1,192 @@
+                       --------------------------
+                       Supported Document Formats
+                       --------------------------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one or more
+~~ contributor license agreements.  See the NOTICE file distributed with
+~~ this work for additional information regarding copyright ownership.
+~~ The ASF licenses this file to You under the Apache License, Version 2.0
+~~ (the "License"); you may not use this file except in compliance with
+~~ the License.  You may obtain a copy of the License at
+~~
+~~     http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+
+Supported Document Formats
+
+   This page lists all the document formats supported by Apache Tika.
+
+   [bzip2 compression (application/x-bzip)]
+    TODO
+
+   [Extensible Markup Language (application/xml)]
+    TODO
+
+   [gzip compression (application/x-gzip)]
+    TODO
+
+   [HyperText Markup Language (text/html)]
+    TODO
+
+   [Images (image/*)]
+    TODO
+
+   [Java class files]
+    TODO
+
+   [Java jar archives]
+    TODO
+
+   [Microsoft Word (application/msword)]
+    Tika uses the {{{http://poi.apache.org/hwpf/}HWPF}} API in
+    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
+    Word documents. Support for Microsoft Word was added in Tika 0.1.
+
+    The Word parser in Tika simply the POI
+    {{{http://poi.apache.org/apidocs/org/apache/poi/hwpf/extractor/WordExtractor.html}WordExtractor}}
+    class to extract text paragraphs from Word documents. Support for more
+    complex content structures is not yet implemented; see
+    {{{https://issues.apache.org/jira/browse/TIKA-123}TIKA-123}} for this
+    issue.
+
+    Generic Microsoft Office document properties like title, author, and
+    keywords are returned as metadata properties.
+
+    Support for the new XML-based Word 2007 format is pending for a POI
+    upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
+    for the current status of this issue.
+
+    For an example of parsing Microsoft Word files, see the
+    {{{xref-test/org/apache/tika/parser/microsoft/WordParserTest.html}WordParserTest}}
+    test case.
+
+   [Microsoft Excel (application/vnd.ms-excel)]
+    Tika uses the {{{http://poi.apache.org/hssf/}HSSF}} API in
+    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
+    Excel spreadsheets. Support for Microsoft Excel was added in Tika 0.1.
+
+    The Excel parser in Tika uses the HSSF event model and is able to recreate
+    much of the document structure, including all (non-empty) worksheets and
+    their table structures. Formula results are extracted as stored in the
+    Excel file, and cell links are exposed as XHTML links. These features
+    were added in Tika 0.2.
+
+    Cell comments and formatting are currently not supported. See
+    {{{https://issues.apache.org/jira/browse/TIKA-148}TIKA-148}} and
+    {{{https://issues.apache.org/jira/browse/TIKA-103}TIKA-103}} for the
+    respective issues.
+
+    Generic Microsoft Office document properties like title, author, and
+    keywords are returned as metadata properties.
+
+    Support for the new XML-based Excel 2007 format is pending for a POI
+    upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
+    for the current status of this issue.
+
+    For an example of parsing Microsoft Excel files, see the
+    {{{xref-test/org/apache/tika/parser/microsoft/ExcelParserTest.html}ExcelParserTest}}
+    test case.
+
+   [Microsoft PowerPoint (application/vnd.ms-powerpoint)]
+    Tika uses the {{{http://poi.apache.org/hslf/}HSLF}} API in
+    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
+    PowerPoint presentations. Support for Microsoft PowerPoint was added
+    in Tika 0.1.
+
+    The PowerPoint parser in Tika simply the POI
+    {{{http://poi.apache.org/apidocs/org/apache/poi/hslf/extractor/PowerPointExtractor.html}PowerPointExtractor}}
+    class to extract all text as a single paragraph from a PowerPoint document.
+    Support for more complex content structures is not yet implemented; see
+    {{{https://issues.apache.org/jira/browse/TIKA-123}TIKA-123}} for this
+    issue.
+
+    Generic Microsoft Office document properties like title, author, and
+    keywords are returned as metadata properties.
+
+    Support for the new XML-based PowerPoint 2007 format is pending for a POI
+    upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
+    for the current status of this issue.
+
+    For an example of parsing Microsoft PowerPoint files, see the
+    {{{xref-test/org/apache/tika/parser/microsoft/PowerPointParserTest.html}PowerPointParserTest}}
+    test case.
+
+   [Microsoft Visio (application/vnd.visio)]
+    Tika uses the {{{http://poi.apache.org/hdgf/}HDGF}} API in
+    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
+    Visio diagrams. Support for Microsoft Visio was added in Tika 0.2.
+
+    The Visio parser in Tika simply the POI
+    {{{http://poi.apache.org/apidocs/org/apache/poi/hdgf/extractor/VisioTextExtractor.html}VisioExtractor}}
+    class to extract all text entries from Visio documents.
+    Support for more complex content structures is not yet implemented; see
+    {{{https://issues.apache.org/jira/browse/TIKA-123}TIKA-123}} for this
+    issue.
+
+    Generic Microsoft Office document properties like title, author, and
+    keywords are returned as metadata properties.
+
+   [Microsoft Outlook (application/vnd.ms-outlook)]
+    Tika uses the {{{http://poi.apache.org/hsmf/}HSMF}} API in
+    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
+    Outlook messages. Support for Microsoft Outlook was added in Tika 0.2.
+
+    The Outlook parser in Tika extracts the subject of the message and
+    the From, To, Cc, and Bcc addresses (formatted for display) along
+    with the body text of text/plain messages.
+
+    For an example of parsing Microsoft Outlook files, see the
+    {{{xref-test/org/apache/tika/parser/microsoft/OutlookParserTest.html}OutlookParserTest}}
+    test case.
+
+   [MP3 Audio (audio/mp3)]
+    TODO
+
+   [OpenDocument (application/vnd.oasis.opendocument.*)]
+    TODO
+
+   [Plain text (text/plain)]
+    Tika uses the
+    {{{http://www.icu-project.org/}International Components for Unicode}}
+    Java library (ICU4J) to parse plain text. Support for plain text was added
+    in Tika 0.1.
+
+    Extracting text content from plain text files is actually a relatively
+    complex task due to the fact that the character encoding of the text
+    file is often unknown to the parser.
+
+    The text parser in Tika uses the ICU4J
+    {{{http://www.icu-project.org/apiref/icu4j/com/ibm/icu/text/CharsetDetector.html}CharsetDetector}}
+    class to automatically detect the character encoding of any text input.
+    As an added benefit, the ICU4J library is in some cases able to detect
+    also the language in which the text is written.
+
+    The character encoding and language of the plain text document are
+    returned as the <<<Metadata.CONTENT_ENCODING>>> and <<<Metadata.LANGUAGE>>>
+    metadata properties. If the (declared) content encoding of a text document
+    is already known to the client application, then it can be supplied as the
+    <<<Metadata.CONTENT_ENCODING>>> metadata property to the parser to
+    simplify encoding detection.
+
+   [Portable Document Format (application/pdf)]
+    TODO
+
+   [Rich Text Format (application/rtf)]
+    Tika uses Java's built-in Swing library to parse Rich Text Format (RTF)
+    documents. Support for RTF was added in Tika 0.1.
+
+    The RTF parser in Tika uses the Swing
+    {{{http://java.sun.com/j2se/1.5.0/docs/api/javax/swing/text/rtf/RTFEditorKit.html}RTFEditorKit}}
+    class to extract all text from an RTF document as a single paragraph.
+    Document metadata extraction is currently not supported.
+
+   [tar archive (application/x-tar)]
+    TODO
+
+   [ZIP archive (application/zip)]
+    TODO

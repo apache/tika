@@ -39,6 +39,7 @@
       <item name="Introduction" href="index.html"/>
       <item name="Download" href="download.html"/>
       <item name="Documentation" href="documentation.html"/>
+      <item name="Supported Formats" href="formats.html"/>
     </menu>
     <menu ref="reports"/>
   </body>
