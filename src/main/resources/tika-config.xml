@@ -114,7 +114,7 @@
                 <mime>application/x-gzip</mime>
         </parser>
 
-        <parser name="parse-gzip" class="org.apache.tika.parser.pkg.Bzip2Parser">
+        <parser name="parse-bzip2" class="org.apache.tika.parser.pkg.Bzip2Parser">
                 <mime>application/x-bzip</mime>
         </parser>
 
