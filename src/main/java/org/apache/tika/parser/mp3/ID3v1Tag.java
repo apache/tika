@@ -16,110 +16,105 @@
  */
 package org.apache.tika.parser.mp3;
 
-import org.apache.commons.lang.StringUtils;
-
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Arrays;
+
+import org.apache.commons.lang.StringUtils;
 
 /**
- * <p>
- * This class parses and represents a ID3v1 Tag. Implemented based on http://www.id3.org/ID3v1.
- * </p>
+ * This class parses and represents a ID3v1 Tag.
+ * 
+ * @see http://www.id3.org/ID3v1
  */
 public class ID3v1Tag {
-    /**
-     * Static Map of genre codes.
-     */
-    private static Map genres = new HashMap();
 
-    static {
-        genres.put(0, "Blues");
-        genres.put(1, "Classic Rock");
-        genres.put(2, "Country");
-        genres.put(3, "Dance");
-        genres.put(4, "Disco");
-        genres.put(5, "Funk");
-        genres.put(6, "Grunge");
-        genres.put(7, "Hip-Hop");
-        genres.put(8, "Jazz");
-        genres.put(9, "Metal");
-        genres.put(10, "New Age");
-        genres.put(11, "Oldies");
-        genres.put(12, "Other");
-        genres.put(13, "Pop");
-        genres.put(14, "R&B");
-        genres.put(15, "Rap");
-        genres.put(16, "Reggae");
-        genres.put(17, "Rock");
-        genres.put(18, "Techno");
-        genres.put(19, "Industrial");
-        genres.put(20, "Alternative");
-        genres.put(21, "Ska");
-        genres.put(22, "Death Metal");
-        genres.put(23, "Pranks");
-        genres.put(24, "Soundtrack");
-        genres.put(25, "Euro-Techno");
-        genres.put(26, "Ambient");
-        genres.put(27, "Trip-Hop");
-        genres.put(28, "Vocal");
-        genres.put(29, "Jazz+Funk");
-        genres.put(30, "Fusion");
-        genres.put(31, "Trance");
-        genres.put(32, "Classical");
-        genres.put(33, "Instrumental");
-        genres.put(34, "Acid");
-        genres.put(35, "House");
-        genres.put(36, "Game");
-        genres.put(37, "Sound Clip");
-        genres.put(38, "Gospel");
-        genres.put(39, "Noise");
-        genres.put(40, "AlternRock");
-        genres.put(41, "Bass");
-        genres.put(42, "Soul");
-        genres.put(43, "Punk");
-        genres.put(44, "Space");
-        genres.put(45, "Meditative");
-        genres.put(46, "Instrumental Pop");
-        genres.put(47, "Instrumental Rock");
-        genres.put(48, "Ethnic");
-        genres.put(49, "Gothic");
-        genres.put(50, "Darkwave");
-        genres.put(51, "Techno-Industrial");
-        genres.put(52, "Electronic");
-        genres.put(53, "Pop-Folk");
-        genres.put(54, "Eurodance");
-        genres.put(55, "Dream");
-        genres.put(56, "Southern Rock");
-        genres.put(57, "Comedy");
-        genres.put(58, "Cult");
-        genres.put(59, "Gangsta");
-        genres.put(60, "Top 40");
-        genres.put(61, "Christian Rap");
-        genres.put(62, "Pop/Funk");
-        genres.put(63, "Jungle");
-        genres.put(64, "Native American");
-        genres.put(65, "Cabaret");
-        genres.put(66, "New Wave");
-        genres.put(67, "Psychadelic");
-        genres.put(68, "Rave");
-        genres.put(69, "Showtunes");
-        genres.put(70, "Trailer");
-        genres.put(71, "Lo-Fi");
-        genres.put(72, "Tribal");
-        genres.put(73, "Acid Punk");
-        genres.put(74, "Acid Jazz");
-        genres.put(75, "Polka");
-        genres.put(76, "Retro");
-        genres.put(77, "Musical");
-        genres.put(78, "Rock & Roll");
-        genres.put(79, "Hard Rock");
-    }
+    /**
+     * List of predefined genres.
+     *
+     * @see http://www.id3.org/id3v2-00
+     */
+    private static final String[] GENRES = new String[] {
+        /*  0 */ "Blues",
+        /*  1 */ "Classic Rock",
+        /*  2 */ "Country",
+        /*  3 */ "Dance",
+        /*  4 */ "Disco",
+        /*  5 */ "Funk",
+        /*  6 */ "Grunge",
+        /*  7 */ "Hip-Hop",
+        /*  8 */ "Jazz",
+        /*  9 */ "Metal",
+        /* 10 */ "New Age",
+        /* 11 */ "Oldies",
+        /* 12 */ "Other",
+        /* 13 */ "Pop",
+        /* 14 */ "R&B",
+        /* 15 */ "Rap",
+        /* 16 */ "Reggae",
+        /* 17 */ "Rock",
+        /* 18 */ "Techno",
+        /* 19 */ "Industrial",
+        /* 20 */ "Alternative",
+        /* 21 */ "Ska",
+        /* 22 */ "Death Metal",
+        /* 23 */ "Pranks",
+        /* 24 */ "Soundtrack",
+        /* 25 */ "Euro-Techno",
+        /* 26 */ "Ambient",
+        /* 27 */ "Trip-Hop",
+        /* 28 */ "Vocal",
+        /* 29 */ "Jazz+Funk",
+        /* 30 */ "Fusion",
+        /* 31 */ "Trance",
+        /* 32 */ "Classical",
+        /* 33 */ "Instrumental",
+        /* 34 */ "Acid",
+        /* 35 */ "House",
+        /* 36 */ "Game",
+        /* 37 */ "Sound Clip",
+        /* 38 */ "Gospel",
+        /* 39 */ "Noise",
+        /* 40 */ "AlternRock",
+        /* 41 */ "Bass",
+        /* 42 */ "Soul",
+        /* 43 */ "Punk",
+        /* 44 */ "Space",
+        /* 45 */ "Meditative",
+        /* 46 */ "Instrumental Pop",
+        /* 47 */ "Instrumental Rock",
+        /* 48 */ "Ethnic",
+        /* 49 */ "Gothic",
+        /* 50 */ "Darkwave",
+        /* 51 */ "Techno-Industrial",
+        /* 52 */ "Electronic",
+        /* 53 */ "Pop-Folk",
+        /* 54 */ "Eurodance",
+        /* 55 */ "Dream",
+        /* 56 */ "Southern Rock",
+        /* 57 */ "Comedy",
+        /* 58 */ "Cult",
+        /* 59 */ "Gangsta",
+        /* 60 */ "Top 40",
+        /* 61 */ "Christian Rap",
+        /* 62 */ "Pop/Funk",
+        /* 63 */ "Jungle",
+        /* 64 */ "Native American",
+        /* 65 */ "Cabaret",
+        /* 66 */ "New Wave",
+        /* 67 */ "Psychadelic",
+        /* 68 */ "Rave",
+        /* 69 */ "Showtunes",
+        /* 70 */ "Trailer",
+        /* 71 */ "Lo-Fi",
+        /* 72 */ "Tribal",
+        /* 73 */ "Acid Punk",
+        /* 74 */ "Acid Jazz",
+        /* 75 */ "Polka",
+        /* 76 */ "Retro",
+        /* 77 */ "Musical",
+        /* 78 */ "Rock & Roll",
+        /* 79 */ "Hard Rock"
+    };
 
     private String title;
     private String artist;
@@ -129,7 +124,7 @@ public class ID3v1Tag {
     private int genre;
 
     /**
-     * Default Private Contructor.
+     * Default private constructor.
      *
      * @param title   the title.
      * @param artist  the artist.
@@ -173,7 +168,11 @@ public class ID3v1Tag {
     }
 
     public String getGenreAsString() {
-        return (String) genres.get(genre);
+        if (0 <= genre && genre < GENRES.length) {
+            return GENRES[genre];
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -181,20 +180,17 @@ public class ID3v1Tag {
      *
      * @param stream the <code>InputStream</code> to parse.
      * @return a <code>ID3v1Tag</code> if ID3 v1 information is available, null otherwise.
+     * @throws IOException if the stream can not be read
      */
-    public static ID3v1Tag createID3v1Tag(InputStream stream) {
-        byte[] buffer;
-        try {
-             buffer = getSuffix(stream, 128);
-        } catch (IOException ex) {
+    public static ID3v1Tag createID3v1Tag(InputStream stream)
+            throws IOException {
+        byte[] buffer = getSuffix(stream, 128);
+        if (buffer.length != 128
+                || buffer[0] != 'T' || buffer[0] != 'A' || buffer[2] != 'G') {
             return null;
         }
 
-        // We have read what we think is the tag, first check and if ok extract values
-        String tag = new String(buffer, 0, 128);
-        if (!StringUtils.equals(StringUtils.substring(tag, 0, 3), "TAG")) {
-            return null;
-        }
+        String tag = new String(buffer, "ISO-8859-1");
         String title = StringUtils.substring(tag, 3, 33).trim();
         String artist = StringUtils.substring(tag, 33, 63).trim();
         String album = StringUtils.substring(tag, 63, 93).trim();
