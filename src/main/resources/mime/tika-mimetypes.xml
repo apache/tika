@@ -656,6 +656,26 @@
 
   <mime-type type="audio/mpeg">
     <glob pattern="*.mp3" />
+    <magic priority="20">
+      <!-- http://mpgedit.org/mpgedit/mpeg_format/MP3Format.html -->
+      <!-- ----------------------------------------------------- -->
+      <!-- Bit pattern for first two bytes: 11111111 111VVLLC    -->
+      <!-- VV = MPEG Audio Version ID; 10 = V2, 11 = V1          -->
+      <!-- LL = Layer description; 01 = L3, 10 = L2, 11 = L1     -->
+      <!-- C = Protection bit; 0 = CRC, 1 = no CRC               -->
+      <match value="0xfff2" type="string" offset="0" /> <!-- V2, L3, CRC -->
+      <match value="0xfff3" type="string" offset="0" /> <!-- V2, L3      -->
+      <match value="0xfff4" type="string" offset="0" /> <!-- V2, L2, CRC -->
+      <match value="0xfff5" type="string" offset="0" /> <!-- V2, L2      -->
+      <match value="0xfff6" type="string" offset="0" /> <!-- V2, L1, CRC -->
+      <match value="0xfff7" type="string" offset="0" /> <!-- V2, L1      -->
+      <match value="0xfffa" type="string" offset="0" /> <!-- V1, L3, CRC -->
+      <match value="0xfffb" type="string" offset="0" /> <!-- V1, L3      -->
+      <match value="0xfffc" type="string" offset="0" /> <!-- V1, L2, CRC -->
+      <match value="0xfffd" type="string" offset="0" /> <!-- V1, L2      -->
+      <match value="0xfffe" type="string" offset="0" /> <!-- V1, L1, CRC -->
+      <match value="0xffff" type="string" offset="0" /> <!-- V1, L1      -->
+    </magic>
   </mime-type>
 
   <!-- ===================================================================== -->
