@@ -75,6 +75,8 @@ public class OfficeParser implements Parser {
                 setType(metadata, "application/vnd.ms-excel");
             } else if ("VisioDocument".equals(name)) {
                 setType(metadata, "application/vnd.visio");
+            } else if (name.startsWith("__substg1.0_")) {
+                setType(metadata, "application/vnd.ms-outlook");
             }
         }
     }
@@ -119,6 +121,9 @@ public class OfficeParser implements Parser {
                 for (String text : extractor.getAllText()) {
                     xhtml.element("p", text);
                 }
+            } else if (name.startsWith("__substg1.0_")) {
+                setType(metadata, "application/vnd.ms-outlook");
+                new OutlookExtractor(filesystem).parse(xhtml, metadata);
             }
         }
 

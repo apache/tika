@@ -34,9 +34,6 @@
                 <mime>application/vnd.ms-excel</mime>
                 <mime>application/vnd.ms-powerpoint</mime>
                 <mime>application/vnd.visio</mime>
-        </parser>
-
-        <parser name="parse-outlook" class="org.apache.tika.parser.microsoft.OutlookMessageParser">
                 <mime>application/vnd.ms-outlook</mime>
         </parser>
 
