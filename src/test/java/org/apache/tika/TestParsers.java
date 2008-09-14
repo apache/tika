@@ -181,6 +181,16 @@ public class TestParsers extends TestCase {
         assertNotNull(parser);
     }
 
+    public void testMP3Extraction() throws Exception {
+        File file = getTestFile("testMP3.mp3");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "audio/mpeg");
+        assertEquals(s1, s2);
+
+        Parser parser = tc.getParser("audio/mpeg");
+        assertNotNull(parser);
+    }
+
     public void testZipExtraction() throws Exception {
         File zip = getTestFile("test-documents.zip");
         List<Parser> parsers = ParseUtils.getParsersFromZip(zip, tc);
