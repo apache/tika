@@ -41,19 +41,33 @@ Supported Document Formats
    property sets and exposes them as the following document metadata:
 
       * <<<TITLE>>> Title
+
       * <<<SUBJECT>>> Subject
+
       * <<<AUTHOR>>> Author
+
       * <<<KEYWORDS>>> Keywords
+
       * <<<COMMENTS>>> Comments
+
       * <<<TEMPLATE>>> Template
+
       * <<<LAST_SAVED>>> Last Saved By
+
       * <<<REVISION_NUMBER>>> Revision Number
+
       * <<<LAST_PRINTED>>> Last Printed
+
       * <<<LAST_SAVED>>> Last Saved Time/Date
+
       * <<<LAST_SAVED>>> Last Saved Time/Date
+
       * <<<PAGE_COUNT>>> Number of Pages
+
       * <<<WORD_COUNT>>> Number of Words
+
       * <<<CHARACTER_COUNT>>> Number of Characters
+
       * <<<APPLICATION_NAME>>> Name of Creating Application
 
    Note that in practice the metadata in many documents is either missing,
@@ -126,7 +140,7 @@ Supported Document Formats
 
     The Outlook parser extracts the subject of the message and the From,
     To, Cc, and Bcc addresses (formatted for display) along with the body
-    text of text/plain messages. The <<<AUTHOR>>>, <<<TITLE>> and
+    text of text/plain messages. The <<<AUTHOR>>>, <<<TITLE>>> and
     <<<SUBJECT>>> metadata properties are set explicitly, overriding
     potential generic document metadata retrieved from OLE2 property sets.
 
