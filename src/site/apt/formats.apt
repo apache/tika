@@ -22,13 +22,39 @@ Supported Document Formats
    This page lists all the document formats supported by Apache Tika.
 
    [bzip2 compression (application/x-bzip)]
-    TODO
+    Tika uses an adapted version of the bzip2 parsing code from
+    {{{http://ant.apache.org/}Apache Ant}} to decompress bzip2 streams.
+    The bzip2 code is originally based on work by Keiron Liddle from
+    Aftex Software. Support for bzip2 compression was added in Tika 0.2.
+
+    The bzip2 parser decompresses the incoming stream and passes the
+    resulting stream to a configured delegate parser. If the
+    <<<RESOURCE_NAME_KEY>>> metadata property is set to a file name
+    that matches the common patterns <<<*.{tbz2,tbz}>>> or <<<*.{bz2,bz}>>>,
+    then name is replaced with <<<*.tar>>> or <<<*>>> respectively before
+    passing the decompressed stream for further parsing.
+
+    Bzip2 compression is automatically detected based on a magic header
+    or glob patterns.
 
    [Extensible Markup Language (application/xml)]
     TODO
 
    [gzip compression (application/x-gzip)]
-    TODO
+    Tika uses Java's built-in gzip support to decompress gzip streams.
+    Support for gzip compression was added in Tika 0.2.
+
+    The gzip parser simply uses the
+    {{{http://java.sun.com/j2se/1.5.0/docs/api/java/util/zip/GZIPInputStream.html}GZIPInputStream}}
+    class to decompress the incoming stream. The resulting stream is
+    passed to a configured delegate parser. If the
+    <<<RESOURCE_NAME_KEY>>> metadata property is set to a file name
+    that matches the common patterns <<<*.tgz2>>> or <<<*{.gz,-gz}>>>,
+    then name is replaced with <<<*.tar>>> or <<<*>>> respectively before
+    passing the decompressed stream for further parsing.
+
+    Gzip compression is automatically detected based on a magic header
+    or glob patterns.
 
    [HyperText Markup Language (text/html)]
     TODO
@@ -61,6 +87,9 @@ Supported Document Formats
     upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
     for the current status of this issue.
 
+    Microsoft Word documents are automatically detected based on a magic
+    header or a glob pattern.
+
     For an example of parsing Microsoft Word files, see the
     {{{xref-test/org/apache/tika/parser/microsoft/WordParserTest.html}WordParserTest}}
     test case.
@@ -88,6 +117,9 @@ Supported Document Formats
     upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
     for the current status of this issue.
 
+    Microsoft Excel spreadsheets are automatically detected based on a magic
+    header or a glob pattern.
+
     For an example of parsing Microsoft Excel files, see the
     {{{xref-test/org/apache/tika/parser/microsoft/ExcelParserTest.html}ExcelParserTest}}
     test case.
@@ -112,6 +144,9 @@ Supported Document Formats
     upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
     for the current status of this issue.
 
+    Microsoft PowerPoint presentations are automatically detected based on
+    a magic header or a glob pattern.
+
     For an example of parsing Microsoft PowerPoint files, see the
     {{{xref-test/org/apache/tika/parser/microsoft/PowerPointParserTest.html}PowerPointParserTest}}
     test case.
@@ -131,6 +166,9 @@ Supported Document Formats
     Generic Microsoft Office document properties like title, author, and
     keywords are returned as metadata properties.
 
+    Microsoft Visio diagrams are automatically detected based on a magic
+    header or a glob pattern.
+
    [Microsoft Outlook (application/vnd.ms-outlook)]
     Tika uses the {{{http://poi.apache.org/hsmf/}HSMF}} API in
     {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
@@ -139,6 +177,9 @@ Supported Document Formats
     The Outlook parser in Tika extracts the subject of the message and
     the From, To, Cc, and Bcc addresses (formatted for display) along
     with the body text of text/plain messages.
+
+    Microsoft Outlook messages are automatically detected based on a magic
+    header or a glob pattern.
 
     For an example of parsing Microsoft Outlook files, see the
     {{{xref-test/org/apache/tika/parser/microsoft/OutlookParserTest.html}OutlookParserTest}}
@@ -174,7 +215,9 @@ Supported Document Formats
     simplify encoding detection.
 
    [Portable Document Format (application/pdf)]
-    TODO
+    Tika uses the {{{http://www.pdfbox.org}PDFBox}} library to parse
+    Portable Document Format (PDF) documents. Support for PDF was added
+    in Tika 0.1.
 
    [Rich Text Format (application/rtf)]
     Tika uses Java's built-in Swing library to parse Rich Text Format (RTF)
@@ -186,7 +229,10 @@ Supported Document Formats
     Document metadata extraction is currently not supported.
 
    [tar archive (application/x-tar)]
-    TODO
+    Tika uses an adapted version of the tar parsing code from
+    {{{http://ant.apache.org/}Apache Ant}} to parse tar archives.
+    The tar code is originally based on work by Timothy Gerard Endres.
+    Support for tar archives was added in Tika 0.2.
 
    [ZIP archive (application/zip)]
     TODO
