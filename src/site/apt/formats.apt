@@ -21,6 +21,115 @@ Supported Document Formats
 
    This page lists all the document formats supported by Apache Tika.
 
+* Microsoft's OLE 2 Compound Document format
+
+   A number of Microsoft applications, most notably the Microsoft Office
+   suite, use the generic OLE 2 Compound Document format as the basis of
+   their document formats. Tika uses {{{http://poi.apache.org/}Apache POI}}
+   to support a number of these formats.
+
+   The OLE2 Compound Document format is designed for use with random access
+   files, and so the input stream passed to a Tika parser needs to be spooled
+   in memory or in a temporary file depending on the size of the document.
+   See {{{https://issues.apache.org/jira/browse/TIKA-153}TIKA-153}} for an
+   effort to avoid this extra temporary file if the input document already
+   comes from a file.
+
+   In addition to the shared base format there's also a shared sets of
+   metadata in typical OLE2 documents. Tika uses the
+   {{{http://poi.apache.org/hpsf/}HPSF library}} from POI to parse these
+   property sets and exposes them as the following document metadata:
+
+      * <<<TITLE>>> Title
+      * <<<SUBJECT>>> Subject
+      * <<<AUTHOR>>> Author
+      * <<<KEYWORDS>>> Keywords
+      * <<<COMMENTS>>> Comments
+      * <<<TEMPLATE>>> Template
+      * <<<LAST_SAVED>>> Last Saved By
+      * <<<REVISION_NUMBER>>> Revision Number
+      * <<<LAST_PRINTED>>> Last Printed
+      * <<<LAST_SAVED>>> Last Saved Time/Date
+      * <<<LAST_SAVED>>> Last Saved Time/Date
+      * <<<PAGE_COUNT>>> Number of Pages
+      * <<<WORD_COUNT>>> Number of Words
+      * <<<CHARACTER_COUNT>>> Number of Characters
+      * <<<APPLICATION_NAME>>> Name of Creating Application
+
+   Note that in practice the metadata in many documents is either missing,
+   incomplete or even incorrect, so a client application should not rely
+   too much on this information.
+
+   Support for the new Office Open XML format used by Microsoft Office
+   version 2007 is pending for a POI upgrade. Current status is recorded in
+   {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}.
+
+   The generic OLE2 Compound Document format is automatically detected using
+   a magic number, and further parsing can automatically determine the more
+   specific document format. Tika also knows a number of common glob patterns
+   like <<<*.doc>>> and <<<*.ppt>>> for these formats.
+
+   The supported OLE 2 Compound Document formats are:
+
+   [Microsoft Excel (application/vnd.ms-excel)]
+    Excel spreadsheet support is available in all versions of Tika and is
+    based on the {{{http://poi.apache.org/hssf/}HSSF library}} from POI.
+
+    The Excel parser in Tika uses the
+    {{{http://poi.apache.org/hssf/how-to.html#event_api}HSSF event API}} and
+    is able to extract much of the document structure, including all
+    (non-empty) worksheets and their table structures. Formula results are
+    extracted as stored in the Excel file, and cell links are exposed as
+    XHTML links. These features were added in Tika version 0.2.
+
+    Cell comments and formatting are currently not supported. See
+    {{{https://issues.apache.org/jira/browse/TIKA-148}TIKA-148}} and
+    {{{https://issues.apache.org/jira/browse/TIKA-103}TIKA-103}} for the
+    respective issues.
+
+    See the {{{xref-test/org/apache/tika/parser/microsoft/ExcelParserTest.html}ExcelParserTest}}
+    test case for an example of parsing Microsoft Excel files.
+
+   [Microsoft Word (application/msword)]
+    Word document support is available in all versions of Tika and is based
+    on the {{{http://poi.apache.org/hwpf/}HWPF library}} from POI.
+
+    The Word parser uses the
+    {{{http://poi.apache.org/apidocs/org/apache/poi/hwpf/extractor/WordExtractor.html}WordExtractor}}
+    class from HWPF to extract document content as a sequence of paragraphs.
+
+    See the {{{xref-test/org/apache/tika/parser/microsoft/WordParserTest.html}WordParserTest}}
+    test case for an example of parsing Microsoft Word files.
+
+   [Microsoft PowerPoint (application/vnd.ms-powerpoint)]
+    PowerPoint presentation support is available in all versions of Tika and
+    is based on the {{{http://poi.apache.org/hslf/}HSLF library}} from POI.
+
+    The PowerPoint parser uses the
+    {{{http://poi.apache.org/apidocs/org/apache/poi/hslf/extractor/PowerPointExtractor.html}PowerPointExtractor}}
+    class from HSLF to extract spreadsheet content as a single paragraph.
+
+    See the {{{xref-test/org/apache/tika/parser/microsoft/PowerPointParserTest.html}PowerPointParserTest}}
+    test case for an example of parsing Microsoft PowerPoint files.
+
+   [Microsoft Visio (application/vnd.visio)]
+    Visio diagram support was added in Tika version 0.2 and is based on the
+    {{{http://poi.apache.org/hdgf/}HDGF library}} from POI.
+
+    The Visio parser uses the
+    {{{http://poi.apache.org/apidocs/org/apache/poi/hdgf/extractor/VisioTextExtractor.html}VisioExtractor}}
+    class from HDGF to extract diagram content as a sequence of paragraphs.
+
+   [Microsoft Outlook (application/vnd.ms-outlook)]
+    Outlook message support was added in Tika version 0.2 and is based on the
+    {{{http://poi.apache.org/hsmf/}HSMF library}} from POI.
+
+    The Outlook parser extracts the subject of the message and the From,
+    To, Cc, and Bcc addresses (formatted for display) along with the body
+    text of text/plain messages. The <<<AUTHOR>>>, <<<TITLE>> and
+    <<<SUBJECT>>> metadata properties are set explicitly, overriding
+    potential generic document metadata retrieved from OLE2 property sets.
+
 * Compression formats
 
    General purpose compression formats are used to reduce the size of
@@ -43,6 +152,8 @@ Supported Document Formats
    property, no document metadata is passed to or from the second parsing
    stage. Only the text content extracted by the second stage parser is
    returned to the client application.
+
+   The supported compression formats are:
 
    [gzip compression (application/x-gzip)]
     {{{http://en.wikipedia.org/wiki/Gzip}Gzip}} support was added in
@@ -80,123 +191,6 @@ Supported Document Formats
 
    [Java jar archives]
     TODO
-
-   [Microsoft Word (application/msword)]
-    Tika uses the {{{http://poi.apache.org/hwpf/}HWPF}} API in
-    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
-    Word documents. Support for Microsoft Word was added in Tika 0.1.
-
-    The Word parser in Tika simply uses the POI
-    {{{http://poi.apache.org/apidocs/org/apache/poi/hwpf/extractor/WordExtractor.html}WordExtractor}}
-    class to extract text paragraphs from Word documents. Support for more
-    complex content structures is not yet implemented; see
-    {{{https://issues.apache.org/jira/browse/TIKA-123}TIKA-123}} for this
-    issue.
-
-    Generic Microsoft Office document properties like title, author, and
-    keywords are returned as metadata properties.
-
-    Support for the new XML-based Word 2007 format is pending for a POI
-    upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
-    for the current status of this issue.
-
-    Microsoft Word documents are automatically detected based on a magic
-    header or a glob pattern.
-
-    For an example of parsing Microsoft Word files, see the
-    {{{xref-test/org/apache/tika/parser/microsoft/WordParserTest.html}WordParserTest}}
-    test case.
-
-   [Microsoft Excel (application/vnd.ms-excel)]
-    Tika uses the {{{http://poi.apache.org/hssf/}HSSF}} API in
-    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
-    Excel spreadsheets. Support for Microsoft Excel was added in Tika 0.1.
-
-    The Excel parser in Tika uses the HSSF event model and is able to recreate
-    much of the document structure, including all (non-empty) worksheets and
-    their table structures. Formula results are extracted as stored in the
-    Excel file, and cell links are exposed as XHTML links. These features
-    were added in Tika 0.2.
-
-    Cell comments and formatting are currently not supported. See
-    {{{https://issues.apache.org/jira/browse/TIKA-148}TIKA-148}} and
-    {{{https://issues.apache.org/jira/browse/TIKA-103}TIKA-103}} for the
-    respective issues.
-
-    Generic Microsoft Office document properties like title, author, and
-    keywords are returned as metadata properties.
-
-    Support for the new XML-based Excel 2007 format is pending for a POI
-    upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
-    for the current status of this issue.
-
-    Microsoft Excel spreadsheets are automatically detected based on a magic
-    header or a glob pattern.
-
-    For an example of parsing Microsoft Excel files, see the
-    {{{xref-test/org/apache/tika/parser/microsoft/ExcelParserTest.html}ExcelParserTest}}
-    test case.
-
-   [Microsoft PowerPoint (application/vnd.ms-powerpoint)]
-    Tika uses the {{{http://poi.apache.org/hslf/}HSLF}} API in
-    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
-    PowerPoint presentations. Support for Microsoft PowerPoint was added
-    in Tika 0.1.
-
-    The PowerPoint parser in Tika simply uses the POI
-    {{{http://poi.apache.org/apidocs/org/apache/poi/hslf/extractor/PowerPointExtractor.html}PowerPointExtractor}}
-    class to extract all text as a single paragraph from a PowerPoint document.
-    Support for more complex content structures is not yet implemented; see
-    {{{https://issues.apache.org/jira/browse/TIKA-123}TIKA-123}} for this
-    issue.
-
-    Generic Microsoft Office document properties like title, author, and
-    keywords are returned as metadata properties.
-
-    Support for the new XML-based PowerPoint 2007 format is pending for a POI
-    upgrade. See {{{https://issues.apache.org/jira/browse/TIKA-152}TIKA-152}}
-    for the current status of this issue.
-
-    Microsoft PowerPoint presentations are automatically detected based on
-    a magic header or a glob pattern.
-
-    For an example of parsing Microsoft PowerPoint files, see the
-    {{{xref-test/org/apache/tika/parser/microsoft/PowerPointParserTest.html}PowerPointParserTest}}
-    test case.
-
-   [Microsoft Visio (application/vnd.visio)]
-    Tika uses the {{{http://poi.apache.org/hdgf/}HDGF}} API in
-    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
-    Visio diagrams. Support for Microsoft Visio was added in Tika 0.2.
-
-    The Visio parser in Tika simply uses the POI
-    {{{http://poi.apache.org/apidocs/org/apache/poi/hdgf/extractor/VisioTextExtractor.html}VisioExtractor}}
-    class to extract all text entries from Visio documents.
-    Support for more complex content structures is not yet implemented; see
-    {{{https://issues.apache.org/jira/browse/TIKA-123}TIKA-123}} for this
-    issue.
-
-    Generic Microsoft Office document properties like title, author, and
-    keywords are returned as metadata properties.
-
-    Microsoft Visio diagrams are automatically detected based on a magic
-    header or a glob pattern.
-
-   [Microsoft Outlook (application/vnd.ms-outlook)]
-    Tika uses the {{{http://poi.apache.org/hsmf/}HSMF}} API in
-    {{{http://poi.apache.org/}Apache POI}} to parse OLE2-based Microsoft
-    Outlook messages. Support for Microsoft Outlook was added in Tika 0.2.
-
-    The Outlook parser in Tika extracts the subject of the message and
-    the From, To, Cc, and Bcc addresses (formatted for display) along
-    with the body text of text/plain messages.
-
-    Microsoft Outlook messages are automatically detected based on a magic
-    header or a glob pattern.
-
-    For an example of parsing Microsoft Outlook files, see the
-    {{{xref-test/org/apache/tika/parser/microsoft/OutlookParserTest.html}OutlookParserTest}}
-    test case.
 
    [MP3 Audio (audio/mp3)]
     TODO
