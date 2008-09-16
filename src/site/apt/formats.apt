@@ -21,40 +21,53 @@ Supported Document Formats
 
    This page lists all the document formats supported by Apache Tika.
 
+* Compression formats
+
+   General purpose compression formats are used to reduce the size of
+   any kinds of documents. Tika uses a parsing pipeline to support general
+   purpose compression: in the first stage the compressed stream decompressed
+   and the resulting decompressed stream is passed on to a second parsing
+   stage where it will be processed as if the document had never been
+   compressed.
+
+   Tika contains magic numbers and glob patterns for auto-detecting all
+   supported compression formats. The glob patterns of compression formats
+   are also used to determine the name of the original uncompressed document.
+   If a client application has supplied a <<<RESOURCE_NAME_KEY>>> metadata
+   property that matches such a glob pattern, then the decompressing first
+   parsing stage will replace the <<<RESOURCE_NAME_KEY>>> metadata property
+   with the deduced original document name before passing control to the
+   second parsing stage.
+
+   Note that apart from the special handling of the <<<RESOURCE_NAME_KEY>>>
+   property, no document metadata is passed to or from the second parsing
+   stage. Only the text content extracted by the second stage parser is
+   returned to the client application.
+
+   [gzip compression (application/x-gzip)]
+    {{{http://en.wikipedia.org/wiki/Gzip}Gzip}} support was added in
+    Tika version 0.2 and is based on the
+    {{{http://java.sun.com/j2se/1.5.0/docs/api/java/util/zip/GZIPInputStream.html}GZIPInputStream}}
+    class in the Java 5 class library.
+
+    The known gzip glob patterns are <<<*.tgz>>>, <<<*.gz>>> and <<<*-gz>>>,
+    and they will respectively be replaced with <<<*.tar>>>, <<<*>>> and
+    <<<*>>> as described above.
+
    [bzip2 compression (application/x-bzip)]
-    Tika uses an adapted version of the bzip2 parsing code from
-    {{{http://ant.apache.org/}Apache Ant}} to decompress bzip2 streams.
-    The bzip2 code is originally based on work by Keiron Liddle from
-    Aftex Software. Support for bzip2 compression was added in Tika 0.2.
+    {{{http://en.wikipedia.org/wiki/Bzip2}Bzip2}} support was added in
+    Tika version 0.2 and is based on bzip2 parsing code from
+    {{{http://ant.apache.org/}Apache Ant}}, which in turn was originally
+    based on work by Keiron Liddle from Aftex Software.
 
-    The bzip2 parser decompresses the incoming stream and passes the
-    resulting stream to a configured delegate parser. If the
-    <<<RESOURCE_NAME_KEY>>> metadata property is set to a file name
-    that matches the common patterns <<<*.{tbz2,tbz}>>> or <<<*.{bz2,bz}>>>,
-    then name is replaced with <<<*.tar>>> or <<<*>>> respectively before
-    passing the decompressed stream for further parsing.
+    The known bzip2 glob patterns are <<<*.tbz>>>, <<<*.tbz2>>>, <<<*.bz>>>
+    and <<<*.bz2>>>, and they will respectively be replaced with <<<*.tar>>>,
+    <<<*.tar>>>, <<<*>>> and <<<*>>> as described above.
 
-    Bzip2 compression is automatically detected based on a magic header
-    or glob patterns.
+* Other supported formats
 
    [Extensible Markup Language (application/xml)]
     TODO
-
-   [gzip compression (application/x-gzip)]
-    Tika uses Java's built-in gzip support to decompress gzip streams.
-    Support for gzip compression was added in Tika 0.2.
-
-    The gzip parser simply uses the
-    {{{http://java.sun.com/j2se/1.5.0/docs/api/java/util/zip/GZIPInputStream.html}GZIPInputStream}}
-    class to decompress the incoming stream. The resulting stream is
-    passed to a configured delegate parser. If the
-    <<<RESOURCE_NAME_KEY>>> metadata property is set to a file name
-    that matches the common patterns <<<*.tgz2>>> or <<<*{.gz,-gz}>>>,
-    then name is replaced with <<<*.tar>>> or <<<*>>> respectively before
-    passing the decompressed stream for further parsing.
-
-    Gzip compression is automatically detected based on a magic header
-    or glob patterns.
 
    [HyperText Markup Language (text/html)]
     TODO
