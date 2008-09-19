@@ -34,24 +34,6 @@ import org.xml.sax.SAXException;
  */
 public class PDFParser implements Parser {
 
-    public void parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        PDDocument pdfDocument = PDDocument.load(stream);
-        try {
-            if (pdfDocument.isEncrypted()) {
-                try {
-                    pdfDocument.decrypt("");
-                } catch (Exception e) {
-                    // Ignore
-                }
-            }
-            metadata.add(Metadata.CONTENT_TYPE, "application/pdf");
-            extractMetadata(pdfDocument, metadata);
-        } finally {
-            pdfDocument.close();
-        }
-    }
-
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {

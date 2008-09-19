@@ -21,7 +21,7 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.Parser;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.xml.sax.ContentHandler;
@@ -30,7 +30,7 @@ import org.xml.sax.SAXException;
 /**
  * Parser for Java .class files.
  */
-public class ClassParser extends AbstractParser {
+public class ClassParser implements Parser {
 
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)

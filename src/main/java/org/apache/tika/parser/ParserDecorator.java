@@ -30,7 +30,7 @@ import org.xml.sax.SAXException;
  * instance. Subclasses can provide extra decoration by overriding the
  * parse method.
  */
-public class ParserDecorator extends AbstractParser {
+public class ParserDecorator implements Parser {
 
     /**
      * The decorated parser instance.

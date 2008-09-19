@@ -30,9 +30,6 @@ import org.xml.sax.SAXException;
  */
 public class EmptyParser implements Parser {
 
-    public void parse(InputStream stream, Metadata metadata) {
-    }
-
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws SAXException {

@@ -102,14 +102,6 @@ public class CompositeParser implements Parser {
     /**
      * Delegates the call to the matching component parser.
      */
-    public void parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        getParser(metadata).parse(stream, metadata);
-    }
-
-    /**
-     * Delegates the call to the matching component parser.
-     */
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {

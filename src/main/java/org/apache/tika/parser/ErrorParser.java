@@ -30,12 +30,6 @@ import org.xml.sax.ContentHandler;
 public class ErrorParser implements Parser {
 
     public void parse(
-            InputStream stream, Metadata metadata)
-            throws TikaException {
-        throw new TikaException("Parse error");
-    }
-
-    public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws TikaException {
         throw new TikaException("Parse error");

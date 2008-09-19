@@ -33,8 +33,9 @@ import org.xml.sax.SAXException;
 
 public class ImageParser implements Parser {
 
-    public void parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type != null) {
             Iterator<ImageReader> iterator =
@@ -48,12 +49,7 @@ public class ImageParser implements Parser {
                 reader.dispose();
             }
         }
-    }
 
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, metadata);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();

@@ -19,73 +19,70 @@ Unreleased changes (0.2-incubating)
 
 8.  TIKA-112 - Use Commons IO 1.4 (Jukka Zitting)
 
-9.  TIKA-126 - Add Parser.parse(InputStream, Metadata) for metadata extraction
-              (Jukka Zitting)
+9.  TIKA-127 - Add support for Visio files (Jukka Zitting)
 
-10. TIKA-127 - Add support for Visio files (Jukka Zitting)
+10. TIKA-129 - node() support for the streaming XPath utility (Jukka Zitting)
 
-11. TIKA-129 - node() support for the streaming XPath utility (Jukka Zitting)
-
-12. TIKA-130 - self-or-descendant axis does not match self in streaming XPath
+11. TIKA-130 - self-or-descendant axis does not match self in streaming XPath
                (Jukka Zitting)
 
-13. TIKA-131 - Lazy XHTML prefix generation (Jukka Zitting)
+12. TIKA-131 - Lazy XHTML prefix generation (Jukka Zitting)
 
-14. TIKA-128 - HTML parser should produce XHTML SAX events (Jukka Zitting)
+13. TIKA-128 - HTML parser should produce XHTML SAX events (Jukka Zitting)
 
-15. TIKA-133 - TeeContentHandler constructor should use varargs (Jukka Zitting)
+14. TIKA-133 - TeeContentHandler constructor should use varargs (Jukka Zitting)
 
-16. TIKA-132 - Refactor Excel extractor to parse per sheet and add
+15. TIKA-132 - Refactor Excel extractor to parse per sheet and add
                hyperlink support (Niall Pemberton)
 
-17. TIKA-134 - mvn package does not produce packages for bin/src
+16. TIKA-134 - mvn package does not produce packages for bin/src
                (Karl Heinz Marbaise)
 
-18. TIKA-138 - Ignore HTML style and script content (Jukka Zitting)
+17. TIKA-138 - Ignore HTML style and script content (Jukka Zitting)
 
-19. TIKA-113 - Metadata (such as title) should not be part of content
+18. TIKA-113 - Metadata (such as title) should not be part of content
                (Jukka Zitting)
 
-20. TIKA-139 - Add a composite parser (Jukka Zitting)
+19. TIKA-139 - Add a composite parser (Jukka Zitting)
 
-21. TIKA-142 - Include application/xhtml+xml as valid mime type for XMLParser
+20. TIKA-142 - Include application/xhtml+xml as valid mime type for XMLParser
                (mattmann)
 
-22. TIKA-143 - Add ParsingReader (Jukka Zitting)
+21. TIKA-143 - Add ParsingReader (Jukka Zitting)
 
-23. TIKA-144 - Upgrade nekohtml dependency (Jukka Zitting)
+22. TIKA-144 - Upgrade nekohtml dependency (Jukka Zitting)
 
-24. TIKA-145 - Separate NOTICEs and LICENSEs for binary and source packages
+23. TIKA-145 - Separate NOTICEs and LICENSEs for binary and source packages
                (Jukka Zitting)
 
-25. TIKA-146 - Upgrade to POI 3.1 (Jukka Zitting)
+24. TIKA-146 - Upgrade to POI 3.1 (Jukka Zitting)
 
-26. TIKA-99  - Support external parser programs (Jukka Zitting)
+25. TIKA-99  - Support external parser programs (Jukka Zitting)
 
-27. TIKA-149 - Parser for Zip files (Dave Meikle & Jukka Zitting)
+26. TIKA-149 - Parser for Zip files (Dave Meikle & Jukka Zitting)
 
-28. TIKA-150 - Parser for tar files (Jukka Zitting)
+27. TIKA-150 - Parser for tar files (Jukka Zitting)
 
-29. TIKA-151 - Stream compression support (Jukka Zitting)
+28. TIKA-151 - Stream compression support (Jukka Zitting)
 
-30. TIKA-156 - Some MIME magic patterns are ignored by MimeTypes
+29. TIKA-156 - Some MIME magic patterns are ignored by MimeTypes
                (Jukka Zitting)
 
-31. TIKA-155 - Java class file parser (Dave Brosius & Jukka Zitting)
+30. TIKA-155 - Java class file parser (Dave Brosius & Jukka Zitting)
 
-32. TIKA-108 - New Tika logos (Yongqian Li & Jukka Zitting)
+31. TIKA-108 - New Tika logos (Yongqian Li & Jukka Zitting)
 
-33. TIKA-120 - Add support for retrieving ID3 tags from MP3 files
+32. TIKA-120 - Add support for retrieving ID3 tags from MP3 files
                (Dave Meikle & Jukka Zitting)
 
-34. TIKA-54  - Outlook msg parser
+33. TIKA-54  - Outlook msg parser
                (Rida Benjelloun, Dave Meikle & Jukka Zitting)
 
-35. TIKA-114 - PDFParser : Getting content of the document using
+34. TIKA-114 - PDFParser : Getting content of the document using
                "writer.ToString ()" , some words are stuck together
                (Dave Meikle)
 
-36. TIKA-161 - Enable PMD reports (Jukka Zitting)
+35. TIKA-161 - Enable PMD reports (Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
 

@@ -22,7 +22,6 @@ import java.io.InputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -39,7 +38,7 @@ import org.xml.sax.SAXException;
  * (optional) entry name as a &lt;h1&gt; element and the full
  * structured body content of the parsed entry.
  */
-public abstract class PackageParser extends AbstractParser {
+public abstract class PackageParser implements Parser {
 
     /**
      * The parser instance used to parse package entries.

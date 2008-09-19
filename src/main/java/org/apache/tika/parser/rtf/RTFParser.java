@@ -25,7 +25,7 @@ import javax.swing.text.rtf.RTFEditorKit;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
 /**
  * RTF parser
  */
-public class RTFParser extends AbstractParser {
+public class RTFParser implements Parser {
 
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)

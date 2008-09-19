@@ -22,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
  *
  * @see http://www.id3.org/ID3v1
  */
-public class Mp3Parser extends AbstractParser {
+public class Mp3Parser implements Parser {
 
     /**
      * List of predefined genres.

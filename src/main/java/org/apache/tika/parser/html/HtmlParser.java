@@ -26,7 +26,7 @@ import java.util.Set;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
  * and post-processes the events to produce XHTML and metadata expected by
  * Tika clients.
  */
-public class HtmlParser extends AbstractParser {
+public class HtmlParser implements Parser {
 
     /**
      * Set of safe mappings from incoming HTML elements to outgoing

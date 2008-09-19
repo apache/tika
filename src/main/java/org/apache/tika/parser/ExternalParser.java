@@ -43,12 +43,6 @@ public class ExternalParser implements Parser {
     private String command = "cat";
 
     /**
-     * Does nothing as metadata extraction is not supported by this parser.
-     */
-    public void parse(InputStream stream, Metadata metadata) {
-    }
-
-    /**
      * Executes the configured external command and passes the given document
      * stream as a simple XHTML document to the given SAX content handler.
      * No metadata is extracted.
