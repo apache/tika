@@ -85,6 +85,8 @@ Unreleased changes (0.2-incubating)
                "writer.ToString ()" , some words are stuck together
                (Dave Meikle)
 
+36. TIKA-161 - Enable PMD reports (Jukka Zitting)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)

@@ -356,6 +356,17 @@
         </configuration>
       </plugin>
 
+      <!-- PMD report -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <configuration>
+          <linkXref>true</linkXref>
+          <sourceEncoding>ASCII</sourceEncoding>
+          <targetJdk>1.5</targetJdk>
+        </configuration>
+      </plugin>
+
     </plugins>
   </reporting>
 
