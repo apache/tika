@@ -570,6 +570,10 @@
 
   <mime-type type="audio/midi">
     <glob pattern="*.kar" />
+    <glob pattern="*.mid" />
+    <magic priority ="20">
+      <match type="string" value="MThd" offset="0" />
+    </magic>
   </mime-type>
 
   <mime-type type="audio/x-pn-realaudio">
@@ -691,6 +695,33 @@
 
   <mime-type type="image/png">
     <glob pattern="*.png" />
+  </mime-type>
+
+  <mime-type type="audio/basic">
+    <glob pattern="*.au" />
+    <glob pattern="*.snd" />
+    <magic priority="20">
+      <match value=".snd" type="string" offset="0" />
+    </magic>
+  </mime-type>
+
+  <mime-type type="audio/x-aiff">
+    <glob pattern="*.aif" />
+    <glob pattern="*.aiff" />
+    <magic priority="20">
+      <match value="FORM" type="string" offset="0" />
+      <match value="AIFF" type="string" offset="8" />
+      <match value="AIFC" type="string" offset="8" />
+      <match value="8SVX" type="string" offset="8" />
+    </magic>
+  </mime-type>
+
+  <mime-type type="audio/x-wav">
+    <glob pattern="*.wav" />
+    <magic priority="20">
+      <match value="RIFF" type="string" offset="0" />
+      <match value="WAVE" type="string" offset="8" />
+    </magic>
   </mime-type>
 
 </mime-info>

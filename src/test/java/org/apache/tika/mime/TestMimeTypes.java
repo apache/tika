@@ -18,14 +18,13 @@
 package org.apache.tika.mime;
 
 // Junit imports
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import junit.framework.TestCase;
 
-// Tika imports
 import org.apache.tika.config.TikaConfig;
 
 /**
@@ -48,8 +47,6 @@ public class TestMimeTypes extends TestCase {
     }
 
     private static final File f = new File("/a/b/c/x.pdf");
-
-
 
     public TestMimeTypes() {
         try {
@@ -84,19 +81,19 @@ public class TestMimeTypes extends TestCase {
         assertEquals("text/plain", repo.getMimeType("x.txt").getName());
         assertEquals("text/html", repo.getMimeType("x.htm").getName());
         assertEquals("text/html", repo.getMimeType("x.html").getName());
-        assertEquals("application/xhtml+xml",
-                repo.getMimeType("x.xhtml").getName());
+        assertEquals("application/xhtml+xml", repo.getMimeType("x.xhtml")
+                .getName());
         assertEquals("application/xml", repo.getMimeType("x.xml").getName());
         assertEquals("application/msword", repo.getMimeType("x.doc").getName());
-        assertEquals("application/vnd.ms-powerpoint",
-                repo.getMimeType("x.ppt").getName());
-        assertEquals("application/vnd.ms-excel",
-                repo.getMimeType("x.xls").getName());
+        assertEquals("application/vnd.ms-powerpoint", repo.getMimeType("x.ppt")
+                .getName());
+        assertEquals("application/vnd.ms-excel", repo.getMimeType("x.xls")
+                .getName());
         assertEquals("application/zip", repo.getMimeType("x.zip").getName());
-        assertEquals("application/vnd.oasis.opendocument.text",
-                repo.getMimeType("x.odt").getName());
-        assertEquals("application/octet-stream",
-                repo.getMimeType("x.xyz").getName());
+        assertEquals("application/vnd.oasis.opendocument.text", repo
+                .getMimeType("x.odt").getName());
+        assertEquals("application/octet-stream", repo.getMimeType("x.xyz")
+                .getName());
     }
 
     /**
@@ -110,9 +107,10 @@ public class TestMimeTypes extends TestCase {
         // TODO: Currently returns generic MS Office type based on
         // the magic header. The getMimeType method should understand
         // MS Office types better.
-        // assertEquals("application/vnd.ms-excel", getMimeType("testEXCEL.xls"));
+        // assertEquals("application/vnd.ms-excel",
+        // getMimeType("testEXCEL.xls"));
         // assertEquals("application/vnd.ms-powerpoint",
-        //         getMimeType("testPPT.ppt"));
+        // getMimeType("testPPT.ppt"));
         // assertEquals("application/msword", getMimeType("testWORD.doc"));
         assertEquals("text/html", getMimeType("testHTML_utf8.html"));
         assertEquals("application/vnd.oasis.opendocument.text",
@@ -121,8 +119,11 @@ public class TestMimeTypes extends TestCase {
         assertEquals("application/rtf", getMimeType("testRTF.rtf"));
         assertEquals("text/plain", getMimeType("testTXT.txt"));
         assertEquals("application/xml", getMimeType("testXML.xml"));
+        assertEquals("audio/basic", getMimeType("testAU.au"));
+        assertEquals("audio/x-aiff", getMimeType("testAIFF.aif"));
+        assertEquals("audio/x-wav", getMimeType("testWAV.wav"));
+        assertEquals("audio/midi", getMimeType("testMID.mid"));
     }
-
 
     private String getMimeType(String filename) {
 

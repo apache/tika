@@ -125,6 +125,18 @@
         <parser name="parse-mp3" class="org.apache.tika.parser.mp3.Mp3Parser">
                 <mime>audio/mpeg</mime>
         </parser>
+
+        <parser name="parse-midi" class="org.apache.tika.parser.audio.MidiParser">
+                <mime>application/x-midi</mime>
+                <mime>audio/midi</mime>
+        </parser>
+
+        <parser name="parse-audio" class="org.apache.tika.parser.audio.AudioParser">
+                <mime>audio/basic</mime>
+                <mime>audio/x-wav</mime>
+                <mime>audio/x-aiff</mime>
+        </parser>
+
     </parsers>
 
 </properties>
