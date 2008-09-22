@@ -90,6 +90,7 @@ Unreleased changes (0.2-incubating)
 37. TIKA-140 - HTML parser unable to extract text
                (Julien Nioche & Jukka Zitting)
 
+38. TIKA-163 - GUI does not support drag and drop in Gnome or KDE (Dave Meikle)
 
 Release 0.1-incubating - 12/27/2007
 

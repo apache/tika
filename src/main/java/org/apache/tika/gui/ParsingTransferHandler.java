@@ -22,6 +22,9 @@ import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.io.File;
 import java.util.List;
+import java.util.StringTokenizer;
+import java.util.ArrayList;
+import java.net.URI;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -36,6 +39,14 @@ class ParsingTransferHandler extends TransferHandler {
 
     private final TikaGUI tika;
 
+    private static DataFlavor uriListFlavor;
+    static {
+         try {
+             uriListFlavor = new DataFlavor("text/uri-list;class=java.lang.String");
+         } catch (ClassNotFoundException e) {
+         }
+    }
+
     public ParsingTransferHandler(TransferHandler delegate, TikaGUI tika) {
         this.delegate = delegate;
         this.tika = tika;
@@ -43,7 +54,7 @@ class ParsingTransferHandler extends TransferHandler {
 
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor)) {
+            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor)) {
                 return true;
             }
         }
@@ -53,8 +64,14 @@ class ParsingTransferHandler extends TransferHandler {
     public boolean importData(
             JComponent component, Transferable transferable) {
         try {
-            List<?> files = (List<?>)
-                transferable.getTransferData(DataFlavor.javaFileListFlavor);
+            List<?> files = null;
+            if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                files = (List<?>)
+                    transferable.getTransferData(DataFlavor.javaFileListFlavor);
+            } else if (transferable.isDataFlavorSupported(uriListFlavor)) {
+                files = uriToFileList((String) transferable.getTransferData(uriListFlavor));
+            }
+
             for (Object file : files) {
                 tika.importFile((File) file);
             }
@@ -81,4 +98,20 @@ class ParsingTransferHandler extends TransferHandler {
         return delegate.getVisualRepresentation(arg0);
     }
 
+    private static List<File> uriToFileList(String data) {
+        List<File> list = new ArrayList<File>();
+        StringTokenizer st = new StringTokenizer(data, "\r\n");
+        while (st.hasMoreTokens())
+        {
+            String s = st.nextToken();
+            if (s.startsWith("#")) {
+                continue;
+            }
+            try {
+                list.add(new File(new URI(s)));
+            } catch (Exception e) {
+            }
+        }
+        return list;
+    }
 }
