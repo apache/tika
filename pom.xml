@@ -149,13 +149,6 @@
     <url>http://svn.apache.org/viewvc/incubator/tika/trunk</url>
   </scm>
 
-  <distributionManagement>
-    <site>
-      <id>svn-site-directory</id>
-      <url>file://${basedir}/../site</url>
-    </site>
-  </distributionManagement>
-
   <dependencies>
     <dependency>
       <groupId>commons-lang</groupId>
