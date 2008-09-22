@@ -25,7 +25,6 @@
 
         <parser name="parse-dcxml" class="org.apache.tika.parser.xml.DcXMLParser">
                 <mime>application/xml</mime>
-                <mime>application/xhtml+xml</mime>
         </parser>
 
         <parser name="parse-office" class="org.apache.tika.parser.microsoft.OfficeParser">
@@ -39,6 +38,7 @@
 
         <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">
                 <mime>text/html</mime>
+                <mime>application/xhtml+xml</mime>
                 <mime>application/x-asp</mime>
         </parser>
 

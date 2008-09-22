@@ -84,7 +84,11 @@ Unreleased changes (0.2-incubating)
 
 35. TIKA-161 - Enable PMD reports (Jukka Zitting)
 
-36. TIKA-159 - Add support for parsing basic audio types: wav, aiff, au, midi (Sami Siren)
+36. TIKA-159 - Add support for parsing basic audio types: wav, aiff, au, midi
+               (Sami Siren)
+
+37. TIKA-140 - HTML parser unable to extract text
+               (Julien Nioche & Jukka Zitting)
 
 
 Release 0.1-incubating - 12/27/2007

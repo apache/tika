@@ -25,6 +25,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -44,7 +45,7 @@ public class HtmlParserTest extends TestCase {
 
     public void testParseAscii() throws Exception {
         final StringWriter href = new StringWriter();
-        
+
         ContentHandler body = new BodyContentHandler();
         ContentHandler link = new DefaultHandler() {
             @Override
@@ -75,7 +76,6 @@ public class HtmlParserTest extends TestCase {
         assertTrue(
                 "Did not contain expected text:" + "Indexation du fichier",
                 content.contains("Indexation du fichier"));
-
     }
 
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
@@ -97,7 +97,27 @@ public class HtmlParserTest extends TestCase {
 
         assertTrue("Did not contain expected text:" + "åäö", content
                 .contains("åäö"));
+    }
 
+    public void testXhtmlParsing() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = HtmlParserTest.class.getResourceAsStream(
+                "/test-documents/testXHTML.html");
+        try {
+            parser.parse(stream, handler, metadata);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("application/xhtml+xml", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("XHTML test document", metadata.get(Metadata.TITLE));
+        String content = handler.toString();
+        assertTrue(content.contains("ability of Apache Tika"));
+        assertTrue(content.contains("extract content"));
+        assertTrue(content.contains("an XHTML document"));
     }
 
     public void testParseEmpty() throws Exception {

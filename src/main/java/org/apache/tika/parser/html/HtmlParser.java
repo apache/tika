@@ -102,7 +102,7 @@ public class HtmlParser implements Parser {
         // Parse the HTML document
         xhtml.startDocument();
         SAXParser parser = new SAXParser();
-        parser.setContentHandler(handler);
+        parser.setContentHandler(new XHTMLDowngradeHandler(handler));
         parser.parse(new InputSource(Utils.getUTF8Reader(stream, metadata)));
         xhtml.endDocument();
     }
