@@ -23,7 +23,7 @@ Apache Tika Documentation
 
 The Parser interface
 
-   The {{{apidocs/org/apache/tika/parser/Parser.html}org.apache.tika.parser.Parser}
+   The {{{apidocs/org/apache/tika/parser/Parser.html}org.apache.tika.parser.Parser}}
    interface is the key concept of Apache Tika. It hides the complexity of
    different file formats and parsing libraries while providing a simple and
    powerful mechanism for client applications to extract structured text
@@ -108,10 +108,8 @@ XHTML SAX events
 
    The XHTML SAX events produced by the parser implementation are sent to a
    {{{http://java.sun.com/j2se/1.5.0/docs/api/org/xml/sax/ContentHandler.html}ContentHandler}}
-   instance given to the <<<parse>>> method.
-
-   If this the content handler fails to process an event, then parsing stops
-   and the thrown
+   instance given to the <<<parse>>> method. If this the content handler
+   fails to process an event, then parsing stops and the thrown
    {{{http://java.sun.com/j2se/1.5.0/docs/api/org/xml/sax/SAXException.html}SAXException}}
    is passed up to the client application.
 
