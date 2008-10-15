@@ -123,6 +123,13 @@
       </roles>
     </developer>
     <developer>
+      <name>Dave Meikle</name>
+      <id>dmeikle</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
       <name>Sami Siren</name>
       <id>siren</id>
       <roles>
