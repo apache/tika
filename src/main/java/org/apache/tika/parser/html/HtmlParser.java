@@ -81,6 +81,7 @@ public class HtmlParser implements Parser {
 
         DISCARD_ELEMENTS.add("STYLE");
         DISCARD_ELEMENTS.add("SCRIPT");
+
     }
 
     public void parse(
@@ -95,9 +96,11 @@ public class HtmlParser implements Parser {
         XPathParser xpath = new XPathParser(null, "");
         Matcher body = xpath.parse("/HTML/BODY//node()");
         Matcher title = xpath.parse("/HTML/HEAD/TITLE//node()");
+        Matcher meta = xpath.parse("/HTML/HEAD/META//node()");
         handler = new TeeContentHandler(
                 new MatchingContentHandler(getBodyHandler(xhtml), body),
-                new MatchingContentHandler(getTitleHandler(metadata), title));
+                new MatchingContentHandler(getTitleHandler(metadata), title),
+                new MatchingContentHandler(getMetaHandler(metadata), meta));
 
         // Parse the HTML document
         xhtml.startDocument();
@@ -112,6 +115,22 @@ public class HtmlParser implements Parser {
             @Override
             public void endElement(String u, String l, String n) {
                 metadata.set(Metadata.TITLE, toString());
+            }
+        };
+    }
+
+    private ContentHandler getMetaHandler(final Metadata metadata) {
+        return new WriteOutContentHandler() {
+            @Override
+            public void startElement(
+                    String uri, String local, String name, Attributes atts)
+                    throws SAXException {
+                    if (atts.getValue("http-equiv") != null) {
+                        metadata.set(atts.getValue("http-equiv"), atts.getValue("content"));
+                    }
+                    if (atts.getValue("name") != null) {
+                        metadata.set(atts.getValue("name"), atts.getValue("content"));
+                    }
             }
         };
     }

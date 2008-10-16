@@ -67,6 +67,8 @@ public class HtmlParserTest extends TestCase {
 
         assertEquals(
                 "Title : Test Indexation Html", metadata.get(Metadata.TITLE));
+        assertEquals("Tika Developers", metadata.get("Author"));
+        assertEquals("5", metadata.get("refresh"));
         assertEquals("http://www.apache.org/", href.toString());
 
         String content = body.toString();
@@ -115,6 +117,8 @@ public class HtmlParserTest extends TestCase {
         assertEquals("application/xhtml+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("XHTML test document", metadata.get(Metadata.TITLE));
         String content = handler.toString();
+        assertEquals("Tika Developers", metadata.get("Author"));
+        assertEquals("5", metadata.get("refresh"));
         assertTrue(content.contains("ability of Apache Tika"));
         assertTrue(content.contains("extract content"));
         assertTrue(content.contains("an XHTML document"));
