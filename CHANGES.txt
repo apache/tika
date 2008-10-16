@@ -92,6 +92,8 @@ Unreleased changes (0.2-incubating)
 
 38. TIKA-163 - GUI does not support drag and drop in Gnome or KDE (Dave Meikle)
 
+39. TIKA-166 - Update HTMLParser to parse contents of meta tags (Dave Meikle)
+
 Release 0.1-incubating - 12/27/2007
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
