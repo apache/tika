@@ -26,20 +26,6 @@ Tika - Content Analysis Toolkit
    {{{documentation.html}available documentation}}. You can find the
    latest release on the {{{download.html}download page}}.
 
-   Apache Tika is an effort undergoing
-   {{{http://incubator.apache.org/}incubation}} at
-   {{{http://www.apache.org/}The Apache Software Foundation}} (ASF),
-   sponsored by the {{{http://lucene.apache.org/}Apache Lucene PMC}}.
-   Incubation is required of all newly accepted projects until a further
-   review indicates that the infrastructure, communications, and decision
-   making process have stabilized in a manner consistent with other
-   successful ASF projects. While incubation status is not necessarily
-   a reflection of the completeness or stability of the code, it does
-   indicate that the project has yet to be fully endorsed by the ASF.
-
-   See the {{{http://incubator.apache.org/projects/tika.html}Apache Tika
-   Incubation Status}} page for the current incubation status.
-
 Latest News
 
    [July 2008: Apache Tika status report]
