@@ -148,12 +148,12 @@
 
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/incubator/tika/trunk
+      scm:svn:http://svn.apache.org/repos/asf/lucene/tika/trunk
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/incubator/tika/trunk
+      scm:svn:https://svn.apache.org/repos/asf/lucene/tika/trunk
     </developerConnection>
-    <url>http://svn.apache.org/viewvc/incubator/tika/trunk</url>
+    <url>http://svn.apache.org/viewvc/lucene/tika/trunk</url>
   </scm>
 
   <dependencies>
