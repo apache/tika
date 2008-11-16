@@ -21,22 +21,21 @@
   <publishDate position="none"/>
   <bannerLeft>
     <alt>Apache Tika</alt>
-    <src>http://incubator.apache.org/tika/tika.png</src>
-    <href>http://incubator.apache.org/tika/</href>
+    <src>http://lucene.apache.org/tika/tika.png</src>
+    <href>http://lucene.apache.org/tika/</href>
   </bannerLeft>
   <bannerRight>
-    <alt>Apache Incubator</alt>
-    <src>http://incubator.apache.org/images/apache-incubator-logo.png</src>
-    <href>http://incubator.apache.org/</href>
+    <alt>Apache Lucene</alt>
+    <src>http://lucene.apache.org/images/lucene_green_300.gif</src>
+    <href>http://lucene.apache.org/</href>
   </bannerRight>
   <body>
     <head>
       <link rel="icon" type="image/png"
-            href="http://incubator.apache.org/tika/tikaNoText16.png"/>
+            href="http://lucene.apache.org/tika/tikaNoText16.png"/>
     </head>
     <links>
       <item name="Apache" href="http://www.apache.org/" />
-      <item name="Incubator" href="http://incubator.apache.org/"/>
       <item name="Lucene" href="http://lucene.apache.org/"/>
     </links>
     <menu name="Apache Tika">
