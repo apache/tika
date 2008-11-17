@@ -1,6 +1,6 @@
 Tika Change Log
 
-Unreleased changes (0.2-incubating)
+Unreleased changes (0.2)
 
 1.  TIKA-109 - WordParser fails on some Word files (Dave Meikle)
 
@@ -106,7 +106,7 @@ Release 0.1-incubating - 12/27/2007
 
 5. TIKA-16 - Issues with data files used for testing by TestParsers (bdelacretaz)
 
-6. TIKA-14 - MimeTypeUtils.getMimeType() returns the default mime type for 
+6. TIKA-14 - MimeTypeUtils.getMimeType() returns the default mime type for
              .odt (Open Office) file (bdelacretaz)
 
 7. TIKA-12 - Add URL capability to MimeTypesUtils (jukka)
@@ -143,10 +143,10 @@ Release 0.1-incubating - 12/27/2007
 
 23. TIKA-31 - protected Parser.parse(InputStream stream,
               Iterable<Content> contents) (jukka & K. Bennett)
-              
-24. TIKA-36 - A convenience method for getting a document's content's text 
+
+24. TIKA-36 - A convenience method for getting a document's content's text
               would be helpful (K. Bennett & mattmann)
-  
+
 25. TIKA-33 - Stateless parsers (jukka)
 
 26. TIKA-38 - TXTParser adds a space to the content it reads from a file (K. Bennett & ridabenjelloun)
@@ -155,7 +155,7 @@ Release 0.1-incubating - 12/27/2007
 
 28. TIKA-39 - Excel parsing improvements (siren & ridabenjelloun)
 
-29. TIKA-34 - Provide a method that will return a default configuration 
+29. TIKA-34 - Provide a method that will return a default configuration
               (TikaConfig) (K. Bennett & mattmann)
 
 30. TIKA-42 - Content class needs (String, String, String) constructor (K. Bennett)
@@ -228,7 +228,7 @@ Release 0.1-incubating - 12/27/2007
                into a single String could be problematic (Niall Pemberton)
 
 61. TIKA-107 - Remove use of assertions for argument checking (Niall Pemberton)
- 
+
 62. TIKA-104 - Add utility methods to throw IOException with the caused
                intialized (jukka & Niall Pemberton)
 
