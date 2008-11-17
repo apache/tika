@@ -192,22 +192,35 @@ Supported Document Formats
 * Other supported formats
 
    [Extensible Markup Language (application/xml)]
-    TODO
+    Tika uses the <<<javax.xml>>> classes to parse Extensible Markup Language files.
+    Support for Extensible Markup Language files was added in Tika 0.1.
 
    [HyperText Markup Language (text/html)]
-    TODO
+    Tika uses the {{{http://sourceforge.net/projects/nekohtml}CyberNeko}} library to parse HyperText Markup Language files.
+    Support for HyperText Markup Language files was added in Tika 0.1.
 
    [Images (image/*)]
-    TODO
+    Tika uses the <<<javax.imageio>>> classes to extract Metadata from Image files.
+    Support for Image files was added in Tika 0.2.
 
    [Java class files]
-    TODO
+    The parsing of Java Class files is based on the asm library and work by Dave Brosius in JCR-1522.
+    Support for Java Class files was added in Tika 0.2.
 
    [Java jar archives]
-    TODO
+    The parsing of Java JAR archives is performed using a combination of the ZIP and Java class file parsers.
+    Support for Java JAR archives was added in Tika 0.2.
 
    [MP3 Audio (audio/mp3)]
-    TODO
+    The parsing of {{{http://www.id3.org/ID3v1}ID3v1}} tags from MP3 files was added in Tika version 0.2.
+    If found the following metadata is extracted and set:
+
+      * <<<TITLE>>> Title
+
+      * <<<SUBJECT>>> Subject
+
+    The above information, as well as the <<<Album>>>, <<<Track>>>, <<<Year>>>, <<<Genre>>>
+    and additional <<<Comment>>> are extracted when set in the file.
 
    [OpenDocument (application/vnd.oasis.opendocument.*)]
     TODO
@@ -256,4 +269,5 @@ Supported Document Formats
     Support for tar archives was added in Tika 0.2.
 
    [ZIP archive (application/zip)]
-    TODO
+    Tika uses Java's built-in Zip classes to parse ZIP files.
+    Support for ZIP was added in Tika 0.2.
