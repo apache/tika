@@ -1,6 +1,6 @@
 Tika Change Log
 
-Unreleased changes (0.2)
+Release 0.2 - 11/18/2008
 
 1.  TIKA-109 - WordParser fails on some Word files (Dave Meikle)
 
