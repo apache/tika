@@ -24,9 +24,13 @@ Tika - Content Analysis Toolkit
    libraries. For more information about Tika, please see the
    {{{formats.html}list of  supported document formats}} and the
    {{{documentation.html}available documentation}}. You can find the
-   latest release on the {{{download.html}download page}}.
+   latest release on the {{{download.html}download page}}. See the
+   {{{gettingstarted.html}Getting Started}} guide for instructions on
+   how to start using Tika.
 
    Tika is a subproject of {{{http://lucene.apache.org/}Apache Lucene}}.
+   Lucene is a project of the
+   {{{http://www.apache.org/}Apache Software Foundation}}.
 
 Latest News
 
