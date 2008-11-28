@@ -201,7 +201,7 @@
     <dependency>
       <groupId>net.sourceforge.nekohtml</groupId>
       <artifactId>nekohtml</artifactId>
-      <version>1.9.7</version>
+      <version>1.9.9</version>
     </dependency>
     <dependency>
       <groupId>com.ibm.icu</groupId>
