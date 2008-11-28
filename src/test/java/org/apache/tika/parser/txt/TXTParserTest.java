@@ -78,7 +78,7 @@ public class TXTParserTest extends TestCase {
         parser.parse(
                 new ByteArrayInputStream(new byte[0]), handler, metadata);
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("", handler.toString());
+        assertEquals("\n", handler.toString());
     }
 
 }

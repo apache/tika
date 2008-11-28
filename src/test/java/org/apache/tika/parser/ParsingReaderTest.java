@@ -40,6 +40,7 @@ public class ParsingReaderTest extends TestCase {
         assertEquals('e', reader.read());
         assertEquals('n', reader.read());
         assertEquals('t', reader.read());
+        assertEquals('\n', reader.read());
         assertEquals(-1, reader.read());
         reader.close();
         assertEquals(-1, stream.read());
@@ -61,6 +62,7 @@ public class ParsingReaderTest extends TestCase {
         assertEquals('e', reader.read());
         assertEquals('n', reader.read());
         assertEquals('t', reader.read());
+        assertEquals('\n', reader.read());
         assertEquals(-1, reader.read());
         reader.close();
         assertEquals(-1, stream.read());
