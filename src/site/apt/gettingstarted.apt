@@ -50,15 +50,15 @@ Build artifacts
 
       * tika-x.y.jar
 
-      * tika-x.y-standalone.jar
+      * tika-x.y-standalone.jar (available since 0.3)
 
-      * tika-x.y-jdk14.jar
+      * tika-x.y-jdk14.jar (available since 0.3)
 
    The main build artifact (tika-x.y.jar) contains the compiled Java
    classes and interfaces in the <<<org.apache.tika>>> packages and
    the default Tika configuration settings.
 
-   The standalone jar (tika-x.y-standalone.jar, available since version 0.2)
+   The standalone jar (tika-x.y-standalone.jar, available since version 0.3)
    includes also the classes and resources from all Tika dependencies. You
    can just drop this jar file in your application to access the full
    functionality of all Tika parsers. This is a runnable jar that runs the
