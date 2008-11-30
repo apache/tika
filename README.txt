@@ -67,8 +67,22 @@ to install the resulting jar artifact in your local Maven repository:
 
     mvn install
 
+You can also find the generated jar libraries in the ./target directory.
+
 See the Maven web site at http://maven.apache.org/ for more instructions
 and the latest Maven downloads. 
+
+Documentation
+=============
+
+You can build a local copy of the Tika documentation including JavaDocs
+using the following Maven 2 command in the Tika source directory: 
+
+    mvn site 
+
+You can then open the Tika Documentation in a web browser: 
+
+    ./target/site/documentation.html 
 
 Mailing Lists
 =============
