@@ -65,7 +65,7 @@ public class OpenOfficeMetaParser extends DcXMLParser {
         dh = getStatistic(dh, md, "nbPara", "paragraph-count");
         dh = getStatistic(dh, md, "nbWord", "word-count");
         dh = getStatistic(dh, md, "nbCharacter", "character-count");
-		dh = new NSNormalizerContentHandler(dh);
+        dh = new NSNormalizerContentHandler(dh);
         return dh;
     }
 

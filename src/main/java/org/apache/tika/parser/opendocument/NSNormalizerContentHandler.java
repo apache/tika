@@ -37,50 +37,50 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class NSNormalizerContentHandler extends ContentHandlerDecorator {
 
-	public NSNormalizerContentHandler(ContentHandler handler) {
-		super(handler);
-	}
+    public NSNormalizerContentHandler(ContentHandler handler) {
+        super(handler);
+    }
 
-	private final String mapOldNS(String ns) {
-		if (ns==null) return null;
-		if (ns.startsWith("http://openoffice.org/2000/"))
-			ns="urn:oasis:names:tc:opendocument:xmlns:"+ns.substring(27)+":1.0";
-		return ns;
-	}
-	
-	@Override
-	public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
-		AttributesImpl natts = new AttributesImpl();
-		for (int i = 0; i < atts.getLength(); i++) {
-			natts.addAttribute(
-				mapOldNS(atts.getURI(i)), atts.getLocalName(i), atts.getQName(i),
-				atts.getType(i), atts.getValue(i)
-			);
-		}
-		super.startElement(mapOldNS(namespaceURI),localName,qName,atts);
-	}
-	
-	@Override
-	public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
-		super.endElement(mapOldNS(namespaceURI),localName,qName);
-	}
-	
-	@Override
-	public void startPrefixMapping(String prefix, String uri) throws SAXException {
-		super.startPrefixMapping(prefix,mapOldNS(uri));
-	}
+    private final String mapOldNS(String ns) {
+        if (ns==null) return null;
+        if (ns.startsWith("http://openoffice.org/2000/"))
+            ns="urn:oasis:names:tc:opendocument:xmlns:"+ns.substring(27)+":1.0";
+        return ns;
+    }
 
-	/** do not load any DTDs (may be requested by parser). Fake the DTD by returning a empty string as InputSource */
-	@Override
-	public InputSource resolveEntity(String publicId, String systemId) throws IOException,SAXException {
-		if (
-			"-//OpenOffice.org//DTD OfficeDocument 1.0//EN".equals(publicId) ||
-			(systemId!=null && systemId.toLowerCase().endsWith(".dtd"))
-		) {
-			return new InputSource(new StringReader(""));
-		} else {
-			return super.resolveEntity(publicId,systemId);
-		}
-	}
-	
+    @Override
+    public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+        AttributesImpl natts = new AttributesImpl();
+        for (int i = 0; i < atts.getLength(); i++) {
+            natts.addAttribute(
+                    mapOldNS(atts.getURI(i)), atts.getLocalName(i), atts.getQName(i),
+                    atts.getType(i), atts.getValue(i)
+            );
+        }
+        super.startElement(mapOldNS(namespaceURI),localName,qName,atts);
+    }
+
+    @Override
+    public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
+        super.endElement(mapOldNS(namespaceURI),localName,qName);
+    }
+
+    @Override
+    public void startPrefixMapping(String prefix, String uri) throws SAXException {
+        super.startPrefixMapping(prefix,mapOldNS(uri));
+    }
+
+    /** do not load any DTDs (may be requested by parser). Fake the DTD by returning a empty string as InputSource */
+    @Override
+    public InputSource resolveEntity(String publicId, String systemId) throws IOException,SAXException {
+        if (
+                "-//OpenOffice.org//DTD OfficeDocument 1.0//EN".equals(publicId) ||
+                (systemId!=null && systemId.toLowerCase().endsWith(".dtd"))
+        ) {
+            return new InputSource(new StringReader(""));
+        } else {
+            return super.resolveEntity(publicId,systemId);
+        }
+    }
+
 }

@@ -34,82 +34,82 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class ElementMappingContentHandler extends ContentHandlerDecorator {
 
-	private final Map<QName,TargetElement> mappings;
+    private final Map<QName,TargetElement> mappings;
 
-	public ElementMappingContentHandler(ContentHandler handler, Map<QName,TargetElement> mappings) {
-		super(handler);
-		this.mappings=mappings;
-	}
+    public ElementMappingContentHandler(ContentHandler handler, Map<QName,TargetElement> mappings) {
+        super(handler);
+        this.mappings=mappings;
+    }
 
-	@Override
-	public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
-		final TargetElement mapping=mappings.get(new QName(namespaceURI,localName));
-		if (mapping!=null) {
-			final QName tag=mapping.getMappedTagName();
-			super.startElement(tag.getNamespaceURI(),tag.getLocalPart(),getQNameAsString(tag),mapping.mapAttributes(atts));
-		}
-	}
+    @Override
+    public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+        final TargetElement mapping=mappings.get(new QName(namespaceURI,localName));
+        if (mapping!=null) {
+            final QName tag=mapping.getMappedTagName();
+            super.startElement(tag.getNamespaceURI(),tag.getLocalPart(),getQNameAsString(tag),mapping.mapAttributes(atts));
+        }
+    }
 
-	@Override
-	public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
-		final TargetElement mapping=mappings.get(new QName(namespaceURI,localName));
-		if (mapping!=null) {
-			final QName tag=mapping.getMappedTagName();
-			super.endElement(tag.getNamespaceURI(),tag.getLocalPart(),getQNameAsString(tag));
-		}
-	}
-	
-	protected static final String getQNameAsString(final QName qname) {
-		final StringBuilder qn=new StringBuilder(qname.getPrefix());
-		if (qn.length()>0) qn.append(':');
-		return qn.append(qname.getLocalPart()).toString();
-	}
+    @Override
+    public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
+        final TargetElement mapping=mappings.get(new QName(namespaceURI,localName));
+        if (mapping!=null) {
+            final QName tag=mapping.getMappedTagName();
+            super.endElement(tag.getNamespaceURI(),tag.getLocalPart(),getQNameAsString(tag));
+        }
+    }
 
-	public static class TargetElement {
-	
-		/** Creates an TargetElement, attributes of this element will be mapped as specified */
-		public TargetElement(QName mappedTagName, Map<QName,QName> attributesMapping) {
-			this.mappedTagName=mappedTagName;
-			this.attributesMapping=attributesMapping;
-		}
-		
-		/** A shortcut that automatically creates the QName object */
-		public TargetElement(String mappedTagURI, String mappedTagLocalName, Map<QName,QName> attributesMapping) {
-			this(new QName(mappedTagURI,mappedTagLocalName), attributesMapping);
-		}
-		
-		/** Creates an TargetElement with no attributes, all attributes will be deleted from SAX stream */
-		public TargetElement(QName mappedTagName) {
-			this(mappedTagName, Collections.<QName,QName>emptyMap());
-		}
-		
-		/** A shortcut that automatically creates the QName object */
-		public TargetElement(String mappedTagURI, String mappedTagLocalName) {
-			this(mappedTagURI, mappedTagLocalName, Collections.<QName,QName>emptyMap());
-		}
-		
-		public QName getMappedTagName() {
-			return mappedTagName;
-		}
-		
-		public Map<QName,QName> getAttributesMapping() {
-			return attributesMapping;
-		}
-		
-		public Attributes mapAttributes(final Attributes atts) {
-			final AttributesImpl natts = new AttributesImpl();
-			for (int i = 0; i < atts.getLength(); i++) {
-				QName name=attributesMapping.get(new QName(atts.getURI(i), atts.getLocalName(i)));
-				if (name!=null) natts.addAttribute(
-					name.getNamespaceURI(), name.getLocalPart(), getQNameAsString(name),
-					atts.getType(i), atts.getValue(i)
-				);
-			}
-			return natts;
-		}
-		
-		private final QName mappedTagName;
-		private final Map<QName,QName> attributesMapping;
-	}
-	
+    protected static final String getQNameAsString(final QName qname) {
+        final StringBuilder qn=new StringBuilder(qname.getPrefix());
+        if (qn.length()>0) qn.append(':');
+        return qn.append(qname.getLocalPart()).toString();
+    }
+
+    public static class TargetElement {
+
+        /** Creates an TargetElement, attributes of this element will be mapped as specified */
+        public TargetElement(QName mappedTagName, Map<QName,QName> attributesMapping) {
+            this.mappedTagName=mappedTagName;
+            this.attributesMapping=attributesMapping;
+        }
+
+        /** A shortcut that automatically creates the QName object */
+        public TargetElement(String mappedTagURI, String mappedTagLocalName, Map<QName,QName> attributesMapping) {
+            this(new QName(mappedTagURI,mappedTagLocalName), attributesMapping);
+        }
+
+        /** Creates an TargetElement with no attributes, all attributes will be deleted from SAX stream */
+        public TargetElement(QName mappedTagName) {
+            this(mappedTagName, Collections.<QName,QName>emptyMap());
+        }
+
+        /** A shortcut that automatically creates the QName object */
+        public TargetElement(String mappedTagURI, String mappedTagLocalName) {
+            this(mappedTagURI, mappedTagLocalName, Collections.<QName,QName>emptyMap());
+        }
+
+        public QName getMappedTagName() {
+            return mappedTagName;
+        }
+
+        public Map<QName,QName> getAttributesMapping() {
+            return attributesMapping;
+        }
+
+        public Attributes mapAttributes(final Attributes atts) {
+            final AttributesImpl natts = new AttributesImpl();
+            for (int i = 0; i < atts.getLength(); i++) {
+                QName name=attributesMapping.get(new QName(atts.getURI(i), atts.getLocalName(i)));
+                if (name!=null) natts.addAttribute(
+                        name.getNamespaceURI(), name.getLocalPart(), getQNameAsString(name),
+                        atts.getType(i), atts.getValue(i)
+                );
+            }
+            return natts;
+        }
+
+        private final QName mappedTagName;
+        private final Map<QName,QName> attributesMapping;
+    }
+
 }

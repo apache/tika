@@ -47,7 +47,7 @@ public class TextContentHandler extends DefaultHandler {
     }
 
     @Override
-	public String toString() {
+    public String toString() {
         return delegate.toString();
     }
 
