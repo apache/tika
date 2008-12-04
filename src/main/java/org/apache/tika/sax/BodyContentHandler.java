@@ -60,7 +60,7 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      * @param writer writer
      */
     public BodyContentHandler(Writer writer) {
-        this(new WriteOutContentHandler(writer));
+        this(new XHTMLToTextContentHandler(new WriteOutContentHandler(writer)));
     }
 
     /**
@@ -70,7 +70,7 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      * @param stream output stream
      */
     public BodyContentHandler(OutputStream stream) {
-        this(new WriteOutContentHandler(stream));
+        this(new XHTMLToTextContentHandler(new WriteOutContentHandler(stream)));
     }
 
     /**
@@ -79,7 +79,7 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      * using the {@link #toString()} method.
      */
     public BodyContentHandler() {
-        this(new WriteOutContentHandler());
+        this(new XHTMLToTextContentHandler(new WriteOutContentHandler()));
     }
 
 }

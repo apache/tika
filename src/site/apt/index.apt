@@ -24,9 +24,37 @@ Tika - Content Analysis Toolkit
    libraries. For more information about Tika, please see the
    {{{formats.html}list of  supported document formats}} and the
    {{{documentation.html}available documentation}}. You can find the
-   latest release on the {{{download.html}download page}}.
+   latest release on the {{{download.html}download page}}. See the
+   {{{gettingstarted.html}Getting Started}} guide for instructions on
+   how to start using Tika.
+
+   Tika is a subproject of {{{http://lucene.apache.org/}Apache Lucene}}.
+   Lucene is a project of the
+   {{{http://www.apache.org/}Apache Software Foundation}}.
 
 Latest News
+   [December 2008: Apache Tika Release]
+     Apache Tika 0.2 has been released. Please see the download page for more details.
+
+   [November 2008: User mailing list created]
+     A new mailing list, tika-user@lucene.apache.org, has been created
+     for discussion about the use of the Tika toolkit. You can subscribe
+     this mailing list by sending a message to
+     tika-user-subscribe@lucene.apache.org.
+
+   [October 2008: Tika graduates to a Lucene subproject]
+     Tika has graduated form the Incubator to become a subproject
+     of Apache Lucene. The project infrastructure will be migrated from
+     incubator.apache.org to lucene.apache.org.
+
+   [October 2008: Apache Tika status report]
+     Dave Meikle was just voted in as a new committer.
+
+     Paolo Mottadelli will present Tika at ApacheCon US.
+
+     Tika 0.2 should be released soon.
+
+     Usage documentation has been added to the website.
 
    [July 2008: Apache Tika status report]
      Tika community remains relatively small, with just a handful

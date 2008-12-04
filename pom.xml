@@ -89,20 +89,6 @@
       </roles>
     </developer>
     <developer>
-      <name>Doug Cutting</name>
-      <id>cutting</id>
-      <roles>
-        <role>mentor</role>
-      </roles>
-    </developer>
-    <developer>
-      <name>Bertrand Delacretaz</name>
-      <id>bdelacretaz</id>
-      <roles>
-        <role>mentor</role>
-      </roles>
-    </developer>
-    <developer>
       <name>Mark Harwood</name>
       <id>mharwood</id>
       <roles>
@@ -140,11 +126,30 @@
       <name>Jukka Zitting</name>
       <id>jukka</id>
       <roles>
-        <role>mentor</role>
         <role>committer</role>
       </roles>
     </developer>
   </developers>
+  <contributors>
+    <contributor>
+      <name>Doug Cutting</name>
+      <roles>
+        <role>mentor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Bertrand Delacretaz</name>
+      <roles>
+        <role>mentor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Niall Pemberton</name>
+      <roles>
+        <role>emeritus</role>
+      </roles>
+    </contributor>
+  </contributors>
 
   <scm>
     <connection>
@@ -196,12 +201,12 @@
     <dependency>
       <groupId>net.sourceforge.nekohtml</groupId>
       <artifactId>nekohtml</artifactId>
-      <version>1.9.7</version>
+      <version>1.9.9</version>
     </dependency>
     <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
-      <version>3.4.4</version>
+      <version>3.8</version>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
@@ -292,7 +297,18 @@
             </goals>
           </execution>
         </executions>
-      </plugin>-->
+      </plugin> -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>retrotranslator-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>translate-project</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 

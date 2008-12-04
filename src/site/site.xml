@@ -43,6 +43,7 @@
       <item name="Download" href="download.html"/>
       <item name="Documentation" href="documentation.html"/>
       <item name="Supported Formats" href="formats.html"/>
+      <item name="Getting Started" href="gettingstarted.html"/>
     </menu>
     <menu ref="reports"/>
   </body>

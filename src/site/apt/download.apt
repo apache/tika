@@ -19,12 +19,12 @@
 
 Download Apache Tika
 
-   The first official release of Apache Tika, 0.1-incubating, is now available.
-   See the {{{http://www.apache.org/dist/incubator/tika/CHANGES-0.1-incubating.txt}CHANGES.txt}}
+   Apache Tika 0.2 is now available.
+   See the {{{http://www.apache.org/dist/lucene/tika/CHANGES-0.2.txt}CHANGES.txt}}
    file for more information on the list of updates in this initial release.
 
-   * {{{http://www.apache.org/dyn/closer.cgi/incubator/tika/apache-tika-0.1-incubating-src.tar.gz}apache-tika-0.1-incubating-src.tar.gz}}
-     ({{{http://www.apache.org/dist/incubator/tika/apache-tika-0.1-incubating-src.tar.gz.asc}PGP}})
+   * {{{http://www.apache.org/dyn/closer.cgi/lucene/tika/apache-tika-0.2.tar.gz}apache-tika-0.2.tar.gz}}
+     ({{{http://www.apache.org/dist/lucene/tika/apache-tika-0.2.tar.gz.asc}PGP}})
 
    []
 

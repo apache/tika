@@ -387,6 +387,20 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/vnd.sun.xml.writer">
+    <comment>
+      OpenOffice v1.0: Writer Document
+    </comment>
+    <alias type="application/x-vnd.sun.xml.writer" />
+    <glob pattern="*.sxw" />
+    <magic>
+      <match type="string" offset="0" value="PK">
+        <match type="string" offset="30"
+          value="mimetypeapplication/vnd.sun.xml.writer" />
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/zip">
     <alias type="application/x-zip-compressed" />
     <magic priority="40">
