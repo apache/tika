@@ -1,6 +1,6 @@
 Tika Change Log
 
-Release 0.2 - 11/18/2008
+Unreleased changes (0.2)
 
 1.  TIKA-109 - WordParser fails on some Word files (Dave Meikle)
 
@@ -93,6 +93,20 @@ Release 0.2 - 11/18/2008
 38. TIKA-163 - GUI does not support drag and drop in Gnome or KDE (Dave Meikle)
 
 39. TIKA-166 - Update HTMLParser to parse contents of meta tags (Dave Meikle)
+
+40. TIKA-164 - Upgrade of the nekohtml dependency to 1.9.9 (Jukka Zitting)
+
+41. TIKA-165 - Upgrade of the ICU4J dependency to version 3.8 (Jukka Zitting)
+
+42. TIKA-172 - New Open Document Parser that emits structured XHTML content
+               (Uwe Schindler & Jukka Zitting)
+
+43. TIKA-175 - Retrotranslate Tika for use in Java 1.4 environments (Jukka Zitting)
+
+44. TIKA-177 - Improvements to build instruction in README (Chris Hostetter & Jukka Zitting)
+
+45. TIKA-171 - New ContentHandler for plain text output that has no problem with
+               missing white space after XHTML block tags (Uwe Schindler & Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
 

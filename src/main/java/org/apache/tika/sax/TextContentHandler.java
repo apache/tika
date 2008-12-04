@@ -34,14 +34,21 @@ public class TextContentHandler extends DefaultHandler {
         this.delegate = delegate;
     }
 
+    @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
         delegate.characters(ch, start, length);
     }
 
+    @Override
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
         delegate.ignorableWhitespace(ch, start, length);
+    }
+
+    @Override
+    public String toString() {
+        return delegate.toString();
     }
 
 }

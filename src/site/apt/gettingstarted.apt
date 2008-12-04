@@ -1,0 +1,144 @@
+                       --------------------------------
+                       Getting Started with Apache Tika
+                       --------------------------------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one or more
+~~ contributor license agreements.  See the NOTICE file distributed with
+~~ this work for additional information regarding copyright ownership.
+~~ The ASF licenses this file to You under the Apache License, Version 2.0
+~~ (the "License"); you may not use this file except in compliance with
+~~ the License.  You may obtain a copy of the License at
+~~
+~~     http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+
+Getting Started with Apache Tika
+
+   This document describes how to build Apache Tika from sources and
+   how to start using Tika in an application.
+
+Getting and building the sources
+
+   To build Tika from sources you first need to either
+   {{{download.html}download}} a source release or
+   {{{source-repository.html}checkout}} the latest sources from
+   version control.
+
+   Once you have the sources, you can build them using the
+   {{{http://maven.apache.org/}Maven 2}} build system. Executing the
+   following command in the source directory will build the sources
+   and install the resulting artifacts in your local Maven repository.
+
+---
+mvn install
+---
+
+   See the Maven documentation for more information about the available
+   build options.
+
+   Note that you need Java 5 or higher to build Tika.
+
+Build artifacts
+
+   The Tika build produces the following libraries in the <<<target>>>
+   directory (x.y stands for the current Tika version number).
+
+      * tika-x.y.jar
+
+   The main build artifact (tika-x.y.jar) contains the compiled Java
+   classes and interfaces in the <<<org.apache.tika>>> packages and
+   the default Tika configuration settings.
+
+Using Tika as a Maven dependency
+
+   Using Tika in a Maven project is very straightforward. Just select the
+   version of Tika you want to use, and add the following dependency.
+
+---
+<dependency>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika</artifactId>
+  <version>x.y</version>
+</dependency>
+---
+
+   Note that the incubating 0.1 release of Tika is not available in the
+   central Maven repository. You need to build and install Tika locally
+   to use it as a Maven dependency.
+
+   Note that adding the Tika dependency will introduce a number of
+   transitive dependencies to your project. You need to make sure that
+   these dependencies won't conflict with your existing project dependencies.
+   The listing below shows all the compile-scope dependencies of Tika 0.1.
+   You can use the command "mvn dependency:tree" to check the latest tree
+   of dependencies.
+
+---
+org.apache.tika:tika:jar:0.1-incubating
++- commons-lang:commons-lang:jar:2.1:compile
++- commons-logging:commons-logging:jar:1.0.4:compile
++- commons-codec:commons-codec:jar:1.3:compile
++- pdfbox:pdfbox:jar:0.7.3:compile
+|  +- org.fontbox:fontbox:jar:0.1.0:compile
+|  +- org.jempbox:jempbox:jar:0.2.0:compile
+|  +- bouncycastle:bcmail-jdk14:jar:136:compile
+|  \- bouncycastle:bcprov-jdk14:jar:136:compile
++- org.apache.poi:poi:jar:3.0-FINAL:compile
++- jdom:jdom:jar:1.0:compile
++- jaxen:jaxen:jar:1.1.1:compile
+|  +- dom4j:dom4j:jar:1.6.1:compile
+|  +- xml-apis:xml-apis:jar:1.3.02:compile
+|  +- xerces:xercesImpl:jar:2.6.2:compile
+|  \- xom:xom:jar:1.0:compile
+|     +- xerces:xmlParserAPIs:jar:2.6.2:compile
+|     \- xalan:xalan:jar:2.6.0:compile
++- nekohtml:nekohtml:jar:0.9.5:compile
++- com.ibm.icu:icu4j:jar:3.4.4:compile
+\- log4j:log4j:jar:1.2.14:compile
+---
+
+Using Tika in an Ant project
+
+   Unless you use a dependency manager tool like
+   {{{http://ant.apache.org/ivy/}Apache Ivy}} you need to add both the
+   Tika jar and all dependency jars individually in your
+   {{{http://ant.apache.org/}Ant}} build. You can leave out some parser
+   libraries if you don't need support for certain file formats.
+
+---
+<classpath>
+  ... <!-- your other classpath entries -->
+  <pathelement location="path/to/tika-x.y.jar"/>
+  <pathelement location="path/to/commons-lang-2.1.jar"/>
+  <pathelement location="path/to/commons-logging-1.0.4.jar"/>
+  <pathelement location="path/to/commons-codec-1.3.jar"/>
+  <pathelement location="path/to/commons-io-1.4.jar"/>
+  <pathelement location="path/to/pdfbox-0.7.3.jar"/>
+  <pathelement location="path/to/fontbox-0.1.0.jar"/>
+  <pathelement location="path/to/jempbox-0.2.0.jar"/>
+  <pathelement location="path/to/bcmail-jdk14-136.jar"/>
+  <pathelement location="path/to/bcprov-jdk14-136.jar"/>
+  <pathelement location="path/to/poi-3.0-FINAL.jar"/>
+  <pathelement location="path/to/jdom-1.0.jar"/>
+  <pathelement location="path/to/jaxen-1.1.1.jar"/>
+  <pathelement location="path/to/dom4j-1.6.1.jar"/>
+  <pathelement location="path/to/xml-apis-1.3.02.jar"/>
+  <pathelement location="path/to/xercesImpl-2.6.2.jar"/>
+  <pathelement location="path/to/xom-1.0.jar"/>
+  <pathelement location="path/to/xmlParserAPIs-2.6.2.jar"/>
+  <pathelement location="path/to/xalan-2.6.0.jar"/>
+  <pathelement location="path/to/nekohtml-0.9.5.jar"/>
+  <pathelement location="path/to/icu4j-3.4.4.jar"/>
+  <pathelement location="path/to/log4j-1.2.14.jar"/>
+</classpath>
+---
+
+   An easy way to gather all these libraries is to run
+   "mvn dependency:copy-dependencies" in the Tika source directory.
+   This will copy all Tika dependencies to the <<<target/dependencies>>>
+   directory.

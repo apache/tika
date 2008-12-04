@@ -1,10 +1,12 @@
-===========================================================
-Welcome to Apache Tika  <http://incubator.apache.org/tika/>
-===========================================================
+========================================================
+Welcome to Apache Tika  <http://lucene.apache.org/tika/>
+========================================================
 
 Apache Tika is a toolkit for detecting and extracting metadata and
 structured text content from various documents using existing parser
-libraries. 
+libraries.
+
+Tika is a subproject of Apache Lucene <http://lucene.apache.org/>.
 
 License (see also LICENSE.txt)
 ==============================
@@ -65,18 +67,41 @@ to install the resulting jar artifact in your local Maven repository:
 
     mvn install
 
+You can also find the generated jar libraries in the ./target directory.
+
 See the Maven web site at http://maven.apache.org/ for more instructions
 and the latest Maven downloads. 
+
+Documentation
+=============
+
+You can build a local copy of the Tika documentation including JavaDocs
+using the following Maven 2 command in the Tika source directory: 
+
+    mvn site 
+
+You can then open the Tika Documentation in a web browser: 
+
+    ./target/site/documentation.html 
 
 Mailing Lists
 =============
 
-Discussion about the Tika project takes place on the development mailing
-list tika-dev@incubator.apache.org. The list is open to anyone and
-publicly archived. You can subscribe the mailing list by sending a
-message to tika-dev-subscribe@incubator.apache.org, and unsubscribe by
-sending a message to tika-dev-unsubscribe@incubator.apache.org. To receive
-more instructions, send a message to tika-dev-help@incubator.apache.org.
+Discussion about Tika takes place on the following mailing lists:
+
+    tika-user@lucene.apache.org    - About using Tika
+    tika-dev@lucene.apache.org     - About developing Tika
+
+Notification on all code changes are sent to the following mailing list:
+
+    tika-commits@lucene.apache.org
+
+The mailing lists are open to anyone and publicly archived.
+
+You can subscribe the mailing lists by sending a message to
+tika-<LIST>-subscribe@lucene.apache.org (for example tika-user-subscribe@...).
+To unsubscribe, send a message to tika-<LIST>-unsubscribe@lucene.apache.org.
+For more instructions, send a message to tika-<LIST>-help@lucene.apache.org.
 
 Issue Tracker
 =============
@@ -89,7 +114,7 @@ latest information on known issues and recent bug fixes and enhancements.
 Updating the Tika web site
 ==========================
 
-Here's how to update the live Tika website (http://incubator.apache.org/tika/)
+Here's how to update the live Tika website (http://lucene.apache.org/tika/)
 
     1) Edit the content found in src/site
 
@@ -97,19 +122,6 @@ Here's how to update the live Tika website (http://incubator.apache.org/tika/)
 
     3) Check the new content at target/site/index.html
 
-    4) Checkout https://svn.apache.org/repos/asf/incubator/tika/site
-       and update the changed pages there
+    4) Commit your changes
 
-    5) Commit your changes, both here and in the tika/site module
-
-    6) To activate the changes on the live website, login to 
-       people.apache.org and run:
-
-           umask 002; svn update /www/incubator.apache.org/tika
-
-    7) That directory is replicated to the live website every few hours,
-       so your changes can take some time to be live.
-
-Easy and fun, isn't it? ;-)
-
-This will get better once Tika graduates from the Incubator.
+Your changes are automatically deployed to the live web site in a few hours.
