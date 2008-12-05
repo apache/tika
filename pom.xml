@@ -76,7 +76,7 @@
       <name>User mailing list</name>
       <subscribe>tika-user-subscribe@lucene.apache.org</subscribe>
       <unsubscribe>tika-user-unsubscribe@lucene.apache.org</unsubscribe>
-      <post>tika-commits@lucene.apache.org</post>
+      <post>tika-user@lucene.apache.org</post>
       <archive>http://mail-archives.apache.org/mod_mbox/lucene-tika-user/</archive>
       <otherArchives>
         <otherArchive>http://www.mail-archive.com/tika-user@lucene.apache.org/</otherArchive>
