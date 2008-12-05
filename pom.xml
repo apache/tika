@@ -39,7 +39,7 @@
   <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
   <description>Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.</description>
 
-  <url>http://incubator.apache.org/tika/</url>
+  <url>http://lucene.apache.org/tika/</url>
 
   <issueManagement>
     <system>JIRA</system>
@@ -49,11 +49,12 @@
   <mailingLists>
     <mailingList>
       <name>Development mailing list</name>
-      <subscribe>tika-dev-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>tika-dev-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>tika-dev@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-tika-dev/</archive>
+      <subscribe>tika-dev-subscribe@lucene.apache.org</subscribe>
+      <unsubscribe>tika-dev-unsubscribe@lucene.apache.org</unsubscribe>
+      <post>tika-dev@lucene.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/lucene-tika-dev/</archive>
       <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-dev@lucene.apache.org/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-dev@incubator.apache.org/</otherArchive>
         <otherArchive>http://www.nabble.com/Apache-Tika---Development-f20913.html</otherArchive>
         <otherArchive>http://news.gmane.org/gmane.comp.apache.tika.devel</otherArchive>
@@ -62,12 +63,23 @@
     </mailingList>
     <mailingList>
       <name>Commit mailing list</name>
-      <subscribe>tika-commits-subscribe@incubator.apache.org</subscribe>
-      <unsubscribe>tika-commits-unsubscribe@incubator.apache.org</unsubscribe>
-      <post>tika-commits@incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-tika-commits/</archive>
+      <subscribe>tika-commits-subscribe@lucene.apache.org</subscribe>
+      <unsubscribe>tika-commits-unsubscribe@lucene.apache.org</unsubscribe>
+      <post>tika-commits@lucene.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/lucene-tika-commits/</archive>
       <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-commits@lucene.apache.org/</otherArchive>
         <otherArchive>http://www.mail-archive.com/tika-commits@incubator.apache.org/</otherArchive>
+      </otherArchives>
+    </mailingList>
+    <mailingList>
+      <name>User mailing list</name>
+      <subscribe>tika-user-subscribe@lucene.apache.org</subscribe>
+      <unsubscribe>tika-user-unsubscribe@lucene.apache.org</unsubscribe>
+      <post>tika-user@lucene.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/lucene-tika-user/</archive>
+      <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-user@lucene.apache.org/</otherArchive>
       </otherArchives>
     </mailingList>
   </mailingLists>
