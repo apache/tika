@@ -163,7 +163,7 @@ Using Tika as a command line utility
 
  The tika jar (tika-x.y.jar) can be used as a command
  line utility for extracting text content and metadata from all sorts of
- files, provided the dependancies detailed previously are included on the classpath.
+ files, provided the dependencies detailed previously are included on the classpath.
 
  The usage instructions are shown below.
 
