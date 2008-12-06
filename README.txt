@@ -82,7 +82,9 @@ using the following Maven 2 command in the Tika source directory:
 
 You can then open the Tika Documentation in a web browser: 
 
-    ./target/site/documentation.html 
+    ./target/site/gettingstarted.html (for information on getting started with Tika)
+    ./target/site/documentation.html (for information on the key abstractions and usage of Tika)
+    ./target/site/formats.html (for information on supported formats)
 
 Mailing Lists
 =============
