@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
  */
 class OutlookExtractor {
 
-    private static final Chunks CHUNKS = Chunks.getInstance();
+    private static final Chunks CHUNKS = Chunks.getInstance(false);
 
     private final POIFSChunkParser parser;
 
