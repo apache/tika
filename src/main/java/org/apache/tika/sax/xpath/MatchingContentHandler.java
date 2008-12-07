@@ -26,9 +26,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Content handler decorator that only passes the elements, attributes,
- * and text nodes that match the given XPath expression. Note especially
- * that {@link #startDocument()} and {@link #endDocument()} events are not
- * passed to the decorated handler.
+ * and text nodes that match the given XPath expression.
  */
 public class MatchingContentHandler extends ContentHandlerDecorator {
 
@@ -100,18 +98,6 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
         if (matcher.matchesText()) {
             super.skippedEntity(name);
         }
-    }
-
-    /**
-     * Ignored.
-     */
-    public void startDocument() {
-    }
-
-    /**
-     * Ignored.
-     */
-    public void endDocument() {
     }
 
 }

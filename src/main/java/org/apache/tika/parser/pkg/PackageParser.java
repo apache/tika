@@ -25,6 +25,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -92,7 +93,7 @@ public abstract class PackageParser implements Parser {
         try {
             getParser().parse(
                     new CloseShieldInputStream(stream),
-                    new BodyContentHandler(xhtml),
+                    new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                     metadata);
             xhtml.characters("\n");
         } catch (TikaException e) {

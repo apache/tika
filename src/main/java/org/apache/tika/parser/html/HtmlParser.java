@@ -103,11 +103,9 @@ public class HtmlParser implements Parser {
                 new MatchingContentHandler(getMetaHandler(metadata), meta));
 
         // Parse the HTML document
-        xhtml.startDocument();
         SAXParser parser = new SAXParser();
         parser.setContentHandler(new XHTMLDowngradeHandler(handler));
         parser.parse(new InputSource(Utils.getUTF8Reader(stream, metadata)));
-        xhtml.endDocument();
     }
 
     private ContentHandler getTitleHandler(final Metadata metadata) {

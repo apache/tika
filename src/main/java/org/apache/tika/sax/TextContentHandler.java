@@ -23,7 +23,8 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * Content handler decorator that only passes the
  * {@link #characters(char[], int, int)} and
- * (@link {@link #ignorableWhitespace(char[], int, int)} events to
+ * (@link {@link #ignorableWhitespace(char[], int, int)}
+ * (plus {@link #startDocument()} and {@link #endDocument()} events to
  * the decorated content handler.
  */
 public class TextContentHandler extends DefaultHandler {
@@ -44,6 +45,16 @@ public class TextContentHandler extends DefaultHandler {
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
         delegate.ignorableWhitespace(ch, start, length);
+    }
+
+    @Override
+    public void startDocument() throws SAXException {
+        delegate.startDocument();
+    }
+
+    @Override
+    public void endDocument() throws SAXException {
+        delegate.endDocument();
     }
 
     @Override

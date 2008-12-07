@@ -79,6 +79,22 @@ public class WriteOutContentHandler extends DefaultHandler {
     }
 
     /**
+     * Flushes the character stream so that no characters are forgotten
+     * in internal buffers.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-179">TIKA-179</a>
+     * @throws SAXException if the stream can not be flushed
+     */
+    @Override
+    public void endDocument() throws SAXException {
+        try {
+            writer.flush();
+        } catch (IOException e) {
+            throw new SAXException("Error flushing character output", e);
+        }
+    }
+
+    /**
      * Returns the contents of the internal string buffer where
      * all the received characters have been collected. Only works
      * when this object was constructed using the empty default
