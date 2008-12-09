@@ -19,12 +19,12 @@
 
 Download Apache Tika
 
-   The first official release of Apache Tika, 0.1-incubating, is now available.
-   See the {{{http://www.apache.org/dist/incubator/tika/CHANGES-0.1-incubating.txt}CHANGES.txt}}
+   Apache Tika 0.2 is now available.
+   See the {{{http://www.apache.org/dist/lucene/tika/CHANGES-0.2.txt}CHANGES.txt}}
    file for more information on the list of updates in this initial release.
 
-   * {{{http://www.apache.org/dyn/closer.cgi/incubator/tika/apache-tika-0.1-incubating-src.tar.gz}apache-tika-0.1-incubating-src.tar.gz}}
-     ({{{http://www.apache.org/dist/incubator/tika/apache-tika-0.1-incubating-src.tar.gz.asc}PGP}})
+   * {{{http://www.apache.org/dyn/closer.cgi/lucene/tika/apache-tika-0.2-src.tar.gz}apache-tika-0.2-src.tar.gz}}
+     ({{{http://www.apache.org/dist/lucene/tika/apache-tika-0.2-src.tar.gz.asc}PGP}})
 
    []
 
@@ -32,6 +32,8 @@ Download Apache Tika
    {{{http://www.apache.org/licenses/LICENSE-2.0}Apache License, Version 2.0}}.
    See the NOTICE.txt file contained in each release artifact for applicable
    copyright attribution notices.
+
+   If you are looking for previous releases of Apache Tika, have a look in the {{{http://archive.apache.org/dist/incubator/tika/}archives}}.
 
 Export control
 
@@ -61,7 +63,7 @@ Export control
 Verify
 
    It is essential that you verify the integrity of the downloaded files
-   using the PGP signatures. Please read 
+   using the PGP signatures. Please read
    {{{http://httpd.apache.org/dev/verification.html}Verifying Apache HTTP Server Releases}}
    for more information on why you should verify our releases.
 

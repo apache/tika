@@ -34,6 +34,9 @@ Tika - Content Analysis Toolkit
 
 Latest News
 
+   [December 2008: Apache Tika Release]
+     Apache Tika 0.2 has been released. Please see the download page for more details.
+
    [November 2008: User mailing list created]
      A new mailing list, tika-user@lucene.apache.org, has been created
      for discussion about the use of the Tika toolkit. You can subscribe
@@ -93,7 +96,7 @@ Latest News
      the {{{http://www.apache.org/dist/incubator/tika/CHANGES-0.1-incubating.txt}CHANGES.txt}}
      file for more information on the list of updates in this initial release. Thanks to all
      who contributed! You can download the official source tarball {{{http://www.apache.org/dyn/closer.cgi/incubator/tika}here}}.
-   
+
    [October 8th, 2007: Welcome Keith Bennett!]
      The Tika PPMC has {{{http://www.nabble.com/Please-welcome-Keith-Bennett-as-a-Tika-committer%21-tf4586151.html#a13107428}elected}}
      Keith Bennett as our new committer. Welcome!
