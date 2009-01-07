@@ -26,7 +26,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * Content handler decorator that simplifies the task of producing XHTML
  * events for Tika content parsers.
  */
-public class XHTMLContentHandler extends ContentHandlerDecorator {
+public class XHTMLContentHandler extends SafeContentHandler {
 
     /**
      * The XHTML namespace URI
