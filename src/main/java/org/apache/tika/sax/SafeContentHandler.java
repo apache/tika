@@ -19,8 +19,28 @@ package org.apache.tika.sax;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+/**
+ * Content handler decorator that makes sure that the character events
+ * ({@link #characters(char[], int, int)} or
+ * {@link #ignorableWhitespace(char[], int, int)}) passed to the decorated
+ * content handler contain only valid XML characters. All invalid characters
+ * are replaced with spaces.
+ * <p>
+ * The XML standard defines the following Unicode character ranges as
+ * valid XML characters:
+ * <pre>
+ * #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+ * </pre>
+ * <p>
+ * Note that currently this class only detects those invalid characters whose
+ * UTF-16 representation fits a single char. Also, this class does not ensure
+ * that the UTF-16 encoding of incoming characters is correct.
+ */
 public class SafeContentHandler extends ContentHandlerDecorator {
 
+    /**
+     * Replacement for invalid characters.
+     */
     private static final char[] REPLACEMENT = new char[] { ' ' };
 
     /**
@@ -58,6 +78,18 @@ public class SafeContentHandler extends ContentHandlerDecorator {
         super(handler);
     }
 
+    /**
+     * Filters and outputs the contents of the given input buffer. Any
+     * invalid characters in the input buffer area handled by sending a
+     * replacement (a space character) to the given output. Any sequences
+     * of valid characters are passed as-is to the given output. 
+     * 
+     * @param ch input buffer
+     * @param start start offset within the buffer
+     * @param length number of characters to read from the buffer
+     * @param output output channel
+     * @throws SAXException if the filtered characters could not be written out
+     */
     private void filter(char[] ch, int start, int length, Output output)
             throws SAXException {
         int end = start + length;
@@ -92,8 +124,12 @@ public class SafeContentHandler extends ContentHandlerDecorator {
      *         <code>false</code> otherwise
      */
     protected boolean isInvalid(char ch) {
-        // TODO: Detect also FFFE, FFFF, and the surrogate blocks
-        return ch < 0x20 && ch != 0x09 && ch != 0x0A && ch != 0x0D;
+        // TODO: Correct handling of multi-word characters
+        if (ch < 0x20) {
+            return ch != 0x09 && ch != 0x0A && ch != 0x0D;
+        } else {
+            return ch >= 0xFFFE;
+        }
     }
 
     /**
