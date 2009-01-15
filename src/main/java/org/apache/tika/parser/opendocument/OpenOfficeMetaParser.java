@@ -25,7 +25,6 @@ import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parser for OpenDocument <code>meta.xml</code> files.
@@ -35,7 +34,7 @@ public class OpenOfficeMetaParser extends DcXMLParser {
     private static final XPathParser META_XPATH = new XPathParser(
             "meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
 
-    private static DefaultHandler getMeta(
+    private static ContentHandler getMeta(
             ContentHandler ch, Metadata md, String name, String element) {
         Matcher matcher = new CompositeMatcher(
                 META_XPATH.parse("//meta:" + element),
@@ -45,7 +44,7 @@ public class OpenOfficeMetaParser extends DcXMLParser {
         return new TeeContentHandler(ch, branch);
     }
 
-    private static DefaultHandler getStatistic(
+    private static ContentHandler getStatistic(
             ContentHandler ch, Metadata md, String name, String attribute) {
         Matcher matcher =
             META_XPATH.parse("//meta:document-statistic/@meta:" + attribute);
@@ -54,19 +53,19 @@ public class OpenOfficeMetaParser extends DcXMLParser {
         return new TeeContentHandler(ch, branch);
     }
 
-    protected DefaultHandler getDefaultHandler(ContentHandler ch, Metadata md) {
-        DefaultHandler dh = super.getDefaultHandler(ch, md);
-        dh = getMeta(dh, md, Metadata.KEYWORDS, "keyword");
-        dh = getMeta(dh, md, "generator", "generator");
-        dh = getStatistic(dh, md, "nbTab", "table-count");
-        dh = getStatistic(dh, md, "nbObject", "object-count");
-        dh = getStatistic(dh, md, "nbImg", "image-count");
-        dh = getStatistic(dh, md, "nbPage", "page-count");
-        dh = getStatistic(dh, md, "nbPara", "paragraph-count");
-        dh = getStatistic(dh, md, "nbWord", "word-count");
-        dh = getStatistic(dh, md, "nbCharacter", "character-count");
-        dh = new NSNormalizerContentHandler(dh);
-        return dh;
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md) {
+        ch = super.getContentHandler(ch, md);
+        ch = getMeta(ch, md, Metadata.KEYWORDS, "keyword");
+        ch = getMeta(ch, md, "generator", "generator");
+        ch = getStatistic(ch, md, "nbTab", "table-count");
+        ch = getStatistic(ch, md, "nbObject", "object-count");
+        ch = getStatistic(ch, md, "nbImg", "image-count");
+        ch = getStatistic(ch, md, "nbPage", "page-count");
+        ch = getStatistic(ch, md, "nbPara", "paragraph-count");
+        ch = getStatistic(ch, md, "nbWord", "word-count");
+        ch = getStatistic(ch, md, "nbCharacter", "character-count");
+        ch = new NSNormalizerContentHandler(ch);
+        return ch;
     }
 
 }

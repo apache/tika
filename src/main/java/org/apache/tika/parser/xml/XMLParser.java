@@ -19,6 +19,7 @@ package org.apache.tika.parser.xml;
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -27,11 +28,11 @@ import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * XML parser
@@ -53,10 +54,12 @@ public class XMLParser implements Parser {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(true);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             SAXParser parser = factory.newSAXParser();
             parser.parse(
                     new CloseShieldInputStream(stream),
-                    getDefaultHandler(handler, metadata));
+                    new OfflineContentHandler(
+                            getContentHandler(handler, metadata)));
         } catch (ParserConfigurationException e) {
             throw new TikaException("XML parser configuration error", e);
         }
@@ -65,7 +68,7 @@ public class XMLParser implements Parser {
         xhtml.endDocument();
     }
 
-    protected DefaultHandler getDefaultHandler(
+    protected ContentHandler getContentHandler(
             ContentHandler handler, Metadata metadata) {
         return new TextContentHandler(handler);
     }

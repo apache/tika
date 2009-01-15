@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Collections;
 import java.util.BitSet;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -33,6 +34,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ElementMappingContentHandler;
+import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.ElementMappingContentHandler.TargetElement;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -259,10 +261,12 @@ public class OpenOfficeContentParser implements Parser {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setValidating(false);
             factory.setNamespaceAware(true);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             SAXParser parser = factory.newSAXParser();
             parser.parse(
                     new CloseShieldInputStream(stream),
-                    new NSNormalizerContentHandler(dh));
+                    new OfflineContentHandler(
+                            new NSNormalizerContentHandler(dh)));
         } catch (ParserConfigurationException e) {
             throw new TikaException("XML parser configuration error", e);
         }

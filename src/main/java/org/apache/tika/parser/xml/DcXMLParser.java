@@ -24,7 +24,6 @@ import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Dublin Core metadata parser
@@ -34,7 +33,7 @@ public class DcXMLParser extends XMLParser {
     private static final XPathParser DC_XPATH = new XPathParser(
             "dc", "http://purl.org/dc/elements/1.1/");
 
-    private static DefaultHandler getDublinCore(
+    private static ContentHandler getDublinCore(
             ContentHandler ch, Metadata md, String name, String element) {
         Matcher matcher = new CompositeMatcher(
                 DC_XPATH.parse("//dc:" + element),
@@ -44,21 +43,21 @@ public class DcXMLParser extends XMLParser {
         return new TeeContentHandler(ch, branch);
     }
 
-    protected DefaultHandler getDefaultHandler(ContentHandler ch, Metadata md) {
-        DefaultHandler dh = super.getDefaultHandler(ch, md);
-        dh = getDublinCore(dh, md, DublinCore.TITLE, "title");
-        dh = getDublinCore(dh, md, DublinCore.SUBJECT, "subject");
-        dh = getDublinCore(dh, md, DublinCore.CREATOR, "creator");
-        dh = getDublinCore(dh, md, DublinCore.DESCRIPTION, "description");
-        dh = getDublinCore(dh, md, DublinCore.PUBLISHER, "publisher");
-        dh = getDublinCore(dh, md, DublinCore.CONTRIBUTOR, "contributor");
-        dh = getDublinCore(dh, md, DublinCore.DATE, "date");
-        dh = getDublinCore(dh, md, DublinCore.TYPE, "type");
-        dh = getDublinCore(dh, md, DublinCore.FORMAT, "format");
-        dh = getDublinCore(dh, md, DublinCore.IDENTIFIER, "identifier");
-        dh = getDublinCore(dh, md, DublinCore.LANGUAGE, "language");
-        dh = getDublinCore(dh, md, DublinCore.RIGHTS, "rights");
-        return dh;
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md) {
+        ch = super.getContentHandler(ch, md);
+        ch = getDublinCore(ch, md, DublinCore.TITLE, "title");
+        ch = getDublinCore(ch, md, DublinCore.SUBJECT, "subject");
+        ch = getDublinCore(ch, md, DublinCore.CREATOR, "creator");
+        ch = getDublinCore(ch, md, DublinCore.DESCRIPTION, "description");
+        ch = getDublinCore(ch, md, DublinCore.PUBLISHER, "publisher");
+        ch = getDublinCore(ch, md, DublinCore.CONTRIBUTOR, "contributor");
+        ch = getDublinCore(ch, md, DublinCore.DATE, "date");
+        ch = getDublinCore(ch, md, DublinCore.TYPE, "type");
+        ch = getDublinCore(ch, md, DublinCore.FORMAT, "format");
+        ch = getDublinCore(ch, md, DublinCore.IDENTIFIER, "identifier");
+        ch = getDublinCore(ch, md, DublinCore.LANGUAGE, "language");
+        ch = getDublinCore(ch, md, DublinCore.RIGHTS, "rights");
+        return ch;
     }
 
 }
