@@ -55,7 +55,6 @@ class OutlookExtractor {
         metadata.set(Metadata.SUBJECT, getChunk(CHUNKS.conversationTopic));
 
         xhtml.element("h1", subject);
-        xhtml.characters("\n");
 
         xhtml.startElement("dl");
         header(xhtml, "From", from);
@@ -63,7 +62,6 @@ class OutlookExtractor {
         header(xhtml, "Cc", getChunk(CHUNKS.displayCCChunk));
         header(xhtml, "Bcc", getChunk(CHUNKS.displayBCCChunk));
         xhtml.endElement("dl");
-        xhtml.characters("\n");
 
         xhtml.element("p", getChunk(CHUNKS.textBodyChunk));
     }
@@ -72,9 +70,7 @@ class OutlookExtractor {
             throws SAXException {
         if (value.length() > 0) {
             xhtml.element("dt", key);
-            xhtml.characters("\t");
             xhtml.element("dd", value);
-            xhtml.characters("\n");
         }
     }
 

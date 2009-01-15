@@ -16,6 +16,9 @@
  */
 package org.apache.tika.sax;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -32,6 +35,58 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * The XHTML namespace URI
      */
     public static final String XHTML = "http://www.w3.org/1999/xhtml";
+
+    /**
+     * The newline character that gets inserted after block elements.
+     */
+    private static final char[] NL = new char[] { '\n' };
+
+    /**
+     * The tab character gets inserted before table cells and list items.
+     */
+    private static final char[] TAB = new char[] { '\t' };
+
+    /**
+     * The elements that get prepended with the {@link #TAB} character.
+     */
+    private static final Set<String> INDENT = new HashSet<String>() {{
+        add("li");
+        add("dd");
+        add("dt");
+        add("td");
+        add("th");
+    }};
+
+    /**
+     * The elements that get appended with the {@link #NL} character.
+     */
+    private static final Set<String> ENDLINE = new HashSet<String>() {{
+        add("p");
+        add("h1");
+        add("h2");
+        add("h3");
+        add("h4");
+        add("h5");
+        add("h6");
+        add("div");
+        add("ul");
+        add("ol");
+        add("dl");
+        add("pre");
+        add("hr");
+        add("blockquote");
+        add("address");
+        add("fieldset");
+        add("table");
+        add("form");
+        add("noscript");
+        add("li");
+        add("dt");
+        add("dd");
+        add("noframes");
+        add("br");
+        add("tr");
+    }};
 
     /**
      * Metadata associated with the document. Used to fill in the
@@ -103,13 +158,35 @@ public class XHTMLContentHandler extends SafeContentHandler {
         super.endDocument();
     }
 
+    /**
+     * Starts the given element. Table cells and list items are automatically
+     * indented by emitting a tab character as ignorable whitespace.
+     */
     @Override
     public void startElement(
             String uri, String local, String name, Attributes attributes)
             throws SAXException {
         lazyStartDocument();
+        if (XHTML.equals(uri) && INDENT.contains(local)) {
+            ignorableWhitespace(TAB, 0, TAB.length);
+        }
         super.startElement(uri, local, name, attributes);
     }
+
+    /**
+     * Ends the given element. Block elements are automatically followed
+     * by a newline character.
+     */
+    @Override
+    public void endElement(String uri, String local, String name)
+            throws SAXException {
+        super.endElement(uri, local, name);
+        if (XHTML.equals(uri) && ENDLINE.contains(local)) {
+            ignorableWhitespace(NL, 0, NL.length);
+        }
+    }
+
+    //------------------------------------------< public convenience methods >
 
     public void startElement(String name) throws SAXException {
         startElement(XHTML, name, name, new AttributesImpl());

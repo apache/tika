@@ -339,7 +339,6 @@ public class ExcelExtractor {
             if (currentSheetIndex < sheetNames.size()) {
                 handler.element("h1", sheetNames.get(currentSheetIndex));
             }
-            handler.characters("\n");
             handler.startElement("table");
             handler.startElement("tbody");
 
@@ -352,7 +351,6 @@ public class ExcelExtractor {
                 while (currentRow < entry.getKey().y) {
                     handler.endElement("td");
                     handler.endElement("tr");
-                    handler.characters("\n");
                     handler.startElement("tr");
                     handler.startElement("td");
                     currentRow++;
@@ -361,7 +359,6 @@ public class ExcelExtractor {
 
                 while (currentColumn < entry.getKey().x) {
                     handler.endElement("td");
-                    handler.characters("\t");
                     handler.startElement("td");
                     currentColumn++;
                 }
@@ -375,7 +372,6 @@ public class ExcelExtractor {
             handler.endElement("tbody");
             handler.endElement("table");
             handler.endElement("div");
-            handler.characters("\n");
         }
     }
 

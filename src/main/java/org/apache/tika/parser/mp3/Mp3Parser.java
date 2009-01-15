@@ -192,11 +192,7 @@ public class Mp3Parser implements Parser {
             metadata.set(Metadata.AUTHOR, artist);
 
             xhtml.element("h1", title);
-            xhtml.characters("\n");
-
             xhtml.element("p", artist);
-            xhtml.characters("\n");
-
             // ID3v1.1 Track addition
             // If the last two bytes of the comment field are zero and
             // non-zero, then the last byte is the track number
@@ -206,16 +202,9 @@ public class Mp3Parser implements Parser {
             } else {
                 xhtml.element("p", album);
             }
-            xhtml.characters("\n");
-
             xhtml.element("p", year);
-            xhtml.characters("\n");
-
             xhtml.element("p", comment);
-            xhtml.characters("\n");
-
             xhtml.element("p", GENRES[Math.min(genre, GENRES.length - 1)]);
-            xhtml.characters("\n");
         }
 
         xhtml.endDocument();

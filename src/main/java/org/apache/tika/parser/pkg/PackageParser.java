@@ -87,7 +87,6 @@ public abstract class PackageParser implements Parser {
         String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
         if (name != null) {
             xhtml.element("h1", name);
-            xhtml.characters("\n");
         }
 
         try {
@@ -95,7 +94,6 @@ public abstract class PackageParser implements Parser {
                     new CloseShieldInputStream(stream),
                     new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                     metadata);
-            xhtml.characters("\n");
         } catch (TikaException e) {
             // Could not parse the entry, just skip the content
         }
