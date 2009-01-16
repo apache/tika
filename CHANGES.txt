@@ -20,6 +20,19 @@ The most notable changes in Tika 0.3 over the previous release are:
 
 See http://tinyurl.com/tika-0-3-changes for a list of all changes in Tika 0.3.
 
+The following people have contributed to Tika 0.3 by submitting or commenting
+on the issues resolved in this release:
+
+    Andrzej Rusin
+    Chris A. Mattmann
+    Dave Meikle
+    Guillermo Arribas
+    Jukka Zitting
+    Paul Borgermans
+    Peter Becker
+    Sébastien Michel
+    Uwe Schindler
+
 Release 0.2 - 12/04/2008
 ------------------------
 
