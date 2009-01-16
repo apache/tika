@@ -33,6 +33,9 @@ on the issues resolved in this release:
     Sébastien Michel
     Uwe Schindler
 
+See http://tinyurl.com/tika-0-3-contributions for more details on
+these contributions.
+
 Release 0.2 - 12/04/2008
 ------------------------
 
