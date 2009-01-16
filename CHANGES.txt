@@ -1,8 +1,27 @@
-Tika Change Log
+Apache Tika Change Log
+======================
 
 Unreleased changes (0.3)
+------------------------
+
+The most notable changes in Tika 0.3 over the previous release are:
+
+  * Tika now disables the loading of all external entities in XML files
+    that it parses as input documents. This improves security and avoids
+    problems with potentially broken references. (TIKA-185)
+
+  * Tika now replaces all invalid XML characters in the extracted text
+    content with spaces. This prevents problems when output from Tika
+    is processed with XML tools. (TIKA-180)
+
+  * The Tika CLI now correctly flushes its buffers when invoked with the
+    --text argument. This prevents the end of the text output from being
+    lost. (TIKA-179)
+
+See http://tinyurl.com/tika-0-3-changes for a list of all changes in Tika 0.3.
 
 Release 0.2 - 12/04/2008
+------------------------
 
 1.  TIKA-109 - WordParser fails on some Word files (Dave Meikle)
 
@@ -111,6 +130,7 @@ Release 0.2 - 12/04/2008
                missing white space after XHTML block tags (Uwe Schindler & Jukka Zitting)
 
 Release 0.1-incubating - 12/27/2007
+-----------------------------------
 
 1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
 
