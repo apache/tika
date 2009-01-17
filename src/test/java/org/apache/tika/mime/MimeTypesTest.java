@@ -130,6 +130,28 @@ public class MimeTypesTest extends TestCase {
         } catch (IllegalArgumentException e) {
             // expected result
         }
+
+        // Plain text detection
+        assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
+        assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
+        assertText(new byte[] { (byte) 0xEF, (byte) 0xFB, (byte) 0xBF });
+        assertText(new byte[] { 'a', 'b', 'c' });
+        assertText(new byte[] { '\t', '\r', '\n', 0x0C, 0x1B });
+        assertNotText(new byte[] { '\t', '\r', '\n', 0x0E, 0x1C });
+    }
+
+    private void assertText(byte[] prefix) {
+        assertMagic("text/plain", prefix);
+    }
+
+    private void assertNotText(byte[] prefix) {
+        assertMagic("application/octet-stream", prefix);
+    }
+
+    private void assertMagic(String expected, byte[] prefix) {
+        MimeType type = types.getMimeType(prefix);
+        assertNotNull(type);
+        assertEquals(expected, type.getName());
     }
 
     /** Test getMimeType(InputStream) */

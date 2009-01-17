@@ -6,6 +6,10 @@ Unreleased changes (0.3)
 
 The most notable changes in Tika 0.3 over the previous release are:
 
+  * Automatic detection of document types in Tika has been improved.
+    For example Tika can now detect plain text just by looking at the first
+    few bytes of the document. (TIKA-154)
+
   * Tika now disables the loading of all external entities in XML files
     that it parses as input documents. This improves security and avoids
     problems with potentially broken references. (TIKA-185)

@@ -26,6 +26,12 @@
     <magic priority="50">
       <match value="This is TeX," type="string" offset="0" />
       <match value="This is METAFONT," type="string" offset="0" />
+      <!-- UTF-16BE BOM -->
+      <match value="0xfeff" type="string" offset="0"/>
+      <!-- UTF-16LE BOM -->
+      <match value="0xfffe" type="string" offset="0"/>
+      <!-- UTF-8 BOM -->
+      <match value="0xefbbbf" type="string" offset="0"/>
     </magic>
     <glob pattern="*.txt" />
     <glob pattern="*.asc" />
@@ -483,8 +489,9 @@
   </mime-type>
 
   <mime-type type="application/rtf">
+    <sub-class-of type="text/plain" />
     <magic priority="50">
-      <match value="{\rtf" type="string" offset="0" />
+      <match value="{\\rtf" type="string" offset="0" />
     </magic>
     <glob pattern="*.rtf" />
     <alias type="text/rtf" />
@@ -499,6 +506,10 @@
 
   <!--  added in by mattmann -->
   <mime-type type="application/xml">
+    <sub-class-of type="text/plain" />
+    <magic priority="50">
+      <match value="&lt;?xml" type="string" offset="0" />
+    </magic>
     <alias type="text/xml" />
     <glob pattern="*.xml" />
   </mime-type>

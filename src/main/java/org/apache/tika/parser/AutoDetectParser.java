@@ -95,14 +95,13 @@ public class AutoDetectParser extends CompositeParser {
      */
     private MimeType getMimeType(InputStream stream, Metadata metadata)
             throws IOException {
+        MimeType type;
+
         // Get type based on magic prefix
         stream.mark(types.getMinLength());
         try {
             byte[] prefix = getPrefix(stream, types.getMinLength());
-            MimeType type = types.getMimeType(prefix);
-            if (type != null) {
-                return type;
-            }
+            type = types.getMimeType(prefix);
         } finally {
             stream.reset();
         }
@@ -110,29 +109,26 @@ public class AutoDetectParser extends CompositeParser {
         // Get type based on resourceName hint (if available)
         String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
         if (resourceName != null) {
-            MimeType type = types.getMimeType(resourceName);
-            if (type != null) {
-                return type;
+            MimeType hint = types.getMimeType(resourceName);
+            if (hint.isDescendantOf(type)) {
+                type = hint;
             }
         }
 
         // Get type based on metadata hint (if available)
-        String typename = metadata.get(Metadata.CONTENT_TYPE);
-        if (typename != null) {
+        String typeName = metadata.get(Metadata.CONTENT_TYPE);
+        if (typeName != null) {
             try {
-                return types.forName(typename);
+                MimeType hint = types.forName(typeName);
+                if (hint.isDescendantOf(type)) {
+                    type = hint;
+                }
             } catch (MimeTypeException e) {
                 // Malformed type name, ignore
             }
         }
 
-        // Finally, use the default type if no matches found
-        try {
-            return types.forName(MimeTypes.DEFAULT);
-        } catch (MimeTypeException e) {
-            // Should never happen
-            return null;
-        }
+        return type;
     }
 
     /**

@@ -43,10 +43,58 @@ import java.util.TreeSet;
  */
 public final class MimeTypes {
 
-    /** The default <code>application/octet-stream</code> MimeType */
-    public final static String DEFAULT = "application/octet-stream";
+    /**
+     * Name of the {@link #root root} type, application/octet-stream.
+     */
+    public final static String OCTET_STREAM = "application/octet-stream";
 
+    /**
+     * Name of the {@link #text text} type, text/plain.
+     */
+    public final static String PLAIN_TEXT = "text/plain";
+
+    /**
+     * Lookup table for all the ASCII/ISO-Latin/UTF-8/etc. control bytes
+     * in the range below 0x20 (the space character). If an entry in this
+     * table is <code>true</code> then that byte is very unlikely to occur
+     * in a plain text document.
+     * <p>
+     * The contents of this lookup table are based on the following definition
+     * from section 4 of the "Content-Type Processing Model" Internet-draft
+     * (<a href="http://webblaze.cs.berkeley.edu/2009/mime-sniff/mime-sniff.txt"
+     * >draft-abarth-mime-sniff-01</a>).
+     * <pre>
+     * +-------------------------+
+     * | Binary data byte ranges |
+     * +-------------------------+
+     * | 0x00 -- 0x08            |
+     * | 0x0B                    |
+     * | 0x0E -- 0x1A            |
+     * | 0x1C -- 0x1F            |
+     * +-------------------------+
+     * </pre>
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-154">TIKA-154</a>
+     */
+    private static final boolean[] IS_CONTROL_BYTE = new boolean[0x20];
+    static {
+        Arrays.fill(IS_CONTROL_BYTE, true);
+        IS_CONTROL_BYTE[0x09] = false; // tabulator
+        IS_CONTROL_BYTE[0x0A] = false; // new line
+        IS_CONTROL_BYTE[0x0C] = false; // new page
+        IS_CONTROL_BYTE[0x0D] = false; // carriage return
+        IS_CONTROL_BYTE[0x1B] = false; // escape
+    }
+
+    /**
+     * Root type, application/octet-stream.
+     */
     private final MimeType root;
+
+    /**
+     * Text type, text/plain.
+     */
+    private final MimeType text;
 
     /** All the registered MimeTypes indexed on their name */
     private final Map<String, MimeType> types = new HashMap<String, MimeType>();
@@ -61,8 +109,16 @@ public final class MimeTypes {
     private SortedSet<MimeType> xmls = new TreeSet<MimeType>();
 
     public MimeTypes() {
-        root = new MimeType(this, DEFAULT);
+        root = new MimeType(this, OCTET_STREAM);
+        text = new MimeType(this, PLAIN_TEXT);
+        try {
+            text.setSuperType(root);
+        } catch (MimeTypeException e) {
+            throw new IllegalStateException("Error in MimeType logic", e);
+        }
+
         types.put(root.getName(), root);
+        types.put(text.getName(), text);
     }
 
     /**
@@ -91,9 +147,9 @@ public final class MimeTypes {
 
     /**
      * Find the Mime Content Type of a document from its name.
+     * Returns application/octet-stream if no better match is found.
      * 
-     * @param name
-     *            of the document to analyze.
+     * @param name of the document to analyze.
      * @return the Mime Content Type of the specified document name
      */
     public MimeType getMimeType(String name) {
@@ -111,13 +167,14 @@ public final class MimeTypes {
 
     /**
      * Returns the MIME type that best matches the given first few bytes
-     * of a document stream.
+     * of a document stream. Returns application/octet-stream if no better
+     * match is found.
      * <p>
      * The given byte array is expected to be at least {@link #getMinLength()}
      * long, or shorter only if the document stream itself is shorter.
      *
      * @param data first few bytes of a document stream
-     * @return matching MIME type, or <code>null</code> if no match is found
+     * @return matching MIME type
      */
     public MimeType getMimeType(byte[] data) {
         if (data == null) {
@@ -138,7 +195,14 @@ public final class MimeTypes {
             }
         }
 
-        return null;
+        // Finally, assume plain text if no control bytes are found
+        for (int i = 0; i < data.length; i++) {
+            int b = data[i] & 0xFF; // prevent sign extension
+            if (b < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[b]) {
+                return root;
+            }
+        }
+        return text;
     }
 
     /**
@@ -213,9 +277,9 @@ public final class MimeTypes {
      * from the header, guesses the MIME type from the URL extension
      * (e.g. "pdf).
      *
-     * @param url
-     * @return
-     * @throws IOException
+     * @param url URL of the document
+     * @return type of the document
+     * @throws IOException if the document can not be accessed
      */
     public String getType(URL url) throws IOException {
         InputStream stream = url.openStream();
@@ -287,7 +351,11 @@ public final class MimeTypes {
             MimeType type = types.get(name);
             if (type == null) {
                 type = new MimeType(this, name);
-                type.setSuperType(root);
+                if (name.startsWith("text/")) {
+                    type.setSuperType(text);
+                } else {
+                    type.setSuperType(root);
+                }
                 types.put(name, type);
             }
             return type;

@@ -100,10 +100,9 @@ public class TestMimeTypes extends TestCase {
      * Tests MimeTypes.getMimeType(URL), which examines both the byte header
      * and, if necessary, the URL's extension.
      */
-    public void testMimeDeterminationForTestDocuments() {
-
-        assertEquals("text/html", getMimeType("testHTML.html"));
-        assertEquals("application/zip", getMimeType("test-documents.zip"));
+    public void testMimeDeterminationForTestDocuments() throws Exception {
+        assertType("text/html", "testHTML.html");
+        assertType("application/zip", "test-documents.zip");
         // TODO: Currently returns generic MS Office type based on
         // the magic header. The getMimeType method should understand
         // MS Office types better.
@@ -112,33 +111,23 @@ public class TestMimeTypes extends TestCase {
         // assertEquals("application/vnd.ms-powerpoint",
         // getMimeType("testPPT.ppt"));
         // assertEquals("application/msword", getMimeType("testWORD.doc"));
-        assertEquals("text/html", getMimeType("testHTML_utf8.html"));
-        assertEquals("application/vnd.oasis.opendocument.text",
-                getMimeType("testOpenOffice2.odt"));
-        assertEquals("application/pdf", getMimeType("testPDF.pdf"));
-        assertEquals("application/rtf", getMimeType("testRTF.rtf"));
-        assertEquals("text/plain", getMimeType("testTXT.txt"));
-        assertEquals("application/xml", getMimeType("testXML.xml"));
-        assertEquals("audio/basic", getMimeType("testAU.au"));
-        assertEquals("audio/x-aiff", getMimeType("testAIFF.aif"));
-        assertEquals("audio/x-wav", getMimeType("testWAV.wav"));
-        assertEquals("audio/midi", getMimeType("testMID.mid"));
+        assertType("text/html", "testHTML_utf8.html");
+        assertType(
+                "application/vnd.oasis.opendocument.text",
+                "testOpenOffice2.odt");
+        assertType("application/pdf", "testPDF.pdf");
+        assertType("application/rtf", "testRTF.rtf");
+        assertType("text/plain", "testTXT.txt");
+        assertType("application/xml", "testXML.xml");
+        assertType("audio/basic", "testAU.au");
+        assertType("audio/x-aiff", "testAIFF.aif");
+        assertType("audio/x-wav", "testWAV.wav");
+        assertType("audio/midi", "testMID.mid");
     }
 
-    private String getMimeType(String filename) {
-
-        String type = null;
-
-        try {
-            URL url = getClass().getResource("/test-documents/" + filename);
-            type = repo.getType(url);
-        } catch (MalformedURLException e) {
-            fail(e.getMessage());
-        } catch (IOException e) {
-            fail(e.getMessage());
-        }
-
-        return type;
+    private void assertType(String expected, String filename) throws Exception {
+        URL url = getClass().getResource("/test-documents/" + filename);
+        assertEquals(expected, repo.getType(url));
     }
 
 }
