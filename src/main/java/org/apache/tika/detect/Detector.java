@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MediaType;
 
 /**
  * Content type detector. Implementations of this interface use various
@@ -54,6 +54,6 @@ public interface Detector {
      * @return detected media type, or <code>application/octet-stream</code>
      * @throws IOException if the document input stream could not be read
      */
-    MimeType detect(InputStream input, Metadata metadata) throws IOException;
+    MediaType detect(InputStream input, Metadata metadata) throws IOException;
 
 }
