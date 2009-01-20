@@ -52,29 +52,27 @@ public final class MediaType {
      * in RFC 2045.
      * <p>
      * Note that currently this method only parses the "type/subtype" part
-     * of the string. Any parameters are simply discarded.
+     * of the string. Any parameters are simply discarded. TODO: Change this.
      *
      * @param string media type string to be parsed
-     * @return parsed media type
-     * @throws IllegalArgumentException if the string is not a media type
+     * @return parsed media type, or <code>null</code> if parsing fails
      */
     public static MediaType parse(String string) {
-        int slash = string.indexOf('/');
-        if (slash == -1) {
-            throw new IllegalArgumentException("Invalid media type: " + string);
-        }
-
-        String type = string.substring(0, slash);
-        String subtype = string.substring(slash + 1);
-        // String parameters = "";
-
-        int colon = subtype.indexOf(';');
+        int colon = string.indexOf(';');
         if (colon != -1) {
-            // parameters = subtype.substring(colon + 1);
-            subtype = subtype.substring(0, colon);
+            string = string.substring(0, colon);
         }
 
-        return new MediaType(type, subtype);
+        int slash = string.indexOf('/');
+        if (slash != -1) {
+            String type = string.substring(0, slash).trim();
+            String subtype = string.substring(slash + 1).trim();
+            if (type.length() > 0 && subtype.length() > 0) {
+                return new MediaType(type, subtype);
+            }
+        }
+
+        return null;
     }
 
     private final String type;
