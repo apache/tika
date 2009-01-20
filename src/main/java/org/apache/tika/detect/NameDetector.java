@@ -26,18 +26,69 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
 /**
- * 
- * @author Jukka Zitting
- *
+ * Content type detection based on the resource name. An instance of this
+ * class contains a set of regular expression patterns that are matched
+ * against the resource name potentially given as a part of the input metadata.
+ * <p>
+ * If a pattern matches the given name, then the media type associated with
+ * that pattern is returned as the likely content type of the input document.
+ * Otherwise the returned type is <code>application/octet-stream</code>.
+ * <p>
+ * See the {@link #detect(InputStream, Metadata)} method for more details
+ * of the matching algorithm.
  */
 public class NameDetector implements Detector {
 
+    /**
+     * The regular expression patterns used for type detection.
+     */
     private final Map<Pattern, MediaType> patterns;
 
+    /**
+     * Creates a new content type detector based on the given name patterns.
+     * The given pattern map is not copied, so the caller may update the
+     * mappings even after this detector instance has been created. However,
+     * the map <em>must not be concurrently modified</em> while this instance
+     * is used for type detection.
+     *
+     * @param patterns map from name patterns to corresponding media types
+     */
     public NameDetector(Map<Pattern, MediaType> patterns) {
         this.patterns = patterns;
     }
 
+    /**
+     * Detects the content type of an input document based on the document
+     * name given in the input metadata. The RESOURCE_NAME_KEY attribute of
+     * the given input metadata is expected to contain the name (normally
+     * a file name or a URL) of the input document.
+     * <p>
+     * If a resource name is given, then it is first processed as follows.
+     * <ol>
+     *   <li>
+     *     Potential URL query (?...) and fragment identifier (#...)
+     *     parts are removed from the end of the resource name.
+     *   </li>
+     *   <li>
+     *     Potential leading path elements (up to the last slash or backslash)
+     *     are removed from the beginning of the resource name.
+     *   </li>
+     *   <li>
+     *     Potential URL encodings (%nn, in UTF-8) are decoded.
+     *   </li>
+     *   <li>
+     *     Any leading and trailing whitespace is removed.
+     *   </li>
+     * </ol>
+     * <p>
+     * The resulting name string (if any) is then matched in sequence against
+     * all the configured name patterns. If a match is found, then the (first)
+     * matching media type is returned.
+     *
+     * @param input ignored
+     * @param metadata input metadata, possibly with a RESOURCE_NAME_KEY value
+     * @return detected media type, or <code>application/octet-stream</code>
+     */
     public MediaType detect(InputStream input, Metadata metadata) {
         // Look for a resource name in the input metadata
         String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
@@ -62,19 +113,19 @@ public class NameDetector implements Detector {
                 name = name.substring(backslash + 1);
             }
 
+            // Decode any potential URL encoding
+            int percent = name.indexOf('%');
+            if (percent != -1) {
+                try {
+                    name = URLDecoder.decode(name, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new AssertionError("UTF-8 not supported");
+                }
+            }
+
             // Skip any leading or trailing whitespace
             name = name.trim();
             if (name.length() > 0) {
-                // Decode any potential URL encoding
-                int percent = name.indexOf('%');
-                if (percent != -1) {
-                    try {
-                        name = URLDecoder.decode(name, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        throw new AssertionError("UTF-8 not supported");
-                    }
-                }
-
                 // Match the name against the registered patterns
                 for (Pattern pattern : patterns.keySet()) {
                     if (pattern.matcher(name).matches()) {
