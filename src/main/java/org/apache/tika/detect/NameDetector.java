@@ -36,6 +36,8 @@ import org.apache.tika.mime.MediaType;
  * <p>
  * See the {@link #detect(InputStream, Metadata)} method for more details
  * of the matching algorithm.
+ *
+ * @since Apache Tika 0.3
  */
 public class NameDetector implements Detector {
 
