@@ -48,6 +48,7 @@ public class NameDetectorTest extends TestCase {
         assertDetect(MediaType.TEXT_PLAIN, "text.txt\n");   // trailing newline
         assertDetect(MediaType.TEXT_PLAIN, "text.txt?a=b"); // URL query
         assertDetect(MediaType.TEXT_PLAIN, "text.txt#abc"); // URL fragment
+        assertDetect(MediaType.TEXT_PLAIN, "text%2Etxt");   // URL encoded
         assertDetect(MediaType.TEXT_PLAIN, "text.TXT");     // case insensitive
         assertDetect(MediaType.OCTET_STREAM, "text.txt.gz");
 
