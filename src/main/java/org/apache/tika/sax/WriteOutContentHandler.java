@@ -78,6 +78,20 @@ public class WriteOutContentHandler extends DefaultHandler {
         }
     }
 
+
+    /**
+     * Writes the given ignorable characters to the given character stream.
+     */
+    @Override
+    public void ignorableWhitespace(char[] ch, int start, int length)
+            throws SAXException {
+        try {
+            writer.write(ch, start, length);
+        } catch (IOException e) {
+            throw new SAXException("Error writing out character content", e);
+        }
+    }
+
     /**
      * Flushes the character stream so that no characters are forgotten
      * in internal buffers.

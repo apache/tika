@@ -70,7 +70,7 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     private final Output ignorableWhitespaceOutput = new Output() {
         public void write(char[] ch, int start, int length)
                 throws SAXException {
-            SafeContentHandler.super.characters(ch, start, length);
+            SafeContentHandler.super.ignorableWhitespace(ch, start, length);
         }
     };
 
