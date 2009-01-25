@@ -343,8 +343,8 @@ public class ExcelExtractor {
             handler.startElement("tbody");
 
             // Process Rows
-            int currentRow = 1;
-            int currentColumn = 1;
+            int currentRow = 0;
+            int currentColumn = 0;
             handler.startElement("tr");
             handler.startElement("td");
             for (Map.Entry<Point, Cell> entry : currentSheet.entrySet()) {
@@ -354,7 +354,7 @@ public class ExcelExtractor {
                     handler.startElement("tr");
                     handler.startElement("td");
                     currentRow++;
-                    currentColumn = 1;
+                    currentColumn = 0;
                 }
 
                 while (currentColumn < entry.getKey().x) {
