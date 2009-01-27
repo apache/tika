@@ -17,15 +17,13 @@
 package org.apache.tika.parser;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -73,88 +71,11 @@ public class AutoDetectParser extends CompositeParser {
         }
 
         // Automatically detect the MIME type of the document 
-        MimeType type = getMimeType(stream, metadata);
-        metadata.set(Metadata.CONTENT_TYPE, type.getName());
+        MediaType type = types.detect(stream, metadata);
+        metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
         // Parse the document
         super.parse(stream, handler, metadata);
-    }
-
-    /**
-     * Automatically detects the MIME type of a document based on magic
-     * markers in the stream prefix and any given metadata hints.
-     * <p>
-     * The given stream is expected to support marks, so that this method
-     * can reset the stream to the position it was in before this method
-     * was called.
-     *
-     * @param stream document stream
-     * @param metadata metadata hints
-     * @return MIME type of the document
-     * @throws IOException if the document stream could not be read
-     */
-    private MimeType getMimeType(InputStream stream, Metadata metadata)
-            throws IOException {
-        MimeType type;
-
-        // Get type based on magic prefix
-        stream.mark(types.getMinLength());
-        try {
-            byte[] prefix = getPrefix(stream, types.getMinLength());
-            type = types.getMimeType(prefix);
-        } finally {
-            stream.reset();
-        }
-
-        // Get type based on resourceName hint (if available)
-        String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
-        if (resourceName != null) {
-            MimeType hint = types.getMimeType(resourceName);
-            if (hint.isDescendantOf(type)) {
-                type = hint;
-            }
-        }
-
-        // Get type based on metadata hint (if available)
-        String typeName = metadata.get(Metadata.CONTENT_TYPE);
-        if (typeName != null) {
-            try {
-                MimeType hint = types.forName(typeName);
-                if (hint.isDescendantOf(type)) {
-                    type = hint;
-                }
-            } catch (MimeTypeException e) {
-                // Malformed type name, ignore
-            }
-        }
-
-        return type;
-    }
-
-    /**
-     * Reads and returns the first <code>length</code> bytes from the
-     * given stream. If the stream ends before that, returns all bytes
-     * from the stream.
-     * 
-     * @param input input stream
-     * @param length number of bytes to read and return
-     * @return stream prefix
-     * @throws IOException if the stream could not be read
-     */
-    private byte[] getPrefix(InputStream input, int length) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        byte[] buffer = new byte[Math.min(1024, length)];
-        int n = input.read(buffer);
-        while (n != -1) {
-            output.write(buffer, 0, n);
-            int remaining = length - output.size();
-            if (remaining > 0) {
-                n = input.read(buffer, 0, Math.min(buffer.length, remaining));
-            } else {
-                n = -1;
-            }
-        }
-        return output.toByteArray();
     }
 
 }

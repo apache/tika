@@ -27,6 +27,9 @@ import java.util.HashMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.tika.detect.Detector;
+import org.apache.tika.metadata.Metadata;
+
 /**
  * This class is a MimeType repository. It gathers a set of MimeTypes and
  * enables to retrieves a content-type from its name, from a file name, or from
@@ -41,7 +44,7 @@ import java.util.TreeSet;
  * (if available) to restore the stream back to the state it was before type
  * detection if it wants to process the stream based on the detected type.
  */
-public final class MimeTypes {
+public final class MimeTypes implements Detector {
 
     /**
      * Name of the {@link #root root} type, application/octet-stream.
@@ -423,6 +426,57 @@ public final class MimeTypes {
         if (type.hasRootXML()) {
             xmls.add(type);
         }
+    }
+
+    /**
+     * Automatically detects the MIME type of a document based on magic
+     * markers in the stream prefix and any given metadata hints.
+     * <p>
+     * The given stream is expected to support marks, so that this method
+     * can reset the stream to the position it was in before this method
+     * was called.
+     *
+     * @param stream document stream
+     * @param metadata metadata hints
+     * @return MIME type of the document
+     * @throws IOException if the document stream could not be read
+     */
+    public MediaType detect(InputStream input, Metadata metadata)
+            throws IOException {
+        MimeType type;
+
+        // Get type based on magic prefix
+        input.mark(getMinLength());
+        try {
+            byte[] prefix = readMagicHeader(input);
+            type = getMimeType(prefix);
+        } finally {
+            input.reset();
+        }
+
+        // Get type based on resourceName hint (if available)
+        String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        if (resourceName != null) {
+            MimeType hint = getMimeType(resourceName);
+            if (hint.isDescendantOf(type)) {
+                type = hint;
+            }
+        }
+
+        // Get type based on metadata hint (if available)
+        String typeName = metadata.get(Metadata.CONTENT_TYPE);
+        if (typeName != null) {
+            try {
+                MimeType hint = forName(typeName);
+                if (hint.isDescendantOf(type)) {
+                    type = hint;
+                }
+            } catch (MimeTypeException e) {
+                // Malformed type name, ignore
+            }
+        }
+
+        return MediaType.parse(type.getName());
     }
 
 }
