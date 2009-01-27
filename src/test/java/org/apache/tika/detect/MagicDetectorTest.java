@@ -29,6 +29,14 @@ import org.apache.tika.mime.MediaType;
  */
 public class MagicDetectorTest extends TestCase {
 
+    public void testDetectNull() throws Exception {
+        MediaType html = new MediaType("text", "html");
+        Detector detector = new MagicDetector(html, "<html".getBytes("ASCII"));
+        assertEquals(
+                MediaType.OCTET_STREAM,
+                detector.detect(null, new Metadata()));
+    }
+
     public void testDetectSimple() throws Exception {
         MediaType html = new MediaType("text", "html");
         Detector detector = new MagicDetector(html, "<html".getBytes("ASCII"));

@@ -151,8 +151,17 @@ public class MagicDetector implements Detector {
         }
     }
 
+    /**
+     * 
+     * @param input document input stream, or <code>null</code>
+     * @param metadata ignored
+     */
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
+        if (input == null) {
+            return MediaType.OCTET_STREAM;
+        }
+
         long offset = 0;
 
         // Skip bytes at the beginning, using skip() or read()

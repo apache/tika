@@ -80,13 +80,16 @@ public class TextDetector implements Detector {
      * Looks at the beginning of the document input stream to determine
      * whether the document is text or not.
      *
-     * @param input document input stream
+     * @param input document input stream, or <code>null</code>
      * @param metadata ignored
      * @return "text/plain" if the input stream suggest a text document,
      *         "application/octet-stream" otherwise
      */
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
+        if (input == null) {
+            return MediaType.OCTET_STREAM;
+        }
         for (int i = 0; i < NUMBER_OF_BYTES_TO_TEST; i++) {
             int ch = input.read();
             if (ch == -1) {

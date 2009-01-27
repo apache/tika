@@ -32,6 +32,12 @@ public class TextDetectorTest extends TestCase {
 
     private final Detector detector = new TextDetector();
 
+    public void testDetectNull() throws Exception {
+        assertEquals(
+                MediaType.OCTET_STREAM,
+                detector.detect(null, new Metadata()));
+    }
+
     public void testDetectText() throws Exception {
         assertText(new byte[0]);
 
