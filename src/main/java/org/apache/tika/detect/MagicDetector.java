@@ -162,55 +162,61 @@ public class MagicDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
-        long offset = 0;
+        input.mark(length);
+        try {
+            long offset = 0;
 
-        // Skip bytes at the beginning, using skip() or read()
-        while (offset < offsetRangeBegin) {
-            long n = input.skip(offsetRangeBegin - offset);
-            if (n > 0) {
-                offset += n;
-            } else if (input.read() != -1) {
-                offset += 1;
-            } else {
-                return MediaType.OCTET_STREAM;
-            }
-        }
-
-        // Fill in the comparison window
-        while (offset < offsetRangeBegin + sourceBuffer.length) {
-            int i = (int) (offset - offsetRangeBegin);
-            int n = input.read(sourceBuffer, i, sourceBuffer.length - i);
-            if (n == -1) {
-                return MediaType.OCTET_STREAM;
-            }
-            offset += n;
-        }
-
-        // Loop until we've covered the entire offset range
-        while (true) {
-            // Apply the mask, if any
-            if (mask != null) {
-                for (int i = 0; i < length; i++) {
-                    compareBuffer[i] = (byte) (sourceBuffer[i] & mask[i]);
-                }
-            }
-
-            if (Arrays.equals(pattern, compareBuffer)) {
-                // We have a match, so return the matching media type
-                return type;
-            } else if (offset < offsetRangeEnd + sourceBuffer.length) {
-                // No match, move the comparison window forward and try again
-                int c = input.read();
-                if (c == -1) {
+            // Skip bytes at the beginning, using skip() or read()
+            while (offset < offsetRangeBegin) {
+                long n = input.skip(offsetRangeBegin - offset);
+                if (n > 0) {
+                    offset += n;
+                } else if (input.read() != -1) {
+                    offset += 1;
+                } else {
                     return MediaType.OCTET_STREAM;
                 }
-                System.arraycopy(sourceBuffer, 1, sourceBuffer, 0, length - 1);
-                sourceBuffer[length - 1] = (byte) c;
-                offset += 1;
-            } else {
-                // We have reached the end of the offset range, no match.
-                return MediaType.OCTET_STREAM;
             }
+
+            // Fill in the comparison window
+            while (offset < offsetRangeBegin + sourceBuffer.length) {
+                int i = (int) (offset - offsetRangeBegin);
+                int n = input.read(sourceBuffer, i, sourceBuffer.length - i);
+                if (n == -1) {
+                    return MediaType.OCTET_STREAM;
+                }
+                offset += n;
+            }
+
+            // Loop until we've covered the entire offset range
+            while (true) {
+                // Apply the mask, if any
+                if (mask != null) {
+                    for (int i = 0; i < length; i++) {
+                        compareBuffer[i] = (byte) (sourceBuffer[i] & mask[i]);
+                    }
+                }
+
+                if (Arrays.equals(pattern, compareBuffer)) {
+                    // We have a match, so return the matching media type
+                    return type;
+                } else if (offset < offsetRangeEnd + sourceBuffer.length) {
+                    // No match, move the comparison window forward
+                    int c = input.read();
+                    if (c == -1) {
+                        return MediaType.OCTET_STREAM;
+                    }
+                    System.arraycopy(
+                            sourceBuffer, 1, sourceBuffer, 0, length - 1);
+                    sourceBuffer[length - 1] = (byte) c;
+                    offset += 1;
+                } else {
+                    // We have reached the end of the offset range, no match
+                    return MediaType.OCTET_STREAM;
+                }
+            }
+        } finally {
+            input.reset();
         }
     }
 

@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import junit.framework.TestCase;
 
@@ -102,9 +103,15 @@ public class MagicDetectorTest extends TestCase {
 
     private void assertDetect(Detector detector, MediaType type, String data) {
         try {
-            assertEquals(type, detector.detect(
-                    new ByteArrayInputStream(data.getBytes("ASCII")),
-                    new Metadata()));
+            byte[] bytes = data.getBytes("ASCII");
+            InputStream stream = new ByteArrayInputStream(bytes);
+            assertEquals(type, detector.detect(stream, new Metadata()));
+
+            // Test that the stream has been reset
+            for (int i = 0; i < bytes.length; i++) {
+                assertEquals(bytes[i], (byte) stream.read());
+            }
+            assertEquals(-1, stream.read());
         } catch (IOException e) {
             fail("Unexpected exception from MagicDetector");
         }
