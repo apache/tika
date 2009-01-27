@@ -47,7 +47,6 @@ public class ExcelParserTest extends TestCase {
             assertFalse(content.contains("9.0"));
             assertTrue(content.contains("196"));
             assertFalse(content.contains("196.0"));
-            System.out.println(content);
         } finally {
             input.close();
         }
