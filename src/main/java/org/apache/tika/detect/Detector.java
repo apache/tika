@@ -39,13 +39,12 @@ public interface Detector {
      * If the document input stream is not available, then the first
      * argument may be <code>null</code>. Otherwise the detector may
      * read bytes from the start of the stream to help in type detection.
-     * The stream must not be closed or otherwise manipulated other by
-     * simply reading bytes from it, as the caller may use the mark feature
-     * to be able to reset the stream to the beginning for proper parsing
-     * when the content type is detected. For the same reason the detector
-     * must only read up to a limited number of bytes from the stream to
-     * avoid potentially unbounded memory use for the buffer of a marked
-     * a stream.
+     * The given stream is guaranteed to support the
+     * {@link InputStream#markSupported() mark feature} and the detector
+     * is expected to {@link InputStream#mark(int) mark} the stream before
+     * reading any bytes from it, and to {@link InputStream#reset() reset}
+     * the stream before returning. The stream must not be closed by the
+     * detector.
      * <p>
      * The given input metadata is only read, not modified, by the detector.
      *
