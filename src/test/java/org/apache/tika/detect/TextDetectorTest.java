@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
@@ -62,10 +63,16 @@ public class TextDetectorTest extends TestCase {
 
     private void assertText(byte[] data) {
         try {
+            InputStream stream = new ByteArrayInputStream(data);
             assertEquals(
                     MediaType.TEXT_PLAIN,
-                    detector.detect(
-                            new ByteArrayInputStream(data), new Metadata()));
+                    detector.detect(stream, new Metadata()));
+
+            // Test that the stream has been reset
+            for (int i = 0; i < data.length; i++) {
+                assertEquals(data[i], (byte) stream.read());
+            }
+            assertEquals(-1, stream.read());
         } catch (IOException e) {
             fail("Unexpected exception from TextDetector");
         }

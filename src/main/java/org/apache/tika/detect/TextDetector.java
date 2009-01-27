@@ -90,15 +90,21 @@ public class TextDetector implements Detector {
         if (input == null) {
             return MediaType.OCTET_STREAM;
         }
-        for (int i = 0; i < NUMBER_OF_BYTES_TO_TEST; i++) {
-            int ch = input.read();
-            if (ch == -1) {
-                return MediaType.TEXT_PLAIN;
-            } else if (ch < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[ch]) {
-                return MediaType.OCTET_STREAM;
+
+        input.mark(NUMBER_OF_BYTES_TO_TEST);
+        try {
+            for (int i = 0; i < NUMBER_OF_BYTES_TO_TEST; i++) {
+                int ch = input.read();
+                if (ch == -1) {
+                    return MediaType.TEXT_PLAIN;
+                } else if (ch < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[ch]) {
+                    return MediaType.OCTET_STREAM;
+                }
             }
+            return MediaType.TEXT_PLAIN;
+        } finally {
+            input.reset();
         }
-        return MediaType.TEXT_PLAIN;
     }
 
 }
