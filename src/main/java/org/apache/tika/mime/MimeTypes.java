@@ -436,22 +436,24 @@ public final class MimeTypes implements Detector {
      * can reset the stream to the position it was in before this method
      * was called.
      *
-     * @param stream document stream
+     * @param stream document stream, or <code>null</code>
      * @param metadata metadata hints
      * @return MIME type of the document
      * @throws IOException if the document stream could not be read
      */
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        MimeType type;
+        MimeType type = root;
 
         // Get type based on magic prefix
-        input.mark(getMinLength());
-        try {
-            byte[] prefix = readMagicHeader(input);
-            type = getMimeType(prefix);
-        } finally {
-            input.reset();
+        if (input != null) {
+            input.mark(getMinLength());
+            try {
+                byte[] prefix = readMagicHeader(input);
+                type = getMimeType(prefix);
+            } finally {
+                input.reset();
+            }
         }
 
         // Get type based on resourceName hint (if available)
