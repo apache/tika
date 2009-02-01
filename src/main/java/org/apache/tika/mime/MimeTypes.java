@@ -17,6 +17,7 @@
 package org.apache.tika.mime;
 
 // JDK imports
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -257,21 +258,19 @@ public final class MimeTypes implements Detector {
     }
 
     public String getType(String typeName, String url, byte[] data) {
-        MimeType type = getMimeType(url, data);
-
-        if (type == null && typeName != null) {
-            try {
-                type = forName(typeName);
-            } catch (MimeTypeException e) {
-                // Invalid type name hint
+        try {
+            Metadata metadata = new Metadata();
+            if (url != null) {
+                metadata.set(Metadata.RESOURCE_NAME_KEY, url);
             }
+            if (typeName != null) {
+                metadata.set(Metadata.CONTENT_TYPE, typeName);
+            }
+            return detect(new ByteArrayInputStream(data), metadata).toString();
+        } catch (IOException e) {
+            throw new IllegalStateException(
+                    "ByteArrayInputStream throws an IOException!", e);
         }
-
-        if (type == null) {
-            type = root;
-        }
-
-        return type.getName();
     }
 
     /**
@@ -287,7 +286,9 @@ public final class MimeTypes implements Detector {
     public String getType(URL url) throws IOException {
         InputStream stream = url.openStream();
         try {
-            return getType(null, url.toString(), readMagicHeader(stream));
+            Metadata metadata = new Metadata();
+            metadata.set(Metadata.RESOURCE_NAME_KEY, url.toString());
+            return detect(stream, metadata).toString();
         } finally {
             stream.close();
         }
