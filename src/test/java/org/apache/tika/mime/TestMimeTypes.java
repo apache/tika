@@ -75,27 +75,28 @@ public class TestMimeTypes extends TestCase {
     /**
      * Tests MIME type determination based solely on the URL's extension.
      */
-    public void testGuessMimeTypes() {
-
-        assertEquals("application/pdf", repo.getMimeType("x.pdf").getName());
+    public void testGuessMimeTypes() throws Exception {
+        assertTypeByName("application/pdf", "x.pdf");
         assertEquals("application/pdf", repo.getMimeType(u).getName());
         assertEquals("application/pdf", repo.getMimeType(f).getName());
-        assertEquals("text/plain", repo.getMimeType("x.txt").getName());
-        assertEquals("text/html", repo.getMimeType("x.htm").getName());
-        assertEquals("text/html", repo.getMimeType("x.html").getName());
-        assertEquals("application/xhtml+xml", repo.getMimeType("x.xhtml")
-                .getName());
-        assertEquals("application/xml", repo.getMimeType("x.xml").getName());
-        assertEquals("application/msword", repo.getMimeType("x.doc").getName());
-        assertEquals("application/vnd.ms-powerpoint", repo.getMimeType("x.ppt")
-                .getName());
-        assertEquals("application/vnd.ms-excel", repo.getMimeType("x.xls")
-                .getName());
-        assertEquals("application/zip", repo.getMimeType("x.zip").getName());
-        assertEquals("application/vnd.oasis.opendocument.text", repo
-                .getMimeType("x.odt").getName());
-        assertEquals("application/octet-stream", repo.getMimeType("x.xyz")
-                .getName());
+        assertTypeByName("text/plain", "x.txt");
+        assertTypeByName("text/html", "x.htm");
+        assertTypeByName("text/html", "x.html");
+        assertTypeByName("application/xhtml+xml", "x.xhtml");
+        assertTypeByName("application/xml", "x.xml");
+        assertTypeByName("application/msword", "x.doc");
+        assertTypeByName("application/vnd.ms-powerpoint", "x.ppt");
+        assertTypeByName("application/vnd.ms-excel", "x.xls");
+        assertTypeByName("application/zip", "x.zip");
+        assertTypeByName("application/vnd.oasis.opendocument.text", "x.odt");
+        assertTypeByName("application/octet-stream", "x.xyz");
+
+        assertTypeByName("image/jpeg", "x.jpg");
+        assertTypeByName("image/jpeg", "x.jpeg");
+        assertTypeByName("image/jpeg", "x.jpe");
+        assertTypeByName("image/jpeg", "x.jif");
+        assertTypeByName("image/jpeg", "x.jfif");
+        assertTypeByName("image/jpeg", "x.jfi");
     }
 
     /**
@@ -139,4 +140,10 @@ public class TestMimeTypes extends TestCase {
         }
     }
 
+    private void assertTypeByName(String expected, String filename)
+            throws IOException {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+        assertEquals(expected, repo.detect(null, metadata).toString());
+    }
 }
