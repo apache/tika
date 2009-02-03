@@ -102,7 +102,6 @@
     <glob pattern="*.roles" />
     <glob pattern="*.sh" />
     <glob pattern="*.sql" />
-    <glob pattern="*.svg" />
     <glob pattern="*.tld" />
     <glob pattern="*.types" />
     <glob pattern="*.vm" />
@@ -539,6 +538,14 @@
     </magic>
     <alias type="text/xml" />
     <glob pattern="*.xml" />
+  </mime-type>
+
+  <mime-type type="image/svg+xml">
+    <sub-class-of type="application/xml" />
+    <acronym>SVG</acronym>
+    <comment>Scalable Vector Graphics</comment>
+    <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg" />
+    <glob pattern="*.svg" />
   </mime-type>
 
   <mime-type type="application/x-mif">
@@ -1077,6 +1084,16 @@
       <match value="P7" type="string" offset="0" />
     </magic>
     <glob pattern="*.ppm" />
+  </mime-type>
+
+  <mime-type type="image/cgm">
+    <acronym>CGM</acronym>
+    <comment>Computer Graphics Metafile</comment>
+    <magic priority="50">
+      <match value="BEGMF" type="string" offset="0" />
+      <match value="0x0020" mask="0xffe0" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.cgm" />
   </mime-type>
 
   <mime-type type="image/x-tika-dng">

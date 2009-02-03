@@ -153,6 +153,19 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-portable-pixmap", "x.PPM");
     }
 
+    public void testCgmDetection() throws Exception {
+        // TODO: Need a test image file
+        assertTypeByName("image/cgm", "x.cgm");
+        assertTypeByName("image/cgm", "x.CGM");
+    }
+
+    public void testSvgDetection() throws Exception {
+        assertType("image/svg+xml", "testSVG.svg");
+        assertTypeByData("image/svg+xml", "testSVG.svg");
+        assertTypeByName("image/svg+xml", "x.svg");
+        assertTypeByName("image/svg+xml", "x.SVG");
+    }
+
     public void testRawDetection() throws Exception {
         assertTypeByName("image/x-tika-dng", "x.dng");
         assertTypeByName("image/x-tika-dng", "x.DNG");
