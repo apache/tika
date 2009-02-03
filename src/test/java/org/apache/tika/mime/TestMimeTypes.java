@@ -96,7 +96,9 @@ public class TestMimeTypes extends TestCase {
         assertType("image/jpeg", "testJPEG.jpg");
         assertTypeByData("image/jpeg", "testJPEG.jpg");
         assertTypeByName("image/jpeg", "x.jpg");
+        assertTypeByName("image/jpeg", "x.JPG");
         assertTypeByName("image/jpeg", "x.jpeg");
+        assertTypeByName("image/jpeg", "x.JPEG");
         assertTypeByName("image/jpeg", "x.jpe");
         assertTypeByName("image/jpeg", "x.jif");
         assertTypeByName("image/jpeg", "x.jfif");
@@ -108,6 +110,14 @@ public class TestMimeTypes extends TestCase {
         assertTypeByData("image/tiff", "testTIFF.tif");
         assertTypeByName("image/tiff", "x.tiff");
         assertTypeByName("image/tiff", "x.tif");
+        assertTypeByName("image/tiff", "x.TIF");
+    }
+
+    public void testGifDetection() throws Exception {
+        assertType("image/gif", "testGIF.gif");
+        assertTypeByData("image/gif", "testGIF.gif");
+        assertTypeByName("image/gif", "x.gif");
+        assertTypeByName("image/gif", "x.GIF");
     }
 
     /**
