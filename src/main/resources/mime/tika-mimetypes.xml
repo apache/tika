@@ -1030,8 +1030,15 @@
   </mime-type>
 
   <mime-type type="image/x-ms-bmp">
+    <acronym>BMP</acronym>
+    <comment>Windows bitmap</comment>
+    <magic priority="50">
+      <match value="BM" type="string" offset="0" />
+    </magic>
     <glob pattern="*.bmp" />
+    <glob pattern="*.dib" />
   </mime-type>
+
   <mime-type type="image/x-portable-bitmap">
     <magic priority="50">
       <match value="P1" type="string" offset="0" />
