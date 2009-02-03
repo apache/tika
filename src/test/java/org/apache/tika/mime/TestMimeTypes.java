@@ -90,13 +90,24 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/zip", "x.zip");
         assertTypeByName("application/vnd.oasis.opendocument.text", "x.odt");
         assertTypeByName("application/octet-stream", "x.xyz");
+    }
 
+    public void testJpegDetection() throws Exception {
+        assertType("image/jpeg", "testJPEG.jpg");
+        assertTypeByData("image/jpeg", "testJPEG.jpg");
         assertTypeByName("image/jpeg", "x.jpg");
         assertTypeByName("image/jpeg", "x.jpeg");
         assertTypeByName("image/jpeg", "x.jpe");
         assertTypeByName("image/jpeg", "x.jif");
         assertTypeByName("image/jpeg", "x.jfif");
         assertTypeByName("image/jpeg", "x.jfi");
+    }
+
+    public void testTiffDetection() throws Exception {
+        assertType("image/tiff", "testTIFF.tif");
+        assertTypeByData("image/tiff", "testTIFF.tif");
+        assertTypeByName("image/tiff", "x.tiff");
+        assertTypeByName("image/tiff", "x.tif");
     }
 
     /**
@@ -146,4 +157,17 @@ public class TestMimeTypes extends TestCase {
         metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
         assertEquals(expected, repo.detect(null, metadata).toString());
     }
+
+    private void assertTypeByData(String expected, String filename)
+            throws IOException {
+        InputStream stream = TestMimeTypes.class.getResourceAsStream(
+                "/test-documents/" + filename);
+        try {
+            Metadata metadata = new Metadata();
+            assertEquals(expected, repo.detect(stream, metadata).toString());
+        } finally {
+            stream.close();
+        }
+    }
+
 }
