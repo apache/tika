@@ -16,3 +16,6 @@ Copyright (c) 2003-2005, www.fontbox.org
 Copyright (c) 1995-2005 International Business Machines Corporation and others
 
 Copyright (c) 2000-2005 INRIA, France Telecom
+
+Copyright (c) Ian F. Darwin 1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995.
+Software written by Ian F. Darwin and others; maintained 1994- Christos Zoulas.

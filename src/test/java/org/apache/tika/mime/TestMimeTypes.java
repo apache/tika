@@ -20,12 +20,14 @@ package org.apache.tika.mime;
 // Junit imports
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 
 import junit.framework.TestCase;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * 
@@ -126,8 +128,15 @@ public class TestMimeTypes extends TestCase {
     }
 
     private void assertType(String expected, String filename) throws Exception {
-        URL url = getClass().getResource("/test-documents/" + filename);
-        assertEquals(expected, repo.getType(url));
+        InputStream stream = TestMimeTypes.class.getResourceAsStream(
+                "/test-documents/" + filename);
+        try {
+            Metadata metadata = new Metadata();
+            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+            assertEquals(expected, repo.detect(stream, metadata).toString());
+        } finally {
+            stream.close();
+        }
     }
 
 }
