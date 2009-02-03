@@ -136,6 +136,23 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-ms-bmp", "x.DIB");
     }
 
+    public void testPnmDetection() throws Exception {
+        assertType("image/x-portable-bitmap", "testPBM.pbm");
+        assertType("image/x-portable-graymap", "testPGM.pgm");
+        assertType("image/x-portable-pixmap", "testPPM.ppm");
+        assertTypeByData("image/x-portable-bitmap", "testPBM.pbm");
+        assertTypeByData("image/x-portable-graymap", "testPGM.pgm");
+        assertTypeByData("image/x-portable-pixmap", "testPPM.ppm");
+        assertTypeByName("image/x-portable-anymap", "x.pnm");
+        assertTypeByName("image/x-portable-anymap", "x.PNM");
+        assertTypeByName("image/x-portable-bitmap", "x.pbm");
+        assertTypeByName("image/x-portable-bitmap", "x.PBM");
+        assertTypeByName("image/x-portable-graymap", "x.pgm");
+        assertTypeByName("image/x-portable-graymap", "x.PGM");
+        assertTypeByName("image/x-portable-pixmap", "x.ppm");
+        assertTypeByName("image/x-portable-pixmap", "x.PPM");
+    }
+
     /**
      * Tests MimeTypes.getMimeType(URL), which examines both the byte header
      * and, if necessary, the URL's extension.

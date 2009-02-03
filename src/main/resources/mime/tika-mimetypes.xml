@@ -1039,21 +1039,38 @@
     <glob pattern="*.dib" />
   </mime-type>
 
+  <mime-type type="image/x-portable-anymap">
+    <acronym>PNM</acronym>
+    <comment>Portable Any Map</comment>
+    <glob pattern="*.pnm" />
+  </mime-type>
+
   <mime-type type="image/x-portable-bitmap">
+    <sub-class-of type="image/x-portable-anymap" />
+    <acronym>PBM</acronym>
+    <comment>Portable Bit Map</comment>
     <magic priority="50">
       <match value="P1" type="string" offset="0" />
       <match value="P4" type="string" offset="0" />
     </magic>
     <glob pattern="*.pbm" />
   </mime-type>
-  <mime-type type="image/x-portable-greymap">
+
+  <mime-type type="image/x-portable-graymap">
+    <sub-class-of type="image/x-portable-anymap" />
+    <acronym>PGM</acronym>
+    <comment>Portable Gray Map</comment>
     <magic priority="50">
       <match value="P2" type="string" offset="0" />
       <match value="P5" type="string" offset="0" />
     </magic>
     <glob pattern="*.pgm" />
   </mime-type>
+
   <mime-type type="image/x-portable-pixmap">
+    <sub-class-of type="image/x-portable-anymap" />
+    <acronym>PXM</acronym>
+    <comment>Portable Pixel Map</comment>
     <magic priority="50">
       <match value="P3" type="string" offset="0" />
       <match value="P6" type="string" offset="0" />
@@ -1061,6 +1078,7 @@
     </magic>
     <glob pattern="*.ppm" />
   </mime-type>
+
   <mime-type type="message/news">
     <magic priority="50">
       <match value="Path:" type="string" offset="0" />
