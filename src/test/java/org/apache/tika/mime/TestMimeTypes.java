@@ -120,6 +120,13 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/gif", "x.GIF");
     }
 
+    public void testPngDetection() throws Exception {
+        assertType("image/png", "testPNG.png");
+        assertTypeByData("image/png", "testPNG.png");
+        assertTypeByName("image/png", "x.png");
+        assertTypeByName("image/png", "x.PNG");
+    }
+
     /**
      * Tests MimeTypes.getMimeType(URL), which examines both the byte header
      * and, if necessary, the URL's extension.
