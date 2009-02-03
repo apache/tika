@@ -1079,6 +1079,122 @@
     <glob pattern="*.ppm" />
   </mime-type>
 
+  <mime-type type="image/x-tika-dng">
+    <acronym>DNG</acronym>
+    <comment>Adobe Digital Negative</comment>
+    <glob pattern="*.dng" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-hasselblad">
+    <comment>Hasselblad raw image</comment>
+    <glob pattern="*.3fr" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-fuji">
+    <comment>Fuji raw image</comment>
+    <glob pattern="*.raf" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-canon">
+    <comment>Canon raw image</comment>
+    <glob pattern="*.crw" />
+    <glob pattern="*.cr2" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-kodak">
+    <comment>Kodak raw image</comment>
+    <glob pattern="*.k25" />
+    <glob pattern="*.kdc" />
+    <glob pattern="*.dcs" />
+    <glob pattern="*.drf" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-minolta">
+    <comment>Minolta raw image</comment>
+    <glob pattern="*.mrw" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-nikon">
+    <comment>Nikon raw image</comment>
+    <glob pattern="*.nef" />
+    <glob pattern="*.nrw" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-olympus">
+    <comment>Olympus raw image</comment>
+    <glob pattern="*.orf" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-pentax">
+    <comment>Pentax raw image</comment>
+    <glob pattern="*.ptx" />
+    <glob pattern="*.pef" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-sony">
+    <comment>Sony raw image</comment>
+    <glob pattern="*.arw" />
+    <glob pattern="*.srf" />
+    <glob pattern="*.sr2" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-sigma">
+    <comment>Sigma raw image</comment>
+    <glob pattern="*.x3f" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-epson">
+    <comment>Epson raw image</comment>
+    <glob pattern="*.erf" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-mamiya">
+    <comment>Mamiya raw image</comment>
+    <glob pattern="*.mef" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-leaf">
+    <comment>Leaf raw image</comment>
+    <glob pattern="*.mos" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-panasonic">
+    <comment>Panasonic raw image</comment>
+    <glob pattern="*.raw" />
+    <glob pattern="*.rw2" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-phaseone">
+    <comment>Phase One raw image</comment>
+    <glob pattern="*.cap" />
+    <glob pattern="*.iiq" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-red">
+    <comment>Red raw image</comment>
+    <glob pattern="*.r3d" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-imacon">
+    <comment>Imacon raw image</comment>
+    <glob pattern="*.fff" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-logitech">
+    <comment>Logitech raw image</comment>
+    <glob pattern="*.pxn" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-casio">
+    <comment>Casio raw image</comment>
+    <glob pattern="*.bay" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-rawzor">
+    <comment>Rawzor raw image</comment>
+    <glob pattern="*.rwz" />
+  </mime-type>
+
   <mime-type type="message/news">
     <magic priority="50">
       <match value="Path:" type="string" offset="0" />

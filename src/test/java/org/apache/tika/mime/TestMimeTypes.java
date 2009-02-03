@@ -153,6 +153,42 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-portable-pixmap", "x.PPM");
     }
 
+    public void testRawDetection() throws Exception {
+        assertTypeByName("image/x-tika-dng", "x.dng");
+        assertTypeByName("image/x-tika-dng", "x.DNG");
+        assertTypeByName("image/x-tika-hasselblad", "x.3fr");
+        assertTypeByName("image/x-tika-fuji", "x.raf");
+        assertTypeByName("image/x-tika-canon", "x.crw");
+        assertTypeByName("image/x-tika-canon", "x.cr2");
+        assertTypeByName("image/x-tika-kodak", "x.k25");
+        assertTypeByName("image/x-tika-kodak", "x.kdc");
+        assertTypeByName("image/x-tika-kodak", "x.dcs");
+        assertTypeByName("image/x-tika-kodak", "x.drf");
+        assertTypeByName("image/x-tika-minolta", "x.mrw");
+        assertTypeByName("image/x-tika-nikon", "x.nef");
+        assertTypeByName("image/x-tika-nikon", "x.nrw");
+        assertTypeByName("image/x-tika-olympus", "x.orf");
+        assertTypeByName("image/x-tika-pentax", "x.ptx");
+        assertTypeByName("image/x-tika-pentax", "x.pef");
+        assertTypeByName("image/x-tika-sony", "x.arw");
+        assertTypeByName("image/x-tika-sony", "x.srf");
+        assertTypeByName("image/x-tika-sony", "x.sr2");
+        assertTypeByName("image/x-tika-sigma", "x.x3f");
+        assertTypeByName("image/x-tika-epson", "x.erf");
+        assertTypeByName("image/x-tika-mamiya", "x.mef");
+        assertTypeByName("image/x-tika-leaf", "x.mos");
+        assertTypeByName("image/x-tika-panasonic", "x.raw");
+        assertTypeByName("image/x-tika-panasonic", "x.rw2");
+        assertTypeByName("image/x-tika-phaseone", "x.cap");
+        assertTypeByName("image/x-tika-phaseone", "x.iiq");
+        assertTypeByName("image/x-tika-phaseone", "x.cap");
+        assertTypeByName("image/x-tika-red", "x.r3d");
+        assertTypeByName("image/x-tika-imacon", "x.fff");
+        assertTypeByName("image/x-tika-logitech", "x.pxn");
+        assertTypeByName("image/x-tika-casio", "x.bay");
+        assertTypeByName("image/x-tika-rawzor", "x.rwz");
+    }
+
     /**
      * Tests MimeTypes.getMimeType(URL), which examines both the byte header
      * and, if necessary, the URL's extension.
