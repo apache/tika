@@ -828,12 +828,19 @@
   </mime-type>
 
   <mime-type type="application/postscript">
+    <comment>PostScript</comment>
     <magic priority="50">
       <match value="%!" type="string" offset="0" />
       <match value="\004%!" type="string" offset="0" />
+      <!-- Windows format EPS -->
+      <match value="0xc5d0d3c6" type="string" offset="0"/>
     </magic>
     <glob pattern="*.ps" />
+    <glob pattern="*.eps" />
+    <glob pattern="*.epsf" />
+    <glob pattern="*.epsi" />
   </mime-type>
+
   <mime-type type="application/vnd.lotus-wordpro">
     <magic priority="50">
       <match value="WordPro\0" type="string" offset="0" />
