@@ -87,13 +87,27 @@ public class TikaConfig {
                 Parser parser = (Parser) Class.forName(name).newInstance();
                 NodeList mimes = node.getElementsByTagName("mime");
                 for (int j = 0; j < mimes.getLength(); j++) {
-                    Element mime = (Element) mimes.item(j);
-                    parsers.put(mime.getTextContent().trim(), parser);
+                    parsers.put(getText(mimes.item(j)).trim(), parser);
                 }
             } catch (Exception e) {
                 throw new TikaException(
                         "Invalid parser configuration: " + name, e);
             }
+        }
+    }
+
+    private String getText(Node node) {
+        if (node.getNodeType() == Node.TEXT_NODE) {
+            return node.getNodeValue();
+        } else if (node.getNodeType() == Node.ELEMENT_NODE) {
+            StringBuilder builder = new StringBuilder();
+            NodeList list = node.getChildNodes();
+            for (int i = 0; i < list.getLength(); i++) {
+                builder.append(getText(list.item(i)));
+            }
+            return builder.toString();
+        } else {
+            return "";
         }
     }
 
