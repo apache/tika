@@ -184,6 +184,21 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/x-shockwave-flash", "x.SWF");
     }
 
+    public void testWmfDetection() throws Exception {
+        // TODO: Need a test wmf file
+        assertTypeByName("image/x-tika-wmf", "x.wmf");
+        assertTypeByName("image/x-tika-wmf", "x.WMF");
+        // TODO: Need a test emf file
+        assertTypeByName("image/x-tika-wmf", "x.emf");
+        assertTypeByName("image/x-tika-wmf", "x.EMF");
+        // TODO: Need a test wmz file
+        assertTypeByName("application/x-gzip", "x.wmz");
+        assertTypeByName("application/x-gzip", "x.WMZ");
+        // TODO: Need a test emf file
+        assertTypeByName("application/x-gzip", "x.emz");
+        assertTypeByName("application/x-gzip", "x.EMZ");
+    }
+
     public void testPsDetection() throws Exception {
         // TODO: Need a test postscript file
         assertTypeByName("application/postscript", "x.ps");

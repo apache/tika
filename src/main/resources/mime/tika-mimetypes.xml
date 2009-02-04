@@ -441,6 +441,8 @@
     <glob pattern="*.gz" />
     <glob pattern="*-gz" />
     <glob pattern="*.svgz" />
+    <glob pattern="*.wmz" />
+    <glob pattern="*.emz" />
   </mime-type>
 
   <mime-type type="application/x-bzip">
@@ -511,6 +513,13 @@
       <match value="CWS" type="string" offset="0" />
     </magic>
     <glob pattern="*.swf" />
+  </mime-type>
+
+  <mime-type type="image/x-tika-wmf">
+    <acronym>WMF</acronym>
+    <comment>Windows Metafile</comment>
+    <glob pattern="*.wmf" />
+    <glob pattern="*.emf" />
   </mime-type>
 
   <mime-type type="application/atom+xml">

@@ -57,6 +57,10 @@ public class GzipParser extends PackageParser {
                     name = name.substring(0, name.length() - 3);
                 } else if (name.toLowerCase().endsWith(".svgz")) {
                     name = name.substring(0, name.length() - 1);
+                } else if (name.toLowerCase().endsWith(".wmz")) {
+                    name = name.substring(0, name.length() - 1) + "f";
+                } else if (name.toLowerCase().endsWith(".emz")) {
+                    name = name.substring(0, name.length() - 1) + "f";
                 }
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
             }
