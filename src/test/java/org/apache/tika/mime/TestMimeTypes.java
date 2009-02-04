@@ -178,6 +178,12 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/pdf", "x.PDF");
     }
 
+    public void testSwfDetection() throws Exception {
+        // TODO: Need a test flash file
+        assertTypeByName("application/x-shockwave-flash", "x.swf");
+        assertTypeByName("application/x-shockwave-flash", "x.SWF");
+    }
+
     public void testPsDetection() throws Exception {
         // TODO: Need a test postscript file
         assertTypeByName("application/postscript", "x.ps");
