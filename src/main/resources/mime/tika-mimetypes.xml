@@ -440,6 +440,7 @@
     <glob pattern="*.tgz" />
     <glob pattern="*.gz" />
     <glob pattern="*-gz" />
+    <glob pattern="*.svgz" />
   </mime-type>
 
   <mime-type type="application/x-bzip">

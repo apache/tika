@@ -66,4 +66,22 @@ public class GzipParserTest extends TestCase {
         assertTrue(content.contains("Rida Benjelloun"));
     }
 
+    public void testSvgzParsing() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = GzipParserTest.class.getResourceAsStream(
+                "/test-documents/testSVG.svgz");
+        try {
+            parser.parse(stream, handler, metadata);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("application/x-gzip", metadata.get(Metadata.CONTENT_TYPE));
+        String content = handler.toString();
+        assertTrue(content.contains("Test SVG image"));
+    }
+
 }

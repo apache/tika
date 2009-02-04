@@ -164,6 +164,11 @@ public class TestMimeTypes extends TestCase {
         assertTypeByData("image/svg+xml", "testSVG.svg");
         assertTypeByName("image/svg+xml", "x.svg");
         assertTypeByName("image/svg+xml", "x.SVG");
+
+        assertType("application/x-gzip", "testSVG.svgz");
+        assertTypeByData("application/x-gzip", "testSVG.svgz");
+        assertTypeByName("application/x-gzip", "x.svgz");
+        assertTypeByName("application/x-gzip", "x.SVGZ");
     }
 
     public void testRawDetection() throws Exception {

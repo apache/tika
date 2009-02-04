@@ -25,6 +25,7 @@
 
         <parser name="parse-dcxml" class="org.apache.tika.parser.xml.DcXMLParser">
                 <mime>application/xml</mime>
+                <mime>image/svg+xml</mime>
         </parser>
 
         <parser name="parse-office" class="org.apache.tika.parser.microsoft.OfficeParser">

@@ -55,6 +55,8 @@ public class GzipParser extends PackageParser {
                     name = name.substring(0, name.length() - 4) + ".tar";
                 } else if (name.endsWith(".gz") || name.endsWith("-gz")) {
                     name = name.substring(0, name.length() - 3);
+                } else if (name.toLowerCase().endsWith(".svgz")) {
+                    name = name.substring(0, name.length() - 1);
                 }
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
             }
