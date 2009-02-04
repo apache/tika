@@ -171,6 +171,13 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/x-gzip", "x.SVGZ");
     }
 
+    public void testPdfDetection() throws Exception {
+        assertType("application/pdf", "testPDF.pdf");
+        assertTypeByData("application/pdf", "testPDF.pdf");
+        assertTypeByName("application/pdf", "x.pdf");
+        assertTypeByName("application/pdf", "x.PDF");
+    }
+
     public void testPsDetection() throws Exception {
         // TODO: Need a test postscript file
         assertTypeByName("application/postscript", "x.ps");

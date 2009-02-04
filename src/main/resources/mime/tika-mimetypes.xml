@@ -492,6 +492,8 @@
   </mime-type>
 
   <mime-type type="application/pdf">
+    <acronym>PDF</acronym>
+    <comment>Portable Document Format</comment>
     <magic priority="50">
       <match value="%PDF-" type="string" offset="0" />
     </magic>
