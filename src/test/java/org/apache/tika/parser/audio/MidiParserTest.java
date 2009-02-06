@@ -38,7 +38,7 @@ public class MidiParserTest extends TestCase {
 
         assertEquals("2", metadata.get("tracks"));
         assertEquals("0", metadata.get("patches"));
-        assertEquals("PRQ", metadata.get("divisionType"));
+        assertEquals("PPQ", metadata.get("divisionType"));
 
     }
 }

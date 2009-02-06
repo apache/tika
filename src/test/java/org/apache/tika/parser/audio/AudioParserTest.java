@@ -36,7 +36,7 @@ public class AudioParserTest extends TestCase {
 
         parser.parse(stream, new DefaultHandler(), metadata);
 
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100.0", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
@@ -51,7 +51,7 @@ public class AudioParserTest extends TestCase {
 
         parser.parse(stream, new DefaultHandler(), metadata);
 
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100.0", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
@@ -66,7 +66,7 @@ public class AudioParserTest extends TestCase {
 
         parser.parse(stream, new DefaultHandler(), metadata);
 
-        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("44100.0", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
