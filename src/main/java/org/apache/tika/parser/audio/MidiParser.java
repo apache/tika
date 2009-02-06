@@ -16,13 +16,15 @@
  */
 package org.apache.tika.parser.audio;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiSystem;
+import javax.sound.midi.Patch;
 import javax.sound.midi.Sequence;
+import javax.sound.midi.Track;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -33,46 +35,44 @@ import org.xml.sax.SAXException;
 
 public class MidiParser implements Parser {
 
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-        parse(stream, metadata);
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
+
+        // MidiSystem expects the stream to support the mark feature
+        InputStream buffered = new BufferedInputStream(stream);
+        try {
+            Sequence sequence = MidiSystem.getSequence(buffered);
+
+            Track[] tracks = sequence.getTracks();
+            metadata.set("tracks", String.valueOf(tracks.length));
+
+            Patch[] patches = sequence.getPatchList();
+            metadata.set("patches", String.valueOf(patches.length));
+
+            float type = sequence.getDivisionType();
+            if (type == Sequence.PPQ) {
+                metadata.set("divisionType", "PPQ");
+            } else if (type == Sequence.SMPTE_24) {
+                metadata.set("divisionType", "SMPTE_24");
+            } else if (type == Sequence.SMPTE_25) {
+                metadata.set("divisionType", "SMPTE_25");
+            } else if (type == Sequence.SMPTE_30) {
+                metadata.set("divisionType", "SMPTE_30");
+            } else if (type == Sequence.SMPTE_30DROP) {
+                metadata.set("divisionType", "SMPTE_30DROP");
+            } else if (type == Sequence.SMPTE_24) {
+                metadata.set("divisionType", String.valueOf(type));
+            }
+        } catch (InvalidMidiDataException ignore) {
+            // There is no way to know whether this exception was
+            // caused by the document being corrupted or by the format
+            // just being unsupported. So we do nothing.
+        }
+
         xhtml.endDocument();
     }
 
-    private static HashMap<Float, String> divisionTypes = new HashMap<Float, String>();
-
-    static {
-        divisionTypes.put(Sequence.PPQ, "PRQ");
-        divisionTypes.put(Sequence.SMPTE_24, "SMPTE_24");
-        divisionTypes.put(Sequence.SMPTE_25, "SMPTE_25");
-        divisionTypes.put(Sequence.SMPTE_30, "SMPTE_30");
-        divisionTypes.put(Sequence.SMPTE_30DROP, "SMPTE_30DROP");
-    }
-
-    public void parse(InputStream stream, Metadata metadata)
-            throws IOException, TikaException {
-        String type = metadata.get(Metadata.CONTENT_TYPE);
-        if (type != null) {
-
-            try {
-
-                Sequence sequence = MidiSystem.getSequence(stream);
-
-                metadata.set("tracks", Integer
-                        .toString(sequence.getTracks().length));
-
-                metadata.set("patches", Integer.toString(sequence
-                        .getPatchList().length));
-
-                metadata.set("divisionType", divisionTypes.get(sequence
-                        .getDivisionType()));
-
-            } catch (InvalidMidiDataException e) {
-                // cannot parse format
-            }
-
-        }
-    }
 }

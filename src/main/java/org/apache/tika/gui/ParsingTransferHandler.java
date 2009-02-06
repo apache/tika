@@ -54,7 +54,8 @@ class ParsingTransferHandler extends TransferHandler {
 
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor)) {
+            if (flavor.equals(DataFlavor.javaFileListFlavor)
+                    || flavor.equals(uriListFlavor)) {
                 return true;
             }
         }
