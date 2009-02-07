@@ -667,15 +667,14 @@
   </mime-type>
 
   <mime-type type="audio/midi">
-    <glob pattern="*.kar" />
-    <glob pattern="*.mid" />
+    <acronym>MIDI</acronym>
+    <comment>Musical Instrument Digital Interface</comment>
     <magic priority ="20">
       <match type="string" value="MThd" offset="0" />
     </magic>
-  </mime-type>
-
-  <mime-type type="audio/x-pn-realaudio">
-    <alias type="audio/x-realaudio" />
+    <glob pattern="*.mid" />
+    <glob pattern="*.midi" />
+    <glob pattern="*.kar" />
   </mime-type>
 
   <mime-type type="message/rfc822">
@@ -763,7 +762,8 @@
   </mime-type>
 
   <mime-type type="audio/mpeg">
-    <glob pattern="*.mp3" />
+    <acronym>MP3</acronym>
+    <comment>MPEG-1 Audio Layer 3</comment>
     <magic priority="20">
       <!-- http://mpgedit.org/mpgedit/mpeg_format/MP3Format.html -->
       <!-- Bit pattern for first two bytes: 11111111 111VVLLC    -->
@@ -784,6 +784,7 @@
       <match value="0xffff" type="string" offset="0" /> <!-- V1, L1      -->
       <match value="ID3" type="string" offset="0" />
     </magic>
+    <glob pattern="*.mp3" />
   </mime-type>
 
   <!-- ===================================================================== -->
@@ -824,30 +825,38 @@
   </mime-type>
 
   <mime-type type="audio/basic">
-    <glob pattern="*.au" />
-    <glob pattern="*.snd" />
     <magic priority="20">
       <match value=".snd" type="string" offset="0" />
     </magic>
+    <glob pattern="*.au" />
+    <glob pattern="*.snd" />
   </mime-type>
 
   <mime-type type="audio/x-aiff">
+    <alias type="audio/aiff"/>
+    <acronym>AIFF</acronym>
+    <comment>Audio Interchange File Format</comment>
+    <magic priority="20">
+      <match value="FORM....AIFF" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF" />
+      <match value="FORM....AIFC" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF" />
+      <!-- Amiga IFF sound sample, somewhat like the more modern AIFF -->
+      <match value="FORM....8SVX" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF" />
+    </magic>
     <glob pattern="*.aif" />
     <glob pattern="*.aiff" />
-    <magic priority="20">
-      <match value="FORM" type="string" offset="0" />
-      <match value="AIFF" type="string" offset="8" />
-      <match value="AIFC" type="string" offset="8" />
-      <match value="8SVX" type="string" offset="8" />
-    </magic>
+    <glob pattern="*.aifc" />
   </mime-type>
 
   <mime-type type="audio/x-wav">
-    <glob pattern="*.wav" />
+    <acronym>WAV</acronym>
     <magic priority="20">
       <match value="RIFF....WAVE" type="string" offset="0"
              mask="0xFFFFFFFF00000000FFFFFFFF" />
     </magic>
+    <glob pattern="*.wav" />
   </mime-type>
 
   <mime-type type="application/postscript">
@@ -1002,20 +1011,18 @@
     </magic>
     <glob pattern="*.zoo" />
   </mime-type>
-  <mime-type type="audio/midi">
-    <magic priority="50">
-      <match value="MThd" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.midi" />
-    <glob pattern="*.mid" />
-  </mime-type>
+
   <mime-type type="audio/x-flac">
+    <acronym>FLAC</acronym>
+    <comment>Free Lossless Audio Codec</comment>
     <magic priority="50">
       <match value="fLaC" type="string" offset="0" />
     </magic>
     <glob pattern="*.flac" />
   </mime-type>
+
   <mime-type type="audio/x-mod">
+    <acronym>MOD</acronym>
     <magic priority="50">
       <match value="Extended\ Module:" type="string" offset="0" />
       <match value="BMOD2STM" type="string" offset="21" />
@@ -1034,10 +1041,14 @@
     </magic>
     <glob pattern="*.mod" />
   </mime-type>
+
   <mime-type type="audio/x-mp4a">
     <glob pattern="*.mp4a" />
   </mime-type>
+
   <mime-type type="audio/x-pn-realaudio">
+    <comment>Real Audio</comment>
+    <alias type="audio/x-realaudio" />
     <magic priority="50">
       <match value="0x2e7261fd" type="big32" offset="0" />
     </magic>
