@@ -22,7 +22,8 @@ import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.xml.sax.helpers.DefaultHandler;
+import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
 
 public class MidiParserTest extends TestCase {
 
@@ -34,11 +35,13 @@ public class MidiParserTest extends TestCase {
         InputStream stream = getClass().getResourceAsStream(
                 "/test-documents/testMID.mid");
 
-        parser.parse(stream, new DefaultHandler(), metadata);
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(stream, handler, metadata);
 
         assertEquals("2", metadata.get("tracks"));
         assertEquals("0", metadata.get("patches"));
         assertEquals("PPQ", metadata.get("divisionType"));
 
+        assertTrue(handler.toString().contains("Untitled"));
     }
 }
