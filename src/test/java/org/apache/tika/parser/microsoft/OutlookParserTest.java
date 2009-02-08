@@ -17,6 +17,8 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 
@@ -60,6 +62,35 @@ public class OutlookParserTest extends TestCase {
         //assertTrue(content.contains("L'\u00C9quipe Microsoft Outlook Express"));
         assertTrue(content.contains("Nouvel utilisateur de Outlook Express"));
         assertTrue(content.contains("Messagerie et groupes de discussion"));
+    }
+
+    /**
+     * Test case for TIKA-197
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-197">TIKA-197</a>
+     */
+    public void testMultipleCopies() throws Exception {
+        Parser parser = new AutoDetectParser();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/testMSG.msg");
+        try {
+            parser.parse(stream, handler, metadata);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals(
+                "application/vnd.ms-outlook",
+                metadata.get(Metadata.CONTENT_TYPE));
+
+        String content = handler.toString();
+        Pattern pattern = Pattern.compile("From");
+        Matcher matcher = pattern.matcher(content);
+        assertTrue(matcher.find());
+        assertFalse(matcher.find());
     }
 
 }

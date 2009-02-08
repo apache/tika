@@ -25,6 +25,9 @@ The most notable changes in Tika 0.3 over the previous release are:
   * Embedded text in MIDI files is now extracted. For example many karaoke
     files contain song lyrics embedded as MIDI text.
 
+  * The text content of Microsoft Outlook message files no longer appears as
+    multiple copies in the extracted text. (TIKA-197)
+
 See http://tinyurl.com/tika-0-3-changes for a list of all changes in Tika 0.3.
 
 The following people have contributed to Tika 0.3 by submitting or commenting

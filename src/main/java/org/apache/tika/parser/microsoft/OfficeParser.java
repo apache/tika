@@ -61,6 +61,7 @@ public class OfficeParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
+        boolean outlookExtracted = false;
         POIFSFileSystem filesystem = new POIFSFileSystem(stream);
         Iterator<?> entries = filesystem.getRoot().getEntries();
         while (entries.hasNext()) {
@@ -92,7 +93,9 @@ public class OfficeParser implements Parser {
                 for (String text : extractor.getAllText()) {
                     xhtml.element("p", text);
                 }
-            } else if (name.startsWith("__substg1.0_")) {
+            } else if (!outlookExtracted && name.startsWith("__substg1.0_")) {
+                // TODO: Cleaner mechanism for detecting Outlook
+                outlookExtracted = true;
                 setType(metadata, "application/vnd.ms-outlook");
                 new OutlookExtractor(filesystem).parse(xhtml, metadata);
             }
