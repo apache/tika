@@ -53,7 +53,7 @@ public class HexCoDec {
      * 
      * @param hexChars
      *            an array of hex characters.
-     * @param starIndex
+     * @param startIndex
      *            the index of the first character to decode
      * @param length
      *            the number of characters to decode.
@@ -86,7 +86,7 @@ public class HexCoDec {
      * 
      * @param bites
      *            the array of bytes to encode.
-     * @param starIndex
+     * @param startIndex
      *            the index of the first character to encode.
      * @param length
      *            the number of characters to encode.

@@ -36,12 +36,12 @@ import java.io.InputStream;
  * <p>The decompression requires large amounts of memory. Thus you
  * should call the {@link #close() close()} method as soon as
  * possible, to force <tt>CBZip2InputStream</tt> to release the
- * allocated memory.  See {@link CBZip2OutputStream
- * CBZip2OutputStream} for information about memory usage.</p>
+ * allocated memory.  See CBZip2OutputStream for information
+ * about memory usage.</p>
  *
  * <p><tt>CBZip2InputStream</tt> reads bytes from the compressed
- * source stream via the single byte {@link java.io.InputStream#read()
- * read()} method exclusively. Thus you should consider to use a
+ * source stream via the single byte {@link java.io.InputStream#read()}
+ * method exclusively. Thus you should consider to use a
  * buffered source stream.</p>
  * 
  * <p>Instances of this class are not threadsafe.</p>

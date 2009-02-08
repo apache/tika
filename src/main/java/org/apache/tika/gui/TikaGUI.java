@@ -59,7 +59,7 @@ public class TikaGUI extends JFrame {
 
     /**
      * Main method. Sets the Swing look and feel to the operating system
-     * settings, and starts the Tika GUI with an {@link AutoDetectParser)
+     * settings, and starts the Tika GUI with an {@link AutoDetectParser}
      * instance as the default parser.
      *
      * @param args ignored

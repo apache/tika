@@ -140,7 +140,7 @@ public class ParseUtils implements TikaMimeKeys {
     /**
      * Returns a list of parsers from URL
      * 
-     * @param URL
+     * @param zip
      * @param config
      * @return a list of parsers from zip file
      * @throws TikaException

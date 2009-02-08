@@ -437,7 +437,7 @@ public final class MimeTypes implements Detector {
      * can reset the stream to the position it was in before this method
      * was called.
      *
-     * @param stream document stream, or <code>null</code>
+     * @param input document stream, or <code>null</code>
      * @param metadata metadata hints
      * @return MIME type of the document
      * @throws IOException if the document stream could not be read
