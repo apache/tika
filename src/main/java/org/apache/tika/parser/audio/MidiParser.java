@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiMessage;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.Patch;
 import javax.sound.midi.Sequence;
@@ -65,6 +67,23 @@ public class MidiParser implements Parser {
                 metadata.set("divisionType", "SMPTE_30DROP");
             } else if (type == Sequence.SMPTE_24) {
                 metadata.set("divisionType", String.valueOf(type));
+            }
+
+            for (Track track : tracks) {
+                xhtml.startElement("p");
+                for (int i = 0; i < track.size(); i++) {
+                    MidiMessage message = track.get(i).getMessage();
+                    if (message instanceof MetaMessage) {
+                        MetaMessage meta = (MetaMessage) message;
+                        // Types 1-15 are reserved for text events
+                        if (meta.getType() >= 1 && meta.getType() <= 15) {
+                            // FIXME: What's the encoding?
+                            xhtml.characters(
+                                    new String(meta.getData(), "ISO-8859-1"));
+                        }
+                    }
+                }
+                xhtml.endElement("p");
             }
         } catch (InvalidMidiDataException ignore) {
             // There is no way to know whether this exception was
