@@ -34,6 +34,27 @@ Tika - Content Analysis Toolkit
 
 Latest News
 
+  
+   [February 2009: Lucene at ApacheCon Europe 2009 in Amsterdam]
+     Lucene will be extremely well represented at {{{http://www.eu.apachecon.com/c/aceu2009/}ApacheCon EU 2009}} in Amsterdam, Netherlands this March 23-27, 2009:
+
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/197}Lucene Boot Camp}} - A two day training session, March 23 & 24th
+ 
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/201}Solr Boot Camp}} - A one day training session, March 24th
+ 
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/136}Introducing Apache Mahout}} - Grant Ingersoll. March 25th @ 10:30
+ 
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/137}Lucene/Solr Case Studies}} - Erik Hatcher. March 25th @ 11:30
+ 
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/138}Advanced Indexing Techniques with Apache Lucene}} - Michael Busch. March 25th @ 14:00
+ 
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/251}Apache Solr - A Case Study}} - Uri Boness. March 26th @ 17:30
+ 
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/250}Best of breed - httpd, forrest, solr and droids}} - Thorsten Scherler. March 27th @ 17:30
+ 
+     * {{{http://eu.apachecon.com/c/aceu2009/sessions/165}Apache Droids - an intelligent standalone robot framework}} - Thorsten Scherler. March 26th @ 15:00
+
+
    [December 2008: Apache Tika Release]
      Apache Tika 0.2 has been released. Please see the download page for more details.
 
