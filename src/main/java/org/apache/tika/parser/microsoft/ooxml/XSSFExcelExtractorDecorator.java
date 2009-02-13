@@ -1,0 +1,113 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.parser.microsoft.ooxml;
+
+import java.io.IOException;
+import java.util.Iterator;
+
+import org.apache.poi.hssf.extractor.ExcelExtractor;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.HeaderFooter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.xmlbeans.XmlException;
+import org.xml.sax.SAXException;
+
+public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
+
+    public XSSFExcelExtractorDecorator(XSSFExcelExtractor extractor) {
+        super(extractor);
+    }
+
+    /**
+     * @see org.apache.poi.xssf.extractor.XSSFExcelExtractor#getText()
+     */
+    @Override
+    protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException,
+            XmlException, IOException {
+        XSSFWorkbook document = (XSSFWorkbook) extractor.getDocument();
+
+        for (int i = 0; i < document.getNumberOfSheets(); i++) {
+            xhtml.startElement("div");
+            XSSFSheet sheet = (XSSFSheet) document.getSheetAt(i);
+            xhtml.element("h1", document.getSheetName(i));
+
+            // Header(s), if present
+            extractHeaderFooter(sheet.getFirstHeader(), xhtml);
+            extractHeaderFooter(sheet.getOddHeader(), xhtml);
+            extractHeaderFooter(sheet.getEvenHeader(), xhtml);
+
+            xhtml.startElement("table");
+            xhtml.startElement("tbody");
+
+            // Rows and cells
+            for (Object rawR : sheet) {
+                xhtml.startElement("tr");
+                Row row = (Row) rawR;
+                for (Iterator<Cell> ri = row.cellIterator(); ri.hasNext();) {
+                    xhtml.startElement("td");
+                    Cell cell = ri.next();
+
+                    if (cell.getCellType() == Cell.CELL_TYPE_FORMULA
+                            || cell.getCellType() == Cell.CELL_TYPE_STRING) {
+                        xhtml.characters(cell.getRichStringCellValue()
+                                .getString());
+                    } else {
+                        XSSFCell xc = (XSSFCell) cell;
+                        String rawValue = xc.getRawValue();
+                        if (rawValue != null) {
+                            xhtml.characters(rawValue);
+                        }
+
+                    }
+
+                    // Output the comment in the same cell as the content
+                    Comment comment = cell.getCellComment();
+                    if (comment != null) {
+                        xhtml.characters(comment.getString().getString());
+                    }
+
+                    xhtml.endElement("td");
+                }
+                xhtml.endElement("tr");
+            }
+
+            xhtml.endElement("tbody");
+            xhtml.endElement("table");
+
+            // Finally footer(s), if present
+            extractHeaderFooter(sheet.getFirstFooter(), xhtml);
+            extractHeaderFooter(sheet.getOddFooter(), xhtml);
+            extractHeaderFooter(sheet.getEvenFooter(), xhtml);
+
+            xhtml.endElement("div");
+        }
+    }
+
+    private void extractHeaderFooter(HeaderFooter hf, XHTMLContentHandler xhtml)
+            throws SAXException {
+        String content = ExcelExtractor._extractHeaderFooter(hf);
+        if (content.length() > 0) {
+            xhtml.element("p", content);
+        }
+    }
+}

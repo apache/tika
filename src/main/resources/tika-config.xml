@@ -36,6 +36,13 @@
                 <mime>application/vnd.visio</mime>
                 <mime>application/vnd.ms-outlook</mime>
         </parser>
+        
+        <parser name="parse-ooxml" class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser">
+                <mime>application/vnd.openxmlformats-package.core-properties+xml</mime>
+                <mime>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</mime>
+                <mime>application/vnd.openxmlformats-officedocument.presentationml.presentation</mime>
+                <mime>application/vnd.openxmlformats-officedocument.wordprocessingml.document</mime>
+        </parser>
 
         <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">
                 <mime>text/html</mime>

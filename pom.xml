@@ -211,6 +211,11 @@
       <version>3.5-beta4</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>3.5-beta4</version>
+    </dependency>
+    <dependency>
       <groupId>net.sourceforge.nekohtml</groupId>
       <artifactId>nekohtml</artifactId>
       <version>1.9.9</version>
