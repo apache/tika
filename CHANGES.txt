@@ -44,8 +44,12 @@ on the issues resolved in this release:
     Andrzej Rusin
     Chris A. Mattmann
     Dave Meikle
+    Georger Araújo
     Guillermo Arribas
+    Jonathan Koren
     Jukka Zitting
+    Karl Heinz Marbaise
+    Kumar Raja Jana
     Paul Borgermans
     Peter Becker
     Sébastien Michel
