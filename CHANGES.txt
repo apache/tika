@@ -28,6 +28,11 @@ The most notable changes in Tika 0.3 over the previous release are:
   * The text content of Microsoft Outlook message files no longer appears as
     multiple copies in the extracted text. (TIKA-197)
 
+  * The ParsingReader class now makes most document metadata available
+    already before any of the extracted text is consumed. This makes it
+    easier for example to construct Lucene Document instances that contain
+    both extracted text and metadata. (TIKA-203)
+
 See http://tinyurl.com/tika-0-3-changes for a list of all changes in Tika 0.3.
 
 The following people have contributed to Tika 0.3 by submitting or commenting

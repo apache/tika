@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -24,6 +25,7 @@ import java.io.InputStream;
 import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
+import java.io.Writer;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
@@ -47,14 +49,14 @@ public class ParsingReader extends Reader {
     private final Parser parser;
 
     /**
-     * Read end of the pipe.
+     * Buffered read end of the pipe.
      */
-    private final PipedReader reader;
+    private final Reader reader;
 
     /**
      * Write end of the pipe.
      */
-    private final PipedWriter writer;
+    private final Writer writer;
 
     /**
      * The binary stream being parsed.
@@ -90,8 +92,9 @@ public class ParsingReader extends Reader {
      * Creates a reader for the text content of the given binary stream.
      *
      * @param stream binary stream
+     * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(InputStream stream) {
+    public ParsingReader(InputStream stream) throws IOException {
         this(new AutoDetectParser(), stream, new Metadata());
     }
 
@@ -101,8 +104,9 @@ public class ParsingReader extends Reader {
      *
      * @param stream binary stream
      * @param name document name
+     * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(InputStream stream, String name) {
+    public ParsingReader(InputStream stream, String name) throws IOException {
         this(new AutoDetectParser(), stream, getMetadata(name));
     }
 
@@ -110,8 +114,10 @@ public class ParsingReader extends Reader {
      * Creates a reader for the text content of the given file.
      *
      * @param file file
+     * @throws FileNotFoundException if the given file does not exist
+     * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(File file) throws FileNotFoundException {
+    public ParsingReader(File file) throws FileNotFoundException, IOException {
         this(new FileInputStream(file), file.getName());
     }
 
@@ -123,12 +129,15 @@ public class ParsingReader extends Reader {
      * @param parser parser instance
      * @param stream binary stream
      * @param metadata document metadata
+     * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(Parser parser, InputStream stream, Metadata metadata) {
+    public ParsingReader(Parser parser, InputStream stream, Metadata metadata)
+            throws IOException {
         this.parser = parser;
-        this.reader = new PipedReader();
+        PipedReader pipedReader = new PipedReader();
+        this.reader = new BufferedReader(pipedReader);
         try {
-            this.writer = new PipedWriter(reader);
+            this.writer = new PipedWriter(pipedReader);
         } catch (IOException e) {
             throw new IllegalStateException(e); // Should never happen
         }
@@ -142,6 +151,11 @@ public class ParsingReader extends Reader {
             name = "Apache Tika";
         }
         new Thread(new ParsingThread(), name).start();
+
+        // TIKA-203: Buffer first character to force metadata extraction
+        reader.mark(1);
+        reader.read();
+        reader.reset();
     }
 
     /**

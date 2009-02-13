@@ -20,6 +20,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
 
+import org.apache.tika.metadata.Metadata;
+
 import junit.framework.TestCase;
 
 public class ParsingReaderTest extends TestCase {
@@ -66,6 +68,32 @@ public class ParsingReaderTest extends TestCase {
         assertEquals(-1, reader.read());
         reader.close();
         assertEquals(-1, stream.read());
+    }
+
+    /**
+     * Test case for TIKA-203
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-203">TIKA-203</a>
+     */
+    public void testMetadata() throws Exception {
+        Metadata metadata = new Metadata();
+        InputStream stream = ParsingReaderTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL.xls");
+        Reader reader =
+            new ParsingReader(new AutoDetectParser(), stream, metadata);
+        try {
+            // Metadata should already be available
+            assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));
+            // Check that the internal buffering isn't broken
+            assertEquals('F', (char) reader.read());
+            assertEquals('e', (char) reader.read());
+            assertEquals('u', (char) reader.read());
+            assertEquals('i', (char) reader.read());
+            assertEquals('l', (char) reader.read());
+            assertEquals('1', (char) reader.read());
+        } finally {
+            reader.close();
+        }
     }
 
 }
