@@ -9,6 +9,11 @@ The most notable changes in Tika 0.3 over the previous release are:
   * Tika now supports the Office Open XML format used by
     Microsoft Office 2007. (TIKA-152)
 
+  * All the metadata keys for Microsoft Office document properties are now
+    included as constants in the MSOffice interface. Clients should use
+    these constants instead of the raw string values to refer to specific
+    metadata items. (TIKA-186)
+
   * Automatic detection of document types in Tika has been improved.
     For example Tika can now detect plain text just by looking at the first
     few bytes of the document. (TIKA-154)

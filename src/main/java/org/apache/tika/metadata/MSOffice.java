@@ -17,9 +17,7 @@
 package org.apache.tika.metadata;
 
 /**
- * A collection of <i>"Office"</i> documents properties names.
- * 
- * 
+ * A collection of Microsoft Office documents property names.
  */
 public interface MSOffice {
 
@@ -65,10 +63,18 @@ public interface MSOffice {
   
   public static final String APPLICATION_VERSION = "Application-Version";
   
-  public static final String VERSION = "version";
+  public static final String VERSION = "Version";
   
   public static final String CONTENT_STATUS = "Content-Status";
   
-  public static final String CATEGORY = "category";
+  public static final String CATEGORY = "Category";
+
+  public static final String COMPANY = "Company";
+
+  public static final String SECURITY = "Security";
+
+  public static final String EDIT_TIME = "Edit-Time";
+
+  public static final String CREATION_DATE = "Creation-Date";
 
 }

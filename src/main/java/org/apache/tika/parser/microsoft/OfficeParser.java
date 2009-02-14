@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
  */
 public class OfficeParser implements Parser {
 
-    private static final String SUMMARY_INFORMATION =
+	private static final String SUMMARY_INFORMATION =
         SummaryInformation.DEFAULT_STREAM_NAME;
 
     private static final String DOCUMENT_SUMMARY_INFORMATION =
@@ -134,19 +134,19 @@ public class OfficeParser implements Parser {
         set(metadata, Metadata.TEMPLATE, summary.getTemplate());
         set(metadata, Metadata.APPLICATION_NAME, summary.getApplicationName());
         set(metadata, Metadata.REVISION_NUMBER, summary.getRevNumber());
-        set(metadata, "creationdate", summary.getCreateDateTime());
+        set(metadata, Metadata.CREATION_DATE, summary.getCreateDateTime());
         set(metadata, Metadata.CHARACTER_COUNT, summary.getCharCount());
-        set(metadata, "edittime", summary.getEditTime());
+        set(metadata, Metadata.EDIT_TIME, summary.getEditTime());
         set(metadata, Metadata.LAST_SAVED, summary.getLastSaveDateTime());
         set(metadata, Metadata.PAGE_COUNT, summary.getPageCount());
-        set(metadata, "security", summary.getSecurity());
+        set(metadata, Metadata.SECURITY, summary.getSecurity());
         set(metadata, Metadata.WORD_COUNT, summary.getWordCount());
         set(metadata, Metadata.LAST_PRINTED, summary.getLastPrinted());
     }
 
     private void parse(DocumentSummaryInformation summary, Metadata metadata) {
-        set(metadata, "company", summary.getCompany());
-        set(metadata, "manager", summary.getManager());
+        set(metadata, Metadata.COMPANY, summary.getCompany());
+        set(metadata, Metadata.MANAGER, summary.getManager());
     }
 
     private void setType(Metadata metadata, String type) {
