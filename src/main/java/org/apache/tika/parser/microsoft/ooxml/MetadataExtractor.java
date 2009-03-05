@@ -21,12 +21,12 @@ import java.io.IOException;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.POIXMLProperties.CoreProperties;
 import org.apache.poi.POIXMLProperties.ExtendedProperties;
+import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
+import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
+import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.xmlbeans.XmlException;
-import org.openxml4j.exceptions.OpenXML4JException;
-import org.openxml4j.opc.internal.PackagePropertiesPart;
-import org.openxml4j.util.Nullable;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
 /**

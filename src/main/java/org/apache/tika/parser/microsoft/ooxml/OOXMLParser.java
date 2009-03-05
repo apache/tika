@@ -21,12 +21,12 @@ import java.io.InputStream;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.xmlbeans.XmlException;
-import org.openxml4j.exceptions.InvalidFormatException;
-import org.openxml4j.exceptions.OpenXML4JException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
