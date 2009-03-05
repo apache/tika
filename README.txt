@@ -11,7 +11,7 @@ Tika is a subproject of Apache Lucene <http://lucene.apache.org/>.
 License (see also LICENSE.txt)
 ==============================
 
-Collective work: Copyright 2007-2008 The Apache Software Foundation.
+Collective work: Copyright 2009 The Apache Software Foundation.
 
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
