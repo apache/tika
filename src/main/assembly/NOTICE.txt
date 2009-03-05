@@ -19,3 +19,15 @@ Copyright (c) 2000-2005 INRIA, France Telecom
 
 Copyright (c) Ian F. Darwin 1986, 1987, 1989, 1990, 1991, 1992, 1994, 1995.
 Software written by Ian F. Darwin and others; maintained 1994- Christos Zoulas.
+
+Copyright 2001-2005 (C) MetaStuff, Ltd. All Rights Reserved.
+
+Copyright (c) 2000-2003, BEA Systems, <http://www.bea.com/>.
+
+Copyright 2001-2003 (c) World Wide Web Consortium (Massachusetts Institute
+of Technology, European Research Consortium for Informatics and Mathematics,
+Keio University)
+
+Copyright 2002 Yuval Oren.
+
+Copyright (C) 2006-2007 Valek Filippov (frob@df.ru)
