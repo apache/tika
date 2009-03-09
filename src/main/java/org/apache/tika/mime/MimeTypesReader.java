@@ -89,7 +89,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * @see http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec
  * 
  */
-final class MimeTypesReader {
+final class MimeTypesReader implements MimeTypesReaderMetKeys {
 
     /** The logger to use */
     private Log logger = null;
@@ -129,25 +129,25 @@ final class MimeTypesReader {
 
     void read(Document document) {
         Element element = document.getDocumentElement();
-        if (element != null && element.getTagName().equals("mime-info")) {
+        if (element != null && element.getTagName().equals(MIME_INFO_TAG)) {
             NodeList nodes = element.getChildNodes();
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
                     Element child = (Element) node;
-                    if (child.getTagName().equals("mime-type")) {
+                    if (child.getTagName().equals(MIME_TYPE_TAG)) {
                         readMimeType(child);
                     }
                 }
             }
         } else {
-            logger.warn("Not a <mime-info/> configuration document");
+            logger.warn("Not a <"+MIME_INFO_TAG+"/> configuration document");
         }
     }
 
     /** Read Element named mime-type. */
     private void readMimeType(Element element) {
-        String name = element.getAttribute("type");
+        String name = element.getAttribute(MIME_TYPE_TYPE_ATTR);
         try {
             MimeType type = types.forName(name);
 
@@ -156,25 +156,25 @@ final class MimeTypesReader {
                 Node node = nodes.item(i);
                 if (node.getNodeType() == Node.ELEMENT_NODE) {
                     Element nodeElement = (Element) node;
-                    if (nodeElement.getTagName().equals("_comment")) {
+                    if (nodeElement.getTagName().equals(COMMENT_TAG)) {
                         type.setDescription(
                                 nodeElement.getFirstChild().getNodeValue());
-                    } else if (nodeElement.getTagName().equals("glob")) {
-                        boolean useRegex = Boolean.valueOf(nodeElement.getAttribute("isregex"));
-                        types.addPattern(type, nodeElement.getAttribute("pattern"), useRegex);
-                    } else if (nodeElement.getTagName().equals("magic")) {
+                    } else if (nodeElement.getTagName().equals(GLOB_TAG)) {
+                        boolean useRegex = Boolean.valueOf(nodeElement.getAttribute(ISREGEX_ATTR));
+                        types.addPattern(type, nodeElement.getAttribute(PATTERN_ATTR), useRegex);
+                    } else if (nodeElement.getTagName().equals(MAGIC_TAG)) {
                         readMagic(nodeElement, type);
-                    } else if (nodeElement.getTagName().equals("alias")) {
-                        String alias = nodeElement.getAttribute("type");
+                    } else if (nodeElement.getTagName().equals(ALIAS_TAG)) {
+                        String alias = nodeElement.getAttribute(ALIAS_TYPE_ATTR);
                         try {
                             type.addAlias(alias);
                         } catch (MimeTypeException e) {
                             logger.warn("Invalid media type alias: " + alias, e);
                         }
-                    } else if (nodeElement.getTagName().equals("root-XML")) {
+                    } else if (nodeElement.getTagName().equals(ROOT_XML_TAG)) {
                         readRootXML(nodeElement, type);
-                    } else if (nodeElement.getTagName().equals("sub-class-of")) {
-                        String parent = nodeElement.getAttribute("type");
+                    } else if (nodeElement.getTagName().equals(SUB_CLASS_OF_TAG)) {
+                        String parent = nodeElement.getAttribute(SUB_CLASS_TYPE_ATTR);
                         try {
                             type.setSuperType(types.forName(parent));
                         } catch (MimeTypeException e) {
@@ -195,7 +195,7 @@ final class MimeTypesReader {
         Magic magic = null;
         try {
             magic = new Magic(Integer
-                    .parseInt(element.getAttribute("priority")));
+                    .parseInt(element.getAttribute(MAGIC_PRIORITY_ATTR)));
         } catch (Exception e) {
             magic = new Magic();
         }
@@ -213,7 +213,7 @@ final class MimeTypesReader {
             Node node = nodes.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element nodeElement = (Element) node;
-                if (nodeElement.getTagName().equals("match")) {
+                if (nodeElement.getTagName().equals(MATCH_TAG)) {
                     sub = readMatches(nodeElement);
                     try {
                         if (sub != null) {
@@ -245,13 +245,13 @@ final class MimeTypesReader {
         NamedNodeMap attrs = element.getAttributes();
         for (int i = 0; i < attrs.getLength(); i++) {
             Attr attr = (Attr) attrs.item(i);
-            if (attr.getName().equals("offset")) {
+            if (attr.getName().equals(MATCH_OFFSET_ATTR)) {
                 offset = attr.getValue();
-            } else if (attr.getName().equals("type")) {
+            } else if (attr.getName().equals(MATCH_TYPE_ATTR)) {
                 type = attr.getValue();
-            } else if (attr.getName().equals("value")) {
+            } else if (attr.getName().equals(MATCH_VALUE_ATTR)) {
                 value = attr.getValue();
-            } else if (attr.getName().equals("mask")) {
+            } else if (attr.getName().equals(MATCH_MASK_ATTR)) {
                 mask = attr.getValue();
             }
         }
@@ -276,8 +276,8 @@ final class MimeTypesReader {
 
     /** Read Element named root-XML. */
     private void readRootXML(Element element, MimeType mimeType) {
-        mimeType.addRootXML(element.getAttribute("namespaceURI"), element
-                .getAttribute("localName"));
+        mimeType.addRootXML(element.getAttribute(NS_URI_ATTR), element
+                .getAttribute(LOCAL_NAME_ATTR));
     }
 
 }
