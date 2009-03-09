@@ -208,6 +208,28 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/postscript", "x.epsi");
     }
 
+    /**
+     * @since TIKA-194
+     */
+    public void testJavaRegex() throws Exception{
+        MimeType testType = new MimeType(this.repo, "foo/bar");
+        this.repo.add(testType);
+        assertNotNull(repo.forName("foo/bar"));
+        String pattern = "rtg_sst_grb_0\\.5\\.\\d{8}";
+        System.out.println("Pattern: ["+pattern+"]");
+        this.repo.addPattern(testType, pattern, true);
+        String testFileName = "rtg_sst_grb_0.5.12345678";
+        assertNotNull(this.repo.getMimeType(testFileName));
+        assertEquals(this.repo.getMimeType(testFileName).getName(), "foo/bar");    
+        
+        MimeType testType2 = new MimeType(this.repo, "foo/bar2");
+        this.repo.add(testType2);
+        assertNotNull(repo.forName("foo/bar2"));
+        this.repo.addPattern(testType2, pattern, false);
+        assertNotNull(this.repo.getMimeType(testFileName));
+        assertNotSame("foo/bar2", this.repo.getMimeType(testFileName).getName());
+    }
+    
     public void testRawDetection() throws Exception {
         assertTypeByName("image/x-tika-dng", "x.dng");
         assertTypeByName("image/x-tika-dng", "x.DNG");

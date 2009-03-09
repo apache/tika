@@ -59,6 +59,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * 
  *    &lt;!ELEMENT glob EMPTY&gt;
  *    &lt;!ATTLIST glob pattern CDATA #REQUIRED&gt;
+ *    &lt;!ATTLIST glob isregex CDATA #IMPLIED&gt;
  * 
  *    &lt;!ELEMENT magic (match)+&gt;
  *    &lt;!ATTLIST magic priority CDATA #IMPLIED&gt;
@@ -159,7 +160,8 @@ final class MimeTypesReader {
                         type.setDescription(
                                 nodeElement.getFirstChild().getNodeValue());
                     } else if (nodeElement.getTagName().equals("glob")) {
-                        types.addPattern(type, nodeElement.getAttribute("pattern"));
+                        boolean useRegex = Boolean.valueOf(nodeElement.getAttribute("isregex"));
+                        types.addPattern(type, nodeElement.getAttribute("pattern"), useRegex);
                     } else if (nodeElement.getTagName().equals("magic")) {
                         readMagic(nodeElement, type);
                     } else if (nodeElement.getTagName().equals("alias")) {

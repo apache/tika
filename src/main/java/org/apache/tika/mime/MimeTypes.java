@@ -387,15 +387,42 @@ public final class MimeTypes implements Detector {
     }
 
     /**
-     * Adds a file name pattern for the given media type.
-     *
-     * @param type media type
-     * @param pattern file name pattern
-     * @throws MimeTypeException if the pattern conflicts with existing ones
+     * Adds a file name pattern for the given media type. Assumes that the
+     * pattern being added is <b>not</b> a JDK standard regular expression.
+     * 
+     * @param type
+     *            media type
+     * @param pattern
+     *            file name pattern
+     * @throws MimeTypeException
+     *             if the pattern conflicts with existing ones
      */
     public void addPattern(MimeType type, String pattern)
             throws MimeTypeException {
-        patterns.add(pattern, type);
+        this.addPattern(type, pattern, false);
+    }
+
+    /**
+     * Adds a file name pattern for the given media type. The caller can specify
+     * whether the pattern being added <b>is</b> or <b>is not</b> a JDK standard
+     * regular expression via the <code>isRegex</code> parameter. If the value
+     * is set to true, then a JDK standard regex is assumed, otherwise the
+     * freedesktop glob type is assumed.
+     * 
+     * @param type
+     *            media type
+     * @param pattern
+     *            file name pattern
+     * @param isRegex
+     *            set to true if JDK std regexs are desired, otherwise set to
+     *            false.
+     * @throws MimeTypeException
+     *             if the pattern conflicts with existing ones.
+     * 
+     */
+    public void addPattern(MimeType type, String pattern, boolean isRegex)
+            throws MimeTypeException {
+        patterns.add(pattern, isRegex, type);
     }
 
     /**

@@ -6,6 +6,14 @@ Unreleased changes (0.3)
 
 The most notable changes in Tika 0.3 over the previous release are:
 
+  * Tika now supports mime type glob patterns specified using
+    standard JDK 1.4 (and beyond) syntax via the isregex attribute
+    on the glob tag. See:
+    
+    http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html
+    
+    for more information. (TIKA-194)
+
   * Tika now supports the Office Open XML format used by
     Microsoft Office 2007. (TIKA-152)
 

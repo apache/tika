@@ -57,25 +57,36 @@ class Patterns {
             }
         });
 
-    public void add(String pattern, MimeType type) throws MimeTypeException {
-        if (pattern == null || type == null) {
-            throw new IllegalArgumentException("Pattern and/or mime type is missing");
-        }
 
-        if (pattern.indexOf('*') == -1
-                && pattern.indexOf('?') == -1
-                && pattern.indexOf('[') == -1) {
-            addName(pattern, type);
-        } else if (pattern.startsWith("*")
-                && pattern.indexOf('*', 1) == -1
-                && pattern.indexOf('?') == -1
-                && pattern.indexOf('[') == -1) {
-            addExtension(pattern.substring(1), type);
+    public void add(String pattern, MimeType type) throws MimeTypeException {
+        this.add(pattern, false, type);
+    }
+   
+    public void add(String pattern, boolean isJavaRegex, MimeType type)
+            throws MimeTypeException {
+        if (pattern == null || type == null) {
+            throw new IllegalArgumentException(
+                    "Pattern and/or mime type is missing");
+        }
+        
+        if (isJavaRegex) {
+            // in this case, we don't need to build a regex pattern
+            // it's already there for us, so just add the pattern as is
+            addGlob(pattern, type);
         } else {
-            addGlob(compile(pattern), type);
+
+            if (pattern.indexOf('*') == -1 && pattern.indexOf('?') == -1
+                    && pattern.indexOf('[') == -1) {
+                addName(pattern, type);
+            } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1
+                    && pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
+                addExtension(pattern.substring(1), type);
+            } else {
+                addGlob(compile(pattern), type);
+            }
         }
     }
-
+    
     private void addName(String name, MimeType type) throws MimeTypeException {
         MimeType previous = names.get(name);
         if (previous == null || previous.isDescendantOf(type)) {
@@ -107,7 +118,7 @@ class Patterns {
             throws MimeTypeException {
         MimeType previous = globs.get(glob);
         if (previous == null || previous.isDescendantOf(type)) {
-            extensions.put(glob, type);
+            globs.put(glob, type);
         } else if (previous == type || type.isDescendantOf(previous)) {
             // do nothing
         } else {
