@@ -216,7 +216,6 @@ public class TestMimeTypes extends TestCase {
         this.repo.add(testType);
         assertNotNull(repo.forName("foo/bar"));
         String pattern = "rtg_sst_grb_0\\.5\\.\\d{8}";
-        System.out.println("Pattern: ["+pattern+"]");
         this.repo.addPattern(testType, pattern, true);
         String testFileName = "rtg_sst_grb_0.5.12345678";
         assertNotNull(this.repo.getMimeType(testFileName));
