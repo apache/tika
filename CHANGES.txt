@@ -1,7 +1,7 @@
 Apache Tika Change Log
 ======================
 
-Unreleased changes (0.3)
+Release 0.3 - 03/09/2009
 ------------------------
 
 The most notable changes in Tika 0.3 over the previous release are:
