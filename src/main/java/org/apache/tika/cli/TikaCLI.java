@@ -56,7 +56,7 @@ public class TikaCLI {
         for (int i = 0; i < args.length; i++) {
             cli.process(args[i]);
         }
-        if (args.length == 0) {
+        if (cli.pipeMode) {
             cli.process("-");
         }
     }
@@ -67,6 +67,8 @@ public class TikaCLI {
 
     private ContentHandler handler;
 
+    private boolean pipeMode = true;
+
     public TikaCLI() throws TransformerConfigurationException {
         parser = new AutoDetectParser();
         handler = getXmlContentHandler();
@@ -74,10 +76,12 @@ public class TikaCLI {
 
     public void process(String arg) throws Exception {
         if (arg.equals("-?") || arg.equals("--help")) {
+            pipeMode = false;
             usage();
         } else if (arg.equals("-v") || arg.equals("--verbose")) {
             Logger.getRootLogger().setLevel(Level.DEBUG);
         } else if (arg.equals("-g") || arg.equals("--gui")) {
+            pipeMode = false;
             TikaGUI.main(new String[0]);
         } else if (arg.equals("-x") || arg.equals("--xml")) {
             handler = getXmlContentHandler();
@@ -88,6 +92,7 @@ public class TikaCLI {
         } else if (arg.equals("-m") || arg.equals("--metadata")) {
             handler = getMetadataContentHandler();
         } else {
+            pipeMode = false;
             metadata = new Metadata();
             if (arg.equals("-")) {
                 parser.parse(System.in, handler, metadata);
@@ -118,7 +123,7 @@ public class TikaCLI {
 
     private void usage() {
         PrintStream out = System.out;
-        out.println("usage: tika [option] file");
+        out.println("usage: tika [option] [file]");
         out.println();
         out.println("Options:");
         out.println("    -? or --help       Print this usage message");
@@ -137,8 +142,9 @@ public class TikaCLI {
         out.println("    Instead of a file name you can also specify the URL");
         out.println("    of a document to be parsed.");
         out.println();
-        out.println("    Use \"-\" as the file name to parse the standard");
-        out.println("    input stream.");
+        out.println("    If no file name or URL is specified (or the special");
+        out.println("    name \"-\" is used), then the standard input stream");
+        out.println("    is parsed.");
         out.println();
         out.println("    Use the \"--gui\" (or \"-g\") option to start");
         out.println("    the Apache Tika GUI. You can drag and drop files");
