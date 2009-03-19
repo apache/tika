@@ -21,10 +21,12 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
 import java.net.URI;
+import java.net.URL;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -40,9 +42,11 @@ class ParsingTransferHandler extends TransferHandler {
     private final TikaGUI tika;
 
     private static DataFlavor uriListFlavor;
+    private static DataFlavor urlListFlavor;
     static {
          try {
              uriListFlavor = new DataFlavor("text/uri-list;class=java.lang.String");
+             urlListFlavor = new DataFlavor("text/plain;class=java.lang.String");
          } catch (ClassNotFoundException e) {
          }
     }
@@ -54,7 +58,7 @@ class ParsingTransferHandler extends TransferHandler {
 
     public boolean canImport(JComponent component, DataFlavor[] flavors) {
         for (DataFlavor flavor : flavors) {
-            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor)) {
+            if (flavor.equals(DataFlavor.javaFileListFlavor) || flavor.equals(uriListFlavor) || flavor.equals(urlListFlavor)) {
                 return true;
             }
         }
@@ -64,16 +68,17 @@ class ParsingTransferHandler extends TransferHandler {
     public boolean importData(
             JComponent component, Transferable transferable) {
         try {
-            List<?> files = null;
+            List<File> files = null;
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                files = (List<?>)
-                    transferable.getTransferData(DataFlavor.javaFileListFlavor);
+                files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+            } else if (transferable.isDataFlavorSupported(urlListFlavor)) {
+                tika.importStream(new URL((String) transferable.getTransferData(urlListFlavor)).openStream());
             } else if (transferable.isDataFlavorSupported(uriListFlavor)) {
                 files = uriToFileList((String) transferable.getTransferData(uriListFlavor));
             }
 
-            for (Object file : files) {
-                tika.importFile((File) file);
+            for (File file : files) {
+                tika.importStream(new FileInputStream(file));
             }
             return true;
         } catch (Exception e) {

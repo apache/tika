@@ -128,8 +128,7 @@ public class TikaGUI extends JFrame {
         this.parser = parser;
     }
 
-    public void importFile(File file) throws IOException {
-        InputStream input = new FileInputStream(file);
+   public void importStream(InputStream input) throws IOException {
         try {
             StringWriter htmlBuffer = new StringWriter();
             StringWriter textBuffer = new StringWriter();
@@ -141,10 +140,9 @@ public class TikaGUI extends JFrame {
                     getTextContentHandler(textBuffer),
                     getXmlContentHandler(xmlBuffer));
             Metadata md = new Metadata();
-            md.set(Metadata.RESOURCE_NAME_KEY, file.getName());
 
             input = new ProgressMonitorInputStream(
-                    this, "Parsing file " + file.getName(), input);
+                    this, "Parsing stream", input);
             parser.parse(input, handler, md);
 
             String[] names = md.names();
@@ -173,8 +171,8 @@ public class TikaGUI extends JFrame {
             tabs.setSelectedIndex(tabs.getTabCount() - 1);
             JOptionPane.showMessageDialog(
                     this,
-                    "Apache Tika was unable to parse the file "
-                    + file.getName() + ".\n See the errors tab for"
+                    "Apache Tika was unable to parse the file or url.\n "
+                    + " See the errors tab for"
                     + " the detailed stack trace of this error.",
                     "Parse error",
                     JOptionPane.ERROR_MESSAGE);
