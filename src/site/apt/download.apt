@@ -19,12 +19,12 @@
 
 Download Apache Tika
 
-   Apache Tika 0.2 is now available.
-   See the {{{http://www.apache.org/dist/lucene/tika/CHANGES-0.2.txt}CHANGES.txt}}
+   Apache Tika 0.3 is now available.
+   See the {{{http://www.apache.org/dist/lucene/tika/CHANGES-0.3.txt}CHANGES.txt}}
    file for more information on the list of updates in this initial release.
 
-   * {{{http://www.apache.org/dyn/closer.cgi/lucene/tika/apache-tika-0.2-src.tar.gz}apache-tika-0.2-src.tar.gz}}
-     ({{{http://www.apache.org/dist/lucene/tika/apache-tika-0.2-src.tar.gz.asc}PGP}})
+   * {{{http://www.apache.org/dyn/closer.cgi/lucene/tika/apache-tika-0.3-src.tar.gz}apache-tika-0.3-src.tar.gz}}
+     ({{{http://www.apache.org/dist/lucene/tika/apache-tika-0.3-src.tar.gz.asc}PGP}})
 
    []
 
@@ -33,7 +33,8 @@ Download Apache Tika
    See the NOTICE.txt file contained in each release artifact for applicable
    copyright attribution notices.
 
-   If you are looking for previous releases of Apache Tika, have a look in the {{{http://archive.apache.org/dist/incubator/tika/}archives}}.
+   If you are looking for previous releases of Apache Tika, have a look in the {{{http://archive.apache.org/dist/lucene/tika/}archives}}.
+   If you are looking for releases of Apache Tika from the Apache Incubator (pre-0.2 releases), have a look in the {{{http://archive.apache.org/dist/incubator/tika/} incubator archives}}.
 
 Export control
 
