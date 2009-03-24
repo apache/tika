@@ -34,7 +34,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
-import org.apache.tika.utils.Utils;
 import org.cyberneko.html.parsers.SAXParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -105,7 +104,7 @@ public class HtmlParser implements Parser {
         // Parse the HTML document
         SAXParser parser = new SAXParser();
         parser.setContentHandler(new XHTMLDowngradeHandler(handler));
-        parser.parse(new InputSource(Utils.getUTF8Reader(stream, metadata)));
+        parser.parse(new InputSource(stream));
     }
 
     private ContentHandler getTitleHandler(final Metadata metadata) {
