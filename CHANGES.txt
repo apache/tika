@@ -4,6 +4,8 @@ Apache Tika Change Log
 Unreleased changes (0.4)
 ------------------------
 
+  * The memory use of parsing Excel sheets with lots of numbers
+    has been considerably reduced. (TIKA-211)
 
 Release 0.3 - 03/09/2009
 ------------------------
