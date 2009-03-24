@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.awt.Point;
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -190,7 +191,15 @@ public class ExcelExtractor {
         private SortedMap<Point, Cell> currentSheet = null;
 
         /**
-         * Contstruct a new listener instance outputting parsed data to
+         * Format for rendering numbers in the worksheet. Currently we just
+         * use the platform default formatting.
+         *
+         * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
+         */
+        private final NumberFormat format = NumberFormat.getInstance();
+
+        /**
+         * Construct a new listener instance outputting parsed data to
          * the specified XHTML content handler.
          *
          * @param handler Destination to write the parsed output to
@@ -254,7 +263,7 @@ public class ExcelExtractor {
 
             case FormulaRecord.sid: // Cell value from a formula
                 FormulaRecord formula = (FormulaRecord) record;
-                addCell(record, new NumberCell(formula.getValue()));
+                addCell(record, new NumberCell(formula.getValue(), format));
                 break;
 
             case LabelRecord.sid: // strings stored directly in the cell
@@ -270,12 +279,12 @@ public class ExcelExtractor {
 
             case NumberRecord.sid: // Contains a numeric cell value
                 NumberRecord number = (NumberRecord) record;
-                addCell(record, new NumberCell(number.getValue()));
+                addCell(record, new NumberCell(number.getValue(), format));
                 break;
 
             case RKRecord.sid: // Excel internal number record
                 RKRecord rk = (RKRecord) record;
-                addCell(record, new NumberCell(rk.getRKNumber()));
+                addCell(record, new NumberCell(rk.getRKNumber(), format));
                 break;
 
             case HyperlinkRecord.sid: // holds a URL associated with a cell

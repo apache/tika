@@ -35,10 +35,6 @@ public class NumberCell implements Cell {
         this.format = format;
     }
 
-    public NumberCell(double number) {
-        this(number, NumberFormat.getInstance());
-    }
-
     public void render(XHTMLContentHandler handler) throws SAXException {
         handler.characters(format.format(number));
     }
