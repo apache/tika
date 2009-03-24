@@ -134,4 +134,18 @@ public class HtmlParserTest extends TestCase {
         assertEquals("", content);
     }
 
+    /**
+     * Test case for TIKA-210
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-210">TIKA-210</a>
+     */
+    public void testCharactersDirectlyUnderBodyElement() throws Exception {
+        String test = "<html><body>test</body></html>";
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                handler, new Metadata());
+        String content = handler.toString();
+        assertEquals("test", content);
+    }
+
 }

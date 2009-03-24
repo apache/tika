@@ -186,6 +186,16 @@ public class XHTMLContentHandler extends SafeContentHandler {
         }
     }
 
+    /**
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-210">TIKA-210</a>
+     */
+    @Override
+    public void characters(char[] ch, int start, int length)
+            throws SAXException {
+        lazyStartDocument();
+        super.characters(ch, start, length);
+    }
+
     //------------------------------------------< public convenience methods >
 
     public void startElement(String name) throws SAXException {
