@@ -19,10 +19,10 @@ package org.apache.tika.parser.pkg;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.pkg.bzip2.CBZip2InputStream;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -38,11 +38,6 @@ public class Bzip2Parser extends PackageParser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        // The CBZip2InputStream class does not want to see the magic BZ header
-        if (stream.read() != 'B' || stream.read() != 'Z') {
-            throw new TikaException("Invalid BZip2 magic header");
-        }
-
         metadata.set(Metadata.CONTENT_TYPE, "application/x-bzip");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -51,7 +46,7 @@ public class Bzip2Parser extends PackageParser {
         // At the end we want to close the bzip2 stream to release any associated
         // resources, but the underlying document stream should not be closed
         InputStream gzip =
-            new CBZip2InputStream(new CloseShieldInputStream(stream));
+            new BZip2CompressorInputStream(new CloseShieldInputStream(stream));
         try {
             Metadata entrydata = new Metadata();
             String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
