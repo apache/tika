@@ -4,6 +4,10 @@ Apache Tika Change Log
 Unreleased changes (0.4)
 ------------------------
 
+  * Tika now uses the new Commons Compress library for improved support
+    of compression and packaging formats like gzip, bzip2, tar, cpio,
+    ar, zip and jar. (TIKA-204)
+
   * The memory use of parsing Excel sheets with lots of numbers
     has been considerably reduced. (TIKA-211)
 
