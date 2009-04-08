@@ -89,9 +89,9 @@ public class TikaConfig {
                 for (int j = 0; j < mimes.getLength(); j++) {
                     parsers.put(getText(mimes.item(j)).trim(), parser);
                 }
-            } catch (Exception e) {
-                throw new TikaException(
-                        "Invalid parser configuration: " + name, e);
+            } catch (Throwable t) {
+                // TODO: Log warning about an invalid parser configuration
+                // For now we just ignore this parser class
             }
         }
     }
