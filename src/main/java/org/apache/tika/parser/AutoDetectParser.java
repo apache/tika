@@ -20,11 +20,13 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.io.input.CountingInputStream;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.sax.SecureContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -74,8 +76,12 @@ public class AutoDetectParser extends CompositeParser {
         MediaType type = types.detect(stream, metadata);
         metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
+        // TIKA-216: Zip bomb prevention
+        CountingInputStream count = new CountingInputStream(stream);
+        SecureContentHandler secure = new SecureContentHandler(handler, count);
+
         // Parse the document
-        super.parse(stream, handler, metadata);
+        super.parse(count, secure, metadata);
     }
 
 }

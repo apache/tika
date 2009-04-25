@@ -24,6 +24,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import junit.framework.TestCase;
 
@@ -161,6 +162,27 @@ public class AutoDetectParserTest extends TestCase {
 
     public void testXML() throws Exception {
         assertAutoDetect("testXML.xml", XML, "Lius");
+    }
+
+    /**
+     * Make sure that zip bomb attacks are prevented.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-216">TIKA-216</a>
+     */
+    public void testZipBombPrevention() throws Exception {
+        InputStream tgz = AutoDetectParserTest.class.getResourceAsStream(
+                "/test-documents/TIKA-216.tgz");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new AutoDetectParser().parse(tgz, handler, metadata);
+            fail("Zip bomb was not detected");
+        } catch (SAXException e) {
+            // expected
+        } finally {
+            tgz.close();
+        }
+    
     }
 
     /**
