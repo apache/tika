@@ -42,7 +42,17 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * Number of output characters that Tika has produced so far.
      */
-    private long count;
+    private long characterCount = 0;
+
+    /**
+     * Output threshold.
+     */
+    private long threshold = 1000000;
+
+    /**
+     * Maximum compression ratio.
+     */
+    private long ratio = 100;
 
     /**
      * Decorates the given content handler with zip bomb prevention based
@@ -58,8 +68,52 @@ public class SecureContentHandler extends ContentHandlerDecorator {
             ContentHandler handler, CountingInputStream stream) {
         super(handler);
         this.stream = stream;
-        this.count = 0;
     }
+
+    /**
+     * Returns the configured output threshold.
+     *
+     * @return output threshold
+     */
+    public long getOutputThreshold() {
+        return threshold;
+    }
+
+
+    /**
+     * Sets the threshold for output characters before the zip bomb prevention
+     * is activated. This avoids false positives in cases where an otherwise
+     * normal document for some reason starts with a highly compressible
+     * sequence of bytes.
+     *
+     * @param threshold new output threshold
+     */
+    public void setOutputThreshold(long threshold) {
+        this.threshold = threshold;
+    }
+
+
+    /**
+     * Returns the maximum compression ratio.
+     *
+     * @return maximum compression ratio
+     */
+    public long getMaximumCompressionRatio() {
+        return ratio;
+    }
+
+
+    /**
+     * Sets the ratio between output characters and input bytes. If this
+     * ratio is exceeded (after the output threshold has been reached) then
+     * an exception gets thrown.
+     *
+     * @param ratio new maximum compression ratio
+     */
+    public void setMaximumCompressionRatio(long ratio) {
+        this.ratio = ratio;
+    }
+
 
     /**
      * Records the given number of output characters (or more accurately
@@ -70,8 +124,9 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * @throws SAXException if a zip bomb is detected
      */
     private void advance(int length) throws SAXException {
-        count += length;
-        if (count > 1000000 && count > 100 * stream.getByteCount()) {
+        characterCount += length;
+        if (characterCount > threshold
+                && characterCount > stream.getByteCount() * ratio) {
             throw new SAXException("Zip Bomb detected!");
         }
     }
