@@ -26,6 +26,7 @@ import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.concurrent.Executor;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
@@ -33,7 +34,7 @@ import org.xml.sax.ContentHandler;
 
 /**
  * Reader for the text content from a given binary stream. This class
- * starts a background thread and uses a {@link Parser}
+ * uses a background parsing task with a {@link Parser}
  * ({@link AutoDetectParser} by default) to parse the text content from
  * a given input stream. The {@link BodyContentHandler} class and a pipe
  * is used to convert the push-based SAX event stream to the pull-based
@@ -71,7 +72,7 @@ public class ParsingReader extends Reader {
     /**
      * An exception (if any) thrown by the parsing thread.
      */
-    private Throwable throwable;
+    private transient Throwable throwable;
 
     /**
      * Utility method that returns a {@link Metadata} instance
@@ -124,15 +125,49 @@ public class ParsingReader extends Reader {
     /**
      * Creates a reader for the text content of the given binary stream
      * with the given document metadata. The given parser is used for
-     * parsing.
+     * parsing. A new background thread is started for the parsing task.
      *
      * @param parser parser instance
      * @param stream binary stream
      * @param metadata document metadata
      * @throws IOException if the document can not be parsed
      */
-    public ParsingReader(Parser parser, InputStream stream, Metadata metadata)
+    public ParsingReader(
+            Parser parser, InputStream stream, final Metadata metadata)
             throws IOException {
+        this(parser, stream, metadata, new Executor() {
+            public void execute(Runnable command) {
+                String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+                if (name != null) {
+                    name = "Apache Tika: " + name;
+                } else {
+                    name = "Apache Tika";
+                }
+                Thread thread = new Thread(command, name);
+                thread.setDaemon(true);
+                thread.start();
+            }
+        });
+    }
+
+    /**
+     * Creates a reader for the text content of the given binary stream
+     * with the given document metadata. The given parser is used for the
+     * parsing task that is run with the given executor. The given executor
+     * <em>must</em> run the parsing task asynchronously in a separate thread,
+     * since the current thread must return to the caller that can then
+     * consume the parsed text through the {@link Reader} interface.
+     *
+     * @param parser parser instance
+     * @param stream binary stream
+     * @param metadata document metadata
+     * @param executor executor for the parsing task
+     * @throws IOException if the document can not be parsed
+     * @since Apache Tika 0.4
+     */
+    public ParsingReader(
+            Parser parser, InputStream stream, Metadata metadata,
+            Executor executor) throws IOException {
         this.parser = parser;
         PipedReader pipedReader = new PipedReader();
         this.reader = new BufferedReader(pipedReader);
@@ -144,13 +179,7 @@ public class ParsingReader extends Reader {
         this.stream = stream;
         this.metadata = metadata;
 
-        String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
-        if (name != null) {
-            name = "Apache Tika: " + name;
-        } else {
-            name = "Apache Tika";
-        }
-        new Thread(new ParsingThread(), name).start();
+        executor.execute(new ParsingTask());
 
         // TIKA-203: Buffer first character to force metadata extraction
         reader.mark(1);
@@ -159,9 +188,9 @@ public class ParsingReader extends Reader {
     }
 
     /**
-     * The background parsing thread.
+     * The background parsing task.
      */
-    private class ParsingThread implements Runnable {
+    private class ParsingTask implements Runnable {
 
         /**
          * Parses the given binary stream and writes the text content

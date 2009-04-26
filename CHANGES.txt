@@ -13,6 +13,10 @@ The most notable changes in Tika 0.4 over the previous release are:
     attacks, where a specially crafted input document can expand to
     practically infinite amount of output text. (TIKA-216)
 
+  * The ParsingReader class can now use a thread pool or a more complex
+    execution model (java.util.concurrent.Executor) for the background
+    parsing task. (TIKA-215)
+
 Release 0.3 - 03/09/2009
 ------------------------
 
