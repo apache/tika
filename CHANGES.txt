@@ -4,8 +4,14 @@ Apache Tika Change Log
 Unreleased changes (0.4)
 ------------------------
 
+The most notable changes in Tika 0.4 over the previous release are:
+
   * The memory use of parsing Excel sheets with lots of numbers
     has been considerably reduced. (TIKA-211)
+
+  * The AutoDetectParser now has basic protection against "zip bomb"
+    attacks, where a specially crafted input document can expand to
+    practically infinite amount of output text. (TIKA-216)
 
 Release 0.3 - 03/09/2009
 ------------------------
