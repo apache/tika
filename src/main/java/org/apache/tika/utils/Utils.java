@@ -35,6 +35,8 @@ import org.apache.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParsingReader;
+import org.apache.tika.parser.txt.TXTParser;
 
 import com.ibm.icu.text.CharsetDetector;
 import com.ibm.icu.text.CharsetMatch;
@@ -101,36 +103,10 @@ public class Utils {
      * and content language ({@link HttpHeaders#CONTENT_LANGUAGE}).
      * 
      * @return Reader to utf8 encoded reader.
+     * @deprecated use {@link TXTParser} instead
      */
     public static Reader getUTF8Reader(InputStream stream, Metadata metadata) throws TikaException, IOException{
-        CharsetDetector detector = new CharsetDetector();
-    
-        // Use the declared character encoding, if available
-        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
-        if (encoding != null) {
-            detector.setDeclaredEncoding(encoding);
-        }
-    
-        // CharsetDetector expects a stream to support marks
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
-    
-        detector.setText(stream);
-    
-        CharsetMatch match = detector.detect();
-        if (match == null) {
-            throw new TikaException("Unable to detect character encoding");
-        }
-        
-        metadata.set(Metadata.CONTENT_ENCODING, match.getName());
-        String language = match.getLanguage();
-        if (language != null) {
-            metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
-            metadata.set(Metadata.LANGUAGE, match.getLanguage());
-        }
-        
-        return match.getReader();
+        return new ParsingReader(new TXTParser(), stream, metadata);
     }
 
 }

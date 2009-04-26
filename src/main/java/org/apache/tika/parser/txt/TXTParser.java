@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.txt;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -24,9 +25,11 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.Utils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import com.ibm.icu.text.CharsetDetector;
+import com.ibm.icu.text.CharsetMatch;
 
 /**
  * Text parser
@@ -36,8 +39,34 @@ public class TXTParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Reader reader = Utils.getUTF8Reader(stream, metadata);
+        CharsetDetector detector = new CharsetDetector();
+
+        // Use the declared character encoding, if available
+        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
+        if (encoding != null) {
+            detector.setDeclaredEncoding(encoding);
+        }
+
+        // CharsetDetector expects a stream to support marks
+        if (!stream.markSupported()) {
+            stream = new BufferedInputStream(stream);
+        }
+        detector.setText(stream);
+    
+        CharsetMatch match = detector.detect();
+        if (match == null) {
+            throw new TikaException("Unable to detect character encoding");
+        }
+
+        Reader reader = match.getReader();
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
+        metadata.set(Metadata.CONTENT_ENCODING, match.getName());
+
+        String language = match.getLanguage();
+        if (language != null) {
+            metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
+            metadata.set(Metadata.LANGUAGE, match.getLanguage());
+        }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
