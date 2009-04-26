@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -177,7 +178,7 @@ public class AutoDetectParserTest extends TestCase {
             ContentHandler handler = new BodyContentHandler();
             new AutoDetectParser().parse(tgz, handler, metadata);
             fail("Zip bomb was not detected");
-        } catch (SAXException e) {
+        } catch (TikaException e) {
             // expected
         } finally {
             tgz.close();

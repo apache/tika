@@ -17,6 +17,7 @@
 package org.apache.tika.sax;
 
 import org.apache.commons.io.input.CountingInputStream;
+import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -114,6 +115,20 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         this.ratio = ratio;
     }
 
+    /**
+     * Converts the given {@link SAXException} to a corresponding
+     * {@link TikaException} if it's caused by this instance detecting
+     * a zip bomb.
+     *
+     * @param e SAX exception
+     * @throws TikaException zip bomb exception
+     */
+    public void throwIfCauseOf(SAXException e) throws TikaException {
+        if (e instanceof SecureSAXException
+                && ((SecureSAXException) e).isCausedBy(this)) {
+            throw new TikaException("Zip bomb detected!", e);
+        }
+    }
 
     /**
      * Records the given number of output characters (or more accurately
@@ -127,7 +142,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         characterCount += length;
         if (characterCount > threshold
                 && characterCount > stream.getByteCount() * ratio) {
-            throw new SAXException("Zip Bomb detected!");
+            throw new SecureSAXException();
         }
     }
 
@@ -143,6 +158,25 @@ public class SecureContentHandler extends ContentHandlerDecorator {
             throws SAXException {
         advance(length);
         super.ignorableWhitespace(ch, start, length);
+    }
+
+    /**
+     * Private exception class used to indicate a suspected zip bomb.
+     *
+     * @see SecureContentHandler#throwIfCauseOf(SAXException)
+     */
+    private class SecureSAXException extends SAXException {
+
+        public SecureSAXException() {
+            super("Suspected zip bomb: "
+                    + stream.getByteCount() + " input bytes produced "
+                    + characterCount + " output characters");
+        }
+
+        public boolean isCausedBy(SecureContentHandler handler) {
+            return SecureContentHandler.this == handler;
+        }
+
     }
 
 }
