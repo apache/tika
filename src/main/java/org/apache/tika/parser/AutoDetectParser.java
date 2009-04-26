@@ -81,7 +81,13 @@ public class AutoDetectParser extends CompositeParser {
         SecureContentHandler secure = new SecureContentHandler(handler, count);
 
         // Parse the document
-        super.parse(count, secure, metadata);
+        try {
+            super.parse(count, secure, metadata);
+        } catch (SAXException e) {
+            // Convert zip bomb exceptions to TikaExceptions
+            secure.throwIfCauseOf(e);
+            throw e;
+        }
     }
 
 }
