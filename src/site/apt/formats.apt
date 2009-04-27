@@ -189,6 +189,39 @@ Supported Document Formats
     and <<<*.bz2>>>, and they will respectively be replaced with <<<*.tar>>>,
     <<<*.tar>>>, <<<*>>> and <<<*>>> as described above.
 
+* Audio formats
+
+   Tika can detect several common audio formats and extract metadata
+   from them. Text extraction is supported for some MIDI-based karaoke
+   formats that contain the lyrics of the encoded audio.
+
+   See {{{https://issues.apache.org/jira/browse/TIKA-94}TIKA-94}} for
+   an effort to integrate speech recognition support to Tika.
+
+   [MP3 Audio (audio/mpeg)]
+    The parsing of {{{http://www.id3.org/ID3v1}ID3v1}} tags from MP3 files
+    was added in Tika version 0.2. If found the following metadata is
+    extracted and set:
+
+      * <<<TITLE>>> Title
+
+      * <<<SUBJECT>>> Subject
+
+    The above information, as well as the <<<Album>>>, <<<Track>>>,
+    <<<Year>>>, <<<Genre>>> and additional <<<Comment>>> are extracted
+    when set in the file.
+
+   [MIDI audio (audio/midi)]
+    Tika uses the MIDI support in <<<javax.audio.midi>>> to parse MIDI
+    sequence files. Many karaoke file formats are based on MIDI, and
+    contain lyrics as embedded text tracks that Tika knows how to extract.
+    Support for MIDI files was added in Tika 0.3.
+
+   [Wave audio (audio/basic)]
+    Tika supports sampled wave audio (.wav files, etc.) using the
+    <<<javax.audio.sampled>>> package. Only sampling metadata is extracted.
+    Support for sampled wave audio was added in Tika 0.3. 
+
 * Other supported formats
 
    [Extensible Markup Language (application/xml)]
@@ -210,17 +243,6 @@ Supported Document Formats
    [Java jar archives]
     The parsing of Java JAR archives is performed using a combination of the ZIP and Java class file parsers.
     Support for Java JAR archives was added in Tika 0.2.
-
-   [MP3 Audio (audio/mp3)]
-    The parsing of {{{http://www.id3.org/ID3v1}ID3v1}} tags from MP3 files was added in Tika version 0.2.
-    If found the following metadata is extracted and set:
-
-      * <<<TITLE>>> Title
-
-      * <<<SUBJECT>>> Subject
-
-    The above information, as well as the <<<Album>>>, <<<Track>>>, <<<Year>>>, <<<Genre>>>
-    and additional <<<Comment>>> are extracted when set in the file.
 
    [OpenDocument (application/vnd.oasis.opendocument.*)]
     TODO
