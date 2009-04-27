@@ -215,11 +215,13 @@ Supported Document Formats
     Tika uses the MIDI support in <<<javax.audio.midi>>> to parse MIDI
     sequence files. Many karaoke file formats are based on MIDI, and
     contain lyrics as embedded text tracks that Tika knows how to extract.
+
     Support for MIDI files was added in Tika 0.3.
 
    [Wave audio (audio/basic)]
     Tika supports sampled wave audio (.wav files, etc.) using the
     <<<javax.audio.sampled>>> package. Only sampling metadata is extracted.
+
     Support for sampled wave audio was added in Tika 0.3. 
 
 * Other supported formats
@@ -233,15 +235,21 @@ Supported Document Formats
     Support for HyperText Markup Language files was added in Tika 0.1.
 
    [Images (image/*)]
-    Tika uses the <<<javax.imageio>>> classes to extract Metadata from Image files.
+    Tika uses the <<<javax.imageio>>> classes to extract metadata
+    from image files.
+
     Support for Image files was added in Tika 0.2.
 
    [Java class files]
-    The parsing of Java Class files is based on the asm library and work by Dave Brosius in JCR-1522.
+    The parsing of Java Class files is based on the asm library and
+    work by Dave Brosius in JCR-1522.
+
     Support for Java Class files was added in Tika 0.2.
 
    [Java jar archives]
-    The parsing of Java JAR archives is performed using a combination of the ZIP and Java class file parsers.
+    The parsing of Java JAR archives is performed using a combination of
+    the ZIP and Java class file parsers.
+
     Support for Java JAR archives was added in Tika 0.2.
 
    [OpenDocument (application/vnd.oasis.opendocument.*)]
@@ -272,8 +280,9 @@ Supported Document Formats
 
    [Portable Document Format (application/pdf)]
     Tika uses the {{{http://www.pdfbox.org}PDFBox}} library to parse
-    Portable Document Format (PDF) documents. Support for PDF was added
-    in Tika 0.1.
+    Portable Document Format (PDF) documents.
+
+    Support for PDF was added in Tika 0.1.
 
    [Rich Text Format (application/rtf)]
     Tika uses Java's built-in Swing library to parse Rich Text Format (RTF)
@@ -288,8 +297,10 @@ Supported Document Formats
     Tika uses an adapted version of the tar parsing code from
     {{{http://ant.apache.org/}Apache Ant}} to parse tar archives.
     The tar code is originally based on work by Timothy Gerard Endres.
+
     Support for tar archives was added in Tika 0.2.
 
    [ZIP archive (application/zip)]
     Tika uses Java's built-in Zip classes to parse ZIP files.
+
     Support for ZIP was added in Tika 0.2.
