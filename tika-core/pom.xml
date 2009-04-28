@@ -186,35 +186,8 @@
               <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
               <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
             </manifestEntries>
-            <manifest>
-              <addClasspath>true</addClasspath>
-              <mainClass>org.apache.tika.cli.TikaCLI</mainClass>
-            </manifest>
           </archive>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.2-beta-2</version>
-        <configuration>
-          <descriptors>
-            <descriptor>src/main/assembly/standalone.xml</descriptor>
-          </descriptors>
-          <archive>
-            <manifest>
-              <mainClass>org.apache.tika.cli.TikaCLI</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

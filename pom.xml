@@ -176,6 +176,7 @@
 
   <modules>
     <module>tika-core</module>
+    <module>tika-app</module>
   </modules>
 
 </project>
