@@ -16,7 +16,6 @@
  */
 package org.apache.tika.utils;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,13 +24,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
-import org.apache.log4j.Logger;
 
 /**
  * Class util
@@ -41,12 +37,10 @@ import org.apache.log4j.Logger;
 
 public class Utils {
 
-    static Logger logger = Logger.getRootLogger();
-
-    public static List unzip(InputStream is) {
-        List res = new ArrayList();
+    public static List<File> unzip(InputStream is) throws IOException {
+        List<File> res = new ArrayList<File>();
+        ZipInputStream in = new ZipInputStream(is);
         try {
-            ZipInputStream in = new ZipInputStream(is);
             ZipEntry entry = null;
             while ((entry = in.getNextEntry()) != null) {
                 ByteArrayOutputStream stream = new ByteArrayOutputStream();
@@ -58,7 +52,7 @@ public class Utils {
                 InputStream isEntry = new ByteArrayInputStream(stream
                         .toByteArray());
                 File file = File.createTempFile("TIKA_unzip_", "_" + entry.getName());
-                
+
                 // TODO we might want to delete the file earlier than on exit,
                 // in case Tika is used inside a long-running app
                 file.deleteOnExit();
@@ -67,9 +61,8 @@ public class Utils {
                 res.add(file);
                 isEntry.close();
             }
+        } finally {
             in.close();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
         }
         return res;
     }
