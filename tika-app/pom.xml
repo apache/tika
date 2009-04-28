@@ -40,9 +40,8 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
+      <artifactId>tika-parsers</artifactId>
       <version>0.4-SNAPSHOT</version>
-      <optional/>
     </dependency>
   </dependencies>
 
