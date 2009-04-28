@@ -20,18 +20,12 @@ package org.apache.tika.mime;
 import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 
-// Jakarta Commons Codec imports
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
-
 /**
  * Defines a magic match.
  * 
  * 
  */
 class MagicMatch implements Clause {
-
-    private final static Hex HEX_CODEC = new Hex();
 
     private int offsetStart;
 
@@ -51,23 +45,18 @@ class MagicMatch implements Clause {
         this.offsetStart = offsetStart;
         this.offsetEnd = offsetEnd;
         this.type = type;
-        try {
-            byte[] decoded = decodeValue(type, value);
-            this.length = decoded.length;
-            this.value = new BigInteger(decoded);
-            if (mask != null) {
-                this.mask = new BigInteger(decodeValue(type, mask));
-                this.value = this.value.and(this.mask);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new MimeTypeException(e);
+
+        byte[] decoded = decodeValue(type, value);
+        this.length = decoded.length;
+        this.value = new BigInteger(decoded);
+        if (mask != null) {
+            this.mask = new BigInteger(decodeValue(type, mask));
+            this.value = this.value.and(this.mask);
         }
     }
 
     private byte[] decodeValue(String type, String value)
-            throws DecoderException {
-
+            throws MimeTypeException {
         // Preliminary check
         if ((value == null) || (type == null)) {
             return null;
@@ -116,10 +105,14 @@ class MagicMatch implements Clause {
         return decoded;
     }
 
-    private byte[] decodeString(String value) throws DecoderException {
-
+    private byte[] decodeString(String value) throws MimeTypeException {
         if (value.startsWith("0x")) {
-            return HEX_CODEC.decode(value.substring(2).getBytes());
+            byte[] bytes = new byte[(value.length() - 2) / 2];
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte)
+                    Integer.parseInt(value.substring(2 + i * 2, 4 + i * 2), 16);
+            }
+            return bytes;
         }
 
         try {
@@ -131,8 +124,8 @@ class MagicMatch implements Clause {
                         decoded.write('\\');
                         i++;
                     } else if (value.charAt(i + 1) == 'x') {
-                        decoded.write(HEX_CODEC.decode(value.substring(i + 2,
-                                i + 4).getBytes()));
+                        decoded.write(Integer.parseInt(
+                                value.substring(i + 2, i + 4), 16));
                         i += 3;
                     } else {
                         int j = i + 1;
@@ -149,8 +142,8 @@ class MagicMatch implements Clause {
                 }
             }
             return decoded.toByteArray();
-        } catch (Exception e) {
-            throw new DecoderException(e.toString() + " for " + value);
+        } catch (NumberFormatException e) {
+            throw new MimeTypeException(e.toString() + " for " + value);
         }
     }
 
