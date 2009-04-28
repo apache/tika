@@ -32,14 +32,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.log4j.Logger;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.HttpHeaders;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParsingReader;
-import org.apache.tika.parser.txt.TXTParser;
-
-import com.ibm.icu.text.CharsetDetector;
-import com.ibm.icu.text.CharsetMatch;
 
 /**
  * Class util
@@ -92,21 +84,6 @@ public class Utils {
 
         in.close();
         out.close();
-    }
-
-    /**
-     * Try to detect encoding from inputstream and return a UTF-8
-     * Reader. A metadata hint can be submitted as part of {@link Metadata}
-     * under key {@link HttpHeaders#CONTENT_ENCODING}.
-     * 
-     * After succesfull detection, fills Metadata with detected content encoding
-     * and content language ({@link HttpHeaders#CONTENT_LANGUAGE}).
-     * 
-     * @return Reader to utf8 encoded reader.
-     * @deprecated use {@link TXTParser} instead
-     */
-    public static Reader getUTF8Reader(InputStream stream, Metadata metadata) throws TikaException, IOException{
-        return new ParsingReader(new TXTParser(), stream, metadata);
     }
 
 }
