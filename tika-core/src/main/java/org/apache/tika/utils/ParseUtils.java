@@ -108,13 +108,17 @@ public class ParseUtils implements TikaMimeKeys {
      */
     private static List<Parser> getParsersFromZip(InputStream zipIs,
             TikaConfig config) throws TikaException {
-        List<Parser> parsers = new ArrayList<Parser>();
-        List<File> zipFiles = Utils.unzip(zipIs);
-        for (int i = 0; i < zipFiles.size(); i++) {
-            File zipEntry = zipFiles.get(i);
-            parsers.add(getParser(zipEntry, config));
+        try {
+            List<Parser> parsers = new ArrayList<Parser>();
+            List<File> zipFiles = Utils.unzip(zipIs);
+            for (int i = 0; i < zipFiles.size(); i++) {
+                File zipEntry = zipFiles.get(i);
+                parsers.add(getParser(zipEntry, config));
+            }
+            return parsers;
+        } catch (IOException e) {
+            throw new TikaException("Failed to read zip file", e);
         }
-        return parsers;
     }
 
     /**
