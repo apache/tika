@@ -216,9 +216,9 @@ public final class MimeType implements Comparable<MimeType> {
 
     /**
      * Returns the aliases of this media type. The returned set is
-     * newly allocated and can be freely modified by the client.
+     * an immutable view of the set.
      *
-     * @return media type aliases
+     * @return media type aliases, unmodifiable, not null
      */
     public SortedSet<String> getAliases() {
         return Collections.unmodifiableSortedSet(aliases);
