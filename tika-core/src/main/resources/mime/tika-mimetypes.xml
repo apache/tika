@@ -23,7 +23,7 @@
 <mime-info>
 
   <mime-type type="text/plain">
-    <magic priority="50">
+    <magic priority="20">
       <match value="This is TeX," type="string" offset="0" />
       <match value="This is METAFONT," type="string" offset="0" />
       <match value="#!/" type="string" offset="0" />
@@ -118,9 +118,6 @@
     <glob pattern="*.xmap" />
     <glob pattern="*.xroles" />
     <glob pattern="*.xsamples" />
-    <glob pattern="*.xsd" />
-    <glob pattern="*.xsl" />
-    <glob pattern="*.xslt" />
     <glob pattern="*.xsp" />
     <glob pattern="*.xul" />
     <glob pattern="*.xweb" />
@@ -154,6 +151,7 @@
   <mime-type type="application/xhtml+xml">
     <sub-class-of type="application/xml" />
     <glob pattern="*.xhtml" />
+    <glob pattern="*.xht" />
     <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html" />
   </mime-type>
 
@@ -564,11 +562,15 @@
   <mime-type type="application/xml">
     <sub-class-of type="text/plain" />
     <magic priority="50">
-      <match value="\&lt;?xml" type="string" offset="0" />
-      <match value="\&lt;?XML" type="string" offset="0" />
+      <match value="&lt;?xml" type="string" offset="0" />
+      <match value="&lt;?XML" type="string" offset="0" />
+      <match value="0xFFFE3C003F0078006D006C00" type="string" offset="0" />
+      <match value="0xFEFF003C003F0078006D006C" type="string" offset="0" />
+      <!-- TODO: Add matches for the rest of the possible XML encoding schemes -->
     </magic>
     <alias type="text/xml" />
     <glob pattern="*.xml" />
+    <glob pattern="*.xsd" />
   </mime-type>
 
   <mime-type type="image/svg+xml">
@@ -579,6 +581,16 @@
     <glob pattern="*.svg" />
   </mime-type>
 
+  <mime-type type="application/xslt+xml">
+    <sub-class-of type="application/xml" />
+    <acronym>XSLT</acronym>
+    <comment>XSL Transformations</comment>
+    <root-XML localName="stylesheet" namespaceURI="http://www.w3.org/1999/XSL/Transform" />
+    <alias type="text/xsl" />
+    <glob pattern="*.xsl" />
+    <glob pattern="*.xslt" />
+  </mime-type>
+  
   <mime-type type="application/x-mif">
     <magic priority="50">
       <match value="\&lt;MakerFile" type="string" offset="0" />
@@ -667,10 +679,6 @@
 
   <mime-type type="application/x-shellscript">
     <alias type="application/x-sh" />
-  </mime-type>
-
-  <mime-type type="application/xhtml+xml">
-    <glob pattern="*.xht" />
   </mime-type>
 
   <mime-type type="audio/midi">

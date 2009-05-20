@@ -23,12 +23,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.xml.namespace.QName;
+
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -127,7 +130,7 @@ public final class MimeTypes implements Detector {
 
     /**
      * Find the Mime Content Type of a file.
-     * 
+     *
      * @param file
      *            to analyze.
      * @return the Mime Content Type of the specified file, or <code>null</code>
@@ -139,7 +142,7 @@ public final class MimeTypes implements Detector {
 
     /**
      * Find the Mime Content Type of a document from its URL.
-     * 
+     *
      * @param url
      *            of the document to analyze.
      * @return the Mime Content Type of the specified document URL, or
@@ -152,7 +155,7 @@ public final class MimeTypes implements Detector {
     /**
      * Find the Mime Content Type of a document from its name.
      * Returns application/octet-stream if no better match is found.
-     * 
+     *
      * @param name of the document to analyze.
      * @return the Mime Content Type of the specified document name
      */
@@ -186,6 +189,7 @@ public final class MimeTypes implements Detector {
         }
 
         // First, check for XML descriptions (level by level)
+        // Problem: Regexp matching doesn't work for all XML encodings
         for (MimeType type : xmls) {
             if (type.matchesXML(data)) {
                 return type;
@@ -193,11 +197,31 @@ public final class MimeTypes implements Detector {
         }
 
         // Then, check for magic bytes
+        MimeType result = null;
         for (Magic magic : magics) {
             if (magic.eval(data)) {
-                return magic.getType();
+                result = magic.getType();
+                break;
             }
         }
+        if (result != null) {
+            // When detecting generic XML, parse XML to determine the root element
+            if ("application/xml".equals(result.getName())) {
+                QName rootElement = XmlRootExtractor.extractRootElement(data);
+                if (rootElement != null) {
+                    for (MimeType type : xmls) {
+                        if (type.matchesXML(
+                                rootElement.getNamespaceURI(),
+                                rootElement.getLocalPart())) {
+                            result = type;
+                            break;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+
 
         // Finally, assume plain text if no control bytes are found
         for (int i = 0; i < data.length; i++) {
@@ -302,7 +326,7 @@ public final class MimeTypes implements Detector {
      * <li>If a type is found, then return it, otherwise try to find the type
      * based on the file name</li>
      * </ol>
-     * 
+     *
      * @param name
      *            of the document to analyze.
      * @param data
@@ -389,7 +413,7 @@ public final class MimeTypes implements Detector {
     /**
      * Adds a file name pattern for the given media type. Assumes that the
      * pattern being added is <b>not</b> a JDK standard regular expression.
-     * 
+     *
      * @param type
      *            media type
      * @param pattern
@@ -408,7 +432,7 @@ public final class MimeTypes implements Detector {
      * regular expression via the <code>isRegex</code> parameter. If the value
      * is set to true, then a JDK standard regex is assumed, otherwise the
      * freedesktop glob type is assumed.
-     * 
+     *
      * @param type
      *            media type
      * @param pattern
@@ -418,7 +442,7 @@ public final class MimeTypes implements Detector {
      *            false.
      * @throws MimeTypeException
      *             if the pattern conflicts with existing ones.
-     * 
+     *
      */
     public void addPattern(MimeType type, String pattern, boolean isRegex)
             throws MimeTypeException {
@@ -428,7 +452,7 @@ public final class MimeTypes implements Detector {
     /**
      * Return the minimum length of data to provide to analyzing methods based
      * on the document's content in order to check all the known MimeTypes.
-     * 
+     *
      * @return the minimum length of data to provide.
      * @see #getMimeType(byte[])
      * @see #getMimeType(String, byte[])
@@ -440,7 +464,7 @@ public final class MimeTypes implements Detector {
 
     /**
      * Add the specified mime-type in the repository.
-     * 
+     *
      * @param type
      *            is the mime-type to add.
      */
