@@ -20,12 +20,9 @@ package org.apache.tika.utils;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -95,69 +92,6 @@ public class ParseUtils implements TikaMimeKeys {
         String mimetype = config.getMimeRepository().getMimeType(documentFile)
         .getName();
         return getParser(mimetype, config);
-    }
-
-    /**
-     * Returns a list of parsers from zip InputStream
-     * 
-     * @param zip
-     *            InputStream
-     * @param config
-     * @return a list of parsers from zip file
-     * @throws TikaException
-     */
-    private static List<Parser> getParsersFromZip(InputStream zipIs,
-            TikaConfig config) throws TikaException {
-        try {
-            List<Parser> parsers = new ArrayList<Parser>();
-            List<File> zipFiles = Utils.unzip(zipIs);
-            for (int i = 0; i < zipFiles.size(); i++) {
-                File zipEntry = zipFiles.get(i);
-                parsers.add(getParser(zipEntry, config));
-            }
-            return parsers;
-        } catch (IOException e) {
-            throw new TikaException("Failed to read zip file", e);
-        }
-    }
-
-    /**
-     * Returns a list of parsers from zip File
-     * 
-     * @param zip
-     *            File
-     * @param config
-     * @return a list of parsers from zip file
-     * @throws TikaException
-     * @throws FileNotFoundException
-     */
-    public static List<Parser> getParsersFromZip(File zip, TikaConfig config)
-            throws TikaException, FileNotFoundException {
-        String zipMimeType = config.getMimeRepository().getMimeType(zip)
-        .getName();
-        if (!zipMimeType.equalsIgnoreCase("application/zip")) {
-            throw new TikaException("The file you are using is note a zip file");
-        }
-        return getParsersFromZip(new FileInputStream(zip), config);
-    }
-
-    /**
-     * Returns a list of parsers from URL
-     * 
-     * @param zip
-     * @param config
-     * @return a list of parsers from zip file
-     * @throws TikaException
-     * @throws IOException
-     */
-    public static List<Parser> getParsersFromZip(URL zip, TikaConfig config)
-            throws TikaException, IOException {
-        String zipMimeType = config.getMimeRepository().getMimeType(zip)
-        .getName();
-        if (!zipMimeType.equalsIgnoreCase("application/zip")) {
-            throw new TikaException("The file you are using is note a zip file");
-        }
-        return getParsersFromZip(zip.openStream(), config);
     }
 
     /**
