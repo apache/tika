@@ -131,7 +131,7 @@ public final class MimeType implements Comparable<MimeType> {
 
     /**
      * Returns the name of this media type.
-     * 
+     *
      * @return media type name (lower case)
      */
     public String getName() {
@@ -189,13 +189,13 @@ public final class MimeType implements Comparable<MimeType> {
                     return true;
                 }
             }
-            return false; 
+            return false;
         }
     }
 
     /**
      * Returns the description of this media type.
-     * 
+     *
      * @return media type description
      */
     public String getDescription() {
@@ -204,7 +204,7 @@ public final class MimeType implements Comparable<MimeType> {
 
     /**
      * Set the description of this media type.
-     * 
+     *
      * @param description media type description
      */
     public void setDescription(String description) {
@@ -245,7 +245,7 @@ public final class MimeType implements Comparable<MimeType> {
 
     /**
      * Add some rootXML info to this mime-type
-     * 
+     *
      * @param namespaceURI
      * @param localName
      */
@@ -259,6 +259,15 @@ public final class MimeType implements Comparable<MimeType> {
         for (int i = 0; i < rootXML.size(); i++) {
             xml = rootXML.get(i);
             if (xml.matches(content)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    boolean matchesXML(String namespaceURI, String localName) {
+        for (RootXML xml : rootXML) {
+            if (xml.matches(namespaceURI, localName)) {
                 return true;
             }
         }
@@ -351,6 +360,23 @@ public final class MimeType implements Comparable<MimeType> {
 
         boolean matches(String data) {
             return pattern.matcher(data).matches();
+        }
+
+        boolean matches(String namespaceURI, String localName) {
+            //Compare namespaces
+            if (!(StringUtil.isEmpty(this.namespaceURI))) {
+                if (!this.namespaceURI.equals(namespaceURI)) {
+                    return false;
+                }
+            }
+
+            //Compare root element's local name
+            if (!StringUtil.isEmpty(this.localName)) {
+                if (!this.localName.equals(localName)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         MimeType getType() {
