@@ -19,7 +19,6 @@ package org.apache.tika;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -27,7 +26,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ParseUtils;
-import org.apache.tika.utils.Utils;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -189,31 +187,6 @@ public class TestParsers extends TestCase {
 
         Parser parser = tc.getParser("audio/mpeg");
         assertNotNull(parser);
-    }
-
-    public void testZipExtraction() throws Exception {
-        File zip = getTestFile("test-documents.zip");
-        List<Parser> parsers = ParseUtils.getParsersFromZip(zip, tc);
-        List<File> zipFiles = Utils.unzip(new FileInputStream(zip));
-        for (int i = 0; i < parsers.size(); i++) {
-            Parser zipEntryParser = parsers.get(i);
-            assertNotNull(zipEntryParser);
-            for (int j = 0; j < zipFiles.size(); j++) {
-                /* FIXME: Doesn't work with the new Parser interface
-                ParserConfig config = tc.getParserConfig(
-                        zipEntryParser.getMimeType());
-                Map<String, Content> contents = config.getContents();
-                assertNotNull(contents);
-                InputStream stream = new FileInputStream(zipFiles.get(j));
-                try {
-                    zipEntryParser.getContents(stream, contents);
-                    assertNotNull(contents.get("fullText"));
-                } finally {
-                    stream.close();
-                }
-                */
-            }
-        }
     }
 
     private File getTestFile(String filename) {
