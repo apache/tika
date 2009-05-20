@@ -17,6 +17,9 @@ The most notable changes in Tika 0.4 over the previous release are:
     execution model (java.util.concurrent.Executor) for the background
     parsing task. (TIKA-215)
 
+  * Automatic type detection of text- and XML-based documents has been
+    improved. (TIKA-225) 
+
 Release 0.3 - 03/09/2009
 ------------------------
 
