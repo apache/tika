@@ -33,7 +33,9 @@
   </parent>
 
   <artifactId>tika-parsers</artifactId>
+  <packaging>bundle</packaging>
   <name>Apache Tika parsers</name>
+  <url>http://lucene.apache.org/tika/</url>
 
   <properties>
     <poi.version>3.5-beta5</poi.version>
@@ -97,5 +99,23 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>
+              org.apache.tika.parser.*;version=${project.version}
+            </Export-Package>
+            <Bundle-DocURL>${project.url}</Bundle-DocURL>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>
