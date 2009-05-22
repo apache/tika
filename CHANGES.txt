@@ -14,6 +14,10 @@ The most notable changes in Tika 0.4 over the previous release are:
 
   * All the three Tika components are packaged as OSGi bundles. (TIKA-228)
 
+  * Tika now uses the new Commons Compress library for improved support
+    of compression and packaging formats like gzip, bzip2, tar, cpio,
+    ar, zip and jar. (TIKA-204)
+
   * The memory use of parsing Excel sheets with lots of numbers
     has been considerably reduced. (TIKA-211)
 

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -51,18 +52,9 @@ public class GzipParser extends PackageParser {
             Metadata entrydata = new Metadata();
             String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
             if (name != null) {
-                if (name.endsWith(".tgz")) {
-                    name = name.substring(0, name.length() - 4) + ".tar";
-                } else if (name.endsWith(".gz") || name.endsWith("-gz")) {
-                    name = name.substring(0, name.length() - 3);
-                } else if (name.toLowerCase().endsWith(".svgz")) {
-                    name = name.substring(0, name.length() - 1);
-                } else if (name.toLowerCase().endsWith(".wmz")) {
-                    name = name.substring(0, name.length() - 1) + "f";
-                } else if (name.toLowerCase().endsWith(".emz")) {
-                    name = name.substring(0, name.length() - 1) + "f";
-                }
-                entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
+                entrydata.set(
+                        Metadata.RESOURCE_NAME_KEY,
+                        GzipUtils.getUncompressedFilename(name));
             }
             parseEntry(gzip, xhtml, entrydata);
         } finally {
