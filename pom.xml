@@ -175,6 +175,7 @@
   </scm>
 
   <modules>
+    <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
     <module>tika-app</module>
