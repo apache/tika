@@ -61,14 +61,5 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <resources>
-      <resource>
-        <targetPath>org/apache/tika</targetPath>
-        <directory>${basedir}/src/main/resources</directory>
-      </resource>
-    </resources>
-  </build>
-
 </project>
 
