@@ -19,13 +19,10 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.lang.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import junit.framework.TestCase;
 
@@ -120,7 +117,7 @@ public class AutoDetectParserTest extends TestCase {
 //        assertAutoDetect(resource, null, type, null,          content);
 //        assertAutoDetect(resource, null, type, wrongMimeType, content);
 
-        final String badResource = "a.xyz";
+//        final String badResource = "a.xyz";
 //        assertAutoDetect(resource, badResource, type, type,          content);
 //        assertAutoDetect(resource, badResource, type, null,          content);
 //        assertAutoDetect(resource, badResource, type, wrongMimeType, content);
@@ -217,20 +214,22 @@ public class AutoDetectParserTest extends TestCase {
         /**
          * Produces a string like the following:
          *
-         * org.apache.tika.parser.AutoDetectParserTest$TestParams@8fff06[
-         *   resourceRealName=/test-documents/testEXCEL.xls
-         *   resourceStatedName=<null>
-         *   realType=application/vnd.ms-excel
-         *   statedType=<null>
-         *   expectedContentFragment=Sample Excel Worksheet
-         * ]
-         *
-         * @return
+         * <pre>
+         * Test parameters:
+         *   resourceRealName        = /test-documents/testEXCEL.xls
+         *   resourceStatedName      = null
+         *   realType                = application/vnd.ms-excel
+         *   statedType              = null
+         *   expectedContentFragment = Sample Excel Worksheet
+         * </pre>
          */
-
         public String toString() {
-            return ReflectionToStringBuilder.toString(
-                    this, ToStringStyle.MULTI_LINE_STYLE);
+            return "Test parameters:\n"
+                + "  resourceRealName        = " + resourceRealName + "\n"
+                + "  resourceStatedName      = " + resourceStatedName + "\n"
+                + "  realType                = " + realType + "\n"
+                + "  statedType              = " + statedType + "\n"
+                + "  expectedContentFragment = " + realType + "\n";
         }
     }
 }

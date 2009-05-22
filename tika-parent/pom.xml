@@ -36,84 +36,140 @@
   <version>0.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>Apache Tika Parent pom</name>
+  <name>Apache Tika parent</name>
   <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
   <description>Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.</description>
+
+  <url>http://lucene.apache.org/tika/</url>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>Development mailing list</name>
+      <subscribe>tika-dev-subscribe@lucene.apache.org</subscribe>
+      <unsubscribe>tika-dev-unsubscribe@lucene.apache.org</unsubscribe>
+      <post>tika-dev@lucene.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/lucene-tika-dev/</archive>
+      <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-dev@lucene.apache.org/</otherArchive>
+        <otherArchive>http://www.mail-archive.com/tika-dev@incubator.apache.org/</otherArchive>
+        <otherArchive>http://www.nabble.com/Apache-Tika---Development-f20913.html</otherArchive>
+        <otherArchive>http://news.gmane.org/gmane.comp.apache.tika.devel</otherArchive>
+        <otherArchive>http://tika.markmail.org/</otherArchive>
+      </otherArchives>
+    </mailingList>
+    <mailingList>
+      <name>Commit mailing list</name>
+      <subscribe>tika-commits-subscribe@lucene.apache.org</subscribe>
+      <unsubscribe>tika-commits-unsubscribe@lucene.apache.org</unsubscribe>
+      <post>tika-commits@lucene.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/lucene-tika-commits/</archive>
+      <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-commits@lucene.apache.org/</otherArchive>
+        <otherArchive>http://www.mail-archive.com/tika-commits@incubator.apache.org/</otherArchive>
+      </otherArchives>
+    </mailingList>
+    <mailingList>
+      <name>User mailing list</name>
+      <subscribe>tika-user-subscribe@lucene.apache.org</subscribe>
+      <unsubscribe>tika-user-unsubscribe@lucene.apache.org</unsubscribe>
+      <post>tika-user@lucene.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/lucene-tika-user/</archive>
+      <otherArchives>
+        <otherArchive>http://www.mail-archive.com/tika-user@lucene.apache.org/</otherArchive>
+      </otherArchives>
+    </mailingList>
+  </mailingLists>
+
+  <developers>
+    <developer>
+      <name>Rida Benjelloun</name>
+      <id>ridabenjelloun</id>
+      <email>ridabenjelloun@apache.org</email>     
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Keith Bennett</name>
+      <id>kbennett</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Mark Harwood</name>
+      <id>mharwood</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Chris A. Mattmann</name>
+      <id>mattmann</id>
+      <email>mattmann@apache.org</email>
+      <url>http://people.apache.org/~mattmann/</url>
+      <organization>NASA Jet Propulsion Laboratory</organization>
+      <organizationUrl>http://www.jpl.nasa.gov</organizationUrl>
+      <timezone>-8</timezone>
+      <properties/>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Dave Meikle</name>
+      <id>dmeikle</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Sami Siren</name>
+      <id>siren</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Jukka Zitting</name>
+      <id>jukka</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+  </developers>
+  <contributors>
+    <contributor>
+      <name>Doug Cutting</name>
+      <roles>
+        <role>mentor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Bertrand Delacretaz</name>
+      <roles>
+        <role>mentor</role>
+      </roles>
+    </contributor>
+    <contributor>
+      <name>Niall Pemberton</name>
+      <roles>
+        <role>emeritus</role>
+      </roles>
+    </contributor>
+  </contributors>
 
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-        <version>2.1</version>
-        <optional />
-      </dependency>
-      <dependency>
-        <groupId>commons-logging</groupId>
-        <artifactId>commons-logging</artifactId>
-        <version>1.0.4</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>1.4</version>
-      </dependency>
-      <dependency>
-        <groupId>pdfbox</groupId>
-        <artifactId>pdfbox</artifactId>
-        <version>0.7.3</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.poi</groupId>
-        <artifactId>poi</artifactId>
-        <version>3.5-beta5</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.poi</groupId>
-        <artifactId>poi-scratchpad</artifactId>
-        <version>3.5-beta5</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.poi</groupId>
-        <artifactId>poi-ooxml</artifactId>
-        <version>3.5-beta5</version>
-        <exclusions>
-          <exclusion>
-            <groupId>stax</groupId>
-            <artifactId>stax-api</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.geronimo.specs</groupId>
-        <artifactId>geronimo-stax-api_1.0_spec</artifactId>
-        <version>1.0</version>
-      </dependency>
-      <dependency>
-        <groupId>net.sourceforge.nekohtml</groupId>
-        <artifactId>nekohtml</artifactId>
-        <version>1.9.9</version>
-      </dependency>
-      <dependency>
-        <groupId>com.ibm.icu</groupId>
-        <artifactId>icu4j</artifactId>
-        <version>3.8</version>
-      </dependency>
-      <dependency>
-        <groupId>asm</groupId>
-        <artifactId>asm</artifactId>
-        <version>3.1</version>
-      </dependency>
-      <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
-        <version>1.2.14</version>
-      </dependency>
-      <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>3.8.1</version>
-        <type>jar</type>
         <scope>test</scope>
       </dependency>
     </dependencies>

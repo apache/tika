@@ -32,58 +32,73 @@
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.tika</groupId>
   <artifactId>tika-parsers</artifactId>
-  <version>0.4-SNAPSHOT</version>
-
   <name>Apache Tika parsers</name>
+
+  <properties>
+    <poi.version>3.5-beta5</poi.version>
+  </properties>
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
-      <version>0.4-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
+      <version>0.7.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
+      <version>${poi.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-scratchpad</artifactId>
+      <version>${poi.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
+      <version>${poi.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>stax</groupId>
+          <artifactId>stax-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-stax-api_1.0_spec</artifactId>
+      <version>1.0</version>
     </dependency>
     <dependency>
       <groupId>net.sourceforge.nekohtml</groupId>
       <artifactId>nekohtml</artifactId>
+      <version>1.9.9</version>
     </dependency>
     <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
+      <version>3.8</version>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
+      <version>3.1</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
+      <version>1.2.14</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <type>jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies>

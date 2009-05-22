@@ -32,10 +32,7 @@
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.tika</groupId>
   <artifactId>tika-core</artifactId>
-  <version>0.4-SNAPSHOT</version>
-
   <name>Apache Tika core</name>
   <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
   <description>Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.</description>
@@ -44,25 +41,25 @@
     <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
-      <optional/>
+      <version>2.1</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
       <artifactId>commons-logging</artifactId>
+      <version>1.0.4</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
+      <version>1.4</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <type>jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <build/>
 
 </project>
 
