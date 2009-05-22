@@ -18,7 +18,10 @@ The most notable changes in Tika 0.4 over the previous release are:
     parsing task. (TIKA-215)
 
   * Automatic type detection of text- and XML-based documents has been
-    improved. (TIKA-225) 
+    improved. (TIKA-225)
+
+  * Charset detection functionality from the ICU4J library was inlined
+    in Tika to avoid the dependency to the large ICU4J jar. (TIKA-229)
 
 Release 0.3 - 03/09/2009
 ------------------------
