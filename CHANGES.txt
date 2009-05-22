@@ -6,6 +6,12 @@ Unreleased changes (0.4)
 
 The most notable changes in Tika 0.4 over the previous release are:
 
+  * Tika has been split to three different components for increased
+    modularity. The tika-core component contains the key interfaces and
+    core functionality of Tika, tika-parsers contains all the adapters
+    to external parser libraries, and tika-app bundles everything together
+    in a single executable jar file. (TIKA-219).
+
   * The memory use of parsing Excel sheets with lots of numbers
     has been considerably reduced. (TIKA-211)
 
