@@ -32,17 +32,14 @@
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.tika</groupId>
   <artifactId>tika-app</artifactId>
-  <version>0.4-SNAPSHOT</version>
-
   <name>Apache Tika application</name>
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers</artifactId>
-      <version>0.4-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
