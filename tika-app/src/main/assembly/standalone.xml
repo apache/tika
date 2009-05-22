@@ -20,16 +20,6 @@
     <format>jar</format>
   </formats>
   <includeBaseDirectory>false</includeBaseDirectory>
-  <fileSets>
-    <fileSet>
-      <directory>src/main/assembly</directory>
-      <outputDirectory>META-INF</outputDirectory>
-      <includes>
-        <include>LICENSE.txt</include>
-        <include>NOTICE.txt</include>
-      </includes>
-    </fileSet>
-  </fileSets>
   <dependencySets>
     <dependencySet>
       <outputDirectory></outputDirectory>
