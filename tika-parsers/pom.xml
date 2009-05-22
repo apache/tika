@@ -26,9 +26,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>4</version>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>0.4-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
   <groupId>org.apache.tika</groupId>
@@ -46,211 +47,48 @@
     <dependency>
       <groupId>pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
-      <version>0.7.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
-      <version>3.5-beta5</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-scratchpad</artifactId>
-      <version>3.5-beta5</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi-ooxml</artifactId>
-      <version>3.5-beta5</version>
-      <exclusions>
-        <exclusion>
-          <groupId>stax</groupId>
-          <artifactId>stax-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-stax-api_1.0_spec</artifactId>
-      <version>1.0</version>
     </dependency>
     <dependency>
       <groupId>net.sourceforge.nekohtml</groupId>
       <artifactId>nekohtml</artifactId>
-      <version>1.9.9</version>
     </dependency>
     <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
-      <version>3.8</version>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
       <artifactId>asm</artifactId>
-      <version>3.1</version>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
-      <version>1.2.14</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>3.8.1</version>
       <type>jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.0.2</version>
-        <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.3</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-        </configuration>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>
-                ${project.build.directory}/classes/META-INF
-              </outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${basedir}</directory>
-                  <includes>
-                    <include>README.txt</include>
-                    <include>NOTICE.txt</include>
-                    <include>LICENSE.txt</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.4.3</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.2</version>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Specification-Title>${project.name}</Specification-Title>
-              <Specification-Version>${project.version}</Specification-Version>
-              <Specification-Vendor>${project.organization.name}</Specification-Vendor>
-              <Implementation-Title>${project.name}</Implementation-Title>
-              <Implementation-Version>${project.version}</Implementation-Version>
-              <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
-              <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>retrotranslator-maven-plugin</artifactId>
-        <version>1.0-alpha-4</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>translate-project</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-
-  <reporting>
-    <plugins>
-
-      <!-- Produce JavaDoc -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.2</version>
-        <configuration> 
-          <source>1.5</source>
-        </configuration> 
-      </plugin>
-
-      <!-- Produce Source cross references -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.1</version>
-        <configuration> 
-        </configuration> 
-      </plugin>
-
-      <!-- Unit tests report -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>2.3</version>
-      </plugin>
-
-      <!-- "Release Audit" report (checks license headers etc.) -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>rat-maven-plugin</artifactId>
-        <version>1.0-alpha-3</version>
-      </plugin>
-
-      <!-- FindBugs Report -->
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
-        <version>1.0.0</version>
-        <configuration>
-          <threshold>Normal</threshold>
-          <effort>Default</effort>
-       </configuration>
-      </plugin>
-
-      <!-- Checkstyle report -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.1</version>
-        <configuration>
-          <!--configLocation>checkstyle.xml</configLocation-->
-          <enableRulesSummary>false</enableRulesSummary>
-        </configuration>
-      </plugin>
-
-      <!-- PMD report -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-pmd-plugin</artifactId>
-        <configuration>
-          <linkXref>true</linkXref>
-          <sourceEncoding>ASCII</sourceEncoding>
-          <targetJdk>1.5</targetJdk>
-        </configuration>
-      </plugin>
-
-    </plugins>
-  </reporting>
+  <build/>
 
 </project>
 
