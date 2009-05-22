@@ -34,10 +34,7 @@
 
   <artifactId>tika-reactor</artifactId>
   <packaging>pom</packaging>
-
-  <name>Apache Tika reactor</name>
-  <!-- Keep on a single line, see http://jira.codehaus.org/browse/MJAR-39 -->
-  <description>Tika is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.</description>
+  <name>Apache Tika</name>
 
   <scm>
     <connection>
@@ -56,5 +53,15 @@
     <module>tika-app</module>
   </modules>
 
-</project>
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip> <!-- No need to deploy the reactor -->
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
+</project>
