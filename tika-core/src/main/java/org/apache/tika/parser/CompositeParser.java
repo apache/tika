@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -100,12 +101,26 @@ public class CompositeParser implements Parser {
     }
 
     /**
-     * Delegates the call to the matching component parser.
+     * Delegates the call to the matching component parser. Potential
+     * {@link RuntimeException}s and {@link IOException}s unrelated to the
+     * given input stream are automatically wrapped into
+     * {@link TikaException}s to better honor the {@link Parser} contract.
      */
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        getParser(metadata).parse(stream, handler, metadata);
+        TaggedInputStream tagged = new TaggedInputStream(stream);
+        try {
+            getParser(metadata).parse(tagged, handler, metadata);
+        } catch (RuntimeException e) {
+            throw new TikaException("Unexpected parse error", e);
+        } catch (IOException e) {
+            tagged.throwIfCauseOf(e);
+
+            // The IOException was caused by the parser instead of the stream,
+            // convert the exception to a TikaException
+            throw new TikaException("Parse error", e);
+        }
     }
 
 }

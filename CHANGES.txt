@@ -35,6 +35,11 @@ The most notable changes in Tika 0.4 over the previous release are:
   * Charset detection functionality from the ICU4J library was inlined
     in Tika to avoid the dependency to the large ICU4J jar. (TIKA-229)
 
+  * Composite parsers like the AutoDetectParser now make sure that any
+    RuntimeExceptions or IOExceptions unrelated to the given document
+    stream are converted to TikaExceptions before being passed to the
+    client. (TIKA-198)
+
 Release 0.3 - 03/09/2009
 ------------------------
 
