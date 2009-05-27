@@ -46,7 +46,7 @@ public class PDFParser implements Parser {
                     // Ignore
                 }
             }
-            metadata.add(Metadata.CONTENT_TYPE, "application/pdf");
+            metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
             PDF2XHTML.process(pdfDocument, handler, metadata);
         } finally {
