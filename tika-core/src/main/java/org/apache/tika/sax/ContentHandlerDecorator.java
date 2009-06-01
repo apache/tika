@@ -44,58 +44,124 @@ public class ContentHandlerDecorator extends DefaultHandler {
         this.handler = handler;
     }
 
+    @Override
     public void startPrefixMapping(String prefix, String uri)
             throws SAXException {
-        handler.startPrefixMapping(prefix, uri);
+        try {
+            handler.startPrefixMapping(prefix, uri);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void endPrefixMapping(String prefix) throws SAXException {
-        handler.endPrefixMapping(prefix);
+        try {
+            handler.endPrefixMapping(prefix);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void processingInstruction(String target, String data)
             throws SAXException {
-        handler.processingInstruction(target, data);
+        try {
+            handler.processingInstruction(target, data);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void setDocumentLocator(Locator locator) {
         handler.setDocumentLocator(locator);
     }
 
+    @Override
     public void startDocument() throws SAXException {
-        handler.startDocument();
+        try {
+            handler.startDocument();
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void endDocument() throws SAXException {
-        handler.endDocument();
+        try {
+            handler.endDocument();
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
-    public void startElement(String uri, String localName, String name,
-            Attributes atts) throws SAXException {
-        handler.startElement(uri, localName, name, atts);
+    @Override
+    public void startElement(
+            String uri, String localName, String name, Attributes atts)
+            throws SAXException {
+        try {
+            handler.startElement(uri, localName, name, atts);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void endElement(String uri, String localName, String name)
             throws SAXException {
-        handler.endElement(uri, localName, name);
+        try {
+            handler.endElement(uri, localName, name);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
-        handler.characters(ch, start, length);
+        try {
+            handler.characters(ch, start, length);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
-        handler.ignorableWhitespace(ch, start, length);
+        try {
+            handler.ignorableWhitespace(ch, start, length);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public void skippedEntity(String name) throws SAXException {
-        handler.skippedEntity(name);
+        try {
+            handler.skippedEntity(name);
+        } catch (SAXException e) {
+            handleException(e);
+        }
     }
 
+    @Override
     public String toString() {
         return handler.toString();
+    }
+
+    /**
+     * Handle any exceptions thrown by methods in this class. This method
+     * provides a single place to implement custom exception handling. The
+     * default behaviour is simply to re-throw the given exception, but
+     * subclasses can also provide alternative ways of handling the situation.
+     *
+     * @param exception the exception that was thrown
+     * @throws SAXException the exception (if any) thrown to the client
+     */
+    protected void handleException(SAXException exception) throws SAXException {
+        throw exception;
     }
 
 }
