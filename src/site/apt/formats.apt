@@ -253,11 +253,13 @@ Supported Document Formats
     Support for Java JAR archives was added in Tika 0.2.
 
    [OpenDocument (application/vnd.oasis.opendocument.*)]
-    Currently Tika supports the parsing of ods, odp and odt {{{http://en.wikipedia.org/wiki/OpenDocument}document types}}.
-    These formats are usualy used by OpenOffice (2.0, 3.0). The older sxc, sxw formats
-    (OpenOffice 1.0) are not supported.
+    Tika uses the built-in ZIP and XML features in Java to parse the
+    {{{http://en.wikipedia.org/wiki/OpenDocument}OpenDocument}} document types
+    used most notably by OpenOffice 2.0 and higher. The older OpenOffice 1.0
+    formats are also supported, though they are currently not auto-detected
+    as well as the newer formats.
 
-    Support for the ods, odp and odt file types was added in Tika 0.3.
+    Support for the OpenDocument formats was added in Tika 0.3.
 
    [Plain text (text/plain)]
     Tika uses the
