@@ -16,49 +16,59 @@
  */
 package org.apache.tika.detect;
 
-import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 
+import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.tika.sax.OfflineContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Utility class that uses a {@link SAXParser} to determine the namespace URI and local name of
- * the root element of an XML file.
+ * Utility class that uses a {@link SAXParser} to determine
+ * the namespace URI and local name of the root element of an XML file.
  *
  * @since Apache Tika 0.4
  */
 public class XmlRootExtractor {
 
-    public static QName extractRootElement(byte[] data) {
-        SAXParserFactory parserFactory = SAXParserFactory.newInstance();
-        parserFactory.setNamespaceAware(true);
-        parserFactory.setValidating(false);
+    private final SAXParser parser;
 
+    public XmlRootExtractor() throws SAXException, ParserConfigurationException {
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+
+        factory.setNamespaceAware(true);
+        factory.setValidating(false);
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+
+        this.parser = factory.newSAXParser();
+    }
+
+    public QName extractRootElement(byte[] data) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
-            SAXParser parser = parserFactory.newSAXParser();
-            InputStream in = new java.io.ByteArrayInputStream(data);
-            parser.parse(in, handler);
-        } catch (Exception e) {
-            //ignore
+            parser.parse(
+                    new ByteArrayInputStream(data),
+                    new OfflineContentHandler(handler));
+        } catch (Exception ignore) {
         }
         return handler.rootElement;
     }
 
     private static class ExtractorHandler extends DefaultHandler {
 
-        private QName rootElement;
+        private QName rootElement = null;
 
-        /** @inheritDoc */
         @Override
-        public void startElement(String uri, String localName, String name, Attributes attributes)
+        public void startElement(
+                String uri, String local, String name, Attributes attributes)
                 throws SAXException {
-            this.rootElement = new QName(uri, localName);
+            this.rootElement = new QName(uri, local);
             throw new SAXException("Aborting: root element received");
         }
 

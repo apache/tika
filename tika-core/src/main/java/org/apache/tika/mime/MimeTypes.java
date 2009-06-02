@@ -115,6 +115,8 @@ public final class MimeTypes implements Detector {
     /** List of all registered rootXML */
     private SortedSet<MimeType> xmls = new TreeSet<MimeType>();
 
+    private final XmlRootExtractor xmlRootExtractor;
+
     public MimeTypes() {
         root = new MimeType(this, OCTET_STREAM);
         text = new MimeType(this, PLAIN_TEXT);
@@ -126,6 +128,13 @@ public final class MimeTypes implements Detector {
 
         types.put(root.getName(), root);
         types.put(text.getName(), text);
+
+        try {
+            xmlRootExtractor = new XmlRootExtractor();
+        } catch (Exception e) {
+            throw new IllegalStateException(
+                    "Unable to create a XmlRootExtractor", e);
+        }
     }
 
     /**
@@ -207,7 +216,7 @@ public final class MimeTypes implements Detector {
         if (result != null) {
             // When detecting generic XML, parse XML to determine the root element
             if ("application/xml".equals(result.getName())) {
-                QName rootElement = XmlRootExtractor.extractRootElement(data);
+                QName rootElement = xmlRootExtractor.extractRootElement(data);
                 if (rootElement != null) {
                     for (MimeType type : xmls) {
                         if (type.matchesXML(
