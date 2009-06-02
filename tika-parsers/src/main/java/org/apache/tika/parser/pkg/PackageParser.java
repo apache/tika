@@ -22,8 +22,7 @@ import java.io.InputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -39,37 +38,10 @@ import org.xml.sax.SAXException;
  * (optional) entry name as a &lt;h1&gt; element and the full
  * structured body content of the parsed entry.
  */
-public abstract class PackageParser implements Parser {
+public abstract class PackageParser extends DelegatingParser {
 
     /**
-     * The parser instance used to parse package entries.
-     */
-    private Parser parser;
-
-    /**
-     * Returns the parser instance used to parse package entries.
-     *
-     * @return entry parser
-     */
-    public Parser getParser() {
-        Parser parser = this.parser;
-        if (parser == null) {
-            parser = new AutoDetectParser();
-        }
-        return parser;
-    }
-
-    /**
-     * Sets the parser instance used to parse package entries.
-     *
-     * @param parser entry parser
-     */
-    public void setParser(Parser parser) {
-        this.parser = parser;
-    }
-
-    /**
-     * Parses the given entry entry using the underlying parser instance.
+     * Parses the given entry entry using the delegate parser instance.
      * It is not an error if the entry can not be parsed, in that case
      * just the entry name (if given) is emitted.
      *
@@ -90,7 +62,7 @@ public abstract class PackageParser implements Parser {
         }
 
         try {
-            getParser().parse(
+            super.parse(
                     new CloseShieldInputStream(stream),
                     new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                     metadata);
