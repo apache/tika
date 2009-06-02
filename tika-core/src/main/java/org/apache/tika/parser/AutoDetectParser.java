@@ -40,7 +40,7 @@ public class AutoDetectParser extends CompositeParser {
      */
     public AutoDetectParser() {
         try {
-            setConfig(TikaConfig.getDefaultConfig());
+            setConfig(TikaConfig.getDefaultConfig(this));
         } catch (TikaException e) {
             // FIXME: This should never happen
             throw new RuntimeException(e);

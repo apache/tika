@@ -30,6 +30,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
+import org.apache.tika.parser.DelegatingParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.Parser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -46,7 +48,7 @@ public class TikaConfig {
         "/org/apache/tika/tika-config.xml";
 
     private final Map<String, Parser> parsers = new HashMap<String, Parser>();
-    
+
     private static MimeTypes mimeTypes;
 
     public TikaConfig(String file)
@@ -66,14 +68,29 @@ public class TikaConfig {
 
     public TikaConfig(InputStream stream)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(stream));
+        this(stream, null);
+    }
+
+    public TikaConfig(InputStream stream, Parser delegate)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(stream), delegate);
     }
 
     public TikaConfig(Document document) throws TikaException, IOException {
-        this(document.getDocumentElement());
+        this(document, null);
+    }
+
+    public TikaConfig(Document document, Parser delegate)
+            throws TikaException, IOException {
+        this(document.getDocumentElement(), delegate);
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
+        this(element, null);
+    }
+
+    public TikaConfig(Element element, Parser delegate)
+            throws TikaException, IOException {
         Element mtr = getChild(element, "mimeTypeRepository");
         if (mtr != null) {
             mimeTypes = MimeTypesFactory.create(mtr.getAttribute("resource"));
@@ -84,7 +101,13 @@ public class TikaConfig {
             Element node = (Element) nodes.item(i);
             String name = node.getAttribute("class");
             try {
-                Parser parser = (Parser) Class.forName(name).newInstance();
+                Class<?> parserClass = Class.forName(name);
+                Parser parser = (Parser) parserClass.newInstance();
+
+                if (delegate != null && parser instanceof DelegatingParser) {
+                    ((DelegatingParser) parser).setDelegate(delegate);
+                }
+
                 NodeList mimes = node.getElementsByTagName("mime");
                 for (int j = 0; j < mimes.getLength(); j++) {
                     parsers.put(getText(mimes.item(j)).trim(), parser);
@@ -139,10 +162,15 @@ public class TikaConfig {
      * @throws TikaException if the default configuration is not available
      */
     public static TikaConfig getDefaultConfig() throws TikaException {
+        return getDefaultConfig(new EmptyParser());
+    }
+
+    public static TikaConfig getDefaultConfig(Parser delegate)
+            throws TikaException {
         try {
             InputStream stream =
                 TikaConfig.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION);
-            return new TikaConfig(stream);
+            return new TikaConfig(stream, delegate);
         } catch (IOException e) {
             throw new TikaException("Unable to read default configuration", e);
         } catch (SAXException e) {
