@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
  */
 public class OfficeParser implements Parser {
 
-	private static final String SUMMARY_INFORMATION =
+    private static final String SUMMARY_INFORMATION =
         SummaryInformation.DEFAULT_STREAM_NAME;
 
     private static final String DOCUMENT_SUMMARY_INFORMATION =
