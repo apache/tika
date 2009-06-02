@@ -24,26 +24,22 @@ package org.apache.tika.mime;
  */
 class Magic implements Clause, Comparable<Magic> {
 
-    private MimeType type = null;
+    private final MimeType type;
 
     private int priority = 50;
 
     private Clause clause = null;
 
-    Magic() {
-        this(50);
-    }
-
-    Magic(int priority) {
-        this.priority = priority;
-    }
-
-    void setType(MimeType type) {
+    Magic(MimeType type) {
         this.type = type;
     }
 
     MimeType getType() {
         return type;
+    }
+
+    void setPriority(int priority) {
+        this.priority = priority;
     }
 
     int getPriority() {

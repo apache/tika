@@ -192,15 +192,15 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
 
     /** Read Element named magic. */
     private void readMagic(Element element, MimeType mimeType) {
-        Magic magic = null;
-        try {
-            magic = new Magic(Integer
-                    .parseInt(element.getAttribute(MAGIC_PRIORITY_ATTR)));
-        } catch (Exception e) {
-            magic = new Magic();
+        Magic magic = new Magic(mimeType);
+
+        String priority = element.getAttribute(MAGIC_PRIORITY_ATTR);
+        if (priority != null && priority.length() > 0) {
+            magic.setPriority(Integer.parseInt(priority));
         }
-        magic.setType(mimeType);
+
         magic.setClause(readMatches(element));
+
         mimeType.addMagic(magic);
     }
 
@@ -255,21 +255,21 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
                 mask = attr.getValue();
             }
         }
+
         // Parse OffSet
-        String[] offsets = offset.split(":");
         int offStart = 0;
         int offEnd = 0;
-        try {
-            offStart = Integer.parseInt(offsets[0]);
-        } catch (Exception e) {
-            // WARN log + avoid loading
+        if (offset != null) {
+            int colon = offset.indexOf(':');
+            if (colon == -1) {
+                offStart = Integer.parseInt(offset);
+                offEnd = offStart;
+            } else {
+                offStart = Integer.parseInt(offset.substring(0, colon));
+                offEnd = Integer.parseInt(offset.substring(colon + 1));
+                offEnd = Math.max(offStart, offEnd);
+            }
         }
-        try {
-            offEnd = Integer.parseInt(offsets[1]);
-        } catch (Exception e) {
-            // WARN log
-        }
-        offEnd = Math.max(offStart, offEnd);
 
         return new MagicMatch(offStart, offEnd, type, mask, value);
     }
