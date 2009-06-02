@@ -18,7 +18,6 @@
   under the License.
 -->
 <project name="Apache Tika">
-  <publishDate position="none"/>
   <bannerLeft>
     <alt>Apache Tika</alt>
     <src>http://lucene.apache.org/tika/tika.png</src>
@@ -31,8 +30,6 @@
   </bannerRight>
   <body>
     <head>
-      <link rel="icon" type="image/png"
-            href="http://lucene.apache.org/tika/tikaNoText16.png"/>
     </head>
     <links>
       <item name="Apache" href="http://www.apache.org/" />
