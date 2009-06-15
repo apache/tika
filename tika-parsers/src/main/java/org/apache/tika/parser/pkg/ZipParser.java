@@ -18,9 +18,9 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -46,10 +46,10 @@ public class ZipParser extends PackageParser {
 
         // At the end we want to close the Zip stream to release any associated
         // resources, but the underlying document stream should not be closed
-        ZipInputStream zip =
-            new ZipInputStream(new CloseShieldInputStream(stream));
+        ZipArchiveInputStream zip =
+            new ZipArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            ZipEntry entry = zip.getNextEntry();
+            ArchiveEntry entry = zip.getNextEntry();
             while (entry != null) {
                 Metadata entrydata = new Metadata();
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
