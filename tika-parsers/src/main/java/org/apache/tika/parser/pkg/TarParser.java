@@ -19,12 +19,10 @@ package org.apache.tika.parser.pkg;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -41,28 +39,15 @@ public class TarParser extends PackageParser {
             throws IOException, TikaException, SAXException {
         metadata.set(Metadata.CONTENT_TYPE, "application/x-tar");
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-
         // At the end we want to close the tar stream to release any associated
         // resources, but the underlying document stream should not be closed
         TarArchiveInputStream tar =
             new TarArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            TarArchiveEntry entry = tar.getNextTarEntry();
-            while (entry != null) {
-                if (!entry.isDirectory()) {
-                    Metadata entrydata = new Metadata();
-                    entrydata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
-                    parseEntry(tar, xhtml, entrydata);
-                }
-                entry = tar.getNextTarEntry();
-            }
+            parseArchive(tar, handler, metadata);
         } finally {
             tar.close();
         }
-
-        xhtml.endDocument();
     }
 
 }

@@ -23,17 +23,20 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.DelegatingParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Gzip parser.
+ * Bzip2 parser.
  */
-public class Bzip2Parser extends PackageParser {
+public class Bzip2Parser extends DelegatingParser {
 
     /**
-     * Parses the given stream as a gzip file.
+     * Parses the given stream as a bzip2 file.
      */
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
@@ -45,7 +48,7 @@ public class Bzip2Parser extends PackageParser {
 
         // At the end we want to close the bzip2 stream to release any associated
         // resources, but the underlying document stream should not be closed
-        InputStream gzip =
+        InputStream bzip2 =
             new BZip2CompressorInputStream(new CloseShieldInputStream(stream));
         try {
             Metadata entrydata = new Metadata();
@@ -62,9 +65,14 @@ public class Bzip2Parser extends PackageParser {
                 }
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
             }
-            parseEntry(gzip, xhtml, entrydata);
+            // Use the delegate parser to parse the compressed document
+            super.parse(
+                    new CloseShieldInputStream(bzip2),
+                    new EmbeddedContentHandler(
+                            new BodyContentHandler(xhtml)),
+                    entrydata);
         } finally {
-            gzip.close();
+            bzip2.close();
         }
 
         xhtml.endDocument();

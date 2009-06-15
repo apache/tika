@@ -19,12 +19,10 @@ package org.apache.tika.parser.pkg;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -39,28 +37,15 @@ public class CpioParser extends PackageParser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, TikaException, SAXException {
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-
         // At the end we want to close the cpio stream to release any associated
         // resources, but the underlying document stream should not be closed
         CpioArchiveInputStream cpio =
             new CpioArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            CpioArchiveEntry entry = cpio.getNextCPIOEntry();
-            while (entry != null) {
-                if (!entry.isDirectory()) {
-                    Metadata entrydata = new Metadata();
-                    entrydata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
-                    parseEntry(cpio, xhtml, entrydata);
-                }
-                entry = cpio.getNextCPIOEntry();
-            }
+            parseArchive(cpio, handler, metadata);
         } finally {
             cpio.close();
         }
-
-        xhtml.endDocument();
     }
 
 }

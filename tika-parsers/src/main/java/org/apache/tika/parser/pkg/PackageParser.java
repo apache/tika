@@ -19,6 +19,8 @@ package org.apache.tika.parser.pkg;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -26,6 +28,7 @@ import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -41,36 +44,49 @@ import org.xml.sax.SAXException;
 public abstract class PackageParser extends DelegatingParser {
 
     /**
-     * Parses the given entry entry using the delegate parser instance.
+     * Parses the given stream as a package of multiple underlying files.
+     * The package entries are parsed using the delegate parser instance.
      * It is not an error if the entry can not be parsed, in that case
      * just the entry name (if given) is emitted.
      *
-     * @param stream entry stream
-     * @param xhtml XHTML event handler
-     * @param metadata entry metadata
+     * @param stream package stream
+     * @param handler content handler
+     * @param metadata package metadata
      * @throws IOException if an IO error occurs
      * @throws SAXException if a SAX error occurs
      */
-    protected void parseEntry(
-            InputStream stream, XHTMLContentHandler xhtml, Metadata metadata)
+    protected void parseArchive(
+            ArchiveInputStream archive, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException {
-        xhtml.startElement("div", "class", "package-entry");
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
 
-        String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
-        if (name != null) {
-            xhtml.element("h1", name);
+        ArchiveEntry entry = archive.getNextEntry();
+        while (entry != null) {
+            if (!entry.isDirectory()) {
+                xhtml.startElement("div", "class", "package-entry");
+                Metadata entrydata = new Metadata();
+                String name = entry.getName();
+                if (name != null && name.length() > 0) {
+                    entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
+                    xhtml.element("h1", name);
+                }
+                try {
+                    // Use the delegate parser to parse this entry
+                    super.parse(
+                            new CloseShieldInputStream(archive),
+                            new EmbeddedContentHandler(
+                                    new BodyContentHandler(xhtml)),
+                            entrydata);
+                } catch (TikaException e) {
+                    // Could not parse the entry, just skip the content
+                }
+                xhtml.endElement("div");
+            }
+            entry = archive.getNextEntry();
         }
 
-        try {
-            super.parse(
-                    new CloseShieldInputStream(stream),
-                    new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                    metadata);
-        } catch (TikaException e) {
-            // Could not parse the entry, just skip the content
-        }
-
-        xhtml.endElement("div");
+        xhtml.endDocument();
     }
 
 }
