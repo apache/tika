@@ -24,6 +24,9 @@ import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.DelegatingParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -31,7 +34,7 @@ import org.xml.sax.SAXException;
 /**
  * Gzip parser.
  */
-public class GzipParser extends PackageParser {
+public class GzipParser extends DelegatingParser {
 
     /**
      * Parses the given stream as a gzip file.
@@ -51,12 +54,17 @@ public class GzipParser extends PackageParser {
         try {
             Metadata entrydata = new Metadata();
             String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
-            if (name != null) {
+            if (name != null && name.length() > 0) {
                 entrydata.set(
                         Metadata.RESOURCE_NAME_KEY,
                         GzipUtils.getUncompressedFilename(name));
             }
-            parseEntry(gzip, xhtml, entrydata);
+            // Use the delegate parser to parse the compressed document
+            super.parse(
+                    new CloseShieldInputStream(gzip),
+                    new EmbeddedContentHandler(
+                            new BodyContentHandler(xhtml)),
+                    entrydata);
         } finally {
             gzip.close();
         }

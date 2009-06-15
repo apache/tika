@@ -19,12 +19,10 @@ package org.apache.tika.parser.pkg;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -41,26 +39,15 @@ public class ZipParser extends PackageParser {
             throws IOException, TikaException, SAXException {
         metadata.set(Metadata.CONTENT_TYPE, "application/zip");
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-
         // At the end we want to close the Zip stream to release any associated
         // resources, but the underlying document stream should not be closed
         ZipArchiveInputStream zip =
             new ZipArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            ArchiveEntry entry = zip.getNextEntry();
-            while (entry != null) {
-                Metadata entrydata = new Metadata();
-                entrydata.set(Metadata.RESOURCE_NAME_KEY, entry.getName());
-                parseEntry(zip, xhtml, entrydata);
-                entry = zip.getNextEntry();
-            }
+            parseArchive(zip, handler, metadata);
         } finally {
             zip.close();
         }
-
-        xhtml.endDocument();
     }
 
 }
