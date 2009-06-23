@@ -16,37 +16,31 @@
  */
 package org.apache.tika.mime;
 
+import org.apache.tika.exception.TikaException;
+
 /**
  * A class to encapsulate MimeType related exceptions.
- * 
- * 
  */
-public class MimeTypeException extends Exception {
-
-    /**
-     * Constructs a MimeTypeException with no specified detail message.
-     */
-    public MimeTypeException() {
-        super();
-    }
+public class MimeTypeException extends TikaException {
 
     /**
      * Constructs a MimeTypeException with the specified detail message.
      * 
-     * @param msg
-     *            the detail message.
+     * @param message the detail message.
      */
-    public MimeTypeException(String msg) {
-        super(msg);
+    public MimeTypeException(String message) {
+        super(message);
     }
 
     /**
-     * Constructs a MimeTypeException with the specified cause.
+     * Constructs a MimeTypeException with the specified detail message
+     * and root cause.
      * 
-     * @param t
-     *            the cause.
+     * @param message the detail message.
+     * @param cause root cause
      */
-    public MimeTypeException(Throwable t) {
-        super(t);
+    public MimeTypeException(String message, Throwable cause) {
+        super(message, cause);
     }
+
 }

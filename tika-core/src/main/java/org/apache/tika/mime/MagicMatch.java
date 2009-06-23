@@ -143,7 +143,7 @@ class MagicMatch implements Clause {
             }
             return decoded.toByteArray();
         } catch (NumberFormatException e) {
-            throw new MimeTypeException(e.toString() + " for " + value);
+            throw new MimeTypeException("Invalid string value: " + value, e);
         }
     }
 

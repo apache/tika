@@ -28,7 +28,6 @@ import org.w3c.dom.Document;
  */
 public class MimeTypesFactory {
 
-
     /**
      * Creates an empty instance; same as calling new MimeTypes().
      *
@@ -40,8 +39,9 @@ public class MimeTypesFactory {
 
     /**
      * Creates and returns a MimeTypes instance from the specified document.
+     * @throws MimeTypeException if the type configuration is invalid
      */
-    public static MimeTypes create(Document document) {
+    public static MimeTypes create(Document document) throws MimeTypeException {
         MimeTypes mimeTypes = new MimeTypes();
         new MimeTypesReader(mimeTypes).read(document);
         return mimeTypes;
@@ -50,8 +50,11 @@ public class MimeTypesFactory {
     /**
      * Creates and returns a MimeTypes instance from the specified input stream.
      * Does not close the input stream.
+     * @throws IOException if the stream can not be read
+     * @throws MimeTypeException if the type configuration is invalid
      */
-    public static MimeTypes create(InputStream inputStream) {
+    public static MimeTypes create(InputStream inputStream)
+            throws IOException, MimeTypeException {
         MimeTypes mimeTypes = new MimeTypes();
         new MimeTypesReader(mimeTypes).read(inputStream);
         return mimeTypes;
@@ -61,8 +64,12 @@ public class MimeTypesFactory {
      * Creates and returns a MimeTypes instance from the resource
      * at the location specified by the URL.  Opens and closes the
      * InputStream from the URL.
+     *
+     * @throws IOException if the URL can not be accessed
+     * @throws MimeTypeException if the type configuration is invalid
      */
-    public static MimeTypes create(URL url) throws IOException {
+    public static MimeTypes create(URL url)
+            throws IOException, MimeTypeException {
         InputStream stream = url.openStream();
         try {
             return create(stream);
@@ -74,8 +81,12 @@ public class MimeTypesFactory {
     /**
      * Creates and returns a MimeTypes instance from the specified file path,
      * as interpreted by the class loader in getResource().
+     *
+     * @throws IOException if the file can not be accessed
+     * @throws MimeTypeException if the type configuration is invalid
      */
-    public static MimeTypes create(String filePath) throws IOException {
+    public static MimeTypes create(String filePath)
+            throws IOException, MimeTypeException {
         return create(MimeTypesReader.class.getResource(filePath));
     }
 }
