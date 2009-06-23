@@ -39,11 +39,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>commons-logging</groupId>
-      <artifactId>commons-logging</artifactId>
-      <version>1.0.4</version>
-    </dependency>
-    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>1.4</version>
@@ -68,7 +63,6 @@
             </Export-Package>
             <Import-Package>
               org.apache.commons.io.*;version="[1.4,2.0)",
-              org.apache.commons.logging.*;version="[1.0.4,2.0)",
               *
             </Import-Package>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>

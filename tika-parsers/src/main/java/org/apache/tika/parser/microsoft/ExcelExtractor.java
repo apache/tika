@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
@@ -74,9 +72,6 @@ import org.xml.sax.SAXException;
  */
 public class ExcelExtractor {
 
-    /** Logging instance */
-    private static final Log log = LogFactory.getLog(ExcelExtractor.class);
-
     /**
      * <code>true</code> if the HSSFListener should be registered
      * to listen for all records or <code>false</code> (the default)
@@ -119,8 +114,6 @@ public class ExcelExtractor {
      */
     protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
-        log.debug("Starting listenForAllRecords=" + listenForAllRecords);
-
         // Set up listener and register the records we want to process
         TikaHSSFListener listener = new TikaHSSFListener(xhtml);
         HSSFRequest hssfRequest = new HSSFRequest();
@@ -216,9 +209,6 @@ public class ExcelExtractor {
         public void processRecord(Record record) {
             if (exception == null) {
                 try {
-                    if (log.isDebugEnabled()) {
-                        log.debug(record.toString());
-                    }
                     internalProcessRecord(record);
                 } catch (SAXException e) {
                     exception = e;
