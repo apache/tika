@@ -21,8 +21,8 @@ import java.io.InputStream;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.sax.BodyContentHandler;

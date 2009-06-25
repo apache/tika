@@ -18,8 +18,8 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 
-import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.pdfbox.pdmodel.PDDocument;

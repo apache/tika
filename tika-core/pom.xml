@@ -39,11 +39,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>1.4</version>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
@@ -62,7 +57,6 @@
               org.apache.tika.*;version=${project.version}
             </Export-Package>
             <Import-Package>
-              org.apache.commons.io.*;version="[1.4,2.0)",
               *
             </Import-Package>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
