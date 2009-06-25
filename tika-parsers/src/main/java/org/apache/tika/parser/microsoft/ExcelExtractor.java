@@ -40,6 +40,7 @@ import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FormatRecord;
 import org.apache.poi.hssf.record.FormulaRecord;
 import org.apache.poi.hssf.record.HyperlinkRecord;
+import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.UnicodeString;
 //import org.apache.poi.hssf.record.HyperlinkRecord;  // FIXME - requires POI release
 import org.apache.poi.hssf.record.LabelRecord;
@@ -134,6 +135,7 @@ public class ExcelExtractor {
             hssfRequest.addListener(listener, NumberRecord.sid);
             hssfRequest.addListener(listener, RKRecord.sid);
             hssfRequest.addListener(listener, HyperlinkRecord.sid);
+            hssfRequest.addListener(listener, TextObjectRecord.sid);
         }
 
         // Create event factory and process Workbook (fire events)
@@ -288,6 +290,10 @@ public class ExcelExtractor {
                     }
                 }
                 break;
+            case TextObjectRecord.sid:
+                TextObjectRecord tor = (TextObjectRecord) record;
+                addTextCell(record, tor.getStr().getString());
+                break;
             }
         }
 
@@ -298,16 +304,21 @@ public class ExcelExtractor {
          * @param record record that holds the cell value
          * @param cell cell value (or <code>null</code>)
          */
-        private void addCell(Record record, Cell cell) {
-            if (currentSheet == null) {
-                // Ignore cells outside sheets
-            } else if (cell == null) {
+        private void addCell(Record record, Cell cell) throws SAXException {
+            if (cell == null) {
                 // Ignore empty cells
-            } else if (record instanceof CellValueRecordInterface) {
+            } else if (currentSheet != null
+                    && record instanceof CellValueRecordInterface) {
+                // Normal cell inside a worksheet
                 CellValueRecordInterface value =
                     (CellValueRecordInterface) record;
                 Point point = new Point(value.getColumn(), value.getRow());
                 currentSheet.put(point, cell);
+            } else {
+                // Cell outside the worksheets
+                handler.startElement("div", "class", "outside");
+                cell.render(handler);
+                handler.endElement("div");
             }
         }
 
@@ -317,8 +328,9 @@ public class ExcelExtractor {
          *
          * @param record record that holds the text value
          * @param text text content, may be <code>null</code>
+         * @throws SAXException 
          */
-        private void addTextCell(Record record, String text) {
+        private void addTextCell(Record record, String text) throws SAXException {
             if (text != null) {
                 text = text.trim();
                 if (text.length() > 0) {
