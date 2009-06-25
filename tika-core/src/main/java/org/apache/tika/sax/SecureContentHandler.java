@@ -16,8 +16,8 @@
  */
 package org.apache.tika.sax;
 
-import org.apache.commons.io.input.CountingInputStream;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CountingInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 

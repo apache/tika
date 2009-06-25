@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.sax.BodyContentHandler;

@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
-import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;

@@ -18,8 +18,8 @@ package org.apache.tika.sax;
 
 import java.io.IOException;
 
-import org.apache.commons.io.input.CountingInputStream;
-import org.apache.commons.io.input.NullInputStream;
+import org.apache.tika.io.CountingInputStream;
+import org.apache.tika.io.NullInputStream;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
