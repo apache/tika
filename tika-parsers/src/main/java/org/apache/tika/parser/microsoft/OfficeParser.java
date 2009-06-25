@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
+import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hpsf.MarkUnsupportedException;
 import org.apache.poi.hpsf.NoPropertySetStreamException;
@@ -147,6 +148,19 @@ public class OfficeParser implements Parser {
     private void parse(DocumentSummaryInformation summary, Metadata metadata) {
         set(metadata, Metadata.COMPANY, summary.getCompany());
         set(metadata, Metadata.MANAGER, summary.getManager());
+        set(metadata, Metadata.LANGUAGE, getLanguage(summary));
+        set(metadata, Metadata.CATEGORY, summary.getCategory());
+    }
+
+    private String getLanguage(DocumentSummaryInformation summary) {
+        CustomProperties customProperties = summary.getCustomProperties();
+        if (customProperties != null) {
+            Object value = customProperties.get("Language");
+            if (value instanceof String) {
+                return (String) value;
+            }
+        }
+        return null;
     }
 
     private void setType(Metadata metadata, String type) {
