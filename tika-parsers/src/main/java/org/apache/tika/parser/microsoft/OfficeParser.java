@@ -76,9 +76,11 @@ public class OfficeParser implements Parser {
             } else if ("WordDocument".equals(name)) {
                 setType(metadata, "application/msword");
                 WordExtractor extractor = new WordExtractor(filesystem);
+                addTextIfAny(xhtml, "header", extractor.getHeaderText());
                 for (String paragraph : extractor.getParagraphText()) {
                     xhtml.element("p", paragraph);
                 }
+                addTextIfAny(xhtml, "footer", extractor.getFooterText());
             } else if ("PowerPoint Document".equals(name)) {
                 setType(metadata, "application/vnd.ms-powerpoint");
                 PowerPointExtractor extractor =
@@ -182,6 +184,24 @@ public class OfficeParser implements Parser {
     private void set(Metadata metadata, String name, long value) {
         if (value > 0) {
             metadata.set(name, Long.toString(value));
+        }
+    }
+
+    /**
+     * Outputs a section of text if the given text is non-empty.
+     *
+     * @param xhtml XHTML content handler
+     * @param section the class of the &lt;div/&gt; section emitted
+     * @param text text to be emitted, if any
+     * @throws SAXException if an error occurs
+     */
+    private void addTextIfAny(
+            XHTMLContentHandler xhtml, String section, String text)
+            throws SAXException {
+        if (text != null && text.length() > 0) {
+            xhtml.startElement("div", "class", section);
+            xhtml.element("p", text);
+            xhtml.endElement("div");
         }
     }
 
