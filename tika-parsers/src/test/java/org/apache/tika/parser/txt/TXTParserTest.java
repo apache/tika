@@ -81,4 +81,31 @@ public class TXTParserTest extends TestCase {
         assertEquals("\n", handler.toString());
     }
 
+    /**
+     * Test case for TIKA-240: Drop the BOM when extracting plain text
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-240">TIKA-240</a> 
+     */
+    public void testDropByteOrderMark() throws Exception {
+        assertExtractText("UTF-8 BOM", "test", new byte[] {
+                (byte) 0xEF, (byte) 0xBB, (byte) 0xBF, 't', 'e', 's', 't' });
+        assertExtractText("UTF-16 BE BOM", "test", new byte[] {
+                (byte) 0xFE, (byte) 0xFF, 0, 't', 0, 'e', 0, 's', 0, 't'});
+        assertExtractText("UTF-16 LE BOM", "test", new byte[] {
+                (byte) 0xFF, (byte) 0xFE, 't', 0, 'e', 0, 's', 0, 't', 0});
+    }
+
+    private void assertExtractText(String msg, String expected, byte[] input)
+            throws Exception {
+        ContentHandler handler = new BodyContentHandler() {
+            public void ignorableWhitespace(char[] ch, int off, int len) {
+                // Ignore the whitespace added by XHTMLContentHandler
+            }
+        };
+        Metadata metadata = new Metadata();
+        parser.parse(new ByteArrayInputStream(input), handler, metadata);
+        assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(msg, expected, handler.toString());
+    }
+
 }
