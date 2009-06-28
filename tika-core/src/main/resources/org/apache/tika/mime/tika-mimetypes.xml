@@ -188,26 +188,6 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-powerpoint.addin.macroenabled.12">
-    <glob pattern="*.ppam"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
-  <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
-    <glob pattern="*.pptm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
-  <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
-    <glob pattern="*.potm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
-  <mime-type type="application/vnd.ms-powerpoint.slideshow.macroenabled.12">
-    <glob pattern="*.ppsm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
   <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-excel -->
   <mime-type type="application/vnd.ms-excel">
     <comment>Microsoft Excel Spreadsheet</comment>
@@ -230,24 +210,10 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-excel.sheet.macroenabled.12">
-    <glob pattern="*.xlsm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
-  <mime-type type="application/vnd.ms-excel.template.macroenabled.12">
-    <glob pattern="*.xltm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
-  <mime-type type="application/vnd.ms-excel.addin.macroenabled.12">
-    <glob pattern="*.xlam"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
   <mime-type type="application/vnd.ms-excel.sheet.binary.macroenabled.12">
+    <comment>Microsoft Excel 2007 Binary Spreadsheet</comment>
     <glob pattern="*.xlsb"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/vnd.ms-excel"/>
   </mime-type>
 
   <!-- http://www.iana.org/assignments/media-types/application/msword -->
@@ -272,16 +238,6 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-word.document.macroenabled.12">
-    <glob pattern="*.docm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
-  <mime-type type="application/vnd.ms-word.template.macroenabled.12">
-    <glob pattern="*.dotm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
-  </mime-type>
-
   <mime-type type="application/vnd.ms-outlook">
     <comment>Microsoft Outlook Message</comment>
     <glob pattern="*.msg" />
@@ -300,7 +256,17 @@
   <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.presentation">
     <comment>Office Open XML Presentation</comment>
     <glob pattern="*.pptx"/>
+    <glob pattern="*.sldx"/>
+    <glob pattern="*.thmx"/>
     <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
+    <comment>Office Open XML Presentation (macro-enabled)</comment>
+    <glob pattern="*.pptm"/>
+    <glob pattern="*.potm"/>
+    <glob pattern="*.sldm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
   <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.template">
@@ -315,15 +281,45 @@
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
+  <mime-type type="application/vnd.ms-powerpoint.slideshow.macroenabled.12">
+    <comment>Office Open XML Presentation Slideshow (macro-enabled)</comment>
+    <glob pattern="*.ppsm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-powerpoint.addin.macroenabled.12">
+    <comment>Office Open XML Presentation Add-in (macro-enabled)</comment>
+    <glob pattern="*.ppam"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
   <mime-type type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
-    <comment>Office Open XML Spreadsheet</comment>
+    <comment>Office Open XML Workbook</comment>
     <glob pattern="*.xlsx"/>
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
+  <mime-type type="application/vnd.ms-excel.sheet.macroenabled.12">
+    <comment>Office Open XML Workbook (macro-enabled)</comment>
+    <glob pattern="*.xlsm"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
   <mime-type type="application/vnd.openxmlformats-officedocument.spreadsheetml.template">
-    <comment>Office Open XML Spreadsheet Template</comment>
+    <comment>Office Open XML Workbook Template</comment>
     <glob pattern="*.xltx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.template.macroenabled.12">
+    <comment>Office Open XML Workbook Template (macro-enabled)</comment>
+    <glob pattern="*.xltm"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.addin.macroenabled.12">
+    <comment>Office Open XML Workbook Add-in (macro-enabled)</comment>
+    <glob pattern="*.xlam"/>
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
@@ -333,9 +329,21 @@
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
+  <mime-type type="application/vnd.ms-word.document.macroenabled.12">
+    <comment>Office Open XML Document (macro-enabled)</comment>
+    <glob pattern="*.docm"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
   <mime-type type="application/vnd.openxmlformats-officedocument.wordprocessingml.template">
     <comment>Office Open XML Document Template</comment>
     <glob pattern="*.dotx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-word.template.macroenabled.12">
+    <comment>Office Open XML Document Template (macro-enabled)</comment>
+    <glob pattern="*.dotm"/>
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
