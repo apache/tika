@@ -30,18 +30,32 @@
 
         <parser name="parse-office" class="org.apache.tika.parser.microsoft.OfficeParser">
                 <mime>application/x-tika-msoffice</mime>
-                <mime>application/msword</mime>
-                <mime>application/vnd.ms-excel</mime>
-                <mime>application/vnd.ms-powerpoint</mime>
                 <mime>application/vnd.visio</mime>
+                <mime>application/vnd.ms-powerpoint</mime>
+                <mime>application/vnd.ms-powerpoint.addin.macroenabled.12</mime>
+                <mime>application/vnd.ms-powerpoint.presentation.macroenabled.12</mime>
+                <mime>application/vnd.ms-powerpoint.presentation.macroenabled.12</mime>
+                <mime>application/vnd.ms-powerpoint.slideshow.macroenabled.12</mime>
+                <mime>application/vnd.ms-excel</mime>
+                <mime>application/vnd.ms-excel.sheet.macroenabled.12</mime>
+                <mime>application/vnd.ms-excel.template.macroenabled.12</mime>
+                <mime>application/vnd.ms-excel.addin.macroenabled.12</mime>
+                <mime>application/vnd.ms-excel.sheet.binary.macroenabled.12</mime>
+                <mime>application/msword</mime>
+                <mime>application/vnd.ms-word.document.macroenabled.12</mime>
+                <mime>application/vnd.ms-word.template.macroenabled.12</mime>
                 <mime>application/vnd.ms-outlook</mime>
         </parser>
         
         <parser name="parse-ooxml" class="org.apache.tika.parser.microsoft.ooxml.OOXMLParser">
-                <mime>application/vnd.openxmlformats-package.core-properties+xml</mime>
-                <mime>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</mime>
+                <mime>application/x-tika-ooxml</mime>
                 <mime>application/vnd.openxmlformats-officedocument.presentationml.presentation</mime>
+                <mime>application/vnd.openxmlformats-officedocument.presentationml.template</mime>
+                <mime>application/vnd.openxmlformats-officedocument.presentationml.slideshow</mime>
+                <mime>application/vnd.openxmlformats-officedocument.spreadsheetml.sheet</mime>
+                <mime>application/vnd.openxmlformats-officedocument.spreadsheetml.template</mime>
                 <mime>application/vnd.openxmlformats-officedocument.wordprocessingml.document</mime>
+                <mime>application/vnd.openxmlformats-officedocument.wordprocessingml.template</mime>
         </parser>
 
         <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">

@@ -37,8 +37,11 @@ import org.xml.sax.SAXException;
 public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     protected POIXMLTextExtractor extractor;
 
-    public AbstractOOXMLExtractor(POIXMLTextExtractor extractor) {
+    private final String type;
+
+    public AbstractOOXMLExtractor(POIXMLTextExtractor extractor, String type) {
         this.extractor = extractor;
+        this.type = type;
     }
 
     /**
@@ -52,7 +55,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getMetadataExtractor()
      */
     public MetadataExtractor getMetadataExtractor() {
-        return new MetadataExtractor(extractor);
+        return new MetadataExtractor(extractor, type);
     }
 
     /**
