@@ -17,6 +17,7 @@
 package org.apache.tika.parser.txt;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -55,7 +56,14 @@ public class TXTParser implements Parser {
             throw new TikaException("Unable to detect character encoding");
         }
 
-        Reader reader = match.getReader();
+        Reader reader = new BufferedReader(match.getReader());
+        // TIKA-240: Drop the BOM when extracting plain text
+        reader.mark(1);
+        int bom = reader.read();
+        if (bom != '\ufeff') { // zero-width no-break space
+            reader.reset();
+        }
+
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
         metadata.set(Metadata.CONTENT_ENCODING, match.getName());
 
