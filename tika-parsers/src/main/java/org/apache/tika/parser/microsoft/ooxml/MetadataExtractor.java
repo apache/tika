@@ -38,14 +38,18 @@ import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProp
  */
 public class MetadataExtractor {
 
-    private POIXMLTextExtractor extractor;
+    private final POIXMLTextExtractor extractor;
 
-    public MetadataExtractor(POIXMLTextExtractor extractor) {
+    private final String type;
+
+    public MetadataExtractor(POIXMLTextExtractor extractor, String type) {
         this.extractor = extractor;
+        this.type = type;
     }
 
     public void extract(Metadata metadata) throws TikaException {
         try {
+            addProperty(metadata, Metadata.CONTENT_TYPE, type);
             extractMetadata(extractor.getCoreProperties(), metadata);
             extractMetadata(extractor.getExtendedProperties(), metadata);
         } catch (IOException e) {
@@ -64,8 +68,6 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.CATEGORY, propsHolder.getCategoryProperty());
         addProperty(metadata, Metadata.CONTENT_STATUS, propsHolder
                 .getContentStatusProperty());
-        addProperty(metadata, Metadata.CONTENT_TYPE, propsHolder
-                .getContentType());
         addProperty(metadata, Metadata.DATE, propsHolder
                 .getCreatedPropertyString());
         addProperty(metadata, Metadata.CREATOR, propsHolder

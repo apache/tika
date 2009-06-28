@@ -84,12 +84,38 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("text/html", "x.html");
         assertTypeByName("application/xhtml+xml", "x.xhtml");
         assertTypeByName("application/xml", "x.xml");
-        assertTypeByName("application/msword", "x.doc");
-        assertTypeByName("application/vnd.ms-powerpoint", "x.ppt");
-        assertTypeByName("application/vnd.ms-excel", "x.xls");
         assertTypeByName("application/zip", "x.zip");
         assertTypeByName("application/vnd.oasis.opendocument.text", "x.odt");
         assertTypeByName("application/octet-stream", "x.xyz");
+
+        // Test for the MS Office media types and file extensions listed in
+        // http://blogs.msdn.com/vsofficedeveloper/pages/Office-2007-Open-XML-MIME-Types.aspx
+        assertTypeByName("application/msword", "x.doc");
+        assertTypeByName("application/msword", "x.dot");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "x.docx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "x.dotx");
+        assertTypeByName("application/vnd.ms-word.document.macroenabled.12", "x.docm");
+        assertTypeByName("application/vnd.ms-word.template.macroenabled.12", "x.dotm");
+        assertTypeByName("application/vnd.ms-excel", "x.xls");
+        assertTypeByName("application/vnd.ms-excel", "x.xlt");
+        assertTypeByName("application/vnd.ms-excel", "x.xla");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "x.xlsx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.spreadsheetml.template", "x.xltx");
+        assertTypeByName("application/vnd.ms-excel.sheet.macroenabled.12", "x.xlsm");
+        assertTypeByName("application/vnd.ms-excel.template.macroenabled.12", "x.xltm");
+        assertTypeByName("application/vnd.ms-excel.addin.macroenabled.12", "x.xlam");
+        assertTypeByName("application/vnd.ms-excel.sheet.binary.macroenabled.12", "x.xlsb");
+        assertTypeByName("application/vnd.ms-powerpoint", "x.ppt");
+        assertTypeByName("application/vnd.ms-powerpoint", "x.pot");
+        assertTypeByName("application/vnd.ms-powerpoint", "x.pps");
+        assertTypeByName("application/vnd.ms-powerpoint", "x.ppa");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.presentation", "x.pptx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.template", "x.potx");
+        assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.slideshow", "x.ppsx");
+        assertTypeByName("application/vnd.ms-powerpoint.addin.macroenabled.12", "x.ppam");
+        assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.pptm");
+        assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.potm");
+        assertTypeByName("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "x.ppsm");
     }
 
     public void testJpegDetection() throws Exception {

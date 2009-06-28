@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
 public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     public XWPFWordExtractorDecorator(XWPFWordExtractor extractor) {
-        super(extractor);
+        super(extractor, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     }
 
     /**

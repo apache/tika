@@ -155,6 +155,10 @@
     <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html" />
   </mime-type>
 
+  <!-- ===================================================================== -->
+  <!-- Microsoft Office binary file formats                                  -->
+  <!-- http://www.microsoft.com/interop/docs/OfficeBinaryFormats.mspx        -->
+  <!-- ===================================================================== -->
 
   <mime-type type="application/x-tika-msoffice">
     <magic>
@@ -164,20 +168,49 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.visio -->
   <mime-type type="application/vnd.visio">
+    <comment>Microsoft Visio Diagram</comment>
     <glob pattern="*.vsd" />
     <glob pattern="*.vst" />
     <glob pattern="*.vsw" />
     <glob pattern="*.vss" />
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-powerpoint -->
   <mime-type type="application/vnd.ms-powerpoint">
+    <comment>Microsoft Powerpoint Presentation</comment>
     <glob pattern="*.ppz" />
     <glob pattern="*.ppt" />
     <glob pattern="*.pps" />
     <glob pattern="*.pot" />
+    <glob pattern="*.ppa" />
+    <alias type="application/mspowerpoint" />
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/vnd.ms-powerpoint.addin.macroenabled.12">
+    <glob pattern="*.ppam"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
+    <glob pattern="*.pptm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
+    <glob pattern="*.potm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-powerpoint.slideshow.macroenabled.12">
+    <glob pattern="*.ppsm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-excel -->
   <mime-type type="application/vnd.ms-excel">
+    <comment>Microsoft Excel Spreadsheet</comment>
     <magic priority="50">
       <match value="Microsoft\ Excel\ 5.0\ Worksheet" type="string" offset="2080" />
       <match value="Foglio\ di\ lavoro\ Microsoft\ Exce" type="string" offset="2080" />
@@ -194,17 +227,116 @@
     <glob pattern="*.xlt" />
     <glob pattern="*.xld" />
     <alias type="application/msexcel" />
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.sheet.macroenabled.12">
+    <glob pattern="*.xlsm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.template.macroenabled.12">
+    <glob pattern="*.xltm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.addin.macroenabled.12">
+    <glob pattern="*.xlam"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.sheet.binary.macroenabled.12">
+    <glob pattern="*.xlsb"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <!-- http://www.iana.org/assignments/media-types/application/msword -->
+  <mime-type type="application/msword">
+    <comment>Microsoft Word Document</comment>
+    <magic priority="50">
+      <match value="Microsoft\ Word\ 6.0\ Document" type="string" offset="2080" />
+      <match value="Documento\ Microsoft\ Word\ 6" type="string" offset="2080" />
+      <match value="MSWordDoc" type="string" offset="2112" />
+      <match value="0x31be0000" type="big32" offset="0" />
+      <match value="PO^Q`" type="string" offset="0" />
+      <match value="\376\067\0\043" type="string" offset="0" />
+      <match value="\333\245-\0\0\0" type="string" offset="0" />
+      <match value="\354\245\301" type="string" offset="512" />
+      <match value="\320\317\021\340\241\261\032\341" type="string" offset="0" />
+      <match value="\224\246\056" type="string" offset="0" />
+      <match value="R\0o\0o\0t\0\ \0E\0n\0t\0r\0y" type="string" offset="512" />
+    </magic>
+    <glob pattern="*.doc" />
+    <glob pattern="*.dot" />
+    <alias type="application/vnd.ms-word" />
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-word.document.macroenabled.12">
+    <glob pattern="*.docm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-word.template.macroenabled.12">
+    <glob pattern="*.dotm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-outlook">
+    <comment>Microsoft Outlook Message</comment>
     <glob pattern="*.msg" />
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
-  <mime-type type="application/vnd.openxmlformats-package.core-properties+xml">
+  <!-- ===================================================================== -->
+  <!-- Office Open XML file formats                                          -->
+  <!-- http://www.ecma-international.org/publications/standards/Ecma-376.htm -->
+  <!-- ===================================================================== -->
+
+  <mime-type type="application/x-tika-ooxml">
     <sub-class-of type="application/zip"/>
-    <glob pattern="*.docx" />
-    <glob pattern="*.pptx" />
-    <glob pattern="*.xlsx" />
+  </mime-type>
+
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.presentation">
+    <comment>Office Open XML Presentation</comment>
+    <glob pattern="*.pptx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.template">
+    <comment>Office Open XML Presentation Template</comment>
+    <glob pattern="*.potx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.slideshow">
+    <comment>Office Open XML Presentation Slideshow</comment>
+    <glob pattern="*.ppsx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+    <comment>Office Open XML Spreadsheet</comment>
+    <glob pattern="*.xlsx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.openxmlformats-officedocument.spreadsheetml.template">
+    <comment>Office Open XML Spreadsheet Template</comment>
+    <glob pattern="*.xltx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+    <comment>Office Open XML Document</comment>
+    <glob pattern="*.docx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.openxmlformats-officedocument.wordprocessingml.template">
+    <comment>Office Open XML Document Template</comment>
+    <glob pattern="*.dotx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <!-- ===================================================================== -->
@@ -466,24 +598,6 @@
       <match value="0xcafebabe" type="string" offset="0" />
     </magic>
     <glob pattern="*.class" />
-  </mime-type>
-
-  <mime-type type="application/msword">
-    <magic priority="50">
-      <match value="Microsoft\ Word\ 6.0\ Document" type="string" offset="2080" />
-      <match value="Documento\ Microsoft\ Word\ 6" type="string" offset="2080" />
-      <match value="MSWordDoc" type="string" offset="2112" />
-      <match value="0x31be0000" type="big32" offset="0" />
-      <match value="PO^Q`" type="string" offset="0" />
-      <match value="\376\067\0\043" type="string" offset="0" />
-      <match value="\333\245-\0\0\0" type="string" offset="0" />
-      <match value="\354\245\301" type="string" offset="512" />
-      <match value="\320\317\021\340\241\261\032\341" type="string" offset="0" />
-      <match value="\224\246\056" type="string" offset="0" />
-      <match value="R\0o\0o\0t\0\ \0E\0n\0t\0r\0y" type="string" offset="512" />
-    </magic>
-    <glob pattern="*.doc" />
-    <alias type="application/vnd.ms-word" />
   </mime-type>
 
   <mime-type type="application/octet-stream">

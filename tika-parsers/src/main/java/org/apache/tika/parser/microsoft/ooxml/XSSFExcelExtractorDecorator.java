@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
     public XSSFExcelExtractorDecorator(XSSFExcelExtractor extractor) {
-        super(extractor);
+        super(extractor, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
 
     /**

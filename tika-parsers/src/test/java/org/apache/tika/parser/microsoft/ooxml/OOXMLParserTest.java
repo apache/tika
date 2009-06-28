@@ -44,7 +44,7 @@ public class OOXMLParserTest extends TestCase {
             parser.parse(input, handler, metadata);
             
             assertEquals(
-                    "application/vnd.openxmlformats-package.core-properties+xml",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
@@ -74,7 +74,7 @@ public class OOXMLParserTest extends TestCase {
             parser.parse(input, handler, metadata);
             
             assertEquals(
-                    "application/vnd.openxmlformats-package.core-properties+xml",
+                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Sample Powerpoint Slide", metadata.get(Metadata.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
@@ -101,7 +101,7 @@ public class OOXMLParserTest extends TestCase {
             parser.parse(input, handler, metadata);
             
             assertEquals(
-                    "application/vnd.openxmlformats-package.core-properties+xml",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Sample Word Document", metadata.get(Metadata.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
