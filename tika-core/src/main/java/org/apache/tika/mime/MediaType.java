@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +30,7 @@ import java.util.regex.Pattern;
 public final class MediaType {
 
     private static final Map<String, String> NO_PARAMETERS =
-        Collections.emptyMap();
+        new TreeMap<String, String>();
 
     private static final Pattern SPECIAL =
         Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
@@ -47,22 +48,37 @@ public final class MediaType {
         new MediaType("application", "xml", NO_PARAMETERS);
 
     /**
-     * Parses the given string to a media type. The string is expected
-     * to be of the form "type/subtype(; parameter=...)*" as defined
-     * in RFC 2045.
-     * <p>
-     * Note that currently this method only parses the "type/subtype" part
-     * of the string. Any parameters are simply discarded. TODO: Change this.
-     *
-     * @param string media type string to be parsed
+     * Parses the given string to a media type. The string is expected to be of
+     * the form "type/subtype(; parameter=...)*" as defined in RFC 2045.
+     * 
+     * @param string
+     *            media type string to be parsed
      * @return parsed media type, or <code>null</code> if parsing fails
      */
     public static MediaType parse(String string) {
         int colon = string.indexOf(';');
-        if (colon != -1) {
-            string = string.substring(0, colon);
-        }
+        if (colon != -1 && colon != string.length()-1) {
+            String primarySubString = string.substring(0, colon);
+            String parameters = string
+                    .substring(colon + 1, string.length());
 
+            MediaType type = parseNoParams(primarySubString);
+            String[] paramBases = parameters.split(";");
+            for (int i = 0; i < paramBases.length; i++) {
+                String[] paramToks = paramBases[i].split("=");
+                String paramName = paramToks[0].trim();
+                String paramValue = paramToks[1].trim();
+                type.parameters.put(paramName, paramValue);
+            }
+
+            return type;
+
+        } else
+            return parseNoParams(string);
+
+    }
+
+    private static MediaType parseNoParams(String string) {
         int slash = string.indexOf('/');
         if (slash != -1) {
             String type = string.substring(0, slash).trim();

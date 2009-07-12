@@ -106,6 +106,55 @@ public class MediaTypeTest extends TestCase {
                 + "; c=\"\\(\\)\\<\\>\\@\\,\\;\\:\\\\\\\"\\/\\[\\]\\?\\=\"",
                 new MediaType("text", "plain", parameters).toString());
     }
+    
+    /**
+     * @since TIKA-121
+     */
+    public void testParseWithParams() {
+        String mimeStringWithParams = "text/html;charset=UTF-8;foo=bar;foo2=bar2";
+
+        MediaType type = MediaType.parse(mimeStringWithParams);
+        assertNotNull(type);
+        assertNotNull(type.getParameters());
+        assertNotNull(type.getParameters().keySet());
+        assertEquals(3, type.getParameters().keySet().size());
+        boolean gotCharset = false, gotFoo = false, gotFoo2 = false;
+        for (String param : type.getParameters().keySet()) {
+            if (param.equals("charset")) {
+                gotCharset = true;
+            } else if (param.equals("foo")) {
+                gotFoo = true;
+            } else if (param.equals("foo2")) {
+                gotFoo2 = true;
+            }
+        }
+        assertTrue(gotCharset && gotFoo && gotFoo2);
+    }
+
+    /**
+     * @since TIKA-121
+     */
+    public void testParseNoParams() {
+        String mimeStringNoParams = "text/html";
+
+        MediaType type = MediaType.parse(mimeStringNoParams);
+        assertNotNull(type);
+        assertNotNull(type.getParameters());
+        assertNotNull(type.getParameters().keySet());
+        assertEquals(0, type.getParameters().keySet().size());
+    }
+
+    /**
+     * @since TIKA-121
+     */
+    public void testParseNoParamsWithSemi() {
+        String mimeStringNoParamsWithSemi = "text/html;";
+        MediaType type = MediaType.parse(mimeStringNoParamsWithSemi);
+        assertNotNull(type);
+        assertNotNull(type.getParameters());
+        assertNotNull(type.getParameters().keySet());
+        assertEquals(0, type.getParameters().keySet().size());
+    }
 
     
 }

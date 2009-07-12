@@ -17,6 +17,8 @@
 package org.apache.tika.detect;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.TreeMap;
 
 import junit.framework.TestCase;
 
@@ -29,13 +31,22 @@ import org.apache.tika.mime.MediaType;
 public class TypeDetectorTest extends TestCase {
 
     private Detector detector = new TypeDetector();
+    
+    private static final Map<String, String> params = new
+        TreeMap<String, String>();
+    static{
+        params.put("a", "b");
+    }
+    
+    private static final MediaType TEXT_PLAIN_A_EQ_B = 
+          new MediaType("text", "plain", params);
 
     public void testDetect() {
         assertDetect(MediaType.TEXT_PLAIN, "text/plain");
         assertDetect(MediaType.TEXT_PLAIN, "TEXT/PLAIN");
         assertDetect(MediaType.TEXT_PLAIN, " text/\tplain\n");
-        assertDetect(MediaType.TEXT_PLAIN, "text/plain; a=b");
-        assertDetect(MediaType.TEXT_PLAIN, "\ttext/plain; a=b\n");
+        assertDetect(TEXT_PLAIN_A_EQ_B, "text/plain; a=b");
+        assertDetect(TEXT_PLAIN_A_EQ_B, "\ttext/plain; a=b\n");
 
         assertDetect(MediaType.OCTET_STREAM, "text\\plain");
 
