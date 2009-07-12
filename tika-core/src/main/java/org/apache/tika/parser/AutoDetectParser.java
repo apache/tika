@@ -25,14 +25,18 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CountingInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.sax.SecureContentHandler;
+import org.apache.tika.detect.Detector;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class AutoDetectParser extends CompositeParser {
 
-    private MimeTypes types;
+    /**
+     * The type detector used by this parser to auto-detect the type
+     * of a document.
+     */
+    private Detector detector; // always set in the constructor
 
     /**
      * Creates an auto-detecting parser instance using the default Tika
@@ -53,15 +57,31 @@ public class AutoDetectParser extends CompositeParser {
 
     public void setConfig(TikaConfig config) {
         setParsers(config.getParsers());
-        setMimeTypes(config.getMimeRepository());
+        setDetector(config.getMimeRepository());
     }
 
-    public MimeTypes getMimeTypes() {
-        return types;
+    /**
+     * Returns the type detector used by this parser to auto-detect the type
+     * of a document.
+     *
+     * @return type detector
+     * @since Apache Tika 0.4
+     */
+    public Detector getDetector() {
+        return detector;
     }
 
-    public void setMimeTypes(MimeTypes types) {
-        this.types = types;
+    /**
+     * Sets the type detector used by this parser to auto-detect the type
+     * of a document. Note that calling the {@link #setConfig(TikaConfig)}
+     * method will override the type detector setting with the type settings
+     * included in the given configuration.
+     *
+     * @param detector type detector
+     * @since Apache Tika 0.4
+     */
+    public void setDetector(Detector detector) {
+        this.detector = detector;
     }
 
     public void parse(
@@ -73,7 +93,7 @@ public class AutoDetectParser extends CompositeParser {
         }
 
         // Automatically detect the MIME type of the document 
-        MediaType type = types.detect(stream, metadata);
+        MediaType type = detector.detect(stream, metadata);
         metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
         // TIKA-216: Zip bomb prevention
