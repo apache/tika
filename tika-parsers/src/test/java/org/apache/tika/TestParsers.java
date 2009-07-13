@@ -19,6 +19,7 @@ package org.apache.tika;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URL;
 
 import junit.framework.TestCase;
 
@@ -35,33 +36,12 @@ public class TestParsers extends TestCase {
 
     private TikaConfig tc;
 
-    private File testFilesBaseDir;
-
     public void setUp() throws Exception {
-        /*
-         * FIXME the old mechanism does not work anymore when running the tests
-         * with Maven - need a resource-based one, but this means more changes
-         * to classes which rely on filenames.
-         *
-         * String sep = File.separator; StringTokenizer st = new
-         * StringTokenizer(System.getProperty( "java.class.path"),
-         * File.pathSeparator);
-         *
-         * classDir = new File(st.nextToken());
-         *
-         * config = classDir.getParent() + sep + "config" + sep + "config.xml";
-         *
-         * String log4j = classDir.getParent() + sep + "Config" + sep + "log4j" +
-         * sep + "log4j.properties";
-         */
-
-        testFilesBaseDir = new File("src/test/resources/test-documents");
-
         tc = TikaConfig.getDefaultConfig();
     }
 
     public void testPDFExtraction() throws Exception {
-        File file = getTestFile("testPDF.pdf");
+        File file = getResourceAsFile("/test-documents/testPDF.pdf");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/pdf");
         String s3 = ParseUtils.getStringContent(file, TikaConfig
@@ -71,31 +51,31 @@ public class TestParsers extends TestCase {
     }
 
     public void testTXTExtraction() throws Exception {
-        File file = getTestFile("testTXT.txt");
+        File file = getResourceAsFile("/test-documents/testTXT.txt");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "text/plain");
         assertEquals(s1, s2);
     }
 
     public void testRTFExtraction() throws Exception {
-        File file = getTestFile("testRTF.rtf");
+        File file = getResourceAsFile("/test-documents/testRTF.rtf");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
         assertEquals(s1, s2);
     }
 
     public void testXMLExtraction() throws Exception {
-        File file = getTestFile("testXML.xml");
+        File file = getResourceAsFile("/test-documents/testXML.xml");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/xml");
         assertEquals(s1, s2);
     }
 
     public void testPPTExtraction() throws Exception {
-        File file = getTestFile("testPPT.ppt");
+        File file = getResourceAsFile("/test-documents/testPPT.ppt");
         String s1 = ParseUtils.getStringContent(file, tc);
-        String s2 = ParseUtils.getStringContent(
-                file, tc, "application/vnd.ms-powerpoint");
+        String s2 = ParseUtils.getStringContent(file, tc,
+                "application/vnd.ms-powerpoint");
         assertEquals(s1, s2);
         Parser parser = tc.getParser("application/vnd.ms-powerpoint");
         Metadata metadata = new Metadata();
@@ -109,7 +89,7 @@ public class TestParsers extends TestCase {
     }
 
     public void testWORDxtraction() throws Exception {
-        File file = getTestFile("testWORD.doc");
+        File file = getResourceAsFile("/test-documents/testWORD.doc");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/msword");
         assertEquals(s1, s2);
@@ -126,9 +106,10 @@ public class TestParsers extends TestCase {
 
     public void testEXCELExtraction() throws Exception {
         final String expected = "Numbers and their Squares";
-        File file = getTestFile("testEXCEL.xls");
+        File file = getResourceAsFile("/test-documents/testEXCEL.xls");
         String s1 = ParseUtils.getStringContent(file, tc);
-        String s2 = ParseUtils.getStringContent(file, tc, "application/vnd.ms-excel");
+        String s2 = ParseUtils.getStringContent(file, tc,
+                "application/vnd.ms-excel");
         assertEquals(s1, s2);
         assertTrue("Text does not contain '" + expected + "'", s1
                 .contains(expected));
@@ -144,23 +125,23 @@ public class TestParsers extends TestCase {
     }
 
     public void testOOExtraction() throws Exception {
-        File file = getTestFile("testOpenOffice2.odt");
+        File file = getResourceAsFile("/test-documents/testOpenOffice2.odt");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc,
-        "application/vnd.oasis.opendocument.text");
+                "application/vnd.oasis.opendocument.text");
         assertEquals(s1, s2);
     }
 
     public void testOutlookExtraction() throws Exception {
-        File file = getTestFile("test-outlook.msg");
+        File file = getResourceAsFile("/test-documents/test-outlook.msg");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc,
-        "application/vnd.ms-outlook");
+                "application/vnd.ms-outlook");
         assertEquals(s1, s2);
     }
 
     public void testHTMLExtraction() throws Exception {
-        File file = getTestFile("testHTML.html");
+        File file = getResourceAsFile("/test-documents/testHTML.html");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "text/html");
         assertEquals(s1, s2);
@@ -170,7 +151,7 @@ public class TestParsers extends TestCase {
     }
 
     public void testZipFileExtraction() throws Exception {
-        File file = getTestFile("test-documents.zip");
+        File file = getResourceAsFile("/test-documents/test-documents.zip");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/zip");
         assertEquals(s1, s2);
@@ -180,7 +161,7 @@ public class TestParsers extends TestCase {
     }
 
     public void testMP3Extraction() throws Exception {
-        File file = getTestFile("testMP3.mp3");
+        File file = getResourceAsFile("/test-documents/testMP3.mp3");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "audio/mpeg");
         assertEquals(s1, s2);
@@ -189,8 +170,35 @@ public class TestParsers extends TestCase {
         assertNotNull(parser);
     }
 
-    private File getTestFile(String filename) {
-        return new File(testFilesBaseDir, filename);
+    /**
+     * This method will give you back the filename incl. the absolute path name
+     * to the resource. If the resource does not exist it will give you back the
+     * resource name incl. the path.
+     * 
+     * It will give you back an absolute path incl. the name which is in the
+     * same directory as the the class you've called it from.
+     * 
+     * @param name
+     * @return
+     */
+    public String getFileResource(String name) {
+        URL url = this.getClass().getResource(name);
+        if (url != null) {
+            return url.getFile();
+        } else {
+            // We have a file which does not exists
+            // We got the path
+            url = this.getClass().getResource(".");
+            return url.getFile() + name;
+        }
+    }
+
+    public File getResourceAsFile(String filename) {
+        return new File(getFileResource(filename));
+    }
+
+    public InputStream getResourceAsStream(String name) {
+        return this.getClass().getResourceAsStream(name);
     }
 
 }
