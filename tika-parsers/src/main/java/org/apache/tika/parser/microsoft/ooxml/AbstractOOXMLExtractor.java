@@ -62,13 +62,12 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getXHTML(org.xml.sax.ContentHandler,
      *      org.apache.tika.metadata.Metadata)
      */
-    public XHTMLContentHandler getXHTML(ContentHandler handler,
-            Metadata metadata) throws SAXException, XmlException, IOException {
+    public void getXHTML(ContentHandler handler, Metadata metadata)
+            throws SAXException, XmlException, IOException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         buildXHTML(xhtml);
         xhtml.endDocument();
-        return xhtml;
     }
 
     /**

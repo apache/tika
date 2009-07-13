@@ -21,7 +21,6 @@ import java.io.IOException;
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -47,9 +46,9 @@ public interface OOXMLExtractor {
     MetadataExtractor getMetadataExtractor();
 
     /**
-     * Returns to clients a {@link XHTMLContentHandler} object representing the
-     * parsed content of a document as XHTML SAX events.
+     * Parses the document into a sequence of XHTML SAX events sent to the
+     * given content handler.
      */
-    XHTMLContentHandler getXHTML(ContentHandler handler, Metadata metadata)
+    void getXHTML(ContentHandler handler, Metadata metadata)
             throws SAXException, XmlException, IOException;
 }
