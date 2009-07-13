@@ -83,6 +83,14 @@
       <artifactId>geronimo-stax-api_1.0_spec</artifactId>
       <version>1.0</version>
     </dependency>
+    <!-- TIKA-260: Weird transitive dependencies from commons-logging    -->
+    <!-- POI depends on Commons Logging 1.1 that has weird dependencies. -->
+    <!-- Override the dependency with version 1.1.1 that's much better.  -->
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>1.1.1</version>
+    </dependency>
     <dependency>
       <groupId>net.sourceforge.nekohtml</groupId>
       <artifactId>nekohtml</artifactId>
