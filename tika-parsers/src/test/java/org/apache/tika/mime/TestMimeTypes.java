@@ -118,6 +118,12 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "x.ppsm");
     }
 
+    public void testOoxmlDetection() throws Exception {
+        assertTypeByData("application/x-tika-ooxml", "testWORD.docx");
+        assertTypeByData("application/x-tika-ooxml", "testEXCEL.xlsx");
+        assertTypeByData("application/x-tika-ooxml", "testPPT.pptx");
+    }
+
     public void testJpegDetection() throws Exception {
         assertType("image/jpeg", "testJPEG.jpg");
         assertTypeByData("image/jpeg", "testJPEG.jpg");

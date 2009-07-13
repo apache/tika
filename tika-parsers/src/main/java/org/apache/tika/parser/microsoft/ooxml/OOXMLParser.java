@@ -47,9 +47,8 @@ public class OOXMLParser implements Parser {
             OOXMLExtractor extractor = OOXMLExtractorFactory
                     .createExtractor((POIXMLTextExtractor) ExtractorFactory
                             .createExtractor(stream));
-            extractor.getXHTML(handler, metadata);
             extractor.getMetadataExtractor().extract(metadata);
-
+            extractor.getXHTML(handler, metadata);
         } catch (InvalidFormatException e) {
             throw new TikaException("Error creating OOXML extractor", e);
         } catch (OpenXML4JException e) {
