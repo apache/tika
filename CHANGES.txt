@@ -1,7 +1,7 @@
 Apache Tika Change Log
 ======================
 
-Unreleased changes (0.4)
+Release 0.4 - 07/14/2009
 ------------------------
 
 The most notable changes in Tika 0.4 over the previous release are:
@@ -39,6 +39,27 @@ The most notable changes in Tika 0.4 over the previous release are:
     RuntimeExceptions, IOExceptions or SAXExceptions unrelated to the given
     document stream or content handler are converted to TikaExceptions
     before being passed to the client. (TIKA-198, TIKA-237)
+    
+The following people have contributed to Tika 0.4 by submitting or commenting
+on the issues resolved in this release:
+
+Chris A. Mattmann 
+Daan de Wit
+Dave Meikle 
+David Weekly
+Jeremias Maerki  	
+Jonathan Koren
+Jukka Zitting
+Karl Heinz Marbaise
+Keith R. Bennett
+Maxim Valyanskiy
+Niall Pemberton 
+Robert Burrell Donkin
+Sami Siren
+Siddharth Gargate 
+Uwe Schindler 
+
+See http://tinyurl.com/mgv9o3 for more details on these contributions.
 
 Release 0.3 - 03/09/2009
 ------------------------
