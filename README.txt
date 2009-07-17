@@ -6,7 +6,21 @@ Apache Tika is a toolkit for detecting and extracting metadata and
 structured text content from various documents using existing parser
 libraries.
 
-Tika is a subproject of Apache Lucene <http://lucene.apache.org/>.
+Tika is a subproject of Apache Lucene <http://lucene.apache.org/>,
+a project of the Apache Software Foundation <http://www.apache.org/>.
+
+Getting Started
+===============
+
+Tika is based on Java 5 and uses the Maven 2 <http://maven.apache.org/>
+build system. To build Tika, use the following command in this directory:
+
+    mvn install
+
+The build consists of a number of components, including a standalone runnable
+jar that you can use to try out Tika features. You can run it like this:
+
+    java -jar tika-app/target/tika-app-0.5-SNAPSHOT.jar --help
 
 License (see also LICENSE.txt)
 ==============================
@@ -57,20 +71,6 @@ The following provides more details on the included cryptographic software:
     Apache Tika uses the Bouncy Castle generic encryption libraries for
     extracting text content and metadata from encrypted PDF files.
     See http://www.bouncycastle.org/ for more details on Bouncy Castle.
-
-Building Tika
-=============
-
-You can build the Tika sources using the Maven 2 build system. Execute the
-following command in the Tika source directory to build the sources and
-to install the resulting jar artifact in your local Maven repository:
-
-    mvn install
-
-You can also find the generated jar libraries in the ./target directory.
-
-See the Maven web site at http://maven.apache.org/ for more instructions
-and the latest Maven downloads. 
 
 Documentation
 =============
