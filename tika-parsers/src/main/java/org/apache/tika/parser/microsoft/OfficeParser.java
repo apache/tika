@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -62,17 +63,22 @@ public class OfficeParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        boolean outlookExtracted = false;
         POIFSFileSystem filesystem = new POIFSFileSystem(stream);
+
+        // Parse summary entries first, to make metadata available early
+        parseSummaryEntryIfExists(
+                filesystem, SUMMARY_INFORMATION, metadata);
+        parseSummaryEntryIfExists(
+                filesystem, DOCUMENT_SUMMARY_INFORMATION, metadata);
+
+        // Parse remaining document entries
+        boolean outlookExtracted = false;
         Iterator<?> entries = filesystem.getRoot().getEntries();
         while (entries.hasNext()) {
             Entry entry = (Entry) entries.next();
             String name = entry.getName();
             if (!(entry instanceof DocumentEntry)) {
                 // Skip directory entries
-            } else if (SUMMARY_INFORMATION.equals(name)
-                    || DOCUMENT_SUMMARY_INFORMATION.equals(name)) {
-                parse((DocumentEntry) entry, metadata);
             } else if ("WordDocument".equals(name)) {
                 setType(metadata, "application/msword");
                 WordExtractor extractor = new WordExtractor(filesystem);
@@ -107,9 +113,12 @@ public class OfficeParser implements Parser {
         xhtml.endDocument();
     }
 
-    public void parse(DocumentEntry entry, Metadata metadata)
+    private void parseSummaryEntryIfExists(
+            POIFSFileSystem filesystem, String entryName, Metadata metadata)
             throws IOException, TikaException {
         try {
+            DocumentEntry entry =
+                (DocumentEntry) filesystem.getRoot().getEntry(entryName);
             PropertySet properties =
                 new PropertySet(new DocumentInputStream(entry));
             if (properties.isSummaryInformation()) {
@@ -118,6 +127,8 @@ public class OfficeParser implements Parser {
             if (properties.isDocumentSummaryInformation()) {
                 parse(new DocumentSummaryInformation(properties), metadata);
             }
+        } catch (FileNotFoundException e) {
+            // entry does not exist, just skip it
         } catch (NoPropertySetStreamException e) {
             throw new TikaException("Not a HPSF document", e);
         } catch (UnexpectedPropertySetTypeException e) {
