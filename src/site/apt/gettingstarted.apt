@@ -97,31 +97,30 @@ Using Tika as a Maven dependency
  transitive dependencies to your project. You need to make sure that
  these dependencies won't conflict with your existing project dependencies.
  The listing below shows all the compile-scope dependencies of the
- current Tika release (0.3, March 2009). You can use the
- command "mvn dependency:tree" to check the latest tree of dependencies.
+ current Tika parsers release (0.4, July 2009). You can use the
+ command "mvn dependency:tree" to check the latest tree of dependencies on any
+ one of Tika's core, parsers and app projects.
 
 ---
-org.apache.tika:tika:jar:0.3
-+- commons-lang:commons-lang:jar:2.1:compile
-+- commons-logging:commons-logging:jar:1.0.4:compile
-+- commons-codec:commons-codec:jar:1.3:compile
-+- commons-io:commons-io:jar:1.4:compile
+org.apache.tika:tika-parsers:bundle:0.4
++- org.apache.tika:tika-core:jar:0.4:compile
++- org.apache.commons:commons-compress:jar:1.0:compile
 +- pdfbox:pdfbox:jar:0.7.3:compile
 |  +- org.fontbox:fontbox:jar:0.1.0:compile
 |  +- org.jempbox:jempbox:jar:0.2.0:compile
 |  +- bouncycastle:bcmail-jdk14:jar:136:compile
 |  \- bouncycastle:bcprov-jdk14:jar:136:compile
-+- org.apache.poi:poi:jar:3.5-beta5:compile
-+- org.apache.poi:poi-scratchpad:jar:3.5-beta5:compile
-+- org.apache.poi:poi-ooxml:jar:3.5-beta5:compile
++- org.apache.poi:poi:jar:3.5-beta6:compile
++- org.apache.poi:poi-scratchpad:jar:3.5-beta6:compile
++- org.apache.poi:poi-ooxml:jar:3.5-beta6:compile
 |  +- org.apache.poi:ooxml-schemas:jar:1.0:compile
 |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:compile
 |  \- dom4j:dom4j:jar:1.6.1:compile
 |     \- xml-apis:xml-apis:jar:1.0.b2:compile
 +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0:compile
++- commons-logging:commons-logging:jar:1.1.1:compile
 +- net.sourceforge.nekohtml:nekohtml:jar:1.9.9:compile
 |  \- xerces:xercesImpl:jar:2.8.1:compile
-+- com.ibm.icu:icu4j:jar:3.8:compile
 +- asm:asm:jar:3.1:compile
 +- log4j:log4j:jar:1.2.14:compile
 \- junit:junit:jar:3.8.1:test
