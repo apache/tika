@@ -53,9 +53,6 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Export-Package>
-              org.apache.tika.*;version=${project.version}
-            </Export-Package>
             <Import-Package>
               *
             </Import-Package>
