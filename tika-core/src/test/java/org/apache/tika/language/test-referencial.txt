@@ -1,0 +1,10 @@
+da.test;da
+de.test;de
+el.test;el
+en.test;en
+es.test;es
+fi.test;fi
+fr.test;fr
+it.test;it
+nl.test;nl
+pt.test;pt
