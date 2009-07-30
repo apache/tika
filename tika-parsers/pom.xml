@@ -121,9 +121,6 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Export-Package>
-              org.apache.tika.parser.*;version=${project.version}
-            </Export-Package>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
           </instructions>
         </configuration>
