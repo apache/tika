@@ -98,7 +98,7 @@ public class LanguageIdentifier {
         String lang = (String) (alllanguages.nextElement());
 
         InputStream is = this.getClass().getClassLoader().getResourceAsStream(
-                "org/apache/nutch/analysis/lang/" + lang + "." + NGramProfile.FILE_EXTENSION);
+                "org/apache/tika/language/" + lang + "." + NGramProfile.FILE_EXTENSION);
 
         if (is != null) {
           NGramProfile profile = new NGramProfile(lang, minLength, maxLength);
@@ -137,6 +137,7 @@ public class LanguageIdentifier {
       // Create the suspect profile
       suspect = new NGramProfile("suspect", minLength, maxLength);
     } catch (Exception e) {
+        e.printStackTrace();
       // if (LOG.isFatalEnabled()) { LOG.fatal(e.toString()); }
     }
   }
