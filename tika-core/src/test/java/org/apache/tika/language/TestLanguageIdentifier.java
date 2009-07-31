@@ -180,8 +180,7 @@ public class TestLanguageIdentifier extends TestCase {
     }
   }
 
-    // Disable until the resource files are properly located
-    public void disabledTtestIdentify() {
+    public void testIdentify() {
         try {
             long total = 0;
             LanguageIdentifier idfr = new LanguageIdentifier();
