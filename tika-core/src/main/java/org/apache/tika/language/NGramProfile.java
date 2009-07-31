@@ -148,7 +148,7 @@ public class NGramProfile {
         if (cs.equals(SEP_CHARSEQ)) { return; }
         NGramEntry nge = ngrams.get(cs);
         if (nge == null) {
-            nge = new NGramEntry(cs);
+            nge = new NGramEntry(this, cs);
             ngrams.put(cs, nge);
         }
         nge.inc();
@@ -200,26 +200,19 @@ public class NGramProfile {
     }
 
     /**
-     * Normalize the profile (calculates the ngrams frequencies)
+     * Normalize the profile (calculates the ngram frequencies)
      */
     protected void normalize() {
-        NGramEntry e = null;
-        //List sorted = getSorted();
-        Iterator<NGramEntry> i = ngrams.values().iterator();
-
-        // Calculate ngramcount if not already done
+        // Calculate ngram count if not already done
         if (ngramcounts == null) {
             ngramcounts = new int[maxLength+1];
-            while (i.hasNext()) {
-                e = i.next();
-                ngramcounts[e.size()] += e.count;
+            for (NGramEntry entry : ngrams.values()) {
+                ngramcounts[entry.size()] += entry.getCount();
             }
         }
 
-        i = ngrams.values().iterator();
-        while (i.hasNext()) {
-            e = i.next();
-            e.frequency = (float) e.count / (float) ngramcounts[e.size()];
+        for (NGramEntry entry : ngrams.values()) {
+            entry.calculateFrequency(ngramcounts[entry.size()]);
         }
     }
 
@@ -247,13 +240,10 @@ public class NGramProfile {
         StringBuffer s = new StringBuffer().append("NGramProfile: ")
         .append(name).append("\n");
 
-        Iterator<NGramEntry> i = getSorted().iterator();
-
-        while (i.hasNext()) {
-            NGramEntry entry = i.next();
-            s.append("[").append(entry.seq)
-            .append("/").append(entry.count)
-            .append("/").append(entry.frequency).append("]\n");
+        for (NGramEntry entry : getSorted()) {
+            s.append("    ");
+            s.append(entry);
+            s.append("\n");
         }
         return s.toString();
     }
@@ -272,21 +262,21 @@ public class NGramProfile {
             Iterator<NGramEntry> i = another.getSorted().iterator();
             while (i.hasNext()) {
                 NGramEntry other = i.next();
-                if (ngrams.containsKey(other.seq)) {
-                    sum += Math.abs((other.frequency -
-                            ngrams.get(other.seq).frequency)) / 2;
+                if (ngrams.containsKey(other.getSeq())) {
+                    sum += Math.abs((other.getFrequency() -
+                            ngrams.get(other.getSeq()).getFrequency())) / 2;
                 } else {
-                    sum += other.frequency;
+                    sum += other.getFrequency();
                 }
             }
             i = getSorted().iterator();
             while (i.hasNext()) {
                 NGramEntry other = i.next();
-                if (another.ngrams.containsKey(other.seq)) {
-                    sum += Math.abs((other.frequency -
-                            another.ngrams.get(other.seq).frequency)) / 2;
+                if (another.ngrams.containsKey(other.getSeq())) {
+                    sum += Math.abs((other.getFrequency() -
+                            another.ngrams.get(other.getSeq()).getFrequency())) / 2;
                 } else {
-                    sum += other.frequency;
+                    sum += other.getFrequency();
                 }
             }
         } catch (Exception e) {
@@ -315,7 +305,7 @@ public class NGramProfile {
                 int len = ngramsequence.length();
                 if ((len >= minLength) && (len <= maxLength)) {
                     int ngramcount = Integer.parseInt(line.substring(spacepos + 1));
-                    NGramEntry en = new NGramEntry(ngramsequence, ngramcount);
+                    NGramEntry en = new NGramEntry(this, ngramsequence, ngramcount);
                     ngrams.put(en.getSeq(), en);
                     ngramcounts[len] += ngramcount;
                 }
@@ -484,130 +474,6 @@ public class NGramProfile {
             }
         } catch (Exception e) {
         }
-    }
-
-    /**
-     * Inner class that describes a NGram
-     */
-    class NGramEntry implements Comparable<NGramEntry> {
-
-        /** The NGRamProfile this NGram is related to */
-        private NGramProfile profile = null;
-
-        /** The sequence of characters of the ngram */
-        CharSequence seq = null;
-
-        /** The number of occurences of this ngram in its profile */
-        private int count = 0;
-
-        /** The frequency of this ngram in its profile */
-        private float frequency = 0.0F;
-
-        /** 
-         * Constructs a new NGramEntry
-         * @param seq is the sequence of characters of the ngram
-         */
-        public NGramEntry(CharSequence seq) {
-            this.seq = seq;
-        }
-
-        /** 
-         * Constructs a new NGramEntry
-         * @param seq is the sequence of characters of the ngram
-         * @param count is the number of occurences of this ngram
-         */
-        public NGramEntry(String seq, int count) {
-            this.seq = new StringBuffer(seq).subSequence(0, seq.length());
-            this.count = count;
-        }
-
-        /**
-         * Returns the number of occurences of this ngram in its profile
-         * @return the number of occurences of this ngram in its profile
-         */
-        public int getCount() {
-            return count;
-        }
-
-        /**
-         * Returns the frequency of this ngram in its profile
-         * @return the frequency of this ngram in its profile
-         */
-        public float getFrequency() {
-            return frequency;
-        }
-
-        /**
-         * Returns the sequence of characters of this ngram
-         * @return the sequence of characters of this ngram
-         */
-        public CharSequence getSeq() {
-            return seq;
-        }
-
-        /**
-         * Returns the size of this ngram
-         * @return the size of this ngram
-         */
-        public int size() {
-            return seq.length();
-        }
-
-        // Inherited JavaDoc
-        public int compareTo(NGramEntry ngram) {
-            int diff = Float.compare(ngram.getFrequency(), frequency);
-            if (diff != 0) {
-                return diff;
-            } else {
-                return (toString().compareTo(ngram.toString()));
-            }
-        }
-
-        /**
-         * Increments the number of occurences of this ngram.
-         */
-        public void inc() {
-            count++;
-        }
-
-        /**
-         * Associated a profile to this ngram
-         * @param profile is the profile associated to this ngram
-         */
-        public void setProfile(NGramProfile profile) {
-            this.profile = profile;
-        }
-
-        /**
-         * Returns the profile associated to this ngram
-         * @return the profile associated to this ngram
-         */
-        public NGramProfile getProfile() {
-            return profile;
-        }
-
-        // Inherited JavaDoc
-        public String toString() {
-            return seq.toString();
-        }
-
-        // Inherited JavaDoc
-        public int hashCode() {
-            return seq.hashCode();
-        }
-
-        // Inherited JavaDoc
-        public boolean equals(Object obj) {
-
-            NGramEntry ngram = null;
-            try {
-                ngram = (NGramEntry) obj;
-                return ngram.seq.equals(seq);
-            } catch (Exception e) {
-                return false;
-            }
-        }
-
     }
 
     private class QuickStringBuffer implements CharSequence {

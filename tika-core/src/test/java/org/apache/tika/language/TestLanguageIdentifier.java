@@ -28,8 +28,6 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 
-import org.apache.tika.language.NGramProfile.NGramEntry;
-
 /**
  * JUnit based test of class {@link LanguageIdentifier}.
  *

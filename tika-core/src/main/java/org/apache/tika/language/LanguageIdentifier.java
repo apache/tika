@@ -31,8 +31,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Vector;
 
-import org.apache.tika.language.NGramProfile.NGramEntry;
-
 /**
  * Identify the language of a content, based on statistical analysis.
  *
@@ -112,7 +110,6 @@ public class LanguageIdentifier {
                                 tmpIdx.put(entry, registered);
                             }
                             registered.add(entry);
-                            entry.setProfile(profile);
                         }
                         list.append(" " + lang + "(" + ngrams.size() + ")");
                         is.close();
