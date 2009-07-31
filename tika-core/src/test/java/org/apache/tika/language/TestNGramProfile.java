@@ -23,8 +23,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.tika.language.NGramProfile.NGramEntry;
-
 public class TestNGramProfile extends TestCase {
 
     String tokencontent1 = "testaddtoken";
