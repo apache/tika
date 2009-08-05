@@ -31,7 +31,7 @@ Getting and building the sources
 
  Once you have the sources, you can build them using the
  {{{http://maven.apache.org/}Maven 2}} build system. Executing the
- following command in the source directory will build the sources
+ following command in the base directory will build the sources
  and install the resulting artifacts in your local Maven repository.
 
 ---
