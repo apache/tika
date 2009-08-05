@@ -45,55 +45,55 @@ mvn install
 
 Build artifacts
 
- The Tika build produces the following libraries in the <<<target>>>
- directory (x.y stands for the current Tika version number).
+ Starting with Tika 0.4, the build consists of a number of components
+ and produces the following main binaries (x.y stands for the current
+ Tika version number):
 
-    * tika-x.y.jar
+ [tika-core/target/tika-core-x.y.jar]
+  Tika core library. Contains the core interfaces and classes of Tika,
+  but none of the parser implementations. Depends only on Java 5.
 
-    * tika-x.y-jdk14.jar (available since 0.2)
+ [tika-core/target/tika-core-x.y-jdk14.jar]
+  Java 1.4 version of the Tika core library.
 
- The main build artifact (tika-x.y.jar) contains the compiled Java
- classes and interfaces in the <<<org.apache.tika>>> packages and
- the default Tika configuration settings.
+ [tika-parsers/target/tika-parsers-x.y.jar]
+  Tika parsers. Collection of classes that implement the Tika Parser
+  interface based on various external parser libraries.
 
- The second build artifact (tika-x.y-jdk14.jar, available since version 0.2)
- is a {{{http://retrotranslator.sourceforge.net/}retrotranslated}} version
- of the main Tika build artifact. Normally Tika only works with Java 5 or
- higher, but you can use this version of Tika also with Java 1.4.
+ [tika-app/target/tika-app-x.y.jar]
+  Tika application. Combines the above libraries and all the external
+  parser libraries into a single runnable jar with a GUI and a command
+  line interface.
 
 Using Tika as a Maven dependency
 
- Using Tika in a Maven project is very straightforward. Just select the
- version of Tika you want to use, and add the following dependency.
+ Since the 0.4 release Tika has been split to components to give you
+ more control over which parts of Tika you want to use in your application.
+ The core library, tika-core, contains the key interfaces and classes, so
+ you'll always want to include a dependency to it:
 
 ---
-<dependency>
-<groupId>org.apache.tika</groupId>
-<artifactId>tika</artifactId>
-<version>x.y</version>
-</dependency>
+  <dependency>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-core</artifactId>
+    <version>x.y</version>  <!-- 0.4 or higher -->
+  </dependency>
 ---
 
- The first version of the org.apache.tika:tika artifact available in the
- central Maven repository is 0.2. For the 0.1 version or for SNAPSHOT
- dependencies you need to build and install Tika locally.
-
- If your application uses Java 1.4, you need to use the retrotranslated
- version of Tika. This version is identified by the classifier "jdk14".
+ This dependency only gives you basic Tika functionality without any of
+ the parser libraries. If you want to use Tika to parse documents (instead
+ of simply detecting document types, etc.), you also need the tika-parsers
+ dependency: 
 
 ---
-<dependency>
-<groupId>org.apache.tika</groupId>
-<artifactId>tika</artifactId>
-<version>x.y</version>
-<classifier>jdk14</classifier>
-</dependency>
+  <dependency>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parsers</artifactId>
+    <version>x.y</version>  <!-- same version as in tika-core -->
+  </dependency>
 ---
 
- The retrotranslated version will be available in the central Maven
- repository starting with Tika version 0.2.
-
- Note that adding the Tika dependency will introduce a number of
+ Note that adding this dependency will introduce a number of
  transitive dependencies to your project. You need to make sure that
  these dependencies won't conflict with your existing project dependencies.
  The listing below shows all the compile-scope dependencies of the
@@ -122,82 +122,87 @@ org.apache.tika:tika-parsers:bundle:0.4
 +- net.sourceforge.nekohtml:nekohtml:jar:1.9.9:compile
 |  \- xerces:xercesImpl:jar:2.8.1:compile
 +- asm:asm:jar:3.1:compile
-+- log4j:log4j:jar:1.2.14:compile
-\- junit:junit:jar:3.8.1:test
+\- log4j:log4j:jar:1.2.14:compile
 ---
 
 Using Tika in an Ant project
 
- Unless you use a dependency manager tool like {{{http://ant.apache.org/ivy/}Apache Ivy}},
- to use Tika in you application you can include the main Tika jar file and its dependencies individually.
+ Unless you use a dependency manager tool like
+ {{{http://ant.apache.org/ivy/}Apache Ivy}}, to use Tika in you application
+ you can include the Tika jar files and the dependencies individually.
 
 ---
 <classpath>
-... <!-- your other classpath entries -->
-<pathelement location="path/to/tika-x.y.jar"/>
-<pathelement location="path/to/commons-lang-2.1.jar"/>
-<pathelement location="path/to/commons-logging-1.0.4.jar"/>
-<pathelement location="path/to/commons-codec-1.3.jar"/>
-<pathelement location="path/to/commons-io-1.4.jar"/>
-<pathelement location="path/to/pdfbox-0.7.3.jar"/>
-<pathelement location="path/to/fontbox-0.1.0.jar"/>
-<pathelement location="path/to/jempbox-0.2.0.jar"/>
-<pathelement location="path/to/bcmail-jdk14-136.jar"/>
-<pathelement location="path/to/bcprov-jdk14-136.jar"/>
-<pathelement location="path/to/poi-3.1-FINAL.jar"/>
-<pathelement location="path/to/poi-scratchpad-3.1-FINAL.jar"/>
-<pathelement location="path/to/nekohtml-1.9.7.jar"/>
-<pathelement location="path/to/xercesImpl-2.8.1.jar"/>
-<pathelement location="path/to/xml-apis-1.3.03.jar"/>
-<pathelement location="path/to/icu4j-3.4.4.jar"/>
-<pathelement location="path/to/asm-3.1.jar"/>
-<pathelement location="path/to/log4j-1.2.14.jar"/>
+  ... <!-- your other classpath entries -->
+  <pathelement location="path/to/tika-core-0.4.jar"/>
+  <pathelement location="path/to/tika-parsers-0.4.jar"/>
+  <pathelement location="path/to/commons-logging-1.1.1.jar"/>
+  <pathelement location="path/to/commons-compress-1.0.jar"/>
+  <pathelement location="path/to/pdfbox-0.7.3.jar"/>
+  <pathelement location="path/to/fontbox-0.1.0.jar"/>
+  <pathelement location="path/to/jempbox-0.2.0.jar"/>
+  <pathelement location="path/to/bcmail-jdk14-136.jar"/>
+  <pathelement location="path/to/bcprov-jdk14-136.jar"/>
+  <pathelement location="path/to/poi-3.5-beta6.jar"/>
+  <pathelement location="path/to/poi-scratchpad-3.5-beta6.jar"/>
+  <pathelement location="path/to/poi-ooxml-3.5-beta6.jar"/>
+  <pathelement location="path/to/ooxml-schemas-1.0.jar"/>
+  <pathelement location="path/to/xmlbeans-2.3.0.jar"/>
+  <pathelement location="path/to/dom4j-1.6.1.jar"/>
+  <pathelement location="path/to/nekohtml-1.9.9.jar"/>
+  <pathelement location="path/to/xercesImpl-2.8.1.jar"/>
+  <pathelement location="path/to/xml-apis-1.0.b2.jar"/>
+  <pathelement location="path/to/geronimo-stax-api_1.0_spec-1.0.jar"/>
+  <pathelement location="path/to/asm-3.1.jar"/>
+  <pathelement location="path/to/log4j-1.2.14.jar"/>
 </classpath>
 ---
-
- If you're using Java 1.4 as the base platform of your project,
- use the tika-x.y-jdk14.jar instead.
 
  An easy way to gather all these libraries is to run
  "mvn dependency:copy-dependencies" in the Tika source directory.
  This will copy all Tika dependencies to the <<<target/dependencies>>>
  directory.
 
+ Alternatively you can simply drop the entire tika-app jar to your
+ classpath to get all of the above dependencies in a single archive.
+
 Using Tika as a command line utility
 
- The tika jar (tika-x.y.jar) can be used as a command
+ The Tika application jar (tika-app-x.y.jar) can be used as a command
  line utility for extracting text content and metadata from all sorts of
- files, provided the dependencies detailed previously are included on the classpath.
+ files. This runnable jar contains all the dependencies it needs, so
+ you don't need to worry about classpath settings to run it.
 
  The usage instructions are shown below.
 
 ---
-usage: java -jar tika-x.y.jar [option] file
+usage: java -jar tika-app-x.y.jar [option] [file]
 
 Options:
-  -? or --help       Print this usage message
-  -v or --verbose    Print debug level messages
-  -g or --gui        Start the Apache Tika GUI
-  -x or --xml        Output XHTML content (default)
-  -h or --html       Output HTML content
-  -t or --text       Output plain text content
-  -m or --metadata   Output only metadata
+    -? or --help       Print this usage message
+    -v or --verbose    Print debug level messages
+    -g or --gui        Start the Apache Tika GUI
+    -x or --xml        Output XHTML content (default)
+    -h or --html       Output HTML content
+    -t or --text       Output plain text content
+    -m or --metadata   Output only metadata
 
 Description:
-  Apache Tika will parse the file(s) specified on the
-  command line and output the extracted text content
-  or metadata to standard output.
+    Apache Tika will parse the file(s) specified on the
+    command line and output the extracted text content
+    or metadata to standard output.
 
-  Instead of a file name you can also specify the URL
-  of a document to be parsed.
+    Instead of a file name you can also specify the URL
+    of a document to be parsed.
 
-  Use "-" as the file name to parse the standard
-  input stream.
+    If no file name or URL is specified (or the special
+    name "-" is used), then the standard input stream
+    is parsed.
 
-  Use the "--gui" (or "-g") option to start
-  the Apache Tika GUI. You can drag and drop files
-  from a normal file explorer to the GUI window to
-  extract text content and metadata from the files.
+    Use the "--gui" (or "-g") option to start
+    the Apache Tika GUI. You can drag and drop files
+    from a normal file explorer to the GUI window to
+    extract text content and metadata from the files.
 ---
 
  You can also use the jar as a component in a Unix pipeline or
@@ -206,6 +211,6 @@ Description:
 ---
 # Check if an Internet resource contains a specific keyword
 curl http://.../document.doc \
-  | java -jar tika-x.y.jar --text \
+  | java -jar tika-app-x.y.jar --text \
   | grep -q keyword
 ---
