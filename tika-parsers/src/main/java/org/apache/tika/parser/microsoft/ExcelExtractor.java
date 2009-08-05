@@ -238,7 +238,7 @@ public class ExcelExtractor {
                 break;
 
             case EOFRecord.sid: // end of workbook, worksheet etc. records
-                if (currentSheet != null && !currentSheet.isEmpty()) {
+                if (currentSheet != null) {
                     processSheet();
                 }
                 currentSheet = null;
