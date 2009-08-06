@@ -21,6 +21,6 @@ package org.apache.tika.metadata;
  */
 public interface TikaMetadataKeys {
 
-    public static final String RESOURCE_NAME_KEY = "resourceName";
-    
+    String RESOURCE_NAME_KEY = "resourceName";
+
 }

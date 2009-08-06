@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,16 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.metadata;
 
 /**
  * A collection of Tika metadata keys used in Mime Type resolution
- * 
  */
 public interface TikaMimeKeys {
 
-    public static final String TIKA_MIME_FILE = "tika.mime.file";
+    String TIKA_MIME_FILE = "tika.mime.file";
 
-    public static final String MIME_TYPE_MAGIC = "mime.type.magic";
+    String MIME_TYPE_MAGIC = "mime.type.magic";
+
 }

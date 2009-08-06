@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -18,16 +18,8 @@ package org.apache.tika.mime;
 
 /**
  * Defines a Boolean Binary Operator.
- * 
- * 
  */
 interface Operator {
-
-    /** The OR Boolean operator */
-    final static Operator OR = new Or();
-
-    /** The AND Boolean operator */
-    final static Operator AND = new And();
 
     /**
      * Evaluates the specified bolean operands.
@@ -41,29 +33,24 @@ interface Operator {
      */
     boolean eval(boolean o1, boolean o2);
 
-    /**
-     * Defines the Boolean Binary Operator AND.
-     */
-    final static class And implements Operator {
+    /** The AND Boolean operator */
+    Operator AND = new Operator() {
         public boolean eval(boolean o1, boolean o2) {
             return o1 && o2;
         }
-
         public String toString() {
             return "AND";
         }
-    }
+    };
 
-    /**
-     * Defines the Boolean Binary Operator OR.
-     */
-    final static class Or implements Operator {
+    /** The OR Boolean operator */
+    Operator OR = new Operator() {
         public boolean eval(boolean o1, boolean o2) {
             return o1 || o2;
         }
-
         public String toString() {
             return "OR";
         }
-    }
+    };
+
 }
