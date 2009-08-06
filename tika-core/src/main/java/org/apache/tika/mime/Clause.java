@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -18,54 +18,44 @@ package org.apache.tika.mime;
 
 /**
  * Defines a clause to be evaluated.
- * 
- * 
  */
 interface Clause {
-
-    /** A clause that is always true. */
-    final static Clause TRUE = new True();
-
-    /** A clause that is always false. */
-    final static Clause FALSE = new False();
 
     /**
      * Evaluates this clause with the specified chunk of data.
      */
-    public boolean eval(byte[] data);
+    boolean eval(byte[] data);
 
     /**
      * Returns the size of this clause. The size of a clause is the number of
      * chars it is composed of.
      */
-    public int size();
+    int size();
 
-    final static class False implements Clause {
-        public boolean eval(byte[] data) {
-            return false;
-        }
-
-        public int size() {
-            return 0;
-        }
-
-        public String toString() {
-            return "FALSE";
-        }
-    }
-
-    final static class True implements Clause {
+    /** A clause that is always true. */
+    Clause TRUE = new Clause() {
         public boolean eval(byte[] data) {
             return true;
         }
-
         public int size() {
             return 0;
         }
-
         public String toString() {
             return "TRUE";
         }
-    }
+    };
+
+    /** A clause that is always false. */
+    Clause FALSE = new Clause() {
+        public boolean eval(byte[] data) {
+            return false;
+        }
+        public int size() {
+            return 0;
+        }
+        public String toString() {
+            return "FALSE";
+        }
+    };
 
 }

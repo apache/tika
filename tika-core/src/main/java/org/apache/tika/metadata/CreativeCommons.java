@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -20,15 +20,13 @@ package org.apache.tika.metadata;
  * A collection of Creative Commons properties names.
  * 
  * @see <a href="http://www.creativecommons.org/">creativecommons.org</a>
- * 
- * 
  */
 public interface CreativeCommons {
 
-  public final static String LICENSE_URL = "License-Url";
+    String LICENSE_URL = "License-Url";
 
-  public final static String LICENSE_LOCATION = "License-Location";
+    String LICENSE_LOCATION = "License-Location";
 
-  public final static String WORK_TYPE = "Work-Type";
+    String WORK_TYPE = "Work-Type";
 
 }

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -21,60 +21,60 @@ package org.apache.tika.metadata;
  */
 public interface MSOffice {
 
-  public static final String KEYWORDS = "Keywords";
+    String KEYWORDS = "Keywords";
 
-  public static final String COMMENTS = "Comments";
+    String COMMENTS = "Comments";
 
-  public static final String LAST_AUTHOR = "Last-Author";
+    String LAST_AUTHOR = "Last-Author";
 
-  public static final String APPLICATION_NAME = "Application-Name";
+    String APPLICATION_NAME = "Application-Name";
 
-  public static final String CHARACTER_COUNT = "Character Count";
+    String CHARACTER_COUNT = "Character Count";
 
-  public static final String LAST_PRINTED = "Last-Printed";
+    String LAST_PRINTED = "Last-Printed";
 
-  public static final String LAST_SAVED = "Last-Save-Date";
+    String LAST_SAVED = "Last-Save-Date";
 
-  public static final String PAGE_COUNT = "Page-Count";
+    String PAGE_COUNT = "Page-Count";
 
-  public static final String REVISION_NUMBER = "Revision-Number";
+    String REVISION_NUMBER = "Revision-Number";
 
-  public static final String WORD_COUNT = "Word-Count";
+    String WORD_COUNT = "Word-Count";
 
-  public static final String TEMPLATE = "Template";
+    String TEMPLATE = "Template";
 
-  public static final String AUTHOR = "Author";
-  
-  public static final String TOTAL_TIME = "Total-Time";
-  
-  public static final String SLIDE_COUNT = "Slide-Count";
-  
-  public static final String PRESENTATION_FORMAT = "Presentation-Format";
-  
-  public static final String PARAGRAPH_COUNT = "Paragraph-Count";
-  
-  public static final String NOTES = "Notes";
-  
-  public static final String MANAGER = "Manager";
-  
-  public static final String LINE_COUNT = "Line-Count";
-  
-  public static final String CHARACTER_COUNT_WITH_SPACES = "Character-Count-With-Spaces";
-  
-  public static final String APPLICATION_VERSION = "Application-Version";
-  
-  public static final String VERSION = "Version";
-  
-  public static final String CONTENT_STATUS = "Content-Status";
-  
-  public static final String CATEGORY = "Category";
+    String AUTHOR = "Author";
 
-  public static final String COMPANY = "Company";
+    String TOTAL_TIME = "Total-Time";
 
-  public static final String SECURITY = "Security";
+    String SLIDE_COUNT = "Slide-Count";
 
-  public static final String EDIT_TIME = "Edit-Time";
+    String PRESENTATION_FORMAT = "Presentation-Format";
 
-  public static final String CREATION_DATE = "Creation-Date";
+    String PARAGRAPH_COUNT = "Paragraph-Count";
+
+    String NOTES = "Notes";
+
+    String MANAGER = "Manager";
+
+    String LINE_COUNT = "Line-Count";
+
+    String CHARACTER_COUNT_WITH_SPACES = "Character-Count-With-Spaces";
+
+    String APPLICATION_VERSION = "Application-Version";
+
+    String VERSION = "Version";
+
+    String CONTENT_STATUS = "Content-Status";
+
+    String CATEGORY = "Category";
+
+    String COMPANY = "Company";
+
+    String SECURITY = "Security";
+
+    String EDIT_TIME = "Edit-Time";
+
+    String CREATION_DATE = "Creation-Date";
 
 }
