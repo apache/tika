@@ -66,20 +66,8 @@ public class LanguageIdentifier {
     /**
      * Constructs a new Language Identifier.
      */
-    public LanguageIdentifier() {
-
-        // Gets ngram sizes to take into account from the Nutch Config
-        minLength = NGramProfile.DEFAULT_MIN_NGRAM_LENGTH;
-        maxLength = NGramProfile.DEFAULT_MAX_NGRAM_LENGTH;
-        // Ensure the min and max values are in an acceptale range
-        // (ie min >= DEFAULT_MIN_NGRAM_LENGTH and max <= DEFAULT_MAX_NGRAM_LENGTH)
-        maxLength = Math.min(maxLength, NGramProfile.ABSOLUTE_MAX_NGRAM_LENGTH);
-        maxLength = Math.max(maxLength, NGramProfile.ABSOLUTE_MIN_NGRAM_LENGTH);
-        minLength = Math.max(minLength, NGramProfile.ABSOLUTE_MIN_NGRAM_LENGTH);
-        minLength = Math.min(minLength, maxLength);
-
-        // Gets the value of the maximum size of data to analyze
-        analyzeLength = DEFAULT_ANALYSIS_LENGTH;
+    public LanguageIdentifier(NGramProfile suspect) {
+        this.suspect = suspect;
 
         Properties p = new Properties();
         try {
@@ -128,12 +116,17 @@ public class LanguageIdentifier {
                     ngramsIdx.put(entry.getSeq(), array);
                 }
             }
-            // Create the suspect profile
-            suspect = new NGramProfile("suspect", minLength, maxLength);
         } catch (Exception e) {
             e.printStackTrace();
             // if (LOG.isFatalEnabled()) { LOG.fatal(e.toString()); }
         }
+    }
+
+    public LanguageIdentifier() {
+        this(new NGramProfile(
+                "suspect",
+                NGramProfile.DEFAULT_MIN_NGRAM_LENGTH,
+                NGramProfile.DEFAULT_MAX_NGRAM_LENGTH));
     }
 
     /**
@@ -298,8 +291,12 @@ public class LanguageIdentifier {
             text = new StringBuilder().append(content);
             text.setLength(analyzeLength);
         }
-
         suspect.analyze(text);
+
+        return identify();
+    }
+
+    public String identify() {
         Iterator<NGramEntry> iter = suspect.getSorted().iterator();
         float topscore = Float.MIN_VALUE;
         String lang = "";
