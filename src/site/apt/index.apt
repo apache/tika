@@ -34,6 +34,55 @@ Tika - Content Analysis Toolkit
 
 Latest News
 
+   [14 August 2009 - Lucene at US ApacheCon]
+     ApacheCon US is once again in the Bay Area and Lucene is coming along for the ride! The 
+     Lucene community has planned two full days of talks, plus a meetup and the usual bevy 
+     of training.  With a well-balanced mix of first time and veteran ApacheCon speakers, the 
+     {{{http://www.us.apachecon.com/c/acus2009/schedule#lucene}Lucene track}} at ApacheCon US 
+     promises to have something for everyone.  Be sure not to miss:
+
+   Training:
+     
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/437}Lucene Boot Camp}} - A two 
+       day training session, Nov. 2nd & 3rd
+
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/375}Solr Day}} - A one day training 
+       session, Nov. 2nd
+
+   Thursday, Nov. 5th:
+   
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/428}Introduction to the Lucene Ecosystem}} - 
+     Grant Ingersoll @ 9:00
+     
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/461}Lucene Basics and New Features}} - Michael 
+     Busch @ 10:00
+     
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/331}Apache Solr: Out of the Box}} - Chris 
+     Hostetter @ 14:00
+     
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/427}Introduction to Nutch}} - Andrzej 
+     Bialecki @ 15:00
+     
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/430}Lucene and Solr Performance Tuning}} - 
+     Mark Miller @ 16:30
+     
+   Friday, Nov. 6th:
+   
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/332}Implementing an Information Retrieval Framework for an Organizational Repository}} 
+       - Sithu D Sudarsan @ 9:00
+       
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/333}Apache Mahout - Going from raw data to Information}}
+       - Isabel Drost @ 10:00
+       
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/334}MIME Magic with Apache Tika}} - Jukka 
+       Zitting @ 11:30
+       
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/335}Building Intelligent Search Applications with the Lucene Ecosystem}}
+       - Ted Dunning @ 14:00
+       
+     * {{{http://www.us.apachecon.com/c/acus2009/sessions/462}Realtime Search}} - Jason Rutherglen @ 
+       15:00
+
    [July 2009: Apache Tika Release]
      Apache Tika 0.4 has been released. Please see the download page for more details.
 
