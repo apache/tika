@@ -148,4 +148,21 @@ public class HtmlParserTest extends TestCase {
         assertEquals("test", content);
     }
 
+    /**
+     * Test case for TIKA-268
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-268">TIKA-268</a>
+     */
+    public void testWhitespaceBetweenTableCells() throws Exception {
+        String test =
+            "<html><body><table><tr><td>a</td><td>b</td></table></body></html>";
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                handler, new Metadata());
+        String content = handler.toString();
+        assertTrue(content.contains("a"));
+        assertTrue(content.contains("b"));
+        assertFalse(content.contains("ab"));
+    }
+
 }
