@@ -30,18 +30,35 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * PDF parser
+ * PDF parser.
+ * <p>
+ * This parser can process also encrypted PDF documents if the required
+ * password is given as a part of the input metadata associated with a
+ * document. If no password is given, then this parser will try decrypting
+ * the document using the empty password that's often used with PDFs.
  */
 public class PDFParser implements Parser {
+
+    /**
+     * Metadata key for giving the document password to the parser.
+     *
+     * @since Apache Tika 0.5
+     */
+    public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
 
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         PDDocument pdfDocument = PDDocument.load(stream);
         try {
-            if (pdfDocument.isEncrypted()) {
+            if (pdfDocument.isEncrypted()
+                    && !pdfDocument.getCurrentAccessPermission().canExtractContent()) {
                 try {
-                    pdfDocument.decrypt("");
+                    String password = metadata.get(PASSWORD);
+                    if (password == null) {
+                        password = "";
+                    }
+                    pdfDocument.decrypt(password);
                 } catch (Exception e) {
                     // Ignore
                 }
