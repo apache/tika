@@ -76,7 +76,12 @@ public class HtmlParser implements Parser {
         SAFE_ELEMENTS.put("DD", "dd");
         SAFE_ELEMENTS.put("PRE", "pre");
         SAFE_ELEMENTS.put("BLOCKQUOTE", "blockquote");
-        SAFE_ELEMENTS.put("TABLE", "p"); // TODO colspan/rowspan issues
+        SAFE_ELEMENTS.put("TABLE", "table");
+        SAFE_ELEMENTS.put("THEAD", "thead");
+        SAFE_ELEMENTS.put("TBODY", "tbody");
+        SAFE_ELEMENTS.put("TR", "tr");
+        SAFE_ELEMENTS.put("TH", "th");
+        SAFE_ELEMENTS.put("TD", "td");
 
         DISCARD_ELEMENTS.add("STYLE");
         DISCARD_ELEMENTS.add("SCRIPT");
