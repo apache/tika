@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -20,9 +20,13 @@ import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -30,58 +34,90 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Text parser
+ * Plain text parser. The text encoding of the document stream is
+ * automatically detected based on the byte patterns found at the
+ * beginning of the stream. The input metadata key
+ * {@link HttpHeaders#CONTENT_ENCODING} is used as an encoding hint
+ * if the automatic encoding detection fails.
+ * <p>
+ * This parser sets the following output metadata entries:
+ * <dl>
+ *   <dt>{@link HttpHeaders#CONTENT_TYPE}</dt>
+ *   <dd><code>text/plain</code></dd>
+ *   <dt>{@link HttpHeaders#CONTENT_ENCODING}</dt>
+ *   <dd>The detected text encoding of the document.</dd>
+ *   <dt>
+ *     {@link HttpHeaders#CONTENT_LANGUAGE} and {@link DublinCore#LANGUAGE}
+ *   </dt>
+ *   <dd>
+ *     The default language of the detected encoding. Only set if the
+ *     detected encoding is associated with some specific language
+ *     (for example KOI8-R with Russian or SJIS with Japanese).
+ *   </dd>
+ * </dl>
  */
 public class TXTParser implements Parser {
 
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        CharsetDetector detector = new CharsetDetector();
-
-        // Use the declared character encoding, if available
-        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
-        if (encoding != null) {
-            detector.setDeclaredEncoding(encoding);
-        }
+        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
 
         // CharsetDetector expects a stream to support marks
         if (!stream.markSupported()) {
             stream = new BufferedInputStream(stream);
         }
-        detector.setText(stream);
-    
-        CharsetMatch match = detector.detect();
-        if (match == null) {
-            throw new TikaException("Unable to detect character encoding");
+
+        // Detect the content encoding (the stream is reset to the beginning)
+        // TODO: Better use of the possible encoding hint in input metadata
+        CharsetMatch match = new CharsetDetector().setText(stream).detect();
+        if (match != null) {
+            metadata.set(Metadata.CONTENT_ENCODING, match.getName());
+
+            // Is the encoding language-specific (KOI8-R, SJIS, etc.)?
+            String language = match.getLanguage();
+            if (language != null) {
+                metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
+                metadata.set(Metadata.LANGUAGE, match.getLanguage());
+            }
         }
 
-        Reader reader = new BufferedReader(match.getReader());
-        // TIKA-240: Drop the BOM when extracting plain text
-        reader.mark(1);
-        int bom = reader.read();
-        if (bom != '\ufeff') { // zero-width no-break space
-            reader.reset();
+        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
+        if (encoding == null) {
+            throw new TikaException(
+                    "Text encoding could not be detected and no encoding"
+                    + " hint is available in document metadata");
         }
 
-        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
-        metadata.set(Metadata.CONTENT_ENCODING, match.getName());
+        try {
+            Reader reader =
+                new BufferedReader(new InputStreamReader(stream, encoding));
 
-        String language = match.getLanguage();
-        if (language != null) {
-            metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
-            metadata.set(Metadata.LANGUAGE, match.getLanguage());
-        }
+            // TIKA-240: Drop the BOM when extracting plain text
+            reader.mark(1);
+            int bom = reader.read();
+            if (bom != '\ufeff') { // zero-width no-break space
+                reader.reset();
+            }
 
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.startElement("p");
-        char[] buffer = new char[4096];
-        for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-            xhtml.characters(buffer, 0, n);
+            XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+
+            xhtml.startElement("p");
+            char[] buffer = new char[4096];
+            int n = reader.read(buffer);
+            while (n != -1) {
+                xhtml.characters(buffer, 0, n);
+                n = reader.read(buffer);
+            }
+            xhtml.endElement("p");
+
+            xhtml.endDocument();
+        } catch (UnsupportedEncodingException e) {
+            throw new TikaException(
+                    "Unsupported text encoding: " + encoding, e);
         }
-        xhtml.endElement("p");
-        xhtml.endDocument();
     }
 
 }
