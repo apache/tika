@@ -94,6 +94,13 @@ public class HtmlParser implements Parser {
         // Protect the stream from being closed by CyberNeko
         stream = new CloseShieldInputStream(stream);
 
+        // Prepare the input source using the encoding hint if available
+        InputSource source = new InputSource(stream); 
+        String encoding = metadata.get(Metadata.CONTENT_ENCODING); 
+        if (encoding != null) { 
+            source.setEncoding(encoding);
+        }
+
         // Prepare the HTML content handler that generates proper
         // XHTML events to records relevant document metadata
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
@@ -109,7 +116,7 @@ public class HtmlParser implements Parser {
         // Parse the HTML document
         SAXParser parser = new SAXParser();
         parser.setContentHandler(new XHTMLDowngradeHandler(handler));
-        parser.parse(new InputSource(stream));
+        parser.parse(source);
     }
 
     private ContentHandler getTitleHandler(final Metadata metadata) {
