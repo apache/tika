@@ -23,8 +23,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-import org.apache.tika.utils.StringUtil;
-
 /**
  * Internet media type.
  */
@@ -336,15 +334,14 @@ public final class MimeType implements Comparable<MimeType> {
             this.type = type;
             this.namespaceURI = namespaceURI;
             this.localName = localName;
-            if ((StringUtil.isEmpty(namespaceURI))
-                    && (StringUtil.isEmpty(localName))) {
+            if (isEmpty(namespaceURI) && isEmpty(localName)) {
                 throw new IllegalArgumentException(
                         "Both namespaceURI and localName cannot be null");
             }
             String regex = null;
-            if (StringUtil.isEmpty(namespaceURI)) {
+            if (isEmpty(namespaceURI)) {
                 regex = ".*<" + localName + "[^<>]*>.*";
-            } else if (StringUtil.isEmpty(localName)) {
+            } else if (isEmpty(localName)) {
                 regex = ".*<[^<>]*\\p{Space}xmlns=[\"\']?" + namespaceURI
                         + "[\"\']?[^<>]*>.*";
             } else {
@@ -364,19 +361,26 @@ public final class MimeType implements Comparable<MimeType> {
 
         boolean matches(String namespaceURI, String localName) {
             //Compare namespaces
-            if (!(StringUtil.isEmpty(this.namespaceURI))) {
+            if (!isEmpty(this.namespaceURI)) {
                 if (!this.namespaceURI.equals(namespaceURI)) {
                     return false;
                 }
             }
 
             //Compare root element's local name
-            if (!StringUtil.isEmpty(this.localName)) {
+            if (!isEmpty(this.localName)) {
                 if (!this.localName.equals(localName)) {
                     return false;
                 }
             }
             return true;
+        }
+
+        /**
+         * Checks if a string is null or empty.
+         */
+        private boolean isEmpty(String str) {
+            return (str == null) || (str.equals(""));
         }
 
         MimeType getType() {
