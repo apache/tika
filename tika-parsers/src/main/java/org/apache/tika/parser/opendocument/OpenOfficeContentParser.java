@@ -18,6 +18,7 @@ package org.apache.tika.parser.opendocument;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Stack;
 import java.util.HashMap;
 import java.util.Collections;
@@ -123,7 +124,8 @@ public class OpenOfficeContentParser implements Parser {
     }
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         final XHTMLContentHandler xhtml =
             new XHTMLContentHandler(handler,metadata);
@@ -270,6 +272,16 @@ public class OpenOfficeContentParser implements Parser {
         } catch (ParserConfigurationException e) {
             throw new TikaException("XML parser configuration error", e);
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
 }

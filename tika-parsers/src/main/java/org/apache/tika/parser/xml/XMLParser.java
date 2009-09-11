@@ -18,6 +18,8 @@ package org.apache.tika.parser.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
@@ -41,7 +43,8 @@ import org.xml.sax.SAXNotRecognizedException;
 public class XMLParser implements Parser {
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
             metadata.set(Metadata.CONTENT_TYPE, "application/xml");
@@ -75,6 +78,16 @@ public class XMLParser implements Parser {
 
         xhtml.endElement("p");
         xhtml.endDocument();
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
     protected ContentHandler getContentHandler(

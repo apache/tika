@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -110,13 +111,14 @@ public class CompositeParser implements Parser {
      * honor the {@link Parser} contract.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata);
         TaggedInputStream taggedStream = new TaggedInputStream(stream);
         TaggedContentHandler taggedHandler = new TaggedContentHandler(handler);
         try {
-            parser.parse(taggedStream, taggedHandler, metadata);
+            parser.parse(taggedStream, taggedHandler, metadata, context);
         } catch (RuntimeException e) {
             throw new TikaException(
                     "Unexpected RuntimeException from " + parser, e);
@@ -129,6 +131,16 @@ public class CompositeParser implements Parser {
             throw new TikaException(
                     "TIKA-237: Illegal SAXException from " + parser, e);
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
 }

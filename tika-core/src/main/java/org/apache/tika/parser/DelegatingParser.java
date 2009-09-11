@@ -18,6 +18,8 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -78,9 +80,20 @@ public class DelegatingParser implements Parser {
      * specified delegate parser.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws SAXException, IOException, TikaException {
-        delegate.parse(stream, handler, metadata);
+        delegate.parse(stream, handler, metadata, context);
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
 }

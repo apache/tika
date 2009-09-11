@@ -19,6 +19,8 @@ package org.apache.tika.parser.audio;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MetaMessage;
@@ -38,7 +40,8 @@ import org.xml.sax.SAXException;
 public class MidiParser implements Parser {
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -92,6 +95,16 @@ public class MidiParser implements Parser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
 }

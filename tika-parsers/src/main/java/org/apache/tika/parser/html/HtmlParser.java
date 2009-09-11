@@ -18,6 +18,7 @@ package org.apache.tika.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -89,7 +90,8 @@ public class HtmlParser implements Parser {
     }
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         // Protect the stream from being closed by CyberNeko
         stream = new CloseShieldInputStream(stream);
@@ -117,6 +119,16 @@ public class HtmlParser implements Parser {
         SAXParser parser = new SAXParser();
         parser.setContentHandler(new XHTMLDowngradeHandler(handler));
         parser.parse(source);
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
     private ContentHandler getTitleHandler(final Metadata metadata) {

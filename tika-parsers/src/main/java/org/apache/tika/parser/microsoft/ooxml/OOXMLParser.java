@@ -18,6 +18,8 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
@@ -36,13 +38,10 @@ import org.xml.sax.SAXException;
  */
 public class OOXMLParser implements Parser {
 
-    /**
-     * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
-     *      org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
-     */
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
+            throws IOException, SAXException, TikaException {
         try {
             OOXMLExtractor extractor = OOXMLExtractorFactory
                     .createExtractor((POIXMLTextExtractor) ExtractorFactory
@@ -56,6 +55,16 @@ public class OOXMLParser implements Parser {
         } catch (XmlException e) {
             throw new TikaException("Error creating OOXML extractor", e);
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
 }

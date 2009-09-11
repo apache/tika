@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -49,10 +50,12 @@ public class ParserPostProcessor extends ParserDecorator {
      * results as described above.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         ContentHandler body = new BodyContentHandler();
-        super.parse(stream, new TeeContentHandler(handler, body), metadata);
+        ContentHandler tee = new TeeContentHandler(handler, body);
+        super.parse(stream, tee, metadata, context);
 
         String content = body.toString();
         metadata.set("fulltext", content);
