@@ -30,7 +30,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
-import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.Parser;
 import org.w3c.dom.Document;
@@ -103,10 +102,6 @@ public class TikaConfig {
             try {
                 Class<?> parserClass = Class.forName(name);
                 Parser parser = (Parser) parserClass.newInstance();
-
-                if (delegate != null && parser instanceof DelegatingParser) {
-                    ((DelegatingParser) parser).setDelegate(delegate);
-                }
 
                 NodeList mimes = node.getElementsByTagName("mime");
                 for (int j = 0; j < mimes.getLength(); j++) {

@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.tika.exception.TikaException;
@@ -35,7 +36,8 @@ public class ZipParser extends PackageParser {
      * Parses the given stream as a Zip file.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, TikaException, SAXException {
         metadata.set(Metadata.CONTENT_TYPE, "application/zip");
 
@@ -44,7 +46,7 @@ public class ZipParser extends PackageParser {
         ZipArchiveInputStream zip =
             new ZipArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            parseArchive(zip, handler, metadata);
+            parseArchive(zip, handler, metadata, context);
         } finally {
             zip.close();
         }

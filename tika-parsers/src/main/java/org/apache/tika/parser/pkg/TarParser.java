@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.tika.exception.TikaException;
@@ -35,7 +36,8 @@ public class TarParser extends PackageParser {
      * Parses the given stream as a tar file.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, TikaException, SAXException {
         metadata.set(Metadata.CONTENT_TYPE, "application/x-tar");
 
@@ -44,7 +46,7 @@ public class TarParser extends PackageParser {
         TarArchiveInputStream tar =
             new TarArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            parseArchive(tar, handler, metadata);
+            parseArchive(tar, handler, metadata, context);
         } finally {
             tar.close();
         }

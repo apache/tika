@@ -28,62 +28,41 @@ import org.xml.sax.SAXException;
 
 /**
  * Base class for parser implementations that want to delegate parts of the
- * task of parsing an input document to another parser. The default base
- * class implementation simply delegates the entire parsing task to a dummy
- * {@link EmptyParser} instance, but subclasses can implement more complex
- * processing rules and a more complete delegate parser can be specified
- * through the {@link #setDelegate(Parser)} method.
+ * task of parsing an input document to another parser. The delegate parser
+ * is looked up from the parsing context.
  * <p>
- * The Tika configuration mechanism also contains a way to automatically
- * set the delegate parser of all configured delegating parsers
- * implementations. This feature is most notably used by the
- * {@link AutoDetectParser} class to make it the recursive target of all
- * delegated parsing tasks.
+ * This class uses the following parsing context:
+ * <dl>
+ *   <dt>org.apache.tika.parser.Parser</dt>
+ *   <dd>
+ *     The delegate parser ({@link Parser} instance).
+ *   </dd>
+ * </dl>
  *
- * @since Apache Tika 0.4
+ * @since Apache Tika 0.4, major changes in Tika 0.5
  */
 public class DelegatingParser implements Parser {
 
     /**
-     * The parser to which parts of the parsing tasks are delegated.
-     */
-    private transient Parser delegate = new EmptyParser();
-
-    /**
-     * Returns delegate parser instance.
-     *
-     * @return delegate parser
-     */
-    public Parser getDelegate() {
-        return delegate;
-    }
-
-    /**
-     * Sets the delegate parser instance.
-     *
-     * @param delegate delegate parser
-     */
-    public void setDelegate(Parser delegate) {
-        if (delegate == null) {
-            throw new NullPointerException(
-                    "Delegate parser of " + this + " can not be null");
-        } else {
-            this.delegate = delegate;
-        }
-    }
-
-    /**
-     * Parses the given document using the specified delegate parser.
-     * Subclasses should override this method with more complex delegation
-     * rules based on the structure of the input document. The default
-     * implementation simply delegates the entire parsing task to the
-     * specified delegate parser.
+     * Looks up the delegate parser from the parsing context and
+     * delegates the parse operation to it. If a delegate parser is not
+     * found, then an empty XHTML document is returned.
+     * <p>
+     * Subclasses should override this method to parse the top level
+     * structure of the given document stream. Parsed sub-streams can
+     * be passed to this base class method to be parsed by the configured
+     * delegate parser.
      */
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, Map<String, Object> context)
             throws SAXException, IOException, TikaException {
-        delegate.parse(stream, handler, metadata, context);
+        Object parser = context.get(Parser.class.getName());
+        if (parser instanceof Parser) {
+            ((Parser) parser).parse(stream, handler, metadata, context);
+        } else {
+            new EmptyParser().parse(stream, handler, metadata, context);
+        }
     }
 
     /**
