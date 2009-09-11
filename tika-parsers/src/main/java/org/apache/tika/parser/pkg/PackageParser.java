@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -56,7 +57,8 @@ public abstract class PackageParser extends DelegatingParser {
      * @throws SAXException if a SAX error occurs
      */
     protected void parseArchive(
-            ArchiveInputStream archive, ContentHandler handler, Metadata metadata)
+            ArchiveInputStream archive, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -77,7 +79,7 @@ public abstract class PackageParser extends DelegatingParser {
                             new CloseShieldInputStream(archive),
                             new EmbeddedContentHandler(
                                     new BodyContentHandler(xhtml)),
-                            entrydata);
+                            entrydata, context);
                 } catch (TikaException e) {
                     // Could not parse the entry, just skip the content
                 }

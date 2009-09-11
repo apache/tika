@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.tika.exception.TikaException;
@@ -35,14 +36,15 @@ public class CpioParser extends PackageParser {
      * Parses the given stream as a cpio file.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, TikaException, SAXException {
         // At the end we want to close the cpio stream to release any associated
         // resources, but the underlying document stream should not be closed
         CpioArchiveInputStream cpio =
             new CpioArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            parseArchive(cpio, handler, metadata);
+            parseArchive(cpio, handler, metadata, context);
         } finally {
             cpio.close();
         }

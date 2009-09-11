@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
@@ -40,7 +41,8 @@ public class GzipParser extends DelegatingParser {
      * Parses the given stream as a gzip file.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "application/x-gzip");
 
@@ -64,7 +66,7 @@ public class GzipParser extends DelegatingParser {
                     new CloseShieldInputStream(gzip),
                     new EmbeddedContentHandler(
                             new BodyContentHandler(xhtml)),
-                    entrydata);
+                    entrydata, context);
         } finally {
             gzip.close();
         }

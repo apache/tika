@@ -19,6 +19,8 @@ package org.apache.tika.parser;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
@@ -85,7 +87,8 @@ public class AutoDetectParser extends CompositeParser {
     }
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         // We need buffering to enable MIME magic detection before parsing
         if (!stream.markSupported()) {
@@ -102,12 +105,20 @@ public class AutoDetectParser extends CompositeParser {
 
         // Parse the document
         try {
-            super.parse(count, secure, metadata);
+            super.parse(count, secure, metadata, context);
         } catch (SAXException e) {
             // Convert zip bomb exceptions to TikaExceptions
             secure.throwIfCauseOf(e);
             throw e;
         }
+    }
+
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = new HashMap<String, Object>();
+        context.put(Parser.class.getName(), this);
+        parse(stream, handler, metadata, context);
     }
 
 }

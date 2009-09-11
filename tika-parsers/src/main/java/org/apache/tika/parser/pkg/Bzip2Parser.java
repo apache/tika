@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.tika.exception.TikaException;
@@ -39,7 +40,8 @@ public class Bzip2Parser extends DelegatingParser {
      * Parses the given stream as a bzip2 file.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "application/x-bzip");
 
@@ -70,7 +72,7 @@ public class Bzip2Parser extends DelegatingParser {
                     new CloseShieldInputStream(bzip2),
                     new EmbeddedContentHandler(
                             new BodyContentHandler(xhtml)),
-                    entrydata);
+                    entrydata, context);
         } finally {
             bzip2.close();
         }

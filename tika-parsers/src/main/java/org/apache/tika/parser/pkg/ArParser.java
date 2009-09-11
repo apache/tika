@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.tika.exception.TikaException;
@@ -35,14 +36,15 @@ public class ArParser extends PackageParser {
      * Parses the given stream as an ar archive.
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, TikaException, SAXException {
         // At the end we want to close the ar stream to release any associated
         // resources, but the underlying document stream should not be closed
         ArArchiveInputStream ar =
             new ArArchiveInputStream(new CloseShieldInputStream(stream));
         try {
-            parseArchive(ar, handler, metadata);
+            parseArchive(ar, handler, metadata, context);
         } finally {
             ar.close();
         }
