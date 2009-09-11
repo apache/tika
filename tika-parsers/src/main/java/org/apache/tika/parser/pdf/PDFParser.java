@@ -19,6 +19,8 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -47,7 +49,8 @@ public class PDFParser implements Parser {
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         PDDocument pdfDocument = PDDocument.load(stream);
         try {
@@ -69,6 +72,16 @@ public class PDFParser implements Parser {
         } finally {
             pdfDocument.close();
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
     private void extractMetadata(PDDocument document, Metadata metadata)

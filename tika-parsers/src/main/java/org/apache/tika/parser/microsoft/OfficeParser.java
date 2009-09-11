@@ -19,8 +19,10 @@ package org.apache.tika.parser.microsoft;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpsf.CustomProperties;
@@ -58,7 +60,8 @@ public class OfficeParser implements Parser {
      * Extracts properties and text from an MS Document input stream
      */
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -111,6 +114,16 @@ public class OfficeParser implements Parser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
     private void parseSummaryEntryIfExists(

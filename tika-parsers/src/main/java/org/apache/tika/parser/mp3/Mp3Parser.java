@@ -19,6 +19,8 @@ package org.apache.tika.parser.mp3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -171,7 +173,8 @@ public class Mp3Parser implements Parser {
     };
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
 
@@ -208,6 +211,16 @@ public class Mp3Parser implements Parser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
     /**

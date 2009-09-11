@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
@@ -48,7 +50,8 @@ public class ExternalParser implements Parser {
      * No metadata is extracted.
      */
     public void parse(
-            final InputStream stream, ContentHandler handler, Metadata metadata)
+            final InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml =
             new XHTMLContentHandler(handler, metadata);
@@ -64,6 +67,16 @@ public class ExternalParser implements Parser {
             } catch (InterruptedException ignore) {
             }
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
     /**

@@ -18,6 +18,8 @@ package org.apache.tika.parser.rtf;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -36,7 +38,8 @@ import org.xml.sax.SAXException;
 public class RTFParser implements Parser {
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         try {
             DefaultStyledDocument sd = new DefaultStyledDocument();
@@ -50,6 +53,16 @@ public class RTFParser implements Parser {
         } catch (BadLocationException e) {
             throw new TikaException("Error parsing an RTF document", e);
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
 }

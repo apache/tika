@@ -18,6 +18,8 @@ package org.apache.tika.parser.opendocument;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -55,7 +57,8 @@ public class OpenOfficeParser implements Parser {
     }
 
     public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException {
         ZipInputStream zip = new ZipInputStream(stream);
         ZipEntry entry = zip.getNextEntry();
@@ -64,12 +67,22 @@ public class OpenOfficeParser implements Parser {
                 String type = IOUtils.toString(zip, "UTF-8");
                 metadata.set(Metadata.CONTENT_TYPE, type);
             } else if (entry.getName().equals("meta.xml")) {
-                meta.parse(zip, new DefaultHandler(), metadata);
+                meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().equals("content.xml")) {
-                content.parse(zip, handler, metadata);
+                content.parse(zip, handler, metadata, context);
             }
             entry = zip.getNextEntry();
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        Map<String, Object> context = Collections.emptyMap();
+        parse(stream, handler, metadata, context);
     }
 
 }

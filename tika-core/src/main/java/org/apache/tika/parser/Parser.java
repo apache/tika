@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -25,7 +26,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Tika parser interface
+ * Tika parser interface.
  */
 public interface Parser {
 
@@ -35,15 +36,34 @@ public interface Parser {
      * <p>
      * The given document stream is consumed but not closed by this method.
      * The responsibility to close the stream remains on the caller.
+     * <p>
+     * Information about the parsing context can be passed in the context
+     * parameter. See the parser implementations for the kinds of context
+     * information they expect.
      *
+     * @since Apache Tika 0.5
      * @param stream the document stream (input)
      * @param handler handler for the XHTML SAX events (output)
      * @param metadata document metadata (input and output)
+     * @param context parse context
      * @throws IOException if the document stream could not be read
      * @throws SAXException if the SAX events could not be processed
      * @throws TikaException if the document could not be parsed
      */
-    void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+    void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Map<String, Object> context)
             throws IOException, SAXException, TikaException;
+
+    /**
+     * The parse() method from Tika 0.4 and earlier. Please use the
+     * {@link #parse(InputStream, ContentHandler, Metadata, Map)} method
+     * instead in new code. Calls to this backwards compatibility method
+     * are forwarded to the new parse() method with an empty parse context.
+     *
+     * @deprecated This method will be removed in Apache Tika 1.0.
+     */
+    void parse(InputStream stream, ContentHandler handler, Metadata metadata)
+        throws IOException, SAXException, TikaException;
 
 }
