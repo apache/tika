@@ -67,29 +67,32 @@ public class TikaConfig {
 
     public TikaConfig(InputStream stream)
             throws TikaException, IOException, SAXException {
-        this(stream, null);
+        this(getBuilder().parse(stream));
     }
 
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
+     */
     public TikaConfig(InputStream stream, Parser delegate)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(stream), delegate);
+        this(stream);
     }
 
     public TikaConfig(Document document) throws TikaException, IOException {
-        this(document, null);
+        this(document.getDocumentElement());
     }
 
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
+     */
     public TikaConfig(Document document, Parser delegate)
             throws TikaException, IOException {
-        this(document.getDocumentElement(), delegate);
+        this(document);
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
-        this(element, null);
-    }
-
-    public TikaConfig(Element element, Parser delegate)
-            throws TikaException, IOException {
         Element mtr = getChild(element, "mimeTypeRepository");
         if (mtr != null) {
             mimeTypes = MimeTypesFactory.create(mtr.getAttribute("resource"));
@@ -112,6 +115,15 @@ public class TikaConfig {
                 // For now we just ignore this parser class
             }
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
+     */
+    public TikaConfig(Element element, Parser delegate)
+            throws TikaException, IOException {
+        this(element);
     }
 
     private String getText(Node node) {
