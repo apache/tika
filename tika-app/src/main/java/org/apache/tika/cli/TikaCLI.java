@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
@@ -61,6 +63,8 @@ public class TikaCLI {
         }
     }
 
+    private Map<String, Object> context;
+
     private Parser parser;
 
     private Metadata metadata;
@@ -70,7 +74,9 @@ public class TikaCLI {
     private boolean pipeMode = true;
 
     public TikaCLI() throws TransformerConfigurationException {
+        context = new HashMap<String, Object>();
         parser = new AutoDetectParser();
+        context.put(Parser.class.getName(), parser);
         handler = getXmlContentHandler();
     }
 
@@ -95,7 +101,7 @@ public class TikaCLI {
             pipeMode = false;
             metadata = new Metadata();
             if (arg.equals("-")) {
-                parser.parse(System.in, handler, metadata);
+                parser.parse(System.in, handler, metadata, context);
             } else {
                 InputStream input;
                 File file = new File(arg);
@@ -113,7 +119,7 @@ public class TikaCLI {
                     input = url.openStream();
                 }
                 try {
-                    parser.parse(input, handler, metadata);
+                    parser.parse(input, handler, metadata, context);
                 } finally {
                     input.close();
                 }
