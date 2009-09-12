@@ -38,7 +38,13 @@ import org.apache.tika.parser.ParsingReader;
  */
 public class Tika {
 
-    private final Parser parser = new AutoDetectParser();
+    private static final Parser parser = new AutoDetectParser();
+
+    /**
+     * Private constructor to prevent this class from being instantiated.
+     */
+    private Tika() {
+    }
 
     /**
      * Parses the given document and returns the extracted text content.
@@ -47,7 +53,7 @@ public class Tika {
      * @result extracted text content
      * @throws IOException if the document can not be read or parsed
      */
-    public Reader parse(InputStream stream) throws IOException {
+    public static Reader parse(InputStream stream) throws IOException {
         return new ParsingReader(parser, stream, new Metadata());
     }
 
@@ -59,7 +65,8 @@ public class Tika {
      * @throws FileNotFoundException if the given file does not exist
      * @throws IOException if the file can not be read or parsed
      */
-    public Reader parse(File file) throws FileNotFoundException, IOException {
+    public static Reader parse(File file)
+            throws FileNotFoundException, IOException {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
         return new ParsingReader(parser, new FileInputStream(file), metadata);
@@ -73,7 +80,7 @@ public class Tika {
      * @result extracted text content
      * @throws IOException if the resource can not be read or parsed
      */
-    public Reader parse(URL url) throws IOException {
+    public static Reader parse(URL url) throws IOException {
         Metadata metadata = new Metadata();
         String path = url.getPath();
         int slash = path.lastIndexOf('/');
