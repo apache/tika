@@ -16,15 +16,10 @@
  */
 package org.apache.tika.parser.asm;
 
-import java.io.InputStream;
-
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
-
 import junit.framework.TestCase;
+
+import org.apache.tika.Tika;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Test case for parsing Java class files.
@@ -32,24 +27,16 @@ import junit.framework.TestCase;
 public class ClassParserTest extends TestCase {
 
     public void testClassParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
+        String path = "/test-documents/AutoDetectParser.class";
         Metadata metadata = new Metadata();
-
-        InputStream stream = ClassParserTest.class.getResourceAsStream(
-                "/test-documents/AutoDetectParser.class");
-        try {
-            parser.parse(stream, handler, metadata);
-        } finally {
-            stream.close();
-        }
+        String content = Tika.parseToString(
+                ClassParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("AutoDetectParser", metadata.get(Metadata.TITLE));
         assertEquals(
                 "AutoDetectParser.class",
                 metadata.get(Metadata.RESOURCE_NAME_KEY));
 
-        String content = handler.toString();
         assertTrue(content.contains("package org.apache.tika.parser;"));
         assertTrue(content.contains(
                 "class AutoDetectParser extends CompositeParser"));
