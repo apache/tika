@@ -17,14 +17,14 @@
 package org.apache.tika.gui;
 
 import java.awt.Dimension;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -73,6 +73,11 @@ public class TikaGUI extends JFrame {
             }
         });
     }
+
+    /**
+     * Parsing context.
+     */
+    private final Map<String, Object> context;
 
     /**
      * Configured parser instance.
@@ -125,7 +130,9 @@ public class TikaGUI extends JFrame {
         setPreferredSize(new Dimension(500, 400));
         pack();
 
+        this.context = new HashMap<String, Object>();
         this.parser = parser;
+        this.context.put(Parser.class.getName(), parser);
     }
 
    public void importStream(InputStream input) throws IOException {
@@ -143,7 +150,7 @@ public class TikaGUI extends JFrame {
 
             input = new ProgressMonitorInputStream(
                     this, "Parsing stream", input);
-            parser.parse(input, handler, md);
+            parser.parse(input, handler, md, context);
 
             String[] names = md.names();
             Arrays.sort(names);
