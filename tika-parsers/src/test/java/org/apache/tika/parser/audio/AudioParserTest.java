@@ -16,61 +16,56 @@
  */
 package org.apache.tika.parser.audio;
 
-import java.io.InputStream;
-
 import junit.framework.TestCase;
 
+import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class AudioParserTest extends TestCase {
 
-    private final Parser parser = new AudioParser();
-
     public void testWAV() throws Exception {
+        String path = "/test-documents/testWAV.wav";
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "audio/x-wav");
-        InputStream stream = getClass().getResourceAsStream(
-                "/test-documents/testWAV.wav");
+        String content = Tika.parseToString(
+                AudioParserTest.class.getResourceAsStream(path), metadata);
 
-        parser.parse(stream, new DefaultHandler(), metadata);
-
+        assertEquals("audio/x-wav", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("44100.0", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
 
+        assertEquals("", content);
     }
 
     public void testAIFF() throws Exception {
+        String path = "/test-documents/testAIFF.aif";
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "audio/x-aiff");
-        InputStream stream = getClass().getResourceAsStream(
-                "/test-documents/testAIFF.aif");
+        String content = Tika.parseToString(
+                AudioParserTest.class.getResourceAsStream(path), metadata);
 
-        parser.parse(stream, new DefaultHandler(), metadata);
-
+        assertEquals("audio/x-aiff", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("44100.0", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
 
+        assertEquals("", content);
     }
 
     public void testAU() throws Exception {
+        String path = "/test-documents/testAU.au";
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "audio/basic");
-        InputStream stream = getClass().getResourceAsStream(
-                "/test-documents/testAU.au");
+        String content = Tika.parseToString(
+                AudioParserTest.class.getResourceAsStream(path), metadata);
 
-        parser.parse(stream, new DefaultHandler(), metadata);
-
+        assertEquals("audio/basic", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("44100.0", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
         assertEquals("16", metadata.get("bits"));
         assertEquals("PCM_SIGNED", metadata.get("encoding"));
 
+        assertEquals("", content);
     }
 
 }

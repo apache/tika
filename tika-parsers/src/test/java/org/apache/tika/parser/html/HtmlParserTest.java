@@ -20,13 +20,13 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.Attributes;
@@ -36,31 +36,26 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class HtmlParserTest extends TestCase {
 
-    private Parser parser = new HtmlParser();
-
-    private static InputStream getStream(String name) {
-        return Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(name);
-    }
-
     public void testParseAscii() throws Exception {
+        String path = "/test-documents/testHTML.html";
         final StringWriter href = new StringWriter();
-
         ContentHandler body = new BodyContentHandler();
-        ContentHandler link = new DefaultHandler() {
-            @Override
-            public void startElement(
-                    String u, String l, String n, Attributes a)
-                    throws SAXException {
-                if ("a".equals(l)) {
-                    href.append(a.getValue("href"));
-                }
-            }
-        };
         Metadata metadata = new Metadata();
-        InputStream stream = getStream("test-documents/testHTML.html");
+        InputStream stream = HtmlParserTest.class.getResourceAsStream(path);
         try {
-            parser.parse(stream, new TeeContentHandler(body, link), metadata);
+            ContentHandler link = new DefaultHandler() {
+                @Override
+                public void startElement(
+                        String u, String l, String n, Attributes a)
+                        throws SAXException {
+                    if ("a".equals(l)) {
+                        href.append(a.getValue("href"));
+                    }
+                }
+            };
+            new HtmlParser().parse(
+                    stream, new TeeContentHandler(body, link),
+                    metadata, new HashMap<String, Object>());
         } finally {
             stream.close();
         }
@@ -69,6 +64,7 @@ public class HtmlParserTest extends TestCase {
                 "Title : Test Indexation Html", metadata.get(Metadata.TITLE));
         assertEquals("Tika Developers", metadata.get("Author"));
         assertEquals("5", metadata.get("refresh"));
+
         assertEquals("http://www.apache.org/", href.toString());
 
         String content = body.toString();
@@ -81,13 +77,10 @@ public class HtmlParserTest extends TestCase {
     }
 
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
-        ContentHandler handler = new BodyContentHandler();
+        String path = "/test-documents/testXHTML_utf8.html";
         Metadata metadata = new Metadata();
-
-        parser.parse(
-                getStream("test-documents/testHTML_utf8.html"),
-                handler, metadata);
-        String content = handler.toString();
+        String content = Tika.parseToString(
+                HtmlParserTest.class.getResourceAsStream(path), metadata);
 
         assertTrue("Did not contain expected text:"
                 + "Title : Tilte with UTF-8 chars öäå", content
@@ -102,21 +95,14 @@ public class HtmlParserTest extends TestCase {
     }
 
     public void testXhtmlParsing() throws Exception {
-        Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
+        String path = "/test-documents/testXHTML.html";
         Metadata metadata = new Metadata();
-
-        InputStream stream = HtmlParserTest.class.getResourceAsStream(
-                "/test-documents/testXHTML.html");
-        try {
-            parser.parse(stream, handler, metadata);
-        } finally {
-            stream.close();
-        }
+        String content = Tika.parseToString(
+                HtmlParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("application/xhtml+xml", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("XHTML test document", metadata.get(Metadata.TITLE));
-        String content = handler.toString();
+
         assertEquals("Tika Developers", metadata.get("Author"));
         assertEquals("5", metadata.get("refresh"));
         assertTrue(content.contains("ability of Apache Tika"));
@@ -125,13 +111,11 @@ public class HtmlParserTest extends TestCase {
     }
 
     public void testParseEmpty() throws Exception {
-        Metadata metadata = new Metadata();
-        StringWriter writer = new StringWriter();
-        parser.parse(
+        ContentHandler handler = new BodyContentHandler();
+        new HtmlParser().parse(
                 new ByteArrayInputStream(new byte[0]),
-                new BodyContentHandler(writer), metadata);
-        String content = writer.toString();
-        assertEquals("", content);
+                handler,  new Metadata(), new HashMap<String, Object>());
+        assertEquals("", handler.toString());
     }
 
     /**
@@ -140,11 +124,8 @@ public class HtmlParserTest extends TestCase {
      */
     public void testCharactersDirectlyUnderBodyElement() throws Exception {
         String test = "<html><body>test</body></html>";
-        ContentHandler handler = new BodyContentHandler();
-        parser.parse(
-                new ByteArrayInputStream(test.getBytes("UTF-8")),
-                handler, new Metadata());
-        String content = handler.toString();
+        String content = Tika.parseToString(
+                new ByteArrayInputStream(test.getBytes("UTF-8")));
         assertEquals("test", content);
     }
 
@@ -155,11 +136,8 @@ public class HtmlParserTest extends TestCase {
     public void testWhitespaceBetweenTableCells() throws Exception {
         String test =
             "<html><body><table><tr><td>a</td><td>b</td></table></body></html>";
-        ContentHandler handler = new BodyContentHandler();
-        parser.parse(
-                new ByteArrayInputStream(test.getBytes("UTF-8")),
-                handler, new Metadata());
-        String content = handler.toString();
+        String content = Tika.parseToString(
+                new ByteArrayInputStream(test.getBytes("UTF-8")));
         assertTrue(content.contains("a"));
         assertTrue(content.contains("b"));
         assertFalse(content.contains("ab"));

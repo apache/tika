@@ -16,32 +16,24 @@
  */
 package org.apache.tika.parser.audio;
 
-import java.io.InputStream;
-
 import junit.framework.TestCase;
 
+import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
 
 public class MidiParserTest extends TestCase {
 
-    private final Parser parser = new MidiParser();
-
     public void testMID() throws Exception {
+        String path = "/test-documents/testMID.mid";
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "audio/midi");
-        InputStream stream = getClass().getResourceAsStream(
-                "/test-documents/testMID.mid");
+        String content = Tika.parseToString(
+                MidiParserTest.class.getResourceAsStream(path), metadata);
 
-        ContentHandler handler = new BodyContentHandler();
-        parser.parse(stream, handler, metadata);
-
+        assertEquals("audio/midi", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("2", metadata.get("tracks"));
         assertEquals("0", metadata.get("patches"));
         assertEquals("PPQ", metadata.get("divisionType"));
 
-        assertTrue(handler.toString().contains("Untitled"));
+        assertTrue(content.contains("Untitled"));
     }
 }
