@@ -67,13 +67,51 @@ public class TikaCLI {
         }
     }
 
+    private interface OutputType {
+        ContentHandler getContentHandler() throws Exception;
+    }
+
+    private final OutputType XML = new OutputType() {
+        public ContentHandler getContentHandler() throws Exception {
+            return getTransformerHandler("xml", encoding);
+        }
+    };
+
+    private final OutputType HTML = new OutputType() {
+        public ContentHandler getContentHandler() throws Exception {
+            return getTransformerHandler("html", encoding);
+        }
+    };
+
+    private final OutputType TEXT = new OutputType() {
+        public ContentHandler getContentHandler() throws Exception {
+            return new BodyContentHandler(getSystemOutWriter(encoding));
+        }
+    };
+
+    private final OutputType METADATA = new OutputType() {
+        public ContentHandler getContentHandler() throws Exception {
+            final PrintWriter writer =
+                new PrintWriter(getSystemOutWriter(encoding));
+            return new DefaultHandler() {
+                public void endDocument() {
+                    String[] names = metadata.names();
+                    Arrays.sort(names);
+                    for (String name : names) {
+                        writer.println(name + ": " + metadata.get(name));
+                    }
+                }
+            };
+        }
+    };
+
     private Map<String, Object> context;
 
     private Parser parser;
 
     private Metadata metadata;
 
-    private ContentHandler handler;
+    private OutputType type = XML;
 
     /**
      * Output character encoding, or <code>null</code> for platform default
@@ -86,7 +124,6 @@ public class TikaCLI {
         context = new HashMap<String, Object>();
         parser = new AutoDetectParser();
         context.put(Parser.class.getName(), parser);
-        handler = getXmlContentHandler();
     }
 
     public void process(String arg) throws Exception {
@@ -103,18 +140,20 @@ public class TikaCLI {
         } else if (arg.startsWith("--encoding=")) {
             encoding = arg.substring("--encoding=".length());
         } else if (arg.equals("-x") || arg.equals("--xml")) {
-            handler = getXmlContentHandler();
+            type = XML;
         } else if (arg.equals("-h") || arg.equals("--html")) {
-            handler = getHtmlContentHandler();
+            type = HTML;
         } else if (arg.equals("-t") || arg.equals("--text")) {
-            handler = getTextContentHandler();
+            type = TEXT;
         } else if (arg.equals("-m") || arg.equals("--metadata")) {
-            handler = getMetadataContentHandler();
+            type = METADATA;
         } else {
             pipeMode = false;
             metadata = new Metadata();
             if (arg.equals("-")) {
-                parser.parse(System.in, handler, metadata, context);
+                parser.parse(
+                        System.in, type.getContentHandler(),
+                        metadata, context);
             } else {
                 InputStream input;
                 File file = new File(arg);
@@ -132,7 +171,9 @@ public class TikaCLI {
                     input = url.openStream();
                 }
                 try {
-                    parser.parse(input, handler, metadata, context);
+                    parser.parse(
+                            System.in, type.getContentHandler(),
+                            metadata, context);
                 } finally {
                     input.close();
                 }
@@ -172,69 +213,52 @@ public class TikaCLI {
         out.println("    extract text content and metadata from the files.");
     }
 
-    private ContentHandler getXmlContentHandler()
-            throws TransformerConfigurationException {
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-            SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-        if (encoding != null) {
-            handler.getTransformer().setOutputProperty(
-                    OutputKeys.ENCODING, encoding);
-        }
-        handler.setResult(new StreamResult(System.out));
-        return handler;
-    }
-
-    private ContentHandler getHtmlContentHandler()
-            throws TransformerConfigurationException {
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-        SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-        if (encoding != null) {
-            handler.getTransformer().setOutputProperty(
-                    OutputKeys.ENCODING, encoding);
-        }
-        handler.setResult(new StreamResult(System.out));
-        return handler;
-    }
-
-    private ContentHandler getTextContentHandler()
-            throws UnsupportedEncodingException {
-        return new BodyContentHandler(getSystemOutWriter());
-    }
-
-    private ContentHandler getMetadataContentHandler()
-            throws UnsupportedEncodingException {
-        final PrintWriter writer = new PrintWriter(getSystemOutWriter());
-        return new DefaultHandler() {
-            public void endDocument() {
-                String[] names = metadata.names();
-                Arrays.sort(names);
-                for (String name : names) {
-                    writer.println(name + ": " + metadata.get(name));
-                }
-            }
-        };
-    }
-
     /**
-     * Returns a {@link System#out} writer with the configured output encoding.
+     * Returns a {@link System#out} writer with the given output encoding.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
-     * @return writer
+     * @param encoding output encoding,
+     *                 or <code>null</code> for the platform default
+     * @return {@link System#out} writer
      * @throws UnsupportedEncodingException
      *         if the configured encoding is not supported
      */
-    private Writer getSystemOutWriter() throws UnsupportedEncodingException {
+    private static Writer getSystemOutWriter(String encoding)
+            throws UnsupportedEncodingException {
         if (encoding != null) {
             return new OutputStreamWriter(System.out, encoding);
         } else {
             return new OutputStreamWriter(System.out);
         }
+    }
+
+    /**
+     * Returns a transformer handler that serializes incoming SAX events
+     * to XHTML or HTML (depending the given method) using the given output
+     * encoding.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
+     * @param method "xml" or "html"
+     * @param encoding output encoding,
+     *                 or <code>null</code> for the platform default
+     * @return {@link System#out} transformer handler
+     * @throws TransformerConfigurationException
+     *         if the transformer can not be created
+     */
+    private static TransformerHandler getTransformerHandler(
+            String method, String encoding)
+            throws TransformerConfigurationException {
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, method);
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        if (encoding != null) {
+            handler.getTransformer().setOutputProperty(
+                    OutputKeys.ENCODING, encoding);
+        }
+        handler.setResult(new StreamResult(System.out));
+        return handler;
     }
 
 }
