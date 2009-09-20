@@ -19,7 +19,11 @@ package org.apache.tika.cli;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -71,6 +75,11 @@ public class TikaCLI {
 
     private ContentHandler handler;
 
+    /**
+     * Output character encoding, or <code>null</code> for platform default
+     */
+    private String encoding = null;
+
     private boolean pipeMode = true;
 
     public TikaCLI() throws TransformerConfigurationException {
@@ -89,6 +98,10 @@ public class TikaCLI {
         } else if (arg.equals("-g") || arg.equals("--gui")) {
             pipeMode = false;
             TikaGUI.main(new String[0]);
+        } else if (arg.startsWith("-e")) {
+            encoding = arg.substring("-e".length());
+        } else if (arg.startsWith("--encoding=")) {
+            encoding = arg.substring("--encoding=".length());
         } else if (arg.equals("-x") || arg.equals("--xml")) {
             handler = getXmlContentHandler();
         } else if (arg.equals("-h") || arg.equals("--html")) {
@@ -132,13 +145,14 @@ public class TikaCLI {
         out.println("usage: tika [option] [file]");
         out.println();
         out.println("Options:");
-        out.println("    -? or --help       Print this usage message");
-        out.println("    -v or --verbose    Print debug level messages");
-        out.println("    -g or --gui        Start the Apache Tika GUI");
-        out.println("    -x or --xml        Output XHTML content (default)");
-        out.println("    -h or --html       Output HTML content");
-        out.println("    -t or --text       Output plain text content");
-        out.println("    -m or --metadata   Output only metadata");
+        out.println("    -?  or --help        Print this usage message");
+        out.println("    -v  or --verbose     Print debug level messages");
+        out.println("    -g  or --gui         Start the Apache Tika GUI");
+        out.println("    -eX or --encoding=X  Use output encoding X");
+        out.println("    -x  or --xml         Output XHTML content (default)");
+        out.println("    -h  or --html        Output HTML content");
+        out.println("    -t  or --text        Output plain text content");
+        out.println("    -m  or --metadata    Output only metadata");
         out.println();
         out.println("Description:");
         out.println("    Apache Tika will parse the file(s) specified on the");
@@ -165,6 +179,10 @@ public class TikaCLI {
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        if (encoding != null) {
+            handler.getTransformer().setOutputProperty(
+                    OutputKeys.ENCODING, encoding);
+        }
         handler.setResult(new StreamResult(System.out));
         return handler;
     }
@@ -176,24 +194,47 @@ public class TikaCLI {
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        if (encoding != null) {
+            handler.getTransformer().setOutputProperty(
+                    OutputKeys.ENCODING, encoding);
+        }
         handler.setResult(new StreamResult(System.out));
         return handler;
     }
 
-    private ContentHandler getTextContentHandler() {
-        return new BodyContentHandler(System.out);
+    private ContentHandler getTextContentHandler()
+            throws UnsupportedEncodingException {
+        return new BodyContentHandler(getSystemOutWriter());
     }
 
-    private ContentHandler getMetadataContentHandler() {
+    private ContentHandler getMetadataContentHandler()
+            throws UnsupportedEncodingException {
+        final PrintWriter writer = new PrintWriter(getSystemOutWriter());
         return new DefaultHandler() {
             public void endDocument() {
                 String[] names = metadata.names();
                 Arrays.sort(names);
                 for (String name : names) {
-                    System.out.println(name + ": " + metadata.get(name));
+                    writer.println(name + ": " + metadata.get(name));
                 }
             }
         };
+    }
+
+    /**
+     * Returns a {@link System#out} writer with the configured output encoding.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
+     * @return writer
+     * @throws UnsupportedEncodingException
+     *         if the configured encoding is not supported
+     */
+    private Writer getSystemOutWriter() throws UnsupportedEncodingException {
+        if (encoding != null) {
+            return new OutputStreamWriter(System.out, encoding);
+        } else {
+            return new OutputStreamWriter(System.out);
+        }
     }
 
 }
