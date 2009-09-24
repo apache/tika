@@ -179,8 +179,6 @@
   </dependencyManagement>
 
   <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.compile.source>1.5</maven.compile.source>
     <maven.compile.target>1.5</maven.compile.target>
   </properties>
@@ -189,40 +187,9 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>2.0.2</version>
         <configuration>
           <source>${maven.compile.source}</source>
           <target>${maven.compile.target}</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.3</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.4.3</version>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.2</version>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Specification-Title>${project.name}</Specification-Title>
-              <Specification-Version>${project.version}</Specification-Version>
-              <Specification-Vendor>${project.organization.name}</Specification-Vendor>
-              <Implementation-Title>${project.name}</Implementation-Title>
-              <Implementation-Version>${project.version}</Implementation-Version>
-              <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
-              <Implementation-Vendor-Id>org.apache</Implementation-Vendor-Id>
-              <X-Compile-Source-JDK>${maven.compile.source}</X-Compile-Source-JDK>
-              <X-Compile-Target-JDK>${maven.compile.target}</X-Compile-Target-JDK>
-            </manifestEntries>
-          </archive>
         </configuration>
       </plugin>
       <plugin>
@@ -245,9 +212,7 @@
 
       <!-- Produce JavaDoc -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.2</version>
         <configuration> 
           <source>${maven.compile.source}</source>
         </configuration> 
@@ -255,16 +220,12 @@
 
       <!-- Produce Source cross references -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
-        <version>2.1</version>
       </plugin>
 
       <!-- Unit tests report -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>2.3</version>
       </plugin>
 
       <!-- "Release Audit" report (checks license headers etc.) -->
@@ -287,7 +248,6 @@
 
       <!-- Checkstyle report -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.1</version>
         <configuration>
@@ -298,7 +258,6 @@
 
       <!-- PMD report -->
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
         <configuration>
           <linkXref>true</linkXref>
