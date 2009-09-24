@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -18,14 +18,14 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.util.PDFTextStripper;
+import org.apache.pdfbox.util.TextPosition;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.pdfbox.pdmodel.PDDocument;
-import org.pdfbox.pdmodel.PDPage;
-import org.pdfbox.util.PDFTextStripper;
-import org.pdfbox.util.TextPosition;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 

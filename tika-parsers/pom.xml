@@ -53,9 +53,9 @@
       <version>1.0</version>
     </dependency>
     <dependency>
-      <groupId>pdfbox</groupId>
+      <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
-      <version>0.7.3</version>
+      <version>0.8.0-incubating</version>
     </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
