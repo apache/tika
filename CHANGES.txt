@@ -4,7 +4,10 @@ Apache Tika Change Log
 Release 0.5 - Current Development
 ------------------------
 
+The most notable changes in Tika 0.5 over the previous release are:
 
+ * Tika now uses the Apache PDFBox version 0.8.0-incubating for parsing PDF
+   documents. This version is much the 0.7.3 release used earlier. (TIKA-158)
 
 Release 0.4 - 07/14/2009
 ------------------------
@@ -122,7 +125,7 @@ on the issues resolved in this release:
     Andrzej Rusin
     Chris A. Mattmann
     Dave Meikle
-    Georger Araújo
+    Georger Araï¿½jo
     Guillermo Arribas
     Jonathan Koren
     Jukka Zitting
@@ -130,7 +133,7 @@ on the issues resolved in this release:
     Kumar Raja Jana
     Paul Borgermans
     Peter Becker
-    Sébastien Michel
+    Sï¿½bastien Michel
     Uwe Schindler
 
 See http://tinyurl.com/tika-0-3-contributions for more details on
