@@ -26,6 +26,8 @@ import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 import org.apache.tika.metadata.Metadata;
@@ -68,6 +70,8 @@ public class ParsingReader extends Reader {
      * Metadata associated with the document being parsed.
      */
     private final Metadata metadata;
+
+    private final Map<String, Object> context;
 
     /**
      * An exception (if any) thrown by the parsing thread.
@@ -133,9 +137,9 @@ public class ParsingReader extends Reader {
      * @throws IOException if the document can not be parsed
      */
     public ParsingReader(
-            Parser parser, InputStream stream, final Metadata metadata)
-            throws IOException {
-        this(parser, stream, metadata, new Executor() {
+            Parser parser, InputStream stream, final Metadata metadata,
+            Map<String, Object> context) throws IOException {
+        this(parser, stream, metadata, context, new Executor() {
             public void execute(Runnable command) {
                 String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
                 if (name != null) {
@@ -161,13 +165,14 @@ public class ParsingReader extends Reader {
      * @param parser parser instance
      * @param stream binary stream
      * @param metadata document metadata
+     * @param context parsing context
      * @param executor executor for the parsing task
      * @throws IOException if the document can not be parsed
      * @since Apache Tika 0.4
      */
     public ParsingReader(
             Parser parser, InputStream stream, Metadata metadata,
-            Executor executor) throws IOException {
+            Map<String, Object> context, Executor executor) throws IOException {
         this.parser = parser;
         PipedReader pipedReader = new PipedReader();
         this.reader = new BufferedReader(pipedReader);
@@ -178,6 +183,7 @@ public class ParsingReader extends Reader {
         }
         this.stream = stream;
         this.metadata = metadata;
+        this.context = context;
 
         executor.execute(new ParsingTask());
 
@@ -185,6 +191,27 @@ public class ParsingReader extends Reader {
         reader.mark(1);
         reader.read();
         reader.reset();
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
+     */
+    public ParsingReader(Parser parser, InputStream stream, Metadata metadata)
+            throws IOException {
+        this(parser, stream, metadata, new HashMap<String, Object>());
+        context.put(Parser.class.getName(), parser);
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
+     */
+    public ParsingReader(
+            Parser parser, InputStream stream, Metadata metadata,
+            Executor executor) throws IOException {
+        this(parser, stream, metadata, new HashMap<String, Object>(), executor);
+        context.put(Parser.class.getName(), parser);
     }
 
     /**
@@ -201,7 +228,7 @@ public class ParsingReader extends Reader {
         public void run() {
             try {
                 ContentHandler handler = new BodyContentHandler(writer);
-                parser.parse(stream, handler, metadata);
+                parser.parse(stream, handler, metadata, context);
             } catch (Throwable t) {
                 throwable = t;
             }
