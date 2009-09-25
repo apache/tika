@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -30,7 +30,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.Parser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -169,20 +168,24 @@ public class TikaConfig {
      * @throws TikaException if the default configuration is not available
      */
     public static TikaConfig getDefaultConfig() throws TikaException {
-        return getDefaultConfig(new EmptyParser());
-    }
-
-    public static TikaConfig getDefaultConfig(Parser delegate)
-            throws TikaException {
         try {
             InputStream stream =
                 TikaConfig.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION);
-            return new TikaConfig(stream, delegate);
+            return new TikaConfig(stream);
         } catch (IOException e) {
             throw new TikaException("Unable to read default configuration", e);
         } catch (SAXException e) {
             throw new TikaException("Unable to parse default configuration", e);
         }
+    }
+
+    /**
+     * @deprecated This method will be removed in Apache Tika 1.0
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
+     */
+    public static TikaConfig getDefaultConfig(Parser delegate)
+            throws TikaException {
+        return getDefaultConfig();
     }
 
     private static DocumentBuilder getBuilder() throws TikaException {
