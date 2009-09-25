@@ -71,7 +71,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         // then all document tables
-        extractTableContent(document.getDocument().getBody().getTblArray(),
+        extractTableContent(document, document.getDocument().getBody().getTblArray(),
                 xhtml);
 
         // footers
@@ -89,7 +89,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     /**
      * Low level structured parsing of document tables.
      */
-    private void extractTableContent(CTTbl[] tables, XHTMLContentHandler xhtml)
+    private void extractTableContent(XWPFDocument doc, CTTbl[] tables, XHTMLContentHandler xhtml)
             throws SAXException {
         for (CTTbl table : tables) {
             xhtml.startElement("table");
@@ -102,20 +102,26 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.startElement("td");
                     CTP[] content = tc.getPArray();
                     for (CTP ctp : content) {
-                        CTR[] inner = ctp.getRArray();
-                        for (CTR ctr : inner) {
-                            CTText[] text = ctr.getTArray();
-                            for (CTText textContent : text) {
-                                xhtml.characters(textContent.getStringValue());
-                            }
-                        }
+                        XWPFParagraph p = new MyXWPFParagraph(ctp, doc);
+
+                        XWPFParagraphDecorator decorator = new XWPFCommentsDecorator(
+                                new XWPFHyperlinkDecorator(p, null, true));
+
+                        xhtml.element("p", decorator.getText());
                     }
+
                     xhtml.endElement("td");
                 }
                 xhtml.endElement("tr");
             }
             xhtml.endElement("tbody");
             xhtml.endElement("table");
+        }
+    }
+
+    private class MyXWPFParagraph extends XWPFParagraph {
+        private MyXWPFParagraph(CTP ctp, XWPFDocument xwpfDocument) {
+            super(ctp, xwpfDocument);
         }
     }
 }
