@@ -29,11 +29,9 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTbl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTc;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTText;
 import org.xml.sax.SAXException;
 
 public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
@@ -71,8 +69,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         // then all document tables
-        extractTableContent(document, document.getDocument().getBody().getTblArray(),
-                xhtml);
+        extractTableContent(document, xhtml);
 
         // footers
         if (hfPolicy.getFirstPageFooter() != null) {
@@ -89,9 +86,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     /**
      * Low level structured parsing of document tables.
      */
-    private void extractTableContent(XWPFDocument doc, CTTbl[] tables, XHTMLContentHandler xhtml)
+    private void extractTableContent(XWPFDocument doc, XHTMLContentHandler xhtml)
             throws SAXException {
-        for (CTTbl table : tables) {
+        for (CTTbl table : doc.getDocument().getBody().getTblArray()) {
             xhtml.startElement("table");
             xhtml.startElement("tbody");
             CTRow[] rows = table.getTrArray();
@@ -119,7 +116,11 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private class MyXWPFParagraph extends XWPFParagraph {
+    /**
+     * Private wrapper class that makes the protected {@link XWPFParagraph}
+     * constructor available.
+     */
+    private static class MyXWPFParagraph extends XWPFParagraph {
         private MyXWPFParagraph(CTP ctp, XWPFDocument xwpfDocument) {
             super(ctp, xwpfDocument);
         }
