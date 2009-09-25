@@ -67,6 +67,7 @@ class PDF2XHTML extends PDFTextStripper {
         this.handler = new XHTMLContentHandler(handler, metadata);
     }
 
+    @Override
     protected void startDocument(PDDocument pdf) throws IOException {
         try {
             handler.startDocument();
@@ -75,6 +76,7 @@ class PDF2XHTML extends PDFTextStripper {
         }
     }
 
+    @Override
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
             handler.endDocument();
@@ -83,38 +85,37 @@ class PDF2XHTML extends PDFTextStripper {
         }
     }
 
+    @Override
     protected void startPage(PDPage page) throws IOException {
         try {
-            handler.startElement("div");
+            handler.startElement("div", "class", "page");
+            handler.startElement("p");
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to start a page", e);
         }
     }
 
+    @Override
     protected void endPage(PDPage page) throws IOException {
         try {
+            handler.endElement("p");
             handler.endElement("div");
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
         }
     }
 
-    protected void startParagraph() throws IOException {
+    @Override
+    protected void writeString(String text) throws IOException {
         try {
-            handler.startElement("p");
+            handler.characters(text);
         } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to start a paragraph", e);
+            throw new IOExceptionWithCause(
+                    "Unable to write a string: " + text, e);
         }
     }
 
-    protected void endParagraph() throws IOException {
-        try {
-            handler.endElement("p");
-        } catch (SAXException e) {
-            throw new IOExceptionWithCause("Unable to end a paragraph", e);
-        }
-    }
-
+    @Override
     protected void writeCharacters(TextPosition text) throws IOException {
         try {
             handler.characters(text.getCharacter());
@@ -126,6 +127,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     // Two methods added to work around lack of support for processWordSeparator
     // and processLineSeparator in PDFBox-0.7.3. This is fixed in CVS Head (PDFBox-0.7.4)
+    @Override
     public String getWordSeparator()
     {
         try
@@ -137,6 +139,7 @@ class PDF2XHTML extends PDFTextStripper {
         return super.getWordSeparator();    //To change body of overridden methods use File | Settings | File Templates.
     }
 
+    @Override
     public String getLineSeparator()
     {
         try
