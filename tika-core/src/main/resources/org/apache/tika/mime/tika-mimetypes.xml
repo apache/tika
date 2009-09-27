@@ -331,11 +331,22 @@
     <glob pattern="*.pls"/>
   </mime-type>
   <mime-type type="application/poc-settings+xml"/>
+
   <mime-type type="application/postscript">
+    <comment>PostScript</comment>
+    <magic priority="50">
+      <match value="%!" type="string" offset="0" />
+      <match value="\004%!" type="string" offset="0" />
+      <!-- Windows format EPS -->
+      <match value="0xc5d0d3c6" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.ai"/>
-    <glob pattern="*.eps"/>
     <glob pattern="*.ps"/>
+    <glob pattern="*.eps"/>
+    <glob pattern="*.epsf"/>
+    <glob pattern="*.epsi"/>
   </mime-type>
+
   <mime-type type="application/prs.alvestrand.titrax-sheet"/>
   <mime-type type="application/prs.cww">
     <glob pattern="*.cww"/>
@@ -1004,9 +1015,15 @@
   <mime-type type="application/vnd.lotus-screencam">
     <glob pattern="*.scm"/>
   </mime-type>
+
   <mime-type type="application/vnd.lotus-wordpro">
+    <magic priority="50">
+      <match value="WordPro\0" type="string" offset="0" />
+      <match value="WordPro\r\373" type="string" offset="0" />
+    </magic>
     <glob pattern="*.lwp"/>
   </mime-type>
+
   <mime-type type="application/vnd.macports.portpkg">
     <glob pattern="*.portpkg"/>
   </mime-type>
@@ -1038,15 +1055,16 @@
   </mime-type>
 
   <mime-type type="application/vnd.mif">
-    <_comment>FrameMaker MIF document</_comment>
+    <comment>FrameMaker MIF document</comment>
     <alias type="application/x-mif"/>
+    <alias type="application/x-frame"/>
     <magic priority="50">
       <match value="\&lt;MakerFile" type="string" offset="0" />
       <match value="\&lt;MIFFile" type="string" offset="0" />
       <match value="\&lt;MakerDictionary" type="string" offset="0" />
       <match value="\&lt;MakerScreenFont" type="string" offset="0" />
       <match value="\&lt;MML" type="string" offset="0" />
-      <match value="\&lt;BookFile" type="string" offset="0" />
+      <match value="\&lt;Book" type="string" offset="0" />
       <match value="\&lt;Maker" type="string" offset="0" />
     </magic>
     <glob pattern="*.mif"/>
@@ -1217,7 +1235,12 @@
     <glob pattern="*.mpt"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-tnef"/>
+  <mime-type type="application/vnd.ms-tnef">
+    <magic priority="50">
+      <match value="0x223e9f78" type="little16" offset="0" />
+    </magic>
+  </mime-type>
+
   <mime-type type="application/vnd.ms-wmdrm.lic-chlg-req"/>
   <mime-type type="application/vnd.ms-wmdrm.lic-resp"/>
   <mime-type type="application/vnd.ms-wmdrm.meter-chlg-req"/>
@@ -1681,9 +1704,14 @@
   <mime-type type="application/vnd.rim.cod">
     <glob pattern="*.cod"/>
   </mime-type>
+
   <mime-type type="application/vnd.rn-realmedia">
+    <magic priority="50">
+      <match value=".RMF" type="string" offset="0" />
+    </magic>
     <glob pattern="*.rm"/>
   </mime-type>
+
   <mime-type type="application/vnd.route66.link66+xml">
     <glob pattern="*.link66"/>
   </mime-type>
@@ -1823,10 +1851,15 @@
     <glob pattern="*.svd"/>
   </mime-type>
   <mime-type type="application/vnd.swiftview-ics"/>
+
   <mime-type type="application/vnd.symbian.install">
+    <magic priority="50">
+      <match value="0x10000419" type="little32" offset="8" />
+    </magic>
     <glob pattern="*.sis"/>
     <glob pattern="*.sisx"/>
   </mime-type>
+
   <mime-type type="application/vnd.syncml+xml">
     <glob pattern="*.xsm"/>
   </mime-type>
@@ -2172,8 +2205,20 @@
   <mime-type type="application/x-dvi">
     <magic priority="50">
       <match value="\367\002" type="string" offset="0"/>
+      <match value="0x02f7" type="little16" offset="0"/>
     </magic>
     <glob pattern="*.dvi"/>
+  </mime-type>
+
+  <mime-type type="application/x-elc">
+    <comment>Emacs Lisp bytecode</comment>
+    <magic priority="50">
+      <!-- Emacs 18 -->
+      <match value="\012(" type="string" offset="0" />
+      <!-- Emacs 19 -->
+      <match value=";ELC\023\000\000\000" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.elc"/>
   </mime-type>
 
   <mime-type type="application/x-font-bdf">
@@ -2400,6 +2445,12 @@
     <glob pattern="*.rpm"/>
   </mime-type>
 
+  <mime-type type="application/x-sc">
+    <magic priority="50">
+      <match value="Spreadsheet" type="string" offset="38"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-sh">
     <magic priority="50">
       <match value="#!/" type="string" offset="0"/>
@@ -2606,42 +2657,6 @@
     <glob pattern="*.zip"/>
   </mime-type>
 
-  <mime-type type="application/postscript">
-    <comment>PostScript</comment>
-    <magic priority="50">
-      <match value="%!" type="string" offset="0" />
-      <match value="\004%!" type="string" offset="0" />
-      <!-- Windows format EPS -->
-      <match value="0xc5d0d3c6" type="string" offset="0"/>
-    </magic>
-    <glob pattern="*.ps" />
-    <glob pattern="*.eps" />
-    <glob pattern="*.epsf" />
-    <glob pattern="*.epsi" />
-  </mime-type>
-
-  <mime-type type="application/vnd.lotus-wordpro">
-    <magic priority="50">
-      <match value="WordPro\0" type="string" offset="0" />
-      <match value="WordPro\r\373" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/vnd.ms-tnef">
-    <magic priority="50">
-      <match value="0x223e9f78" type="little16" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/vnd.rn-realmedia">
-    <magic priority="50">
-      <match value=".RMF" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/vnd.symbian.install">
-    <magic priority="50">
-      <match value="0x10000419" type="little32" offset="8" />
-    </magic>
-  </mime-type>
-
   <mime-type type="audio/32kadpcm"/>
   <mime-type type="audio/3gpp"/>
   <mime-type type="audio/3gpp2"/>
@@ -2656,7 +2671,15 @@
 
   <mime-type type="audio/basic">
     <magic priority="20">
-      <match value=".snd" type="string" offset="0"/>
+      <match value=".snd" type="string" offset="0">
+        <match value="1" type="big32" offset="12"/>
+        <match value="2" type="big32" offset="12"/>
+        <match value="3" type="big32" offset="12"/>
+        <match value="4" type="big32" offset="12"/>
+        <match value="5" type="big32" offset="12"/>
+        <match value="6" type="big32" offset="12"/>
+        <match value="7" type="big32" offset="12"/>
+      </match>
     </magic>
     <glob pattern="*.au"/>
     <glob pattern="*.snd"/>
@@ -2773,7 +2796,13 @@
   <mime-type type="audio/pcma-wb"/>
   <mime-type type="audio/pcmu-wb"/>
   <mime-type type="audio/pcmu"/>
-  <mime-type type="audio/prs.sid"/>
+
+  <mime-type type="audio/prs.sid">
+    <magic priority="50">
+      <match value="PSID" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="audio/qcelp"/>
   <mime-type type="audio/red"/>
   <mime-type type="audio/rtp-enc-aescm128"/>
@@ -2845,6 +2874,14 @@
     <glob pattern="*.aac"/>
   </mime-type>
 
+  <mime-type type="audio/x-adbcm">
+    <magic priority="20">
+      <match value=".snd" type="string" offset="0">
+        <match value="23" type="big32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="audio/x-aiff">
     <alias type="audio/aiff"/>
     <acronym>AIFF</acronym>
@@ -2861,6 +2898,28 @@
     <glob pattern="*.aif"/>
     <glob pattern="*.aiff"/>
     <glob pattern="*.aifc"/>
+  </mime-type>
+
+  <mime-type type="audio/x-dec-basic">
+    <magic priority="20">
+      <match value="0x0064732E" type="big32" offset="0">
+        <match value="1" type="big32" offset="12"/>
+        <match value="2" type="big32" offset="12"/>
+        <match value="3" type="big32" offset="12"/>
+        <match value="4" type="big32" offset="12"/>
+        <match value="5" type="big32" offset="12"/>
+        <match value="6" type="big32" offset="12"/>
+        <match value="7" type="big32" offset="12"/>
+      </match>
+    </magic>
+  </mime-type>
+
+  <mime-type type="audio/x-dec-adbcm">
+    <magic priority="20">
+      <match value="0x0064732E" type="big32" offset="0">
+        <match value="23" type="big32" offset="12"/>
+      </match>
+    </magic>
   </mime-type>
 
   <mime-type type="audio/x-flac">
@@ -2981,15 +3040,6 @@
       <match value="GIF89a" type="string" offset="0"/>
     </magic>
     <glob pattern="*.gif"/>
-  </mime-type>
-
-  <mime-type type="image/x-icon">
-    <magic priority="50">
-      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000"
-             type="string" offset="0"/>
-      <match value="\000\000\001\000" type="string" offset="0"/>
-    </magic>
-    <glob pattern="*.ico"/>
   </mime-type>
 
   <mime-type type="image/ief">
@@ -3124,9 +3174,23 @@
     <glob pattern="*.fh5"/>
     <glob pattern="*.fh7"/>
   </mime-type>
+
   <mime-type type="image/x-icon">
+    <magic priority="50">
+      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000"
+             type="string" offset="0"/>
+      <match value="\000\000\001\000" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.ico"/>
   </mime-type>
+
+  <mime-type type="image/x-niff">
+    <comment>Navy Interchange File Format</comment>
+    <magic priority="50">
+      <match value="IIN1" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="image/x-pcx">
     <glob pattern="*.pcx"/>
   </mime-type>
@@ -3294,8 +3358,13 @@
   <mime-type type="image/x-rgb">
     <glob pattern="*.rgb"/>
   </mime-type>
+
   <mime-type type="image/x-xbitmap">
+    <magic priority="50">
+      <match value="/* XPM" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.xbm"/>
+    <sub-class-of type="text/x-c"/>
   </mime-type>
 
   <mime-type type="image/x-xcf">
@@ -3463,6 +3532,9 @@
     <magic priority="20">
       <match value="This is TeX," type="string" offset="0"/>
       <match value="This is METAFONT," type="string" offset="0"/>
+      <match value="/*" type="string" offset="0"/>
+      <match value="//" type="string" offset="0"/>
+      <match value=";;" type="string" offset="0"/>
       <!-- UTF-16BE BOM -->
       <match value="0xfeff" type="string" offset="0"/>
       <!-- UTF-16LE BOM -->
@@ -3752,6 +3824,9 @@
   <mime-type type="video/mp4v-es"/>
 
   <mime-type type="video/mpeg">
+    <magic priority="50">
+      <match value="\000\000\001\263" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.mpeg"/>
     <glob pattern="*.mpg"/>
     <glob pattern="*.mpe"/>
