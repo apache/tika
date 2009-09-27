@@ -2094,14 +2094,10 @@
       <match value="BZh" type="string" offset="0"/>
     </magic>
     <glob pattern="*.bz"/>
-    <glob pattern="*.tbz"/>
-  </mime-type>
-
-  <mime-type type="application/x-bzip2">
     <glob pattern="*.bz2"/>
     <glob pattern="*.tbz2"/>
     <glob pattern="*.boz"/>
-    <sub-class-of type="application/x-bzip"/>
+    <glob pattern="*.tbz"/>
   </mime-type>
 
   <mime-type type="application/x-cdlink">
@@ -2222,15 +2218,6 @@
       <match value="=&lt;gmr:Workbook" type="string" offset="39" />
     </magic>
     <glob pattern="*.gnumeric"/>
-  </mime-type>
-
-  <mime-type type="application/x-gtar">
-    <magic priority="40">
-      <!-- GNU tar archive -->
-      <match value="ustar  \0" type="string" offset="257" />
-    </magic>
-    <glob pattern="*.gtar"/>
-    <sub-class-of type="application/x-tar"/>
   </mime-type>
 
   <mime-type type="application/x-gzip">
@@ -2446,8 +2433,11 @@
     <magic priority="40">
       <!-- POSIX tar archive -->
       <match value="ustar\0" type="string" offset="257" />
+      <!-- GNU tar archive -->
+      <match value="ustar  \0" type="string" offset="257" />
     </magic>
     <glob pattern="*.tar"/>
+    <glob pattern="*.gtar"/>
   </mime-type>
 
   <mime-type type="application/x-tcl">
