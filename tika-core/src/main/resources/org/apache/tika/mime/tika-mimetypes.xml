@@ -2052,6 +2052,22 @@
     <glob pattern="*.ace"/>
   </mime-type>
 
+  <mime-type type="application/x-adobe-indesign">
+    <acronym>INDD</acronym>
+    <comment>Adobe InDesign document</comment>
+    <glob pattern="*.indd"/>
+  </mime-type>
+
+  <mime-type type="application/x-adobe-indesign-interchange">
+    <acronym>INX</acronym>
+    <comment>Adobe InDesign Interchange format</comment>
+    <magic priority="50">
+      <match value="&lt;?aid" type="string" offset="0:100"/>
+    </magic>
+    <glob pattern="*.inx"/>
+    <sub-class-of type="application/xml"/>
+  </mime-type>
+
   <mime-type type="application/x-archive">
     <magic priority="50">
       <match value="=&lt;ar&gt;" type="string" offset="0"/>
