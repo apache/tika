@@ -564,242 +564,21 @@
     <glob pattern="*.zip" />
   </mime-type>
 
-  <mime-type type="application/x-tar">
-    <magic priority="40">
-      <!-- POSIX tar archive -->
-      <match value="ustar\0" type="string" offset="257" />
-      <!-- GNU tar archive -->
-      <match value="ustar  \0" type="string" offset="257" />
-    </magic>
-    <glob pattern="*.tar" />
-  </mime-type>
 
-  <mime-type type="application/x-gzip">
-    <magic priority="40">
-      <match value="\037\213" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.tgz" />
-    <glob pattern="*.gz" />
-    <glob pattern="*-gz" />
-    <glob pattern="*.svgz" />
-    <glob pattern="*.emz" />
-  </mime-type>
 
-  <mime-type type="application/x-bzip">
-    <alias type="application/x-bzip2" />
-    <magic priority="40">
-      <match value="BZh" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.bz" />
-    <glob pattern="*.bz2" />
-    <glob pattern="*.tbz" />
-    <glob pattern="*.tbz2" />
-  </mime-type>
 
-  <mime-type type="application/java-vm">
-    <magic priority="40">
-      <match value="0xcafebabe" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.class"/>
-  </mime-type>
 
-  <mime-type type="application/octet-stream">
-    <magic priority="50">
-      <match value="#\ This\ is\ a\ shell\ archive" type="string" offset="10" />
-      <match value="\037\036" type="string" offset="0" />
-      <match value="017437" type="host16" offset="0" />
-      <match value="0x1fff" type="host16" offset="0" />
-      <match value="\377\037" type="string" offset="0" />
-      <match value="0145405" type="host16" offset="0" />
-    </magic>
-    <glob pattern="*.bin" />
-  </mime-type>
 
-  <mime-type type="application/pdf">
-    <acronym>PDF</acronym>
-    <comment>Portable Document Format</comment>
-    <magic priority="50">
-      <match value="%PDF-" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.pdf" />
-    <alias type="application/x-pdf" />
-  </mime-type>
 
-  <mime-type type="application/x-shockwave-flash">
-    <acronym>Flash</acronym>
-    <comment>Adobe Flash</comment>
-    <magic priority="50">
-      <!-- F = Uncompressed -->
-      <match value="FWS" type="string" offset="0" />
-      <!-- C = Compressed -->
-      <match value="CWS" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.swf" />
-  </mime-type>
 
-  <mime-type type="application/atom+xml">
-    <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#" />
-  </mime-type>
 
-  <mime-type type="application/mac-compactpro">
-    <glob pattern="*.cpt" />
-  </mime-type>
 
-  <mime-type type="application/rtf">
-    <sub-class-of type="text/plain" />
-    <magic priority="50">
-      <match value="{\\rtf" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.rtf" />
-    <alias type="text/rtf" />
-  </mime-type>
 
-  <mime-type type="application/rss+xml">
-    <alias type="text/rss" />
-    <root-XML localName="rss" />
-    <root-XML namespaceURI="http://purl.org/rss/1.0/" />
-    <glob pattern="*.rss" />
-  </mime-type>
 
-  <!--  added in by mattmann -->
-  <mime-type type="application/xml">
-    <sub-class-of type="text/plain" />
-    <magic priority="50">
-      <match value="&lt;?xml" type="string" offset="0" />
-      <match value="&lt;?XML" type="string" offset="0" />
-      <match value="0xFFFE3C003F0078006D006C00" type="string" offset="0" />
-      <match value="0xFEFF003C003F0078006D006C" type="string" offset="0" />
-      <!-- TODO: Add matches for the rest of the possible XML encoding schemes -->
-    </magic>
-    <alias type="text/xml" />
-    <glob pattern="*.xml" />
-    <glob pattern="*.xsd" />
-  </mime-type>
 
-  <mime-type type="image/svg+xml">
-    <sub-class-of type="application/xml" />
-    <acronym>SVG</acronym>
-    <comment>Scalable Vector Graphics</comment>
-    <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg" />
-    <glob pattern="*.svg" />
-  </mime-type>
 
-  <mime-type type="application/xslt+xml">
-    <sub-class-of type="application/xml" />
-    <acronym>XSLT</acronym>
-    <comment>XSL Transformations</comment>
-    <root-XML localName="stylesheet" namespaceURI="http://www.w3.org/1999/XSL/Transform" />
-    <alias type="text/xsl" />
-    <glob pattern="*.xsl" />
-    <glob pattern="*.xslt" />
-  </mime-type>
-  
-  <mime-type type="application/x-mif">
-    <magic priority="50">
-      <match value="\&lt;MakerFile" type="string" offset="0" />
-      <match value="\&lt;MIFFile" type="string" offset="0" />
-      <match value="\&lt;MakerDictionary" type="string" offset="0" />
-      <match value="\&lt;MakerScreenFont" type="string" offset="0" />
-      <match value="\&lt;MML" type="string" offset="0" />
-      <match value="\&lt;BookFile" type="string" offset="0" />
-      <match value="\&lt;Maker" type="string" offset="0" />
-    </magic>
-    <alias type="application/vnd.mif" />
-  </mime-type>
 
-  <mime-type type="application/vnd.wap.wbxml">
-    <glob pattern="*.wbxml" />
-  </mime-type>
 
-  <mime-type type="application/vnd.wap.wmlc">
-    <_comment>Compiled WML Document</_comment>
-    <glob pattern="*.wmlc" />
-  </mime-type>
-
-  <mime-type type="application/vnd.wap.wmlscriptc">
-    <_comment>Compiled WML Script</_comment>
-    <glob pattern="*.wmlsc" />
-  </mime-type>
-
-  <mime-type type="text/vnd.wap.wmlscript">
-    <_comment>WML Script</_comment>
-    <glob pattern="*.wmls" />
-  </mime-type>
-
-  <mime-type type="application/x-cdlink">
-    <_comment>Virtual CD-ROM CD Image File</_comment>
-    <glob pattern="*.vcd" />
-  </mime-type>
-
-  <mime-type type="application/x-director">
-    <_comment>Shockwave Movie</_comment>
-    <glob pattern="*.dcr" />
-    <glob pattern="*.dir" />
-    <glob pattern="*.dxr" />
-  </mime-type>
-
-  <mime-type type="application/x-futuresplash">
-    <_comment>Macromedia FutureSplash File</_comment>
-    <glob pattern="*.spl" />
-  </mime-type>
-
-  <mime-type type="application/x-latex">
-    <_comment>LaTeX Source Document</_comment>
-    <magic priority="50">
-      <match value="%\ -*-latex-*-" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.latex" />
-  </mime-type>
-
-  <!-- JC CHANGED
-    <mime-type type="application/x-mif">
-    <_comment>FrameMaker MIF document</_comment>
-    <glob pattern="*.mif"/>
-    </mime-type> -->
-
-  <mime-type type="application/x-ms-dos-executable">
-    <alias type="application/x-dosexec" />
-  </mime-type>
-
-  <mime-type type="application/ogg">
-    <magic priority="50">
-      <match value="OggS" type="string" offset="0" />
-    </magic>
-    <alias type="application/x-ogg" />
-  </mime-type>
-
-  <mime-type type="application/x-rar">
-    <alias type="application/x-rar-compressed" />
-  </mime-type>
-
-  <mime-type type="application/x-shellscript">
-    <alias type="application/x-sh" />
-  </mime-type>
-
-  <mime-type type="audio/midi">
-    <acronym>MIDI</acronym>
-    <comment>Musical Instrument Digital Interface</comment>
-    <magic priority ="20">
-      <match type="string" value="MThd" offset="0" />
-    </magic>
-    <glob pattern="*.mid" />
-    <glob pattern="*.midi" />
-    <glob pattern="*.kar" />
-  </mime-type>
-
-  <mime-type type="message/rfc822">
-    <magic priority="50">
-      <match type="string" value="Relay-Version:" offset="0" />
-      <match type="string" value="#! rnews" offset="0" />
-      <match type="string" value="N#! rnews" offset="0" />
-      <match type="string" value="Forward to" offset="0" />
-      <match type="string" value="Pipe to" offset="0" />
-      <match type="string" value="Return-Path:" offset="0" />
-      <match type="string" value="From:" offset="0" />
-      <match type="string" value="Message-ID:" offset="0" />
-      <match type="string" value="Date:" offset="0" />
-    </magic>
-  </mime-type>
 
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
@@ -809,9 +588,12 @@
   <mime-type type="application/applixware">
     <glob pattern="*.aw"/>
   </mime-type>
+
   <mime-type type="application/atom+xml">
+    <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#"/>
     <glob pattern="*.atom"/>
   </mime-type>
+
   <mime-type type="application/atomcat+xml">
     <glob pattern="*.atomcat"/>
   </mime-type>
@@ -886,21 +668,33 @@
   <mime-type type="application/iotp"/>
   <mime-type type="application/ipp"/>
   <mime-type type="application/isup"/>
+
   <mime-type type="application/java-archive">
     <sub-class-of type="application/zip"/>
     <glob pattern="*.jar"/>
   </mime-type>
+
   <mime-type type="application/java-serialized-object">
     <glob pattern="*.ser"/>
   </mime-type>
+
   <mime-type type="application/javascript">
     <sub-class-of type="text/plain"/>
     <glob pattern="*.js"/>
   </mime-type>
+
   <mime-type type="application/json">
     <sub-class-of type="application/javascript"/>
     <glob pattern="*.json"/>
   </mime-type>
+
+  <mime-type type="application/java-vm">
+    <magic priority="40">
+      <match value="0xcafebabe" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.class"/>
+  </mime-type>
+
   <mime-type type="application/kpml-request+xml"/>
   <mime-type type="application/kpml-response+xml"/>
   <mime-type type="application/lost+xml">
@@ -919,6 +713,7 @@
   <mime-type type="application/mac-compactpro">
     <glob pattern="*.cpt"/>
   </mime-type>
+
   <mime-type type="application/macwriteii"/>
   <mime-type type="application/marc">
     <glob pattern="*.mrc"/>
@@ -973,7 +768,16 @@
   <mime-type type="application/nss"/>
   <mime-type type="application/ocsp-request"/>
   <mime-type type="application/ocsp-response"/>
+
   <mime-type type="application/octet-stream">
+    <magic priority="50">
+      <match value="#\ This\ is\ a\ shell\ archive" type="string" offset="10"/>
+      <match value="\037\036" type="string" offset="0"/>
+      <match value="017437" type="host16" offset="0"/>
+      <match value="0x1fff" type="host16" offset="0"/>
+      <match value="\377\037" type="string" offset="0"/>
+      <match value="0145405" type="host16" offset="0"/>
+    </magic>
     <glob pattern="*.bin"/>
     <glob pattern="*.dms"/>
     <glob pattern="*.lha"/>
@@ -990,15 +794,22 @@
     <glob pattern="*.elc"/>
     <glob pattern="*.deploy"/>
   </mime-type>
+
   <mime-type type="application/oda">
     <glob pattern="*.oda"/>
   </mime-type>
   <mime-type type="application/oebps-package+xml">
     <glob pattern="*.opf"/>
   </mime-type>
+
   <mime-type type="application/ogg">
+    <alias type="application/x-ogg"/>
+    <magic priority="50">
+      <match value="OggS" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.ogx"/>
   </mime-type>
+
   <mime-type type="application/onenote">
     <glob pattern="*.onetoc"/>
     <glob pattern="*.onetoc2"/>
@@ -1009,9 +820,17 @@
   <mime-type type="application/patch-ops-error+xml">
     <glob pattern="*.xer"/>
   </mime-type>
+
   <mime-type type="application/pdf">
+    <alias type="application/x-pdf"/>
+    <acronym>PDF</acronym>
+    <comment>Portable Document Format</comment>
+    <magic priority="50">
+      <match value="%PDF-" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.pdf"/>
   </mime-type>
+
   <mime-type type="application/pgp-encrypted">
     <glob pattern="*.pgp"/>
   </mime-type>
@@ -1088,12 +907,23 @@
   <mime-type type="application/rsd+xml">
     <glob pattern="*.rsd"/>
   </mime-type>
+
   <mime-type type="application/rss+xml">
+    <alias type="text/rss"/>
+    <root-XML localName="rss"/>
+    <root-XML namespaceURI="http://purl.org/rss/1.0/"/>
     <glob pattern="*.rss"/>
   </mime-type>
+
   <mime-type type="application/rtf">
+    <alias type="text/rtf"/>
+    <magic priority="50">
+      <match value="{\\rtf" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.rtf"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
+
   <mime-type type="application/rtx"/>
   <mime-type type="application/samlassertion+xml"/>
   <mime-type type="application/samlmetadata+xml"/>
@@ -1745,9 +1575,22 @@
   <mime-type type="application/vnd.micrografx.igx">
     <glob pattern="*.igx"/>
   </mime-type>
+
   <mime-type type="application/vnd.mif">
+    <_comment>FrameMaker MIF document</_comment>
+    <alias type="application/x-mif"/>
+    <magic priority="50">
+      <match value="\&lt;MakerFile" type="string" offset="0" />
+      <match value="\&lt;MIFFile" type="string" offset="0" />
+      <match value="\&lt;MakerDictionary" type="string" offset="0" />
+      <match value="\&lt;MakerScreenFont" type="string" offset="0" />
+      <match value="\&lt;MML" type="string" offset="0" />
+      <match value="\&lt;BookFile" type="string" offset="0" />
+      <match value="\&lt;Maker" type="string" offset="0" />
+    </magic>
     <glob pattern="*.mif"/>
   </mime-type>
+
   <mime-type type="application/vnd.minisoft-hp3000-save"/>
   <mime-type type="application/vnd.mitsubishi.misty-guard.trustweb"/>
   <mime-type type="application/vnd.mobius.daf">
@@ -2346,15 +2189,21 @@
   </mime-type>
   <mime-type type="application/vnd.wap.sic"/>
   <mime-type type="application/vnd.wap.slc"/>
+
   <mime-type type="application/vnd.wap.wbxml">
     <glob pattern="*.wbxml"/>
   </mime-type>
+
   <mime-type type="application/vnd.wap.wmlc">
+    <_comment>Compiled WML Document</_comment>
     <glob pattern="*.wmlc"/>
   </mime-type>
+
   <mime-type type="application/vnd.wap.wmlscriptc">
+    <_comment>Compiled WML Script</_comment>
     <glob pattern="*.wmlsc"/>
   </mime-type>
+
   <mime-type type="application/vnd.webturbo">
     <glob pattern="*.wtb"/>
   </mime-type>
@@ -2525,15 +2374,25 @@
   </mime-type>
 
   <mime-type type="application/x-bzip">
+    <magic priority="40">
+      <match value="BZh" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.bz"/>
+    <glob pattern="*.tbz"/>
   </mime-type>
+
   <mime-type type="application/x-bzip2">
     <glob pattern="*.bz2"/>
+    <glob pattern="*.tbz2"/>
     <glob pattern="*.boz"/>
+    <sub-class-of type="application/x-bzip"/>
   </mime-type>
+
   <mime-type type="application/x-cdlink">
+    <_comment>Virtual CD-ROM CD Image File</_comment>
     <glob pattern="*.vcd"/>
   </mime-type>
+
   <mime-type type="application/x-chat">
     <glob pattern="*.chat"/>
   </mime-type>
@@ -2555,7 +2414,6 @@
     <glob pattern="*.cpio"/>
   </mime-type>
 
-
   <mime-type type="application/x-csh">
     <glob pattern="*.csh"/>
   </mime-type>
@@ -2566,6 +2424,7 @@
   </mime-type>
 
   <mime-type type="application/x-director">
+    <_comment>Shockwave Movie</_comment>
     <glob pattern="*.dir"/>
     <glob pattern="*.dcr"/>
     <glob pattern="*.dxr"/>
@@ -2576,6 +2435,7 @@
     <glob pattern="*.fgd"/>
     <glob pattern="*.swa"/>
   </mime-type>
+
   <mime-type type="application/x-doom">
     <glob pattern="*.wad"/>
   </mime-type>
@@ -2630,7 +2490,9 @@
     <glob pattern="*.afm"/>
   </mime-type>
   <mime-type type="application/x-font-vfont"/>
+
   <mime-type type="application/x-futuresplash">
+    <_comment>Macromedia FutureSplash File</_comment>
     <glob pattern="*.spl"/>
   </mime-type>
 
@@ -2647,9 +2509,24 @@
   </mime-type>
 
   <mime-type type="application/x-gtar">
+    <magic priority="40">
+      <!-- GNU tar archive -->
+      <match value="ustar  \0" type="string" offset="257" />
+    </magic>
     <glob pattern="*.gtar"/>
+    <sub-class-of type="application/x-tar"/>
   </mime-type>
-  <mime-type type="application/x-gzip"/>
+
+  <mime-type type="application/x-gzip">
+    <magic priority="40">
+      <match value="\037\213" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.tgz" />
+    <glob pattern="*.gz" />
+    <glob pattern="*-gz" />
+    <glob pattern="*.svgz" />
+    <glob pattern="*.emz" />
+  </mime-type>
 
   <mime-type type="application/x-hdf">
     <magic priority="50">
@@ -2684,6 +2561,10 @@
   </mime-type>
 
   <mime-type type="application/x-latex">
+    <_comment>LaTeX Source Document</_comment>
+    <magic priority="50">
+      <match value="%\ -*-latex-*-" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.latex"/>
   </mime-type>
 
@@ -2804,14 +2685,17 @@
     <sub-class-of type="text/plain"/>
     <glob pattern="*.sh"/>
   </mime-type>
+
   <mime-type type="application/x-shar">
     <glob pattern="*.shar"/>
   </mime-type>
 
   <mime-type type="application/x-shockwave-flash">
+    <acronym>Flash</acronym>
+    <comment>Adobe Flash</comment>
     <magic priority="50">
-      <match value="FWS" type="string" offset="0"/>
-      <match value="CWS" type="string" offset="0"/>
+      <match value="FWS" type="string" offset="0"/> <!-- F = Uncompressed -->
+      <match value="CWS" type="string" offset="0"/> <!-- C = Compressed   -->
     </magic>
     <glob pattern="*.swf"/>
   </mime-type>
@@ -2836,7 +2720,12 @@
   <mime-type type="application/x-sv4crc">
     <glob pattern="*.sv4crc"/>
   </mime-type>
+
   <mime-type type="application/x-tar">
+    <magic priority="40">
+      <!-- POSIX tar archive -->
+      <match value="ustar\0" type="string" offset="257" />
+    </magic>
     <glob pattern="*.tar"/>
   </mime-type>
 
@@ -2914,10 +2803,21 @@
     <glob pattern="*.xht"/>
   </mime-type>
   <mime-type type="application/xhtml-voice+xml"/>
+
   <mime-type type="application/xml">
+    <alias type="text/xml"/>
+    <magic priority="50">
+      <match value="&lt;?xml" type="string" offset="0"/>
+      <match value="&lt;?XML" type="string" offset="0"/>
+      <match value="0xFFFE3C003F0078006D006C00" type="string" offset="0"/>
+      <match value="0xFEFF003C003F0078006D006C" type="string" offset="0"/>
+      <!-- TODO: Add matches for the other possible XML encoding schemes -->
+    </magic>
     <glob pattern="*.xml"/>
-    <glob pattern="*.xsl"/>
+    <glob pattern="*.xsd"/>
+    <sub-class-of type="text/plain" />
   </mime-type>
+
   <mime-type type="application/xml-dtd">
     <sub-class-of type="text/plain"/>
     <glob pattern="*.dtd"/>
@@ -2927,9 +2827,17 @@
   <mime-type type="application/xop+xml">
     <glob pattern="*.xop"/>
   </mime-type>
+
   <mime-type type="application/xslt+xml">
+    <alias type="text/xsl"/>
+    <acronym>XSLT</acronym>
+    <comment>XSL Transformations</comment>
+    <root-XML localName="stylesheet"
+              namespaceURI="http://www.w3.org/1999/XSL/Transform"/>
     <glob pattern="*.xslt"/>
+    <glob pattern="*.xsl"/>
   </mime-type>
+
   <mime-type type="application/xspf+xml">
     <glob pattern="*.xspf"/>
   </mime-type>
@@ -3043,12 +2951,19 @@
   <mime-type type="audio/l24"/>
   <mime-type type="audio/l8"/>
   <mime-type type="audio/lpc"/>
+
   <mime-type type="audio/midi">
+    <acronym>MIDI</acronym>
+    <comment>Musical Instrument Digital Interface</comment>
+    <magic priority ="20">
+      <match type="string" value="MThd" offset="0"/>
+    </magic>
     <glob pattern="*.mid"/>
     <glob pattern="*.midi"/>
     <glob pattern="*.kar"/>
     <glob pattern="*.rmi"/>
   </mime-type>
+
   <mime-type type="audio/mobile-xmf"/>
   <mime-type type="audio/mp4">
     <alias type="audio/x-mp4a"/>
@@ -3090,11 +3005,14 @@
   </mime-type>
 
   <mime-type type="audio/mpeg4-generic"/>
+
   <mime-type type="audio/ogg">
     <glob pattern="*.oga"/>
     <glob pattern="*.ogg"/>
     <glob pattern="*.spx"/>
+    <sub-class-of type="application/ogg"/>
   </mime-type>
+
   <mime-type type="audio/parityfec"/>
   <mime-type type="audio/pcma"/>
   <mime-type type="audio/pcma-wb"/>
@@ -3357,10 +3275,16 @@
     <glob pattern="*.btif"/>
   </mime-type>
   <mime-type type="image/prs.pti"/>
+
   <mime-type type="image/svg+xml">
+    <sub-class-of type="application/xml"/>
+    <acronym>SVG</acronym>
+    <comment>Scalable Vector Graphics</comment>
+    <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg"/>
     <glob pattern="*.svg"/>
     <!-- <glob pattern="*.svgz"/> (see application/x-gzip) -->
   </mime-type>
+
   <mime-type type="image/t38"/>
 
   <mime-type type="image/tiff">
@@ -3665,6 +3589,8 @@
       <match value="Return-Path:" type="string" offset="0"/>
       <match value="From:" type="string" offset="0"/>
       <match value="Received:" type="string" offset="0"/>
+      <match type="string" value="Message-ID:" offset="0"/>
+      <match type="string" value="Date:" offset="0"/>
     </magic>
     <glob pattern="*.eml"/>
     <glob pattern="*.mime"/>
@@ -3854,9 +3780,12 @@
   <mime-type type="text/vnd.wap.wml">
     <glob pattern="*.wml"/>
   </mime-type>
+
   <mime-type type="text/vnd.wap.wmlscript">
+    <_comment>WML Script</_comment>
     <glob pattern="*.wmls"/>
   </mime-type>
+
   <mime-type type="text/x-asm">
     <glob pattern="*.s"/>
     <glob pattern="*.asm"/>
@@ -3971,9 +3900,12 @@
   <mime-type type="video/mpeg4-generic"/>
   <mime-type type="video/mpv"/>
   <mime-type type="video/nv"/>
+
   <mime-type type="video/ogg">
     <glob pattern="*.ogv"/>
+    <sub-class-of type="application/ogg"/>
   </mime-type>
+
   <mime-type type="video/parityfec"/>
   <mime-type type="video/pointer"/>
 
