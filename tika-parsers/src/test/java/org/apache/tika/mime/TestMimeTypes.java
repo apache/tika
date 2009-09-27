@@ -114,7 +114,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/vnd.openxmlformats-officedocument.presentationml.slideshow", "x.ppsx");
         assertTypeByName("application/vnd.ms-powerpoint.addin.macroenabled.12", "x.ppam");
         assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.pptm");
-        assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.potm");
+        assertTypeByName("application/vnd.ms-powerpoint.template.macroenabled.12", "x.potm");
         assertTypeByName("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "x.ppsm");
     }
 
@@ -197,10 +197,11 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/svg+xml", "x.svg");
         assertTypeByName("image/svg+xml", "x.SVG");
 
+        // Should *.svgz be svg or gzip
         assertType("application/x-gzip", "testSVG.svgz");
         assertTypeByData("application/x-gzip", "testSVG.svgz");
-        assertTypeByName("application/x-gzip", "x.svgz");
-        assertTypeByName("application/x-gzip", "x.SVGZ");
+        assertTypeByName("image/svg+xml", "x.svgz");
+        assertTypeByName("image/svg+xml", "x.SVGZ");
     }
 
     public void testPdfDetection() throws Exception {
