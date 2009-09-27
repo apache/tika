@@ -140,7 +140,7 @@
         </parser>
 
         <parser name="parse-class" class="org.apache.tika.parser.asm.ClassParser">
-                <mime>application/x-tika-java-class</mime>
+                <mime>application/java-vm</mime>
         </parser>
 
         <parser name="parse-mp3" class="org.apache.tika.parser.mp3.Mp3Parser">

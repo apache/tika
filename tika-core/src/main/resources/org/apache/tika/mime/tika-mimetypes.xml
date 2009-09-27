@@ -17,8 +17,8 @@
 -->
 <!--
   Description: This xml file defines the valid mime types used by Tika.
-  The mime types within this file are based on the types in the mime-types.xml
-  file available in Apache Nutch.
+  The mime type data within this file is based on information from various
+  sources like Apache Nutch, Apache HTTP Server, the file(1) command, etc.
 -->
 <mime-info>
 
@@ -37,7 +37,6 @@
       <match value="0xefbbbf" type="string" offset="0"/>
     </magic>
     <glob pattern="*.txt" />
-    <glob pattern="*.asc" />
 
     <!-- TIKA-85: http://www.apache.org/dev/svn-eol-style.txt -->
     <glob pattern="INSTALL" />
@@ -77,7 +76,6 @@
     <glob pattern="*.java" />
     <glob pattern="*.jmx" />
     <glob pattern="*.jsp" />
-    <glob pattern="*.js" />
     <glob pattern="*.junit" />
     <glob pattern="*.jx" />
     <glob pattern="*.manifest" />
@@ -95,8 +93,6 @@
     <glob pattern="*.properties" />
     <glob pattern="*.py" />
     <glob pattern="*.rb" />
-    <glob pattern="*.rdf" />
-    <glob pattern="*.rnc" />
     <glob pattern="*.rng" />
     <glob pattern="*.rnx" />
     <glob pattern="*.roles" />
@@ -606,11 +602,11 @@
     <glob pattern="*.tbz2" />
   </mime-type>
 
-  <mime-type type="application/x-tika-java-class">
+  <mime-type type="application/java-vm">
     <magic priority="40">
       <match value="0xcafebabe" type="string" offset="0" />
     </magic>
-    <glob pattern="*.class" />
+    <glob pattern="*.class"/>
   </mime-type>
 
   <mime-type type="application/octet-stream">
@@ -1539,7 +1535,6 @@
     <glob pattern="*.gnumeric" />
   </mime-type>
 
-<!-- MIME type information from the mime.types file in Apache HTTP server
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
     <glob pattern="*.ez"/>
@@ -1626,18 +1621,18 @@
   <mime-type type="application/ipp"/>
   <mime-type type="application/isup"/>
   <mime-type type="application/java-archive">
+    <sub-class-of type="application/zip"/>
     <glob pattern="*.jar"/>
   </mime-type>
   <mime-type type="application/java-serialized-object">
     <glob pattern="*.ser"/>
   </mime-type>
-  <mime-type type="application/java-vm">
-    <glob pattern="*.class"/>
-  </mime-type>
   <mime-type type="application/javascript">
+    <sub-class-of type="text/plain"/>
     <glob pattern="*.js"/>
   </mime-type>
   <mime-type type="application/json">
+    <sub-class-of type="application/javascript"/>
     <glob pattern="*.json"/>
   </mime-type>
   <mime-type type="application/kpml-request+xml"/>
@@ -1802,6 +1797,7 @@
     <glob pattern="*.rif"/>
   </mime-type>
   <mime-type type="application/relax-ng-compact-syntax">
+    <sub-class-of type="text/plain"/>
     <glob pattern="*.rnc"/>
   </mime-type>
   <mime-type type="application/remote-printing"/>
@@ -1846,6 +1842,7 @@
   <mime-type type="application/sdp">
     <glob pattern="*.sdp"/>
   </mime-type>
+<!-- MIME type information from the mime.types file in Apache HTTP server
   <mime-type type="application/set-payment"/>
   <mime-type type="application/set-payment-initiation">
     <glob pattern="*.setpay"/>
