@@ -1539,4 +1539,2631 @@
     <glob pattern="*.gnumeric" />
   </mime-type>
 
+<!-- MIME type information from the mime.types file in Apache HTTP server
+  <mime-type type="application/activemessage"/>
+  <mime-type type="application/andrew-inset">
+    <glob pattern="*.ez"/>
+  </mime-type>
+  <mime-type type="application/applefile"/>
+  <mime-type type="application/applixware">
+    <glob pattern="*.aw"/>
+  </mime-type>
+  <mime-type type="application/atom+xml">
+    <glob pattern="*.atom"/>
+  </mime-type>
+  <mime-type type="application/atomcat+xml">
+    <glob pattern="*.atomcat"/>
+  </mime-type>
+  <mime-type type="application/atomicmail"/>
+  <mime-type type="application/atomsvc+xml">
+    <glob pattern="*.atomsvc"/>
+  </mime-type>
+  <mime-type type="application/auth-policy+xml"/>
+  <mime-type type="application/batch-smtp"/>
+  <mime-type type="application/beep+xml"/>
+  <mime-type type="application/cals-1840"/>
+  <mime-type type="application/ccxml+xml">
+    <glob pattern="*.ccxml"/>
+  </mime-type>
+  <mime-type type="application/cea-2018+xml"/>
+  <mime-type type="application/cellml+xml"/>
+  <mime-type type="application/cnrp+xml"/>
+  <mime-type type="application/commonground"/>
+  <mime-type type="application/conference-info+xml"/>
+  <mime-type type="application/cpl+xml"/>
+  <mime-type type="application/csta+xml"/>
+  <mime-type type="application/cstadata+xml"/>
+  <mime-type type="application/cu-seeme">
+    <glob pattern="*.cu"/>
+  </mime-type>
+  <mime-type type="application/cybercash"/>
+  <mime-type type="application/davmount+xml">
+    <glob pattern="*.davmount"/>
+  </mime-type>
+  <mime-type type="application/dca-rft"/>
+  <mime-type type="application/dec-dx"/>
+  <mime-type type="application/dialog-info+xml"/>
+  <mime-type type="application/dicom"/>
+  <mime-type type="application/dns"/>
+  <mime-type type="application/dvcs"/>
+  <mime-type type="application/ecmascript">
+    <glob pattern="*.ecma"/>
+  </mime-type>
+  <mime-type type="application/edi-consent"/>
+  <mime-type type="application/edi-x12"/>
+  <mime-type type="application/edifact"/>
+  <mime-type type="application/emma+xml">
+    <glob pattern="*.emma"/>
+  </mime-type>
+  <mime-type type="application/epp+xml"/>
+  <mime-type type="application/epub+zip">
+    <glob pattern="*.epub"/>
+  </mime-type>
+  <mime-type type="application/eshop"/>
+  <mime-type type="application/example"/>
+  <mime-type type="application/fastinfoset"/>
+  <mime-type type="application/fastsoap"/>
+  <mime-type type="application/fits"/>
+  <mime-type type="application/font-tdpfr">
+    <glob pattern="*.pfr"/>
+  </mime-type>
+  <mime-type type="application/h224"/>
+  <mime-type type="application/http"/>
+  <mime-type type="application/hyperstudio">
+    <glob pattern="*.stk"/>
+  </mime-type>
+  <mime-type type="application/ibe-key-request+xml"/>
+  <mime-type type="application/ibe-pkg-reply+xml"/>
+  <mime-type type="application/ibe-pp-data"/>
+  <mime-type type="application/iges"/>
+  <mime-type type="application/im-iscomposing+xml"/>
+  <mime-type type="application/index"/>
+  <mime-type type="application/index.cmd"/>
+  <mime-type type="application/index.obj"/>
+  <mime-type type="application/index.response"/>
+  <mime-type type="application/index.vnd"/>
+  <mime-type type="application/iotp"/>
+  <mime-type type="application/ipp"/>
+  <mime-type type="application/isup"/>
+  <mime-type type="application/java-archive">
+    <glob pattern="*.jar"/>
+  </mime-type>
+  <mime-type type="application/java-serialized-object">
+    <glob pattern="*.ser"/>
+  </mime-type>
+  <mime-type type="application/java-vm">
+    <glob pattern="*.class"/>
+  </mime-type>
+  <mime-type type="application/javascript">
+    <glob pattern="*.js"/>
+  </mime-type>
+  <mime-type type="application/json">
+    <glob pattern="*.json"/>
+  </mime-type>
+  <mime-type type="application/kpml-request+xml"/>
+  <mime-type type="application/kpml-response+xml"/>
+  <mime-type type="application/lost+xml">
+    <glob pattern="*.lostxml"/>
+  </mime-type>
+  <mime-type type="application/mac-binhex40">
+    <glob pattern="*.hqx"/>
+  </mime-type>
+  <mime-type type="application/mac-compactpro">
+    <glob pattern="*.cpt"/>
+  </mime-type>
+  <mime-type type="application/macwriteii"/>
+  <mime-type type="application/marc">
+    <glob pattern="*.mrc"/>
+  </mime-type>
+  <mime-type type="application/mathematica">
+    <glob pattern="*.ma"/>
+    <glob pattern="*.nb"/>
+    <glob pattern="*.mb"/>
+  </mime-type>
+  <mime-type type="application/mathml+xml">
+    <glob pattern="*.mathml"/>
+  </mime-type>
+  <mime-type type="application/mbms-associated-procedure-description+xml"/>
+  <mime-type type="application/mbms-deregister+xml"/>
+  <mime-type type="application/mbms-envelope+xml"/>
+  <mime-type type="application/mbms-msk+xml"/>
+  <mime-type type="application/mbms-msk-response+xml"/>
+  <mime-type type="application/mbms-protection-description+xml"/>
+  <mime-type type="application/mbms-reception-report+xml"/>
+  <mime-type type="application/mbms-register+xml"/>
+  <mime-type type="application/mbms-register-response+xml"/>
+  <mime-type type="application/mbms-user-service-description+xml"/>
+  <mime-type type="application/mbox">
+    <glob pattern="*.mbox"/>
+  </mime-type>
+  <mime-type type="application/media_control+xml"/>
+  <mime-type type="application/mediaservercontrol+xml">
+    <glob pattern="*.mscml"/>
+  </mime-type>
+  <mime-type type="application/mikey"/>
+  <mime-type type="application/moss-keys"/>
+  <mime-type type="application/moss-signature"/>
+  <mime-type type="application/mosskey-data"/>
+  <mime-type type="application/mosskey-request"/>
+  <mime-type type="application/mp4">
+    <glob pattern="*.mp4s"/>
+  </mime-type>
+  <mime-type type="application/mpeg4-generic"/>
+  <mime-type type="application/mpeg4-iod"/>
+  <mime-type type="application/mpeg4-iod-xmt"/>
+  <mime-type type="application/msword">
+    <glob pattern="*.doc"/>
+    <glob pattern="*.dot"/>
+  </mime-type>
+  <mime-type type="application/mxf">
+    <glob pattern="*.mxf"/>
+  </mime-type>
+  <mime-type type="application/nasdata"/>
+  <mime-type type="application/news-checkgroups"/>
+  <mime-type type="application/news-groupinfo"/>
+  <mime-type type="application/news-transmission"/>
+  <mime-type type="application/nss"/>
+  <mime-type type="application/ocsp-request"/>
+  <mime-type type="application/ocsp-response"/>
+  <mime-type type="application/octet-stream">
+    <glob pattern="*.bin"/>
+    <glob pattern="*.dms"/>
+    <glob pattern="*.lha"/>
+    <glob pattern="*.lrf"/>
+    <glob pattern="*.lzh"/>
+    <glob pattern="*.so"/>
+    <glob pattern="*.iso"/>
+    <glob pattern="*.dmg"/>
+    <glob pattern="*.dist"/>
+    <glob pattern="*.distz"/>
+    <glob pattern="*.pkg"/>
+    <glob pattern="*.bpk"/>
+    <glob pattern="*.dump"/>
+    <glob pattern="*.elc"/>
+    <glob pattern="*.deploy"/>
+  </mime-type>
+  <mime-type type="application/oda">
+    <glob pattern="*.oda"/>
+  </mime-type>
+  <mime-type type="application/oebps-package+xml">
+    <glob pattern="*.opf"/>
+  </mime-type>
+  <mime-type type="application/ogg">
+    <glob pattern="*.ogx"/>
+  </mime-type>
+  <mime-type type="application/onenote">
+    <glob pattern="*.onetoc"/>
+    <glob pattern="*.onetoc2"/>
+    <glob pattern="*.onetmp"/>
+    <glob pattern="*.onepkg"/>
+  </mime-type>
+  <mime-type type="application/parityfec"/>
+  <mime-type type="application/patch-ops-error+xml">
+    <glob pattern="*.xer"/>
+  </mime-type>
+  <mime-type type="application/pdf">
+    <glob pattern="*.pdf"/>
+  </mime-type>
+  <mime-type type="application/pgp-encrypted">
+    <glob pattern="*.pgp"/>
+  </mime-type>
+  <mime-type type="application/pgp-keys"/>
+  <mime-type type="application/pgp-signature">
+    <glob pattern="*.asc"/>
+    <glob pattern="*.sig"/>
+  </mime-type>
+  <mime-type type="application/pics-rules">
+    <glob pattern="*.prf"/>
+  </mime-type>
+  <mime-type type="application/pidf+xml"/>
+  <mime-type type="application/pidf-diff+xml"/>
+  <mime-type type="application/pkcs10">
+    <glob pattern="*.p10"/>
+  </mime-type>
+  <mime-type type="application/pkcs7-mime">
+    <glob pattern="*.p7m"/>
+    <glob pattern="*.p7c"/>
+  </mime-type>
+  <mime-type type="application/pkcs7-signature">
+    <glob pattern="*.p7s"/>
+  </mime-type>
+  <mime-type type="application/pkix-cert">
+    <glob pattern="*.cer"/>
+  </mime-type>
+  <mime-type type="application/pkix-crl">
+    <glob pattern="*.crl"/>
+  </mime-type>
+  <mime-type type="application/pkix-pkipath">
+    <glob pattern="*.pkipath"/>
+  </mime-type>
+  <mime-type type="application/pkixcmp">
+    <glob pattern="*.pki"/>
+  </mime-type>
+  <mime-type type="application/pls+xml">
+    <glob pattern="*.pls"/>
+  </mime-type>
+  <mime-type type="application/poc-settings+xml"/>
+  <mime-type type="application/postscript">
+    <glob pattern="*.ai"/>
+    <glob pattern="*.eps"/>
+    <glob pattern="*.ps"/>
+  </mime-type>
+  <mime-type type="application/prs.alvestrand.titrax-sheet"/>
+  <mime-type type="application/prs.cww">
+    <glob pattern="*.cww"/>
+  </mime-type>
+  <mime-type type="application/prs.nprend"/>
+  <mime-type type="application/prs.plucker"/>
+  <mime-type type="application/qsig"/>
+  <mime-type type="application/rdf+xml">
+    <glob pattern="*.rdf"/>
+  </mime-type>
+  <mime-type type="application/reginfo+xml">
+    <glob pattern="*.rif"/>
+  </mime-type>
+  <mime-type type="application/relax-ng-compact-syntax">
+    <glob pattern="*.rnc"/>
+  </mime-type>
+  <mime-type type="application/remote-printing"/>
+  <mime-type type="application/resource-lists+xml">
+    <glob pattern="*.rl"/>
+  </mime-type>
+  <mime-type type="application/resource-lists-diff+xml">
+    <glob pattern="*.rld"/>
+  </mime-type>
+  <mime-type type="application/riscos"/>
+  <mime-type type="application/rlmi+xml"/>
+  <mime-type type="application/rls-services+xml">
+    <glob pattern="*.rs"/>
+  </mime-type>
+  <mime-type type="application/rsd+xml">
+    <glob pattern="*.rsd"/>
+  </mime-type>
+  <mime-type type="application/rss+xml">
+    <glob pattern="*.rss"/>
+  </mime-type>
+  <mime-type type="application/rtf">
+    <glob pattern="*.rtf"/>
+  </mime-type>
+  <mime-type type="application/rtx"/>
+  <mime-type type="application/samlassertion+xml"/>
+  <mime-type type="application/samlmetadata+xml"/>
+  <mime-type type="application/sbml+xml">
+    <glob pattern="*.sbml"/>
+  </mime-type>
+  <mime-type type="application/scvp-cv-request">
+    <glob pattern="*.scq"/>
+  </mime-type>
+  <mime-type type="application/scvp-cv-response">
+    <glob pattern="*.scs"/>
+  </mime-type>
+  <mime-type type="application/scvp-vp-request">
+    <glob pattern="*.spq"/>
+  </mime-type>
+  <mime-type type="application/scvp-vp-response">
+    <glob pattern="*.spp"/>
+  </mime-type>
+  <mime-type type="application/sdp">
+    <glob pattern="*.sdp"/>
+  </mime-type>
+  <mime-type type="application/set-payment"/>
+  <mime-type type="application/set-payment-initiation">
+    <glob pattern="*.setpay"/>
+  </mime-type>
+  <mime-type type="application/set-registration"/>
+  <mime-type type="application/set-registration-initiation">
+    <glob pattern="*.setreg"/>
+  </mime-type>
+  <mime-type type="application/sgml"/>
+  <mime-type type="application/sgml-open-catalog"/>
+  <mime-type type="application/shf+xml">
+    <glob pattern="*.shf"/>
+  </mime-type>
+  <mime-type type="application/sieve"/>
+  <mime-type type="application/simple-filter+xml"/>
+  <mime-type type="application/simple-message-summary"/>
+  <mime-type type="application/simplesymbolcontainer"/>
+  <mime-type type="application/slate"/>
+  <mime-type type="application/smil"/>
+  <mime-type type="application/smil+xml">
+    <glob pattern="*.smi"/>
+    <glob pattern="*.smil"/>
+  </mime-type>
+  <mime-type type="application/soap+fastinfoset"/>
+  <mime-type type="application/soap+xml"/>
+  <mime-type type="application/sparql-query">
+    <glob pattern="*.rq"/>
+  </mime-type>
+  <mime-type type="application/sparql-results+xml">
+    <glob pattern="*.srx"/>
+  </mime-type>
+  <mime-type type="application/spirits-event+xml"/>
+  <mime-type type="application/srgs">
+    <glob pattern="*.gram"/>
+  </mime-type>
+  <mime-type type="application/srgs+xml">
+    <glob pattern="*.grxml"/>
+  </mime-type>
+  <mime-type type="application/ssml+xml">
+    <glob pattern="*.ssml"/>
+  </mime-type>
+  <mime-type type="application/timestamp-query"/>
+  <mime-type type="application/timestamp-reply"/>
+  <mime-type type="application/tve-trigger"/>
+  <mime-type type="application/ulpfec"/>
+  <mime-type type="application/vemmi"/>
+  <mime-type type="application/vividence.scriptfile"/>
+  <mime-type type="application/vnd.3gpp.bsf+xml"/>
+  <mime-type type="application/vnd.3gpp.pic-bw-large">
+    <glob pattern="*.plb"/>
+  </mime-type>
+  <mime-type type="application/vnd.3gpp.pic-bw-small">
+    <glob pattern="*.psb"/>
+  </mime-type>
+  <mime-type type="application/vnd.3gpp.pic-bw-var">
+    <glob pattern="*.pvb"/>
+  </mime-type>
+  <mime-type type="application/vnd.3gpp.sms"/>
+  <mime-type type="application/vnd.3gpp2.bcmcsinfo+xml"/>
+  <mime-type type="application/vnd.3gpp2.sms"/>
+  <mime-type type="application/vnd.3gpp2.tcap">
+    <glob pattern="*.tcap"/>
+  </mime-type>
+  <mime-type type="application/vnd.3m.post-it-notes">
+    <glob pattern="*.pwn"/>
+  </mime-type>
+  <mime-type type="application/vnd.accpac.simply.aso">
+    <glob pattern="*.aso"/>
+  </mime-type>
+  <mime-type type="application/vnd.accpac.simply.imp">
+    <glob pattern="*.imp"/>
+  </mime-type>
+  <mime-type type="application/vnd.acucobol">
+    <glob pattern="*.acu"/>
+  </mime-type>
+  <mime-type type="application/vnd.acucorp">
+    <glob pattern="*.atc"/>
+    <glob pattern="*.acutc"/>
+  </mime-type>
+  <mime-type type="application/vnd.adobe.air-application-installer-package+zip">
+    <glob pattern="*.air"/>
+  </mime-type>
+  <mime-type type="application/vnd.adobe.xdp+xml">
+    <glob pattern="*.xdp"/>
+  </mime-type>
+  <mime-type type="application/vnd.adobe.xfdf">
+    <glob pattern="*.xfdf"/>
+  </mime-type>
+  <mime-type type="application/vnd.aether.imp"/>
+  <mime-type type="application/vnd.airzip.filesecure.azf">
+    <glob pattern="*.azf"/>
+  </mime-type>
+  <mime-type type="application/vnd.airzip.filesecure.azs">
+    <glob pattern="*.azs"/>
+  </mime-type>
+  <mime-type type="application/vnd.amazon.ebook">
+    <glob pattern="*.azw"/>
+  </mime-type>
+  <mime-type type="application/vnd.americandynamics.acc">
+    <glob pattern="*.acc"/>
+  </mime-type>
+  <mime-type type="application/vnd.amiga.ami">
+    <glob pattern="*.ami"/>
+  </mime-type>
+  <mime-type type="application/vnd.android.package-archive">
+    <glob pattern="*.apk"/>
+  </mime-type>
+  <mime-type type="application/vnd.anser-web-certificate-issue-initiation">
+    <glob pattern="*.cii"/>
+  </mime-type>
+  <mime-type type="application/vnd.anser-web-funds-transfer-initiation">
+    <glob pattern="*.fti"/>
+  </mime-type>
+  <mime-type type="application/vnd.antix.game-component">
+    <glob pattern="*.atx"/>
+  </mime-type>
+  <mime-type type="application/vnd.apple.installer+xml">
+    <glob pattern="*.mpkg"/>
+  </mime-type>
+  <mime-type type="application/vnd.arastra.swi">
+    <glob pattern="*.swi"/>
+  </mime-type>
+  <mime-type type="application/vnd.audiograph">
+    <glob pattern="*.aep"/>
+  </mime-type>
+  <mime-type type="application/vnd.autopackage"/>
+  <mime-type type="application/vnd.avistar+xml"/>
+  <mime-type type="application/vnd.blueice.multipass">
+    <glob pattern="*.mpm"/>
+  </mime-type>
+  <mime-type type="application/vnd.bluetooth.ep.oob"/>
+  <mime-type type="application/vnd.bmi">
+    <glob pattern="*.bmi"/>
+  </mime-type>
+  <mime-type type="application/vnd.businessobjects">
+    <glob pattern="*.rep"/>
+  </mime-type>
+  <mime-type type="application/vnd.cab-jscript"/>
+  <mime-type type="application/vnd.canon-cpdl"/>
+  <mime-type type="application/vnd.canon-lips"/>
+  <mime-type type="application/vnd.cendio.thinlinc.clientconf"/>
+  <mime-type type="application/vnd.chemdraw+xml">
+    <glob pattern="*.cdxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.chipnuts.karaoke-mmd">
+    <glob pattern="*.mmd"/>
+  </mime-type>
+  <mime-type type="application/vnd.cinderella">
+    <glob pattern="*.cdy"/>
+  </mime-type>
+  <mime-type type="application/vnd.cirpack.isdn-ext"/>
+  <mime-type type="application/vnd.claymore">
+    <glob pattern="*.cla"/>
+  </mime-type>
+  <mime-type type="application/vnd.clonk.c4group">
+    <glob pattern="*.c4g"/>
+    <glob pattern="*.c4d"/>
+    <glob pattern="*.c4f"/>
+    <glob pattern="*.c4p"/>
+    <glob pattern="*.c4u"/>
+  </mime-type>
+  <mime-type type="application/vnd.commerce-battelle"/>
+  <mime-type type="application/vnd.commonspace">
+    <glob pattern="*.csp"/>
+  </mime-type>
+  <mime-type type="application/vnd.contact.cmsg">
+    <glob pattern="*.cdbcmsg"/>
+  </mime-type>
+  <mime-type type="application/vnd.cosmocaller">
+    <glob pattern="*.cmc"/>
+  </mime-type>
+  <mime-type type="application/vnd.crick.clicker">
+    <glob pattern="*.clkx"/>
+  </mime-type>
+  <mime-type type="application/vnd.crick.clicker.keyboard">
+    <glob pattern="*.clkk"/>
+  </mime-type>
+  <mime-type type="application/vnd.crick.clicker.palette">
+    <glob pattern="*.clkp"/>
+  </mime-type>
+  <mime-type type="application/vnd.crick.clicker.template">
+    <glob pattern="*.clkt"/>
+  </mime-type>
+  <mime-type type="application/vnd.crick.clicker.wordbank">
+    <glob pattern="*.clkw"/>
+  </mime-type>
+  <mime-type type="application/vnd.criticaltools.wbs+xml">
+    <glob pattern="*.wbs"/>
+  </mime-type>
+  <mime-type type="application/vnd.ctc-posml">
+    <glob pattern="*.pml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ctct.ws+xml"/>
+  <mime-type type="application/vnd.cups-pdf"/>
+  <mime-type type="application/vnd.cups-postscript"/>
+  <mime-type type="application/vnd.cups-ppd">
+    <glob pattern="*.ppd"/>
+  </mime-type>
+  <mime-type type="application/vnd.cups-raster"/>
+  <mime-type type="application/vnd.cups-raw"/>
+  <mime-type type="application/vnd.curl.car">
+    <glob pattern="*.car"/>
+  </mime-type>
+  <mime-type type="application/vnd.curl.pcurl">
+    <glob pattern="*.pcurl"/>
+  </mime-type>
+  <mime-type type="application/vnd.cybank"/>
+  <mime-type type="application/vnd.data-vision.rdz">
+    <glob pattern="*.rdz"/>
+  </mime-type>
+  <mime-type type="application/vnd.denovo.fcselayout-link">
+    <glob pattern="*.fe_launch"/>
+  </mime-type>
+  <mime-type type="application/vnd.dir-bi.plate-dl-nosuffix"/>
+  <mime-type type="application/vnd.dna">
+    <glob pattern="*.dna"/>
+  </mime-type>
+  <mime-type type="application/vnd.dolby.mlp">
+    <glob pattern="*.mlp"/>
+  </mime-type>
+  <mime-type type="application/vnd.dolby.mobile.1"/>
+  <mime-type type="application/vnd.dolby.mobile.2"/>
+  <mime-type type="application/vnd.dpgraph">
+    <glob pattern="*.dpg"/>
+  </mime-type>
+  <mime-type type="application/vnd.dreamfactory">
+    <glob pattern="*.dfac"/>
+  </mime-type>
+  <mime-type type="application/vnd.dvb.esgcontainer"/>
+  <mime-type type="application/vnd.dvb.ipdcdftnotifaccess"/>
+  <mime-type type="application/vnd.dvb.ipdcesgaccess"/>
+  <mime-type type="application/vnd.dvb.ipdcroaming"/>
+  <mime-type type="application/vnd.dvb.iptv.alfec-base"/>
+  <mime-type type="application/vnd.dvb.iptv.alfec-enhancement"/>
+  <mime-type type="application/vnd.dvb.notif-aggregate-root+xml"/>
+  <mime-type type="application/vnd.dvb.notif-container+xml"/>
+  <mime-type type="application/vnd.dvb.notif-generic+xml"/>
+  <mime-type type="application/vnd.dvb.notif-ia-msglist+xml"/>
+  <mime-type type="application/vnd.dvb.notif-ia-registration-request+xml"/>
+  <mime-type type="application/vnd.dvb.notif-ia-registration-response+xml"/>
+  <mime-type type="application/vnd.dvb.notif-init+xml"/>
+  <mime-type type="application/vnd.dxr"/>
+  <mime-type type="application/vnd.dynageo">
+    <glob pattern="*.geo"/>
+  </mime-type>
+  <mime-type type="application/vnd.ecdis-update"/>
+  <mime-type type="application/vnd.ecowin.chart">
+    <glob pattern="*.mag"/>
+  </mime-type>
+  <mime-type type="application/vnd.ecowin.filerequest"/>
+  <mime-type type="application/vnd.ecowin.fileupdate"/>
+  <mime-type type="application/vnd.ecowin.series"/>
+  <mime-type type="application/vnd.ecowin.seriesrequest"/>
+  <mime-type type="application/vnd.ecowin.seriesupdate"/>
+  <mime-type type="application/vnd.emclient.accessrequest+xml"/>
+  <mime-type type="application/vnd.enliven">
+    <glob pattern="*.nml"/>
+  </mime-type>
+  <mime-type type="application/vnd.epson.esf">
+    <glob pattern="*.esf"/>
+  </mime-type>
+  <mime-type type="application/vnd.epson.msf">
+    <glob pattern="*.msf"/>
+  </mime-type>
+  <mime-type type="application/vnd.epson.quickanime">
+    <glob pattern="*.qam"/>
+  </mime-type>
+  <mime-type type="application/vnd.epson.salt">
+    <glob pattern="*.slt"/>
+  </mime-type>
+  <mime-type type="application/vnd.epson.ssf">
+    <glob pattern="*.ssf"/>
+  </mime-type>
+  <mime-type type="application/vnd.ericsson.quickcall"/>
+  <mime-type type="application/vnd.eszigno3+xml">
+    <glob pattern="*.es3"/>
+    <glob pattern="*.et3"/>
+  </mime-type>
+  <mime-type type="application/vnd.etsi.aoc+xml"/>
+  <mime-type type="application/vnd.etsi.cug+xml"/>
+  <mime-type type="application/vnd.etsi.iptvcommand+xml"/>
+  <mime-type type="application/vnd.etsi.iptvdiscovery+xml"/>
+  <mime-type type="application/vnd.etsi.iptvprofile+xml"/>
+  <mime-type type="application/vnd.etsi.iptvsad-bc+xml"/>
+  <mime-type type="application/vnd.etsi.iptvsad-cod+xml"/>
+  <mime-type type="application/vnd.etsi.iptvsad-npvr+xml"/>
+  <mime-type type="application/vnd.etsi.iptvueprofile+xml"/>
+  <mime-type type="application/vnd.etsi.mcid+xml"/>
+  <mime-type type="application/vnd.etsi.sci+xml"/>
+  <mime-type type="application/vnd.etsi.simservs+xml"/>
+  <mime-type type="application/vnd.eudora.data"/>
+  <mime-type type="application/vnd.ezpix-album">
+    <glob pattern="*.ez2"/>
+  </mime-type>
+  <mime-type type="application/vnd.ezpix-package">
+    <glob pattern="*.ez3"/>
+  </mime-type>
+  <mime-type type="application/vnd.f-secure.mobile"/>
+  <mime-type type="application/vnd.fdf">
+    <glob pattern="*.fdf"/>
+  </mime-type>
+  <mime-type type="application/vnd.fdsn.mseed">
+    <glob pattern="*.mseed"/>
+  </mime-type>
+  <mime-type type="application/vnd.fdsn.seed">
+    <glob pattern="*.seed"/>
+    <glob pattern="*.dataless"/>
+  </mime-type>
+  <mime-type type="application/vnd.ffsns"/>
+  <mime-type type="application/vnd.fints"/>
+  <mime-type type="application/vnd.flographit">
+    <glob pattern="*.gph"/>
+  </mime-type>
+  <mime-type type="application/vnd.fluxtime.clip">
+    <glob pattern="*.ftc"/>
+  </mime-type>
+  <mime-type type="application/vnd.font-fontforge-sfd"/>
+  <mime-type type="application/vnd.framemaker">
+    <glob pattern="*.fm"/>
+    <glob pattern="*.frame"/>
+    <glob pattern="*.maker"/>
+    <glob pattern="*.book"/>
+  </mime-type>
+  <mime-type type="application/vnd.frogans.fnc">
+    <glob pattern="*.fnc"/>
+  </mime-type>
+  <mime-type type="application/vnd.frogans.ltf">
+    <glob pattern="*.ltf"/>
+  </mime-type>
+  <mime-type type="application/vnd.fsc.weblaunch">
+    <glob pattern="*.fsc"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujitsu.oasys">
+    <glob pattern="*.oas"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujitsu.oasys2">
+    <glob pattern="*.oa2"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujitsu.oasys3">
+    <glob pattern="*.oa3"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujitsu.oasysgp">
+    <glob pattern="*.fg5"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujitsu.oasysprs">
+    <glob pattern="*.bh2"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujixerox.art-ex"/>
+  <mime-type type="application/vnd.fujixerox.art4"/>
+  <mime-type type="application/vnd.fujixerox.hbpl"/>
+  <mime-type type="application/vnd.fujixerox.ddd">
+    <glob pattern="*.ddd"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujixerox.docuworks">
+    <glob pattern="*.xdw"/>
+  </mime-type>
+  <mime-type type="application/vnd.fujixerox.docuworks.binder">
+    <glob pattern="*.xbd"/>
+  </mime-type>
+  <mime-type type="application/vnd.fut-misnet"/>
+  <mime-type type="application/vnd.fuzzysheet">
+    <glob pattern="*.fzs"/>
+  </mime-type>
+  <mime-type type="application/vnd.genomatix.tuxedo">
+    <glob pattern="*.txd"/>
+  </mime-type>
+  <mime-type type="application/vnd.geogebra.file">
+    <glob pattern="*.ggb"/>
+  </mime-type>
+  <mime-type type="application/vnd.geogebra.tool">
+    <glob pattern="*.ggt"/>
+  </mime-type>
+  <mime-type type="application/vnd.geometry-explorer">
+    <glob pattern="*.gex"/>
+    <glob pattern="*.gre"/>
+  </mime-type>
+  <mime-type type="application/vnd.gmx">
+    <glob pattern="*.gmx"/>
+  </mime-type>
+  <mime-type type="application/vnd.google-earth.kml+xml">
+    <glob pattern="*.kml"/>
+  </mime-type>
+  <mime-type type="application/vnd.google-earth.kmz">
+    <glob pattern="*.kmz"/>
+  </mime-type>
+  <mime-type type="application/vnd.grafeq">
+    <glob pattern="*.gqf"/>
+    <glob pattern="*.gqs"/>
+  </mime-type>
+  <mime-type type="application/vnd.gridmp"/>
+  <mime-type type="application/vnd.groove-account">
+    <glob pattern="*.gac"/>
+  </mime-type>
+  <mime-type type="application/vnd.groove-help">
+    <glob pattern="*.ghf"/>
+  </mime-type>
+  <mime-type type="application/vnd.groove-identity-message">
+    <glob pattern="*.gim"/>
+  </mime-type>
+  <mime-type type="application/vnd.groove-injector">
+    <glob pattern="*.grv"/>
+  </mime-type>
+  <mime-type type="application/vnd.groove-tool-message">
+    <glob pattern="*.gtm"/>
+  </mime-type>
+  <mime-type type="application/vnd.groove-tool-template">
+    <glob pattern="*.tpl"/>
+  </mime-type>
+  <mime-type type="application/vnd.groove-vcard">
+    <glob pattern="*.vcg"/>
+  </mime-type>
+  <mime-type type="application/vnd.handheld-entertainment+xml">
+    <glob pattern="*.zmm"/>
+  </mime-type>
+  <mime-type type="application/vnd.hbci">
+    <glob pattern="*.hbci"/>
+  </mime-type>
+  <mime-type type="application/vnd.hcl-bireports"/>
+  <mime-type type="application/vnd.hhe.lesson-player">
+    <glob pattern="*.les"/>
+  </mime-type>
+  <mime-type type="application/vnd.hp-hpgl">
+    <glob pattern="*.hpgl"/>
+  </mime-type>
+  <mime-type type="application/vnd.hp-hpid">
+    <glob pattern="*.hpid"/>
+  </mime-type>
+  <mime-type type="application/vnd.hp-hps">
+    <glob pattern="*.hps"/>
+  </mime-type>
+  <mime-type type="application/vnd.hp-jlyt">
+    <glob pattern="*.jlt"/>
+  </mime-type>
+  <mime-type type="application/vnd.hp-pcl">
+    <glob pattern="*.pcl"/>
+  </mime-type>
+  <mime-type type="application/vnd.hp-pclxl">
+    <glob pattern="*.pclxl"/>
+  </mime-type>
+  <mime-type type="application/vnd.httphone"/>
+  <mime-type type="application/vnd.hydrostatix.sof-data">
+    <glob pattern="*.sfd-hdstx"/>
+  </mime-type>
+  <mime-type type="application/vnd.hzn-3d-crossword">
+    <glob pattern="*.x3d"/>
+  </mime-type>
+  <mime-type type="application/vnd.ibm.afplinedata"/>
+  <mime-type type="application/vnd.ibm.electronic-media"/>
+  <mime-type type="application/vnd.ibm.minipay">
+    <glob pattern="*.mpy"/>
+  </mime-type>
+  <mime-type type="application/vnd.ibm.modcap">
+    <glob pattern="*.afp"/>
+    <glob pattern="*.listafp"/>
+    <glob pattern="*.list3820"/>
+  </mime-type>
+  <mime-type type="application/vnd.ibm.rights-management">
+    <glob pattern="*.irm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ibm.secure-container">
+    <glob pattern="*.sc"/>
+  </mime-type>
+  <mime-type type="application/vnd.iccprofile">
+    <glob pattern="*.icc"/>
+    <glob pattern="*.icm"/>
+  </mime-type>
+  <mime-type type="application/vnd.igloader">
+    <glob pattern="*.igl"/>
+  </mime-type>
+  <mime-type type="application/vnd.immervision-ivp">
+    <glob pattern="*.ivp"/>
+  </mime-type>
+  <mime-type type="application/vnd.immervision-ivu">
+    <glob pattern="*.ivu"/>
+  </mime-type>
+  <mime-type type="application/vnd.informedcontrol.rms+xml"/>
+  <mime-type type="application/vnd.informix-visionary"/>
+  <mime-type type="application/vnd.intercon.formnet">
+    <glob pattern="*.xpw"/>
+    <glob pattern="*.xpx"/>
+  </mime-type>
+  <mime-type type="application/vnd.intertrust.digibox"/>
+  <mime-type type="application/vnd.intertrust.nncp"/>
+  <mime-type type="application/vnd.intu.qbo">
+    <glob pattern="*.qbo"/>
+  </mime-type>
+  <mime-type type="application/vnd.intu.qfx">
+    <glob pattern="*.qfx"/>
+  </mime-type>
+  <mime-type type="application/vnd.iptc.g2.conceptitem+xml"/>
+  <mime-type type="application/vnd.iptc.g2.knowledgeitem+xml"/>
+  <mime-type type="application/vnd.iptc.g2.newsitem+xml"/>
+  <mime-type type="application/vnd.iptc.g2.packageitem+xml"/>
+  <mime-type type="application/vnd.ipunplugged.rcprofile">
+    <glob pattern="*.rcprofile"/>
+  </mime-type>
+  <mime-type type="application/vnd.irepository.package+xml">
+    <glob pattern="*.irp"/>
+  </mime-type>
+  <mime-type type="application/vnd.is-xpr">
+    <glob pattern="*.xpr"/>
+  </mime-type>
+  <mime-type type="application/vnd.jam">
+    <glob pattern="*.jam"/>
+  </mime-type>
+  <mime-type type="application/vnd.japannet-directory-service"/>
+  <mime-type type="application/vnd.japannet-jpnstore-wakeup"/>
+  <mime-type type="application/vnd.japannet-payment-wakeup"/>
+  <mime-type type="application/vnd.japannet-registration"/>
+  <mime-type type="application/vnd.japannet-registration-wakeup"/>
+  <mime-type type="application/vnd.japannet-setstore-wakeup"/>
+  <mime-type type="application/vnd.japannet-verification"/>
+  <mime-type type="application/vnd.japannet-verification-wakeup"/>
+  <mime-type type="application/vnd.jcp.javame.midlet-rms">
+    <glob pattern="*.rms"/>
+  </mime-type>
+  <mime-type type="application/vnd.jisp">
+    <glob pattern="*.jisp"/>
+  </mime-type>
+  <mime-type type="application/vnd.joost.joda-archive">
+    <glob pattern="*.joda"/>
+  </mime-type>
+  <mime-type type="application/vnd.kahootz">
+    <glob pattern="*.ktz"/>
+    <glob pattern="*.ktr"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.karbon">
+    <glob pattern="*.karbon"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.kchart">
+    <glob pattern="*.chrt"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.kformula">
+    <glob pattern="*.kfo"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.kivio">
+    <glob pattern="*.flw"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.kontour">
+    <glob pattern="*.kon"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.kpresenter">
+    <glob pattern="*.kpr"/>
+    <glob pattern="*.kpt"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.kspread">
+    <glob pattern="*.ksp"/>
+  </mime-type>
+  <mime-type type="application/vnd.kde.kword">
+    <glob pattern="*.kwd"/>
+    <glob pattern="*.kwt"/>
+  </mime-type>
+  <mime-type type="application/vnd.kenameaapp">
+    <glob pattern="*.htke"/>
+  </mime-type>
+  <mime-type type="application/vnd.kidspiration">
+    <glob pattern="*.kia"/>
+  </mime-type>
+  <mime-type type="application/vnd.kinar">
+    <glob pattern="*.kne"/>
+    <glob pattern="*.knp"/>
+  </mime-type>
+  <mime-type type="application/vnd.koan">
+    <glob pattern="*.skp"/>
+    <glob pattern="*.skd"/>
+    <glob pattern="*.skt"/>
+    <glob pattern="*.skm"/>
+  </mime-type>
+  <mime-type type="application/vnd.kodak-descriptor">
+    <glob pattern="*.sse"/>
+  </mime-type>
+  <mime-type type="application/vnd.liberty-request+xml"/>
+  <mime-type type="application/vnd.llamagraphics.life-balance.desktop">
+    <glob pattern="*.lbd"/>
+  </mime-type>
+  <mime-type type="application/vnd.llamagraphics.life-balance.exchange+xml">
+    <glob pattern="*.lbe"/>
+  </mime-type>
+  <mime-type type="application/vnd.lotus-1-2-3">
+    <glob pattern="*.123"/>
+  </mime-type>
+  <mime-type type="application/vnd.lotus-approach">
+    <glob pattern="*.apr"/>
+  </mime-type>
+  <mime-type type="application/vnd.lotus-freelance">
+    <glob pattern="*.pre"/>
+  </mime-type>
+  <mime-type type="application/vnd.lotus-notes">
+    <glob pattern="*.nsf"/>
+  </mime-type>
+  <mime-type type="application/vnd.lotus-organizer">
+    <glob pattern="*.org"/>
+  </mime-type>
+  <mime-type type="application/vnd.lotus-screencam">
+    <glob pattern="*.scm"/>
+  </mime-type>
+  <mime-type type="application/vnd.lotus-wordpro">
+    <glob pattern="*.lwp"/>
+  </mime-type>
+  <mime-type type="application/vnd.macports.portpkg">
+    <glob pattern="*.portpkg"/>
+  </mime-type>
+  <mime-type type="application/vnd.marlin.drm.actiontoken+xml"/>
+  <mime-type type="application/vnd.marlin.drm.conftoken+xml"/>
+  <mime-type type="application/vnd.marlin.drm.license+xml"/>
+  <mime-type type="application/vnd.marlin.drm.mdcf"/>
+  <mime-type type="application/vnd.mcd">
+    <glob pattern="*.mcd"/>
+  </mime-type>
+  <mime-type type="application/vnd.medcalcdata">
+    <glob pattern="*.mc1"/>
+  </mime-type>
+  <mime-type type="application/vnd.mediastation.cdkey">
+    <glob pattern="*.cdkey"/>
+  </mime-type>
+  <mime-type type="application/vnd.meridian-slingshot"/>
+  <mime-type type="application/vnd.mfer">
+    <glob pattern="*.mwf"/>
+  </mime-type>
+  <mime-type type="application/vnd.mfmp">
+    <glob pattern="*.mfm"/>
+  </mime-type>
+  <mime-type type="application/vnd.micrografx.flo">
+    <glob pattern="*.flo"/>
+  </mime-type>
+  <mime-type type="application/vnd.micrografx.igx">
+    <glob pattern="*.igx"/>
+  </mime-type>
+  <mime-type type="application/vnd.mif">
+    <glob pattern="*.mif"/>
+  </mime-type>
+  <mime-type type="application/vnd.minisoft-hp3000-save"/>
+  <mime-type type="application/vnd.mitsubishi.misty-guard.trustweb"/>
+  <mime-type type="application/vnd.mobius.daf">
+    <glob pattern="*.daf"/>
+  </mime-type>
+  <mime-type type="application/vnd.mobius.dis">
+    <glob pattern="*.dis"/>
+  </mime-type>
+  <mime-type type="application/vnd.mobius.mbk">
+    <glob pattern="*.mbk"/>
+  </mime-type>
+  <mime-type type="application/vnd.mobius.mqy">
+    <glob pattern="*.mqy"/>
+  </mime-type>
+  <mime-type type="application/vnd.mobius.msl">
+    <glob pattern="*.msl"/>
+  </mime-type>
+  <mime-type type="application/vnd.mobius.plc">
+    <glob pattern="*.plc"/>
+  </mime-type>
+  <mime-type type="application/vnd.mobius.txf">
+    <glob pattern="*.txf"/>
+  </mime-type>
+  <mime-type type="application/vnd.mophun.application">
+    <glob pattern="*.mpn"/>
+  </mime-type>
+  <mime-type type="application/vnd.mophun.certificate">
+    <glob pattern="*.mpc"/>
+  </mime-type>
+  <mime-type type="application/vnd.motorola.flexsuite"/>
+  <mime-type type="application/vnd.motorola.flexsuite.adsi"/>
+  <mime-type type="application/vnd.motorola.flexsuite.fis"/>
+  <mime-type type="application/vnd.motorola.flexsuite.gotap"/>
+  <mime-type type="application/vnd.motorola.flexsuite.kmr"/>
+  <mime-type type="application/vnd.motorola.flexsuite.ttc"/>
+  <mime-type type="application/vnd.motorola.flexsuite.wem"/>
+  <mime-type type="application/vnd.motorola.iprm"/>
+  <mime-type type="application/vnd.mozilla.xul+xml">
+    <glob pattern="*.xul"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-artgalry">
+    <glob pattern="*.cil"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-asf"/>
+  <mime-type type="application/vnd.ms-cab-compressed">
+    <glob pattern="*.cab"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-excel">
+    <glob pattern="*.xls"/>
+    <glob pattern="*.xlm"/>
+    <glob pattern="*.xla"/>
+    <glob pattern="*.xlc"/>
+    <glob pattern="*.xlt"/>
+    <glob pattern="*.xlw"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-excel.addin.macroenabled.12">
+    <glob pattern="*.xlam"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-excel.sheet.binary.macroenabled.12">
+    <glob pattern="*.xlsb"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-excel.sheet.macroenabled.12">
+    <glob pattern="*.xlsm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-excel.template.macroenabled.12">
+    <glob pattern="*.xltm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-fontobject">
+    <glob pattern="*.eot"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-htmlhelp">
+    <glob pattern="*.chm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-ims">
+    <glob pattern="*.ims"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-lrm">
+    <glob pattern="*.lrm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-pki.seccat">
+    <glob pattern="*.cat"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-pki.stl">
+    <glob pattern="*.stl"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-playready.initiator+xml"/>
+  <mime-type type="application/vnd.ms-powerpoint">
+    <glob pattern="*.ppt"/>
+    <glob pattern="*.pps"/>
+    <glob pattern="*.pot"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-powerpoint.addin.macroenabled.12">
+    <glob pattern="*.ppam"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
+    <glob pattern="*.pptm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-powerpoint.slide.macroenabled.12">
+    <glob pattern="*.sldm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-powerpoint.slideshow.macroenabled.12">
+    <glob pattern="*.ppsm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-powerpoint.template.macroenabled.12">
+    <glob pattern="*.potm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-project">
+    <glob pattern="*.mpp"/>
+    <glob pattern="*.mpt"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-tnef"/>
+  <mime-type type="application/vnd.ms-wmdrm.lic-chlg-req"/>
+  <mime-type type="application/vnd.ms-wmdrm.lic-resp"/>
+  <mime-type type="application/vnd.ms-wmdrm.meter-chlg-req"/>
+  <mime-type type="application/vnd.ms-wmdrm.meter-resp"/>
+  <mime-type type="application/vnd.ms-word.document.macroenabled.12">
+    <glob pattern="*.docm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-word.template.macroenabled.12">
+    <glob pattern="*.dotm"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-works">
+    <glob pattern="*.wps"/>
+    <glob pattern="*.wks"/>
+    <glob pattern="*.wcm"/>
+    <glob pattern="*.wdb"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-wpl">
+    <glob pattern="*.wpl"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-xpsdocument">
+    <glob pattern="*.xps"/>
+  </mime-type>
+  <mime-type type="application/vnd.mseq">
+    <glob pattern="*.mseq"/>
+  </mime-type>
+  <mime-type type="application/vnd.msign"/>
+  <mime-type type="application/vnd.multiad.creator"/>
+  <mime-type type="application/vnd.multiad.creator.cif"/>
+  <mime-type type="application/vnd.music-niff"/>
+  <mime-type type="application/vnd.musician">
+    <glob pattern="*.mus"/>
+  </mime-type>
+  <mime-type type="application/vnd.muvee.style">
+    <glob pattern="*.msty"/>
+  </mime-type>
+  <mime-type type="application/vnd.ncd.control"/>
+  <mime-type type="application/vnd.ncd.reference"/>
+  <mime-type type="application/vnd.nervana"/>
+  <mime-type type="application/vnd.netfpx"/>
+  <mime-type type="application/vnd.neurolanguage.nlu">
+    <glob pattern="*.nlu"/>
+  </mime-type>
+  <mime-type type="application/vnd.noblenet-directory">
+    <glob pattern="*.nnd"/>
+  </mime-type>
+  <mime-type type="application/vnd.noblenet-sealer">
+    <glob pattern="*.nns"/>
+  </mime-type>
+  <mime-type type="application/vnd.noblenet-web">
+    <glob pattern="*.nnw"/>
+  </mime-type>
+  <mime-type type="application/vnd.nokia.catalogs"/>
+  <mime-type type="application/vnd.nokia.conml+wbxml"/>
+  <mime-type type="application/vnd.nokia.conml+xml"/>
+  <mime-type type="application/vnd.nokia.isds-radio-presets"/>
+  <mime-type type="application/vnd.nokia.iptv.config+xml"/>
+  <mime-type type="application/vnd.nokia.landmark+wbxml"/>
+  <mime-type type="application/vnd.nokia.landmark+xml"/>
+  <mime-type type="application/vnd.nokia.landmarkcollection+xml"/>
+  <mime-type type="application/vnd.nokia.n-gage.ac+xml"/>
+  <mime-type type="application/vnd.nokia.n-gage.data">
+    <glob pattern="*.ngdat"/>
+  </mime-type>
+  <mime-type type="application/vnd.nokia.n-gage.symbian.install">
+    <glob pattern="*.n-gage"/>
+  </mime-type>
+  <mime-type type="application/vnd.nokia.ncd"/>
+  <mime-type type="application/vnd.nokia.pcd+wbxml"/>
+  <mime-type type="application/vnd.nokia.pcd+xml"/>
+  <mime-type type="application/vnd.nokia.radio-preset">
+    <glob pattern="*.rpst"/>
+  </mime-type>
+  <mime-type type="application/vnd.nokia.radio-presets">
+    <glob pattern="*.rpss"/>
+  </mime-type>
+  <mime-type type="application/vnd.novadigm.edm">
+    <glob pattern="*.edm"/>
+  </mime-type>
+  <mime-type type="application/vnd.novadigm.edx">
+    <glob pattern="*.edx"/>
+  </mime-type>
+  <mime-type type="application/vnd.novadigm.ext">
+    <glob pattern="*.ext"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.chart">
+    <glob pattern="*.odc"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.chart-template">
+    <glob pattern="*.otc"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.database">
+    <glob pattern="*.odb"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.formula">
+    <glob pattern="*.odf"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.formula-template">
+    <glob pattern="*.odft"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.graphics">
+    <glob pattern="*.odg"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.graphics-template">
+    <glob pattern="*.otg"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.image">
+    <glob pattern="*.odi"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.image-template">
+    <glob pattern="*.oti"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.presentation">
+    <glob pattern="*.odp"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.presentation-template otp"/>
+  <mime-type type="application/vnd.oasis.opendocument.spreadsheet">
+    <glob pattern="*.ods"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.spreadsheet-template">
+    <glob pattern="*.ots"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.text">
+    <glob pattern="*.odt"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.text-master">
+    <glob pattern="*.otm"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.text-template">
+    <glob pattern="*.ott"/>
+  </mime-type>
+  <mime-type type="application/vnd.oasis.opendocument.text-web">
+    <glob pattern="*.oth"/>
+  </mime-type>
+  <mime-type type="application/vnd.obn"/>
+  <mime-type type="application/vnd.olpc-sugar">
+    <glob pattern="*.xo"/>
+  </mime-type>
+  <mime-type type="application/vnd.oma-scws-config"/>
+  <mime-type type="application/vnd.oma-scws-http-request"/>
+  <mime-type type="application/vnd.oma-scws-http-response"/>
+  <mime-type type="application/vnd.oma.bcast.associated-procedure-parameter+xml"/>
+  <mime-type type="application/vnd.oma.bcast.drm-trigger+xml"/>
+  <mime-type type="application/vnd.oma.bcast.imd+xml"/>
+  <mime-type type="application/vnd.oma.bcast.ltkm"/>
+  <mime-type type="application/vnd.oma.bcast.notification+xml"/>
+  <mime-type type="application/vnd.oma.bcast.provisioningtrigger"/>
+  <mime-type type="application/vnd.oma.bcast.sgboot"/>
+  <mime-type type="application/vnd.oma.bcast.sgdd+xml"/>
+  <mime-type type="application/vnd.oma.bcast.sgdu"/>
+  <mime-type type="application/vnd.oma.bcast.simple-symbol-container"/>
+  <mime-type type="application/vnd.oma.bcast.smartcard-trigger+xml"/>
+  <mime-type type="application/vnd.oma.bcast.sprov+xml"/>
+  <mime-type type="application/vnd.oma.bcast.stkm"/>
+  <mime-type type="application/vnd.oma.dcd"/>
+  <mime-type type="application/vnd.oma.dcdc"/>
+  <mime-type type="application/vnd.oma.dd2+xml">
+    <glob pattern="*.dd2"/>
+  </mime-type>
+  <mime-type type="application/vnd.oma.drm.risd+xml"/>
+  <mime-type type="application/vnd.oma.group-usage-list+xml"/>
+  <mime-type type="application/vnd.oma.poc.detailed-progress-report+xml"/>
+  <mime-type type="application/vnd.oma.poc.final-report+xml"/>
+  <mime-type type="application/vnd.oma.poc.groups+xml"/>
+  <mime-type type="application/vnd.oma.poc.invocation-descriptor+xml"/>
+  <mime-type type="application/vnd.oma.poc.optimized-progress-report+xml"/>
+  <mime-type type="application/vnd.oma.xcap-directory+xml"/>
+  <mime-type type="application/vnd.omads-email+xml"/>
+  <mime-type type="application/vnd.omads-file+xml"/>
+  <mime-type type="application/vnd.omads-folder+xml"/>
+  <mime-type type="application/vnd.omaloc-supl-init"/>
+  <mime-type type="application/vnd.openofficeorg.extension">
+    <glob pattern="*.oxt"/>
+  </mime-type>
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.presentation pptx"/>
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.slide">
+    <glob pattern="*.sldx"/>
+  </mime-type>
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.slideshow">
+    <glob pattern="*.ppsx"/>
+  </mime-type>
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.template">
+    <glob pattern="*.potx"/>
+  </mime-type>
+  <mime-type type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+    <glob pattern="*.xlsx"/>
+  </mime-type>
+  <mime-type type="application/vnd.openxmlformats-officedocument.spreadsheetml.template">
+    <glob pattern="*.xltx"/>
+  </mime-type>
+  <mime-type type="application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+    <glob pattern="*.docx"/>
+  </mime-type>
+  <mime-type type="application/vnd.openxmlformats-officedocument.wordprocessingml.template">
+    <glob pattern="*.dotx"/>
+  </mime-type>
+  <mime-type type="application/vnd.osa.netdeploy"/>
+  <mime-type type="application/vnd.osgi.bundle"/>
+  <mime-type type="application/vnd.osgi.dp">
+    <glob pattern="*.dp"/>
+  </mime-type>
+  <mime-type type="application/vnd.otps.ct-kip+xml"/>
+  <mime-type type="application/vnd.palm">
+    <glob pattern="*.pdb"/>
+    <glob pattern="*.pqa"/>
+    <glob pattern="*.oprc"/>
+  </mime-type>
+  <mime-type type="application/vnd.paos.xml"/>
+  <mime-type type="application/vnd.pg.format">
+    <glob pattern="*.str"/>
+  </mime-type>
+  <mime-type type="application/vnd.pg.osasli">
+    <glob pattern="*.ei6"/>
+  </mime-type>
+  <mime-type type="application/vnd.piaccess.application-licence"/>
+  <mime-type type="application/vnd.picsel">
+    <glob pattern="*.efif"/>
+  </mime-type>
+  <mime-type type="application/vnd.poc.group-advertisement+xml"/>
+  <mime-type type="application/vnd.pocketlearn">
+    <glob pattern="*.plf"/>
+  </mime-type>
+  <mime-type type="application/vnd.powerbuilder6">
+    <glob pattern="*.pbd"/>
+  </mime-type>
+  <mime-type type="application/vnd.powerbuilder6-s"/>
+  <mime-type type="application/vnd.powerbuilder7"/>
+  <mime-type type="application/vnd.powerbuilder7-s"/>
+  <mime-type type="application/vnd.powerbuilder75"/>
+  <mime-type type="application/vnd.powerbuilder75-s"/>
+  <mime-type type="application/vnd.preminet"/>
+  <mime-type type="application/vnd.previewsystems.box">
+    <glob pattern="*.box"/>
+  </mime-type>
+  <mime-type type="application/vnd.proteus.magazine">
+    <glob pattern="*.mgz"/>
+  </mime-type>
+  <mime-type type="application/vnd.publishare-delta-tree">
+    <glob pattern="*.qps"/>
+  </mime-type>
+  <mime-type type="application/vnd.pvi.ptid1">
+    <glob pattern="*.ptid"/>
+  </mime-type>
+  <mime-type type="application/vnd.pwg-multiplexed"/>
+  <mime-type type="application/vnd.pwg-xhtml-print+xml"/>
+  <mime-type type="application/vnd.qualcomm.brew-app-res"/>
+  <mime-type type="application/vnd.quark.quarkxpress">
+    <glob pattern="*.qxd"/>
+    <glob pattern="*.qxt"/>
+    <glob pattern="*.qwd"/>
+    <glob pattern="*.qwt"/>
+    <glob pattern="*.qxl"/>
+    <glob pattern="*.qxb"/>
+  </mime-type>
+  <mime-type type="application/vnd.rapid"/>
+  <mime-type type="application/vnd.recordare.musicxml">
+    <glob pattern="*.mxl"/>
+  </mime-type>
+  <mime-type type="application/vnd.recordare.musicxml+xml">
+    <glob pattern="*.musicxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.renlearn.rlprint"/>
+  <mime-type type="application/vnd.rim.cod">
+    <glob pattern="*.cod"/>
+  </mime-type>
+  <mime-type type="application/vnd.rn-realmedia">
+    <glob pattern="*.rm"/>
+  </mime-type>
+  <mime-type type="application/vnd.route66.link66+xml">
+    <glob pattern="*.link66"/>
+  </mime-type>
+  <mime-type type="application/vnd.ruckus.download"/>
+  <mime-type type="application/vnd.s3sms"/>
+  <mime-type type="application/vnd.sbm.cid"/>
+  <mime-type type="application/vnd.sbm.mid2"/>
+  <mime-type type="application/vnd.scribus"/>
+  <mime-type type="application/vnd.sealed.3df"/>
+  <mime-type type="application/vnd.sealed.csf"/>
+  <mime-type type="application/vnd.sealed.doc"/>
+  <mime-type type="application/vnd.sealed.eml"/>
+  <mime-type type="application/vnd.sealed.mht"/>
+  <mime-type type="application/vnd.sealed.net"/>
+  <mime-type type="application/vnd.sealed.ppt"/>
+  <mime-type type="application/vnd.sealed.tiff"/>
+  <mime-type type="application/vnd.sealed.xls"/>
+  <mime-type type="application/vnd.sealedmedia.softseal.html"/>
+  <mime-type type="application/vnd.sealedmedia.softseal.pdf"/>
+  <mime-type type="application/vnd.seemail">
+    <glob pattern="*.see"/>
+  </mime-type>
+  <mime-type type="application/vnd.sema">
+    <glob pattern="*.sema"/>
+  </mime-type>
+  <mime-type type="application/vnd.semd">
+    <glob pattern="*.semd"/>
+  </mime-type>
+  <mime-type type="application/vnd.semf">
+    <glob pattern="*.semf"/>
+  </mime-type>
+  <mime-type type="application/vnd.shana.informed.formdata">
+    <glob pattern="*.ifm"/>
+  </mime-type>
+  <mime-type type="application/vnd.shana.informed.formtemplate">
+    <glob pattern="*.itp"/>
+  <mime-type type="application/vnd.shana.informed.interchange">
+    <glob pattern="*.iif"/>
+  </mime-type>
+  <mime-type type="application/vnd.shana.informed.package">
+    <glob pattern="*.ipk"/>
+  </mime-type>
+  <mime-type type="application/vnd.simtech-mindmapper">
+    <glob pattern="*.twd"/>
+    <glob pattern="*.twds"/>
+  </mime-type>
+  <mime-type type="application/vnd.smaf">
+    <glob pattern="*.mmf"/>
+  </mime-type>
+  <mime-type type="application/vnd.smart.teacher">
+    <glob pattern="*.teacher"/>
+  </mime-type>
+  <mime-type type="application/vnd.software602.filler.form+xml"/>
+  <mime-type type="application/vnd.software602.filler.form-xml-zip"/>
+  <mime-type type="application/vnd.solent.sdkm+xml">
+    <glob pattern="*.sdkm"/>
+    <glob pattern="*.sdkd"/>
+  </mime-type>
+  <mime-type type="application/vnd.spotfire.dxp">
+    <glob pattern="*.dxp"/>
+  </mime-type>
+  <mime-type type="application/vnd.spotfire.sfs">
+    <glob pattern="*.sfs"/>
+  </mime-type>
+  <mime-type type="application/vnd.sss-cod"/>
+  <mime-type type="application/vnd.sss-dtf"/>
+  <mime-type type="application/vnd.sss-ntf"/>
+  <mime-type type="application/vnd.stardivision.calc">
+    <glob pattern="*.sdc"/>
+  </mime-type>
+  <mime-type type="application/vnd.stardivision.draw">
+    <glob pattern="*.sda"/>
+  </mime-type>
+  <mime-type type="application/vnd.stardivision.impress">
+    <glob pattern="*.sdd"/>
+  </mime-type>
+  <mime-type type="application/vnd.stardivision.math">
+    <glob pattern="*.smf"/>
+  </mime-type>
+  <mime-type type="application/vnd.stardivision.writer">
+    <glob pattern="*.sdw"/>
+  </mime-type>
+  <mime-type type="application/vnd.stardivision.writer">
+    <glob pattern="*.vor"/>
+  </mime-type>
+  <mime-type type="application/vnd.stardivision.writer-global">
+    <glob pattern="*.sgl"/>
+  </mime-type>
+  <mime-type type="application/vnd.street-stream"/>
+  <mime-type type="application/vnd.sun.xml.calc">
+    <glob pattern="*.sxc"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.calc.template">
+    <glob pattern="*.stc"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.draw">
+    <glob pattern="*.sxd"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.draw.template">
+    <glob pattern="*.std"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.impress">
+    <glob pattern="*.sxi"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.impress.template">
+    <glob pattern="*.sti"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.math">
+    <glob pattern="*.sxm"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.writer">
+    <glob pattern="*.sxw"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.writer.global">
+    <glob pattern="*.sxg"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.xml.writer.template">
+    <glob pattern="*.stw"/>
+  </mime-type>
+  <mime-type type="application/vnd.sun.wadl+xml"/>
+  <mime-type type="application/vnd.sus-calendar">
+    <glob pattern="*.sus"/>
+    <glob pattern="*.susp"/>
+  </mime-type>
+  <mime-type type="application/vnd.svd">
+    <glob pattern="*.svd"/>
+  </mime-type>
+  <mime-type type="application/vnd.swiftview-ics"/>
+  <mime-type type="application/vnd.symbian.install">
+    <glob pattern="*.sis"/>
+    <glob pattern="*.sisx"/>
+  </mime-type>
+  <mime-type type="application/vnd.syncml+xml">
+    <glob pattern="*.xsm"/>
+  </mime-type>
+  <mime-type type="application/vnd.syncml.dm+wbxml">
+    <glob pattern="*.bdm"/>
+  </mime-type>
+  <mime-type type="application/vnd.syncml.dm+xml">
+    <glob pattern="*.xdm"/>
+  </mime-type>
+  <mime-type type="application/vnd.syncml.dm.notification"/>
+  <mime-type type="application/vnd.syncml.ds.notification"/>
+  <mime-type type="application/vnd.tao.intent-module-archive">
+    <glob pattern="*.tao"/>
+  </mime-type>
+  <mime-type type="application/vnd.tmobile-livetv">
+    <glob pattern="*.tmo"/>
+  </mime-type>
+  <mime-type type="application/vnd.trid.tpt">
+    <glob pattern="*.tpt"/>
+  </mime-type>
+  <mime-type type="application/vnd.triscape.mxs">
+    <glob pattern="*.mxs"/>
+  </mime-type>
+  <mime-type type="application/vnd.trueapp">
+    <glob pattern="*.tra"/>
+  </mime-type>
+  <mime-type type="application/vnd.truedoc"/>
+  <mime-type type="application/vnd.ufdl">
+    <glob pattern="*.ufd"/>
+    <glob pattern="*.ufdl"/>
+  </mime-type>
+  <mime-type type="application/vnd.uiq.theme">
+    <glob pattern="*.utz"/>
+  </mime-type>
+  <mime-type type="application/vnd.umajin">
+    <glob pattern="*.umj"/>
+  </mime-type>
+  <mime-type type="application/vnd.unity">
+    <glob pattern="*.unityweb"/>
+  </mime-type>
+  <mime-type type="application/vnd.uoml+xml">
+    <glob pattern="*.uoml"/>
+  </mime-type>
+  <mime-type type="application/vnd.uplanet.alert"/>
+  <mime-type type="application/vnd.uplanet.alert-wbxml"/>
+  <mime-type type="application/vnd.uplanet.bearer-choice"/>
+  <mime-type type="application/vnd.uplanet.bearer-choice-wbxml"/>
+  <mime-type type="application/vnd.uplanet.cacheop"/>
+  <mime-type type="application/vnd.uplanet.cacheop-wbxml"/>
+  <mime-type type="application/vnd.uplanet.channel"/>
+  <mime-type type="application/vnd.uplanet.channel-wbxml"/>
+  <mime-type type="application/vnd.uplanet.list"/>
+  <mime-type type="application/vnd.uplanet.list-wbxml"/>
+  <mime-type type="application/vnd.uplanet.listcmd"/>
+  <mime-type type="application/vnd.uplanet.listcmd-wbxml"/>
+  <mime-type type="application/vnd.uplanet.signal"/>
+  <mime-type type="application/vnd.vcx">
+    <glob pattern="*.vcx"/>
+  </mime-type>
+  <mime-type type="application/vnd.vd-study"/>
+  <mime-type type="application/vnd.vectorworks"/>
+  <mime-type type="application/vnd.vidsoft.vidconference"/>
+  <mime-type type="application/vnd.visio">
+    <glob pattern="*.vsd"/>
+    <glob pattern="*.vst"/>
+    <glob pattern="*.vss"/>
+    <glob pattern="*.vsw"/>
+  </mime-type>
+  <mime-type type="application/vnd.visionary">
+    <glob pattern="*.vis"/>
+  </mime-type>
+  <mime-type type="application/vnd.vividence.scriptfile"/>
+  <mime-type type="application/vnd.vsf">
+    <glob pattern="*.vsf"/>
+  </mime-type>
+  <mime-type type="application/vnd.wap.sic"/>
+  <mime-type type="application/vnd.wap.slc"/>
+  <mime-type type="application/vnd.wap.wbxml">
+    <glob pattern="*.wbxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.wap.wmlc">
+    <glob pattern="*.wmlc"/>
+  </mime-type>
+  <mime-type type="application/vnd.wap.wmlscriptc">
+    <glob pattern="*.wmlsc"/>
+  </mime-type>
+  <mime-type type="application/vnd.webturbo">
+    <glob pattern="*.wtb"/>
+  </mime-type>
+  <mime-type type="application/vnd.wfa.wsc"/>
+  <mime-type type="application/vnd.wmc"/>
+  <mime-type type="application/vnd.wmf.bootstrap"/>
+  <mime-type type="application/vnd.wordperfect">
+    <glob pattern="*.wpd"/>
+  </mime-type>
+  <mime-type type="application/vnd.wqd">
+    <glob pattern="*.wqd"/>
+  </mime-type>
+  <mime-type type="application/vnd.wrq-hp3000-labelled"/>
+  <mime-type type="application/vnd.wt.stf">
+    <glob pattern="*.stf"/>
+  </mime-type>
+  <mime-type type="application/vnd.wv.csp+wbxml"/>
+  <mime-type type="application/vnd.wv.csp+xml"/>
+  <mime-type type="application/vnd.wv.ssp+xml"/>
+  <mime-type type="application/vnd.xara">
+    <glob pattern="*.xar"/>
+  </mime-type>
+  <mime-type type="application/vnd.xfdl">
+    <glob pattern="*.xfdl"/>
+  </mime-type>
+  <mime-type type="application/vnd.xfdl.webform"/>
+  <mime-type type="application/vnd.xmi+xml"/>
+  <mime-type type="application/vnd.xmpie.cpkg"/>
+  <mime-type type="application/vnd.xmpie.dpkg"/>
+  <mime-type type="application/vnd.xmpie.plan"/>
+  <mime-type type="application/vnd.xmpie.ppkg"/>
+  <mime-type type="application/vnd.xmpie.xlim"/>
+  <mime-type type="application/vnd.yamaha.hv-dic">
+    <glob pattern="*.hvd"/>
+  </mime-type>
+  <mime-type type="application/vnd.yamaha.hv-script">
+    <glob pattern="*.hvs"/>
+  </mime-type>
+  <mime-type type="application/vnd.yamaha.hv-voice">
+    <glob pattern="*.hvp"/>
+  </mime-type>
+  <mime-type type="application/vnd.yamaha.openscoreformat">
+    <glob pattern="*.osf"/>
+  </mime-type>
+  <mime-type type="application/vnd.yamaha.openscoreformat.osfpvg+xml">
+    <glob pattern="*.osfpvg"/>
+  </mime-type>
+  <mime-type type="application/vnd.yamaha.smaf-audio">
+    <glob pattern="*.saf"/>
+  </mime-type>
+  <mime-type type="application/vnd.yamaha.smaf-phrase">
+    <glob pattern="*.spf"/>
+  </mime-type>
+  <mime-type type="application/vnd.yellowriver-custom-menu">
+    <glob pattern="*.cmp"/>
+  </mime-type>
+  <mime-type type="application/vnd.zul">
+    <glob pattern="*.zir"/>
+    <glob pattern="*.zirz"/>
+  </mime-type>
+  <mime-type type="application/vnd.zzazz.deck+xml">
+    <glob pattern="*.zaz"/>
+  </mime-type>
+  <mime-type type="application/voicexml+xml">
+    <glob pattern="*.vxml"/>
+  </mime-type>
+  <mime-type type="application/watcherinfo+xml"/>
+  <mime-type type="application/whoispp-query"/>
+  <mime-type type="application/whoispp-response"/>
+  <mime-type type="application/winhlp">
+    <glob pattern="*.hlp"/>
+  </mime-type>
+  <mime-type type="application/wita"/>
+  <mime-type type="application/wordperfect5.1"/>
+  <mime-type type="application/wsdl+xml">
+    <glob pattern="*.wsdl"/>
+  </mime-type>
+  <mime-type type="application/wspolicy+xml">
+    <glob pattern="*.wspolicy"/>
+  </mime-type>
+  <mime-type type="application/x-abiword">
+    <glob pattern="*.abw"/>
+  </mime-type>
+  <mime-type type="application/x-ace-compressed">
+    <glob pattern="*.ace"/>
+  </mime-type>
+  <mime-type type="application/x-authorware-bin">
+    <glob pattern="*.aab"/>
+    <glob pattern="*.x32"/>
+    <glob pattern="*.u32"/>
+    <glob pattern="*.vox"/>
+  </mime-type>
+  <mime-type type="application/x-authorware-map">
+    <glob pattern="*.aam"/>
+  </mime-type>
+  <mime-type type="application/x-authorware-seg">
+    <glob pattern="*.aas"/>
+  </mime-type>
+  <mime-type type="application/x-bcpio">
+    <glob pattern="*.bcpio"/>
+  </mime-type>
+  <mime-type type="application/x-bittorrent">
+    <glob pattern="*.torrent"/>
+  </mime-type>
+  <mime-type type="application/x-bzip">
+    <glob pattern="*.bz"/>
+  </mime-type>
+  <mime-type type="application/x-bzip2">
+    <glob pattern="*.bz2"/>
+    <glob pattern="*.boz"/>
+  </mime-type>
+  <mime-type type="application/x-cdlink">
+    <glob pattern="*.vcd"/>
+  </mime-type>
+  <mime-type type="application/x-chat">
+    <glob pattern="*.chat"/>
+  </mime-type>
+  <mime-type type="application/x-chess-pgn">
+    <glob pattern="*.pgn"/>
+  </mime-type>
+  <mime-type type="application/x-compress"/>
+  <mime-type type="application/x-cpio">
+    <glob pattern="*.cpio"/>
+  </mime-type>
+  <mime-type type="application/x-csh">
+    <glob pattern="*.csh"/>
+  </mime-type>
+  <mime-type type="application/x-debian-package">
+    <glob pattern="*.deb"/>
+    <glob pattern="*.udeb"/>
+  </mime-type>
+  <mime-type type="application/x-director">
+    <glob pattern="*.dir"/>
+    <glob pattern="*.dcr"/>
+    <glob pattern="*.dxr"/>
+    <glob pattern="*.cst"/>
+    <glob pattern="*.cct"/>
+    <glob pattern="*.cxt"/>
+    <glob pattern="*.w3d"/>
+    <glob pattern="*.fgd"/>
+    <glob pattern="*.swa"/>
+  </mime-type>
+  <mime-type type="application/x-doom">
+    <glob pattern="*.wad"/>
+  </mime-type>
+  <mime-type type="application/x-dtbncx+xml">
+    <glob pattern="*.ncx"/>
+  </mime-type>
+  <mime-type type="application/x-dtbook+xml">
+    <glob pattern="*.dtb"/>
+  </mime-type>
+  <mime-type type="application/x-dtbresource+xml">
+    <glob pattern="*.res"/>
+  </mime-type>
+  <mime-type type="application/x-dvi">
+    <glob pattern="*.dvi"/>
+  </mime-type>
+  <mime-type type="application/x-font-bdf">
+    <glob pattern="*.bdf"/>
+  </mime-type>
+  <mime-type type="application/x-font-dos"/>
+  <mime-type type="application/x-font-framemaker"/>
+  <mime-type type="application/x-font-ghostscript">
+    <glob pattern="*.gsf"/>
+  </mime-type>
+  <mime-type type="application/x-font-libgrx"/>
+  <mime-type type="application/x-font-linux-psf">
+    <glob pattern="*.psf"/>
+  </mime-type>
+  <mime-type type="application/x-font-otf">
+    <glob pattern="*.otf"/>
+  </mime-type>
+  <mime-type type="application/x-font-pcf">
+    <glob pattern="*.pcf"/>
+  </mime-type>
+  <mime-type type="application/x-font-snf">
+    <glob pattern="*.snf"/>
+  </mime-type>
+  <mime-type type="application/x-font-speedo"/>
+  <mime-type type="application/x-font-sunos-news"/>
+  <mime-type type="application/x-font-ttf">
+    <glob pattern="*.ttf"/>
+    <glob pattern="*.ttc"/>
+  </mime-type>
+  <mime-type type="application/x-font-type1">
+    <glob pattern="*.pfa"/>
+    <glob pattern="*.pfb"/>
+    <glob pattern="*.pfm"/>
+    <glob pattern="*.afm"/>
+  </mime-type>
+  <mime-type type="application/x-font-vfont"/>
+  <mime-type type="application/x-futuresplash">
+    <glob pattern="*.spl"/>
+  </mime-type>
+  <mime-type type="application/x-gnumeric">
+    <glob pattern="*.gnumeric"/>
+  </mime-type>
+  <mime-type type="application/x-gtar">
+    <glob pattern="*.gtar"/>
+  </mime-type>
+  <mime-type type="application/x-gzip"/>
+  <mime-type type="application/x-hdf">
+    <glob pattern="*.hdf"/>
+  </mime-type>
+  <mime-type type="application/x-java-jnlp-file">
+    <glob pattern="*.jnlp"/>
+  </mime-type>
+  <mime-type type="application/x-latex">
+    <glob pattern="*.latex"/>
+  </mime-type>
+  <mime-type type="application/x-mobipocket-ebook">
+    <glob pattern="*.prc"/>
+    <glob pattern="*.mobi"/>
+  </mime-type>
+  <mime-type type="application/x-ms-application">
+    <glob pattern="*.application"/>
+  </mime-type>
+  <mime-type type="application/x-ms-wmd">
+    <glob pattern="*.wmd"/>
+  </mime-type>
+  <mime-type type="application/x-ms-wmz">
+    <glob pattern="*.wmz"/>
+  </mime-type>
+  <mime-type type="application/x-ms-xbap">
+    <glob pattern="*.xbap"/>
+  </mime-type>
+  <mime-type type="application/x-msaccess">
+    <glob pattern="*.mdb"/>
+  </mime-type>
+  <mime-type type="application/x-msbinder">
+  </mime-type>
+    <glob pattern="*.obd"/>
+  </mime-type>
+  <mime-type type="application/x-mscardfile">
+    <glob pattern="*.crd"/>
+  </mime-type>
+  <mime-type type="application/x-msclip">
+    <glob pattern="*.clp"/>
+  </mime-type>
+  <mime-type type="application/x-msdownload">
+    <glob pattern="*.exe"/>
+    <glob pattern="*.dll"/>
+    <glob pattern="*.com"/>
+    <glob pattern="*.bat"/>
+    <glob pattern="*.msi"/>
+  </mime-type>
+  <mime-type type="application/x-msmediaview">
+    <glob pattern="*.mvb"/>
+    <glob pattern="*.m13"/>
+    <glob pattern="*.m14"/>
+  </mime-type>
+  <mime-type type="application/x-msmetafile">
+    <glob pattern="*.wmf"/>
+  </mime-type>
+  <mime-type type="application/x-msmoney">
+    <glob pattern="*.mny"/>
+  </mime-type>
+  <mime-type type="application/x-mspublisher">
+    <glob pattern="*.pub"/>
+  </mime-type>
+  <mime-type type="application/x-msschedule">
+    <glob pattern="*.scd"/>
+  </mime-type>
+  <mime-type type="application/x-msterminal">
+    <glob pattern="*.trm"/>
+  </mime-type>
+  <mime-type type="application/x-mswrite">
+    <glob pattern="*.wri"/>
+  </mime-type>
+  <mime-type type="application/x-netcdf">
+    <glob pattern="*.nc"/>
+    <glob pattern="*.cdf"/>
+  </mime-type>
+  <mime-type type="application/x-pkcs12">
+    <glob pattern="*.p12"/>
+    <glob pattern="*.pfx"/>
+  </mime-type>
+  <mime-type type="application/x-pkcs7-certificates">
+    <glob pattern="*.p7b"/>
+    <glob pattern="*.spc"/>
+  </mime-type>
+  <mime-type type="application/x-pkcs7-certreqresp">
+    <glob pattern="*.p7r"/>
+  </mime-type>
+  <mime-type type="application/x-rar-compressed">
+    <glob pattern="*.rar"/>
+  </mime-type>
+  <mime-type type="application/x-sh">
+    <glob pattern="*.sh"/>
+  </mime-type>
+  <mime-type type="application/x-shar">
+    <glob pattern="*.shar"/>
+  </mime-type>
+  <mime-type type="application/x-shockwave-flash">
+    <glob pattern="*.swf"/>
+  </mime-type>
+  <mime-type type="application/x-silverlight-app">
+    <glob pattern="*.xap"/>
+  </mime-type>
+  <mime-type type="application/x-stuffit">
+    <glob pattern="*.sit"/>
+  </mime-type>
+  <mime-type type="application/x-stuffitx">
+    <glob pattern="*.sitx"/>
+  </mime-type>
+  <mime-type type="application/x-sv4cpio">
+    <glob pattern="*.sv4cpio"/>
+  </mime-type>
+  <mime-type type="application/x-sv4crc">
+    <glob pattern="*.sv4crc"/>
+  </mime-type>
+  <mime-type type="application/x-tar">
+    <glob pattern="*.tar"/>
+  </mime-type>
+  <mime-type type="application/x-tcl">
+    <glob pattern="*.tcl"/>
+  </mime-type>
+  <mime-type type="application/x-tex">
+    <glob pattern="*.tex"/>
+  </mime-type>
+  <mime-type type="application/x-tex-tfm">
+    <glob pattern="*.tfm"/>
+  </mime-type>
+  <mime-type type="application/x-texinfo">
+    <glob pattern="*.texinfo"/>
+    <glob pattern="*.texi"/>
+  </mime-type>
+  <mime-type type="application/x-ustar">
+    <glob pattern="*.ustar"/>
+  </mime-type>
+  <mime-type type="application/x-wais-source">
+    <glob pattern="*.src"/>
+  </mime-type>
+  <mime-type type="application/x-x509-ca-cert">
+    <glob pattern="*.der"/>
+    <glob pattern="*.crt"/>
+  </mime-type>
+  <mime-type type="application/x-xfig">
+    <glob pattern="*.fig"/>
+  </mime-type>
+  <mime-type type="application/x-xpinstall">
+    <glob pattern="*.xpi"/>
+  </mime-type>
+  <mime-type type="application/x400-bp"/>
+  <mime-type type="application/xcap-att+xml"/>
+  <mime-type type="application/xcap-caps+xml"/>
+  <mime-type type="application/xcap-el+xml"/>
+  <mime-type type="application/xcap-error+xml"/>
+  <mime-type type="application/xcap-ns+xml"/>
+  <mime-type type="application/xcon-conference-info-diff+xml"/>
+  <mime-type type="application/xcon-conference-info+xml"/>
+  <mime-type type="application/xenc+xml">
+    <glob pattern="*.xenc"/>
+  </mime-type>
+  <mime-type type="application/xhtml+xml">
+    <glob pattern="*.xhtml"/>
+    <glob pattern="*.xht"/>
+  </mime-type>
+  <mime-type type="application/xhtml-voice+xml"/>
+  <mime-type type="application/xml">
+    <glob pattern="*.xml"/>
+    <glob pattern="*.xsl"/>
+  </mime-type>
+  <mime-type type="application/xml-dtd">
+    <glob pattern="*.dtd"/>
+  </mime-type>
+  <mime-type type="application/xml-external-parsed-entity"/>
+  <mime-type type="application/xmpp+xml"/>
+  <mime-type type="application/xop+xml">
+    <glob pattern="*.xop"/>
+  </mime-type>
+  <mime-type type="application/xslt+xml">
+    <glob pattern="*.xslt"/>
+  </mime-type>
+  <mime-type type="application/xspf+xml">
+    <glob pattern="*.xspf"/>
+  </mime-type>
+  <mime-type type="application/xv+xml">
+    <glob pattern="*.mxml"/>
+    <glob pattern="*.xhvml"/>
+    <glob pattern="*.xvml"/>
+    <glob pattern="*.xvm"/>
+  </mime-type>
+  <mime-type type="application/zip">
+    <glob pattern="*.zip"/>
+  </mime-type>
+  <mime-type type="audio/32kadpcm"/>
+  <mime-type type="audio/3gpp"/>
+  <mime-type type="audio/3gpp2"/>
+  <mime-type type="audio/ac3"/>
+  <mime-type type="audio/adpcm">
+    <glob pattern="*.adp"/>
+  </mime-type>
+  <mime-type type="audio/amr"/>
+  <mime-type type="audio/amr-wb"/>
+  <mime-type type="audio/amr-wb+"/>
+  <mime-type type="audio/asc"/>
+  <mime-type type="audio/basic">
+    <glob pattern="*.au"/>
+    <glob pattern="*.snd"/>
+  </mime-type>
+  <mime-type type="audio/bv16"/>
+  <mime-type type="audio/bv32"/>
+  <mime-type type="audio/clearmode"/>
+  <mime-type type="audio/cn"/>
+  <mime-type type="audio/dat12"/>
+  <mime-type type="audio/dls"/>
+  <mime-type type="audio/dsr-es201108"/>
+  <mime-type type="audio/dsr-es202050"/>
+  <mime-type type="audio/dsr-es202211"/>
+  <mime-type type="audio/dsr-es202212"/>
+  <mime-type type="audio/dvi4"/>
+  <mime-type type="audio/eac3"/>
+  <mime-type type="audio/evrc"/>
+  <mime-type type="audio/evrc-qcp"/>
+  <mime-type type="audio/evrc0"/>
+  <mime-type type="audio/evrc1"/>
+  <mime-type type="audio/evrcb"/>
+  <mime-type type="audio/evrcb0"/>
+  <mime-type type="audio/evrcb1"/>
+  <mime-type type="audio/evrcwb"/>
+  <mime-type type="audio/evrcwb0"/>
+  <mime-type type="audio/evrcwb1"/>
+  <mime-type type="audio/example"/>
+  <mime-type type="audio/g719"/>
+  <mime-type type="audio/g722"/>
+  <mime-type type="audio/g7221"/>
+  <mime-type type="audio/g723"/>
+  <mime-type type="audio/g726-16"/>
+  <mime-type type="audio/g726-24"/>
+  <mime-type type="audio/g726-32"/>
+  <mime-type type="audio/g726-40"/>
+  <mime-type type="audio/g728"/>
+  <mime-type type="audio/g729"/>
+  <mime-type type="audio/g7291"/>
+  <mime-type type="audio/g729d"/>
+  <mime-type type="audio/g729e"/>
+  <mime-type type="audio/gsm"/>
+  <mime-type type="audio/gsm-efr"/>
+  <mime-type type="audio/ilbc"/>
+  <mime-type type="audio/l16"/>
+  <mime-type type="audio/l20"/>
+  <mime-type type="audio/l24"/>
+  <mime-type type="audio/l8"/>
+  <mime-type type="audio/lpc"/>
+  <mime-type type="audio/midi">
+    <glob pattern="*.mid"/>
+    <glob pattern="*.midi"/>
+    <glob pattern="*.kar"/>
+    <glob pattern="*.rmi"/>
+  </mime-type>
+  <mime-type type="audio/mobile-xmf"/>
+  <mime-type type="audio/mp4">
+    <glob pattern="*.mp4a"/>
+  </mime-type>
+  <mime-type type="audio/mp4a-latm"/>
+  <mime-type type="audio/mpa"/>
+  <mime-type type="audio/mpa-robust"/>
+  <mime-type type="audio/mpeg">
+    <glob pattern="*.mpga"/>
+    <glob pattern="*.mp2"/>
+    <glob pattern="*.mp2a"/>
+    <glob pattern="*.mp3"/>
+    <glob pattern="*.m2a"/>
+    <glob pattern="*.m3a"/>
+  </mime-type>
+  <mime-type type="audio/mpeg4-generic"/>
+  <mime-type type="audio/ogg">
+    <glob pattern="*.oga"/>
+    <glob pattern="*.ogg"/>
+    <glob pattern="*.spx"/>
+  </mime-type>
+  <mime-type type="audio/parityfec"/>
+  <mime-type type="audio/pcma"/>
+  <mime-type type="audio/pcma-wb"/>
+  <mime-type type="audio/pcmu-wb"/>
+  <mime-type type="audio/pcmu"/>
+  <mime-type type="audio/prs.sid"/>
+  <mime-type type="audio/qcelp"/>
+  <mime-type type="audio/red"/>
+  <mime-type type="audio/rtp-enc-aescm128"/>
+  <mime-type type="audio/rtp-midi"/>
+  <mime-type type="audio/rtx"/>
+  <mime-type type="audio/smv"/>
+  <mime-type type="audio/smv0"/>
+  <mime-type type="audio/smv-qcp"/>
+  <mime-type type="audio/sp-midi"/>
+  <mime-type type="audio/t140c"/>
+  <mime-type type="audio/t38"/>
+  <mime-type type="audio/telephone-event"/>
+  <mime-type type="audio/tone"/>
+  <mime-type type="audio/ulpfec"/>
+  <mime-type type="audio/vdvi"/>
+  <mime-type type="audio/vmr-wb"/>
+  <mime-type type="audio/vnd.3gpp.iufp"/>
+  <mime-type type="audio/vnd.4sb"/>
+  <mime-type type="audio/vnd.audiokoz"/>
+  <mime-type type="audio/vnd.celp"/>
+  <mime-type type="audio/vnd.cisco.nse"/>
+  <mime-type type="audio/vnd.cmles.radio-events"/>
+  <mime-type type="audio/vnd.cns.anp1"/>
+  <mime-type type="audio/vnd.cns.inf1"/>
+  <mime-type type="audio/vnd.digital-winds">
+    <glob pattern="*.eol"/>
+  </mime-type>
+  <mime-type type="audio/vnd.dlna.adts"/>
+  <mime-type type="audio/vnd.dolby.heaac.1"/>
+  <mime-type type="audio/vnd.dolby.heaac.2"/>
+  <mime-type type="audio/vnd.dolby.mlp"/>
+  <mime-type type="audio/vnd.dolby.mps"/>
+  <mime-type type="audio/vnd.dolby.pl2"/>
+  <mime-type type="audio/vnd.dolby.pl2x"/>
+  <mime-type type="audio/vnd.dolby.pl2z"/>
+  <mime-type type="audio/vnd.dts">
+    <glob pattern="*.dts"/>
+  </mime-type>
+  <mime-type type="audio/vnd.dts.hd">
+    <glob pattern="*.dtshd"/>
+  </mime-type>
+  <mime-type type="audio/vnd.everad.plj"/>
+  <mime-type type="audio/vnd.hns.audio"/>
+  <mime-type type="audio/vnd.lucent.voice">
+    <glob pattern="*.lvp"/>
+  </mime-type>
+  <mime-type type="audio/vnd.ms-playready.media.pya">
+    <glob pattern="*.pya"/>
+  </mime-type>
+  <mime-type type="audio/vnd.nokia.mobile-xmf"/>
+  <mime-type type="audio/vnd.nortel.vbk"/>
+  <mime-type type="audio/vnd.nuera.ecelp4800">
+    <glob pattern="*.ecelp4800"/>
+  </mime-type>
+  <mime-type type="audio/vnd.nuera.ecelp7470">
+    <glob pattern="*.ecelp7470"/>
+  </mime-type>
+  <mime-type type="audio/vnd.nuera.ecelp9600">
+    <glob pattern="*.ecelp9600"/>
+  </mime-type>
+  <mime-type type="audio/vnd.octel.sbc"/>
+  <mime-type type="audio/vnd.qcelp"/>
+  <mime-type type="audio/vnd.rhetorex.32kadpcm"/>
+  <mime-type type="audio/vnd.sealedmedia.softseal.mpeg"/>
+  <mime-type type="audio/vnd.vmx.cvsd"/>
+  <mime-type type="audio/vorbis"/>
+  <mime-type type="audio/vorbis-config"/>
+  <mime-type type="audio/x-aac">
+    <glob pattern="*.aac"/>
+  </mime-type>
+  <mime-type type="audio/x-aiff">
+    <glob pattern="*.aif"/>
+    <glob pattern="*.aiff"/>
+    <glob pattern="*.aifc"/>
+  </mime-type>
+  <mime-type type="audio/x-mpegurl">
+    <glob pattern="*.m3u"/>
+  </mime-type>
+  <mime-type type="audio/x-ms-wax">
+    <glob pattern="*.wax"/>
+  </mime-type>
+  <mime-type type="audio/x-ms-wma">
+    <glob pattern="*.wma"/>
+  </mime-type>
+  <mime-type type="audio/x-pn-realaudio">
+    <glob pattern="*.ram"/>
+    <glob pattern="*.ra"/>
+  </mime-type>
+  <mime-type type="audio/x-pn-realaudio-plugin">
+    <glob pattern="*.rmp"/>
+  </mime-type>
+  <mime-type type="audio/x-wav">
+    <glob pattern="*.wav"/>
+  </mime-type>
+  <mime-type type="chemical/x-cdx">
+    <glob pattern="*.cdx"/>
+  </mime-type>
+  <mime-type type="chemical/x-cif">
+    <glob pattern="*.cif"/>
+  </mime-type>
+  <mime-type type="chemical/x-cmdf">
+    <glob pattern="*.cmdf"/>
+  </mime-type>
+  <mime-type type="chemical/x-cml">
+    <glob pattern="*.cml"/>
+  </mime-type>
+  <mime-type type="chemical/x-csml">
+    <glob pattern="*.csml"/>
+  </mime-type>
+  <mime-type type="chemical/x-pdb"/>
+  <mime-type type="chemical/x-xyz">
+    <glob pattern="*.xyz"/>
+  </mime-type>
+  <mime-type type="image/bmp">
+    <glob pattern="*.bmp"/>
+  </mime-type>
+  <mime-type type="image/cgm">
+    <glob pattern="*.cgm"/>
+  </mime-type>
+  <mime-type type="image/example"/>
+  <mime-type type="image/fits"/>
+  <mime-type type="image/g3fax">
+    <glob pattern="*.g3"/>
+  </mime-type>
+  <mime-type type="image/gif">
+    <glob pattern="*.gif"/>
+  </mime-type>
+  <mime-type type="image/ief">
+    <glob pattern="*.ief"/>
+  </mime-type>
+  <mime-type type="image/jp2"/>
+  <mime-type type="image/jpeg">
+    <glob pattern="*.jpeg"/>
+    <glob pattern="*.jpg"/>
+    <glob pattern="*.jpe"/>
+  </mime-type>
+  <mime-type type="image/jpm"/>
+  <mime-type type="image/jpx"/>
+  <mime-type type="image/naplps"/>
+  <mime-type type="image/png">
+    <glob pattern="*.png"/>
+  </mime-type>
+  <mime-type type="image/prs.btif">
+    <glob pattern="*.btif"/>
+  </mime-type>
+  <mime-type type="image/prs.pti"/>
+  <mime-type type="image/svg+xml">
+    <glob pattern="*.svg"/>
+    <glob pattern="*.svgz"/>
+  </mime-type>
+  <mime-type type="image/t38"/>
+  <mime-type type="image/tiff">
+    <glob pattern="*.tiff"/>
+    <glob pattern="*.tif"/>
+  </mime-type>
+  <mime-type type="image/tiff-fx"/>
+  <mime-type type="image/vnd.adobe.photoshop">
+    <glob pattern="*.psd"/>
+  </mime-type>
+  <mime-type type="image/vnd.cns.inf2"/>
+  <mime-type type="image/vnd.djvu">
+    <glob pattern="*.djvu"/>
+    <glob pattern="*.djv"/>
+  </mime-type>
+  <mime-type type="image/vnd.dwg">
+    <glob pattern="*.dwg"/>
+  </mime-type>
+  <mime-type type="image/vnd.dxf">
+    <glob pattern="*.dxf"/>
+  </mime-type>
+  <mime-type type="image/vnd.fastbidsheet">
+    <glob pattern="*.fbs"/>
+  </mime-type>
+  <mime-type type="image/vnd.fpx">
+    <glob pattern="*.fpx"/>
+  </mime-type>
+  <mime-type type="image/vnd.fst">
+    <glob pattern="*.fst"/>
+  </mime-type>
+  <mime-type type="image/vnd.fujixerox.edmics-mmr">
+    <glob pattern="*.mmr"/>
+  </mime-type>
+  <mime-type type="image/vnd.fujixerox.edmics-rlc">
+    <glob pattern="*.rlc"/>
+  </mime-type>
+  <mime-type type="image/vnd.globalgraphics.pgb"/>
+  <mime-type type="image/vnd.microsoft.icon"/>
+  <mime-type type="image/vnd.mix"/>
+  <mime-type type="image/vnd.ms-modi">
+    <glob pattern="*.mdi"/>
+  </mime-type>
+  <mime-type type="image/vnd.net-fpx">
+    <glob pattern="*.npx"/>
+  </mime-type>
+  <mime-type type="image/vnd.radiance"/>
+  <mime-type type="image/vnd.sealed.png"/>
+  <mime-type type="image/vnd.sealedmedia.softseal.gif"/>
+  <mime-type type="image/vnd.sealedmedia.softseal.jpg"/>
+  <mime-type type="image/vnd.svf"/>
+  <mime-type type="image/vnd.wap.wbmp">
+    <glob pattern="*.wbmp"/>
+  </mime-type>
+  <mime-type type="image/vnd.xiff">
+    <glob pattern="*.xif"/>
+  </mime-type>
+  <mime-type type="image/x-cmu-raster">
+    <glob pattern="*.ras"/>
+  </mime-type>
+  <mime-type type="image/x-cmx">
+    <glob pattern="*.cmx"/>
+  </mime-type>
+  <mime-type type="image/x-freehand">
+    <glob pattern="*.fh"/>
+    <glob pattern="*.fhc"/>
+    <glob pattern="*.fh4"/>
+    <glob pattern="*.fh5"/>
+    <glob pattern="*.fh7"/>
+  </mime-type>
+  <mime-type type="image/x-icon">
+    <glob pattern="*.ico"/>
+  </mime-type>
+  <mime-type type="image/x-pcx">
+    <glob pattern="*.pcx"/>
+  </mime-type>
+  <mime-type type="image/x-pict">
+    <glob pattern="*.pic"/>
+    <glob pattern="*.pct"/>
+  </mime-type>
+  <mime-type type="image/x-portable-anymap">
+    <glob pattern="*.pnm"/>
+  </mime-type>
+  <mime-type type="image/x-portable-bitmap">
+    <glob pattern="*.pbm"/>
+  </mime-type>
+  <mime-type type="image/x-portable-graymap">
+    <glob pattern="*.pgm"/>
+  </mime-type>
+  <mime-type type="image/x-portable-pixmap">
+    <glob pattern="*.ppm"/>
+  </mime-type>
+  <mime-type type="image/x-rgb">
+    <glob pattern="*.rgb"/>
+  </mime-type>
+  <mime-type type="image/x-xbitmap">
+    <glob pattern="*.xbm"/>
+  </mime-type>
+  <mime-type type="image/x-xpixmap">
+    <glob pattern="*.xpm"/>
+  </mime-type>
+  <mime-type type="image/x-xwindowdump">
+    <glob pattern="*.xwd"/>
+  </mime-type>
+  <mime-type type="message/cpim"/>
+  <mime-type type="message/delivery-status"/>
+  <mime-type type="message/disposition-notification"/>
+  <mime-type type="message/example"/>
+  <mime-type type="message/external-body"/>
+  <mime-type type="message/global"/>
+  <mime-type type="message/global-delivery-status"/>
+  <mime-type type="message/global-disposition-notification"/>
+  <mime-type type="message/global-headers"/>
+  <mime-type type="message/http"/>
+  <mime-type type="message/imdn+xml"/>
+  <mime-type type="message/news"/>
+  <mime-type type="message/partial"/>
+  <mime-type type="message/rfc822">
+    <glob pattern="*.eml"/>
+    <glob pattern="*.mime"/>
+  </mime-type>
+  <mime-type type="message/s-http"/>
+  <mime-type type="message/sip"/>
+  <mime-type type="message/sipfrag"/>
+  <mime-type type="message/tracking-status"/>
+  <mime-type type="message/vnd.si.simp"/>
+  <mime-type type="model/example"/>
+  <mime-type type="model/iges">
+    <glob pattern="*.igs"/>
+    <glob pattern="*.iges"/>
+  </mime-type>
+  <mime-type type="model/mesh">
+    <glob pattern="*.msh"/>
+    <glob pattern="*.mesh"/>
+    <glob pattern="*.silo"/>
+  </mime-type>
+  <mime-type type="model/vnd.dwf">
+    <glob pattern="*.dwf"/>
+  </mime-type>
+  <mime-type type="model/vnd.flatland.3dml"/>
+  <mime-type type="model/vnd.gdl">
+    <glob pattern="*.gdl"/>
+  </mime-type>
+  <mime-type type="model/vnd.gs-gdl"/>
+  <mime-type type="model/vnd.gs.gdl"/>
+  <mime-type type="model/vnd.gtw">
+    <glob pattern="*.gtw"/>
+  </mime-type>
+  <mime-type type="model/vnd.moml+xml"/>
+  <mime-type type="model/vnd.mts">
+    <glob pattern="*.mts"/>
+  </mime-type>
+  <mime-type type="model/vnd.parasolid.transmit.binary"/>
+  <mime-type type="model/vnd.parasolid.transmit.text"/>
+  <mime-type type="model/vnd.vtu">
+    <glob pattern="*.vtu"/>
+  </mime-type>
+  <mime-type type="model/vrml">
+    <glob pattern="*.wrl"/>
+    <glob pattern="*.vrml"/>
+  </mime-type>
+  <mime-type type="multipart/alternative"/>
+  <mime-type type="multipart/appledouble"/>
+  <mime-type type="multipart/byteranges"/>
+  <mime-type type="multipart/digest"/>
+  <mime-type type="multipart/encrypted"/>
+  <mime-type type="multipart/example"/>
+  <mime-type type="multipart/form-data"/>
+  <mime-type type="multipart/header-set"/>
+  <mime-type type="multipart/mixed"/>
+  <mime-type type="multipart/parallel"/>
+  <mime-type type="multipart/related"/>
+  <mime-type type="multipart/report"/>
+  <mime-type type="multipart/signed"/>
+  <mime-type type="multipart/voice-message"/>
+  <mime-type type="text/calendar">
+    <glob pattern="*.ics"/>
+    <glob pattern="*.ifb"/>
+  </mime-type>
+  <mime-type type="text/css">
+    <glob pattern="*.css"/>
+  </mime-type>
+  <mime-type type="text/csv">
+    <glob pattern="*.csv"/>
+  </mime-type>
+  <mime-type type="text/directory"/>
+  <mime-type type="text/dns"/>
+  <mime-type type="text/ecmascript"/>
+  <mime-type type="text/enriched"/>
+  <mime-type type="text/example"/>
+  <mime-type type="text/html">
+    <glob pattern="*.html"/>
+    <glob pattern="*.htm"/>
+  </mime-type>
+  <mime-type type="text/javascript"/>
+  <mime-type type="text/parityfec"/>
+  <mime-type type="text/plain">
+    <glob pattern="*.txt"/>
+    <glob pattern="*.text"/>
+    <glob pattern="*.conf"/>
+    <glob pattern="*.def"/>
+    <glob pattern="*.list"/>
+    <glob pattern="*.log"/>
+    <glob pattern="*.in"/>
+  </mime-type>
+  <mime-type type="text/prs.fallenstein.rst"/>
+  <mime-type type="text/prs.lines.tag">
+    <glob pattern="*.dsc"/>
+  </mime-type>
+  <mime-type type="text/red"/>
+  <mime-type type="text/rfc822-headers"/>
+  <mime-type type="text/richtext">
+    <glob pattern="*.rtx"/>
+  </mime-type>
+  <mime-type type="text/rtf"/>
+  <mime-type type="text/rtp-enc-aescm128"/>
+  <mime-type type="text/rtx"/>
+  <mime-type type="text/sgml">
+    <glob pattern="*.sgml"/>
+    <glob pattern="*.sgm"/>
+  </mime-type>
+  <mime-type type="text/t140"/>
+  <mime-type type="text/tab-separated-values">
+    <glob pattern="*.tsv"/>
+  </mime-type>
+  <mime-type type="text/troff">
+    <glob pattern="*.t"/>
+    <glob pattern="*.tr"/>
+    <glob pattern="*.roff"/>
+    <glob pattern="*.man"/>
+    <glob pattern="*.me"/>
+    <glob pattern="*.ms"/>
+  </mime-type>
+  <mime-type type="text/ulpfec"/>
+  <mime-type type="text/uri-list">
+    <glob pattern="*.uri"/>
+    <glob pattern="*.uris"/>
+    <glob pattern="*.urls"/>
+  </mime-type>
+  <mime-type type="text/vnd.abc"/>
+  <mime-type type="text/vnd.curl">
+    <glob pattern="*.curl"/>
+  </mime-type>
+  <mime-type type="text/vnd.curl.dcurl">
+    <glob pattern="*.dcurl"/>
+  </mime-type>
+  <mime-type type="text/vnd.curl.scurl">
+    <glob pattern="*.scurl"/>
+  </mime-type>
+  <mime-type type="text/vnd.curl.mcurl">
+    <glob pattern="*.mcurl"/>
+  </mime-type>
+  <mime-type type="text/vnd.dmclientscript"/>
+  <mime-type type="text/vnd.esmertec.theme-descriptor"/>
+  <mime-type type="text/vnd.fly">
+    <glob pattern="*.fly"/>
+  </mime-type>
+  <mime-type type="text/vnd.fmi.flexstor">
+    <glob pattern="*.flx"/>
+  </mime-type>
+  <mime-type type="text/vnd.graphviz">
+    <glob pattern="*.gv"/>
+  </mime-type>
+  <mime-type type="text/vnd.in3d.3dml">
+    <glob pattern="*.3dml"/>
+  </mime-type>
+  <mime-type type="text/vnd.in3d.spot">
+    <glob pattern="*.spot"/>
+  </mime-type>
+  <mime-type type="text/vnd.iptc.newsml"/>
+  <mime-type type="text/vnd.iptc.nitf"/>
+  <mime-type type="text/vnd.latex-z"/>
+  <mime-type type="text/vnd.motorola.reflex"/>
+  <mime-type type="text/vnd.ms-mediapackage"/>
+  <mime-type type="text/vnd.net2phone.commcenter.command"/>
+  <mime-type type="text/vnd.si.uricatalogue"/>
+  <mime-type type="text/vnd.sun.j2me.app-descriptor">
+    <glob pattern="*.jad"/>
+  </mime-type>
+  <mime-type type="text/vnd.trolltech.linguist"/>
+  <mime-type type="text/vnd.wap.si"/>
+  <mime-type type="text/vnd.wap.sl"/>
+  <mime-type type="text/vnd.wap.wml">
+    <glob pattern="*.wml"/>
+  </mime-type>
+  <mime-type type="text/vnd.wap.wmlscript">
+    <glob pattern="*.wmls"/>
+  </mime-type>
+  <mime-type type="text/x-asm">
+    <glob pattern="*.s"/>
+    <glob pattern="*.asm"/>
+  </mime-type>
+  <mime-type type="text/x-c">
+    <glob pattern="*.c"/>
+    <glob pattern="*.cc"/>
+    <glob pattern="*.cxx"/>
+    <glob pattern="*.cpp"/>
+    <glob pattern="*.h"/>
+    <glob pattern="*.hh"/>
+    <glob pattern="*.dic"/>
+  </mime-type>
+  <mime-type type="text/x-fortran">
+    <glob pattern="*.f"/>
+    <glob pattern="*.for"/>
+    <glob pattern="*.f77"/>
+    <glob pattern="*.f90"/>
+  </mime-type>
+  <mime-type type="text/x-pascal">
+    <glob pattern="*.p"/>
+    <glob pattern="*.pas"/>
+  </mime-type>
+  <mime-type type="text/x-java-source">
+    <glob pattern="*.java"/>
+  </mime-type>
+  <mime-type type="text/x-setext">
+    <glob pattern="*.etx"/>
+  </mime-type>
+  <mime-type type="text/x-uuencode">
+    <glob pattern="*.uu"/>
+  </mime-type>
+  <mime-type type="text/x-vcalendar">
+    <glob pattern="*.vcs"/>
+  </mime-type>
+  <mime-type type="text/x-vcard">
+    <glob pattern="*.vcf"/>
+  </mime-type>
+  <mime-type type="text/xml"/>
+  <mime-type type="text/xml-external-parsed-entity"/>
+  <mime-type type="video/3gpp">
+    <glob pattern="*.3gp"/>
+  </mime-type>
+  <mime-type type="video/3gpp-tt"/>
+  <mime-type type="video/3gpp2">
+    <glob pattern="*.3g2"/>
+  </mime-type>
+  <mime-type type="video/bmpeg"/>
+  <mime-type type="video/bt656"/>
+  <mime-type type="video/celb"/>
+  <mime-type type="video/dv"/>
+  <mime-type type="video/example"/>
+  <mime-type type="video/h261">
+    <glob pattern="*.h261"/>
+  </mime-type>
+  <mime-type type="video/h263">
+    <glob pattern="*.h263"/>
+  </mime-type>
+  <mime-type type="video/h263-1998"/>
+  <mime-type type="video/h263-2000"/>
+  <mime-type type="video/h264">
+    <glob pattern="*.h264"/>
+  </mime-type>
+  <mime-type type="video/jpeg">
+    <glob pattern="*.jpgv"/>
+  </mime-type>
+  <mime-type type="video/jpeg2000"/>
+  <mime-type type="video/jpm">
+    <glob pattern="*.jpm"/>
+    <glob pattern="*.jpgm"/>
+  </mime-type>
+  <mime-type type="video/mj2">
+    <glob pattern="*.mj2"/>
+    <glob pattern="*.mjp2"/>
+  </mime-type>
+  <mime-type type="video/mp1s"/>
+  <mime-type type="video/mp2p"/>
+  <mime-type type="video/mp2t"/>
+  <mime-type type="video/mp4">
+    <glob pattern="*.mp4"/>
+    <glob pattern="*.mp4v"/>
+    <glob pattern="*.mpg4"/>
+  </mime-type>
+  <mime-type type="video/mp4v-es"/>
+  <mime-type type="video/mpeg">
+    <glob pattern="*.mpeg"/>
+    <glob pattern="*.mpg"/>
+    <glob pattern="*.mpe"/>
+    <glob pattern="*.m1v"/>
+    <glob pattern="*.m2v"/>
+  </mime-type>
+  <mime-type type="video/mpeg4-generic"/>
+  <mime-type type="video/mpv"/>
+  <mime-type type="video/nv"/>
+  <mime-type type="video/ogg">
+    <glob pattern="*.ogv"/>
+  </mime-type>
+  <mime-type type="video/parityfec"/>
+  <mime-type type="video/pointer"/>
+  <mime-type type="video/quicktime">
+    <glob pattern="*.qt"/>
+    <glob pattern="*.mov"/>
+  </mime-type>
+  <mime-type type="video/raw"/>
+  <mime-type type="video/rtp-enc-aescm128"/>
+  <mime-type type="video/rtx"/>
+  <mime-type type="video/smpte292m"/>
+  <mime-type type="video/ulpfec"/>
+  <mime-type type="video/vc1"/>
+  <mime-type type="video/vnd.cctv"/>
+  <mime-type type="video/vnd.dlna.mpeg-tts"/>
+  <mime-type type="video/vnd.fvt">
+    <glob pattern="*.fvt"/>
+  </mime-type>
+  <mime-type type="video/vnd.hns.video"/>
+  <mime-type type="video/vnd.iptvforum.1dparityfec-1010"/>
+  <mime-type type="video/vnd.iptvforum.1dparityfec-2005"/>
+  <mime-type type="video/vnd.iptvforum.2dparityfec-1010"/>
+  <mime-type type="video/vnd.iptvforum.2dparityfec-2005"/>
+  <mime-type type="video/vnd.iptvforum.ttsavc"/>
+  <mime-type type="video/vnd.iptvforum.ttsmpeg2"/>
+  <mime-type type="video/vnd.motorola.video"/>
+  <mime-type type="video/vnd.motorola.videop"/>
+  <mime-type type="video/vnd.mpegurl">
+    <glob pattern="*.mxu"/>
+    <glob pattern="*.m4u"/>
+  </mime-type>
+  <mime-type type="video/vnd.ms-playready.media.pyv">
+    <glob pattern="*.pyv"/>
+  </mime-type>
+  <mime-type type="video/vnd.nokia.interleaved-multimedia"/>
+  <mime-type type="video/vnd.nokia.videovoip"/>
+  <mime-type type="video/vnd.objectvideo"/>
+  <mime-type type="video/vnd.sealed.mpeg1"/>
+  <mime-type type="video/vnd.sealed.mpeg4"/>
+  <mime-type type="video/vnd.sealed.swf"/>
+  <mime-type type="video/vnd.sealedmedia.softseal.mov"/>
+  <mime-type type="video/vnd.vivo">
+    <glob pattern="*.viv"/>
+  </mime-type>
+  <mime-type type="video/x-f4v">
+    <glob pattern="*.f4v"/>
+  </mime-type>
+  <mime-type type="video/x-fli">
+    <glob pattern="*.fli"/>
+  </mime-type>
+  <mime-type type="video/x-flv">
+    <glob pattern="*.flv"/>
+  </mime-type>
+  <mime-type type="video/x-m4v">
+    <glob pattern="*.m4v"/>
+  </mime-type>
+  <mime-type type="video/x-ms-asf">
+    <glob pattern="*.asf"/>
+    <glob pattern="*.asx"/>
+  </mime-type>
+  <mime-type type="video/x-ms-wm">
+    <glob pattern="*.wm"/>
+  </mime-type>
+  <mime-type type="video/x-ms-wmv">
+    <glob pattern="*.wmv"/>
+  </mime-type>
+  <mime-type type="video/x-ms-wmx">
+    <glob pattern="*.wmx"/>
+  </mime-type>
+  <mime-type type="video/x-ms-wvx">
+    <glob pattern="*.wvx"/>
+  </mime-type>
+  <mime-type type="video/x-msvideo">
+    <glob pattern="*.avi"/>
+  </mime-type>
+  <mime-type type="video/x-sgi-movie">
+    <glob pattern="*.movie"/>
+  </mime-type>
+  <mime-type type="x-conference/x-cooltalk">
+    <glob pattern="*.ice"/>
+  </mime-type>
+-->
+
 </mime-info>
