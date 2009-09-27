@@ -897,78 +897,6 @@
     <glob pattern="*.mp3" />
   </mime-type>
 
-  <!-- ===================================================================== -->
-  <!-- TIKA-85: http://www.apache.org/dev/svn-eol-style.txt                  -->
-  <!-- ===================================================================== -->
-
-  <mime-type type="image/x-icon">
-    <magic priority="50">
-      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000" type="string" offset="0" />
-      <match value="\000\000\001\000" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.ico" />
-  </mime-type>
-
-  <mime-type type="image/jpeg">
-    <acronym>JPEG</acronym>
-    <comment>Joint Photographic Experts Group</comment>
-    <magic priority="50">
-      <!-- FFD8 is the SOI (Start Of Image) marker.              -->
-      <!-- It is followed by another marker that starts with FF. -->
-      <match value="0xffd8ff" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.jpg" />
-    <glob pattern="*.jpeg" />
-    <glob pattern="*.jpe" />
-    <glob pattern="*.jif" />
-    <glob pattern="*.jfif" />
-    <glob pattern="*.jfi" />
-  </mime-type>
-
-  <mime-type type="image/png">
-    <acronym>PNG</acronym>
-    <comment>Portable Network Graphics</comment>
-    <magic priority="50">
-      <match value="\x89PNG\x0d\x0a\x1a\x0a" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.png" />
-  </mime-type>
-
-  <mime-type type="audio/basic">
-    <magic priority="20">
-      <match value=".snd" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.au" />
-    <glob pattern="*.snd" />
-  </mime-type>
-
-  <mime-type type="audio/x-aiff">
-    <alias type="audio/aiff"/>
-    <acronym>AIFF</acronym>
-    <comment>Audio Interchange File Format</comment>
-    <magic priority="20">
-      <match value="FORM....AIFF" type="string" offset="0"
-             mask="0xFFFFFFFF00000000FFFFFFFF" />
-      <match value="FORM....AIFC" type="string" offset="0"
-             mask="0xFFFFFFFF00000000FFFFFFFF" />
-      <!-- Amiga IFF sound sample, somewhat like the more modern AIFF -->
-      <match value="FORM....8SVX" type="string" offset="0"
-             mask="0xFFFFFFFF00000000FFFFFFFF" />
-    </magic>
-    <glob pattern="*.aif" />
-    <glob pattern="*.aiff" />
-    <glob pattern="*.aifc" />
-  </mime-type>
-
-  <mime-type type="audio/x-wav">
-    <acronym>WAV</acronym>
-    <magic priority="20">
-      <match value="RIFF....WAVE" type="string" offset="0"
-             mask="0xFFFFFFFF00000000FFFFFFFF" />
-    </magic>
-    <glob pattern="*.wav" />
-  </mime-type>
-
 
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
@@ -3137,10 +3065,15 @@
   <mime-type type="audio/amr-wb"/>
   <mime-type type="audio/amr-wb+"/>
   <mime-type type="audio/asc"/>
+
   <mime-type type="audio/basic">
+    <magic priority="20">
+      <match value=".snd" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.au"/>
     <glob pattern="*.snd"/>
   </mime-type>
+
   <mime-type type="audio/bv16"/>
   <mime-type type="audio/bv32"/>
   <mime-type type="audio/clearmode"/>
@@ -3289,7 +3222,20 @@
   <mime-type type="audio/x-aac">
     <glob pattern="*.aac"/>
   </mime-type>
+
   <mime-type type="audio/x-aiff">
+    <alias type="audio/aiff"/>
+    <acronym>AIFF</acronym>
+    <comment>Audio Interchange File Format</comment>
+    <magic priority="20">
+      <match value="FORM....AIFF" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF"/>
+      <match value="FORM....AIFC" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF"/>
+      <!-- Amiga IFF sound sample, somewhat like the more modern AIFF -->
+      <match value="FORM....8SVX" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF"/>
+    </magic>
     <glob pattern="*.aif"/>
     <glob pattern="*.aiff"/>
     <glob pattern="*.aifc"/>
@@ -3348,7 +3294,13 @@
   <mime-type type="audio/x-pn-realaudio-plugin">
     <glob pattern="*.rmp"/>
   </mime-type>
+
   <mime-type type="audio/x-wav">
+    <acronym>WAV</acronym>
+    <magic priority="20">
+      <match value="RIFF....WAVE" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF"/>
+    </magic>
     <glob pattern="*.wav"/>
   </mime-type>
 
@@ -3409,21 +3361,49 @@
     <glob pattern="*.gif"/>
   </mime-type>
 
+  <mime-type type="image/x-icon">
+    <magic priority="50">
+      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000"
+             type="string" offset="0"/>
+      <match value="\000\000\001\000" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ico"/>
+  </mime-type>
+
   <mime-type type="image/ief">
     <glob pattern="*.ief"/>
   </mime-type>
   <mime-type type="image/jp2"/>
+
   <mime-type type="image/jpeg">
-    <glob pattern="*.jpeg"/>
+    <acronym>JPEG</acronym>
+    <comment>Joint Photographic Experts Group</comment>
+    <magic priority="50">
+      <!-- FFD8 is the SOI (Start Of Image) marker.              -->
+      <!-- It is followed by another marker that starts with FF. -->
+      <match value="0xffd8ff" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.jpg"/>
+    <glob pattern="*.jpeg"/>
     <glob pattern="*.jpe"/>
+    <glob pattern="*.jif"/>
+    <glob pattern="*.jfif"/>
+    <glob pattern="*.jfi"/>
   </mime-type>
+
   <mime-type type="image/jpm"/>
   <mime-type type="image/jpx"/>
   <mime-type type="image/naplps"/>
+
   <mime-type type="image/png">
+    <acronym>PNG</acronym>
+    <comment>Portable Network Graphics</comment>
+    <magic priority="50">
+      <match value="\x89PNG\x0d\x0a\x1a\x0a" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.png"/>
   </mime-type>
+
   <mime-type type="image/prs.btif">
     <glob pattern="*.btif"/>
   </mime-type>
