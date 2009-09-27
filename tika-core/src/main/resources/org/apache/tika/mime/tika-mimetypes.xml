@@ -3859,7 +3859,6 @@
   <mime-type type="multipart/report"/>
   <mime-type type="multipart/signed"/>
   <mime-type type="multipart/voice-message"/>
-<!--
   <mime-type type="text/calendar">
     <glob pattern="*.ics"/>
     <glob pattern="*.ifb"/>
@@ -4150,6 +4149,5 @@
   <mime-type type="x-conference/x-cooltalk">
     <glob pattern="*.ice"/>
   </mime-type>
--->
 
 </mime-info>
