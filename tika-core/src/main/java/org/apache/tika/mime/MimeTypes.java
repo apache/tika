@@ -21,6 +21,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -520,9 +522,27 @@ public final class MimeTypes implements Detector {
         // Get type based on resourceName hint (if available)
         String resourceName = metadata.get(Metadata.RESOURCE_NAME_KEY);
         if (resourceName != null) {
-            MimeType hint = getMimeType(resourceName);
-            if (hint.isDescendantOf(type)) {
-                type = hint;
+            String name = null;
+
+            // Deal with a URI or a path name in as the resource  name
+            try {
+                URI uri = new URI(resourceName);
+                String path = uri.getPath();
+                if (path != null) {
+                    int slash = path.lastIndexOf('/');
+                    if (slash + 1 < path.length()) {
+                        name = path.substring(slash + 1);
+                    }
+                }
+            } catch (URISyntaxException e) {
+                name = resourceName;
+            }
+
+            if (name != null) {
+                MimeType hint = getMimeType(name);
+                if (hint.isDescendantOf(type)) {
+                    type = hint;
+                }
             }
         }
 
