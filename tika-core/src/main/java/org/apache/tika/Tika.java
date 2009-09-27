@@ -100,7 +100,7 @@ public class Tika {
      */
     public String detect(InputStream stream, Metadata metadata)
             throws IOException {
-        if (stream.markSupported()) {
+        if (stream == null || stream.markSupported()) {
             return detector.detect(stream, metadata).toString();
         } else {
             return detector.detect(

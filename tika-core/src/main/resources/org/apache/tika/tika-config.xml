@@ -129,6 +129,7 @@
 
         <parser name="parse-tar" class="org.apache.tika.parser.pkg.TarParser">
                 <mime>application/x-tar</mime>
+                <mime>application/x-gtar</mime>
         </parser>
 
         <parser name="parse-gzip" class="org.apache.tika.parser.pkg.GzipParser">
@@ -137,6 +138,7 @@
 
         <parser name="parse-bzip2" class="org.apache.tika.parser.pkg.Bzip2Parser">
                 <mime>application/x-bzip</mime>
+                <mime>application/x-bzip2</mime>
         </parser>
 
         <parser name="parse-class" class="org.apache.tika.parser.asm.ClassParser">

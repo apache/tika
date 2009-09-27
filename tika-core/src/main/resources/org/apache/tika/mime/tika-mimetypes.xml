@@ -1193,7 +1193,6 @@
   <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
     <comment>Office Open XML Presentation (macro-enabled)</comment>
     <glob pattern="*.pptm"/>
-    <glob pattern="*.potm"/>
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
@@ -1205,6 +1204,11 @@
   <mime-type type="application/vnd.ms-powerpoint.slideshow.macroenabled.12">
     <comment>Office Open XML Presentation Slideshow (macro-enabled)</comment>
     <glob pattern="*.ppsm"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-powerpoint.template.macroenabled.12">
+    <glob pattern="*.potm"/>
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
@@ -1480,7 +1484,7 @@
                value="mimetypeapplication/vnd.oasis.opendocument.text-master"/>
       </match>
     </magic>
-    <glob pattern="*.odm"/>
+    <glob pattern="*.otm"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.text-template">
@@ -2094,10 +2098,14 @@
       <match value="BZh" type="string" offset="0"/>
     </magic>
     <glob pattern="*.bz"/>
+    <glob pattern="*.tbz"/>
+  </mime-type>
+
+  <mime-type type="application/x-bzip2">
     <glob pattern="*.bz2"/>
     <glob pattern="*.tbz2"/>
     <glob pattern="*.boz"/>
-    <glob pattern="*.tbz"/>
+    <sub-class-of type="application/x-bzip"/>
   </mime-type>
 
   <mime-type type="application/x-cdlink">
@@ -2220,6 +2228,15 @@
     <glob pattern="*.gnumeric"/>
   </mime-type>
 
+  <mime-type type="application/x-gtar">
+    <magic priority="40">
+      <!-- GNU tar archive -->
+      <match value="ustar  \0" type="string" offset="257" />
+    </magic>
+    <glob pattern="*.gtar"/>
+    <sub-class-of type="application/x-tar"/>
+  </mime-type>
+
   <mime-type type="application/x-gzip">
     <magic priority="40">
       <match value="\037\213" type="string" offset="0" />
@@ -2227,7 +2244,6 @@
     <glob pattern="*.tgz" />
     <glob pattern="*.gz" />
     <glob pattern="*-gz" />
-    <glob pattern="*.svgz" />
     <glob pattern="*.emz" />
   </mime-type>
 
@@ -2327,7 +2343,7 @@
     <glob pattern="*.exe"/>
     <glob pattern="*.dll"/>
     <glob pattern="*.com"/>
-    <!-- <glob pattern="*.bat"/> (see text/plain) -->
+    <glob pattern="*.bat"/>
     <glob pattern="*.msi"/>
   </mime-type>
   <mime-type type="application/x-msmediaview">
@@ -2433,11 +2449,8 @@
     <magic priority="40">
       <!-- POSIX tar archive -->
       <match value="ustar\0" type="string" offset="257" />
-      <!-- GNU tar archive -->
-      <match value="ustar  \0" type="string" offset="257" />
     </magic>
     <glob pattern="*.tar"/>
-    <glob pattern="*.gtar"/>
   </mime-type>
 
   <mime-type type="application/x-tcl">
@@ -2551,6 +2564,7 @@
       <!-- TODO: Add matches for the other possible XML encoding schemes -->
     </magic>
     <glob pattern="*.xml"/>
+    <glob pattern="*.xsl"/>
     <glob pattern="*.xsd"/>
     <sub-class-of type="text/plain" />
   </mime-type>
@@ -2572,7 +2586,6 @@
     <root-XML localName="stylesheet"
               namespaceURI="http://www.w3.org/1999/XSL/Transform"/>
     <glob pattern="*.xslt"/>
-    <glob pattern="*.xsl"/>
   </mime-type>
 
   <mime-type type="application/xspf+xml">
@@ -3024,7 +3037,7 @@
     <comment>Scalable Vector Graphics</comment>
     <root-XML localName="svg" namespaceURI="http://www.w3.org/2000/svg"/>
     <glob pattern="*.svg"/>
-    <!-- <glob pattern="*.svgz"/> (see application/x-gzip) -->
+    <glob pattern="*.svgz"/>
   </mime-type>
 
   <mime-type type="image/t38"/>
@@ -3403,9 +3416,13 @@
     <glob pattern="*.ics"/>
     <glob pattern="*.ifb"/>
   </mime-type>
+
   <mime-type type="text/css">
+    <comment>Cascading Style Sheet</comment>
     <glob pattern="*.css"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
+
   <mime-type type="text/csv">
     <glob pattern="*.csv"/>
   </mime-type>
@@ -3472,14 +3489,10 @@
     <glob pattern="*.aart"/>
     <glob pattern="*.ac"/>
     <glob pattern="*.am"/>
-    <glob pattern="*.bat"/>
-    <glob pattern="*.c"/>
     <glob pattern="*.cgi"/>
     <glob pattern="*.classpath"/>
     <glob pattern="*.cmd"/>
     <glob pattern="*.config"/>
-    <glob pattern="*.cpp"/>
-    <glob pattern="*.css"/>
     <glob pattern="*.cwiki"/>
     <glob pattern="*.data"/>
     <glob pattern="*.dcl"/>
@@ -3490,10 +3503,8 @@
     <glob pattern="*.fv"/>
     <glob pattern="*.grm"/>
     <glob pattern="*.g"/>
-    <glob pattern="*.h"/>
     <glob pattern=".htaccess"/>
     <glob pattern="*.ihtml"/>
-    <glob pattern="*.java"/>
     <glob pattern="*.jmx"/>
     <glob pattern="*.jsp"/>
     <glob pattern="*.junit"/>
@@ -3640,6 +3651,7 @@
     <glob pattern="*.s"/>
     <glob pattern="*.asm"/>
   </mime-type>
+
   <mime-type type="text/x-c">
     <glob pattern="*.c"/>
     <glob pattern="*.cc"/>
@@ -3648,6 +3660,7 @@
     <glob pattern="*.h"/>
     <glob pattern="*.hh"/>
     <glob pattern="*.dic"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
 
   <mime-type type="text/x-diff">
@@ -3672,9 +3685,12 @@
     <glob pattern="*.p"/>
     <glob pattern="*.pas"/>
   </mime-type>
+
   <mime-type type="text/x-java-source">
     <glob pattern="*.java"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
+
   <mime-type type="text/x-setext">
     <glob pattern="*.etx"/>
   </mime-type>
