@@ -1159,10 +1159,6 @@
     <glob pattern="*.mod" />
   </mime-type>
 
-  <mime-type type="audio/x-mp4a">
-    <glob pattern="*.mp4a" />
-  </mime-type>
-
   <mime-type type="audio/x-pn-realaudio">
     <comment>Real Audio</comment>
     <alias type="audio/x-realaudio" />
@@ -1193,16 +1189,6 @@
     </magic>
     <glob pattern="*.tiff" />
     <glob pattern="*.tif" />
-  </mime-type>
-
-  <mime-type type="image/x-ms-bmp">
-    <acronym>BMP</acronym>
-    <comment>Windows bitmap</comment>
-    <magic priority="50">
-      <match value="BM" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.bmp" />
-    <glob pattern="*.dib" />
   </mime-type>
 
   <mime-type type="image/x-portable-anymap">
@@ -3450,7 +3436,6 @@
   <mime-type type="application/zip">
     <glob pattern="*.zip"/>
   </mime-type>
-<!--
   <mime-type type="audio/32kadpcm"/>
   <mime-type type="audio/3gpp"/>
   <mime-type type="audio/3gpp2"/>
@@ -3518,6 +3503,7 @@
   </mime-type>
   <mime-type type="audio/mobile-xmf"/>
   <mime-type type="audio/mp4">
+    <alias type="audio/x-mp4a"/>
     <glob pattern="*.mp4a"/>
   </mime-type>
   <mime-type type="audio/mp4a-latm"/>
@@ -3657,7 +3643,14 @@
     <glob pattern="*.xyz"/>
   </mime-type>
   <mime-type type="image/bmp">
+    <alias type="image/x-ms-bmp"/>
+    <acronym>BMP</acronym>
+    <comment>Windows bitmap</comment>
+    <magic priority="50">
+      <match value="BM" type="string" offset="0" />
+    </magic>
     <glob pattern="*.bmp"/>
+    <glob pattern="*.dib"/>
   </mime-type>
   <mime-type type="image/cgm">
     <glob pattern="*.cgm"/>
@@ -3691,7 +3684,7 @@
   <mime-type type="image/prs.pti"/>
   <mime-type type="image/svg+xml">
     <glob pattern="*.svg"/>
-    <glob pattern="*.svgz"/>
+    <!-- <glob pattern="*.svgz"/> (see application/x-gzip) -->
   </mime-type>
   <mime-type type="image/t38"/>
   <mime-type type="image/tiff">
@@ -3866,6 +3859,7 @@
   <mime-type type="multipart/report"/>
   <mime-type type="multipart/signed"/>
   <mime-type type="multipart/voice-message"/>
+<!--
   <mime-type type="text/calendar">
     <glob pattern="*.ics"/>
     <glob pattern="*.ifb"/>
