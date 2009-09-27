@@ -64,7 +64,9 @@ public class Tika {
      */
     public static Reader parse(InputStream stream, Metadata metadata)
             throws IOException {
-        return new ParsingReader(parser, stream, metadata);
+        Map<String, Object> context = new HashMap<String, Object>();
+        context.put(Parser.class.getName(), parser);
+        return new ParsingReader(parser, stream, metadata, context);
     }
 
     /**
