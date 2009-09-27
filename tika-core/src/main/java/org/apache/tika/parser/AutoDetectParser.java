@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -45,12 +45,7 @@ public class AutoDetectParser extends CompositeParser {
      * configuration.
      */
     public AutoDetectParser() {
-        try {
-            setConfig(TikaConfig.getDefaultConfig());
-        } catch (TikaException e) {
-            // FIXME: This should never happen
-            throw new RuntimeException(e);
-        }
+        this(TikaConfig.getDefaultConfig());
     }
 
     public AutoDetectParser(TikaConfig config) {

@@ -26,6 +26,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -44,12 +45,24 @@ import org.xml.sax.SAXException;
  */
 public class Tika {
 
-    private static final Parser parser = new AutoDetectParser();
+    /**
+     * The parser instance used by this facade.
+     */
+    private final Parser parser;
 
     /**
-     * Private constructor to prevent this class from being instantiated.
+     * Creates a Tika facade using the given configuration.
+     * @param config
      */
-    private Tika() {
+    public Tika(TikaConfig config) {
+        this.parser = new AutoDetectParser(config);
+    }
+
+    /**
+     * Creates a Tika facade using the default configuration.
+     */
+    public Tika() {
+        this(TikaConfig.getDefaultConfig());
     }
 
     /**
@@ -62,7 +75,7 @@ public class Tika {
      * @return extracted text content
      * @throws IOException if the document can not be read or parsed
      */
-    public static Reader parse(InputStream stream, Metadata metadata)
+    public Reader parse(InputStream stream, Metadata metadata)
             throws IOException {
         Map<String, Object> context = new HashMap<String, Object>();
         context.put(Parser.class.getName(), parser);
@@ -76,7 +89,7 @@ public class Tika {
      * @return extracted text content
      * @throws IOException if the document can not be read or parsed
      */
-    public static Reader parse(InputStream stream) throws IOException {
+    public Reader parse(InputStream stream) throws IOException {
         return parse(stream, new Metadata());
     }
 
@@ -88,8 +101,7 @@ public class Tika {
      * @throws FileNotFoundException if the given file does not exist
      * @throws IOException if the file can not be read or parsed
      */
-    public static Reader parse(File file)
-            throws FileNotFoundException, IOException {
+    public Reader parse(File file) throws FileNotFoundException, IOException {
         return parse(new FileInputStream(file), getFileMetadata(file));
     }
 
@@ -101,7 +113,7 @@ public class Tika {
      * @return extracted text content
      * @throws IOException if the resource can not be read or parsed
      */
-    public static Reader parse(URL url) throws IOException {
+    public Reader parse(URL url) throws IOException {
         return parse(url.openStream(), getUrlMetadata(url));
     }
 
@@ -115,7 +127,7 @@ public class Tika {
      * @throws IOException if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
-    public static String parseToString(InputStream stream, Metadata metadata)
+    public String parseToString(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
         try {
             ContentHandler handler = new BodyContentHandler();
@@ -140,7 +152,7 @@ public class Tika {
      * @throws IOException if the document can not be read
      * @throws TikaException if the document can not be parsed
      */
-    public static String parseToString(InputStream stream)
+    public String parseToString(InputStream stream)
             throws IOException, TikaException {
         return parseToString(stream, new Metadata());
     }
@@ -154,7 +166,7 @@ public class Tika {
      * @throws IOException if the file can not be read
      * @throws TikaException if the file can not be parsed
      */
-    public static String parseToString(File file)
+    public String parseToString(File file)
             throws FileNotFoundException, IOException, TikaException {
         return parseToString(new FileInputStream(file), getFileMetadata(file));
     }
@@ -168,8 +180,7 @@ public class Tika {
      * @throws IOException if the resource can not be read
      * @throws TikaException if the resource can not be parsed
      */
-    public static String parseToString(URL url)
-            throws IOException, TikaException {
+    public String parseToString(URL url) throws IOException, TikaException {
         return parseToString(url.openStream(), getUrlMetadata(url));
     }
 

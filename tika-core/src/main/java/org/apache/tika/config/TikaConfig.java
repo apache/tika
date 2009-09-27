@@ -165,17 +165,21 @@ public class TikaConfig {
      * return a shared instance once it is completely immutable.
      *
      * @return default configuration
-     * @throws TikaException if the default configuration is not available
      */
-    public static TikaConfig getDefaultConfig() throws TikaException {
+    public static TikaConfig getDefaultConfig() {
         try {
             InputStream stream =
                 TikaConfig.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION);
             return new TikaConfig(stream);
         } catch (IOException e) {
-            throw new TikaException("Unable to read default configuration", e);
+            throw new RuntimeException(
+                    "Unable to read default configuration", e);
         } catch (SAXException e) {
-            throw new TikaException("Unable to parse default configuration", e);
+            throw new RuntimeException(
+                    "Unable to parse default configuration", e);
+        } catch (TikaException e) {
+            throw new RuntimeException(
+                    "Unable to access default configuration", e);
         }
     }
 
