@@ -50,7 +50,6 @@
     <glob pattern="*.am" />
     <glob pattern="*.bat" />
     <glob pattern="*.c" />
-    <glob pattern="*.cat" />
     <glob pattern="*.cgi" />
     <glob pattern="*.classpath" />
     <glob pattern="*.cmd" />
@@ -61,7 +60,6 @@
     <glob pattern="*.cwiki" />
     <glob pattern="*.data" />
     <glob pattern="*.dcl" />
-    <glob pattern="*.dtd" />
     <glob pattern="*.egrm" />
     <glob pattern="*.ent" />
     <glob pattern="*.ft" />
@@ -96,14 +94,12 @@
     <glob pattern="*.rng" />
     <glob pattern="*.rnx" />
     <glob pattern="*.roles" />
-    <glob pattern="*.sh" />
     <glob pattern="*.sql" />
     <glob pattern="*.tld" />
     <glob pattern="*.types" />
     <glob pattern="*.vm" />
     <glob pattern="*.vsl" />
     <glob pattern="*.wsdd" />
-    <glob pattern="*.wsdl" />
     <glob pattern="*.xargs" />
     <glob pattern="*.xcat" />
     <glob pattern="*.xconf" />
@@ -115,7 +111,6 @@
     <glob pattern="*.xroles" />
     <glob pattern="*.xsamples" />
     <glob pattern="*.xsp" />
-    <glob pattern="*.xul" />
     <glob pattern="*.xweb" />
     <glob pattern="*.xwelcome" />
   </mime-type>
@@ -512,7 +507,7 @@
   <mime-type type="application/vnd.oasis.opendocument.formula-template">
     <comment>OpenDocument v1.0: Formula document used as template</comment>
     <alias type="application/x-vnd.oasis.opendocument.formula-template" />
-    <glob pattern="*.otf" />
+    <!-- <glob pattern="*.otf" /> (conflicts with application/x-font-orf) -->
     <magic>
       <match type="string" offset="0" value="PK">
         <match type="string" offset="30"
@@ -587,7 +582,6 @@
     <glob pattern="*.gz" />
     <glob pattern="*-gz" />
     <glob pattern="*.svgz" />
-    <glob pattern="*.wmz" />
     <glob pattern="*.emz" />
   </mime-type>
 
@@ -641,13 +635,6 @@
       <match value="CWS" type="string" offset="0" />
     </magic>
     <glob pattern="*.swf" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-wmf">
-    <acronym>WMF</acronym>
-    <comment>Windows Metafile</comment>
-    <glob pattern="*.wmf" />
-    <glob pattern="*.emf" />
   </mime-type>
 
   <mime-type type="application/atom+xml">
@@ -761,14 +748,6 @@
   <mime-type type="application/x-futuresplash">
     <_comment>Macromedia FutureSplash File</_comment>
     <glob pattern="*.spl" />
-  </mime-type>
-
-  <mime-type type="application/x-koan">
-    <_comment>SSEYO Koan File</_comment>
-    <glob pattern="*.skp" />
-    <glob pattern="*.skd" />
-    <glob pattern="*.skt" />
-    <glob pattern="*.skm" />
   </mime-type>
 
   <mime-type type="application/x-latex">
@@ -1528,12 +1507,6 @@
       <match value="must\ be\ converted\ with\ BinHex" type="string" offset="11" />
     </magic>
   </mime-type>
-  <mime-type type="application/x-Gnumeric-spreadsheet">
-    <magic priority="50">
-      <match value="=&lt;gmr:Workbook" type="string" offset="39" />
-    </magic>
-    <glob pattern="*.gnumeric" />
-  </mime-type>
 
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
@@ -1842,7 +1815,6 @@
   <mime-type type="application/sdp">
     <glob pattern="*.sdp"/>
   </mime-type>
-<!-- MIME type information from the mime.types file in Apache HTTP server
   <mime-type type="application/set-payment"/>
   <mime-type type="application/set-payment-initiation">
     <glob pattern="*.setpay"/>
@@ -2406,6 +2378,8 @@
     <glob pattern="*.knp"/>
   </mime-type>
   <mime-type type="application/vnd.koan">
+    <alias type="application/x-koan"/>
+    <_comment>SSEYO Koan File</_comment>
     <glob pattern="*.skp"/>
     <glob pattern="*.skd"/>
     <glob pattern="*.skt"/>
@@ -2560,6 +2534,7 @@
     <glob pattern="*.stl"/>
   </mime-type>
   <mime-type type="application/vnd.ms-playready.initiator+xml"/>
+<!--
   <mime-type type="application/vnd.ms-powerpoint">
     <glob pattern="*.ppt"/>
     <glob pattern="*.pps"/>
@@ -2584,6 +2559,7 @@
     <glob pattern="*.mpp"/>
     <glob pattern="*.mpt"/>
   </mime-type>
+-->
   <mime-type type="application/vnd.ms-tnef"/>
   <mime-type type="application/vnd.ms-wmdrm.lic-chlg-req"/>
   <mime-type type="application/vnd.ms-wmdrm.lic-resp"/>
@@ -2669,6 +2645,7 @@
   <mime-type type="application/vnd.novadigm.ext">
     <glob pattern="*.ext"/>
   </mime-type>
+<!--
   <mime-type type="application/vnd.oasis.opendocument.chart">
     <glob pattern="*.odc"/>
   </mime-type>
@@ -2699,7 +2676,9 @@
   <mime-type type="application/vnd.oasis.opendocument.presentation">
     <glob pattern="*.odp"/>
   </mime-type>
-  <mime-type type="application/vnd.oasis.opendocument.presentation-template otp"/>
+  <mime-type type="application/vnd.oasis.opendocument.presentation-template">
+    <glob pattern="otp"/>
+  </mime-type>
   <mime-type type="application/vnd.oasis.opendocument.spreadsheet">
     <glob pattern="*.ods"/>
   </mime-type>
@@ -2718,6 +2697,7 @@
   <mime-type type="application/vnd.oasis.opendocument.text-web">
     <glob pattern="*.oth"/>
   </mime-type>
+-->
   <mime-type type="application/vnd.obn"/>
   <mime-type type="application/vnd.olpc-sugar">
     <glob pattern="*.xo"/>
@@ -2755,10 +2735,13 @@
   <mime-type type="application/vnd.omads-file+xml"/>
   <mime-type type="application/vnd.omads-folder+xml"/>
   <mime-type type="application/vnd.omaloc-supl-init"/>
+<!--
   <mime-type type="application/vnd.openofficeorg.extension">
     <glob pattern="*.oxt"/>
   </mime-type>
-  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.presentation pptx"/>
+  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.presentation">
+    <glob pattern="pptx"/>
+  </mime-type>
   <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.slide">
     <glob pattern="*.sldx"/>
   </mime-type>
@@ -2780,6 +2763,7 @@
   <mime-type type="application/vnd.openxmlformats-officedocument.wordprocessingml.template">
     <glob pattern="*.dotx"/>
   </mime-type>
+-->
   <mime-type type="application/vnd.osa.netdeploy"/>
   <mime-type type="application/vnd.osgi.bundle"/>
   <mime-type type="application/vnd.osgi.dp">
@@ -2888,6 +2872,7 @@
   </mime-type>
   <mime-type type="application/vnd.shana.informed.formtemplate">
     <glob pattern="*.itp"/>
+  </mime-type>
   <mime-type type="application/vnd.shana.informed.interchange">
     <glob pattern="*.iif"/>
   </mime-type>
@@ -3265,6 +3250,10 @@
     <glob pattern="*.spl"/>
   </mime-type>
   <mime-type type="application/x-gnumeric">
+    <alias type="application/x-Gnumeric-spreadsheet"/>
+    <magic priority="50">
+      <match value="=&lt;gmr:Workbook" type="string" offset="39" />
+    </magic>
     <glob pattern="*.gnumeric"/>
   </mime-type>
   <mime-type type="application/x-gtar">
@@ -3291,6 +3280,7 @@
     <glob pattern="*.wmd"/>
   </mime-type>
   <mime-type type="application/x-ms-wmz">
+    <sub-class-of type="application/x-gzip"/>
     <glob pattern="*.wmz"/>
   </mime-type>
   <mime-type type="application/x-ms-xbap">
@@ -3300,7 +3290,6 @@
     <glob pattern="*.mdb"/>
   </mime-type>
   <mime-type type="application/x-msbinder">
-  </mime-type>
     <glob pattern="*.obd"/>
   </mime-type>
   <mime-type type="application/x-mscardfile">
@@ -3313,7 +3302,7 @@
     <glob pattern="*.exe"/>
     <glob pattern="*.dll"/>
     <glob pattern="*.com"/>
-    <glob pattern="*.bat"/>
+    <!-- <glob pattern="*.bat"/> (see text/plain) -->
     <glob pattern="*.msi"/>
   </mime-type>
   <mime-type type="application/x-msmediaview">
@@ -3322,7 +3311,10 @@
     <glob pattern="*.m14"/>
   </mime-type>
   <mime-type type="application/x-msmetafile">
+    <acronym>WMF</acronym>
+    <comment>Windows Metafile</comment>
     <glob pattern="*.wmf"/>
+    <glob pattern="*.emf"/>
   </mime-type>
   <mime-type type="application/x-msmoney">
     <glob pattern="*.mny"/>
@@ -3358,6 +3350,7 @@
     <glob pattern="*.rar"/>
   </mime-type>
   <mime-type type="application/x-sh">
+    <sub-class-of type="text/plain"/>
     <glob pattern="*.sh"/>
   </mime-type>
   <mime-type type="application/x-shar">
@@ -3434,6 +3427,7 @@
     <glob pattern="*.xsl"/>
   </mime-type>
   <mime-type type="application/xml-dtd">
+    <sub-class-of type="text/plain"/>
     <glob pattern="*.dtd"/>
   </mime-type>
   <mime-type type="application/xml-external-parsed-entity"/>
@@ -3456,6 +3450,7 @@
   <mime-type type="application/zip">
     <glob pattern="*.zip"/>
   </mime-type>
+<!--
   <mime-type type="audio/32kadpcm"/>
   <mime-type type="audio/3gpp"/>
   <mime-type type="audio/3gpp2"/>
