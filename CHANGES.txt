@@ -9,7 +9,7 @@ The most notable changes in Tika 0.5 over the previous release are:
  * The media type registry in Tika was synchronized with the MIME type
    configuration in the Apache HTTP Server. Tika now knows about 1274
    different media types and can detect 672 of those using 927 file
-   extension and 268 magic byte patterns. (TIKA-285)
+   extension and 280 magic byte patterns. (TIKA-285)
 
  * Tika now uses the Apache PDFBox version 0.8.0-incubating for parsing PDF
    documents. This version is much the 0.7.3 release used earlier. (TIKA-158)
