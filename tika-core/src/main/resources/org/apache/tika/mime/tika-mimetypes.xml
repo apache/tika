@@ -969,197 +969,6 @@
     <glob pattern="*.wav" />
   </mime-type>
 
-  <mime-type type="application/postscript">
-    <comment>PostScript</comment>
-    <magic priority="50">
-      <match value="%!" type="string" offset="0" />
-      <match value="\004%!" type="string" offset="0" />
-      <!-- Windows format EPS -->
-      <match value="0xc5d0d3c6" type="string" offset="0"/>
-    </magic>
-    <glob pattern="*.ps" />
-    <glob pattern="*.eps" />
-    <glob pattern="*.epsf" />
-    <glob pattern="*.epsi" />
-  </mime-type>
-
-  <mime-type type="application/vnd.lotus-wordpro">
-    <magic priority="50">
-      <match value="WordPro\0" type="string" offset="0" />
-      <match value="WordPro\r\373" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/vnd.ms-tnef">
-    <magic priority="50">
-      <match value="0x223e9f78" type="little16" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/vnd.rn-realmedia">
-    <magic priority="50">
-      <match value=".RMF" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/vnd.symbian.install">
-    <magic priority="50">
-      <match value="0x10000419" type="little32" offset="8" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-123">
-    <magic priority="50">
-      <match value="0x00001a00" type="big32" offset="0" />
-      <match value="0x00000200" type="big32" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-archive">
-    <magic priority="50">
-      <match value="=&lt;ar&gt;" type="string" offset="0" />
-      <match value="=!&lt;arch&gt;" type="string" offset="0" />
-    </magic>
-    <glob patter="*.ar" />
-  </mime-type>
-  <mime-type type="application/x-bittorrent">
-    <magic priority="50">
-      <match value="d8:announce" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.torrent" />
-  </mime-type>
-  <mime-type type="application/x-compress">
-    <magic priority="50">
-      <match value="\037\235" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.z" />
-  </mime-type>
-  <mime-type type="application/x-cpio">
-    <magic priority="50">
-      <match value="070707" type="host16" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-debian-package">
-    <glob pattern="*.deb" />
-  </mime-type>
-  <mime-type type="application/x-dvi">
-    <magic priority="50">
-      <match value="\367\002" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.dvi" />
-  </mime-type>
-  <mime-type type="application/x-gnucash">
-    <glob pattern="*.gnucash" />
-  </mime-type>
-  <mime-type type="application/x-gnumeric">
-    <magic priority="50">
-      <match value="=&lt;gmr:Workbook" type="string" offset="39" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-hdf">
-    <magic priority="50">
-      <match value="0x0e031301" type="big32" offset="0" />
-      <match value="\211HDF\r\n\032" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-hwp">
-    <magic priority="50">
-      <match value="R\0o\0o\0t\0" type="string" offset="512" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-iso9660-image">
-    <magic priority="50">
-      <match value="CD001" type="string" offset="37633" />
-    </magic>
-    <glob pattern="*.iso" />
-  </mime-type>
-  <mime-type type="application/x-kdelnk">
-    <magic priority="50">
-      <match value="[KDE\ Desktop\ Entry]" type="string" offset="0" />
-      <match value="#\ KDE\ Config\ File" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-lha">
-    <magic priority="50">
-      <match value="-lzs-" type="string" offset="2" />
-      <match value="-lh\40-" type="string" offset="2" />
-      <match value="-lhd-" type="string" offset="2" />
-      <match value="-lh2-" type="string" offset="2" />
-      <match value="-lh3-" type="string" offset="2" />
-      <match value="-lh4-" type="string" offset="2" />
-      <match value="-lh5-" type="string" offset="2" />
-      <match value="-lh6-" type="string" offset="2" />
-      <match value="-lh7-" type="string" offset="2" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-lharc">
-    <magic priority="50">
-      <match value="-lh0-" type="string" offset="2" />
-      <match value="-lh1-" type="string" offset="2" />
-      <match value="-lz4-" type="string" offset="2" />
-      <match value="-lz5-" type="string" offset="2" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-rar">
-    <magic priority="50">
-      <match value="Rar!" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.rar" />
-  </mime-type>
-  <mime-type type="application/x-rpm">
-    <glob pattern="*.rpm" />
-  </mime-type>
-  <mime-type type="application/x-shockwave-flash">
-    <magic priority="50">
-      <match value="FWS" type="string" offset="0" />
-      <match value="CWS" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-stuffit">
-    <magic priority="50">
-      <match value="StuffIt" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-zoo">
-    <magic priority="50">
-      <match value="0xfdc4a7dc" type="little32" offset="20" />
-    </magic>
-    <glob pattern="*.zoo" />
-  </mime-type>
-
-  <mime-type type="audio/x-flac">
-    <acronym>FLAC</acronym>
-    <comment>Free Lossless Audio Codec</comment>
-    <magic priority="50">
-      <match value="fLaC" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.flac" />
-  </mime-type>
-
-  <mime-type type="audio/x-mod">
-    <acronym>MOD</acronym>
-    <magic priority="50">
-      <match value="Extended\ Module:" type="string" offset="0" />
-      <match value="BMOD2STM" type="string" offset="21" />
-      <match value="M.K." type="string" offset="1080" />
-      <match value="M!K!" type="string" offset="1080" />
-      <match value="FLT4" type="string" offset="1080" />
-      <match value="FLT8" type="string" offset="1080" />
-      <match value="4CHN" type="string" offset="1080" />
-      <match value="6CHN" type="string" offset="1080" />
-      <match value="8CHN" type="string" offset="1080" />
-      <match value="CD81" type="string" offset="1080" />
-      <match value="OKTA" type="string" offset="1080" />
-      <match value="16CN" type="string" offset="1080" />
-      <match value="32CN" type="string" offset="1080" />
-      <match value="IMPM" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.mod" />
-  </mime-type>
-
-  <mime-type type="audio/x-pn-realaudio">
-    <comment>Real Audio</comment>
-    <alias type="audio/x-realaudio" />
-    <magic priority="50">
-      <match value="0x2e7261fd" type="big32" offset="0" />
-    </magic>
-    <glob pattern="*.ra" />
-  </mime-type>
 
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
@@ -2795,12 +2604,29 @@
   <mime-type type="application/wspolicy+xml">
     <glob pattern="*.wspolicy"/>
   </mime-type>
+
+  <mime-type type="application/x-123">
+    <magic priority="50">
+      <match value="0x00001a00" type="big32" offset="0" />
+      <match value="0x00000200" type="big32" offset="0" />
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-abiword">
     <glob pattern="*.abw"/>
   </mime-type>
   <mime-type type="application/x-ace-compressed">
     <glob pattern="*.ace"/>
   </mime-type>
+
+  <mime-type type="application/x-archive">
+    <magic priority="50">
+      <match value="=&lt;ar&gt;" type="string" offset="0"/>
+      <match value="=!&lt;arch&gt;" type="string" offset="0"/>
+    </magic>
+    <glob patter="*.ar"/>
+  </mime-type>
+
   <mime-type type="application/x-authorware-bin">
     <glob pattern="*.aab"/>
     <glob pattern="*.x32"/>
@@ -2861,8 +2687,12 @@
   </mime-type>
 
   <mime-type type="application/x-bittorrent">
+    <magic priority="50">
+      <match value="d8:announce" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.torrent"/>
   </mime-type>
+
   <mime-type type="application/x-bzip">
     <glob pattern="*.bz"/>
   </mime-type>
@@ -2879,17 +2709,31 @@
   <mime-type type="application/x-chess-pgn">
     <glob pattern="*.pgn"/>
   </mime-type>
-  <mime-type type="application/x-compress"/>
+
+  <mime-type type="application/x-compress">
+    <magic priority="50">
+      <match value="\037\235" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.z"/>
+  </mime-type>
+
   <mime-type type="application/x-cpio">
+    <magic priority="50">
+      <match value="070707" type="host16" offset="0"/>
+    </magic>
     <glob pattern="*.cpio"/>
   </mime-type>
+
+
   <mime-type type="application/x-csh">
     <glob pattern="*.csh"/>
   </mime-type>
+
   <mime-type type="application/x-debian-package">
     <glob pattern="*.deb"/>
     <glob pattern="*.udeb"/>
   </mime-type>
+
   <mime-type type="application/x-director">
     <glob pattern="*.dir"/>
     <glob pattern="*.dcr"/>
@@ -2913,9 +2757,14 @@
   <mime-type type="application/x-dtbresource+xml">
     <glob pattern="*.res"/>
   </mime-type>
+
   <mime-type type="application/x-dvi">
+    <magic priority="50">
+      <match value="\367\002" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.dvi"/>
   </mime-type>
+
   <mime-type type="application/x-font-bdf">
     <glob pattern="*.bdf"/>
   </mime-type>
@@ -2953,6 +2802,11 @@
   <mime-type type="application/x-futuresplash">
     <glob pattern="*.spl"/>
   </mime-type>
+
+  <mime-type type="application/x-gnucash">
+    <glob pattern="*.gnucash" />
+  </mime-type>
+
   <mime-type type="application/x-gnumeric">
     <alias type="application/x-Gnumeric-spreadsheet"/>
     <magic priority="50">
@@ -2960,19 +2814,71 @@
     </magic>
     <glob pattern="*.gnumeric"/>
   </mime-type>
+
   <mime-type type="application/x-gtar">
     <glob pattern="*.gtar"/>
   </mime-type>
   <mime-type type="application/x-gzip"/>
+
   <mime-type type="application/x-hdf">
+    <magic priority="50">
+      <match value="0x0e031301" type="big32" offset="0"/>
+      <match value="\211HDF\r\n\032" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.hdf"/>
   </mime-type>
+
+  <mime-type type="application/x-hwp">
+    <magic priority="50">
+      <match value="R\0o\0o\0t\0" type="string" offset="512"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-iso9660-image">
+    <magic priority="50">
+      <match value="CD001" type="string" offset="37633"/>
+    </magic>
+    <glob pattern="*.iso" />
+  </mime-type>
+
   <mime-type type="application/x-java-jnlp-file">
     <glob pattern="*.jnlp"/>
   </mime-type>
+
+  <mime-type type="application/x-kdelnk">
+    <magic priority="50">
+      <match value="[KDE\ Desktop\ Entry]" type="string" offset="0"/>
+      <match value="#\ KDE\ Config\ File" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-latex">
     <glob pattern="*.latex"/>
   </mime-type>
+
+  <mime-type type="application/x-lha">
+    <magic priority="50">
+      <match value="-lzs-" type="string" offset="2"/>
+      <match value="-lh\40-" type="string" offset="2"/>
+      <match value="-lhd-" type="string" offset="2"/>
+      <match value="-lh2-" type="string" offset="2"/>
+      <match value="-lh3-" type="string" offset="2"/>
+      <match value="-lh4-" type="string" offset="2"/>
+      <match value="-lh5-" type="string" offset="2"/>
+      <match value="-lh6-" type="string" offset="2"/>
+      <match value="-lh7-" type="string" offset="2"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-lharc">
+    <magic priority="50">
+      <match value="-lh0-" type="string" offset="2"/>
+      <match value="-lh1-" type="string" offset="2"/>
+      <match value="-lz4-" type="string" offset="2"/>
+      <match value="-lz5-" type="string" offset="2"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-mobipocket-ebook">
     <glob pattern="*.prc"/>
     <glob pattern="*.mobi"/>
@@ -3050,8 +2956,17 @@
   <mime-type type="application/x-pkcs7-certreqresp">
     <glob pattern="*.p7r"/>
   </mime-type>
+
   <mime-type type="application/x-rar-compressed">
+    <alias type="application/x-rar"/>
+    <magic priority="50">
+      <match value="Rar!" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.rar"/>
+  </mime-type>
+
+  <mime-type type="application/x-rpm">
+    <glob pattern="*.rpm"/>
   </mime-type>
 
   <mime-type type="application/x-sh">
@@ -3061,15 +2976,26 @@
   <mime-type type="application/x-shar">
     <glob pattern="*.shar"/>
   </mime-type>
+
   <mime-type type="application/x-shockwave-flash">
+    <magic priority="50">
+      <match value="FWS" type="string" offset="0"/>
+      <match value="CWS" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.swf"/>
   </mime-type>
+
   <mime-type type="application/x-silverlight-app">
     <glob pattern="*.xap"/>
   </mime-type>
+
   <mime-type type="application/x-stuffit">
+    <magic priority="50">
+      <match value="StuffIt" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.sit"/>
   </mime-type>
+
   <mime-type type="application/x-stuffitx">
     <glob pattern="*.sitx"/>
   </mime-type>
@@ -3111,6 +3037,14 @@
   <mime-type type="application/x-xpinstall">
     <glob pattern="*.xpi"/>
   </mime-type>
+
+  <mime-type type="application/x-zoo">
+    <magic priority="50">
+      <match value="0xfdc4a7dc" type="little32" offset="20"/>
+    </magic>
+    <glob pattern="*.zoo"/>
+  </mime-type>
+
   <mime-type type="application/x400-bp"/>
   <mime-type type="application/xcap-att+xml"/>
   <mime-type type="application/xcap-caps+xml"/>
@@ -3155,6 +3089,43 @@
   <mime-type type="application/zip">
     <glob pattern="*.zip"/>
   </mime-type>
+
+  <mime-type type="application/postscript">
+    <comment>PostScript</comment>
+    <magic priority="50">
+      <match value="%!" type="string" offset="0" />
+      <match value="\004%!" type="string" offset="0" />
+      <!-- Windows format EPS -->
+      <match value="0xc5d0d3c6" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ps" />
+    <glob pattern="*.eps" />
+    <glob pattern="*.epsf" />
+    <glob pattern="*.epsi" />
+  </mime-type>
+
+  <mime-type type="application/vnd.lotus-wordpro">
+    <magic priority="50">
+      <match value="WordPro\0" type="string" offset="0" />
+      <match value="WordPro\r\373" type="string" offset="0" />
+    </magic>
+  </mime-type>
+  <mime-type type="application/vnd.ms-tnef">
+    <magic priority="50">
+      <match value="0x223e9f78" type="little16" offset="0" />
+    </magic>
+  </mime-type>
+  <mime-type type="application/vnd.rn-realmedia">
+    <magic priority="50">
+      <match value=".RMF" type="string" offset="0" />
+    </magic>
+  </mime-type>
+  <mime-type type="application/vnd.symbian.install">
+    <magic priority="50">
+      <match value="0x10000419" type="little32" offset="8" />
+    </magic>
+  </mime-type>
+
   <mime-type type="audio/32kadpcm"/>
   <mime-type type="audio/3gpp"/>
   <mime-type type="audio/3gpp2"/>
@@ -3323,6 +3294,37 @@
     <glob pattern="*.aiff"/>
     <glob pattern="*.aifc"/>
   </mime-type>
+
+  <mime-type type="audio/x-flac">
+    <acronym>FLAC</acronym>
+    <comment>Free Lossless Audio Codec</comment>
+    <magic priority="50">
+      <match value="fLaC" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.flac"/>
+  </mime-type>
+
+  <mime-type type="audio/x-mod">
+    <acronym>MOD</acronym>
+    <magic priority="50">
+      <match value="Extended\ Module:" type="string" offset="0"/>
+      <match value="BMOD2STM" type="string" offset="21"/>
+      <match value="M.K." type="string" offset="1080"/>
+      <match value="M!K!" type="string" offset="1080"/>
+      <match value="FLT4" type="string" offset="1080"/>
+      <match value="FLT8" type="string" offset="1080"/>
+      <match value="4CHN" type="string" offset="1080"/>
+      <match value="6CHN" type="string" offset="1080"/>
+      <match value="8CHN" type="string" offset="1080"/>
+      <match value="CD81" type="string" offset="1080"/>
+      <match value="OKTA" type="string" offset="1080"/>
+      <match value="16CN" type="string" offset="1080"/>
+      <match value="32CN" type="string" offset="1080"/>
+      <match value="IMPM" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.mod"/>
+  </mime-type>
+
   <mime-type type="audio/x-mpegurl">
     <glob pattern="*.m3u"/>
   </mime-type>
@@ -3332,16 +3334,24 @@
   <mime-type type="audio/x-ms-wma">
     <glob pattern="*.wma"/>
   </mime-type>
+
   <mime-type type="audio/x-pn-realaudio">
+    <comment>Real Audio</comment>
+    <alias type="audio/x-realaudio" />
+    <magic priority="50">
+      <match value="0x2e7261fd" type="big32" offset="0"/>
+    </magic>
     <glob pattern="*.ram"/>
     <glob pattern="*.ra"/>
   </mime-type>
+
   <mime-type type="audio/x-pn-realaudio-plugin">
     <glob pattern="*.rmp"/>
   </mime-type>
   <mime-type type="audio/x-wav">
     <glob pattern="*.wav"/>
   </mime-type>
+
   <mime-type type="chemical/x-cdx">
     <glob pattern="*.cdx"/>
   </mime-type>
