@@ -26,7 +26,7 @@ public class MidiParserTest extends TestCase {
     public void testMID() throws Exception {
         String path = "/test-documents/testMID.mid";
         Metadata metadata = new Metadata();
-        String content = Tika.parseToString(
+        String content = new Tika().parseToString(
                 MidiParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("audio/midi", metadata.get(Metadata.CONTENT_TYPE));

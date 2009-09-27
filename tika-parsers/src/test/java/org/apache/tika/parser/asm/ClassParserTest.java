@@ -29,7 +29,7 @@ public class ClassParserTest extends TestCase {
     public void testClassParsing() throws Exception {
         String path = "/test-documents/AutoDetectParser.class";
         Metadata metadata = new Metadata();
-        String content = Tika.parseToString(
+        String content = new Tika().parseToString(
                 ClassParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("AutoDetectParser", metadata.get(Metadata.TITLE));

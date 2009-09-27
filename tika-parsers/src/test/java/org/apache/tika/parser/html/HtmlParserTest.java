@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -79,7 +79,7 @@ public class HtmlParserTest extends TestCase {
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
         String path = "/test-documents/testXHTML_utf8.html";
         Metadata metadata = new Metadata();
-        String content = Tika.parseToString(
+        String content = new Tika().parseToString(
                 HtmlParserTest.class.getResourceAsStream(path), metadata);
 
         assertTrue("Did not contain expected text:"
@@ -97,7 +97,7 @@ public class HtmlParserTest extends TestCase {
     public void testXhtmlParsing() throws Exception {
         String path = "/test-documents/testXHTML.html";
         Metadata metadata = new Metadata();
-        String content = Tika.parseToString(
+        String content = new Tika().parseToString(
                 HtmlParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("application/xhtml+xml", metadata.get(Metadata.CONTENT_TYPE));
@@ -124,7 +124,7 @@ public class HtmlParserTest extends TestCase {
      */
     public void testCharactersDirectlyUnderBodyElement() throws Exception {
         String test = "<html><body>test</body></html>";
-        String content = Tika.parseToString(
+        String content = new Tika().parseToString(
                 new ByteArrayInputStream(test.getBytes("UTF-8")));
         assertEquals("test", content);
     }
@@ -136,7 +136,7 @@ public class HtmlParserTest extends TestCase {
     public void testWhitespaceBetweenTableCells() throws Exception {
         String test =
             "<html><body><table><tr><td>a</td><td>b</td></table></body></html>";
-        String content = Tika.parseToString(
+        String content = new Tika().parseToString(
                 new ByteArrayInputStream(test.getBytes("UTF-8")));
         assertTrue(content.contains("a"));
         assertTrue(content.contains("b"));
