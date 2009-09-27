@@ -641,13 +641,6 @@
     <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#" />
   </mime-type>
 
-  <mime-type type="application/mac-binhex40">
-    <magic priority="50">
-      <match value="must\ be\ converted\ with\ BinHex" type="string" offset="11" />
-    </magic>
-    <glob pattern="*.hqx" />
-  </mime-type>
-
   <mime-type type="application/mac-compactpro">
     <glob pattern="*.cpt" />
   </mime-type>
@@ -1379,120 +1372,6 @@
   <mime-type type="model/vrml">
     <glob pattern="*.vrml" />
   </mime-type>
-  <mime-type type="text/troff">
-    <magic priority="50">
-      <match value=".\\&quot;" type="string" offset="0" />
-      <match value="'\\&quot;" type="string" offset="0" />
-      <match value="'.\\&quot;" type="string" offset="0" />
-      <match value="\\&quot;" type="string" offset="0" />
-      <match value="'''" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="text/x-diff">
-    <magic priority="50">
-      <match value="diff\ " type="string" offset="0" />
-      <match value="***\ " type="string" offset="0" />
-      <match value="Only\ in\ " type="string" offset="0" />
-      <match value="Common\ subdirectories:\ " type="string" offset="0" />
-      <match value="Index:" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="video/mpeg">
-    <glob pattern="*.mpg" />
-    <glob pattern="*.mpeg" />
-  </mime-type>
-  <mime-type type="video/quicktime">
-    <magic priority="50">
-      <match value="moov" type="string" offset="4" />
-      <match value="mdat" type="string" offset="4" />
-      <match value="ftyp" type="string" offset="4" />
-    </magic>
-    <glob pattern="*.mov" />
-  </mime-type>
-  <mime-type type="video/x-flc">
-    <glob pattern="*.flc" />
-  </mime-type>
-  <mime-type type="video/x-fli">
-    <glob pattern="*.fli" />
-  </mime-type>
-  <mime-type type="video/x-flv">
-    <magic priority="50">
-      <match value="FLV" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.flv" />
-  </mime-type>
-  <mime-type type="video/x-jng">
-    <magic priority="50">
-      <match value="\x8bJNG" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.jng" />
-  </mime-type>
-  <mime-type type="video/x-mng">
-    <magic priority="50">
-      <match value="\x8aMNG" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.mng" />
-  </mime-type>
-  <mime-type type="video/x-msvideo">
-    <magic priority="50">
-      <match value="RIFF....AVI " type="string" offset="0"
-             mask="0xFFFFFFFF00000000FFFFFFFF" />
-    </magic>
-    <glob pattern="*.avi" />
-    <alias type="video/avi" />
-    <alias type="video/msvideo" />
-  </mime-type>
-  <mime-type type="video/x-sgi-movie">
-    <magic priority="50">
-      <match value="MOVI" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-Berkeley-DB">
-    <magic priority="50">
-      <match value="0x00061561" type="big32" offset="0" />
-      <match value="0x00061561" type="host32" offset="12" />
-      <match value="0x00061561" type="big32" offset="12" />
-      <match value="0x00061561" type="little32" offset="12" />
-      <match value="0x00053162" type="host32" offset="12" />
-      <match value="0x00053162" type="big32" offset="12" />
-      <match value="0x00053162" type="little32" offset="12" />
-      <match value="0x00042253" type="host32" offset="12" />
-      <match value="0x00042253" type="big32" offset="12" />
-      <match value="0x00042253" type="little32" offset="12" />
-      <match value="0x00040988" type="host32" offset="12" />
-      <match value="0x00040988" type="little32" offset="12" />
-      <match value="0x00040988" type="big32" offset="12" />
-      <match value="0x00053162" type="host32" offset="0" />
-      <match value="0x00053162" type="big32" offset="0" />
-      <match value="0x00053162" type="little32" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="application/x-BibTeX-text-file">
-    <magic priority="50">
-      <match value="%\ BibTeX\ `" type="string" offset="0" />
-      <match value="%%%\ \ " type="string" offset="73" />
-      <match value="%\ BibTeX\ standard\ bibliography\ " type="string" offset="0" />
-      <match value="%%%\ \ @BibTeX-style-file{" type="string" offset="73" />
-      <match value="@article{" type="string" offset="0" />
-      <match value="@book{" type="string" offset="0" />
-      <match value="@inbook{" type="string" offset="0" />
-      <match value="@incollection{" type="string" offset="0" />
-      <match value="@inproceedings{" type="string" offset="0" />
-      <match value="@manual{" type="string" offset="0" />
-      <match value="@misc{" type="string" offset="0" />
-      <match value="@preamble{" type="string" offset="0" />
-      <match value="@phdthesis{" type="string" offset="0" />
-      <match value="@techreport{" type="string" offset="0" />
-      <match value="@unpublished{" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.bib" />
-    <glob pattern="*.bibtex" />
-  </mime-type>
-  <mime-type type="application/x-BinHex-binary-text">
-    <magic priority="50">
-      <match value="must\ be\ converted\ with\ BinHex" type="string" offset="11" />
-    </magic>
-  </mime-type>
 
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
@@ -1599,9 +1478,16 @@
   <mime-type type="application/lost+xml">
     <glob pattern="*.lostxml"/>
   </mime-type>
+
   <mime-type type="application/mac-binhex40">
+    <alias type="application/mac-binhex"/>
+    <alias type="application/binhex"/>
+    <magic priority="50">
+      <match value="must\ be\ converted\ with\ BinHex" type="string" offset="11"/>
+    </magic>
     <glob pattern="*.hqx"/>
   </mime-type>
+
   <mime-type type="application/mac-compactpro">
     <glob pattern="*.cpt"/>
   </mime-type>
@@ -3142,6 +3028,50 @@
   <mime-type type="application/x-bcpio">
     <glob pattern="*.bcpio"/>
   </mime-type>
+
+  <mime-type type="application/x-berkeley-db">
+    <magic priority="50">
+      <match value="0x00061561" type="big32" offset="0"/>
+      <match value="0x00061561" type="host32" offset="12"/>
+      <match value="0x00061561" type="big32" offset="12"/>
+      <match value="0x00061561" type="little32" offset="12"/>
+      <match value="0x00053162" type="host32" offset="12"/>
+      <match value="0x00053162" type="big32" offset="12"/>
+      <match value="0x00053162" type="little32" offset="12"/>
+      <match value="0x00042253" type="host32" offset="12"/>
+      <match value="0x00042253" type="big32" offset="12"/>
+      <match value="0x00042253" type="little32" offset="12"/>
+      <match value="0x00040988" type="host32" offset="12"/>
+      <match value="0x00040988" type="little32" offset="12"/>
+      <match value="0x00040988" type="big32" offset="12"/>
+      <match value="0x00053162" type="host32" offset="0"/>
+      <match value="0x00053162" type="big32" offset="0"/>
+      <match value="0x00053162" type="little32" offset="0"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-bibtex-text-file">
+    <magic priority="50">
+      <match value="%\ BibTeX\ `" type="string" offset="0"/>
+      <match value="%%%\ \ " type="string" offset="73"/>
+      <match value="%\ BibTeX\ standard\ bibliography\ " type="string" offset="0"/>
+      <match value="%%%\ \ @BibTeX-style-file{" type="string" offset="73"/>
+      <match value="@article{" type="string" offset="0"/>
+      <match value="@book{" type="string" offset="0"/>
+      <match value="@inbook{" type="string" offset="0"/>
+      <match value="@incollection{" type="string" offset="0"/>
+      <match value="@inproceedings{" type="string" offset="0"/>
+      <match value="@manual{" type="string" offset="0"/>
+      <match value="@misc{" type="string" offset="0"/>
+      <match value="@preamble{" type="string" offset="0"/>
+      <match value="@phdthesis{" type="string" offset="0"/>
+      <match value="@techreport{" type="string" offset="0"/>
+      <match value="@unpublished{" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.bib"/>
+    <glob pattern="*.bibtex"/>
+  </mime-type>
+
   <mime-type type="application/x-bittorrent">
     <glob pattern="*.torrent"/>
   </mime-type>
@@ -3335,6 +3265,7 @@
   <mime-type type="application/x-rar-compressed">
     <glob pattern="*.rar"/>
   </mime-type>
+
   <mime-type type="application/x-sh">
     <sub-class-of type="text/plain"/>
     <glob pattern="*.sh"/>
@@ -3909,7 +3840,15 @@
   <mime-type type="text/tab-separated-values">
     <glob pattern="*.tsv"/>
   </mime-type>
+
   <mime-type type="text/troff">
+    <magic priority="50">
+      <match value=".\\&quot;" type="string" offset="0"/>
+      <match value="'\\&quot;" type="string" offset="0"/>
+      <match value="'.\\&quot;" type="string" offset="0"/>
+      <match value="\\&quot;" type="string" offset="0"/>
+      <match value="'''" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.t"/>
     <glob pattern="*.tr"/>
     <glob pattern="*.roff"/>
@@ -3917,6 +3856,7 @@
     <glob pattern="*.me"/>
     <glob pattern="*.ms"/>
   </mime-type>
+
   <mime-type type="text/ulpfec"/>
   <mime-type type="text/uri-list">
     <glob pattern="*.uri"/>
@@ -3985,6 +3925,19 @@
     <glob pattern="*.hh"/>
     <glob pattern="*.dic"/>
   </mime-type>
+
+  <mime-type type="text/x-diff">
+    <magic priority="50">
+      <match value="diff\ " type="string" offset="0"/>
+      <match value="***\ " type="string" offset="0"/>
+      <match value="Only\ in\ " type="string" offset="0"/>
+      <match value="Common\ subdirectories:\ " type="string" offset="0"/>
+      <match value="Index:" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.diff"/>
+    <glob pattern="*.patch"/>
+  </mime-type>
+
   <mime-type type="text/x-fortran">
     <glob pattern="*.f"/>
     <glob pattern="*.for"/>
@@ -4056,6 +4009,7 @@
     <glob pattern="*.mpg4"/>
   </mime-type>
   <mime-type type="video/mp4v-es"/>
+
   <mime-type type="video/mpeg">
     <glob pattern="*.mpeg"/>
     <glob pattern="*.mpg"/>
@@ -4063,6 +4017,7 @@
     <glob pattern="*.m1v"/>
     <glob pattern="*.m2v"/>
   </mime-type>
+
   <mime-type type="video/mpeg4-generic"/>
   <mime-type type="video/mpv"/>
   <mime-type type="video/nv"/>
@@ -4071,10 +4026,17 @@
   </mime-type>
   <mime-type type="video/parityfec"/>
   <mime-type type="video/pointer"/>
+
   <mime-type type="video/quicktime">
+    <magic priority="50">
+      <match value="moov" type="string" offset="4"/>
+      <match value="mdat" type="string" offset="4"/>
+      <match value="ftyp" type="string" offset="4"/>
+    </magic>
     <glob pattern="*.qt"/>
     <glob pattern="*.mov"/>
   </mime-type>
+
   <mime-type type="video/raw"/>
   <mime-type type="video/rtp-enc-aescm128"/>
   <mime-type type="video/rtx"/>
@@ -4115,15 +4077,40 @@
   <mime-type type="video/x-f4v">
     <glob pattern="*.f4v"/>
   </mime-type>
+
+  <mime-type type="video/x-flc">
+    <glob pattern="*.flc"/>
+  </mime-type>
+
   <mime-type type="video/x-fli">
     <glob pattern="*.fli"/>
   </mime-type>
+
   <mime-type type="video/x-flv">
+    <magic priority="50">
+      <match value="FLV" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.flv"/>
   </mime-type>
+
+  <mime-type type="video/x-jng">
+    <magic priority="50">
+      <match value="\x8bJNG" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jng"/>
+  </mime-type>
+
   <mime-type type="video/x-m4v">
     <glob pattern="*.m4v"/>
   </mime-type>
+
+  <mime-type type="video/x-mng">
+    <magic priority="50">
+      <match value="\x8aMNG" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.mng"/>
+  </mime-type>
+
   <mime-type type="video/x-ms-asf">
     <glob pattern="*.asf"/>
     <glob pattern="*.asx"/>
@@ -4140,12 +4127,24 @@
   <mime-type type="video/x-ms-wvx">
     <glob pattern="*.wvx"/>
   </mime-type>
+
   <mime-type type="video/x-msvideo">
+    <alias type="video/avi"/>
+    <alias type="video/msvideo"/>
+    <magic priority="50">
+      <match value="RIFF....AVI " type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF"/>
+    </magic>
     <glob pattern="*.avi"/>
   </mime-type>
+
   <mime-type type="video/x-sgi-movie">
+    <magic priority="50">
+      <match value="MOVI" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.movie"/>
   </mime-type>
+
   <mime-type type="x-conference/x-cooltalk">
     <glob pattern="*.ice"/>
   </mime-type>
