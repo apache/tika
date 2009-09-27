@@ -16,6 +16,7 @@
  */
 package org.apache.tika;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,6 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -39,11 +41,18 @@ import org.xml.sax.SAXException;
 /**
  * Facade class for accessing Tika functionality. This class hides much of
  * the underlying complexity of the lower level Tika classes and provides
- * simple methods for many common parsing operations.
+ * simple methods for many common parsing and type detection operations.
  *
  * @since Apache Tika 0.5
+ * @see Parser
+ * @see Detector
  */
 public class Tika {
+
+    /**
+     * The detector instance used by this facade.
+     */
+    private final Detector detector;
 
     /**
      * The parser instance used by this facade.
@@ -52,9 +61,11 @@ public class Tika {
 
     /**
      * Creates a Tika facade using the given configuration.
-     * @param config
+     *
+     * @param config Tika configuration
      */
     public Tika(TikaConfig config) {
+        this.detector = config.getMimeRepository();
         this.parser = new AutoDetectParser(config);
     }
 
@@ -63,6 +74,119 @@ public class Tika {
      */
     public Tika() {
         this(TikaConfig.getDefaultConfig());
+    }
+
+    /**
+     * Detects the media type of the given document. The type detection is
+     * based on the content of the given document stream and any given
+     * document metadata. The document stream can be <code>null</code>,
+     * in which case only the given document metadata is used for type
+     * detection.
+     * <p>
+     * If the document stream supports the
+     * {@link InputStream#markSupported() mark feature}, then the stream is
+     * marked and reset to the original position before this method returns.
+     * Only a limited number of bytes are read from the stream.
+     * <p>
+     * The given document stream is <em>not</em> closed by this method.
+     * <p>
+     * Unlike in the {@link #parse(InputStream, Metadata)} method, the
+     * given document metadata is <em>not</em> modified by this method.
+     *
+     * @param stream the document stream, or <code>null</code>
+     * @param metadata document metadata
+     * @return detected media type
+     * @throws IOException if the stream can not be read
+     */
+    public String detect(InputStream stream, Metadata metadata)
+            throws IOException {
+        if (stream.markSupported()) {
+            return detector.detect(stream, metadata).toString();
+        } else {
+            return detector.detect(
+                    new BufferedInputStream(stream), metadata).toString();
+        }
+    }
+
+    /**
+     * Detects the media type of the given document. The type detection is
+     * based on the content of the given document stream.
+     * <p>
+     * If the document stream supports the
+     * {@link InputStream#markSupported() mark feature}, then the stream is
+     * marked and reset to the original position before this method returns.
+     * Only a limited number of bytes are read from the stream.
+     * <p>
+     * The given document stream is <em>not</em> closed by this method.
+     *
+     * @param stream the document stream
+     * @return detected media type
+     * @throws IOException if the stream can not be read
+     */
+    public String detect(InputStream stream) throws IOException {
+        return detect(stream, new Metadata());
+    }
+
+    /**
+     * Detects the media type of the given file. The type detection is
+     * based on the document content and a potential known file extension.
+     * <p>
+     * Use the {@link #detect(String)} method when you want to detect the
+     * type of the document without actually accessing the file.
+     *
+     * @param file the file
+     * @return detected media type
+     * @throws FileNotFoundException if the file does not exist
+     * @throws IOException if the file can not be read
+     */
+    public String detect(File file) throws FileNotFoundException, IOException {
+        InputStream stream = new FileInputStream(file);
+        try {
+            return detect(stream, getFileMetadata(file));
+        } finally {
+            stream.close();
+        }
+    }
+
+    /**
+     * Detects the media type of the resource at the given URL. The type
+     * detection is based on the document content and a potential known
+     * file extension included in the URL.
+     * <p>
+     * Use the {@link #detect(String)} method when you want to detect the
+     * type of the document without actually accessing the URL.
+     *
+     * @param url the URL of the resource
+     * @return detected media type
+     * @throws IOException if the resource can not be read
+     */
+    public String detect(URL url) throws IOException {
+        InputStream stream = url.openStream();
+        try {
+            return detect(stream, getUrlMetadata(url));
+        } finally {
+            stream.close();
+        }
+    }
+
+    /**
+     * Detects the media type of a document with the given file name.
+     * The type detection is based on known file name extensions.
+     * <p>
+     * The given name can also be a URL or a full file path. In such cases
+     * only the file name part of the string is used for type detection. 
+     *
+     * @param name the file name of the document
+     * @return detected media type
+     */
+    public String detect(String name) {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, name);
+        try {
+            return detect(null, metadata);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unexpected IOException", e);
+        }
     }
 
     /**
