@@ -1161,218 +1161,6 @@
     <glob pattern="*.ra" />
   </mime-type>
 
-  <mime-type type="image/gif">
-    <acronym>GIF</acronym>
-    <comment>Graphics Interchange Format</comment>
-    <magic priority="50">
-      <match value="GIF87a" type="string" offset="0" />
-      <match value="GIF89a" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.gif" />
-  </mime-type>
-
-  <mime-type type="image/tiff">
-    <acronym>TIFF</acronym>
-    <comment>Tagged Image File Format</comment>
-    <magic priority="50">
-      <!-- MM.* = Big endian (M=Motorola) and 0x002a in big endian    -->
-      <match value="MM\x00\x2a" type="string" offset="0" />
-      <!-- II*. = Little endian (I=Intel) and 0x002a in little endian -->
-      <match value="II\x2a\x00" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.tiff" />
-    <glob pattern="*.tif" />
-  </mime-type>
-
-  <mime-type type="image/x-portable-anymap">
-    <acronym>PNM</acronym>
-    <comment>Portable Any Map</comment>
-    <glob pattern="*.pnm" />
-  </mime-type>
-
-  <mime-type type="image/x-portable-bitmap">
-    <sub-class-of type="image/x-portable-anymap" />
-    <acronym>PBM</acronym>
-    <comment>Portable Bit Map</comment>
-    <magic priority="50">
-      <match value="P1" type="string" offset="0" />
-      <match value="P4" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.pbm" />
-  </mime-type>
-
-  <mime-type type="image/x-portable-graymap">
-    <sub-class-of type="image/x-portable-anymap" />
-    <acronym>PGM</acronym>
-    <comment>Portable Gray Map</comment>
-    <magic priority="50">
-      <match value="P2" type="string" offset="0" />
-      <match value="P5" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.pgm" />
-  </mime-type>
-
-  <mime-type type="image/x-portable-pixmap">
-    <sub-class-of type="image/x-portable-anymap" />
-    <acronym>PXM</acronym>
-    <comment>Portable Pixel Map</comment>
-    <magic priority="50">
-      <match value="P3" type="string" offset="0" />
-      <match value="P6" type="string" offset="0" />
-      <match value="P7" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.ppm" />
-  </mime-type>
-
-  <mime-type type="image/cgm">
-    <acronym>CGM</acronym>
-    <comment>Computer Graphics Metafile</comment>
-    <magic priority="50">
-      <match value="BEGMF" type="string" offset="0" />
-      <match value="0x0020" mask="0xffe0" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.cgm" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-dng">
-    <acronym>DNG</acronym>
-    <comment>Adobe Digital Negative</comment>
-    <glob pattern="*.dng" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-hasselblad">
-    <comment>Hasselblad raw image</comment>
-    <glob pattern="*.3fr" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-fuji">
-    <comment>Fuji raw image</comment>
-    <glob pattern="*.raf" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-canon">
-    <comment>Canon raw image</comment>
-    <glob pattern="*.crw" />
-    <glob pattern="*.cr2" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-kodak">
-    <comment>Kodak raw image</comment>
-    <glob pattern="*.k25" />
-    <glob pattern="*.kdc" />
-    <glob pattern="*.dcs" />
-    <glob pattern="*.drf" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-minolta">
-    <comment>Minolta raw image</comment>
-    <glob pattern="*.mrw" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-nikon">
-    <comment>Nikon raw image</comment>
-    <glob pattern="*.nef" />
-    <glob pattern="*.nrw" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-olympus">
-    <comment>Olympus raw image</comment>
-    <glob pattern="*.orf" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-pentax">
-    <comment>Pentax raw image</comment>
-    <glob pattern="*.ptx" />
-    <glob pattern="*.pef" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-sony">
-    <comment>Sony raw image</comment>
-    <glob pattern="*.arw" />
-    <glob pattern="*.srf" />
-    <glob pattern="*.sr2" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-sigma">
-    <comment>Sigma raw image</comment>
-    <glob pattern="*.x3f" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-epson">
-    <comment>Epson raw image</comment>
-    <glob pattern="*.erf" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-mamiya">
-    <comment>Mamiya raw image</comment>
-    <glob pattern="*.mef" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-leaf">
-    <comment>Leaf raw image</comment>
-    <glob pattern="*.mos" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-panasonic">
-    <comment>Panasonic raw image</comment>
-    <glob pattern="*.raw" />
-    <glob pattern="*.rw2" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-phaseone">
-    <comment>Phase One raw image</comment>
-    <glob pattern="*.cap" />
-    <glob pattern="*.iiq" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-red">
-    <comment>Red raw image</comment>
-    <glob pattern="*.r3d" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-imacon">
-    <comment>Imacon raw image</comment>
-    <glob pattern="*.fff" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-logitech">
-    <comment>Logitech raw image</comment>
-    <glob pattern="*.pxn" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-casio">
-    <comment>Casio raw image</comment>
-    <glob pattern="*.bay" />
-  </mime-type>
-
-  <mime-type type="image/x-tika-rawzor">
-    <comment>Rawzor raw image</comment>
-    <glob pattern="*.rwz" />
-  </mime-type>
-
-  <mime-type type="message/news">
-    <magic priority="50">
-      <match value="Path:" type="string" offset="0" />
-      <match value="Xref:" type="string" offset="0" />
-      <match value="Article" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="message/rfc822">
-    <magic priority="50">
-      <match value="Relay-Version:" type="string" offset="0" />
-      <match value="#!\ rnews" type="string" offset="0" />
-      <match value="N#!\ rnews" type="string" offset="0" />
-      <match value="Forward\ to" type="string" offset="0" />
-      <match value="Pipe\ to" type="string" offset="0" />
-      <match value="Return-Path:" type="string" offset="0" />
-      <match value="From:" type="string" offset="0" />
-      <match value="Received:" type="string" offset="0" />
-    </magic>
-  </mime-type>
-  <mime-type type="model/vrml">
-    <glob pattern="*.vrml" />
-  </mime-type>
-
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
     <glob pattern="*.ez"/>
@@ -3573,6 +3361,7 @@
   <mime-type type="chemical/x-xyz">
     <glob pattern="*.xyz"/>
   </mime-type>
+
   <mime-type type="image/bmp">
     <alias type="image/x-ms-bmp"/>
     <acronym>BMP</acronym>
@@ -3583,17 +3372,33 @@
     <glob pattern="*.bmp"/>
     <glob pattern="*.dib"/>
   </mime-type>
+
   <mime-type type="image/cgm">
+    <acronym>CGM</acronym>
+    <comment>Computer Graphics Metafile</comment>
+    <magic priority="50">
+      <match value="BEGMF" type="string" offset="0"/>
+      <match value="0x0020" mask="0xffe0" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.cgm"/>
   </mime-type>
+
   <mime-type type="image/example"/>
   <mime-type type="image/fits"/>
   <mime-type type="image/g3fax">
     <glob pattern="*.g3"/>
   </mime-type>
+
   <mime-type type="image/gif">
+    <acronym>GIF</acronym>
+    <comment>Graphics Interchange Format</comment>
+    <magic priority="50">
+      <match value="GIF87a" type="string" offset="0"/>
+      <match value="GIF89a" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.gif"/>
   </mime-type>
+
   <mime-type type="image/ief">
     <glob pattern="*.ief"/>
   </mime-type>
@@ -3618,10 +3423,20 @@
     <!-- <glob pattern="*.svgz"/> (see application/x-gzip) -->
   </mime-type>
   <mime-type type="image/t38"/>
+
   <mime-type type="image/tiff">
+    <acronym>TIFF</acronym>
+    <comment>Tagged Image File Format</comment>
+    <magic priority="50">
+      <!-- MM.* = Big endian (M=Motorola) and 0x002a in big endian    -->
+      <match value="MM\x00\x2a" type="string" offset="0"/>
+      <!-- II*. = Little endian (I=Intel) and 0x002a in little endian -->
+      <match value="II\x2a\x00" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.tiff"/>
     <glob pattern="*.tif"/>
   </mime-type>
+
   <mime-type type="image/tiff-fx"/>
   <mime-type type="image/vnd.adobe.photoshop">
     <glob pattern="*.psd"/>
@@ -3695,18 +3510,163 @@
     <glob pattern="*.pic"/>
     <glob pattern="*.pct"/>
   </mime-type>
+
   <mime-type type="image/x-portable-anymap">
-    <glob pattern="*.pnm"/>
+    <acronym>PNM</acronym>
+    <comment>Portable Any Map</comment>
+    <glob pattern="*.pnm" />
   </mime-type>
+
   <mime-type type="image/x-portable-bitmap">
+    <sub-class-of type="image/x-portable-anymap"/>
+    <acronym>PBM</acronym>
+    <comment>Portable Bit Map</comment>
+    <magic priority="50">
+      <match value="P1" type="string" offset="0"/>
+      <match value="P4" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.pbm"/>
   </mime-type>
+
   <mime-type type="image/x-portable-graymap">
+    <sub-class-of type="image/x-portable-anymap"/>
+    <acronym>PGM</acronym>
+    <comment>Portable Gray Map</comment>
+    <magic priority="50">
+      <match value="P2" type="string" offset="0"/>
+      <match value="P5" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.pgm"/>
   </mime-type>
+
   <mime-type type="image/x-portable-pixmap">
+    <sub-class-of type="image/x-portable-anymap"/>
+    <acronym>PXM</acronym>
+    <comment>Portable Pixel Map</comment>
+    <magic priority="50">
+      <match value="P3" type="string" offset="0"/>
+      <match value="P6" type="string" offset="0"/>
+      <match value="P7" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.ppm"/>
   </mime-type>
+
+  <mime-type type="image/x-raw-adobe">
+    <acronym>DNG</acronym>
+    <comment>Adobe Digital Negative</comment>
+    <glob pattern="*.dng"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-hasselblad">
+    <comment>Hasselblad raw image</comment>
+    <glob pattern="*.3fr"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-fuji">
+    <comment>Fuji raw image</comment>
+    <glob pattern="*.raf"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-canon">
+    <comment>Canon raw image</comment>
+    <glob pattern="*.crw"/>
+    <glob pattern="*.cr2"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-kodak">
+    <comment>Kodak raw image</comment>
+    <glob pattern="*.k25"/>
+    <glob pattern="*.kdc"/>
+    <glob pattern="*.dcs"/>
+    <glob pattern="*.drf"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-minolta">
+    <comment>Minolta raw image</comment>
+    <glob pattern="*.mrw"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-nikon">
+    <comment>Nikon raw image</comment>
+    <glob pattern="*.nef"/>
+    <glob pattern="*.nrw"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-olympus">
+    <comment>Olympus raw image</comment>
+    <glob pattern="*.orf"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-pentax">
+    <comment>Pentax raw image</comment>
+    <glob pattern="*.ptx"/>
+    <glob pattern="*.pef"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-sony">
+    <comment>Sony raw image</comment>
+    <glob pattern="*.arw"/>
+    <glob pattern="*.srf"/>
+    <glob pattern="*.sr2"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-sigma">
+    <comment>Sigma raw image</comment>
+    <glob pattern="*.x3f"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-epson">
+    <comment>Epson raw image</comment>
+    <glob pattern="*.erf"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-mamiya">
+    <comment>Mamiya raw image</comment>
+    <glob pattern="*.mef"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-leaf">
+    <comment>Leaf raw image</comment>
+    <glob pattern="*.mos"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-panasonic">
+    <comment>Panasonic raw image</comment>
+    <glob pattern="*.raw"/>
+    <glob pattern="*.rw2"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-phaseone">
+    <comment>Phase One raw image</comment>
+    <glob pattern="*.cap"/>
+    <glob pattern="*.iiq"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-red">
+    <comment>Red raw image</comment>
+    <glob pattern="*.r3d"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-imacon">
+    <comment>Imacon raw image</comment>
+    <glob pattern="*.fff"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-logitech">
+    <comment>Logitech raw image</comment>
+    <glob pattern="*.pxn"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-casio">
+    <comment>Casio raw image</comment>
+    <glob pattern="*.bay"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-rawzor">
+    <comment>Rawzor raw image</comment>
+    <glob pattern="*.rwz"/>
+  </mime-type>
+
   <mime-type type="image/x-rgb">
     <glob pattern="*.rgb"/>
   </mime-type>
@@ -3719,6 +3679,7 @@
   <mime-type type="image/x-xwindowdump">
     <glob pattern="*.xwd"/>
   </mime-type>
+
   <mime-type type="message/cpim"/>
   <mime-type type="message/delivery-status"/>
   <mime-type type="message/disposition-notification"/>
@@ -3730,17 +3691,38 @@
   <mime-type type="message/global-headers"/>
   <mime-type type="message/http"/>
   <mime-type type="message/imdn+xml"/>
-  <mime-type type="message/news"/>
+
+  <mime-type type="message/news">
+    <magic priority="50">
+      <match value="Path:" type="string" offset="0" />
+      <match value="Xref:" type="string" offset="0" />
+      <match value="Article" type="string" offset="0" />
+    </magic>
+  </mime-type>
+
   <mime-type type="message/partial"/>
+
   <mime-type type="message/rfc822">
+    <magic priority="50">
+      <match value="Relay-Version:" type="string" offset="0"/>
+      <match value="#!\ rnews" type="string" offset="0"/>
+      <match value="N#!\ rnews" type="string" offset="0"/>
+      <match value="Forward\ to" type="string" offset="0"/>
+      <match value="Pipe\ to" type="string" offset="0"/>
+      <match value="Return-Path:" type="string" offset="0"/>
+      <match value="From:" type="string" offset="0"/>
+      <match value="Received:" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.eml"/>
     <glob pattern="*.mime"/>
   </mime-type>
+
   <mime-type type="message/s-http"/>
   <mime-type type="message/sip"/>
   <mime-type type="message/sipfrag"/>
   <mime-type type="message/tracking-status"/>
   <mime-type type="message/vnd.si.simp"/>
+
   <mime-type type="model/example"/>
   <mime-type type="model/iges">
     <glob pattern="*.igs"/>

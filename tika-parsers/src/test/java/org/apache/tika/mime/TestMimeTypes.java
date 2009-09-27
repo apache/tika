@@ -86,7 +86,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/xml", "x.xml");
         assertTypeByName("application/zip", "x.zip");
         assertTypeByName("application/vnd.oasis.opendocument.text", "x.odt");
-        assertTypeByName("application/octet-stream", "x.xyz");
+        assertTypeByName("application/octet-stream", "x.unknown");
 
         // Test for the MS Office media types and file extensions listed in
         // http://blogs.msdn.com/vsofficedeveloper/pages/Office-2007-Open-XML-MIME-Types.aspx
@@ -160,12 +160,12 @@ public class TestMimeTypes extends TestCase {
     }
 
     public void testBmpDetection() throws Exception {
-        assertType("image/x-ms-bmp", "testBMP.bmp");
-        assertTypeByData("image/x-ms-bmp", "testBMP.bmp");
-        assertTypeByName("image/x-ms-bmp", "x.bmp");
-        assertTypeByName("image/x-ms-bmp", "x.BMP");
-        assertTypeByName("image/x-ms-bmp", "x.dib");
-        assertTypeByName("image/x-ms-bmp", "x.DIB");
+        assertType("image/bmp", "testBMP.bmp");
+        assertTypeByData("image/bmp", "testBMP.bmp");
+        assertTypeByName("image/bmp", "x.bmp");
+        assertTypeByName("image/bmp", "x.BMP");
+        assertTypeByName("image/bmp", "x.dib");
+        assertTypeByName("image/bmp", "x.DIB");
     }
 
     public void testPnmDetection() throws Exception {
@@ -218,14 +218,14 @@ public class TestMimeTypes extends TestCase {
 
     public void testWmfDetection() throws Exception {
         // TODO: Need a test wmf file
-        assertTypeByName("image/x-tika-wmf", "x.wmf");
-        assertTypeByName("image/x-tika-wmf", "x.WMF");
+        assertTypeByName("application/x-msmetafile", "x.wmf");
+        assertTypeByName("application/x-msmetafile", "x.WMF");
         // TODO: Need a test emf file
-        assertTypeByName("image/x-tika-wmf", "x.emf");
-        assertTypeByName("image/x-tika-wmf", "x.EMF");
+        assertTypeByName("application/x-msmetafile", "x.emf");
+        assertTypeByName("application/x-msmetafile", "x.EMF");
         // TODO: Need a test wmz file
-        assertTypeByName("application/x-gzip", "x.wmz");
-        assertTypeByName("application/x-gzip", "x.WMZ");
+        assertTypeByName("application/x-ms-wmz", "x.wmz");
+        assertTypeByName("application/x-ms-wmz", "x.WMZ");
         // TODO: Need a test emf file
         assertTypeByName("application/x-gzip", "x.emz");
         assertTypeByName("application/x-gzip", "x.EMZ");
@@ -262,39 +262,39 @@ public class TestMimeTypes extends TestCase {
     }
     
     public void testRawDetection() throws Exception {
-        assertTypeByName("image/x-tika-dng", "x.dng");
-        assertTypeByName("image/x-tika-dng", "x.DNG");
-        assertTypeByName("image/x-tika-hasselblad", "x.3fr");
-        assertTypeByName("image/x-tika-fuji", "x.raf");
-        assertTypeByName("image/x-tika-canon", "x.crw");
-        assertTypeByName("image/x-tika-canon", "x.cr2");
-        assertTypeByName("image/x-tika-kodak", "x.k25");
-        assertTypeByName("image/x-tika-kodak", "x.kdc");
-        assertTypeByName("image/x-tika-kodak", "x.dcs");
-        assertTypeByName("image/x-tika-kodak", "x.drf");
-        assertTypeByName("image/x-tika-minolta", "x.mrw");
-        assertTypeByName("image/x-tika-nikon", "x.nef");
-        assertTypeByName("image/x-tika-nikon", "x.nrw");
-        assertTypeByName("image/x-tika-olympus", "x.orf");
-        assertTypeByName("image/x-tika-pentax", "x.ptx");
-        assertTypeByName("image/x-tika-pentax", "x.pef");
-        assertTypeByName("image/x-tika-sony", "x.arw");
-        assertTypeByName("image/x-tika-sony", "x.srf");
-        assertTypeByName("image/x-tika-sony", "x.sr2");
-        assertTypeByName("image/x-tika-sigma", "x.x3f");
-        assertTypeByName("image/x-tika-epson", "x.erf");
-        assertTypeByName("image/x-tika-mamiya", "x.mef");
-        assertTypeByName("image/x-tika-leaf", "x.mos");
-        assertTypeByName("image/x-tika-panasonic", "x.raw");
-        assertTypeByName("image/x-tika-panasonic", "x.rw2");
-        assertTypeByName("image/x-tika-phaseone", "x.cap");
-        assertTypeByName("image/x-tika-phaseone", "x.iiq");
-        assertTypeByName("image/x-tika-phaseone", "x.cap");
-        assertTypeByName("image/x-tika-red", "x.r3d");
-        assertTypeByName("image/x-tika-imacon", "x.fff");
-        assertTypeByName("image/x-tika-logitech", "x.pxn");
-        assertTypeByName("image/x-tika-casio", "x.bay");
-        assertTypeByName("image/x-tika-rawzor", "x.rwz");
+        assertTypeByName("image/x-raw-adobe", "x.dng");
+        assertTypeByName("image/x-raw-adobe", "x.DNG");
+        assertTypeByName("image/x-raw-hasselblad", "x.3fr");
+        assertTypeByName("image/x-raw-fuji", "x.raf");
+        assertTypeByName("image/x-raw-canon", "x.crw");
+        assertTypeByName("image/x-raw-canon", "x.cr2");
+        assertTypeByName("image/x-raw-kodak", "x.k25");
+        assertTypeByName("image/x-raw-kodak", "x.kdc");
+        assertTypeByName("image/x-raw-kodak", "x.dcs");
+        assertTypeByName("image/x-raw-kodak", "x.drf");
+        assertTypeByName("image/x-raw-minolta", "x.mrw");
+        assertTypeByName("image/x-raw-nikon", "x.nef");
+        assertTypeByName("image/x-raw-nikon", "x.nrw");
+        assertTypeByName("image/x-raw-olympus", "x.orf");
+        assertTypeByName("image/x-raw-pentax", "x.ptx");
+        assertTypeByName("image/x-raw-pentax", "x.pef");
+        assertTypeByName("image/x-raw-sony", "x.arw");
+        assertTypeByName("image/x-raw-sony", "x.srf");
+        assertTypeByName("image/x-raw-sony", "x.sr2");
+        assertTypeByName("image/x-raw-sigma", "x.x3f");
+        assertTypeByName("image/x-raw-epson", "x.erf");
+        assertTypeByName("image/x-raw-mamiya", "x.mef");
+        assertTypeByName("image/x-raw-leaf", "x.mos");
+        assertTypeByName("image/x-raw-panasonic", "x.raw");
+        assertTypeByName("image/x-raw-panasonic", "x.rw2");
+        assertTypeByName("image/x-raw-phaseone", "x.cap");
+        assertTypeByName("image/x-raw-phaseone", "x.iiq");
+        assertTypeByName("image/x-raw-phaseone", "x.cap");
+        assertTypeByName("image/x-raw-red", "x.r3d");
+        assertTypeByName("image/x-raw-imacon", "x.fff");
+        assertTypeByName("image/x-raw-logitech", "x.pxn");
+        assertTypeByName("image/x-raw-casio", "x.bay");
+        assertTypeByName("image/x-raw-rawzor", "x.rwz");
     }
 
     /**
