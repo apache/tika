@@ -22,130 +22,6 @@
 -->
 <mime-info>
 
-  <mime-type type="text/plain">
-    <magic priority="20">
-      <match value="This is TeX," type="string" offset="0" />
-      <match value="This is METAFONT," type="string" offset="0" />
-      <match value="#!/" type="string" offset="0" />
-      <match value="#!\ /" type="string" offset="0" />
-      <match value="#!\t/" type="string" offset="0" />
-      <!-- UTF-16BE BOM -->
-      <match value="0xfeff" type="string" offset="0"/>
-      <!-- UTF-16LE BOM -->
-      <match value="0xfffe" type="string" offset="0"/>
-      <!-- UTF-8 BOM -->
-      <match value="0xefbbbf" type="string" offset="0"/>
-    </magic>
-    <glob pattern="*.txt" />
-
-    <!-- TIKA-85: http://www.apache.org/dev/svn-eol-style.txt -->
-    <glob pattern="INSTALL" />
-    <glob pattern="KEYS" />
-    <glob pattern="Makefile" />
-    <glob pattern="README" />
-    <glob pattern="abs-linkmap" />
-    <glob pattern="abs-menulinks" />
-    <glob pattern="*.aart" />
-    <glob pattern="*.ac" />
-    <glob pattern="*.am" />
-    <glob pattern="*.bat" />
-    <glob pattern="*.c" />
-    <glob pattern="*.cgi" />
-    <glob pattern="*.classpath" />
-    <glob pattern="*.cmd" />
-    <glob pattern="*.conf" />
-    <glob pattern="*.config" />
-    <glob pattern="*.cpp" />
-    <glob pattern="*.css" />
-    <glob pattern="*.cwiki" />
-    <glob pattern="*.data" />
-    <glob pattern="*.dcl" />
-    <glob pattern="*.egrm" />
-    <glob pattern="*.ent" />
-    <glob pattern="*.ft" />
-    <glob pattern="*.fn" />
-    <glob pattern="*.fv" />
-    <glob pattern="*.grm" />
-    <glob pattern="*.g" />
-    <glob pattern="*.h" />
-    <glob pattern=".htaccess" />
-    <glob pattern="*.ihtml" />
-    <glob pattern="*.in" />
-    <glob pattern="*.java" />
-    <glob pattern="*.jmx" />
-    <glob pattern="*.jsp" />
-    <glob pattern="*.junit" />
-    <glob pattern="*.jx" />
-    <glob pattern="*.manifest" />
-    <glob pattern="*.m4" />
-    <glob pattern="*.mf" />
-    <glob pattern="*.MF" />
-    <glob pattern="*.meta" />
-    <glob pattern="*.n3" />
-    <glob pattern="*.pen" />
-    <glob pattern="*.pl" />
-    <glob pattern="*.pm" />
-    <glob pattern="*.pod" />
-    <glob pattern="*.pom" />
-    <glob pattern="*.project" />
-    <glob pattern="*.properties" />
-    <glob pattern="*.py" />
-    <glob pattern="*.rb" />
-    <glob pattern="*.rng" />
-    <glob pattern="*.rnx" />
-    <glob pattern="*.roles" />
-    <glob pattern="*.sql" />
-    <glob pattern="*.tld" />
-    <glob pattern="*.types" />
-    <glob pattern="*.vm" />
-    <glob pattern="*.vsl" />
-    <glob pattern="*.wsdd" />
-    <glob pattern="*.xargs" />
-    <glob pattern="*.xcat" />
-    <glob pattern="*.xconf" />
-    <glob pattern="*.xegrm" />
-    <glob pattern="*.xgrm" />
-    <glob pattern="*.xlex" />
-    <glob pattern="*.xlog" />
-    <glob pattern="*.xmap" />
-    <glob pattern="*.xroles" />
-    <glob pattern="*.xsamples" />
-    <glob pattern="*.xsp" />
-    <glob pattern="*.xweb" />
-    <glob pattern="*.xwelcome" />
-  </mime-type>
-
-  <mime-type type="text/html">
-    <magic priority="50">
-      <match value="&lt;!DOCTYPE HTML" type="string" offset="0:64" />
-      <match value="&lt;!doctype html" type="string" offset="0:64" />
-      <match value="&lt;HEAD" type="string" offset="0:64" />
-      <match value="&lt;head" type="string" offset="0:64" />
-      <match value="&lt;TITLE" type="string" offset="0:64" />
-      <match value="&lt;title" type="string" offset="0:64" />
-      <match value="&lt;html" type="string" offset="0:64" />
-      <match value="&lt;HTML" type="string" offset="0:64" />
-      <match value="&lt;BODY" type="string" offset="0" />
-      <match value="&lt;body" type="string" offset="0" />
-      <match value="&lt;TITLE" type="string" offset="0" />
-      <match value="&lt;title" type="string" offset="0" />
-      <match value="&lt;!--" type="string" offset="0" />
-      <match value="&lt;h1" type="string" offset="0" />
-      <match value="&lt;H1" type="string" offset="0" />
-      <match value="&lt;!doctype HTML" type="string" offset="0" />
-      <match value="&lt;!DOCTYPE html" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.html" />
-    <glob pattern="*.htm" />
-  </mime-type>
-
-  <mime-type type="application/xhtml+xml">
-    <sub-class-of type="application/xml" />
-    <glob pattern="*.xhtml" />
-    <glob pattern="*.xht" />
-    <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html" />
-  </mime-type>
-
   <!-- ===================================================================== -->
   <!-- Microsoft Office binary file formats                                  -->
   <!-- http://www.microsoft.com/interop/docs/OfficeBinaryFormats.mspx        -->
@@ -2611,8 +2487,13 @@
   </mime-type>
 
   <mime-type type="application/x-sh">
-    <sub-class-of type="text/plain"/>
+    <magic priority="50">
+      <match value="#!/" type="string" offset="0"/>
+      <match value="#!\ /" type="string" offset="0"/>
+      <match value="#!\t/" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.sh"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
 
   <mime-type type="application/x-shar">
@@ -2727,10 +2608,13 @@
   <mime-type type="application/xenc+xml">
     <glob pattern="*.xenc"/>
   </mime-type>
+
   <mime-type type="application/xhtml+xml">
+    <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html"/>
     <glob pattern="*.xhtml"/>
     <glob pattern="*.xht"/>
   </mime-type>
+
   <mime-type type="application/xhtml-voice+xml"/>
 
   <mime-type type="application/xml">
@@ -3606,13 +3490,46 @@
   <mime-type type="text/ecmascript"/>
   <mime-type type="text/enriched"/>
   <mime-type type="text/example"/>
+
   <mime-type type="text/html">
+    <magic priority="50">
+      <match value="&lt;!DOCTYPE HTML" type="string" offset="0:64"/>
+      <match value="&lt;!doctype html" type="string" offset="0:64"/>
+      <match value="&lt;HEAD" type="string" offset="0:64"/>
+      <match value="&lt;head" type="string" offset="0:64"/>
+      <match value="&lt;TITLE" type="string" offset="0:64"/>
+      <match value="&lt;title" type="string" offset="0:64"/>
+      <match value="&lt;html" type="string" offset="0:64"/>
+      <match value="&lt;HTML" type="string" offset="0:64"/>
+      <match value="&lt;BODY" type="string" offset="0"/>
+      <match value="&lt;body" type="string" offset="0"/>
+      <match value="&lt;TITLE" type="string" offset="0"/>
+      <match value="&lt;title" type="string" offset="0"/>
+      <match value="&lt;!--" type="string" offset="0"/>
+      <match value="&lt;h1" type="string" offset="0"/>
+      <match value="&lt;H1" type="string" offset="0"/>
+      <match value="&lt;!doctype HTML" type="string" offset="0"/>
+      <match value="&lt;!DOCTYPE html" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.html"/>
     <glob pattern="*.htm"/>
   </mime-type>
+
   <mime-type type="text/javascript"/>
   <mime-type type="text/parityfec"/>
+
   <mime-type type="text/plain">
+    <magic priority="20">
+      <match value="This is TeX," type="string" offset="0"/>
+      <match value="This is METAFONT," type="string" offset="0"/>
+      <!-- UTF-16BE BOM -->
+      <match value="0xfeff" type="string" offset="0"/>
+      <!-- UTF-16LE BOM -->
+      <match value="0xfffe" type="string" offset="0"/>
+      <!-- UTF-8 BOM -->
+      <match value="0xefbbbf" type="string" offset="0"/>
+    </magic>
+
     <glob pattern="*.txt"/>
     <glob pattern="*.text"/>
     <glob pattern="*.conf"/>
@@ -3620,7 +3537,82 @@
     <glob pattern="*.list"/>
     <glob pattern="*.log"/>
     <glob pattern="*.in"/>
+
+    <!-- TIKA-85: http://www.apache.org/dev/svn-eol-style.txt -->
+    <glob pattern="INSTALL"/>
+    <glob pattern="KEYS"/>
+    <glob pattern="Makefile"/>
+    <glob pattern="README"/>
+    <glob pattern="abs-linkmap"/>
+    <glob pattern="abs-menulinks"/>
+    <glob pattern="*.aart"/>
+    <glob pattern="*.ac"/>
+    <glob pattern="*.am"/>
+    <glob pattern="*.bat"/>
+    <glob pattern="*.c"/>
+    <glob pattern="*.cgi"/>
+    <glob pattern="*.classpath"/>
+    <glob pattern="*.cmd"/>
+    <glob pattern="*.config"/>
+    <glob pattern="*.cpp"/>
+    <glob pattern="*.css"/>
+    <glob pattern="*.cwiki"/>
+    <glob pattern="*.data"/>
+    <glob pattern="*.dcl"/>
+    <glob pattern="*.egrm"/>
+    <glob pattern="*.ent"/>
+    <glob pattern="*.ft"/>
+    <glob pattern="*.fn"/>
+    <glob pattern="*.fv"/>
+    <glob pattern="*.grm"/>
+    <glob pattern="*.g"/>
+    <glob pattern="*.h"/>
+    <glob pattern=".htaccess"/>
+    <glob pattern="*.ihtml"/>
+    <glob pattern="*.java"/>
+    <glob pattern="*.jmx"/>
+    <glob pattern="*.jsp"/>
+    <glob pattern="*.junit"/>
+    <glob pattern="*.jx"/>
+    <glob pattern="*.manifest"/>
+    <glob pattern="*.m4"/>
+    <glob pattern="*.mf"/>
+    <glob pattern="*.MF"/>
+    <glob pattern="*.meta"/>
+    <glob pattern="*.n3"/>
+    <glob pattern="*.pen"/>
+    <glob pattern="*.pl"/>
+    <glob pattern="*.pm"/>
+    <glob pattern="*.pod"/>
+    <glob pattern="*.pom"/>
+    <glob pattern="*.project"/>
+    <glob pattern="*.properties"/>
+    <glob pattern="*.py"/>
+    <glob pattern="*.rb"/>
+    <glob pattern="*.rng"/>
+    <glob pattern="*.rnx"/>
+    <glob pattern="*.roles"/>
+    <glob pattern="*.sql"/>
+    <glob pattern="*.tld"/>
+    <glob pattern="*.types"/>
+    <glob pattern="*.vm"/>
+    <glob pattern="*.vsl"/>
+    <glob pattern="*.wsdd"/>
+    <glob pattern="*.xargs"/>
+    <glob pattern="*.xcat"/>
+    <glob pattern="*.xconf"/>
+    <glob pattern="*.xegrm"/>
+    <glob pattern="*.xgrm"/>
+    <glob pattern="*.xlex"/>
+    <glob pattern="*.xlog"/>
+    <glob pattern="*.xmap"/>
+    <glob pattern="*.xroles"/>
+    <glob pattern="*.xsamples"/>
+    <glob pattern="*.xsp"/>
+    <glob pattern="*.xweb"/>
+    <glob pattern="*.xwelcome"/>
   </mime-type>
+
   <mime-type type="text/prs.fallenstein.rst"/>
   <mime-type type="text/prs.lines.tag">
     <glob pattern="*.dsc"/>
