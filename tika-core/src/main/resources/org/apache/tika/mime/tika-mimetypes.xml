@@ -801,103 +801,6 @@
     </magic>
   </mime-type>
 
-  <mime-type type="image/vnd.wap.wbmp">
-    <_comment>Wireless Bitmap File Format</_comment>
-    <glob pattern="*.wbmp" />
-  </mime-type>
-
-  <mime-type type="image/x-psd">
-    <alias type="image/photoshop" />
-  </mime-type>
-
-  <mime-type type="image/x-xcf">
-    <alias type="image/xcf" />
-    <magic priority="50">
-      <match type="string" value="gimp xcf " offset="0" />
-    </magic>
-  </mime-type>
-
-  <mime-type type="model/iges">
-    <_comment>Initial Graphics Exchange Specification Format</_comment>
-    <glob pattern="*.igs" />
-    <glob pattern="*.iges" />
-  </mime-type>
-
-  <mime-type type="model/mesh">
-    <glob pattern="*.msh" />
-    <glob pattern="*.mesh" />
-    <glob pattern="*.silo" />
-  </mime-type>
-
-  <mime-type type="model/vrml">
-    <glob pattern="*.vrml" />
-  </mime-type>
-
-  <mime-type type="text/x-tcl">
-    <alias type="application/x-tcl" />
-  </mime-type>
-
-  <mime-type type="text/x-tex">
-    <magic priority="50">
-      <match value="\\input" type="string" offset="0" />
-      <match value="\\section" type="string" offset="0" />
-      <match value="\\setlength" type="string" offset="0" />
-      <match value="\\documentstyle" type="string" offset="0" />
-      <match value="\\chapter" type="string" offset="0" />
-      <match value="\\documentclass" type="string" offset="0" />
-      <match value="\\relax" type="string" offset="0" />
-      <match value="\\contentsline" type="string" offset="0" />
-    </magic>
-    <alias type="application/x-tex" />
-  </mime-type>
-
-  <mime-type type="text/x-texinfo">
-    <magic priority="50">
-      <match value="\\input\ texinfo" type="string" offset="0" />
-    </magic>
-    <alias type="application/x-texinfo" />
-  </mime-type>
-
-  <mime-type type="text/x-troff-me">
-    <alias type="application/x-troff-me" />
-  </mime-type>
-
-  <mime-type type="video/vnd.mpegurl">
-    <glob pattern="*.mxu" />
-  </mime-type>
-
-  <mime-type type="x-conference/x-cooltalk">
-    <_comment>Cooltalk Audio</_comment>
-    <glob pattern="*.ice" />
-  </mime-type>
-
-  <mime-type type="audio/mpeg">
-    <acronym>MP3</acronym>
-    <comment>MPEG-1 Audio Layer 3</comment>
-    <magic priority="20">
-      <!-- http://mpgedit.org/mpgedit/mpeg_format/MP3Format.html -->
-      <!-- Bit pattern for first two bytes: 11111111 111VVLLC    -->
-      <!-- VV = MPEG Audio Version ID; 10 = V2, 11 = V1          -->
-      <!-- LL = Layer description; 01 = L3, 10 = L2, 11 = L1     -->
-      <!-- C = Protection bit; 0 = CRC, 1 = no CRC               -->
-      <match value="0xfff2" type="string" offset="0" /> <!-- V2, L3, CRC -->
-      <match value="0xfff3" type="string" offset="0" /> <!-- V2, L3      -->
-      <match value="0xfff4" type="string" offset="0" /> <!-- V2, L2, CRC -->
-      <match value="0xfff5" type="string" offset="0" /> <!-- V2, L2      -->
-      <match value="0xfff6" type="string" offset="0" /> <!-- V2, L1, CRC -->
-      <match value="0xfff7" type="string" offset="0" /> <!-- V2, L1      -->
-      <match value="0xfffa" type="string" offset="0" /> <!-- V1, L3, CRC -->
-      <match value="0xfffb" type="string" offset="0" /> <!-- V1, L3      -->
-      <match value="0xfffc" type="string" offset="0" /> <!-- V1, L2, CRC -->
-      <match value="0xfffd" type="string" offset="0" /> <!-- V1, L2      -->
-      <match value="0xfffe" type="string" offset="0" /> <!-- V1, L1, CRC -->
-      <match value="0xffff" type="string" offset="0" /> <!-- V1, L1      -->
-      <match value="ID3" type="string" offset="0" />
-    </magic>
-    <glob pattern="*.mp3" />
-  </mime-type>
-
-
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
     <glob pattern="*.ez"/>
@@ -2936,19 +2839,41 @@
   <mime-type type="application/x-tar">
     <glob pattern="*.tar"/>
   </mime-type>
+
   <mime-type type="application/x-tcl">
+    <alias type="text/x-tcl"/>
     <glob pattern="*.tcl"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
+
   <mime-type type="application/x-tex">
+    <alias type="text/x-tex"/>
+    <magic priority="50">
+      <match value="\\input" type="string" offset="0"/>
+      <match value="\\section" type="string" offset="0"/>
+      <match value="\\setlength" type="string" offset="0"/>
+      <match value="\\documentstyle" type="string" offset="0"/>
+      <match value="\\chapter" type="string" offset="0"/>
+      <match value="\\documentclass" type="string" offset="0"/>
+      <match value="\\relax" type="string" offset="0"/>
+      <match value="\\contentsline" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.tex"/>
   </mime-type>
+
   <mime-type type="application/x-tex-tfm">
     <glob pattern="*.tfm"/>
   </mime-type>
+
   <mime-type type="application/x-texinfo">
+    <alias type="text/x-texinfo" />
+    <magic priority="50">
+      <match value="\\input\ texinfo" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.texinfo"/>
     <glob pattern="*.texi"/>
   </mime-type>
+
   <mime-type type="application/x-ustar">
     <glob pattern="*.ustar"/>
   </mime-type>
@@ -3132,7 +3057,30 @@
   <mime-type type="audio/mp4a-latm"/>
   <mime-type type="audio/mpa"/>
   <mime-type type="audio/mpa-robust"/>
+
   <mime-type type="audio/mpeg">
+    <acronym>MP3</acronym>
+    <comment>MPEG-1 Audio Layer 3</comment>
+    <magic priority="20">
+      <!-- http://mpgedit.org/mpgedit/mpeg_format/MP3Format.html -->
+      <!-- Bit pattern for first two bytes: 11111111 111VVLLC    -->
+      <!-- VV = MPEG Audio Version ID; 10 = V2, 11 = V1          -->
+      <!-- LL = Layer description; 01 = L3, 10 = L2, 11 = L1     -->
+      <!-- C = Protection bit; 0 = CRC, 1 = no CRC               -->
+      <match value="0xfff2" type="string" offset="0"/> <!-- V2, L3, CRC -->
+      <match value="0xfff3" type="string" offset="0"/> <!-- V2, L3      -->
+      <match value="0xfff4" type="string" offset="0"/> <!-- V2, L2, CRC -->
+      <match value="0xfff5" type="string" offset="0"/> <!-- V2, L2      -->
+      <match value="0xfff6" type="string" offset="0"/> <!-- V2, L1, CRC -->
+      <match value="0xfff7" type="string" offset="0"/> <!-- V2, L1      -->
+      <match value="0xfffa" type="string" offset="0"/> <!-- V1, L3, CRC -->
+      <match value="0xfffb" type="string" offset="0"/> <!-- V1, L3      -->
+      <match value="0xfffc" type="string" offset="0"/> <!-- V1, L2, CRC -->
+      <match value="0xfffd" type="string" offset="0"/> <!-- V1, L2      -->
+      <match value="0xfffe" type="string" offset="0"/> <!-- V1, L1, CRC -->
+      <match value="0xffff" type="string" offset="0"/> <!-- V1, L1      -->
+      <match value="ID3" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.mpga"/>
     <glob pattern="*.mp2"/>
     <glob pattern="*.mp2a"/>
@@ -3140,6 +3088,7 @@
     <glob pattern="*.m2a"/>
     <glob pattern="*.m3a"/>
   </mime-type>
+
   <mime-type type="audio/mpeg4-generic"/>
   <mime-type type="audio/ogg">
     <glob pattern="*.oga"/>
@@ -3428,9 +3377,12 @@
   </mime-type>
 
   <mime-type type="image/tiff-fx"/>
+
   <mime-type type="image/vnd.adobe.photoshop">
+    <alias type="image/x-psd"/>
     <glob pattern="*.psd"/>
   </mime-type>
+
   <mime-type type="image/vnd.cns.inf2"/>
   <mime-type type="image/vnd.djvu">
     <glob pattern="*.djvu"/>
@@ -3471,9 +3423,12 @@
   <mime-type type="image/vnd.sealedmedia.softseal.gif"/>
   <mime-type type="image/vnd.sealedmedia.softseal.jpg"/>
   <mime-type type="image/vnd.svf"/>
+
   <mime-type type="image/vnd.wap.wbmp">
+    <_comment>Wireless Bitmap File Format</_comment>
     <glob pattern="*.wbmp"/>
   </mime-type>
+
   <mime-type type="image/vnd.xiff">
     <glob pattern="*.xif"/>
   </mime-type>
@@ -3663,6 +3618,14 @@
   <mime-type type="image/x-xbitmap">
     <glob pattern="*.xbm"/>
   </mime-type>
+
+  <mime-type type="image/x-xcf">
+    <alias type="image/xcf"/>
+    <magic priority="50">
+      <match type="string" value="gimp xcf " offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="image/x-xpixmap">
     <glob pattern="*.xpm"/>
   </mime-type>
@@ -3714,15 +3677,19 @@
   <mime-type type="message/vnd.si.simp"/>
 
   <mime-type type="model/example"/>
+
   <mime-type type="model/iges">
+    <_comment>Initial Graphics Exchange Specification Format</_comment>
     <glob pattern="*.igs"/>
     <glob pattern="*.iges"/>
   </mime-type>
+
   <mime-type type="model/mesh">
     <glob pattern="*.msh"/>
     <glob pattern="*.mesh"/>
     <glob pattern="*.silo"/>
   </mime-type>
+
   <mime-type type="model/vnd.dwf">
     <glob pattern="*.dwf"/>
   </mime-type>
@@ -3744,10 +3711,12 @@
   <mime-type type="model/vnd.vtu">
     <glob pattern="*.vtu"/>
   </mime-type>
+
   <mime-type type="model/vrml">
     <glob pattern="*.wrl"/>
     <glob pattern="*.vrml"/>
   </mime-type>
+
   <mime-type type="multipart/alternative"/>
   <mime-type type="multipart/appledouble"/>
   <mime-type type="multipart/byteranges"/>
@@ -3814,6 +3783,10 @@
   </mime-type>
 
   <mime-type type="text/troff">
+    <alias type="application/x-troff"/>
+    <alias type="application/x-troff-man"/>
+    <alias type="application/x-troff-me"/>
+    <alias type="application/x-troff-ms"/>
     <magic priority="50">
       <match value=".\\&quot;" type="string" offset="0"/>
       <match value="'\\&quot;" type="string" offset="0"/>
@@ -3926,6 +3899,7 @@
   <mime-type type="text/x-setext">
     <glob pattern="*.etx"/>
   </mime-type>
+
   <mime-type type="text/x-uuencode">
     <glob pattern="*.uu"/>
   </mime-type>
@@ -3988,6 +3962,10 @@
     <glob pattern="*.mpe"/>
     <glob pattern="*.m1v"/>
     <glob pattern="*.m2v"/>
+  </mime-type>
+
+  <mime-type type="video/vnd.mpegurl">
+    <glob pattern="*.mxu"/>
   </mime-type>
 
   <mime-type type="video/mpeg4-generic"/>
@@ -4118,6 +4096,7 @@
   </mime-type>
 
   <mime-type type="x-conference/x-cooltalk">
+    <_comment>Cooltalk Audio</_comment>
     <glob pattern="*.ice"/>
   </mime-type>
 
