@@ -17,11 +17,14 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.util.PDFOperator;
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.util.TextPosition;
+import org.apache.pdfbox.util.operator.OperatorProcessor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.metadata.Metadata;
@@ -65,6 +68,65 @@ class PDF2XHTML extends PDFTextStripper {
     private PDF2XHTML(ContentHandler handler, Metadata metadata)
             throws IOException {
         this.handler = new XHTMLContentHandler(handler, metadata);
+
+        // TIKA-292: Ignore unneeded PDF operators
+        // TODO: Remove this once PDFBox is no longer so verbose
+        OperatorProcessor ignore = new OperatorProcessor() {
+            @Override @SuppressWarnings("unchecked")
+            public void process(PDFOperator operator, List arguments) {
+            }
+        };
+        registerOperatorProcessor("b", ignore);
+        registerOperatorProcessor("B", ignore);
+        registerOperatorProcessor("b*", ignore);
+        registerOperatorProcessor("B*", ignore);
+        registerOperatorProcessor("BDC", ignore);
+        registerOperatorProcessor("BI", ignore);
+        registerOperatorProcessor("BMC", ignore);
+        registerOperatorProcessor("b", ignore);
+        registerOperatorProcessor("BX", ignore);
+        registerOperatorProcessor("c", ignore);
+        registerOperatorProcessor("CS", ignore);
+        registerOperatorProcessor("cs", ignore);
+        registerOperatorProcessor("d", ignore);
+        registerOperatorProcessor("d0", ignore);
+        registerOperatorProcessor("d1", ignore);
+        registerOperatorProcessor("DP", ignore);
+        registerOperatorProcessor("El", ignore);
+        registerOperatorProcessor("EMC", ignore);
+        registerOperatorProcessor("EX", ignore);
+        registerOperatorProcessor("f", ignore);
+        registerOperatorProcessor("F", ignore);
+        registerOperatorProcessor("f*", ignore);
+        registerOperatorProcessor("G", ignore);
+        registerOperatorProcessor("g", ignore);
+        registerOperatorProcessor("h", ignore);
+        registerOperatorProcessor("i", ignore);
+        registerOperatorProcessor("ID", ignore);
+        registerOperatorProcessor("j", ignore);
+        registerOperatorProcessor("J", ignore);
+        registerOperatorProcessor("K", ignore);
+        registerOperatorProcessor("k", ignore);
+        registerOperatorProcessor("l", ignore);
+        registerOperatorProcessor("m", ignore);
+        registerOperatorProcessor("M", ignore);
+        registerOperatorProcessor("MP", ignore);
+        registerOperatorProcessor("n", ignore);
+        registerOperatorProcessor("re", ignore);
+        registerOperatorProcessor("RG", ignore);
+        registerOperatorProcessor("rg", ignore);
+        registerOperatorProcessor("ri", ignore);
+        registerOperatorProcessor("s", ignore);
+        registerOperatorProcessor("S", ignore);
+        registerOperatorProcessor("SC", ignore);
+        registerOperatorProcessor("sc", ignore);
+        registerOperatorProcessor("SCN", ignore);
+        registerOperatorProcessor("scn", ignore);
+        registerOperatorProcessor("sh", ignore);
+        registerOperatorProcessor("v", ignore);
+        registerOperatorProcessor("W", ignore);
+        registerOperatorProcessor("W*", ignore);
+        registerOperatorProcessor("y", ignore);
     }
 
     @Override
