@@ -32,7 +32,7 @@
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
-  <artifactId>tika-reactor</artifactId>
+  <artifactId>tika</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika</name>
   <url>http://lucene.apache.org/tika/</url>
@@ -71,5 +71,31 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>apache-release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>single</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <descriptors>
+                    <descriptor>assembly.xml</descriptor>
+                  </descriptors>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
