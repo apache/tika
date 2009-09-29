@@ -16,17 +16,13 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import java.io.IOException;
-
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.POIXMLProperties.CoreProperties;
 import org.apache.poi.POIXMLProperties.ExtendedProperties;
-import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
 /**
@@ -48,17 +44,9 @@ public class MetadataExtractor {
     }
 
     public void extract(Metadata metadata) throws TikaException {
-        try {
-            addProperty(metadata, Metadata.CONTENT_TYPE, type);
-            extractMetadata(extractor.getCoreProperties(), metadata);
-            extractMetadata(extractor.getExtendedProperties(), metadata);
-        } catch (IOException e) {
-            throw new TikaException("Error extracting OOXML metadata", e);
-        } catch (OpenXML4JException e) {
-            throw new TikaException("Error extracting OOXML metadata", e);
-        } catch (XmlException e) {
-            throw new TikaException("Error extracting OOXML metadata", e);
-        }
+        addProperty(metadata, Metadata.CONTENT_TYPE, type);
+        extractMetadata(extractor.getCoreProperties(), metadata);
+        extractMetadata(extractor.getExtendedProperties(), metadata);
     }
 
     private void extractMetadata(CoreProperties properties, Metadata metadata) {
