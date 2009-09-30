@@ -53,15 +53,22 @@ import org.apache.tika.metadata.Metadata;
 public final class MimeTypes implements Detector {
 
     /**
-     * Name of the {@link #root root} type, application/octet-stream.
+     * Name of the {@link #rootMimeType root} type, application/octet-stream.
      */
     public final static String OCTET_STREAM = "application/octet-stream";
 
     /**
-     * Name of the {@link #text text} type, text/plain.
+     * Name of the {@link #textMimeType text} type, text/plain.
      */
     public final static String PLAIN_TEXT = "text/plain";
+    
+    /**
+     * Name of the {@link #xml xml} type, application/xml.
+     */
+    public final static String XML = "application/xml";
 
+
+    
     /**
      * Lookup table for all the ASCII/ISO-Latin/UTF-8/etc. control bytes
      * in the range below 0x20 (the space character). If an entry in this
@@ -98,13 +105,18 @@ public final class MimeTypes implements Detector {
     /**
      * Root type, application/octet-stream.
      */
-    private final MimeType root;
+    private final MimeType rootMimeType;
 
     /**
      * Text type, text/plain.
      */
-    private final MimeType text;
+    private final MimeType textMimeType;
 
+    /*
+     * xml type, application/xml
+     */
+    private final MimeType xmlMimeType;
+    
     /** All the registered MimeTypes indexed on their name */
     private final Map<String, MimeType> types = new HashMap<String, MimeType>();
 
@@ -120,16 +132,20 @@ public final class MimeTypes implements Detector {
     private final XmlRootExtractor xmlRootExtractor;
 
     public MimeTypes() {
-        root = new MimeType(this, OCTET_STREAM);
-        text = new MimeType(this, PLAIN_TEXT);
+        rootMimeType = new MimeType(this, OCTET_STREAM);
+        textMimeType = new MimeType(this, PLAIN_TEXT);
+        xmlMimeType = new MimeType(this, XML);
+        
         try {
-            text.setSuperType(root);
+            textMimeType.setSuperType(rootMimeType);
+            xmlMimeType.setSuperType(rootMimeType);
         } catch (MimeTypeException e) {
             throw new IllegalStateException("Error in MimeType logic", e);
         }
 
-        types.put(root.getName(), root);
-        types.put(text.getName(), text);
+        types.put(rootMimeType.getName(), rootMimeType);
+        types.put(textMimeType.getName(), textMimeType);
+        types.put(xmlMimeType.getName(), xmlMimeType);
 
         try {
             xmlRootExtractor = new XmlRootExtractor();
@@ -179,7 +195,7 @@ public final class MimeTypes implements Detector {
         if (type != null) {
             return type;
         } else {
-            return root;
+            return rootMimeType;
         }
     }
 
@@ -238,10 +254,10 @@ public final class MimeTypes implements Detector {
         for (int i = 0; i < data.length; i++) {
             int b = data[i] & 0xFF; // prevent sign extension
             if (b < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[b]) {
-                return root;
+                return rootMimeType;
             }
         }
-        return text;
+        return textMimeType;
     }
 
     /**
@@ -391,9 +407,11 @@ public final class MimeTypes implements Detector {
             if (type == null) {
                 type = new MimeType(this, name);
                 if (name.startsWith("text/")) {
-                    type.setSuperType(text);
+                    type.setSuperType(textMimeType);
+                } else if (name.endsWith("+xml")) {
+                	type.setSuperType(xmlMimeType);
                 } else {
-                    type.setSuperType(root);
+                    type.setSuperType(rootMimeType);
                 }
                 types.put(name, type);
             }
@@ -506,7 +524,7 @@ public final class MimeTypes implements Detector {
      */
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        MimeType type = root;
+        MimeType type = rootMimeType;
 
         // Get type based on magic prefix
         if (input != null) {

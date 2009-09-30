@@ -48,6 +48,15 @@ public class MimeDetectionTest extends TestCase {
         testFile("application/xml", "test-long-comment.xml");
         testFile("application/xslt+xml", "stylesheet.xsl");
     }
+    
+    public void testAutosetSupertype() throws MimeTypeException {
+    	MimeTypes types = new MimeTypes();
+    	MimeType type = types.forName("application/something+xml");
+    	assertEquals("application/xml", type.getSuperType().getName());
+    	
+    	type = types.forName("text/something");
+    	assertEquals("text/plain", type.getSuperType().getName());
+    }
 
     private void testFile(String expected, String filename) throws IOException {
         InputStream in = getClass().getResourceAsStream(filename);

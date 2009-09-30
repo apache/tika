@@ -18,6 +18,9 @@ package org.apache.tika.mime;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Iterator;
+
 import junit.framework.TestCase;
 
 public class MimeTypesTest extends TestCase {
@@ -68,14 +71,20 @@ public class MimeTypesTest extends TestCase {
    }
 
     public void testSubTypes() {
-        assertEquals(1, binary.getSubTypes().size());
-        assertEquals(
-                "text/plain",
-                binary.getSubTypes().iterator().next().getName());
+        assertEquals(2, binary.getSubTypes().size());
+        Iterator<MimeType> iter = binary.getSubTypes().iterator();
+        String[] typeNames = new String[2];
+        typeNames[0] = iter.next().getName();
+        typeNames[1] = iter.next().getName();
+        Arrays.sort(typeNames);
+        assertEquals("application/xml", typeNames[0]);
+        assertEquals("text/plain", typeNames[1]);
+
         assertEquals(1, text.getSubTypes().size());
         assertEquals(
                 "text/html",
                 text.getSubTypes().iterator().next().getName());
+        
         assertEquals(0, html.getSubTypes().size());
     }
 
