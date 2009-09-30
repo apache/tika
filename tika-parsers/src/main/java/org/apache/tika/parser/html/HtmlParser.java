@@ -72,7 +72,7 @@ public class HtmlParser implements Parser {
         SAFE_ELEMENTS.put("UL", "ul");
         SAFE_ELEMENTS.put("OL", "ol");
         SAFE_ELEMENTS.put("LI", "li");
-        SAFE_ELEMENTS.put("MENU", "li");
+        SAFE_ELEMENTS.put("MENU", "ul");
         SAFE_ELEMENTS.put("DL", "dl");
         SAFE_ELEMENTS.put("DT", "dt");
         SAFE_ELEMENTS.put("DD", "dd");
