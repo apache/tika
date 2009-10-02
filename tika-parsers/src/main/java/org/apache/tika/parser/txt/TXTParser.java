@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 
@@ -73,15 +74,20 @@ public class TXTParser implements Parser {
 
         // Detect the content encoding (the stream is reset to the beginning)
         // TODO: Better use of the possible encoding hint in input metadata
-        CharsetMatch match = new CharsetDetector().setText(stream).detect();
-        if (match != null) {
-            metadata.set(Metadata.CONTENT_ENCODING, match.getName());
+        CharsetDetector detector = new CharsetDetector();
+        detector.setText(stream);
+        for (CharsetMatch match : detector.detectAll()) {
+            if (Charset.isSupported(match.getName())) {
+                metadata.set(Metadata.CONTENT_ENCODING, match.getName());
 
-            // Is the encoding language-specific (KOI8-R, SJIS, etc.)?
-            String language = match.getLanguage();
-            if (language != null) {
-                metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
-                metadata.set(Metadata.LANGUAGE, match.getLanguage());
+                // Is the encoding language-specific (KOI8-R, SJIS, etc.)?
+                String language = match.getLanguage();
+                if (language != null) {
+                    metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
+                    metadata.set(Metadata.LANGUAGE, match.getLanguage());
+                }
+
+                break;
             }
         }
 
