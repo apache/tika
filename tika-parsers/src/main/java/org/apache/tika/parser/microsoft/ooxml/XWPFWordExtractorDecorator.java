@@ -30,6 +30,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTbl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTc;
 import org.xml.sax.SAXException;
@@ -44,33 +45,49 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
      * @see org.apache.poi.xwpf.extractor.XWPFWordExtractor#getText()
      */
     @Override
-    protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException,
-            XmlException, IOException {
+    protected void buildXHTML(XHTMLContentHandler xhtml)
+            throws SAXException, XmlException, IOException {
         XWPFDocument document = (XWPFDocument) extractor.getDocument();
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
 
         // headers
-        if (hfPolicy.getFirstPageHeader() != null) {
-            xhtml.element("p", hfPolicy.getFirstPageHeader().getText());
-        }
-        if (hfPolicy.getEvenPageHeader() != null) {
-            xhtml.element("p", hfPolicy.getEvenPageHeader().getText());
-        }
-        if (hfPolicy.getDefaultHeader() != null) {
-            xhtml.element("p", hfPolicy.getDefaultHeader().getText());
-        }
+        extractHeaders(xhtml, hfPolicy);
 
         // first all paragraphs
         Iterator<XWPFParagraph> i = document.getParagraphsIterator();
         while (i.hasNext()) {
+            XWPFParagraph paragraph = i.next();
+
+            CTSectPr ctSectPr = null;
+            if (paragraph.getCTP().getPPr() != null) {
+                ctSectPr = paragraph.getCTP().getPPr().getSectPr();
+            }
+
+            XWPFHeaderFooterPolicy headerFooterPolicy = null;
+
+            if (ctSectPr != null) {
+                headerFooterPolicy =
+                    new XWPFHeaderFooterPolicy(document, ctSectPr);
+                extractHeaders(xhtml, headerFooterPolicy);
+            }
+            
             XWPFParagraphDecorator decorator = new XWPFCommentsDecorator(
-                    new XWPFHyperlinkDecorator(i.next(), null, true));
+                    new XWPFHyperlinkDecorator(paragraph, null, true));
             xhtml.element("p", decorator.getText());
+
+            if (ctSectPr != null) {
+                extractFooters(xhtml, headerFooterPolicy);
+            }
         }
 
         // then all document tables
         extractTableContent(document, xhtml);
+        extractFooters(xhtml, hfPolicy);
+    }
 
+    private void extractFooters(
+            XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
+            throws SAXException {
         // footers
         if (hfPolicy.getFirstPageFooter() != null) {
             xhtml.element("p", hfPolicy.getFirstPageFooter().getText());
@@ -80,6 +97,20 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         }
         if (hfPolicy.getDefaultFooter() != null) {
             xhtml.element("p", hfPolicy.getDefaultFooter().getText());
+        }
+    }
+
+    private void extractHeaders(
+            XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
+            throws SAXException {
+        if (hfPolicy.getFirstPageHeader() != null) {
+            xhtml.element("p", hfPolicy.getFirstPageHeader().getText());
+        }
+        if (hfPolicy.getEvenPageHeader() != null) {
+            xhtml.element("p", hfPolicy.getEvenPageHeader().getText());
+        }
+        if (hfPolicy.getDefaultHeader() != null) {
+            xhtml.element("p", hfPolicy.getDefaultHeader().getText());
         }
     }
 
