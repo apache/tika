@@ -1,0 +1,7 @@
+From envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009
+Return-Path: <name@domain.com>
+Subject: subject
+From: <author@domain.com>
+Date: Tue, 9 Jun 2009 23:58:45 -0400
+
+Test content
