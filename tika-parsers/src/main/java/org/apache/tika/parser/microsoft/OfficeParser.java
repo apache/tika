@@ -85,10 +85,25 @@ public class OfficeParser implements Parser {
             } else if ("WordDocument".equals(name)) {
                 setType(metadata, "application/msword");
                 WordExtractor extractor = new WordExtractor(filesystem);
+
                 addTextIfAny(xhtml, "header", extractor.getHeaderText());
+
                 for (String paragraph : extractor.getParagraphText()) {
                     xhtml.element("p", paragraph);
                 }
+
+                for (String paragraph : extractor.getFootnoteText()) {
+                    xhtml.element("p", paragraph);
+                }
+
+                for (String paragraph : extractor.getCommentsText()) {
+                    xhtml.element("p", paragraph);
+                }
+
+                for (String paragraph : extractor.getEndnoteText()) {
+                    xhtml.element("p", paragraph);
+                }
+
                 addTextIfAny(xhtml, "footer", extractor.getFooterText());
             } else if ("PowerPoint Document".equals(name)) {
                 setType(metadata, "application/vnd.ms-powerpoint");
