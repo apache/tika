@@ -28,6 +28,7 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
@@ -70,9 +71,15 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     new XWPFHeaderFooterPolicy(document, ctSectPr);
                 extractHeaders(xhtml, headerFooterPolicy);
             }
-            
+
             XWPFParagraphDecorator decorator = new XWPFCommentsDecorator(
                     new XWPFHyperlinkDecorator(paragraph, null, true));
+
+            CTBookmark[] bookmarks = paragraph.getCTP().getBookmarkStartArray();
+            for (CTBookmark bookmark : bookmarks) {
+                xhtml.element("p", bookmark.getName());
+            }
+
             xhtml.element("p", decorator.getText());
 
             if (ctSectPr != null) {
