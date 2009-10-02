@@ -179,6 +179,7 @@
   <mime-type type="application/mbms-register-response+xml"/>
   <mime-type type="application/mbms-user-service-description+xml"/>
   <mime-type type="application/mbox">
+    <sub-class-of type="text/plain"/>
     <glob pattern="*.mbox"/>
   </mime-type>
   <mime-type type="application/media_control+xml"/>

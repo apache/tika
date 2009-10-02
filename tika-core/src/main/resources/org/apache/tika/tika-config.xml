@@ -160,6 +160,10 @@
                 <mime>audio/x-aiff</mime>
         </parser>
 
+        <parser name="parse-mbox" class="org.apache.tika.parser.mbox.MboxParser">
+                <mime>application/mbox</mime>
+        </parser>
+
     </parsers>
 
 </properties>
