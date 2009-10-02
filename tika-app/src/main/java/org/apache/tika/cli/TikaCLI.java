@@ -172,7 +172,7 @@ public class TikaCLI {
                 }
                 try {
                     parser.parse(
-                            System.in, type.getContentHandler(),
+                            input, type.getContentHandler(),
                             metadata, context);
                 } finally {
                     input.close();
