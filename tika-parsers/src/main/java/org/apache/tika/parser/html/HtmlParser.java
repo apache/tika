@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -35,7 +35,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
-import org.cyberneko.html.parsers.SAXParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -117,7 +116,8 @@ public class HtmlParser implements Parser {
                 new MatchingContentHandler(getMetaHandler(metadata), meta));
 
         // Parse the HTML document
-        SAXParser parser = new SAXParser();
+        org.ccil.cowan.tagsoup.Parser parser =
+            new org.ccil.cowan.tagsoup.Parser();
         parser.setContentHandler(new XHTMLDowngradeHandler(handler));
         parser.parse(source);
     }
