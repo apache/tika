@@ -92,9 +92,9 @@
       <version>1.1.1</version>
     </dependency>
     <dependency>
-      <groupId>net.sourceforge.nekohtml</groupId>
-      <artifactId>nekohtml</artifactId>
-      <version>1.9.9</version>
+      <groupId>org.ccil.cowan.tagsoup</groupId>
+      <artifactId>tagsoup</artifactId>
+      <version>1.2</version>
     </dependency>
     <dependency>
       <groupId>asm</groupId>
