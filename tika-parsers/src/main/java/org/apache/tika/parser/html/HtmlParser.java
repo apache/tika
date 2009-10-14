@@ -174,10 +174,16 @@ public class HtmlParser implements Parser {
                     xhtml.startElement(SAFE_ELEMENTS.get(name));
                 } else if ("A".equals(name)) {
                     String href = atts.getValue("href");
-                    if (href == null) {
-                        href = "";
+                    if (href != null) {
+                        xhtml.startElement("a", "href", href);
+                    } else {
+                        String anchor = atts.getValue("name");
+                        if (anchor != null) {
+                            xhtml.startElement("a", "name", anchor);
+                        } else {
+                            xhtml.startElement("a");
+                        }
                     }
-                    xhtml.startElement("a", "href", href);
                 }
             }
 

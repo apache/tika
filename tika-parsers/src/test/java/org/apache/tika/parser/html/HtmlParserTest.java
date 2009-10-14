@@ -39,6 +39,7 @@ public class HtmlParserTest extends TestCase {
     public void testParseAscii() throws Exception {
         String path = "/test-documents/testHTML.html";
         final StringWriter href = new StringWriter();
+        final StringWriter name = new StringWriter();
         ContentHandler body = new BodyContentHandler();
         Metadata metadata = new Metadata();
         InputStream stream = HtmlParserTest.class.getResourceAsStream(path);
@@ -49,7 +50,11 @@ public class HtmlParserTest extends TestCase {
                         String u, String l, String n, Attributes a)
                         throws SAXException {
                     if ("a".equals(l)) {
-                        href.append(a.getValue("href"));
+                        if (a.getValue("href") != null) {
+                            href.append(a.getValue("href"));
+                        } else if (a.getValue("name") != null) {
+                            name.append(a.getValue("name"));
+                        }
                     }
                 }
             };
@@ -66,6 +71,7 @@ public class HtmlParserTest extends TestCase {
         assertEquals("5", metadata.get("refresh"));
 
         assertEquals("http://www.apache.org/", href.toString());
+        assertEquals("test-anchor", name.toString());
 
         String content = body.toString();
         assertTrue(
