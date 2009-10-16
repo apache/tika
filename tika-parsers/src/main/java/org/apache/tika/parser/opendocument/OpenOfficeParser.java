@@ -68,7 +68,7 @@ public class OpenOfficeParser implements Parser {
                 metadata.set(Metadata.CONTENT_TYPE, type);
             } else if (entry.getName().equals("meta.xml")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
-            } else if (entry.getName().equals("content.xml")) {
+            } else if (entry.getName().endsWith("content.xml")) {
                 content.parse(zip, handler, metadata, context);
             }
             entry = zip.getNextEntry();

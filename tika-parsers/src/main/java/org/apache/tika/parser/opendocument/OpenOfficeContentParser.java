@@ -56,6 +56,9 @@ public class OpenOfficeContentParser implements Parser {
     public static final String TABLE_NS =
         "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
 
+    public static final String OFFICE_NS =
+        "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
+
     public static final String XLINK_NS = "http://www.w3.org/1999/xlink";
 
     protected static final char[] TAB = new char[] { '\t' };
@@ -83,6 +86,9 @@ public class OpenOfficeContentParser implements Parser {
                 new TargetElement(XHTML, "li"));
         MAPPINGS.put(
                 new QName(TEXT_NS, "note"),
+                new TargetElement(XHTML, "div"));
+        MAPPINGS.put(
+                new QName(OFFICE_NS, "annotation"),
                 new TargetElement(XHTML, "div"));
         MAPPINGS.put(
                 new QName(TEXT_NS, "span"),
