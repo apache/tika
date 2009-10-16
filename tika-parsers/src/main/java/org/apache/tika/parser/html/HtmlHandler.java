@@ -21,12 +21,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-class BodyHandler extends TextContentHandler {
+class HtmlHandler extends TextContentHandler {
 
     /**
      * Set of safe mappings from incoming HTML elements to outgoing
@@ -71,54 +73,103 @@ class BodyHandler extends TextContentHandler {
 
     private final XHTMLContentHandler xhtml;
 
+    private final Metadata metadata;
+
+    private int bodyLevel = 0;
+
     private int discardLevel = 0;
 
-    public BodyHandler(XHTMLContentHandler xhtml) {
+    private int titleLevel = 0;
+
+    private StringBuilder title = new StringBuilder();
+
+    private HtmlHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         super(xhtml);
         this.xhtml = xhtml;
+        this.metadata = metadata;
+    }
+
+    public HtmlHandler(ContentHandler handler, Metadata metadata) {
+        this(new XHTMLContentHandler(handler, metadata), metadata);
     }
 
     @Override
     public void startElement(
             String uri, String local, String name, Attributes atts)
             throws SAXException {
-        if (discardLevel != 0) {
+        if ("TITLE".equals(name) || titleLevel > 0) {
+            titleLevel++;
+        }
+        if ("BODY".equals(name) || bodyLevel > 0) {
+            bodyLevel++;
+        }
+        if (DISCARD_ELEMENTS.contains(name) || discardLevel > 0) {
             discardLevel++;
-        } else if (DISCARD_ELEMENTS.contains(name)) {
-            discardLevel = 1;
-        } else if (SAFE_ELEMENTS.containsKey(name)) {
-            xhtml.startElement(SAFE_ELEMENTS.get(name));
-        } else if ("A".equals(name)) {
-            String href = atts.getValue("href");
-            if (href != null) {
-                xhtml.startElement("a", "href", href);
-            } else {
-                String anchor = atts.getValue("name");
-                if (anchor != null) {
-                    xhtml.startElement("a", "name", anchor);
+        }
+
+        if (bodyLevel == 0 && discardLevel == 0 && "META".equals(name)) {
+            String content = atts.getValue("content");
+            if (atts.getValue("http-equiv") != null && content != null) {
+                metadata.set(atts.getValue("http-equiv"), content);
+            }
+            if (atts.getValue("name") != null && content != null) {
+                metadata.set(atts.getValue("name"), content);
+            }
+        }
+
+        if (bodyLevel > 0 && discardLevel == 0) {
+            if (SAFE_ELEMENTS.containsKey(name)) {
+                xhtml.startElement(SAFE_ELEMENTS.get(name));
+            } else if ("A".equals(name)) {
+                String href = atts.getValue("href");
+                if (href != null) {
+                    xhtml.startElement("a", "href", href);
                 } else {
-                    xhtml.startElement("a");
+                    String anchor = atts.getValue("name");
+                    if (anchor != null) {
+                        xhtml.startElement("a", "name", anchor);
+                    } else {
+                        xhtml.startElement("a");
+                    }
                 }
             }
         }
+
+        title.setLength(0);
     }
 
     @Override
     public void endElement(
             String uri, String local, String name) throws SAXException {
-        if (discardLevel != 0) {
+        if (bodyLevel > 0 && discardLevel == 0) {
+            if (SAFE_ELEMENTS.containsKey(name)) {
+                xhtml.endElement(SAFE_ELEMENTS.get(name));
+            } else if ("A".equals(name)) {
+                xhtml.endElement("a");
+            }
+        }
+
+        if (titleLevel > 0) {
+            titleLevel--;
+            if (titleLevel == 0) {
+                metadata.set(Metadata.TITLE, title.toString().trim());
+            }
+        }
+        if (bodyLevel > 0) {
+            bodyLevel--;
+        }
+        if (discardLevel > 0) {
             discardLevel--;
-        } else if (SAFE_ELEMENTS.containsKey(name)) {
-            xhtml.endElement(SAFE_ELEMENTS.get(name));
-        } else if ("A".equals(name)) {
-            xhtml.endElement("a");
         }
     }
 
     @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
-        if (discardLevel == 0) {
+        if (titleLevel > 0 && bodyLevel == 0) {
+            title.append(ch, start, length);
+        }
+        if (bodyLevel > 0 && discardLevel == 0) {
             super.characters(ch, start, length);
         }
     }
@@ -126,7 +177,7 @@ class BodyHandler extends TextContentHandler {
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
-        if (discardLevel == 0) {
+        if (bodyLevel > 0 && discardLevel == 0) {
             super.ignorableWhitespace(ch, start, length);
         }
     }
