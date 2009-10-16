@@ -100,6 +100,8 @@ public class TikaCLI {
                     for (String name : names) {
                         writer.println(name + ": " + metadata.get(name));
                     }
+
+                    writer.flush();
                 }
             };
         }
