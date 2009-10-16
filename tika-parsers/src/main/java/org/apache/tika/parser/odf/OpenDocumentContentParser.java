@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.opendocument;
+package org.apache.tika.parser.odf;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +48,7 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 /**
  * Parser for OpenDocument <code>content.xml</code> files.
  */
-public class OpenOfficeContentParser implements Parser {
+public class OpenDocumentContentParser implements Parser {
 
     public static final String TEXT_NS =
         "urn:oasis:names:tc:opendocument:xmlns:text:1.0";

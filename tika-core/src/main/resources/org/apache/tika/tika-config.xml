@@ -75,7 +75,7 @@
                 <mime>text/plain</mime>
         </parser>
 
-        <parser name="parse-openoffice" class="org.apache.tika.parser.opendocument.OpenOfficeParser">
+        <parser name="parse-odf" class="org.apache.tika.parser.odf.OpenDocumentParser">
                 <mime>application/vnd.sun.xml.writer</mime>
                 <mime>application/vnd.oasis.opendocument.text</mime>
                 <mime>application/vnd.oasis.opendocument.graphics</mime>

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,73 +16,13 @@
  */
 package org.apache.tika.parser.opendocument;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.Parser;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import org.apache.tika.parser.odf.OpenDocumentParser;
 
 /**
  * OpenOffice parser
+ *
+ * @deprecated Use the {@link OpenDocumentParser} class instead.
+ *             This class will be removed in Apache Tika 1.0.
  */
-public class OpenOfficeParser implements Parser {
-
-    private Parser meta = new OpenOfficeMetaParser();
-
-    private Parser content = new OpenOfficeContentParser();
-
-    public Parser getMetaParser() {
-        return meta;
-    }
-
-    public void setMetaParser(Parser meta) {
-        this.meta = meta;
-    }
-
-    public Parser getContentParser() {
-        return content;
-    }
-
-    public void setContentParser(Parser content) {
-        this.content = content;
-    }
-
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
-            throws IOException, SAXException, TikaException {
-        ZipInputStream zip = new ZipInputStream(stream);
-        ZipEntry entry = zip.getNextEntry();
-        while (entry != null) {
-            if (entry.getName().equals("mimetype")) {
-                String type = IOUtils.toString(zip, "UTF-8");
-                metadata.set(Metadata.CONTENT_TYPE, type);
-            } else if (entry.getName().equals("meta.xml")) {
-                meta.parse(zip, new DefaultHandler(), metadata, context);
-            } else if (entry.getName().endsWith("content.xml")) {
-                content.parse(zip, handler, metadata, context);
-            }
-            entry = zip.getNextEntry();
-        }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
-    }
-
+public class OpenOfficeParser extends OpenDocumentParser {
 }
