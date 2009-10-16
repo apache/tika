@@ -19,17 +19,13 @@ package org.apache.tika.parser.html;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.xpath.Matcher;
@@ -46,48 +42,6 @@ import org.xml.sax.SAXException;
  * Tika clients.
  */
 public class HtmlParser implements Parser {
-
-    /**
-     * Set of safe mappings from incoming HTML elements to outgoing
-     * XHTML elements. Ensures that the output is valid XHTML 1.0 Strict.
-     */
-    private static final Map<String, String> SAFE_ELEMENTS =
-        new HashMap<String, String>();
-
-    /**
-     * Set of HTML elements whose content will be discarded.
-     */
-    private static final Set<String> DISCARD_ELEMENTS = new HashSet<String>();
-
-    static {
-        // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
-        SAFE_ELEMENTS.put("P", "p");
-        SAFE_ELEMENTS.put("H1", "h1");
-        SAFE_ELEMENTS.put("H2", "h2");
-        SAFE_ELEMENTS.put("H3", "h3");
-        SAFE_ELEMENTS.put("H4", "h4");
-        SAFE_ELEMENTS.put("H5", "h5");
-        SAFE_ELEMENTS.put("H6", "h6");
-        SAFE_ELEMENTS.put("UL", "ul");
-        SAFE_ELEMENTS.put("OL", "ol");
-        SAFE_ELEMENTS.put("LI", "li");
-        SAFE_ELEMENTS.put("MENU", "ul");
-        SAFE_ELEMENTS.put("DL", "dl");
-        SAFE_ELEMENTS.put("DT", "dt");
-        SAFE_ELEMENTS.put("DD", "dd");
-        SAFE_ELEMENTS.put("PRE", "pre");
-        SAFE_ELEMENTS.put("BLOCKQUOTE", "blockquote");
-        SAFE_ELEMENTS.put("TABLE", "table");
-        SAFE_ELEMENTS.put("THEAD", "thead");
-        SAFE_ELEMENTS.put("TBODY", "tbody");
-        SAFE_ELEMENTS.put("TR", "tr");
-        SAFE_ELEMENTS.put("TH", "th");
-        SAFE_ELEMENTS.put("TD", "td");
-
-        DISCARD_ELEMENTS.add("STYLE");
-        DISCARD_ELEMENTS.add("SCRIPT");
-
-    }
 
     public void parse(
             InputStream stream, ContentHandler handler,
@@ -111,7 +65,7 @@ public class HtmlParser implements Parser {
         Matcher title = xpath.parse("/HTML/HEAD/TITLE//node()");
         Matcher meta = xpath.parse("/HTML/HEAD/META//node()");
         handler = new TeeContentHandler(
-                new MatchingContentHandler(getBodyHandler(xhtml), body),
+                new MatchingContentHandler(new BodyHandler(xhtml), body),
                 new MatchingContentHandler(getTitleHandler(metadata), title),
                 new MatchingContentHandler(getMetaHandler(metadata), meta));
 
@@ -154,67 +108,6 @@ public class HtmlParser implements Parser {
                         metadata.set(atts.getValue("name"), atts.getValue("content"));
                     }
             }
-        };
-    }
-
-    private ContentHandler getBodyHandler(final XHTMLContentHandler xhtml) {
-        return new TextContentHandler(xhtml) {
-
-            private int discardLevel = 0;
-
-            @Override
-            public void startElement(
-                    String uri, String local, String name, Attributes atts)
-                    throws SAXException {
-                if (discardLevel != 0) {
-                    discardLevel++;
-                } else if (DISCARD_ELEMENTS.contains(name)) {
-                    discardLevel = 1;
-                } else if (SAFE_ELEMENTS.containsKey(name)) {
-                    xhtml.startElement(SAFE_ELEMENTS.get(name));
-                } else if ("A".equals(name)) {
-                    String href = atts.getValue("href");
-                    if (href != null) {
-                        xhtml.startElement("a", "href", href);
-                    } else {
-                        String anchor = atts.getValue("name");
-                        if (anchor != null) {
-                            xhtml.startElement("a", "name", anchor);
-                        } else {
-                            xhtml.startElement("a");
-                        }
-                    }
-                }
-            }
-
-            @Override
-            public void endElement(
-                    String uri, String local, String name) throws SAXException {
-                if (discardLevel != 0) {
-                    discardLevel--;
-                } else if (SAFE_ELEMENTS.containsKey(name)) {
-                    xhtml.endElement(SAFE_ELEMENTS.get(name));
-                } else if ("A".equals(name)) {
-                    xhtml.endElement("a");
-                }
-            }
-
-            @Override
-            public void characters(char[] ch, int start, int length)
-                    throws SAXException {
-                if (discardLevel == 0) {
-                    super.characters(ch, start, length);
-                }
-            }
-
-            @Override
-            public void ignorableWhitespace(char[] ch, int start, int length)
-                    throws SAXException {
-                if (discardLevel == 0) {
-                    super.ignorableWhitespace(ch, start, length);
-                }
-            }
-
         };
     }
 
