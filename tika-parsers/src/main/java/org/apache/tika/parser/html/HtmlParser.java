@@ -53,8 +53,8 @@ public class HtmlParser implements Parser {
         // Parse the HTML document
         org.ccil.cowan.tagsoup.Parser parser =
             new org.ccil.cowan.tagsoup.Parser();
-        parser.setContentHandler(
-                new XHTMLDowngradeHandler(new HtmlHandler(handler, metadata)));
+        parser.setContentHandler(new XHTMLDowngradeHandler(
+                new HtmlHandler(this, handler, metadata)));
         parser.parse(source);
     }
 
@@ -66,6 +66,67 @@ public class HtmlParser implements Parser {
             throws IOException, SAXException, TikaException {
         Map<String, Object> context = Collections.emptyMap();
         parse(stream, handler, metadata, context);
+    }
+
+    /**
+     * Maps "safe" HTML element names to semantic XHTML equivalents. If the
+     * given element is unknown or deemed unsafe for inclusion in the parse
+     * output, then this method returns <code>null</code> and the element
+     * will be ignored but the content inside it is still processed. See
+     * the {@link #isDiscardElement(String)} method for a way to discard
+     * the entire contents of an element.
+     * <p>
+     * Subclasses can override this method to customize the default mapping.
+     *
+     * @since Apache Tika 0.5
+     * @param name HTML element name (upper case)
+     * @return XHTML element name (lower case), or
+     *         <code>null</code> if the element is unsafe 
+     */
+    protected String mapSafeElement(String name) {
+        // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
+
+        if ("H1".equals(name)) return "h1";
+        if ("H2".equals(name)) return "h2";
+        if ("H3".equals(name)) return "h3";
+        if ("H4".equals(name)) return "h4";
+        if ("H5".equals(name)) return "h5";
+        if ("H6".equals(name)) return "h6";
+
+        if ("P".equals(name)) return "p";
+        if ("PRE".equals(name)) return "pre";
+        if ("BLOCKQUOTE".equals(name)) return "blockquote";
+
+        if ("UL".equals(name)) return "ul";
+        if ("OL".equals(name)) return "ol";
+        if ("MENU".equals(name)) return "ul";
+        if ("LI".equals(name)) return "li";
+        if ("DL".equals(name)) return "dl";
+        if ("DT".equals(name)) return "dt";
+        if ("DD".equals(name)) return "dd";
+
+        if ("TABLE".equals(name)) return "table";
+        if ("THEAD".equals(name)) return "thead";
+        if ("TBODY".equals(name)) return "tbody";
+        if ("TR".equals(name)) return "tr";
+        if ("TH".equals(name)) return "th";
+        if ("TD".equals(name)) return "td";
+
+        return null;
+    }
+
+    /**
+     * Checks whether all content within the given HTML element should be
+     * discarded instead of including it in the parse output. Subclasses
+     * can override this method to customize the set of discarded elements.
+     *
+     * @since Apache Tika 0.5
+     * @param name HTML element name (upper case)
+     * @return <code>true</code> if content inside the named element
+     *         should be ignored, <code>false</code> otherwise
+     */
+    protected boolean isDiscardElement(String name) {
+        return "STYLE".equals(name) || "SCRIPT".equals(name);
     }
 
 }

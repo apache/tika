@@ -18,10 +18,6 @@ package org.apache.tika.parser.html;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.TextContentHandler;
@@ -32,46 +28,7 @@ import org.xml.sax.SAXException;
 
 class HtmlHandler extends TextContentHandler {
 
-    /**
-     * Set of safe mappings from incoming HTML elements to outgoing
-     * XHTML elements. Ensures that the output is valid XHTML 1.0 Strict.
-     */
-    private static final Map<String, String> SAFE_ELEMENTS =
-        new HashMap<String, String>();
-
-    /**
-     * Set of HTML elements whose content will be discarded.
-     */
-    private static final Set<String> DISCARD_ELEMENTS = new HashSet<String>();
-
-    static {
-        // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
-        SAFE_ELEMENTS.put("P", "p");
-        SAFE_ELEMENTS.put("H1", "h1");
-        SAFE_ELEMENTS.put("H2", "h2");
-        SAFE_ELEMENTS.put("H3", "h3");
-        SAFE_ELEMENTS.put("H4", "h4");
-        SAFE_ELEMENTS.put("H5", "h5");
-        SAFE_ELEMENTS.put("H6", "h6");
-        SAFE_ELEMENTS.put("UL", "ul");
-        SAFE_ELEMENTS.put("OL", "ol");
-        SAFE_ELEMENTS.put("LI", "li");
-        SAFE_ELEMENTS.put("MENU", "ul");
-        SAFE_ELEMENTS.put("DL", "dl");
-        SAFE_ELEMENTS.put("DT", "dt");
-        SAFE_ELEMENTS.put("DD", "dd");
-        SAFE_ELEMENTS.put("PRE", "pre");
-        SAFE_ELEMENTS.put("BLOCKQUOTE", "blockquote");
-        SAFE_ELEMENTS.put("TABLE", "table");
-        SAFE_ELEMENTS.put("THEAD", "thead");
-        SAFE_ELEMENTS.put("TBODY", "tbody");
-        SAFE_ELEMENTS.put("TR", "tr");
-        SAFE_ELEMENTS.put("TH", "th");
-        SAFE_ELEMENTS.put("TD", "td");
-
-        DISCARD_ELEMENTS.add("STYLE");
-        DISCARD_ELEMENTS.add("SCRIPT");
-    }
+    private final HtmlParser parser;
 
     private final XHTMLContentHandler xhtml;
 
@@ -85,8 +42,10 @@ class HtmlHandler extends TextContentHandler {
 
     private final StringBuilder title = new StringBuilder();
 
-    private HtmlHandler(XHTMLContentHandler xhtml, Metadata metadata) {
+    private HtmlHandler(
+            HtmlParser parser, XHTMLContentHandler xhtml, Metadata metadata) {
         super(xhtml);
+        this.parser = parser;
         this.xhtml = xhtml;
         this.metadata = metadata;
 
@@ -105,8 +64,9 @@ class HtmlHandler extends TextContentHandler {
         }
     }
 
-    public HtmlHandler(ContentHandler handler, Metadata metadata) {
-        this(new XHTMLContentHandler(handler, metadata), metadata);
+    public HtmlHandler(
+            HtmlParser parser, ContentHandler handler, Metadata metadata) {
+        this(parser, new XHTMLContentHandler(handler, metadata), metadata);
     }
 
     @Override
@@ -119,7 +79,7 @@ class HtmlHandler extends TextContentHandler {
         if ("BODY".equals(name) || bodyLevel > 0) {
             bodyLevel++;
         }
-        if (DISCARD_ELEMENTS.contains(name) || discardLevel > 0) {
+        if (parser.isDiscardElement(name) || discardLevel > 0) {
             discardLevel++;
         }
 
@@ -143,8 +103,9 @@ class HtmlHandler extends TextContentHandler {
         }
 
         if (bodyLevel > 0 && discardLevel == 0) {
-            if (SAFE_ELEMENTS.containsKey(name)) {
-                xhtml.startElement(SAFE_ELEMENTS.get(name));
+            String safe = parser.mapSafeElement(name);
+            if (safe != null) {
+                xhtml.startElement(safe);
             } else if ("A".equals(name)) {
                 String href = atts.getValue("href");
                 if (href != null) {
@@ -167,8 +128,9 @@ class HtmlHandler extends TextContentHandler {
     public void endElement(
             String uri, String local, String name) throws SAXException {
         if (bodyLevel > 0 && discardLevel == 0) {
-            if (SAFE_ELEMENTS.containsKey(name)) {
-                xhtml.endElement(SAFE_ELEMENTS.get(name));
+            String safe = parser.mapSafeElement(name);
+            if (safe != null) {
+                xhtml.endElement(safe);
             } else if ("A".equals(name)) {
                 xhtml.endElement("a");
             }
