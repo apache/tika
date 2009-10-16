@@ -123,6 +123,10 @@ public class AutoDetectParserTest extends TestCase {
         assertAutoDetect(resource, badResource, type, wrongMimeType, content);
     }
 
+    public void testEpub() throws Exception {
+        assertAutoDetect(
+                "testEPUB.epub", "application/epub+zip", "");
+    }
 
     public void testExcel() throws Exception {
         assertAutoDetect("testEXCEL.xls", EXCEL, "Sample Excel Worksheet");
