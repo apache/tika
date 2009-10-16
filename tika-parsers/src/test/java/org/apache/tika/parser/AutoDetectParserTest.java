@@ -125,7 +125,8 @@ public class AutoDetectParserTest extends TestCase {
 
     public void testEpub() throws Exception {
         assertAutoDetect(
-                "testEPUB.epub", "application/epub+zip", "");
+                "testEPUB.epub", "application/epub+zip",
+                "The previous headings were subchapters");
     }
 
     public void testExcel() throws Exception {
