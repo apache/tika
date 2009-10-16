@@ -81,9 +81,18 @@
     <glob pattern="*.emma"/>
   </mime-type>
   <mime-type type="application/epp+xml"/>
+
   <mime-type type="application/epub+zip">
+    <acronym>EPUB</acronym>
+    <comment>Electronic Publication</comment>
+    <magic priority="50">
+      <match value="PK\003\004" type="string" offset="0">
+        <match value="mimetypeapplication/epub+zip" type="string" offset="30"/>
+      </match>
+    </magic>
     <glob pattern="*.epub"/>
   </mime-type>
+
   <mime-type type="application/eshop"/>
   <mime-type type="application/example"/>
   <mime-type type="application/fastinfoset"/>
