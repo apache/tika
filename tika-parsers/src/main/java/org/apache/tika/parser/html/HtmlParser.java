@@ -25,13 +25,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.sax.xpath.Matcher;
-import org.apache.tika.sax.xpath.MatchingContentHandler;
-import org.apache.tika.sax.xpath.XPathParser;
-import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -59,15 +53,7 @@ public class HtmlParser implements Parser {
 
         // Prepare the HTML content handler that generates proper
         // XHTML events to records relevant document metadata
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        XPathParser xpath = new XPathParser(null, "");
-        Matcher body = xpath.parse("/HTML/BODY//node()");
-        Matcher title = xpath.parse("/HTML/HEAD/TITLE//node()");
-        Matcher meta = xpath.parse("/HTML/HEAD/META//node()");
-        handler = new TeeContentHandler(
-                new MatchingContentHandler(new BodyHandler(xhtml), body),
-                new MatchingContentHandler(getTitleHandler(metadata), title),
-                new MatchingContentHandler(getMetaHandler(metadata), meta));
+        handler = new HtmlHandler(handler, metadata);
 
         // Parse the HTML document
         org.ccil.cowan.tagsoup.Parser parser =
@@ -84,31 +70,6 @@ public class HtmlParser implements Parser {
             throws IOException, SAXException, TikaException {
         Map<String, Object> context = Collections.emptyMap();
         parse(stream, handler, metadata, context);
-    }
-
-    private ContentHandler getTitleHandler(final Metadata metadata) {
-        return new WriteOutContentHandler() {
-            @Override
-            public void endElement(String u, String l, String n) {
-                metadata.set(Metadata.TITLE, toString());
-            }
-        };
-    }
-
-    private ContentHandler getMetaHandler(final Metadata metadata) {
-        return new WriteOutContentHandler() {
-            @Override
-            public void startElement(
-                    String uri, String local, String name, Attributes atts)
-                    throws SAXException {
-                    if (atts.getValue("http-equiv") != null) {
-                        metadata.set(atts.getValue("http-equiv"), atts.getValue("content"));
-                    }
-                    if (atts.getValue("name") != null) {
-                        metadata.set(atts.getValue("name"), atts.getValue("content"));
-                    }
-            }
-        };
     }
 
 }
