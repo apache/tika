@@ -164,6 +164,10 @@
                 <mime>application/mbox</mime>
         </parser>
 
+        <parser name="parse-epub" class="org.apache.tika.parser.epub.EpubParser">
+                <mime>application/epub+zip</mime>
+        </parser>
+
     </parsers>
 
 </properties>
