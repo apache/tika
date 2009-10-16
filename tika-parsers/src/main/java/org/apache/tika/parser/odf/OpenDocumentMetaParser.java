@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.opendocument;
+package org.apache.tika.parser.odf;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.xml.DcXMLParser;
@@ -29,7 +29,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Parser for OpenDocument <code>meta.xml</code> files.
  */
-public class OpenOfficeMetaParser extends DcXMLParser {
+public class OpenDocumentMetaParser extends DcXMLParser {
 
     private static final XPathParser META_XPATH = new XPathParser(
             "meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
