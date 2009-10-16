@@ -205,7 +205,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     public void startElement(String name, String attribute, String value)
             throws SAXException {
         AttributesImpl attributes = new AttributesImpl();
-        attributes.addAttribute(XHTML, attribute, attribute, "CDATA", value);
+        attributes.addAttribute("", attribute, attribute, "CDATA", value);
         startElement(XHTML, name, name, attributes);
     }
 
