@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.html;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -81,12 +83,26 @@ class HtmlHandler extends TextContentHandler {
 
     private int titleLevel = 0;
 
-    private StringBuilder title = new StringBuilder();
+    private final StringBuilder title = new StringBuilder();
 
     private HtmlHandler(XHTMLContentHandler xhtml, Metadata metadata) {
         super(xhtml);
         this.xhtml = xhtml;
         this.metadata = metadata;
+
+        // Try to determine the default base URL, if one has not been given
+        if (metadata.get(Metadata.CONTENT_LOCATION) == null) {
+            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+            if (name != null) {
+                name = name.trim();
+                try {
+                    new URL(name); // test URL format
+                    metadata.set(Metadata.CONTENT_LOCATION, name);
+                } catch (MalformedURLException e) {
+                    // The resource name is not a valid URL, ignore it
+                }
+            }
+        }
     }
 
     public HtmlHandler(ContentHandler handler, Metadata metadata) {
@@ -107,13 +123,22 @@ class HtmlHandler extends TextContentHandler {
             discardLevel++;
         }
 
-        if (bodyLevel == 0 && discardLevel == 0 && "META".equals(name)) {
-            String content = atts.getValue("content");
-            if (atts.getValue("http-equiv") != null && content != null) {
-                metadata.set(atts.getValue("http-equiv"), content);
-            }
-            if (atts.getValue("name") != null && content != null) {
-                metadata.set(atts.getValue("name"), content);
+        if (bodyLevel == 0 && discardLevel == 0) {
+            if ("META".equals(name) && atts.getValue("content") != null) {
+                if (atts.getValue("http-equiv") != null) {
+                    metadata.set(
+                            atts.getValue("http-equiv"),
+                            atts.getValue("content"));
+                }
+                if (atts.getValue("name") != null) {
+                    metadata.set(
+                            atts.getValue("name"),
+                            atts.getValue("content"));
+                }
+            } else if ("BASE".equals(name) && atts.getValue("href") != null) {
+                metadata.set(
+                        Metadata.CONTENT_LOCATION,
+                        resolve(atts.getValue("href").trim()));
             }
         }
 
@@ -123,11 +148,11 @@ class HtmlHandler extends TextContentHandler {
             } else if ("A".equals(name)) {
                 String href = atts.getValue("href");
                 if (href != null) {
-                    xhtml.startElement("a", "href", href);
+                    xhtml.startElement("a", "href", resolve(href.trim()));
                 } else {
                     String anchor = atts.getValue("name");
                     if (anchor != null) {
-                        xhtml.startElement("a", "name", anchor);
+                        xhtml.startElement("a", "name", anchor.trim());
                     } else {
                         xhtml.startElement("a");
                     }
@@ -179,6 +204,44 @@ class HtmlHandler extends TextContentHandler {
             throws SAXException {
         if (bodyLevel > 0 && discardLevel == 0) {
             super.ignorableWhitespace(ch, start, length);
+        }
+    }
+
+    private String resolve(String url) {
+        // Return the URL as-is if no base URL is available
+        if (metadata.get(Metadata.CONTENT_LOCATION) == null) {
+            return url;
+        }
+
+        // Check for common non-hierarchical and pseudo URI prefixes
+        String lower = url.toLowerCase();
+        if (lower.startsWith("urn:")
+                || lower.startsWith("mailto:")
+                || lower.startsWith("tel:")
+                || lower.startsWith("data:")
+                || lower.startsWith("javascript:")
+                || lower.startsWith("about:")) {
+            return url;
+        }
+
+        try {
+            URL base = new URL(metadata.get(Metadata.CONTENT_LOCATION).trim());
+
+            // We need to handle one special case, where the relativeUrl is
+            // just a query string (like "?pid=1"), and the baseUrl doesn't
+            // end with a '/'. In that case, the URL class removes the last
+            // portion of the path, which we don't want.
+            String path = base.getPath();
+            if (url.startsWith("?") && path.length() > 0 && !path.endsWith("/")) {
+                return new URL(
+                        base.getProtocol(), base.getHost(), base.getPort(),
+                        base.getPath() + url).toExternalForm();
+            } else {
+                return new URL(base, url).toExternalForm();
+            }
+        } catch (MalformedURLException e) {
+            // Unknown or broken format; just return the URL as received.
+            return url;
         }
     }
 
