@@ -191,6 +191,11 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/cgm", "x.CGM");
     }
 
+    public void testRdfXmlDetection() throws Exception {
+        assertTypeByName("application/rdf+xml", "x.rdf");
+        assertTypeByName("application/rdf+xml", "x.owl");
+    }
+
     public void testSvgDetection() throws Exception {
         assertType("image/svg+xml", "testSVG.svg");
         assertTypeByData("image/svg+xml", "testSVG.svg");

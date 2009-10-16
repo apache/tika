@@ -355,9 +355,16 @@
   <mime-type type="application/prs.nprend"/>
   <mime-type type="application/prs.plucker"/>
   <mime-type type="application/qsig"/>
+
   <mime-type type="application/rdf+xml">
+    <acronym>RDF/XML</acronym>
+    <comment>XML syntax for RDF graphs</comment>
+    <glob pattern="*.owl"/>
     <glob pattern="*.rdf"/>
+    <root-XML localName="RDF"
+              namespaceURI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
   </mime-type>
+
   <mime-type type="application/reginfo+xml">
     <glob pattern="*.rif"/>
   </mime-type>

@@ -114,13 +114,13 @@ public class AutoDetectParserTest extends TestCase {
         assertAutoDetect(resource, resource, type, wrongMimeType, content);
 
         assertAutoDetect(resource, null, type, type,          content);
-//        assertAutoDetect(resource, null, type, null,          content);
-//        assertAutoDetect(resource, null, type, wrongMimeType, content);
+        assertAutoDetect(resource, null, type, null,          content);
+        assertAutoDetect(resource, null, type, wrongMimeType, content);
 
-//        final String badResource = "a.xyz";
-//        assertAutoDetect(resource, badResource, type, type,          content);
-//        assertAutoDetect(resource, badResource, type, null,          content);
-//        assertAutoDetect(resource, badResource, type, wrongMimeType, content);
+        final String badResource = "a.xyz";
+        assertAutoDetect(resource, badResource, type, type,          content);
+        assertAutoDetect(resource, badResource, type, null,          content);
+        assertAutoDetect(resource, badResource, type, wrongMimeType, content);
     }
 
 
@@ -144,6 +144,10 @@ public class AutoDetectParserTest extends TestCase {
 
     public void testPowerpoint() throws Exception {
         assertAutoDetect("testPPT.ppt", POWERPOINT, "Sample Powerpoint Slide");
+    }
+
+    public void testRdfXml() throws Exception {
+        assertAutoDetect("testRDF.rdf", "application/rdf+xml", "");
     }
 
     public void testRTF() throws Exception {
@@ -229,7 +233,7 @@ public class AutoDetectParserTest extends TestCase {
                 + "  resourceStatedName      = " + resourceStatedName + "\n"
                 + "  realType                = " + realType + "\n"
                 + "  statedType              = " + statedType + "\n"
-                + "  expectedContentFragment = " + realType + "\n";
+                + "  expectedContentFragment = " + expectedContentFragment + "\n";
         }
     }
 }
