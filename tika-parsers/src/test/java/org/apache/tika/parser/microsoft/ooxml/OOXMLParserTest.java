@@ -22,7 +22,6 @@ import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.opendocument.OpenOfficeParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -31,7 +30,7 @@ import org.apache.tika.parser.AutoDetectParser;
 public class OOXMLParserTest extends TestCase {
 
     public void testExcel() throws Exception {
-        InputStream input = OpenOfficeParserTest.class
+        InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testEXCEL.xlsx");
 
         Parser parser = new AutoDetectParser();
@@ -61,7 +60,7 @@ public class OOXMLParserTest extends TestCase {
     }
 
     public void testPowerPoint() throws Exception {
-        InputStream input = OpenOfficeParserTest.class
+        InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testPPT.pptx");
 
         Parser parser = new AutoDetectParser();
@@ -88,7 +87,7 @@ public class OOXMLParserTest extends TestCase {
     }
 
     public void testWord() throws Exception {
-        InputStream input = OpenOfficeParserTest.class
+        InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testWORD.docx");
 
         Parser parser = new AutoDetectParser();
