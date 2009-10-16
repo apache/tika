@@ -25,7 +25,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -51,14 +50,11 @@ public class HtmlParser implements Parser {
             source.setEncoding(encoding);
         }
 
-        // Prepare the HTML content handler that generates proper
-        // XHTML events to records relevant document metadata
-        handler = new HtmlHandler(handler, metadata);
-
         // Parse the HTML document
         org.ccil.cowan.tagsoup.Parser parser =
             new org.ccil.cowan.tagsoup.Parser();
-        parser.setContentHandler(new XHTMLDowngradeHandler(handler));
+        parser.setContentHandler(
+                new XHTMLDowngradeHandler(new HtmlHandler(handler, metadata)));
         parser.parse(source);
     }
 

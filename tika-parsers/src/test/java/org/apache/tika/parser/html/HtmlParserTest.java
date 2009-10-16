@@ -20,7 +20,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -133,6 +135,74 @@ public class HtmlParserTest extends TestCase {
         String content = new Tika().parseToString(
                 new ByteArrayInputStream(test.getBytes("UTF-8")));
         assertEquals("test", content);
+    }
+
+    /**
+     * Test case for TIKA-287
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-287">TIKA-287</a>
+     */
+    public void testBaseHref() throws Exception {
+        assertRelativeLink(
+                "http://lucene.apache.org/tika/",
+                "http://lucene.apache.org/", "tika/");
+
+        assertRelativeLink(
+                "http://domain.com/?pid=1",
+                "http://domain.com", "?pid=1");
+        assertRelativeLink(
+                "http://domain.com/?pid=2",
+                "http://domain.com?pid=1", "?pid=2");
+
+        assertRelativeLink(
+                "http://domain.com/file.html",
+                "http://domain.com/path/", "/file.html");
+        assertRelativeLink(
+                "http://domain.com/path/file.html",
+                "http://domain.com/path/", "./file.html");
+        assertRelativeLink(
+                "http://domain.com/path/file.html",
+                "http://domain.com/path/", "file.html");
+
+        assertRelativeLink(
+                "http://domain2.com/newpath",
+                "http://domain.com/path/to/file", "http://domain2.com/newpath");
+
+        // See http://www.communities.hp.com/securitysoftware/blogs/jeff/archive/2007/12/19/RFC-1808-vs-2396-vs-3986_3A00_-Browsers-vs.-programing-languages.aspx
+        // Also http://www.ietf.org/rfc/rfc3986.txt
+        // Also http://issues.apache.org/jira/browse/NUTCH-566
+        // Also http://issues.apache.org/jira/browse/NUTCH-436
+        assertRelativeLink(
+                "http://domain.com/path/?pid=1",
+                "http://domain.com/path/", "?pid=1");
+        assertRelativeLink(
+                "http://domain.com/file?pid=1",
+                "http://domain.com/file", "?pid=1");
+        assertRelativeLink(
+                "http://domain.com/path/d;p?pid=1",
+                "http://domain.com/path/d;p?q#f", "?pid=1");
+    }
+
+    private void assertRelativeLink(String url, String base, String relative)
+            throws Exception {
+        String test =
+            "<html><head><base href=\"" + base + "\"></head>"
+            + "<body><a href=\"" + relative + "\">test</a></body></html>";
+        final List<String> links = new ArrayList<String>();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new DefaultHandler() {
+                    @Override
+                    public void startElement(
+                            String u, String l, String name, Attributes atts) {
+                        if (atts.getValue("href") != null) {
+                            links.add(atts.getValue("href"));
+                        }
+                    }
+                },
+                new Metadata(),
+                new HashMap<String, Object>());
+        assertEquals(1, links.size());
+        assertEquals(url, links.get(0));
     }
 
     /**
