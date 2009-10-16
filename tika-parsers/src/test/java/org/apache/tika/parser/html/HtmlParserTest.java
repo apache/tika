@@ -194,8 +194,8 @@ public class HtmlParserTest extends TestCase {
                     @Override
                     public void startElement(
                             String u, String l, String name, Attributes atts) {
-                        if (atts.getValue("href") != null) {
-                            links.add(atts.getValue("href"));
+                        if (atts.getValue("", "href") != null) {
+                            links.add(atts.getValue("", "href"));
                         }
                     }
                 },
