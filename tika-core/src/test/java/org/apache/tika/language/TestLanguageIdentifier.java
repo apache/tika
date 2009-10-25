@@ -166,7 +166,7 @@ public class TestLanguageIdentifier extends TestCase {
         int c = 0;
 
         for (NGramEntry nge : entries) {
-            System.out.println(nge);
+            // System.out.println(nge);
             assertEquals(counts[c], nge.getCount());
             c++;
         }
