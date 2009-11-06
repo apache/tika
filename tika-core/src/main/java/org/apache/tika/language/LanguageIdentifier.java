@@ -17,357 +17,113 @@
 package org.apache.tika.language;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Vector;
+import java.util.Map;
 
 /**
  * Identify the language of a content, based on statistical analysis.
+ * Text document language identifier.
+ * <p>
+ * Language profiles are based on material from
+ * <a href="http://www.isi.edu/~koehn/europarl/">http://www.isi.edu/~koehn/europarl/</a>.
  *
- * @see <a href="http://www.w3.org/WAI/ER/IG/ert/iso639.htm">ISO 639
- *      Language Codes</a>
- * 
- * @author Sami Siren
- * @author J&eacute;r&ocirc;me Charron
+ * @see <a href="http://www.w3.org/WAI/ER/IG/ert/iso639.htm">
+ *      ISO 639 Language Codes</a>
  */
 public class LanguageIdentifier {
 
-    private final static int DEFAULT_ANALYSIS_LENGTH = 0;    // 0 means full content
-
-    private ArrayList<NGramProfile> languages = new ArrayList<NGramProfile>();
-
-    private ArrayList<String> supportedLanguages = new ArrayList<String>();
-
-    /** Minimum size of NGrams */
-    private int minLength = NGramProfile.DEFAULT_MIN_NGRAM_LENGTH;
-
-    /** Maximum size of NGrams */
-    private int maxLength = NGramProfile.DEFAULT_MAX_NGRAM_LENGTH;
-
-    /** The maximum amount of data to analyze */
-    private int analyzeLength = DEFAULT_ANALYSIS_LENGTH;
-
-    /** A global index of ngrams of all supported languages */
-    private HashMap<CharSequence, NGramEntry[]> ngramsIdx = new HashMap<CharSequence, NGramEntry[]>();
-
-    /** The NGramProfile used for identification */
-    private NGramProfile suspect = null;
-
     /**
-     * Constructs a new Language Identifier.
+     * The available language profiles.
      */
-    public LanguageIdentifier(NGramProfile suspect) {
-        this.suspect = suspect;
+    private static final Map<String, LanguageProfile> profiles =
+        new HashMap<String, LanguageProfile>();
 
-        Properties p = new Properties();
+    private static void addProfile(String language) {
         try {
-            p.load(this.getClass().getResourceAsStream("langmappings.properties"));
+            LanguageProfile profile = new LanguageProfile();
 
-            Enumeration alllanguages = p.keys();
-
-            StringBuffer list = new StringBuffer("Language identifier plugin supports:");
-            HashMap<NGramEntry, List<NGramEntry>> tmpIdx = new HashMap<NGramEntry, List<NGramEntry>>();
-            while (alllanguages.hasMoreElements()) {
-                String lang = (String) (alllanguages.nextElement());
-
-                InputStream is = this.getClass().getClassLoader().getResourceAsStream(
-                        "org/apache/tika/language/" + lang + "." + NGramProfile.FILE_EXTENSION);
-
-                if (is != null) {
-                    NGramProfile profile = new NGramProfile(lang, minLength, maxLength);
-                    try {
-                        profile.load(is);
-                        languages.add(profile);
-                        supportedLanguages.add(lang);
-                        List<NGramEntry> ngrams = profile.getSorted();
-                        for (int i=0; i<ngrams.size(); i++) {
-                            NGramEntry entry = ngrams.get(i);
-                            List<NGramEntry> registered = tmpIdx.get(entry);
-                            if (registered == null) {
-                                registered = new ArrayList<NGramEntry>();
-                                tmpIdx.put(entry, registered);
-                            }
-                            registered.add(entry);
-                        }
-                        list.append(" " + lang + "(" + ngrams.size() + ")");
-                        is.close();
-                    } catch (IOException e1) {
-                        // if (LOG.isFatalEnabled()) { LOG.fatal(e1.toString()); }
+            InputStream stream =
+                LanguageIdentifier.class.getResourceAsStream(language + ".ngp");
+            try {
+                BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                String line = reader.readLine();
+                while (line != null) {
+                    if (line.length() > 0 && !line.startsWith("#")) {
+                        int space = line.indexOf(' ');
+                        profile.add(
+                                line.substring(0, space),
+                                Long.parseLong(line.substring(space + 1)));
                     }
+                    line = reader.readLine();
                 }
+            } finally {
+                stream.close();
             }
-            // transform all ngrams lists to arrays for performances
-            Iterator<NGramEntry> keys = tmpIdx.keySet().iterator();
-            while (keys.hasNext()) {
-                NGramEntry entry = keys.next();
-                List<NGramEntry> l = tmpIdx.get(entry);
-                if (l != null) {
-                    NGramEntry[] array = l.toArray(new NGramEntry[l.size()]);
-                    ngramsIdx.put(entry.getSeq(), array);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            // if (LOG.isFatalEnabled()) { LOG.fatal(e.toString()); }
+
+            profiles.put(language, profile);
+        } catch (Throwable t) {
+            // Failed to load this language profile. Log the problem?
         }
     }
 
-    public LanguageIdentifier() {
-        this(new NGramProfile(
-                "suspect",
-                NGramProfile.DEFAULT_MIN_NGRAM_LENGTH,
-                NGramProfile.DEFAULT_MAX_NGRAM_LENGTH));
+    static {
+        addProfile("da"); // Danish
+        addProfile("de"); // German
+        addProfile("ee");
+        addProfile("el"); // Greek
+        addProfile("en"); // English
+        addProfile("es"); // Spanish
+        addProfile("fi"); // Finnish
+        addProfile("fr"); // French
+        addProfile("hu"); // Hungarian
+        addProfile("is"); // Icelandic
+        addProfile("it"); // Italian
+        addProfile("nl"); // Dutch
+        addProfile("no"); // Norwegian
+        addProfile("pl"); // Polish
+        addProfile("pt"); // Portuguese
+        addProfile("ru"); // Russian
+        addProfile("sv"); // Swedish
+        addProfile("th"); // Thai
     }
 
-    /**
-     * Main method used for command line process.
-     * <br/>Usage is:
-     * <pre>
-     * LanguageIdentifier [-identifyrows filename maxlines]
-     *                    [-identifyfile charset filename]
-     *                    [-identifyfileset charset files]
-     *                    [-identifytext text]
-     *                    [-identifyurl url]
-     * </pre>
-     * @param args arguments.
-     */
-    public static void main(String args[]) {
-        String usage = "Usage: LanguageIdentifier" 
-            + " [-identifyrows filename maxlines]"
-            + " [-identifyfile charset filename]"
-            + " [-identifyfileset charset files]"
-            + " [-identifytext text] ";
-        int command = 0;
+    private final String language;
 
-        final int IDFILE = 1;
-        final int IDTEXT = 2;
-        final int IDFILESET = 4;
-        final int IDROWS = 5;
+    private final double distance;
 
-        Vector<String> fileset = new Vector<String>();
-        String filename = "";
-        String charset = "";
-        String text = "";
-        int max = 0;
-
-        if (args.length == 0) {
-            System.err.println(usage);
-            System.exit(-1);
+    public LanguageIdentifier(LanguageProfile profile) {
+        String minLanguage = "unknown";
+        double minDistance = 1.0;
+        for (Map.Entry<String, LanguageProfile> entry : profiles.entrySet()) {
+            double distance = profile.distance(entry.getValue());
+            if (distance < minDistance) {
+                minDistance = distance;
+                minLanguage = entry.getKey();
+            }
         }
 
-        for (int i = 0; i < args.length; i++) { // parse command line
-            if (args[i].equals("-identifyfile")) {
-                command = IDFILE;
-                charset = args[++i];
-                filename = args[++i];
-            }
-
-            if (args[i].equals("-identifyrows")) {
-                command = IDROWS;
-                filename = args[++i];
-                max = Integer.parseInt(args[++i]);
-            }
-
-            if (args[i].equals("-identifytext")) {
-                command = IDTEXT;
-                for (i++; i < args.length - 1; i++)
-                    text += args[i] + " ";
-            }
-
-            if (args[i].equals("-identifyfileset")) {
-                command = IDFILESET;
-                charset = args[++i];
-                for (i++; i < args.length; i++) {
-                    File[] files = null;
-                    File f = new File(args[i]);
-                    if (f.isDirectory()) {
-                        files = f.listFiles();
-                    } else {
-                        files = new File[] { f };
-                    }
-                    for (int j=0; j<files.length; j++) {
-                        fileset.add(files[j].getAbsolutePath());
-                    }
-                }
-            }
-
-        }
-
-        String lang = null;
-        //LanguageIdentifier idfr = LanguageIdentifier.getInstance();
-        LanguageIdentifier idfr = new LanguageIdentifier();
-        File f;
-        FileInputStream fis;
-        try {
-            switch (command) {
-
-            case IDTEXT:
-                lang = idfr.identify(text);
-                break;
-
-            case IDFILE:
-                f = new File(filename);
-                fis = new FileInputStream(f);
-                lang = idfr.identify(fis, charset);
-                fis.close();
-                break;
-
-            case IDROWS:
-                f = new File(filename);
-                BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-                String line;
-                while (max > 0 && (line = br.readLine()) != null) {
-                    line = line.trim();
-                    if (line.length() > 2) {
-                        max--;
-                        lang = idfr.identify(line);
-                        System.out.println("R=" + lang + ":" + line);
-                    }
-                }
-
-                br.close();
-                System.exit(0);
-                break;
-
-            case IDFILESET:
-                System.out.println("FILESET");
-                Iterator<String> i = fileset.iterator();
-                while (i.hasNext()) {
-                    try {
-                        filename = i.next();
-                        f = new File(filename);
-                        fis = new FileInputStream(f);
-                        lang = idfr.identify(fis, charset);
-                        fis.close();
-                    } catch (Exception e) {
-                        System.out.println(e);
-                    }
-                    System.out.println(filename + " was identified as " + lang);
-                }
-                System.exit(0);
-                break;
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-        System.out.println("text was identified as " + lang);
+        this.language = minLanguage;
+        this.distance = minDistance;
     }
 
-    /**
-     * Identify language of a content.
-     * 
-     * @param content is the content to analyze.
-     * @return The 2 letter
-     *         <a href="http://www.w3.org/WAI/ER/IG/ert/iso639.htm">ISO 639
-     *         language code</a> (en, fi, sv, ...) of the language that best
-     *         matches the specified content.
-     */
-    public String identify(String content) {
-        return identify(new StringBuilder(content));
+    public LanguageIdentifier(String content) {
+        this(ProfilingWriter.profile(content));
     }
 
-    /**
-     * Identify language of a content.
-     * 
-     * @param content is the content to analyze.
-     * @return The 2 letter
-     *         <a href="http://www.w3.org/WAI/ER/IG/ert/iso639.htm">ISO 639
-     *         language code</a> (en, fi, sv, ...) of the language that best
-     *         matches the specified content.
-     */
-    public String identify(StringBuilder content) {
-        StringBuilder text = content;
-        if ((analyzeLength > 0) && (content.length() > analyzeLength)) {
-            text = new StringBuilder().append(content);
-            text.setLength(analyzeLength);
-        }
-        suspect.analyze(text);
-
-        return identify();
+    public String getLanguage() {
+        return language;
     }
 
-    public String identify() {
-        Iterator<NGramEntry> iter = suspect.getSorted().iterator();
-        float topscore = Float.MIN_VALUE;
-        String lang = "";
-        HashMap<NGramProfile, Float> scores = new HashMap<NGramProfile, Float>();
-        NGramEntry searched = null;
-
-        while (iter.hasNext()) {
-            searched = iter.next();
-            NGramEntry[] ngrams = ngramsIdx.get(searched.getSeq());
-            if (ngrams != null) {
-                for (int j=0; j<ngrams.length; j++) {
-                    NGramProfile profile = ngrams[j].getProfile();
-                    Float pScore = scores.get(profile);
-                    if (pScore == null) {
-                        pScore = new Float(0);
-                    }
-                    float plScore = pScore.floatValue();
-                    plScore += ngrams[j].getFrequency() + searched.getFrequency();
-                    scores.put(profile, new Float(plScore));
-                    if (plScore > topscore) {
-                        topscore = plScore;
-                        lang = profile.getName();
-                    }
-                }
-            }
-        }
-        return lang;
+    public boolean isReasonablyCertain() {
+        return distance < 0.022;
     }
 
-    /**
-     * Identify language from input stream.
-     * This method uses the platform default encoding to read the input stream.
-     * For using a specific encoding, use the
-     * {@link #identify(InputStream, String)} method.
-     *
-     * @param is is the input stream to analyze.
-     * @return The 2 letter
-     *         <a href="http://www.w3.org/WAI/ER/IG/ert/iso639.htm">ISO 639
-     *         language code</a> (en, fi, sv, ...) of the language that best
-     *         matches the content of the specified input stream.
-     * @throws IOException if something wrong occurs on the input stream.
-     */
-    public String identify(InputStream is) throws IOException {
-        return identify(is, null);
-    }
-
-    /**
-     * Identify language from input stream.
-     * 
-     * @param is is the input stream to analyze.
-     * @param charset is the charset to use to read the input stream.
-     * @return The 2 letter
-     *         <a href="http://www.w3.org/WAI/ER/IG/ert/iso639.htm">ISO 639
-     *         language code</a> (en, fi, sv, ...) of the language that best
-     *         matches the content of the specified input stream.
-     * @throws IOException if something wrong occurs on the input stream.
-     */
-    public String identify(InputStream is, String charset) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buffer = new byte[2048];
-        int len = 0;
-
-        while (((len = is.read(buffer)) != -1) &&
-                ((analyzeLength == 0) || (out.size() < analyzeLength))) {
-            if (analyzeLength != 0) {
-                len = Math.min(len, analyzeLength - out.size());
-            }
-            out.write(buffer, 0, len);
-        }
-        return identify((charset == null) ? out.toString()
-                : out.toString(charset));
+    @Override
+    public String toString() {
+        return language + " (" + distance + ")";
     }
 
 }
