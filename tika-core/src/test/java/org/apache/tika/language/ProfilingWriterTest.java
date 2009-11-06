@@ -17,40 +17,25 @@
 package org.apache.tika.language;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
-import org.apache.tika.io.IOUtils;
 
 import junit.framework.TestCase;
 
 public class ProfilingWriterTest extends TestCase {
 
     public void testProfilingWriter() throws IOException {
-        assertProfile("da");
-        assertProfile("de");
-        assertProfile("el");
-        assertProfile("en");
-        assertProfile("es");
-        assertProfile("fi");
-        assertProfile("fr");
-        assertProfile("it");
-        assertProfile("nl");
-        assertProfile("pt");
-        assertProfile("sv");
-    }
+        ProfilingWriter writer = new ProfilingWriter();
+        writer.write(" foo+BAR FooBar\n");
+        writer.close();
 
-    private void assertProfile(String lang) throws IOException {
-        InputStream stream =
-            ProfilingWriterTest.class.getResourceAsStream(lang + ".test");
-        try {
-            ProfilingWriter writer = new ProfilingWriter();
-            IOUtils.copy(new InputStreamReader(stream, "UTF-8"), writer);
-            NGramProfile profile = writer.getProfile();
-            assertEquals(lang, new LanguageIdentifier(profile).identify());
-        } finally {
-            stream.close();
-        }
+        LanguageProfile profile = writer.getProfile();
+        assertEquals(2, profile.getCount("_fo"));
+        assertEquals(2, profile.getCount("foo"));
+        assertEquals(1, profile.getCount("oo_"));
+        assertEquals(1, profile.getCount("oob"));
+        assertEquals(1, profile.getCount("oba"));
+        assertEquals(1, profile.getCount("_ba"));
+        assertEquals(2, profile.getCount("bar"));
+        assertEquals(2, profile.getCount("ar_"));
     }
 
 }

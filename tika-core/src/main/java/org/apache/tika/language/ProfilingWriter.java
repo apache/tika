@@ -21,40 +21,53 @@ import java.io.Writer;
 
 public class ProfilingWriter extends Writer {
 
-    private final NGramProfile profile = new NGramProfile(
-            "suspect",
-            NGramProfile.DEFAULT_MIN_NGRAM_LENGTH,
-            NGramProfile.DEFAULT_MAX_NGRAM_LENGTH);
-
-    private final StringBuffer buffer = new StringBuffer("_");
-
-    private void addWord() {
-        if (buffer.length() > 1) {
-            buffer.append("_");
-            profile.add(buffer);
-            buffer.setLength(1);
-        }
+    public static LanguageProfile profile(String content) {
+        ProfilingWriter writer = new ProfilingWriter();
+        char[] ch = content.toCharArray();
+        writer.write(ch, 0, ch.length);
+        return writer.getProfile();
     }
 
-    public NGramProfile getProfile() {
+
+    private final LanguageProfile profile = new LanguageProfile();
+
+    private char[] buffer = new char[] { 0, 0, '_' };
+
+    private int n = 1;
+
+    public LanguageProfile getProfile() {
         return profile;
     }
 
     @Override
-    public void write(char[] cbuf, int off, int len) throws IOException {
+    public void write(char[] cbuf, int off, int len) {
         for (int i = 0; i < len; i++) {
             char c = Character.toLowerCase(cbuf[off + i]);
             if (Character.isLetter(c)) {
-                buffer.append(c);
+                addLetter(c);
             } else {
-                addWord();
+                addSeparator();
             }
         }
     }
 
+    private void addLetter(char c) {
+        System.arraycopy(buffer, 1, buffer, 0, buffer.length - 1);
+        buffer[buffer.length - 1] = c;
+        n++;
+        if (n >= buffer.length) {
+            profile.add(new String(buffer));
+        }
+    }
+
+    private void addSeparator() {
+        addLetter('_');
+        n = 1;
+    }
+
     @Override
     public void close() throws IOException {
-        addWord();
+        addSeparator();
     }
 
     /**

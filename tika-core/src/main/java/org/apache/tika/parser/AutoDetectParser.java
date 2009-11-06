@@ -25,9 +25,11 @@ import java.util.Map;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CountingInputStream;
+import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.SecureContentHandler;
+import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.detect.Detector;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -98,9 +100,14 @@ public class AutoDetectParser extends CompositeParser {
         CountingInputStream count = new CountingInputStream(stream);
         SecureContentHandler secure = new SecureContentHandler(handler, count);
 
+        // Automatic language detection
+        ContentHandler profiler = new ProfilingHandler(metadata);
+
         // Parse the document
         try {
-            super.parse(count, secure, metadata, context);
+            super.parse(
+                    count, new TeeContentHandler(secure, profiler),
+                    metadata, context);
         } catch (SAXException e) {
             // Convert zip bomb exceptions to TikaExceptions
             secure.throwIfCauseOf(e);
