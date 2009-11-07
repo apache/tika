@@ -6,6 +6,16 @@ Release 0.5 - Current Development
 
 The most notable changes in Tika 0.5 over the previous release are:
 
+ * A new parse context argument was added to the Parser.parse() method.
+   This context map can be used to pass things like a delegate parser or
+   other settings to the parsing process. The previous parse() method
+   signature has been deprecated and will be removed in Tika 1.0. (TIKA-275)
+
+ * A simple ngram-based language detection mechanism has been added along
+   with predefined language profiles for 18 languages. The AutoDetectParser
+   will automatically set the Metadata.LANGUAGE property if a reasonably
+   certain language profile match is detected. (TIKA-209)
+
  * The media type registry in Tika was synchronized with the MIME type
    configuration in the Apache HTTP Server. Tika now knows about 1274
    different media types and can detect 672 of those using 927 file
