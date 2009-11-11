@@ -6,6 +6,9 @@ Release 0.5 - Current Development
 
 The most notable changes in Tika 0.5 over the previous release are:
 
+ * An org.apache.tika.Tika facade class has been added to simplify common
+   text extraction and type detection use cases. (TIKA-269)
+
  * A new parse context argument was added to the Parser.parse() method.
    This context map can be used to pass things like a delegate parser or
    other settings to the parsing process. The previous parse() method
@@ -22,7 +25,8 @@ The most notable changes in Tika 0.5 over the previous release are:
    extension and 280 magic byte patterns. (TIKA-285)
 
  * Tika now uses the Apache PDFBox version 0.8.0-incubating for parsing PDF
-   documents. This version is much the 0.7.3 release used earlier. (TIKA-158)
+   documents. This version is notably better than the 0.7.3 release used
+   earlier. (TIKA-158)
 
 Release 0.4 - 07/14/2009
 ------------------------
