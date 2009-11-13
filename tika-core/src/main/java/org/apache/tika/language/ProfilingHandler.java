@@ -16,51 +16,52 @@
  */
 package org.apache.tika.language;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.SAXException;
+import org.apache.tika.sax.WriteOutContentHandler;
 
-public class ProfilingHandler extends BodyContentHandler {
+/**
+ * SAX content handler that builds a language profile based on all the
+ * received character content.
+ *
+ * @since Apache Tika 0.5
+ */
+public class ProfilingHandler extends WriteOutContentHandler {
 
-    private static final long CHECK_INTERVAL = 1000;
+    private final ProfilingWriter writer;
 
-    private final LanguageProfile profile;
-
-    private final Metadata metadata;
-
-    private long nextCheckCount = CHECK_INTERVAL;
-
-    private ProfilingHandler(ProfilingWriter writer, Metadata metadata) {
+    public ProfilingHandler(ProfilingWriter writer) {
         super(writer);
-        this.profile = writer.getProfile();
-        this.metadata = metadata;
+        this.writer = writer;
     }
 
-    public ProfilingHandler(Metadata metadata) {
-        this(new ProfilingWriter(), metadata);
+    public ProfilingHandler(LanguageProfile profile) {
+        this(new ProfilingWriter(profile));
     }
 
-    private void checkAndSetLanguage() {
-        LanguageIdentifier identifier = new LanguageIdentifier(profile);
-        if (identifier.isReasonablyCertain()) {
-            metadata.set(Metadata.LANGUAGE, identifier.getLanguage());
-        }
+    public ProfilingHandler() {
+        this(new ProfilingWriter());
     }
 
-    @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
-        super.characters(ch, start, length);
-        if (profile.getCount() > nextCheckCount) {
-            checkAndSetLanguage();
-            nextCheckCount = profile.getCount() + CHECK_INTERVAL;
-        }
+    /**
+     * Returns the language profile being built by this content handler.
+     * Note that the returned profile gets updated whenever new SAX events
+     * are received by this content handler. Use the {@link #getLanguage()}
+     * method to get the language that best matches the current state of
+     * the profile.
+     *
+     * @return language profile
+     */
+    public LanguageProfile getProfile() {
+        return writer.getProfile();
     }
 
-    @Override
-    public void endDocument() throws SAXException {
-        super.endDocument();
-        checkAndSetLanguage();
+    /**
+     * Returns the language that best matches the current state of the
+     * language profile.
+     *
+     * @return language that best matches the current profile
+     */
+    public LanguageIdentifier getLanguage() {
+        return writer.getLanguage();
     }
 
 }

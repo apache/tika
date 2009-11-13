@@ -23,8 +23,14 @@ import java.util.Set;
 
 /**
  * Language profile based on ngram counts.
+ *
+ * @since Apache Tika 0.5
  */
 public class LanguageProfile {
+
+    public static final int DEFAULT_NGRAM_LENGTH = 3;
+
+    private final int length;
 
     /**
      * The ngrams that make up this profile.
@@ -43,6 +49,26 @@ public class LanguageProfile {
         public String toString() {
             return Long.toString(count);
         }
+    }
+
+    public LanguageProfile(int length) {
+        this.length = length;
+    }
+
+    public LanguageProfile() {
+        this(DEFAULT_NGRAM_LENGTH);
+    }
+
+    public LanguageProfile(String content, int length) {
+        this(length);
+
+        ProfilingWriter writer = new ProfilingWriter(this);
+        char[] ch = content.toCharArray();
+        writer.write(ch, 0, ch.length);
+    }
+
+    public LanguageProfile(String content) {
+        this(content, DEFAULT_NGRAM_LENGTH);
     }
 
     public long getCount() {
@@ -74,6 +100,12 @@ public class LanguageProfile {
      * @param count number of occurrences to add
      */
     public void add(String ngram, long count) {
+        if (length != ngram.length()) {
+            throw new IllegalArgumentException(
+                    "Unable to add an ngram of incorrect length: "
+                    + ngram.length() + " != " + length);
+        }
+
         Counter counter = ngrams.get(ngram);
         if (counter == null) {
             counter = new Counter();
@@ -91,6 +123,13 @@ public class LanguageProfile {
      * @return distance between the profiles
      */
     public double distance(LanguageProfile that) {
+        if (length != that.length) {
+            throw new IllegalArgumentException(
+                    "Unable to calculage distance of language profiles"
+                    + " with different ngram lengths: "
+                    + that.length + " != " + length);
+        }
+
         double sumOfSquares = 0.0;
         double thisCount = Math.max(this.count, 1.0);
         double thatCount = Math.max(that.count, 1.0);
