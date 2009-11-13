@@ -18,6 +18,7 @@ package org.apache.tika.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class HtmlParser implements Parser {
         // Prepare the input source using the encoding hint if available
         InputSource source = new InputSource(stream); 
         String encoding = metadata.get(Metadata.CONTENT_ENCODING); 
-        if (encoding != null) { 
+        if (encoding != null && Charset.isSupported(encoding)) { 
             source.setEncoding(encoding);
         }
 
