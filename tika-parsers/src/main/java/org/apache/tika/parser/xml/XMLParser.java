@@ -18,8 +18,6 @@ package org.apache.tika.parser.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
@@ -29,6 +27,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TextContentHandler;
@@ -59,7 +58,7 @@ public class XMLParser implements Parser {
 
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         if (metadata.get(Metadata.CONTENT_TYPE) == null) {
             metadata.set(Metadata.CONTENT_TYPE, "application/xml");
@@ -85,8 +84,7 @@ public class XMLParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
     protected ContentHandler getContentHandler(
@@ -104,11 +102,11 @@ public class XMLParser implements Parser {
      * @return SAX parser
      * @throws TikaException if a SAX parser could not be created
      */
-    private SAXParser getSAXParser(Map<String, Object> context)
+    private SAXParser getSAXParser(ParseContext context)
             throws TikaException {
-        Object parser = context.get(SAXParser.class.getName());
+        SAXParser parser = context.get(SAXParser.class);
         if (parser instanceof SAXParser) {
-            return (SAXParser) parser;
+            return parser;
         } else {
             try {
                 return getSAXParserFactory(context).newSAXParser();
@@ -129,10 +127,10 @@ public class XMLParser implements Parser {
      * @param context parsing context
      * @return SAX parser factory
      */
-    private SAXParserFactory getSAXParserFactory(Map<String, Object> context) {
-        Object factory = context.get(SAXParserFactory.class.getName());
-        if (factory instanceof SAXParserFactory) {
-            return (SAXParserFactory) factory;
+    private SAXParserFactory getSAXParserFactory(ParseContext context) {
+        SAXParserFactory factory = context.get(SAXParserFactory.class);
+        if (factory != null) {
+            return factory;
         } else {
             return getDefaultSAXParserFactory();
         }

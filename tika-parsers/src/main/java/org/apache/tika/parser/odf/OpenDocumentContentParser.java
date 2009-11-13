@@ -16,34 +16,33 @@
  */
 package org.apache.tika.parser.odf;
 
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
-import java.util.Stack;
-import java.util.HashMap;
-import java.util.Collections;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Stack;
 
 import javax.xml.XMLConstants;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-import javax.xml.namespace.QName;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ElementMappingContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.sax.ElementMappingContentHandler.TargetElement;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.sax.ElementMappingContentHandler.TargetElement;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import org.xml.sax.Attributes;
-
-import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 /**
  * Parser for ODF <code>content.xml</code> files.
@@ -165,7 +164,7 @@ public class OpenDocumentContentParser implements Parser {
 
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         final XHTMLContentHandler xhtml =
             new XHTMLContentHandler(handler,metadata);
@@ -334,8 +333,7 @@ public class OpenDocumentContentParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

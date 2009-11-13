@@ -52,7 +52,7 @@ public interface Parser {
      */
     void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
 
     /**

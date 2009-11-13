@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -29,6 +28,7 @@ import junit.framework.TestCase;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.Attributes;
@@ -62,7 +62,7 @@ public class HtmlParserTest extends TestCase {
             };
             new HtmlParser().parse(
                     stream, new TeeContentHandler(body, link),
-                    metadata, new HashMap<String, Object>());
+                    metadata, new ParseContext());
         } finally {
             stream.close();
         }
@@ -122,7 +122,7 @@ public class HtmlParserTest extends TestCase {
         ContentHandler handler = new BodyContentHandler();
         new HtmlParser().parse(
                 new ByteArrayInputStream(new byte[0]),
-                handler,  new Metadata(), new HashMap<String, Object>());
+                handler,  new Metadata(), new ParseContext());
         assertEquals("", handler.toString());
     }
 
@@ -200,7 +200,7 @@ public class HtmlParserTest extends TestCase {
                     }
                 },
                 new Metadata(),
-                new HashMap<String, Object>());
+                new ParseContext());
         assertEquals(1, links.size());
         assertEquals(url, links.get(0));
     }

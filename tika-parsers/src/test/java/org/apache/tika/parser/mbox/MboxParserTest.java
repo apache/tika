@@ -29,6 +29,7 @@ import java.util.Map;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -43,10 +44,9 @@ public class MboxParserTest extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/simple.mbox");
         ContentHandler handler = mock(DefaultHandler.class);
-        Map<String, Object> context = new HashMap<String, Object>();
 
         try {
-            parser.parse(stream, handler, metadata, context);
+            parser.parse(stream, handler, metadata, new ParseContext());
             verify(handler).startDocument();
             verify(handler, times(2)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
             verify(handler, times(2)).endElement(XHTMLContentHandler.XHTML, "p", "p");
@@ -63,10 +63,9 @@ public class MboxParserTest extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/headers.mbox");
         ContentHandler handler = mock(DefaultHandler.class);
-        Map<String, Object> context = new HashMap<String, Object>();
 
         try {
-            parser.parse(stream, handler, metadata, context);
+            parser.parse(stream, handler, metadata, new ParseContext());
 
             verify(handler).startDocument();
             verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
@@ -89,10 +88,9 @@ public class MboxParserTest extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/multiline.mbox");
         ContentHandler handler = mock(DefaultHandler.class);
-        Map<String, Object> context = new HashMap<String, Object>();
 
         try {
-            parser.parse(stream, handler, metadata, context);
+            parser.parse(stream, handler, metadata, new ParseContext());
 
             verify(handler).startDocument();
             verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
@@ -110,10 +108,9 @@ public class MboxParserTest extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/quoted.mbox");
         ContentHandler handler = mock(DefaultHandler.class);
-        Map<String, Object> context = new HashMap<String, Object>();
 
         try {
-            parser.parse(stream, handler, metadata, context);
+            parser.parse(stream, handler, metadata, new ParseContext());
 
             verify(handler).startDocument();
             verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
@@ -133,10 +130,9 @@ public class MboxParserTest extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/complex.mbox");
         ContentHandler handler = mock(DefaultHandler.class);
-        Map<String, Object> context = new HashMap<String, Object>();
 
         try {
-            parser.parse(stream, handler, metadata, context);
+            parser.parse(stream, handler, metadata, new ParseContext());
 
             verify(handler).startDocument();
             verify(handler, times(3)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));

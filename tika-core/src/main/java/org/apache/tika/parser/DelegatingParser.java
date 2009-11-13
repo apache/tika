@@ -18,8 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -29,15 +27,8 @@ import org.xml.sax.SAXException;
 /**
  * Base class for parser implementations that want to delegate parts of the
  * task of parsing an input document to another parser. The delegate parser
- * is looked up from the parsing context.
- * <p>
- * This class uses the following parsing context:
- * <dl>
- *   <dt>org.apache.tika.parser.Parser</dt>
- *   <dd>
- *     The delegate parser ({@link Parser} instance).
- *   </dd>
- * </dl>
+ * is looked up from the parsing context using the {@link Parser} class as
+ * the key.
  *
  * @since Apache Tika 0.4, major changes in Tika 0.5
  */
@@ -55,14 +46,10 @@ public class DelegatingParser implements Parser {
      */
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws SAXException, IOException, TikaException {
-        Object parser = context.get(Parser.class.getName());
-        if (parser instanceof Parser) {
-            ((Parser) parser).parse(stream, handler, metadata, context);
-        } else {
-            new EmptyParser().parse(stream, handler, metadata, context);
-        }
+        Parser parser =  context.get(Parser.class, EmptyParser.INSTANCE);
+        parser.parse(stream, handler, metadata, context);
     }
 
     /**
@@ -71,8 +58,7 @@ public class DelegatingParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

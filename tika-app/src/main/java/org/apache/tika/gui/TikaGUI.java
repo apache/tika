@@ -23,8 +23,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -42,6 +40,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
@@ -77,7 +76,7 @@ public class TikaGUI extends JFrame {
     /**
      * Parsing context.
      */
-    private final Map<String, Object> context;
+    private final ParseContext context;
 
     /**
      * Configured parser instance.
@@ -130,9 +129,9 @@ public class TikaGUI extends JFrame {
         setPreferredSize(new Dimension(500, 400));
         pack();
 
-        this.context = new HashMap<String, Object>();
+        this.context = new ParseContext();
         this.parser = parser;
-        this.context.put(Parser.class.getName(), parser);
+        this.context.set(Parser.class, parser);
     }
 
    public void importStream(InputStream input) throws IOException {
