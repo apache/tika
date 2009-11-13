@@ -46,7 +46,7 @@ import org.xml.sax.Attributes;
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 /**
- * Parser for OpenDocument <code>content.xml</code> files.
+ * Parser for ODF <code>content.xml</code> files.
  */
 public class OpenDocumentContentParser implements Parser {
 
@@ -59,12 +59,21 @@ public class OpenDocumentContentParser implements Parser {
     public static final String OFFICE_NS =
         "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
 
+    public static final String SVG_NS =
+        "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
+
+    public static final String PRESENTATION_NS =
+        "urn:oasis:names:tc:opendocument:xmlns:presentation:1.0";
+
+    public static final String DRAW_NS =
+        "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+
     public static final String XLINK_NS = "http://www.w3.org/1999/xlink";
 
     protected static final char[] TAB = new char[] { '\t' };
 
     /**
-     * Mappings between OpenDocument tag names and XHTML tag names
+     * Mappings between ODF tag names and XHTML tag names
      * (including attributes). All other tag names/attributes are ignored
      * and left out from event stream. 
      */
@@ -73,7 +82,9 @@ public class OpenDocumentContentParser implements Parser {
 
     static {
         // general mappings of text:-tags
-        MAPPINGS.put(new QName(TEXT_NS, "p"), new TargetElement(XHTML, "p"));
+        MAPPINGS.put(
+                new QName(TEXT_NS, "p"),
+                new TargetElement(XHTML, "p"));
         // text:h-tags are mapped specifically in startElement/endElement
         MAPPINGS.put(
                 new QName(TEXT_NS, "line-break"),
@@ -91,12 +102,35 @@ public class OpenDocumentContentParser implements Parser {
                 new QName(OFFICE_NS, "annotation"),
                 new TargetElement(XHTML, "div"));
         MAPPINGS.put(
-                new QName(TEXT_NS, "span"),
+                new QName(PRESENTATION_NS, "notes"),
+                new TargetElement(XHTML, "div"));
+        MAPPINGS.put(
+                new QName(DRAW_NS, "object"),
+                new TargetElement(XHTML, "object"));
+        MAPPINGS.put(
+                new QName(DRAW_NS, "text-box"),
+                new TargetElement(XHTML, "div"));
+        MAPPINGS.put(
+                new QName(SVG_NS, "title"),
                 new TargetElement(XHTML, "span"));
         MAPPINGS.put(
+                new QName(SVG_NS, "desc"),
+                new TargetElement(XHTML, "span"));
+        MAPPINGS.put(
+                new QName(TEXT_NS, "span"),
+                new TargetElement(XHTML, "span"));
+        
+        final HashMap<QName,QName> aAttsMapping =
+            new HashMap<QName,QName>();
+        aAttsMapping.put(
+                new QName(XLINK_NS, "href"),
+                new QName("href"));
+        aAttsMapping.put(
+                new QName(XLINK_NS, "title"),
+                new QName("title"));
+        MAPPINGS.put(
                 new QName(TEXT_NS, "a"),
-                new TargetElement(XHTML, "a", Collections.singletonMap(
-                        new QName(XLINK_NS, "href"), new QName("href"))));
+                new TargetElement(XHTML, "a", aAttsMapping));
 
         // create HTML tables from table:-tags
         MAPPINGS.put(
@@ -186,6 +220,20 @@ public class OpenDocumentContentParser implements Parser {
                 }
             }
 
+            /**
+             * Check if a node is a text node
+             */
+            private boolean isTextNode(String namespaceURI, String localName) {
+                if (TEXT_NS.equals(namespaceURI)) {
+                    return true;
+                }
+                if (SVG_NS.equals(namespaceURI)) {
+                    return "title".equals(localName) ||
+                            "desc".equals(localName);
+                }
+                return false;
+            }
+
             @Override
             public void startElement(
                     String namespaceURI, String localName, String qName,
@@ -197,8 +245,8 @@ public class OpenDocumentContentParser implements Parser {
                 // the depth of the current node and also marks top of stack.
                 assert nodeDepth >= 0;
 
-                textNodeStack.set(nodeDepth++, TEXT_NS.equals(namespaceURI));
-
+                textNodeStack.set(nodeDepth++, 
+                        isTextNode(namespaceURI, localName));
                 // filter *all* content of some tags
                 assert completelyFiltered >= 0;
 
