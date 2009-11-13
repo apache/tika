@@ -366,12 +366,17 @@
   <mime-type type="application/qsig"/>
 
   <mime-type type="application/rdf+xml">
+    <root-XML localName="rdf:RDF"/>
+    <root-XML localName="RDF"
+              namespaceURI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <sub-class-of type="application/xml"/>
     <acronym>RDF/XML</acronym>
     <comment>XML syntax for RDF graphs</comment>
     <glob pattern="*.owl"/>
     <glob pattern="*.rdf"/>
-    <root-XML localName="RDF"
-              namespaceURI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
+    <glob pattern="*.owl"/>
+    <glob pattern="^rdf$" isregex="true"/>
+    <glob pattern="^owl$" isregex="true"/>
   </mime-type>
 
   <mime-type type="application/reginfo+xml">
@@ -3548,7 +3553,6 @@
       <match value="&lt;body" type="string" offset="0"/>
       <match value="&lt;TITLE" type="string" offset="0"/>
       <match value="&lt;title" type="string" offset="0"/>
-      <match value="&lt;!--" type="string" offset="0"/>
       <match value="&lt;h1" type="string" offset="0"/>
       <match value="&lt;H1" type="string" offset="0"/>
       <match value="&lt;!doctype HTML" type="string" offset="0"/>
