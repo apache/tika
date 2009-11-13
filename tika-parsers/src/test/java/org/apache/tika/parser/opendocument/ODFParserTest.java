@@ -24,6 +24,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
+import org.apache.tika.parser.odf.OpenDocumentParser;
+
 public class ODFParserTest extends TestCase {
 
     public void testXMLParser() throws Exception {
@@ -32,7 +34,7 @@ public class ODFParserTest extends TestCase {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OpenOfficeParser().parse(input, handler, metadata);
+            new OpenDocumentParser().parse(input, handler, metadata);
 
             assertEquals(
                     "application/vnd.oasis.opendocument.text",
@@ -42,7 +44,8 @@ public class ODFParserTest extends TestCase {
             assertTrue(content.contains("Tika is part of the Lucene project."));
             assertTrue(content.contains("Solr"));
             assertTrue(content.contains("one embedded"));
-        } finally {
+            assertTrue(content.contains("Rectangle Title"));
+            assertTrue(content.contains("a blue background and dark border"));        } finally {
             input.close();
         }
     }
