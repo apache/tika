@@ -23,12 +23,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Identify the language of a content, based on statistical analysis.
- * Text document language identifier.
- * <p>
- * Language profiles are based on material from
- * <a href="http://www.isi.edu/~koehn/europarl/">http://www.isi.edu/~koehn/europarl/</a>.
+ * Identifier of the language that best matches a given content profile.
+ * The content profile is compared to generic language profiles based on
+ * material from various sources.
  *
+ * @since Apache Tika 0.5
+ * @see <a href="http://www.iccs.inf.ed.ac.uk/~pkoehn/publications/europarl/">
+ *      Europarl: A Parallel Corpus for Statistical Machine Translation</a>
  * @see <a href="http://www.w3.org/WAI/ER/IG/ert/iso639.htm">
  *      ISO 639 Language Codes</a>
  */
@@ -110,7 +111,7 @@ public class LanguageIdentifier {
     }
 
     public LanguageIdentifier(String content) {
-        this(ProfilingWriter.profile(content));
+        this(new LanguageProfile(content));
     }
 
     public String getLanguage() {
