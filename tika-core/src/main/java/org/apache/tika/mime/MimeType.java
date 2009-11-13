@@ -255,7 +255,7 @@ public final class MimeType implements Comparable<MimeType> {
         RootXML xml = null;
         String content = new String(data);
         for (int i = 0; i < rootXML.size(); i++) {
-            xml = rootXML.get(i);
+            xml = rootXML.get(i);            
             if (xml.matches(content)) {
                 return true;
             }
@@ -340,7 +340,7 @@ public final class MimeType implements Comparable<MimeType> {
             }
             String regex = null;
             if (isEmpty(namespaceURI)) {
-                regex = ".*<" + localName + "[^<>]*>.*";
+                regex = ".*<" + localName + "[^<>]*.*";
             } else if (isEmpty(localName)) {
                 regex = ".*<[^<>]*\\p{Space}xmlns=[\"\']?" + namespaceURI
                         + "[\"\']?[^<>]*>.*";

@@ -5,6 +5,8 @@ Release 0.5 - Current Development
 ------------------------
 
 The most notable changes in Tika 0.5 over the previous release are:
+ * Improved RDF/OWL mime detection using both MIME magic as well as
+   pattern matching (TIKA-309)
 
  * An org.apache.tika.Tika facade class has been added to simplify common
    text extraction and type detection use cases. (TIKA-269)
