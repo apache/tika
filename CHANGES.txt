@@ -15,9 +15,7 @@ The most notable changes in Tika 0.5 over the previous release are:
    signature has been deprecated and will be removed in Tika 1.0. (TIKA-275)
 
  * A simple ngram-based language detection mechanism has been added along
-   with predefined language profiles for 18 languages. The AutoDetectParser
-   will automatically set the Metadata.LANGUAGE property if a reasonably
-   certain language profile match is detected. (TIKA-209)
+   with predefined language profiles for 18 languages. (TIKA-209)
 
  * The media type registry in Tika was synchronized with the MIME type
    configuration in the Apache HTTP Server. Tika now knows about 1274
