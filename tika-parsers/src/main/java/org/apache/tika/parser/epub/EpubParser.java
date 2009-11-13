@@ -18,14 +18,13 @@ package org.apache.tika.parser.epub;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.xml.sax.ContentHandler;
@@ -59,7 +58,7 @@ public class EpubParser implements Parser {
 
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         ZipInputStream zip = new ZipInputStream(stream);
         ZipEntry entry = zip.getNextEntry();
@@ -84,7 +83,6 @@ public class EpubParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 }

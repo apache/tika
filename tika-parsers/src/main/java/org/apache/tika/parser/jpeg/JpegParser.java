@@ -16,24 +16,23 @@
  */
 package org.apache.tika.parser.jpeg;
 
-import org.apache.tika.parser.Parser;
-import org.apache.tika.metadata.Metadata;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Iterator;
+
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.util.Map;
-import java.util.Collections;
-import java.util.Iterator;
-
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.metadata.Directory;
-import com.drew.metadata.Tag;
 import com.drew.metadata.MetadataException;
+import com.drew.metadata.Tag;
 
 public class JpegParser implements Parser {
     /**
@@ -42,13 +41,12 @@ public class JpegParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata jpegMetadata = JpegMetadataReader.readMetadata(stream);

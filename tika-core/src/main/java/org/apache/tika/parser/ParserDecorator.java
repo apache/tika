@@ -18,8 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -55,7 +53,7 @@ public class ParserDecorator implements Parser {
      */
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         parser.parse(stream, handler, metadata, context);
     }
@@ -66,8 +64,7 @@ public class ParserDecorator implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

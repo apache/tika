@@ -26,8 +26,6 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
@@ -43,6 +41,7 @@ import org.apache.log4j.WriterAppender;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -107,7 +106,7 @@ public class TikaCLI {
         }
     };
 
-    private Map<String, Object> context;
+    private ParseContext context;
 
     private Parser parser;
 
@@ -123,9 +122,9 @@ public class TikaCLI {
     private boolean pipeMode = true;
 
     public TikaCLI() throws TransformerConfigurationException {
-        context = new HashMap<String, Object>();
+        context = new ParseContext();
         parser = new AutoDetectParser();
-        context.put(Parser.class.getName(), parser);
+        context.set(Parser.class, parser);
     }
 
     public void process(String arg) throws Exception {

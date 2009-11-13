@@ -26,8 +26,6 @@ import java.io.PipedReader;
 import java.io.PipedWriter;
 import java.io.Reader;
 import java.io.Writer;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executor;
 
 import org.apache.tika.metadata.Metadata;
@@ -71,7 +69,10 @@ public class ParsingReader extends Reader {
      */
     private final Metadata metadata;
 
-    private final Map<String, Object> context;
+    /**
+     * The parse context.
+     */
+    private final ParseContext context;
 
     /**
      * An exception (if any) thrown by the parsing thread.
@@ -138,7 +139,7 @@ public class ParsingReader extends Reader {
      */
     public ParsingReader(
             Parser parser, InputStream stream, final Metadata metadata,
-            Map<String, Object> context) throws IOException {
+            ParseContext context) throws IOException {
         this(parser, stream, metadata, context, new Executor() {
             public void execute(Runnable command) {
                 String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
@@ -172,7 +173,7 @@ public class ParsingReader extends Reader {
      */
     public ParsingReader(
             Parser parser, InputStream stream, Metadata metadata,
-            Map<String, Object> context, Executor executor) throws IOException {
+            ParseContext context, Executor executor) throws IOException {
         this.parser = parser;
         PipedReader pipedReader = new PipedReader();
         this.reader = new BufferedReader(pipedReader);
@@ -199,8 +200,8 @@ public class ParsingReader extends Reader {
      */
     public ParsingReader(Parser parser, InputStream stream, Metadata metadata)
             throws IOException {
-        this(parser, stream, metadata, new HashMap<String, Object>());
-        context.put(Parser.class.getName(), parser);
+        this(parser, stream, metadata, new ParseContext());
+        context.set(Parser.class, parser);
     }
 
     /**
@@ -210,8 +211,8 @@ public class ParsingReader extends Reader {
     public ParsingReader(
             Parser parser, InputStream stream, Metadata metadata,
             Executor executor) throws IOException {
-        this(parser, stream, metadata, new HashMap<String, Object>(), executor);
-        context.put(Parser.class.getName(), parser);
+        this(parser, stream, metadata, new ParseContext(), executor);
+        context.set(Parser.class, parser);
     }
 
     /**

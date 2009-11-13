@@ -18,8 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -33,9 +31,14 @@ import org.xml.sax.SAXException;
  */
 public class ErrorParser implements Parser {
 
+    /**
+     * Singleton instance of this class.
+     */
+    public static final ErrorParser INSTANCE = new ErrorParser();
+
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws TikaException {
         throw new TikaException("Parse error");
     }
@@ -46,8 +49,7 @@ public class ErrorParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

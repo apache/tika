@@ -18,7 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -112,7 +111,7 @@ public class CompositeParser implements Parser {
      */
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata);
         TaggedInputStream taggedStream = new TaggedInputStream(stream);
@@ -139,8 +138,7 @@ public class CompositeParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

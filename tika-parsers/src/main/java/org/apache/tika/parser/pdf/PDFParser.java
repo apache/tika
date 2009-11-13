@@ -19,13 +19,12 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Map;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -49,7 +48,7 @@ public class PDFParser implements Parser {
 
     public void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Map<String, Object> context)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         PDDocument pdfDocument = PDDocument.load(stream);
         try {
@@ -79,8 +78,7 @@ public class PDFParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        Map<String, Object> context = Collections.emptyMap();
-        parse(stream, handler, metadata, context);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
     private void extractMetadata(PDDocument document, Metadata metadata)

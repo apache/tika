@@ -24,14 +24,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParsingReader;
 import org.apache.tika.sax.BodyContentHandler;
@@ -201,8 +200,8 @@ public class Tika {
      */
     public Reader parse(InputStream stream, Metadata metadata)
             throws IOException {
-        Map<String, Object> context = new HashMap<String, Object>();
-        context.put(Parser.class.getName(), parser);
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
         return new ParsingReader(parser, stream, metadata, context);
     }
 
@@ -255,8 +254,8 @@ public class Tika {
             throws IOException, TikaException {
         try {
             ContentHandler handler = new BodyContentHandler();
-            Map<String, Object> context = new HashMap<String, Object>();
-            context.put(Parser.class.getName(), parser);
+            ParseContext context = new ParseContext();
+            context.set(Parser.class, parser);
             parser.parse(stream, handler, metadata, context);
             return handler.toString();
         } catch (SAXException e) {
