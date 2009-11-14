@@ -372,7 +372,6 @@
     <sub-class-of type="application/xml"/>
     <acronym>RDF/XML</acronym>
     <comment>XML syntax for RDF graphs</comment>
-    <glob pattern="*.owl"/>
     <glob pattern="*.rdf"/>
     <glob pattern="*.owl"/>
     <glob pattern="^rdf$" isregex="true"/>
