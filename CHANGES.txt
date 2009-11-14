@@ -1,10 +1,11 @@
 Apache Tika Change Log
 ======================
  
-Release 0.5 - Current Development
+Release 0.5 - 11/14/2009
 ------------------------
 
 The most notable changes in Tika 0.5 over the previous release are:
+
  * Improved RDF/OWL mime detection using both MIME magic as well as
    pattern matching (TIKA-309)
 
@@ -27,6 +28,34 @@ The most notable changes in Tika 0.5 over the previous release are:
  * Tika now uses the Apache PDFBox version 0.8.0-incubating for parsing PDF
    documents. This version is notably better than the 0.7.3 release used
    earlier. (TIKA-158)
+
+The following people have contributed to Tika 0.5 by submitting or commenting
+on the issues resolved in this release:
+
+Alex Baranov
+Bart Hanssens
+Benson Margulies
+Chris A. Mattmann
+Daan de Wit
+Erik Hetzner
+Frank Hellwig
+Jeff Cadow
+Joachim Zittmayr
+Jukka Zitting 
+Julien Nioche
+Ken Krugler
+Maxim Valyanskiy
+MRIT64
+Paul Borgermans
+Piotr B.
+Robert Newson
+Sascha Szott
+Ted Dunning
+Thilo Goetz
+Uwe Schindler
+Yuan-Fang Li
+
+See http://tinyurl.com/yl9prwp for more details on these contributions.
 
 Release 0.4 - 07/14/2009
 ------------------------
