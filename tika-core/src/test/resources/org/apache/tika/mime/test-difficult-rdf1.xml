@@ -1,11 +1,5 @@
 <?xml version='1.0' encoding='ISO-8859-1'?>
 
-<!--
-  TIKA-309: Mime type application/rdf+xml not correctly detected
-  Simplified test case based on the OWL document at
-  http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl
--->
-
 <!DOCTYPE uridef[
   <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns">
   <!ENTITY shadow-rdf "http://www.daml.org/services/owl-s/1.2/generic/ObjectList.owl">
@@ -36,6 +30,10 @@
   xmlns=        "&DEFAULT;#"
   xml:base="&process;">
 
-  <!-- ... -->
+<!--
+  TIKA-309: Mime type application/rdf+xml not correctly detected
+  Simplified test case based on the OWL document at
+  http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl
+-->
 
 </rdf:RDF>
