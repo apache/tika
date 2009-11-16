@@ -18,7 +18,6 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -44,41 +43,21 @@ public class MagicDetector implements Detector {
 
     /**
      * The magic match pattern. If this byte pattern is equal to the
-     * possibly bit-masked bytes in the comparison window, then the type
+     * possibly bit-masked bytes from the input stream, then the type
      * detection succeeds and the configured {@link #type} is returned.
      */
     private final byte[] pattern;
 
     /**
-     * Bit mask that is applied to the source bytes in the comparison window
-     * before pattern matching. This mask may be <code>null</code>, in which
-     * case the source bytes are compared as-is against the configured pattern.
+     * Bit mask that is applied to the source bytes before pattern matching.
      */
     private final byte[] mask;
-
-    /**
-     * Byte buffer that contains the raw input bytes in the current comparison
-     * window. This buffer is first filled with the byte sequence starting at
-     * the beginning of the configured offset range. Then the buffer is moved
-     * forward one byte at a time until a match is found or the entire offset
-     * range has been covered.
-     */
-    private final byte[] sourceBuffer;
-
-    /**
-     * The comparison buffer that contains the result of combining the raw
-     * input bytes in the current comparison window with the configured
-     * {@link #mask bit mask}. If a bit mask is not configured, then this
-     * reference points to the {@link #sourceBuffer raw source buffer} to
-     * avoid extra logic or copying when doing the pattern match.
-     */
-    private final byte[] compareBuffer;
 
     /**
      * First offset (inclusive) of the comparison window within the
      * document input stream. Greater than or equal to zero.
      */
-    private final long offsetRangeBegin;
+    private final int offsetRangeBegin;
 
     /**
      * Last offset (inclusive) of the comparison window within the document
@@ -89,7 +68,7 @@ public class MagicDetector implements Detector {
      * the document stream. Instead, the last window of bytes to be compared
      * starts at this offset.
      */
-    private final long offsetRangeEnd;
+    private final int offsetRangeEnd;
 
     /**
      * Creates a detector for input documents that have the exact given byte
@@ -110,45 +89,51 @@ public class MagicDetector implements Detector {
      * @param pattern magic match pattern
      * @param offset offset of the pattern match
      */
-    public MagicDetector(MediaType type, byte[] pattern, long offset) {
+    public MagicDetector(MediaType type, byte[] pattern, int offset) {
         this(type, pattern, null, offset, offset);
     }
 
     /**
      * Creates a detector for input documents that meet the specified
      * magic match.
-     *
      */
     public MagicDetector(
             MediaType type, byte[] pattern, byte[] mask,
-            long offsetRangeBegin, long offsetRangeEnd) {
+            int offsetRangeBegin, int offsetRangeEnd) {
         if (type == null) {
             throw new IllegalArgumentException("Matching media type is null");
         } else if (pattern == null) {
             throw new IllegalArgumentException("Magic match pattern is null");
-        } else if (mask != null && mask.length != pattern.length) {
-            throw new IllegalArgumentException(
-                    "Different pattern and mask lengths: "
-                    + pattern.length + " != " + mask.length);
         } else if (offsetRangeBegin < 0
                 || offsetRangeEnd < offsetRangeBegin) {
             throw new IllegalArgumentException(
                     "Invalid offset range: ["
                     + offsetRangeBegin + "," + offsetRangeEnd + "]");
-        } else {
-            this.type = type;
-            this.length = pattern.length;
-            this.pattern = pattern;
-            this.mask = mask;
-            this.sourceBuffer = new byte[length];
-            if (mask != null) {
-                this.compareBuffer = new byte[length];
-            } else {
-                this.compareBuffer = this.sourceBuffer;
-            }
-            this.offsetRangeBegin = offsetRangeBegin;
-            this.offsetRangeEnd = offsetRangeEnd;
         }
+
+        this.type = type;
+
+        this.length = Math.max(pattern.length, mask != null ? mask.length : 0);
+
+        this.mask = new byte[length];
+        this.pattern = new byte[length];
+
+        for (int i = 0; i < length; i++) {
+            if (mask != null && i < mask.length) {
+                this.mask[i] = mask[i];
+            } else {
+                this.mask[i] = -1;
+            }
+
+            if (i < pattern.length) {
+                this.pattern[i] = (byte) (pattern[i] & this.mask[i]);
+            } else {
+                this.pattern[i] = 0;
+            }
+        }
+
+        this.offsetRangeBegin = offsetRangeBegin;
+        this.offsetRangeEnd = offsetRangeEnd;
     }
 
     /**
@@ -162,9 +147,9 @@ public class MagicDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
-        input.mark(length);
+        input.mark(offsetRangeEnd + length);
         try {
-            long offset = 0;
+            int offset = 0;
 
             // Skip bytes at the beginning, using skip() or read()
             while (offset < offsetRangeBegin) {
@@ -179,42 +164,33 @@ public class MagicDetector implements Detector {
             }
 
             // Fill in the comparison window
-            while (offset < offsetRangeBegin + sourceBuffer.length) {
-                int i = (int) (offset - offsetRangeBegin);
-                int n = input.read(sourceBuffer, i, sourceBuffer.length - i);
-                if (n == -1) {
-                    return MediaType.OCTET_STREAM;
-                }
+            byte[] buffer =
+                new byte[length + (offsetRangeEnd - offsetRangeBegin)];
+            int n = input.read(buffer);
+            if (n > 0) {
                 offset += n;
+            }
+            while (n != -1 && offset < offsetRangeEnd + length) {
+                int bufferOffset = offset - offsetRangeBegin;
+                n = input.read(
+                        buffer, bufferOffset, buffer.length - bufferOffset);
+            }
+            if (offset < offsetRangeBegin + length) {
+                return MediaType.OCTET_STREAM;
             }
 
             // Loop until we've covered the entire offset range
-            while (true) {
-                // Apply the mask, if any
-                if (mask != null) {
-                    for (int i = 0; i < length; i++) {
-                        compareBuffer[i] = (byte) (sourceBuffer[i] & mask[i]);
-                    }
+            for (int i = 0; i <= offsetRangeEnd - offsetRangeBegin; i++) {
+                boolean match = true;
+                for (int j = 0; match && j < length; j++) {
+                    match = (buffer[i + j] & mask[j]) == pattern[j];
                 }
-
-                if (Arrays.equals(pattern, compareBuffer)) {
-                    // We have a match, so return the matching media type
+                if (match) {
                     return type;
-                } else if (offset < offsetRangeEnd + sourceBuffer.length) {
-                    // No match, move the comparison window forward
-                    int c = input.read();
-                    if (c == -1) {
-                        return MediaType.OCTET_STREAM;
-                    }
-                    System.arraycopy(
-                            sourceBuffer, 1, sourceBuffer, 0, length - 1);
-                    sourceBuffer[length - 1] = (byte) c;
-                    offset += 1;
-                } else {
-                    // We have reached the end of the offset range, no match
-                    return MediaType.OCTET_STREAM;
                 }
             }
+
+            return MediaType.OCTET_STREAM;
         } finally {
             input.reset();
         }
