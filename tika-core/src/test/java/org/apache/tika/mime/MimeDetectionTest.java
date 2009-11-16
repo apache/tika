@@ -18,7 +18,6 @@ package org.apache.tika.mime;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 
 import junit.framework.TestCase;
 
@@ -48,8 +47,14 @@ public class MimeDetectionTest extends TestCase {
         testFile("application/xml", "test-utf16be.xml");
         testFile("application/xml", "test-long-comment.xml");
         testFile("application/xslt+xml", "stylesheet.xsl");
-        testUrl("application/rdf+xml", new URL("http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl"));
-        testUrl("application/rdf+xml", new URL("http://www.w3.org/2002/07/owl#"));
+        testUrl(
+                "application/rdf+xml",
+                "http://www.ai.sri.com/daml/services/owl-s/1.2/Process.owl",
+                "test-difficult-rdf1.xml");
+        testUrl(
+                "application/rdf+xml",
+                "http://www.w3.org/2002/07/owl#",
+                "test-difficult-rdf2.xml");
     }
     
     public void testAutosetSupertype() throws MimeTypeException {
@@ -60,10 +65,10 @@ public class MimeDetectionTest extends TestCase {
     	type = types.forName("text/something");
     	assertEquals("text/plain", type.getSuperType().getName());
     }
-    
-    private void testUrl(String expected, URL url) throws IOException{
-        InputStream in = url.openStream();
-        testStream(expected, url.toString(), in);        
+
+    private void testUrl(String expected, String url, String file) throws IOException{
+        InputStream in = getClass().getResourceAsStream(file);
+        testStream(expected, url, in);
     }
 
     private void testFile(String expected, String filename) throws IOException {
