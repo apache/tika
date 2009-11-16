@@ -215,14 +215,6 @@ public final class MimeTypes implements Detector {
             throw new IllegalArgumentException("Data is missing");
         }
 
-        // First, check for XML descriptions (level by level)
-        // Problem: Regexp matching doesn't work for all XML encodings
-        for (MimeType type : xmls) {
-            if (type.matchesXML(data)) {
-                return type;
-            }
-        }
-
         // Then, check for magic bytes
         MimeType result = null;
         for (Magic magic : magics) {
@@ -232,8 +224,10 @@ public final class MimeTypes implements Detector {
             }
         }
         if (result != null) {
-            // When detecting generic XML, parse XML to determine the root element
-            if ("application/xml".equals(result.getName())) {
+            // When detecting generic XML (or possibly XHTML),
+            // extract the root element and match it against known types
+            if ("application/xml".equals(result.getName())
+                    || "text/html".equals(result.getName())) {
                 QName rootElement = xmlRootExtractor.extractRootElement(data);
                 if (rootElement != null) {
                     for (MimeType type : xmls) {
@@ -487,8 +481,9 @@ public final class MimeTypes implements Detector {
      * @see #getMimeType(String, byte[])
      */
     public int getMinLength() {
-        return 1024;
-        // return minLength;
+        // This needs to be reasonably large to be able to correctly detect
+        // things like XML root elements after initial comment and DTDs
+        return 4 * 1024;
     }
 
     /**

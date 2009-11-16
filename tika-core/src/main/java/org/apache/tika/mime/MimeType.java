@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.regex.Pattern;
 
 /**
  * Internet media type.
@@ -251,18 +250,6 @@ public final class MimeType implements Comparable<MimeType> {
         rootXML.add(new RootXML(this, namespaceURI, localName));
     }
 
-    boolean matchesXML(byte[] data) {
-        RootXML xml = null;
-        String content = new String(data);
-        for (int i = 0; i < rootXML.size(); i++) {
-            xml = rootXML.get(i);            
-            if (xml.matches(content)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     boolean matchesXML(String namespaceURI, String localName) {
         for (RootXML xml : rootXML) {
             if (xml.matches(namespaceURI, localName)) {
@@ -310,7 +297,7 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     public boolean matches(byte[] data) {
-        return matchesXML(data) || matchesMagic(data);
+        return matchesMagic(data);
     }
 
     /**
@@ -319,44 +306,20 @@ public final class MimeType implements Comparable<MimeType> {
      */
     class RootXML {
 
-        private final static int PATTERN_FLAGS = Pattern.CASE_INSENSITIVE
-                | Pattern.DOTALL | Pattern.MULTILINE;
-
         private MimeType type = null;
 
         private String namespaceURI = null;
 
         private String localName = null;
 
-        private Pattern pattern = null;
-
         RootXML(MimeType type, String namespaceURI, String localName) {
+            if (isEmpty(namespaceURI) && isEmpty(localName)) {
+                throw new IllegalArgumentException(
+                        "Both namespaceURI and localName cannot be empty");
+            }
             this.type = type;
             this.namespaceURI = namespaceURI;
             this.localName = localName;
-            if (isEmpty(namespaceURI) && isEmpty(localName)) {
-                throw new IllegalArgumentException(
-                        "Both namespaceURI and localName cannot be null");
-            }
-            String regex = null;
-            if (isEmpty(namespaceURI)) {
-                regex = ".*<" + localName + "[^<>]*.*";
-            } else if (isEmpty(localName)) {
-                regex = ".*<[^<>]*\\p{Space}xmlns=[\"\']?" + namespaceURI
-                        + "[\"\']?[^<>]*>.*";
-            } else {
-                regex = ".*<" + localName + "[^<>]*\\p{Space}xmlns=[\"\']?"
-                        + namespaceURI + "[\"\']?[^<>]*>.*";
-            }
-            this.pattern = Pattern.compile(regex, PATTERN_FLAGS);
-        }
-
-        boolean matches(byte[] data) {
-            return matches(new String(data));
-        }
-
-        boolean matches(String data) {
-            return pattern.matcher(data).matches();
         }
 
         boolean matches(String namespaceURI, String localName) {
@@ -396,9 +359,7 @@ public final class MimeType implements Comparable<MimeType> {
         }
 
         public String toString() {
-            return new StringBuffer().append(type.getName()).append(", ")
-                    .append(namespaceURI).append(", ").append(localName)
-                    .toString();
+            return type + ", " + namespaceURI + ", " + localName;
         }
     }
 
