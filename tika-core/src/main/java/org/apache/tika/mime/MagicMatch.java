@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,43 +16,56 @@
  */
 package org.apache.tika.mime;
 
-// JDK imports
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.math.BigInteger;
+import java.io.IOException;
+import java.util.Arrays;
+
+import org.apache.tika.detect.MagicDetector;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Defines a magic match.
- * 
- * 
  */
 class MagicMatch implements Clause {
 
-    private int offsetStart;
+    private static final MediaType MATCH =
+        new MediaType("x-tika", "magic-match");
 
-    private int offsetEnd;
+    private final int length;
 
-    private String type;
-
-    private BigInteger mask;
-
-    private BigInteger value;
-
-    private int length;
+    private final MagicDetector detector;
 
     MagicMatch(int offsetStart, int offsetEnd, String type, String mask,
             String value) throws MimeTypeException {
 
-        this.offsetStart = offsetStart;
-        this.offsetEnd = offsetEnd;
-        this.type = type;
-
-        byte[] decoded = decodeValue(type, value);
-        this.length = decoded.length;
-        this.value = new BigInteger(decoded);
+        byte[] patternBytes = decodeValue(type, value);
+        byte[] maskBytes;
         if (mask != null) {
-            this.mask = new BigInteger(decodeValue(type, mask));
-            this.value = this.value.and(this.mask);
+            maskBytes = decodeValue(type, mask);
+        } else {
+            maskBytes = new byte[patternBytes.length];
+            Arrays.fill(maskBytes, (byte) 0xff);
         }
+        this.length = Math.max(patternBytes.length, maskBytes.length);
+
+        if (patternBytes.length < length) {
+            byte[] buffer = new byte[length];
+            System.arraycopy(patternBytes, 0, buffer, 0, patternBytes.length);
+            patternBytes = buffer;
+        } else if (maskBytes.length < length) {
+            byte[] buffer = new byte[length];
+            Arrays.fill(buffer, (byte) 0xff);
+            System.arraycopy(maskBytes, 0, buffer, 0, maskBytes.length);
+            maskBytes = buffer;
+        }
+
+        for (int i = 0; i < length; i++) {
+            patternBytes[i] &= maskBytes[i];
+        }
+
+        this.detector = new MagicDetector(
+                MATCH, patternBytes, maskBytes, offsetStart, offsetEnd);
     }
 
     private byte[] decodeValue(String type, String value)
@@ -148,23 +161,13 @@ class MagicMatch implements Clause {
     }
 
     public boolean eval(byte[] data) {
-        for (int i = offsetStart; i <= offsetEnd; i++) {
-            if (data.length < (this.length + i)) {
-                // Not enough data...
-                return false;
-            }
-            byte[] array = new byte[this.length];
-            System.arraycopy(data, i, array, 0, this.length);
-            BigInteger content = new BigInteger(array);
-            // System.out.println("Evaluating " + content);
-            if (mask != null) {
-                content = content.and(mask);
-            }
-            if (value.equals(content)) {
-                return true;
-            }
+        try {
+            return detector.detect(
+                    new ByteArrayInputStream(data), new Metadata()) == MATCH;
+        } catch (IOException e) {
+            // Should never happen with a ByteArrayInputStream
+            return false;
         }
-        return false;
     }
 
     public int size() {
@@ -172,8 +175,7 @@ class MagicMatch implements Clause {
     }
 
     public String toString() {
-        return "[" + offsetStart + ":" + offsetEnd
-            + "(" + type + ")-" + mask + "#" + value + "]";
+        return detector.toString();
     }
 
 }
