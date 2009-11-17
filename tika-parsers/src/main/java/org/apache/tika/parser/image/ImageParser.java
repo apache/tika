@@ -20,6 +20,7 @@ package org.apache.tika.parser.image;
 import java.io.InputStream;
 import java.util.Iterator;
 
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 
@@ -40,15 +41,19 @@ public class ImageParser implements Parser {
             throws IOException, SAXException, TikaException {
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type != null) {
-            Iterator<ImageReader> iterator =
-                ImageIO.getImageReadersByMIMEType(type);
-            if (iterator.hasNext()) {
-                ImageReader reader = iterator.next();
-                reader.setInput(ImageIO.createImageInputStream(
-                        new CloseShieldInputStream(stream)));
-                metadata.set("height", Integer.toString(reader.getHeight(0)));
-                metadata.set("width", Integer.toString(reader.getWidth(0)));
-                reader.dispose();
+            try {
+                Iterator<ImageReader> iterator =
+                    ImageIO.getImageReadersByMIMEType(type);
+                if (iterator.hasNext()) {
+                    ImageReader reader = iterator.next();
+                    reader.setInput(ImageIO.createImageInputStream(
+                            new CloseShieldInputStream(stream)));
+                    metadata.set("height", Integer.toString(reader.getHeight(0)));
+                    metadata.set("width", Integer.toString(reader.getWidth(0)));
+                    reader.dispose();
+                }
+            } catch (IIOException e) {
+                throw new TikaException(type + " parse error", e);
             }
         }
 
