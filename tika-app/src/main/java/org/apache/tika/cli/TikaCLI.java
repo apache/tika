@@ -228,6 +228,10 @@ public class TikaCLI {
             throws UnsupportedEncodingException {
         if (encoding != null) {
             return new OutputStreamWriter(System.out, encoding);
+        } else if (System.getProperty("os.name")
+                .toLowerCase().startsWith("mac os x")) {
+            // TIKA-324: Override the default encoding on Mac OS X
+            return new OutputStreamWriter(System.out, "UTF-8");
         } else {
             return new OutputStreamWriter(System.out);
         }
