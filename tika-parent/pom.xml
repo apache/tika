@@ -39,6 +39,7 @@
     structured text content from various documents using existing parser
     libraries.
   </description>
+  <inceptionYear>2007</inceptionYear>
 
   <url>http://lucene.apache.org/tika/</url>
 
