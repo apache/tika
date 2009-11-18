@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,7 +16,7 @@
  */
 package org.apache.tika.mime;
 
-// DOM imports
+import org.apache.tika.detect.MagicDetector;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Node;
 import org.w3c.dom.Element;
@@ -26,7 +26,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-// JDK imports
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.xml.parsers.DocumentBuilder;
@@ -208,17 +208,25 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
 
     /** Read Element named match. */
     private MagicMatch readMatch(Element element) throws MimeTypeException {
-
-        String offset = null;
+        String type = "string";
+        int start = 0;
+        int end = 0;
         String value = null;
         String mask = null;
-        String type = null;
 
         NamedNodeMap attrs = element.getAttributes();
         for (int i = 0; i < attrs.getLength(); i++) {
             Attr attr = (Attr) attrs.item(i);
             if (attr.getName().equals(MATCH_OFFSET_ATTR)) {
-                offset = attr.getValue();
+                String offset = attr.getValue();
+                int colon = offset.indexOf(':');
+                if (colon == -1) {
+                    start = Integer.parseInt(offset);
+                    end = start;
+                } else {
+                    start = Integer.parseInt(offset.substring(0, colon));
+                    end = Integer.parseInt(offset.substring(colon + 1));
+                }
             } else if (attr.getName().equals(MATCH_TYPE_ATTR)) {
                 type = attr.getValue();
             } else if (attr.getName().equals(MATCH_VALUE_ATTR)) {
@@ -228,22 +236,116 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
             }
         }
 
-        // Parse OffSet
-        int offStart = 0;
-        int offEnd = 0;
-        if (offset != null) {
-            int colon = offset.indexOf(':');
-            if (colon == -1) {
-                offStart = Integer.parseInt(offset);
-                offEnd = offStart;
-            } else {
-                offStart = Integer.parseInt(offset.substring(0, colon));
-                offEnd = Integer.parseInt(offset.substring(colon + 1));
-                offEnd = Math.max(offStart, offEnd);
-            }
+        if (value == null) {
+            throw new MimeTypeException("Missing magic byte pattern");
+        } else if (start < 0 || end < start) {
+            throw new MimeTypeException(
+                    "Invalid offset range: [" + start + "," + end + "]");
         }
 
-        return new MagicMatch(offStart, offEnd, type, mask, value);
+        byte[] patternBytes = decodeValue(type, value);
+        int length = patternBytes.length;
+        byte[] maskBytes = null;
+        if (mask != null) {
+            maskBytes = decodeValue(type, mask);
+            length = Math.max(patternBytes.length, maskBytes.length);
+        }
+
+        MagicDetector detector = new MagicDetector(
+                MediaType.TEXT_PLAIN, patternBytes, maskBytes, start, end);
+        return new MagicMatch(detector, length);
+    }
+
+    private byte[] decodeValue(String type, String value)
+            throws MimeTypeException {
+        // Preliminary check
+        if ((value == null) || (type == null)) {
+            return null;
+        }
+
+        byte[] decoded = null;
+        String tmpVal = null;
+        int radix = 8;
+
+        // hex
+        if (value.startsWith("0x")) {
+            tmpVal = value.substring(2);
+            radix = 16;
+        } else {
+            tmpVal = value;
+            radix = 8;
+        }
+
+        if (type.equals("string")) {
+            decoded = decodeString(value);
+
+        } else if (type.equals("byte")) {
+            decoded = tmpVal.getBytes();
+
+        } else if (type.equals("host16") || type.equals("little16")) {
+            int i = Integer.parseInt(tmpVal, radix);
+            decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
+
+        } else if (type.equals("big16")) {
+            int i = Integer.parseInt(tmpVal, radix);
+            decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
+
+        } else if (type.equals("host32") || type.equals("little32")) {
+            long i = Long.parseLong(tmpVal, radix);
+            decoded = new byte[] { (byte) ((i & 0x000000FF)),
+                    (byte) ((i & 0x0000FF00) >> 8),
+                    (byte) ((i & 0x00FF0000) >> 16),
+                    (byte) ((i & 0xFF000000) >> 24) };
+
+        } else if (type.equals("big32")) {
+            long i = Long.parseLong(tmpVal, radix);
+            decoded = new byte[] { (byte) ((i & 0xFF000000) >> 24),
+                    (byte) ((i & 0x00FF0000) >> 16),
+                    (byte) ((i & 0x0000FF00) >> 8), (byte) ((i & 0x000000FF)) };
+        }
+        return decoded;
+    }
+
+    private byte[] decodeString(String value) throws MimeTypeException {
+        if (value.startsWith("0x")) {
+            byte[] bytes = new byte[(value.length() - 2) / 2];
+            for (int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte)
+                Integer.parseInt(value.substring(2 + i * 2, 4 + i * 2), 16);
+            }
+            return bytes;
+        }
+
+        try {
+            ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+
+            for (int i = 0; i < value.length(); i++) {
+                if (value.charAt(i) == '\\') {
+                    if (value.charAt(i + 1) == '\\') {
+                        decoded.write('\\');
+                        i++;
+                    } else if (value.charAt(i + 1) == 'x') {
+                        decoded.write(Integer.parseInt(
+                                value.substring(i + 2, i + 4), 16));
+                        i += 3;
+                    } else {
+                        int j = i + 1;
+                        while ((j < i + 4) && (j < value.length())
+                                && (Character.isDigit(value.charAt(j)))) {
+                            j++;
+                        }
+                        decoded.write(Short.decode(
+                                "0" + value.substring(i + 1, j)).byteValue());
+                        i = j - 1;
+                    }
+                } else {
+                    decoded.write(value.charAt(i));
+                }
+            }
+            return decoded.toByteArray();
+        } catch (NumberFormatException e) {
+            throw new MimeTypeException("Invalid string value: " + value, e);
+        }
     }
 
     /** Read Element named root-XML. */
