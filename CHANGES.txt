@@ -1,6 +1,10 @@
 Apache Tika Change Log
 ======================
- 
+Release 0.6 (Current Development)
+---------------------------------
+
+
+
 Release 0.5 - 11/14/2009
 ------------------------
 
