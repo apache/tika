@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,37 +16,35 @@
  */
 package org.apache.tika.mime;
 
-/**
- * Defines a MagicClause.
- * 
- */
-class MagicClause implements Clause {
+import java.util.List;
 
-    private Operator op = null;
+class OrClause implements Clause {
 
-    private Clause c1 = null;
+    private final List<Clause> clauses;
 
-    private Clause c2 = null;
-
-    private int size = 0;
-
-    MagicClause(Operator op, Clause c1, Clause c2) {
-        this.op = op;
-        this.c1 = c1;
-        this.c2 = c2;
-        this.size = c1.size() + c2.size();
+    OrClause(List<Clause> clauses) {
+        this.clauses = clauses;
     }
 
     public boolean eval(byte[] data) {
-        return op.eval(c1.eval(data), c2.eval(data));
+        for (Clause clause : clauses) {
+            if (clause.eval(data)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public int size() {
+        int size = 0;
+        for (Clause clause : clauses) {
+            size = Math.max(size, clause.size());
+        }
         return size;
     }
 
     public String toString() {
-        return new StringBuffer().append("(").append(c1).append(" ").append(op)
-                .append(" ").append(c2).append(")").toString();
+        return "or" + clauses;
     }
+
 }

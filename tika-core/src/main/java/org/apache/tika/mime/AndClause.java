@@ -16,20 +16,35 @@
  */
 package org.apache.tika.mime;
 
-/**
- * Defines a clause to be evaluated.
- */
-interface Clause {
+import java.util.Arrays;
 
-    /**
-     * Evaluates this clause with the specified chunk of data.
-     */
-    boolean eval(byte[] data);
+class AndClause implements Clause {
 
-    /**
-     * Returns the size of this clause. The size of a clause is the number of
-     * chars it is composed of.
-     */
-    int size();
+    private final Clause[] clauses;
+
+    AndClause(Clause... clauses) {
+        this.clauses = clauses;
+    }
+
+    public boolean eval(byte[] data) {
+        for (Clause clause : clauses) {
+            if (!clause.eval(data)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public int size() {
+        int size = 0;
+        for (Clause clause : clauses) {
+            size += clause.size();
+        }
+        return size;
+    }
+
+    public String toString() {
+        return "and" + Arrays.toString(clauses);
+    }
 
 }

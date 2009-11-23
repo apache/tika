@@ -29,6 +29,9 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -172,42 +175,37 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
      */
     private void readMagic(Element element, MimeType mimeType)
             throws MimeTypeException {
-        Magic magic = new Magic(mimeType);
-
-        String priority = element.getAttribute(MAGIC_PRIORITY_ATTR);
-        if (priority != null && priority.length() > 0) {
-            magic.setPriority(Integer.parseInt(priority));
+        int priority = 50;
+        String value = element.getAttribute(MAGIC_PRIORITY_ATTR);
+        if (value != null && value.length() > 0) {
+            priority = Integer.parseInt(value);
         }
 
-        magic.setClause(readMatches(element));
-
-        mimeType.addMagic(magic);
+        for (Clause clause : readMatches(element)) {
+            Magic magic = new Magic(mimeType);
+            magic.setPriority(priority);
+            magic.setClause(clause);
+            mimeType.addMagic(magic);
+        }
     }
 
-    private Clause readMatches(Element element) throws MimeTypeException {
-        Clause prev = Clause.FALSE;
-        Clause clause = null;
+    private List<Clause> readMatches(Element element) throws MimeTypeException {
+        List<Clause> clauses = new ArrayList<Clause>();
         NodeList nodes = element.getChildNodes();
         for (int i = 0; i < nodes.getLength(); i++) {
             Node node = nodes.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element nodeElement = (Element) node;
                 if (nodeElement.getTagName().equals(MATCH_TAG)) {
-                    clause = readMatch(nodeElement);
-                    Clause sub = readMatches(nodeElement);
-                    if (sub != null) {
-                        clause = new MagicClause(Operator.AND, clause, sub);
-                    }
-                    clause = new MagicClause(Operator.OR, prev, clause);
-                    prev = clause;
+                    clauses.add(readMatch(nodeElement));
                 }
             }
         }
-        return clause;
+        return clauses;
     }
 
     /** Read Element named match. */
-    private MagicMatch readMatch(Element element) throws MimeTypeException {
+    private Clause readMatch(Element element) throws MimeTypeException {
         String type = "string";
         int start = 0;
         int end = 0;
@@ -253,7 +251,16 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
 
         MagicDetector detector = new MagicDetector(
                 MediaType.TEXT_PLAIN, patternBytes, maskBytes, start, end);
-        return new MagicMatch(detector, length);
+        Clause clause = new MagicMatch(detector, length);
+
+        List<Clause> subClauses = readMatches(element);
+        if (subClauses.size() == 0) {
+            return clause;
+        } else if (subClauses.size() == 1) {
+            return new AndClause(clause, subClauses.get(0));
+        } else {
+            return new AndClause(clause, new OrClause(subClauses));
+        }
     }
 
     private byte[] decodeValue(String type, String value)
