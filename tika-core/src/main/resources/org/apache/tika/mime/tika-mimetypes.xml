@@ -2337,7 +2337,11 @@
 
   <mime-type type="application/x-hwp">
     <magic priority="50">
-      <match value="R\0o\0o\0t\0" type="string" offset="512"/>
+      <!--
+        TIKA-330: Detection pattern based on signature strings from
+        the hwpfilter/source/hwpfile.cpp file in OpenOffice.org.
+      -->
+      <match value="HWP Document File V" type="string" offset="0"/>
     </magic>
   </mime-type>
 
