@@ -18,8 +18,6 @@ package org.apache.tika.mime;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Iterator;
 
 import junit.framework.TestCase;
 
@@ -69,24 +67,6 @@ public class MimeTypesTest extends TestCase {
         assertEquals(binary, text.getSuperType());
         assertEquals(text, html.getSuperType());
    }
-
-    public void testSubTypes() {
-        assertEquals(2, binary.getSubTypes().size());
-        Iterator<MimeType> iter = binary.getSubTypes().iterator();
-        String[] typeNames = new String[2];
-        typeNames[0] = iter.next().getName();
-        typeNames[1] = iter.next().getName();
-        Arrays.sort(typeNames);
-        assertEquals("application/xml", typeNames[0]);
-        assertEquals("text/plain", typeNames[1]);
-
-        assertEquals(1, text.getSubTypes().size());
-        assertEquals(
-                "text/html",
-                text.getSubTypes().iterator().next().getName());
-        
-        assertEquals(0, html.getSubTypes().size());
-    }
 
     public void testIsDescendantOf() {
         assertFalse(binary.isDescendantOf(binary));
