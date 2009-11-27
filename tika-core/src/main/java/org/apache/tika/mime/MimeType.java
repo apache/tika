@@ -16,11 +16,7 @@
  */
 package org.apache.tika.mime;
 
-// JDK imports
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * Internet media type.
@@ -86,18 +82,8 @@ public final class MimeType implements Comparable<MimeType> {
      */
     private MimeType superType = null;
 
-    /**
-     * The child types of this media type.
-     */
-    private final SortedSet<MimeType> subTypes = new TreeSet<MimeType>();
-
     /** The magics associated to this Mime-Type */
     private final ArrayList<Magic> magics = new ArrayList<Magic>();
-
-    /**
-     * Lower case alias names of this media type.
-     */
-    private final SortedSet<String> aliases = new TreeSet<String>();
 
     /** The root-XML associated to this Mime-Type */
     private final ArrayList<RootXML> rootXML = new ArrayList<RootXML>();
@@ -161,19 +147,12 @@ public final class MimeType implements Comparable<MimeType> {
                     "Media type can not inherit its descendant: " + type);
         } else if (superType == null) {
             superType = type;
-            superType.subTypes.add(this);
         } else if (type.isDescendantOf(superType)) {
-            superType.subTypes.remove(this);
             superType = type;
-            superType.subTypes.add(this);
         } else {
             throw new MimeTypeException(
                     "Conflicting media type inheritance: " + type);
         }
-    }
-
-    public SortedSet<MimeType> getSubTypes() {
-        return Collections.unmodifiableSortedSet(subTypes);
     }
 
     public boolean isDescendantOf(MimeType type) {
@@ -212,16 +191,6 @@ public final class MimeType implements Comparable<MimeType> {
     }
 
     /**
-     * Returns the aliases of this media type. The returned set is
-     * an immutable view of the set.
-     *
-     * @return media type aliases, unmodifiable, not null
-     */
-    public SortedSet<String> getAliases() {
-        return Collections.unmodifiableSortedSet(aliases);
-    }
-
-    /**
      * Adds an alias name for this media type.
      *
      * @param alias media type alias (case insensitive)
@@ -231,9 +200,8 @@ public final class MimeType implements Comparable<MimeType> {
     public void addAlias(String alias) throws MimeTypeException {
         if (isValid(alias)) {
             alias = alias.toLowerCase();
-            if (!name.equals(alias) && !aliases.contains(alias)) {
+            if (!name.equals(alias)) {
                 registry.addAlias(this, alias);
-                aliases.add(alias);
             }
         } else {
             throw new MimeTypeException("Invalid media type alias: " + alias);
