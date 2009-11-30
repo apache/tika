@@ -33,6 +33,7 @@ import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 
 /**
  * Parser for EPUB OPS <code>*.html</code> files.
@@ -52,7 +53,14 @@ public class EpubContentParser implements Parser {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setValidating(false);
             factory.setNamespaceAware(true);
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            try {
+                factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            } catch (SAXNotRecognizedException e) {
+                // TIKA-329: Some XML parsers do not support the secure-processing
+                // feature, even though it's required by JAXP in Java 5. Ignoring
+                // the exception is fine here, deployments without this feature
+                // are inherently vulnerable to XML denial-of-service attacks.
+            }
             SAXParser parser = factory.newSAXParser();
             parser.parse(
                     new CloseShieldInputStream(stream),
