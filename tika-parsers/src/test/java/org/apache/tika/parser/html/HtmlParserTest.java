@@ -219,4 +219,17 @@ public class HtmlParserTest extends TestCase {
         assertFalse(content.contains("ab"));
     }
 
+    /**
+     * Test case for TIKA-334
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-334">TIKA-334</a>
+     */
+    public void testDetectOfCharset() throws Exception {
+        String test = "<html><title>\u017d</title><body></body></html>";
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        assertEquals("\u017d", metadata.get(Metadata.TITLE));
+    }
+
 }

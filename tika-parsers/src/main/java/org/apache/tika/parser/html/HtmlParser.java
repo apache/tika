@@ -25,30 +25,78 @@ import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.txt.CharsetDetector;
+import org.apache.tika.parser.txt.CharsetMatch;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 /**
- * HTML parser. Uses CyberNeko to turn the input document to HTML SAX events,
+ * HTML parser. Uses TagSoup to turn the input document to HTML SAX events,
  * and post-processes the events to produce XHTML and metadata expected by
  * Tika clients.
  */
 public class HtmlParser implements Parser {
 
+    // Use the widest, most common charset as our default.
+    private static final String DEFAULT_CHARSET = "windows-1252";
+
+    // TODO: Move this into core, along with CharsetDetector
+    private String getEncoding(InputStream stream, Metadata metadata) throws IOException {
+        // TODO: Check for <meta tag in stream. If that exists and is supported, then
+        // set that in metadata and return.
+
+        CharsetDetector detector = new CharsetDetector();
+        String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
+        if (incomingCharset == null) {
+            // TODO: check for charset in metadata's content_type
+        }
+
+        if (incomingCharset != null) {
+            detector.setDeclaredEncoding(incomingCharset);
+        }
+
+        detector.setText(stream);
+        for (CharsetMatch match : detector.detectAll()) {
+            if (Charset.isSupported(match.getName())) {
+                metadata.set(Metadata.CONTENT_ENCODING, match.getName());
+
+                // Is the encoding language-specific (KOI8-R, SJIS, etc.)?
+                String language = match.getLanguage();
+                if (language != null) {
+                    metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
+                    metadata.set(Metadata.LANGUAGE, match.getLanguage());
+                }
+
+                break;
+            }
+        }
+
+        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
+        if (encoding == null) {
+            if (Charset.isSupported(DEFAULT_CHARSET)) {
+                encoding = DEFAULT_CHARSET;
+            } else {
+                encoding = Charset.defaultCharset().name();
+            }
+            
+            metadata.set(Metadata.CONTENT_ENCODING, encoding);
+        }
+
+        return encoding;
+    }
+
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    throws IOException, SAXException, TikaException {
         // Protect the stream from being closed by CyberNeko
+        // TODO: Is this still needed, given our use of TagSoup?
         stream = new CloseShieldInputStream(stream);
 
         // Prepare the input source using the encoding hint if available
         InputSource source = new InputSource(stream); 
-        String encoding = metadata.get(Metadata.CONTENT_ENCODING); 
-        if (encoding != null && Charset.isSupported(encoding)) { 
-            source.setEncoding(encoding);
-        }
+        source.setEncoding(getEncoding(stream, metadata));
 
         // Parse the HTML document
         org.ccil.cowan.tagsoup.Parser parser =
@@ -63,7 +111,7 @@ public class HtmlParser implements Parser {
      */
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
+    throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }
 
