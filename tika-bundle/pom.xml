@@ -29,7 +29,7 @@
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
-  <artifactId>tika-full</artifactId>
+  <artifactId>tika-bundle</artifactId>
   <packaging>bundle</packaging>
   <name>Apache Tika OSGi bundle</name>
   <url>http://lucene.apache.org/tika/</url>
