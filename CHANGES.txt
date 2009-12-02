@@ -1,9 +1,14 @@
 Apache Tika Change Log
 ======================
+
 Release 0.6 (Current Development)
 ---------------------------------
 
+The most notable changes in Tika 0.6 over the previous release are:
 
+ * Tika now has an additional OSGi bundle packaging that includes all the
+   required parser libraries. This bundle package makes it easy to use all
+   Tika features in an OSGi environment. (TIKA-340)
 
 Release 0.5 - 11/14/2009
 ------------------------
