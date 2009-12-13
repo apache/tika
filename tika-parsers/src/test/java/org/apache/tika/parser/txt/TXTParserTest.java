@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
@@ -42,7 +43,8 @@ public class TXTParserTest extends TestCase {
         parser.parse(
                 new ByteArrayInputStream(text.getBytes("UTF-8")),
                 new WriteOutContentHandler(writer),
-                metadata);
+                metadata,
+                new ParseContext());
         String content = writer.toString();
 
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
@@ -65,7 +67,7 @@ public class TXTParserTest extends TestCase {
         Metadata metadata = new Metadata();
         parser.parse(
                 new ByteArrayInputStream(text.getBytes("UTF-8")),
-                handler, metadata);
+                handler, metadata, new ParseContext());
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
 
@@ -76,7 +78,7 @@ public class TXTParserTest extends TestCase {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         parser.parse(
-                new ByteArrayInputStream(new byte[0]), handler, metadata);
+                new ByteArrayInputStream(new byte[0]), handler, metadata, new ParseContext());
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("\n", handler.toString());
     }
@@ -95,6 +97,32 @@ public class TXTParserTest extends TestCase {
                 (byte) 0xFF, (byte) 0xFE, 't', 0, 'e', 0, 's', 0, 't', 0});
     }
 
+    /**
+     * Test case for TIKA-335: using incoming charset
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a> 
+     */
+    public void testUseIncomingCharsetAsHint() throws Exception {
+        // Could be UTF-8 or ISO 8859-1 or ...
+        // u00e1 is latin small letter a with acute
+        final String test2 = "the name is \u00e1ndre";
+
+        Metadata metadata = new Metadata();
+        parser.parse(
+                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        
+        assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
+
+        metadata.set(Metadata.CONTENT_ENCODING, "ISO-8859-1");
+        parser.parse(
+                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        
+        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+    }
+
+
     private void assertExtractText(String msg, String expected, byte[] input)
             throws Exception {
         ContentHandler handler = new BodyContentHandler() {
@@ -103,7 +131,7 @@ public class TXTParserTest extends TestCase {
             }
         };
         Metadata metadata = new Metadata();
-        parser.parse(new ByteArrayInputStream(input), handler, metadata);
+        parser.parse(new ByteArrayInputStream(input), handler, metadata, new ParseContext());
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(msg, expected, handler.toString());
     }

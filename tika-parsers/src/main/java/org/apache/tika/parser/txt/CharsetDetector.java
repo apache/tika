@@ -9,6 +9,7 @@ package org.apache.tika.parser.txt;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Arrays;
@@ -71,7 +72,7 @@ public class CharsetDetector {
      * @stable ICU 3.4
      */
     public CharsetDetector setDeclaredEncoding(String encoding) {
-        fDeclaredEncoding = encoding;
+        setCanonicalDeclaredEncoding(encoding);
         return this;
     }
     
@@ -94,6 +95,8 @@ public class CharsetDetector {
     }
     
     private static final int kBufSize = 8000;
+
+    private static final int MAX_CONFIDENCE = 100;
 
     /**
      * Set the input text (byte) data whose charset is to be detected.
@@ -188,19 +191,29 @@ public class CharsetDetector {
         int               i;
         int               detectResults;
         int               confidence;
-        ArrayList         matches = new ArrayList();
+        ArrayList<CharsetMatch> matches = new ArrayList<CharsetMatch>();
         
         //  Iterate over all possible charsets, remember all that
         //    give a match quality > 0.
         for (i=0; i<fCSRecognizers.size(); i++) {
-            csr = (CharsetRecognizer)fCSRecognizers.get(i);
+            csr = fCSRecognizers.get(i);
             detectResults = csr.match(this);
             confidence = detectResults & 0x000000ff;
             if (confidence > 0) {
+                // Just to be safe, constrain
+                confidence = Math.min(confidence, MAX_CONFIDENCE);
+                
+                // Apply charset hint.
+                if ((fDeclaredEncoding != null) && (fDeclaredEncoding.equalsIgnoreCase(csr.getName()))) {
+                    // Reduce lack of confidence (delta between "sure" and current) by 50%.
+                    confidence += (MAX_CONFIDENCE - confidence)/2;
+                }
+                
                 CharsetMatch  m = new CharsetMatch(this, csr, confidence);
                 matches.add(m);
             }
         }
+        
         Collections.sort(matches);      // CharsetMatch compares on confidence
         Collections.reverse(matches);   //  Put best match first.
         CharsetMatch [] resultArray = new CharsetMatch[matches.size()];
@@ -232,7 +245,7 @@ public class CharsetDetector {
      * @stable ICU 3.4
      */
     public Reader getReader(InputStream in, String declaredEncoding) {
-        fDeclaredEncoding = declaredEncoding;
+        setCanonicalDeclaredEncoding(declaredEncoding);
         
         try {
             setText(in);
@@ -265,9 +278,8 @@ public class CharsetDetector {
      *
      * @stable ICU 3.4
      */
-    public String getString(byte[] in, String declaredEncoding)
-    {
-        fDeclaredEncoding = declaredEncoding;
+    public String getString(byte[] in, String declaredEncoding) {
+        setCanonicalDeclaredEncoding(declaredEncoding);
        
         try {
             setText(in);
@@ -329,6 +341,18 @@ public class CharsetDetector {
         fStripTags = filter;
         
         return previous;
+    }
+    
+    /**
+     * Try to set fDeclaredEncoding to the canonical name for <encoding>, if it exists.
+     * 
+     * @param encoding - name of character encoding
+     */
+    private void setCanonicalDeclaredEncoding(String encoding) {
+        Charset cs = Charset.forName(encoding);
+        if (cs != null) {
+            fDeclaredEncoding = cs.name();
+        }
     }
     
     /*
@@ -450,14 +474,14 @@ public class CharsetDetector {
     /*
      * List of recognizers for all charsets known to the implementation.
      */
-    private static ArrayList fCSRecognizers = createRecognizers();
+    private static ArrayList<CharsetRecognizer> fCSRecognizers = createRecognizers();
     private static String [] fCharsetNames;
     
     /*
      * Create the singleton instances of the CharsetRecognizer classes
      */
-    private static ArrayList createRecognizers() {
-        ArrayList recognizers = new ArrayList();
+    private static ArrayList<CharsetRecognizer> createRecognizers() {
+        ArrayList<CharsetRecognizer> recognizers = new ArrayList<CharsetRecognizer>();
         
         recognizers.add(new CharsetRecog_UTF8());
         

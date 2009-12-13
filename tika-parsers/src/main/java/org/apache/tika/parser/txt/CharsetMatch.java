@@ -26,7 +26,7 @@ import java.io.Reader;
  *
  * @stable ICU 3.4
  */
-public class CharsetMatch implements Comparable {
+public class CharsetMatch implements Comparable<CharsetMatch> {
 
     
     /**
@@ -218,8 +218,7 @@ public class CharsetMatch implements Comparable {
      * @throws ClassCastException if the argument is not a CharsetMatch.
      * @stable ICU 3.4
      */
-    public int compareTo (Object o) {
-        CharsetMatch other = (CharsetMatch)o;
+    public int compareTo(CharsetMatch other) {
         int compareResult = 0;
         if (this.fConfidence > other.fConfidence) {
             compareResult = 1;
@@ -260,4 +259,5 @@ public class CharsetMatch implements Comparable {
 
     private InputStream         fInputStream = null;  // User's input stream, or null if the user
                                                       //   gave us a byte array.
+
 }
