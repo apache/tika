@@ -250,4 +250,27 @@ public class HtmlParserTest extends TestCase {
         assertEquals("\u017d", metadata.get(Metadata.TITLE));
     }
 
+    /**
+     * Test case for TIKA-341
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-XXX">TIKA-XXX</a>
+     */
+    public void testUsingCharsetInContentTypeHeader() throws Exception {
+        final String test =
+            "<html><head><title>the name is \u00e1ndre</title></head>"
+            + "<body></body></html>";
+
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
+
+        metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-1");
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+    }
+
 }

@@ -122,6 +122,31 @@ public class TXTParserTest extends TestCase {
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
+    /**
+     * Test case for TIKA-341: using charset in content-type
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a> 
+     */
+    public void testUsingCharsetInContentTypeHeader() throws Exception {
+        // Could be UTF-8 or ISO 8859-1 or ...
+        // u00e1 is latin small letter a with acute
+        final String test2 = "the name is \u00e1ndre";
+
+        Metadata metadata = new Metadata();
+        parser.parse(
+                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+
+        assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING));
+
+        metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-1");
+        parser.parse(
+                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+
+        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+    }
 
     private void assertExtractText(String msg, String expected, byte[] input)
             throws Exception {
