@@ -64,7 +64,6 @@ public class XHTMLContentHandlerTest extends TestCase {
         xhtml.endElement("table");
         xhtml.endDocument();
 
-        System.out.println(output);
         String[] words = output.toString().split("\\s+");
         assertEquals(6, words.length);
         assertEquals("foo", words[0]);
