@@ -133,6 +133,10 @@ class HtmlHandler extends TextContentHandler {
                 xhtml.endElement(safe);
             } else if ("A".equals(name)) {
                 xhtml.endElement("a");
+            } else if ("BR".equals(name)) {
+                // TIKA-343: Map <br> tags to newlines, unless the HtmlMapper
+                // above has already determined to map them to something else
+                xhtml.characters("\n");
             }
         }
 
