@@ -49,13 +49,13 @@ public class HtmlParser implements Parser {
             "(?is)<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+"
             + "content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
 
-    // TODO: Move this into core, along with CharsetDetector
+    /**
+     * TIKA-332: Check for meta http-equiv tag with charset info in
+     * HTML content.
+     * <p>
+     * TODO: Move this into core, along with CharsetDetector
+     */ 
     private String getEncoding(InputStream stream, Metadata metadata) throws IOException {
-        // TIKA-332: Check for meta http-equiv tag with charset info in HTML content
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
-
         stream.mark(META_TAG_BUFFER_SIZE);
         char[] buffer = new char[META_TAG_BUFFER_SIZE];
         InputStreamReader isr = new InputStreamReader(stream, "us-ascii");
@@ -118,7 +118,12 @@ public class HtmlParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
-    throws IOException, SAXException, TikaException {
+            throws IOException, SAXException, TikaException {
+        // The getEncoding() method depends on the mark feature
+        if (!stream.markSupported()) {
+            stream = new BufferedInputStream(stream);
+        }
+
         // Protect the stream from being closed by CyberNeko
         // TODO: Is this still needed, given our use of TagSoup?
         stream = new CloseShieldInputStream(stream);
