@@ -16,6 +16,8 @@
  */
 package org.apache.tika.sax;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -49,44 +51,21 @@ public class XHTMLContentHandler extends SafeContentHandler {
     /**
      * The elements that get prepended with the {@link #TAB} character.
      */
-    private static final Set<String> INDENT = new HashSet<String>() {{
-        add("li");
-        add("dd");
-        add("dt");
-        add("td");
-        add("th");
-    }};
+    private static final Set<String> INDENT =
+        unmodifiableSet("li", "dd", "dt", "td", "th");
 
     /**
      * The elements that get appended with the {@link #NL} character.
      */
-    private static final Set<String> ENDLINE = new HashSet<String>() {{
-        add("p");
-        add("h1");
-        add("h2");
-        add("h3");
-        add("h4");
-        add("h5");
-        add("h6");
-        add("div");
-        add("ul");
-        add("ol");
-        add("dl");
-        add("pre");
-        add("hr");
-        add("blockquote");
-        add("address");
-        add("fieldset");
-        add("table");
-        add("form");
-        add("noscript");
-        add("li");
-        add("dt");
-        add("dd");
-        add("noframes");
-        add("br");
-        add("tr");
-    }};
+    public static final Set<String> ENDLINE = unmodifiableSet(
+            "p", "h1", "h2", "h3", "h4", "h5", "h6", "div", "ul", "ol", "dl",
+            "pre", "hr", "blockquote", "address", "fieldset", "table", "form",
+            "noscript", "li", "dt", "dd", "noframes", "br", "tr");
+
+    private static Set<String> unmodifiableSet(String... elements) {
+        return Collections.unmodifiableSet(
+                new HashSet<String>(Arrays.asList(elements)));
+    }
 
     /**
      * Metadata associated with the document. Used to fill in the
@@ -182,7 +161,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
             throws SAXException {
         super.endElement(uri, local, name);
         if (XHTML.equals(uri) && ENDLINE.contains(local)) {
-            ignorableWhitespace(NL, 0, NL.length);
+            newline();
         }
     }
 
@@ -215,6 +194,10 @@ public class XHTMLContentHandler extends SafeContentHandler {
 
     public void characters(String characters) throws SAXException {
         characters(characters.toCharArray(), 0, characters.length());
+    }
+
+    public void newline() throws SAXException {
+        ignorableWhitespace(NL, 0, NL.length);
     }
 
     public void element(String name, String value) throws SAXException {
