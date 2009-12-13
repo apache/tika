@@ -220,11 +220,29 @@ public class HtmlParserTest extends TestCase {
     }
 
     /**
+     * Test case for TIKA-332
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-332">TIKA-332</a>
+     */
+    public void testHttpEquivCharset() throws Exception {
+        String test =
+            "<html><head><meta http-equiv=\"content-type\""
+            + " content=\"text/html; charset=ISO-8859-1\" />"
+            + "<title>the name is \u00e1ndre</title>"
+            + "</head><body></body></html>";
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+    }
+
+    /**
      * Test case for TIKA-334
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-334">TIKA-334</a>
      */
     public void testDetectOfCharset() throws Exception {
-        String test = "<html><title>\u017d</title><body></body></html>";
+        String test =
+            "<html><head><title>\u017d</title></head><body></body></html>";
         Metadata metadata = new Metadata();
         new HtmlParser().parse (
                 new ByteArrayInputStream(test.getBytes("UTF-8")),
