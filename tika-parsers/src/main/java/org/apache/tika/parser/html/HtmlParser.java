@@ -16,9 +16,13 @@
  */
 package org.apache.tika.parser.html;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
@@ -40,12 +44,37 @@ public class HtmlParser implements Parser {
 
     // Use the widest, most common charset as our default.
     private static final String DEFAULT_CHARSET = "windows-1252";
+    private static final int META_TAG_BUFFER_SIZE = 4096;
+    private static final Pattern HTTP_EQUIV_CHARSET_PATTERN = Pattern.compile(
+            "(?is)<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+"
+            + "content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
 
     // TODO: Move this into core, along with CharsetDetector
     private String getEncoding(InputStream stream, Metadata metadata) throws IOException {
-        // TODO: Check for <meta tag in stream. If that exists and is supported, then
-        // set that in metadata and return.
+        // TIKA-332: Check for meta http-equiv tag with charset info in HTML content
+        if (!stream.markSupported()) {
+            stream = new BufferedInputStream(stream);
+        }
 
+        stream.mark(META_TAG_BUFFER_SIZE);
+        char[] buffer = new char[META_TAG_BUFFER_SIZE];
+        InputStreamReader isr = new InputStreamReader(stream, "us-ascii");
+        int bufferSize = isr.read(buffer);
+        stream.reset();
+
+        if (bufferSize != -1) {
+            String metaString = new String(buffer, 0, bufferSize);
+            Matcher m = HTTP_EQUIV_CHARSET_PATTERN.matcher(metaString);
+            if (m.find()) {
+                String charset = m.group(1);
+                if (Charset.isSupported(charset)) {
+                    metadata.set(Metadata.CONTENT_ENCODING, charset);
+                    return charset;
+                }
+            }
+        }
+
+        // No charset in a meta http-equiv tag, so detect from actual content bytes.
         CharsetDetector detector = new CharsetDetector();
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
         if (incomingCharset == null) {
