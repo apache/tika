@@ -273,4 +273,21 @@ public class HtmlParserTest extends TestCase {
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
+    /**
+     * Test case for HTML content like "foo&gt;br&lt;bar" that should result
+     * in two whitespace-separated tokens "foo" and "bar" instead of a single
+     * token "foobar".
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-343">TIKA-343</a>
+     */
+    public void testLineBreak() throws Exception {
+        String test = "<html><body><p>foo<br>bar</p></body></html>";
+        String text = new Tika().parseToString(
+                new ByteArrayInputStream(test.getBytes("US-ASCII")));
+        String[] parts = text.trim().split("\\s+");
+        assertEquals(2, parts.length);
+        assertEquals("foo", parts[0]);
+        assertEquals("bar", parts[1]);
+    }
+
 }
