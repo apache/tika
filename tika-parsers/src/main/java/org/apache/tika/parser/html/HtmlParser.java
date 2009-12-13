@@ -213,6 +213,8 @@ public class HtmlParser implements Parser {
         if ("TH".equals(name)) return "th";
         if ("TD".equals(name)) return "td";
 
+        if ("ADDRESS".equals(name)) return "address";
+
         return null;
     }
 
