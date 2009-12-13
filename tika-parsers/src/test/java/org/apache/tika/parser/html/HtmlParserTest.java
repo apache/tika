@@ -292,4 +292,19 @@ public class HtmlParserTest extends TestCase {
         assertEquals("baz", parts[2]);
     }
 
+    /**
+     * Test case for TIKA-339: Don't use language returned by CharsetDetector
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-339">TIKA-339</a>
+     */
+    public void testIgnoreCharsetDetectorLanguage() throws Exception {
+        String test = "<html><title>Simple Content</title><body></body></html>";
+        Metadata metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_LANGUAGE, "en");
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+
+        assertEquals("en", metadata.get(Metadata.CONTENT_LANGUAGE));
+    }
+
 }

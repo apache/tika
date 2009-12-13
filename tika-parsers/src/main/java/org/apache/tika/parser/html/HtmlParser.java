@@ -106,13 +106,18 @@ public class HtmlParser implements Parser {
             if (Charset.isSupported(match.getName())) {
                 metadata.set(Metadata.CONTENT_ENCODING, match.getName());
 
-                // Is the encoding language-specific (KOI8-R, SJIS, etc.)?
+                // TIKA-339: Don't set language, as it's typically not a very good
+                // guess, and it can create ambiguity if another (better) language
+                // value is specified by a meta tag in the HTML (or via HTTP response
+                // header).
+                /*
                 String language = match.getLanguage();
                 if (language != null) {
                     metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
                     metadata.set(Metadata.LANGUAGE, match.getLanguage());
                 }
-
+                */
+                
                 break;
             }
         }

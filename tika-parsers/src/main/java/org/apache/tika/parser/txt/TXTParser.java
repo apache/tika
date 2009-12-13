@@ -100,8 +100,8 @@ public class TXTParser implements Parser {
                 // Is the encoding language-specific (KOI8-R, SJIS, etc.)?
                 String language = match.getLanguage();
                 if (language != null) {
-                    metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
-                    metadata.set(Metadata.LANGUAGE, match.getLanguage());
+                    metadata.add(Metadata.CONTENT_LANGUAGE, language);
+                    metadata.add(Metadata.LANGUAGE, language);
                 }
 
                 break;
