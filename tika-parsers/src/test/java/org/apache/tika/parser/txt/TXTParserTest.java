@@ -161,4 +161,22 @@ public class TXTParserTest extends TestCase {
         assertEquals(msg, expected, handler.toString());
     }
 
+    /**
+     * Test case for TIKA-339: don't override incoming language
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a> 
+     */
+    public void testRetainIncomingLanguage() throws Exception {
+        final String test = "Simple Content";
+
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.LANGUAGE, "en");
+
+        parser.parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+
+        assertEquals("en", metadata.get(Metadata.LANGUAGE));
+    }
+
 }
