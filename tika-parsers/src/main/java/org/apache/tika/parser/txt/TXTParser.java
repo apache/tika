@@ -63,7 +63,7 @@ public class TXTParser implements Parser {
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
+    throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
 
         // CharsetDetector expects a stream to support marks
@@ -72,8 +72,14 @@ public class TXTParser implements Parser {
         }
 
         // Detect the content encoding (the stream is reset to the beginning)
-        // TODO: Better use of the possible encoding hint in input metadata
         CharsetDetector detector = new CharsetDetector();
+        String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
+        if (incomingCharset != null) {
+            detector.setDeclaredEncoding(incomingCharset);
+        } else {
+            // TODO: try to extract charset from CONTENT_TYPE in metadata
+        }
+
         detector.setText(stream);
         for (CharsetMatch match : detector.detectAll()) {
             if (Charset.isSupported(match.getName())) {
@@ -133,7 +139,7 @@ public class TXTParser implements Parser {
      */
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
+    throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }
 
