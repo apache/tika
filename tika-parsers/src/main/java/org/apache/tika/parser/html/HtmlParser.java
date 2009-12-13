@@ -148,11 +148,15 @@ public class HtmlParser implements Parser {
         InputSource source = new InputSource(stream); 
         source.setEncoding(getEncoding(stream, metadata));
 
+        // Get the HTML mapper from the parse context
+        HtmlMapper mapper =
+            context.get(HtmlMapper.class, new HtmlParserMapper());
+
         // Parse the HTML document
         org.ccil.cowan.tagsoup.Parser parser =
             new org.ccil.cowan.tagsoup.Parser();
         parser.setContentHandler(new XHTMLDowngradeHandler(
-                new HtmlHandler(this, handler, metadata)));
+                new HtmlHandler(mapper, handler, metadata)));
         parser.parse(source);
     }
 
@@ -224,6 +228,23 @@ public class HtmlParser implements Parser {
      */
     protected boolean isDiscardElement(String name) {
         return "STYLE".equals(name) || "SCRIPT".equals(name);
+    }
+
+    /**
+     * Adapter class that maintains backwards compatibility with the
+     * protected HtmlParser methods. Making HtmlParser implement HtmlMapper
+     * directly would require those methods to be public, which would break
+     * backwards compatibility with subclasses.
+     * <p>
+     * TODO: Cleanup in Tika 1.0
+     */
+    private class HtmlParserMapper implements HtmlMapper {
+        public String mapSafeElement(String name) {
+            return HtmlParser.this.mapSafeElement(name);
+        }
+        public boolean isDiscardElement(String name) {
+            return HtmlParser.this.isDiscardElement(name);
+        }
     }
 
 }
