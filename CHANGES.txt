@@ -10,6 +10,11 @@ The most notable changes in Tika 0.6 over the previous release are:
    required parser libraries. This bundle package makes it easy to use all
    Tika features in an OSGi environment. (TIKA-340)
 
+ * Handling of character encoding information in input metadata and HTML
+   <meta> tags has been improved. When no applicable encoding information is
+   available, the encoding is detected by looking at the input data.
+   (TIKA-332, TIKA-334, TIKA-335, TIKA-341) 
+
 Release 0.5 - 11/14/2009
 ------------------------
 
