@@ -49,6 +49,9 @@ public class HtmlParser implements Parser {
             "(?is)<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+"
             + "content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
 
+    private static final Pattern CONTENT_TYPE_PATTERN =
+        Pattern.compile("(?i);\\s*charset\\s*=\\s*(.*)");
+
     /**
      * TIKA-332: Check for meta http-equiv tag with charset info in
      * HTML content.
@@ -78,13 +81,26 @@ public class HtmlParser implements Parser {
         CharsetDetector detector = new CharsetDetector();
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
         if (incomingCharset == null) {
-            // TODO: check for charset in metadata's content_type
+            // TIKA-341: Use charset in content-type
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            if (contentType != null) {
+                Matcher m = CONTENT_TYPE_PATTERN.matcher(contentType);
+                if (m.find()) {
+                    String charset = m.group(1).trim();
+                    if (Charset.isSupported(charset)) {
+                        incomingCharset = charset;
+                    }
+                }
+            }
         }
 
         if (incomingCharset != null) {
             detector.setDeclaredEncoding(incomingCharset);
         }
 
+        // TIKA-341 without enabling input filtering (stripping of tags) the
+        // short HTML tests don't work well.
+        detector.enableInputFilter(true);
         detector.setText(stream);
         for (CharsetMatch match : detector.detectAll()) {
             if (Charset.isSupported(match.getName())) {

@@ -24,6 +24,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
@@ -60,11 +62,12 @@ import org.xml.sax.SAXException;
  */
 public class TXTParser implements Parser {
 
+    private static final Pattern CONTENT_TYPE_PATTERN = Pattern.compile("(?i);\\s*charset\\s*=\\s*(.*)");
+
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
     throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
 
         // CharsetDetector expects a stream to support marks
         if (!stream.markSupported()) {
@@ -74,10 +77,19 @@ public class TXTParser implements Parser {
         // Detect the content encoding (the stream is reset to the beginning)
         CharsetDetector detector = new CharsetDetector();
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
+        if (incomingCharset == null) {
+            // TIKA-341: Use charset in content-type
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            if (contentType != null) {
+                Matcher m = CONTENT_TYPE_PATTERN.matcher(contentType);
+                if (m.find()) {
+                    incomingCharset = m.group(1).trim();
+                }
+            }
+        }
+
         if (incomingCharset != null) {
             detector.setDeclaredEncoding(incomingCharset);
-        } else {
-            // TODO: try to extract charset from CONTENT_TYPE in metadata
         }
 
         detector.setText(stream);
@@ -102,6 +114,10 @@ public class TXTParser implements Parser {
                     "Text encoding could not be detected and no encoding"
                     + " hint is available in document metadata");
         }
+
+        // TIKA-341: Only stomp on content-type after we're done trying to
+        // use it to guess at the charset.
+        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
 
         try {
             Reader reader =
