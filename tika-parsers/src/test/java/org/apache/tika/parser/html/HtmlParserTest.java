@@ -274,20 +274,22 @@ public class HtmlParserTest extends TestCase {
     }
 
     /**
-     * Test case for HTML content like "foo&gt;br&lt;bar" that should result
-     * in two whitespace-separated tokens "foo" and "bar" instead of a single
-     * token "foobar".
+     * Test case for HTML content like
+     * "&gt;div&lt;foo&gt;br&lt;bar&gt;/div&gt;" that should result
+     * in three whitespace-separated tokens "foo", "bar" and "baz" instead
+     * of a single token "foobarbaz".
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-343">TIKA-343</a>
      */
     public void testLineBreak() throws Exception {
-        String test = "<html><body><p>foo<br>bar</p></body></html>";
+        String test = "<html><body><div>foo<br>bar</div>baz</body></html>";
         String text = new Tika().parseToString(
                 new ByteArrayInputStream(test.getBytes("US-ASCII")));
         String[] parts = text.trim().split("\\s+");
-        assertEquals(2, parts.length);
+        assertEquals(3, parts.length);
         assertEquals("foo", parts[0]);
         assertEquals("bar", parts[1]);
+        assertEquals("baz", parts[2]);
     }
 
 }
