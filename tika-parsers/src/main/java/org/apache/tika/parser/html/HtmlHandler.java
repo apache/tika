@@ -28,7 +28,7 @@ import org.xml.sax.SAXException;
 
 class HtmlHandler extends TextContentHandler {
 
-    private final HtmlParser parser;
+    private final HtmlMapper mapper;
 
     private final XHTMLContentHandler xhtml;
 
@@ -43,9 +43,9 @@ class HtmlHandler extends TextContentHandler {
     private final StringBuilder title = new StringBuilder();
 
     private HtmlHandler(
-            HtmlParser parser, XHTMLContentHandler xhtml, Metadata metadata) {
+            HtmlMapper mapper, XHTMLContentHandler xhtml, Metadata metadata) {
         super(xhtml);
-        this.parser = parser;
+        this.mapper = mapper;
         this.xhtml = xhtml;
         this.metadata = metadata;
 
@@ -65,8 +65,8 @@ class HtmlHandler extends TextContentHandler {
     }
 
     public HtmlHandler(
-            HtmlParser parser, ContentHandler handler, Metadata metadata) {
-        this(parser, new XHTMLContentHandler(handler, metadata), metadata);
+            HtmlMapper mapper, ContentHandler handler, Metadata metadata) {
+        this(mapper, new XHTMLContentHandler(handler, metadata), metadata);
     }
 
     @Override
@@ -79,7 +79,7 @@ class HtmlHandler extends TextContentHandler {
         if ("BODY".equals(name) || bodyLevel > 0) {
             bodyLevel++;
         }
-        if (parser.isDiscardElement(name) || discardLevel > 0) {
+        if (mapper.isDiscardElement(name) || discardLevel > 0) {
             discardLevel++;
         }
 
@@ -103,7 +103,7 @@ class HtmlHandler extends TextContentHandler {
         }
 
         if (bodyLevel > 0 && discardLevel == 0) {
-            String safe = parser.mapSafeElement(name);
+            String safe = mapper.mapSafeElement(name);
             if (safe != null) {
                 xhtml.startElement(safe);
             } else if ("A".equals(name)) {
@@ -128,7 +128,7 @@ class HtmlHandler extends TextContentHandler {
     public void endElement(
             String uri, String local, String name) throws SAXException {
         if (bodyLevel > 0 && discardLevel == 0) {
-            String safe = parser.mapSafeElement(name);
+            String safe = mapper.mapSafeElement(name);
             if (safe != null) {
                 xhtml.endElement(safe);
             } else if ("A".equals(name)) {
