@@ -60,6 +60,7 @@
         <parser name="parse-html" class="org.apache.tika.parser.html.HtmlParser">
                 <mime>text/html</mime>
                 <mime>application/xhtml+xml</mime>
+                <mime>application/vnd.wap.xhtml+xml</mime>
                 <mime>application/x-asp</mime>
         </parser>
 
