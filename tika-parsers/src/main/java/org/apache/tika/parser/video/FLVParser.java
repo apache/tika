@@ -153,9 +153,6 @@ public class FLVParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-
         DataInputStream datainput = new DataInputStream(stream);
         if (!checkSignature(datainput)) {
             throw new TikaException("FLV signature not detected");
@@ -165,24 +162,30 @@ public class FLVParser implements Parser {
         int version = datainput.readUnsignedByte();
         if (version != 1) {
             // should be 1, perhaps this is not flv?
-            return;
+            throw new TikaException("Unpexpected FLV version: " + version);
         }
 
         int typeFlags = datainput.readUnsignedByte();
-        metadata.add("hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
-        metadata.add("hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
 
         long len = readUInt32(datainput);
         if (len != 9) {
             // we only know about format with header of 9 bytes
-            return;
+            throw new TikaException("Unpexpected FLV header length: " + len);
         }
 
         long sizePrev = readUInt32(datainput);
         if (sizePrev != 0) {
             // should be 0, perhaps this is not flv?
-            return;
+            throw new TikaException(
+                    "Unpexpected FLV first previous block size: " + sizePrev);
         }
+
+        metadata.set(Metadata.CONTENT_TYPE, "video/x-flv");
+        metadata.set("hasVideo", Boolean.toString((typeFlags & MASK_VIDEO) != 0));
+        metadata.set("hasAudio", Boolean.toString((typeFlags & MASK_AUDIO) != 0));
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
 
         // flv tag stream follows...
         while (true) {
@@ -248,7 +251,7 @@ public class FLVParser implements Parser {
 
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata) throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, null);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
 }
