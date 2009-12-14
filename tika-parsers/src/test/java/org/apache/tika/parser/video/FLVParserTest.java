@@ -27,10 +27,10 @@ public class FLVParserTest extends TestCase {
         String path = "/test-documents/testFLV.flv";
         Metadata metadata = new Metadata();
 
-        String content = new Tika().parseToString(FLVParserTest.class.
-                getResourceAsStream(path), metadata);
+        String content = new Tika().parseToString(
+                FLVParserTest.class.getResourceAsStream(path), metadata);
 
-        System.out.println(metadata);
+        assertEquals("", content);
         assertEquals("video/x-flv", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("true", metadata.get("hasVideo"));
         assertEquals("false", metadata.get("stereo"));
