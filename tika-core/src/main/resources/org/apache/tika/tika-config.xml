@@ -172,6 +172,10 @@
                 <mime>application/epub+zip</mime>
         </parser>
 
+        <parser name="parse-flv" class="org.apache.tika.parser.video.FLVParser">
+                <mime>video/x-flv</mime>
+        </parser>
+
     </parsers>
 
 </properties>
