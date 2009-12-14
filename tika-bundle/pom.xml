@@ -58,14 +58,15 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Export-Package>
+            <_exportcontents>
               org.apache.tika.*;version=${pom.version}
-            </Export-Package>
+            </_exportcontents>
             <Embed-Dependency>
+              tika-core,tika-parsers,
               commons-compress,
               pdfbox,fontbox,jempbox,
               poi,poi-scratchpad,poi-ooxml,ooxml-schemas,
-              xmlbeans;inline=org/apache/**|schema**|repackage/**,
+              xmlbeans,
               dom4j,
               tagsoup,
               asm,
@@ -74,6 +75,7 @@
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Import-Package>
+                org.w3c.dom,
                 *;resolution:=optional
             </Import-Package>
           </instructions>
