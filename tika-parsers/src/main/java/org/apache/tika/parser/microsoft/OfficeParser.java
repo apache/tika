@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Locale;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpsf.CustomProperties;
@@ -111,7 +112,8 @@ public class OfficeParser implements Parser {
                 xhtml.element("p", extractor.getText(true, true));
             } else if ("Workbook".equals(name)) {
                 setType(metadata, "application/vnd.ms-excel");
-                new ExcelExtractor().parse(filesystem, xhtml);
+                Locale locale = context.get(Locale.class, Locale.getDefault());
+                new ExcelExtractor().parse(filesystem, xhtml, locale);
             } else if ("VisioDocument".equals(name)) {
                 setType(metadata, "application/vnd.visio");
                 VisioTextExtractor extractor =
