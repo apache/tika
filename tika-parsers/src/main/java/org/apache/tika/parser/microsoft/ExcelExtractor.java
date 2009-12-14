@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -18,11 +18,11 @@ package org.apache.tika.parser.microsoft;
 
 import java.awt.Point;
 import java.io.IOException;
-import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -113,10 +113,11 @@ public class ExcelExtractor {
      * @throws IOException if an error occurs processing the workbook
      * or writing the extracted content
      */
-    protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+    protected void parse(
+            POIFSFileSystem filesystem, XHTMLContentHandler xhtml,
+            Locale locale) throws IOException, SAXException {
         // Set up listener and register the records we want to process
-        TikaHSSFListener listener = new TikaHSSFListener(xhtml);
+        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale);
         HSSFRequest hssfRequest = new HSSFRequest();
         if (listenForAllRecords) {
             hssfRequest.addListenerForAllRecords(listener);
@@ -151,7 +152,7 @@ public class ExcelExtractor {
     /**
      * HSSF Listener implementation which processes the HSSF records.
      */
-    private static class TikaHSSFListener implements HSSFListener, Serializable {
+    private static class TikaHSSFListener implements HSSFListener {
 
         /**
          * XHTML content handler to which the document content is rendered.
@@ -191,7 +192,7 @@ public class ExcelExtractor {
          *
          * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
          */
-        private final NumberFormat format = NumberFormat.getInstance();
+        private final NumberFormat format;
 
         /**
          * Construct a new listener instance outputting parsed data to
@@ -199,8 +200,9 @@ public class ExcelExtractor {
          *
          * @param handler Destination to write the parsed output to
          */
-        private TikaHSSFListener(XHTMLContentHandler handler) {
+        private TikaHSSFListener(XHTMLContentHandler handler, Locale locale) {
             this.handler = handler;
+            this.format = NumberFormat.getInstance(locale);
         }
 
         /**
