@@ -51,6 +51,9 @@ public class RTFParser implements Parser {
             xhtml.endDocument();
         } catch (BadLocationException e) {
             throw new TikaException("Error parsing an RTF document", e);
+        } catch (InternalError e) {
+            throw new TikaException(
+                    "Internal error parsing an RTF document, see TIKA-282", e);
         }
     }
 
