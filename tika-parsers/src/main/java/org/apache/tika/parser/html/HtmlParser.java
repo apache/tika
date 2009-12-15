@@ -45,10 +45,11 @@ public class HtmlParser implements Parser {
     // Use the widest, most common charset as our default.
     private static final String DEFAULT_CHARSET = "windows-1252";
     private static final int META_TAG_BUFFER_SIZE = 4096;
-    private static final Pattern HTTP_EQUIV_CHARSET_PATTERN = Pattern.compile(
-            "(?is)<meta\\s+http-equiv\\s*=\\s*['\"]\\s*Content-Type['\"]\\s+"
-            + "content\\s*=\\s*['\"][^;]+;\\s*charset\\s*=\\s*([^'\"]+)\"");
-
+    private static final Pattern HTTP_EQUIV_PATTERN = Pattern.compile(
+                    "(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*" +
+                    "Content-Type['\\\"]\\s+content\\s*=\\s*['\\\"]" +
+                    "([^'\\\"]+)['\\\"]\\s*/>");
+    
     private static final Pattern CONTENT_TYPE_PATTERN =
         Pattern.compile("(?i);\\s*charset\\s*=\\s*(.*)");
 
@@ -67,12 +68,20 @@ public class HtmlParser implements Parser {
 
         if (bufferSize != -1) {
             String metaString = new String(buffer, 0, bufferSize);
-            Matcher m = HTTP_EQUIV_CHARSET_PATTERN.matcher(metaString);
+            Matcher m = HTTP_EQUIV_PATTERN.matcher(metaString);
             if (m.find()) {
-                String charset = m.group(1);
-                if (Charset.isSupported(charset)) {
-                    metadata.set(Metadata.CONTENT_ENCODING, charset);
-                    return charset;
+                // TIKA-349: flexible handling of attributes
+                // We have one or more x or x=y attributes, separated by ';'
+                String[] attrs = m.group(1).split(";");
+                for (String attr : attrs) {
+                    String[] keyValue = attr.trim().split("=");
+                    if ((keyValue.length == 2) && keyValue[0].equalsIgnoreCase("charset")) {
+                        String charset = keyValue[1];
+                        if (Charset.isSupported(charset)) {
+                            metadata.set(Metadata.CONTENT_ENCODING, charset);
+                            return charset;
+                        }
+                    }
                 }
             }
         }
