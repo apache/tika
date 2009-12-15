@@ -252,7 +252,7 @@ public class HtmlParserTest extends TestCase {
 
     /**
      * Test case for TIKA-341
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-XXX">TIKA-XXX</a>
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a>
      */
     public void testUsingCharsetInContentTypeHeader() throws Exception {
         final String test =
@@ -305,6 +305,35 @@ public class HtmlParserTest extends TestCase {
                 new BodyContentHandler(),  metadata, new ParseContext());
 
         assertEquals("en", metadata.get(Metadata.CONTENT_LANGUAGE));
+    }
+
+    /**
+     * Test case for TIKA-349
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-349">TIKA-349</a>
+     */
+    public void testHttpEquivCharsetFunkyAttributes() throws Exception {
+        String test1 =
+            "<html><head><meta http-equiv=\"content-type\""
+            + " content=\"text/html; charset=ISO-8859-1; charset=iso-8859-1\" />"
+            + "<title>the name is \u00e1ndre</title>"
+            + "</head><body></body></html>";
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test1.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+
+        // Some HTML pages have errors like ';;' versus '; ' as separator
+        String test2 =
+            "<html><head><meta http-equiv=\"content-type\""
+            + " content=\"text/html;;charset=ISO-8859-1\" />"
+            + "<title>the name is \u00e1ndre</title>"
+            + "</head><body></body></html>";
+        metadata = new Metadata();
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
 }
