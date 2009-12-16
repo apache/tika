@@ -8,12 +8,31 @@ The most notable changes in Tika 0.6 over the previous release are:
 
  * Tika now has an additional OSGi bundle packaging that includes all the
    required parser libraries. This bundle package makes it easy to use all
-   Tika features in an OSGi environment. (TIKA-340)
+   Tika features in an OSGi environment. (TIKA-340, TIKA-342)
+
+ * The Apache POI dependency used for parsing Microsoft Office file formats
+   has been upgraded to version 3.6. The most visible improvement in this
+   version is the notably reduced ooxml jar file size. The tika-app jar size
+   is now down to 15MB from the 25MB in Tika 0.5. (TIKA-353)
 
  * Handling of character encoding information in input metadata and HTML
    <meta> tags has been improved. When no applicable encoding information is
    available, the encoding is detected by looking at the input data.
    (TIKA-332, TIKA-334, TIKA-335, TIKA-341) 
+
+ * Some document types like Excel spreadsheets contain content like
+   numbers or dates whose exact text format depends on the current locale.
+   So far Tika has used the platform default locale in such cases, but
+   clients can now explicitly specify the locale by passing a Locale instance
+   in the parse context. (TIKA-125)
+
+ * The default text output encoding of the tika-app jar is now UTF-8
+   when running on Mac OS X. This is because the default encoding used
+   by Java is not compatible with the console application in Mac OS X.
+   On all other platforms the text output from tika-app still uses
+   the platform default encoding. (TIKA-324)
+
+ * A flash video (video/x-flv) parser has been added. (TIKA-328)
 
 Release 0.5 - 11/14/2009
 ------------------------
