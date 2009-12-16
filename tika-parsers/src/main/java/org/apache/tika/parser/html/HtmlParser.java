@@ -50,8 +50,9 @@ public class HtmlParser implements Parser {
                     "Content-Type['\\\"]\\s+content\\s*=\\s*['\\\"]" +
                     "([^'\\\"]+)['\\\"]\\s*/>");
     
-    private static final Pattern CONTENT_TYPE_PATTERN =
-        Pattern.compile("(?i);\\s*charset\\s*=\\s*(.*)");
+    // TIKA-350: handle charset as first element in content-type
+    private static final Pattern CONTENT_TYPE_PATTERN = Pattern.compile(
+                    "(?i)(?:;|)\\s*charset\\s*=\\s*([^\r;\\s]*)");
 
     /**
      * TIKA-332: Check for meta http-equiv tag with charset info in
@@ -86,7 +87,8 @@ public class HtmlParser implements Parser {
             }
         }
 
-        // No charset in a meta http-equiv tag, so detect from actual content bytes.
+        // No charset in a meta http-equiv tag, see if it's in the passed content-encoding
+        // hint, or the passed content-type hint.
         CharsetDetector detector = new CharsetDetector();
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
         if (incomingCharset == null) {
