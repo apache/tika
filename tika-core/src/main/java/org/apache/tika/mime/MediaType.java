@@ -67,6 +67,10 @@ public final class MediaType {
      * @return parsed media type, or <code>null</code> if parsing fails
      */
     public static MediaType parse(String string) {
+        if (string == null) {
+            return null;
+        }
+
         String type;
         String subtype;
         String params;
