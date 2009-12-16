@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
@@ -42,9 +43,10 @@ public class OOXMLParser implements Parser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         try {
-            OOXMLExtractor extractor = OOXMLExtractorFactory
-                    .createExtractor((POIXMLTextExtractor) ExtractorFactory
-                            .createExtractor(stream));
+            Locale locale = context.get(Locale.class, Locale.getDefault());
+            OOXMLExtractor extractor = OOXMLExtractorFactory.createExtractor(
+                    (POIXMLTextExtractor) ExtractorFactory.createExtractor(stream),
+                    locale);
             extractor.getMetadataExtractor().extract(metadata);
             extractor.getXHTML(handler, metadata);
         } catch (InvalidFormatException e) {

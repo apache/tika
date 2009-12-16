@@ -17,7 +17,9 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.util.Iterator;
+import java.util.Locale;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.ss.usermodel.Cell;
@@ -34,8 +36,18 @@ import org.xml.sax.SAXException;
 
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
-    public XSSFExcelExtractorDecorator(XSSFExcelExtractor extractor) {
+    /**
+     * Format for rendering numbers in the worksheet. Currently we just
+     * use the platform default formatting.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
+     */
+    private final NumberFormat format;
+
+    public XSSFExcelExtractorDecorator(
+            XSSFExcelExtractor extractor, Locale locale) {
         super(extractor, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        this.format = NumberFormat.getInstance(locale);
     }
 
     /**
@@ -67,10 +79,16 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.startElement("td");
                     Cell cell = ri.next();
 
-                    if (cell.getCellType() == Cell.CELL_TYPE_FORMULA
-                            || cell.getCellType() == Cell.CELL_TYPE_STRING) {
+                    int type = cell.getCellType();
+                    if (type == Cell.CELL_TYPE_FORMULA) {
+                        type = cell.getCachedFormulaResultType();
+                    }
+                    if (type == Cell.CELL_TYPE_STRING) {
                         xhtml.characters(cell.getRichStringCellValue()
                                 .getString());
+                    } else if (type == Cell.CELL_TYPE_NUMERIC) {
+                        xhtml.characters(
+                                format.format(cell.getNumericCellValue()));
                     } else {
                         XSSFCell xc = (XSSFCell) cell;
                         String rawValue = xc.getRawValue();

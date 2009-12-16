@@ -35,7 +35,7 @@
   <url>http://lucene.apache.org/tika/</url>
 
   <properties>
-    <poi.version>3.5-FINAL</poi.version>
+    <poi.version>3.6</poi.version>
   </properties>
 
   <dependencies>
