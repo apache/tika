@@ -88,9 +88,10 @@ public class HtmlParser implements Parser {
         // hint, or the passed content-type hint.
         CharsetDetector detector = new CharsetDetector();
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
-        if (incomingCharset == null) {
+        String incomingType = metadata.get(Metadata.CONTENT_TYPE);
+        if (incomingCharset == null && incomingType != null) {
             // TIKA-341: Use charset in content-type
-            MediaType mt = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+            MediaType mt = MediaType.parse(incomingType);
             if (mt != null) {
                 String charset = mt.getParameters().get("charset");
                 if ((charset != null) && Charset.isSupported(charset)) {
