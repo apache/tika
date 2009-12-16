@@ -24,13 +24,12 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -62,8 +61,6 @@ import org.xml.sax.SAXException;
  */
 public class TXTParser implements Parser {
 
-    private static final Pattern CONTENT_TYPE_PATTERN = Pattern.compile("(?i);\\s*charset\\s*=\\s*(.*)");
-
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
@@ -77,14 +74,12 @@ public class TXTParser implements Parser {
         // Detect the content encoding (the stream is reset to the beginning)
         CharsetDetector detector = new CharsetDetector();
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
-        if (incomingCharset == null) {
+        String incomingType = metadata.get(Metadata.CONTENT_TYPE);
+        if (incomingCharset == null && incomingType != null) {
             // TIKA-341: Use charset in content-type
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
-            if (contentType != null) {
-                Matcher m = CONTENT_TYPE_PATTERN.matcher(contentType);
-                if (m.find()) {
-                    incomingCharset = m.group(1).trim();
-                }
+            MediaType mt = MediaType.parse(incomingType);
+            if (mt != null) {
+                incomingCharset = mt.getParameters().get("charset");
             }
         }
 

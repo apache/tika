@@ -27,6 +27,7 @@ import java.util.regex.Pattern;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.CharsetDetector;
@@ -50,10 +51,6 @@ public class HtmlParser implements Parser {
                     "Content-Type['\\\"]\\s+content\\s*=\\s*['\\\"]" +
                     "([^'\\\"]+)['\\\"]\\s*/>");
     
-    // TIKA-350: handle charset as first element in content-type
-    private static final Pattern CONTENT_TYPE_PATTERN = Pattern.compile(
-                    "(?i)(?:;|)\\s*charset\\s*=\\s*([^\r;\\s]*)");
-
     /**
      * TIKA-332: Check for meta http-equiv tag with charset info in
      * HTML content.
@@ -93,14 +90,11 @@ public class HtmlParser implements Parser {
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
         if (incomingCharset == null) {
             // TIKA-341: Use charset in content-type
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
-            if (contentType != null) {
-                Matcher m = CONTENT_TYPE_PATTERN.matcher(contentType);
-                if (m.find()) {
-                    String charset = m.group(1).trim();
-                    if (Charset.isSupported(charset)) {
-                        incomingCharset = charset;
-                    }
+            MediaType mt = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+            if (mt != null) {
+                String charset = mt.getParameters().get("charset");
+                if ((charset != null) && Charset.isSupported(charset)) {
+                    incomingCharset = charset;
                 }
             }
         }
