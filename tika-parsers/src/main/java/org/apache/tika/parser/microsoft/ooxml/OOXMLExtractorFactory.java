@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.util.Locale;
+
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.xslf.XSLFSlideShow;
@@ -31,7 +33,8 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
  */
 public class OOXMLExtractorFactory {
 
-    public static OOXMLExtractor createExtractor(POIXMLTextExtractor extractor) {
+    public static OOXMLExtractor createExtractor(
+            POIXMLTextExtractor extractor, Locale locale) {
         POIXMLDocument document = extractor.getDocument();
 
         if (document instanceof XSLFSlideShow) {
@@ -39,7 +42,7 @@ public class OOXMLExtractorFactory {
                     (XSLFPowerPointExtractor) extractor);
         } else if (document instanceof XSSFWorkbook) {
             return new XSSFExcelExtractorDecorator(
-                    (XSSFExcelExtractor) extractor);
+                    (XSSFExcelExtractor) extractor, locale);
         } else if (document instanceof XWPFDocument) {
             return new XWPFWordExtractorDecorator((XWPFWordExtractor) extractor);
         } else {
