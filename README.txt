@@ -20,7 +20,7 @@ build system. To build Tika, use the following command in this directory:
 The build consists of a number of components, including a standalone runnable
 jar that you can use to try out Tika features. You can run it like this:
 
-    java -jar tika-app/target/tika-app-0.5-SNAPSHOT.jar --help
+    java -jar tika-app/target/tika-app-*.jar --help
 
 License (see also LICENSE.txt)
 ==============================
