@@ -16,12 +16,12 @@
  */
 package org.apache.tika.mime;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -38,6 +38,16 @@ public final class MediaType {
     private static final Pattern SPECIAL_OR_WHITESPACE =
         Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
 
+    // TIKA-350: handle charset as first element in content-type
+    // See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters.
+    private static final String VALID_MIMETYPE_CHARS = "[^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]";
+    private static final String MIME_TYPE_PATTERN_STRING = "(" + VALID_MIMETYPE_CHARS + "+)"
+                    + "\\s*/\\s*" + "(" + VALID_MIMETYPE_CHARS + "+)";
+    private static final Pattern CONTENT_TYPE_PATTERN = Pattern.compile(
+                    "(?is)\\s*" + MIME_TYPE_PATTERN_STRING + "\\s*($|;.*)");
+    private static final Pattern CONTENT_TYPE_CHARSET_FIRST_PATTERN = Pattern.compile(
+                    "(?i)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*" + MIME_TYPE_PATTERN_STRING);
+
     public static final MediaType OCTET_STREAM =
         new MediaType("application", "octet-stream", NO_PARAMETERS);
 
@@ -49,46 +59,49 @@ public final class MediaType {
 
     /**
      * Parses the given string to a media type. The string is expected to be of
-     * the form "type/subtype(; parameter=...)*" as defined in RFC 2045.
+     * the form "type/subtype(; parameter=...)*" as defined in RFC 2045, though
+     * we also handle "charset=xxx; type/subtype" for broken web servers.
      * 
      * @param string
      *            media type string to be parsed
      * @return parsed media type, or <code>null</code> if parsing fails
      */
     public static MediaType parse(String string) {
-        int colon = string.indexOf(';');
-        if (colon != -1 && colon != string.length()-1) {
-            String primarySubString = string.substring(0, colon);
-            String parameters = string
-                    .substring(colon + 1, string.length());
-
-            MediaType type = parseNoParams(primarySubString);
-            String[] paramBases = parameters.split(";");
-            for (int i = 0; i < paramBases.length; i++) {
-                String[] paramToks = paramBases[i].split("=");
-                String paramName = paramToks[0].trim();
-                String paramValue = paramToks[1].trim();
-                type.parameters.put(paramName, paramValue);
-            }
-
-            return type;
-
-        } else
-            return parseNoParams(string);
-
-    }
-
-    private static MediaType parseNoParams(String string) {
-        int slash = string.indexOf('/');
-        if (slash != -1) {
-            String type = string.substring(0, slash).trim();
-            String subtype = string.substring(slash + 1).trim();
-            if (type.length() > 0 && subtype.length() > 0) {
-                return new MediaType(type, subtype);
+        String type;
+        String subtype;
+        String params;
+        
+        Matcher m = CONTENT_TYPE_PATTERN.matcher(string);
+        if (m.matches()) {
+            type = m.group(1);
+            subtype = m.group(2);
+            params = m.group(3);
+        } else {
+            m = CONTENT_TYPE_CHARSET_FIRST_PATTERN.matcher(string);
+            if (m.matches()) {
+                params = m.group(1);
+                type = m.group(2);
+                subtype = m.group(3);
+            } else {
+                return null;
             }
         }
-
-        return null;
+        
+        MediaType result = new MediaType(type, subtype);
+        String[] paramPieces = params.split(";");
+        for (String paramPiece : paramPieces) {
+            String[] keyValue = paramPiece.split("=");
+            if (keyValue.length != 2) {
+                continue;
+            }
+            
+            String key = keyValue[0].trim();
+            if (key.length() > 0) {
+                result.parameters.put(key, keyValue[1].trim());
+            }
+        }
+        
+        return result;
     }
 
     private final String type;
