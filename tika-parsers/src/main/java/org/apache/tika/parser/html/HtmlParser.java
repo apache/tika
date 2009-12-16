@@ -43,6 +43,11 @@ import org.xml.sax.SAXException;
  */
 public class HtmlParser implements Parser {
 
+    /**
+     * The default HTML mapping.
+     */
+    private static final HtmlMapper mapper = new DefaultHtmlMapper();
+
     // Use the widest, most common charset as our default.
     private static final String DEFAULT_CHARSET = "windows-1252";
     private static final int META_TAG_BUFFER_SIZE = 4096;
@@ -190,43 +195,15 @@ public class HtmlParser implements Parser {
      * <p>
      * Subclasses can override this method to customize the default mapping.
      *
+     * @deprecated Use the {@link HtmlMapper} mechanism to customize
+     *             the HTML mapping. This method will be removed in Tika 1.0.
      * @since Apache Tika 0.5
      * @param name HTML element name (upper case)
      * @return XHTML element name (lower case), or
      *         <code>null</code> if the element is unsafe 
      */
     protected String mapSafeElement(String name) {
-        // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
-
-        if ("H1".equals(name)) return "h1";
-        if ("H2".equals(name)) return "h2";
-        if ("H3".equals(name)) return "h3";
-        if ("H4".equals(name)) return "h4";
-        if ("H5".equals(name)) return "h5";
-        if ("H6".equals(name)) return "h6";
-
-        if ("P".equals(name)) return "p";
-        if ("PRE".equals(name)) return "pre";
-        if ("BLOCKQUOTE".equals(name)) return "blockquote";
-
-        if ("UL".equals(name)) return "ul";
-        if ("OL".equals(name)) return "ol";
-        if ("MENU".equals(name)) return "ul";
-        if ("LI".equals(name)) return "li";
-        if ("DL".equals(name)) return "dl";
-        if ("DT".equals(name)) return "dt";
-        if ("DD".equals(name)) return "dd";
-
-        if ("TABLE".equals(name)) return "table";
-        if ("THEAD".equals(name)) return "thead";
-        if ("TBODY".equals(name)) return "tbody";
-        if ("TR".equals(name)) return "tr";
-        if ("TH".equals(name)) return "th";
-        if ("TD".equals(name)) return "td";
-
-        if ("ADDRESS".equals(name)) return "address";
-
-        return null;
+        return mapper.mapSafeElement(name);
     }
 
     /**
@@ -234,6 +211,8 @@ public class HtmlParser implements Parser {
      * discarded instead of including it in the parse output. Subclasses
      * can override this method to customize the set of discarded elements.
      *
+     * @deprecated Use the {@link HtmlMapper} mechanism to customize
+     *             the HTML mapping. This method will be removed in Tika 1.0.
      * @since Apache Tika 0.5
      * @param name HTML element name (upper case)
      * @return <code>true</code> if content inside the named element
@@ -248,8 +227,9 @@ public class HtmlParser implements Parser {
      * protected HtmlParser methods. Making HtmlParser implement HtmlMapper
      * directly would require those methods to be public, which would break
      * backwards compatibility with subclasses.
-     * <p>
-     * TODO: Cleanup in Tika 1.0
+     *
+     * @deprecated Use the {@link HtmlMapper} mechanism to customize
+     *             the HTML mapping. This class will be removed in Tika 1.0.
      */
     private class HtmlParserMapper implements HtmlMapper {
         public String mapSafeElement(String name) {
