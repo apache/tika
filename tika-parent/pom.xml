@@ -110,6 +110,17 @@
       </roles>
     </developer>
     <developer>
+      <name>Ken Krugler</name>
+      <id>kkrugler</id>
+      <email>kkrugler@apache.org</email>
+      <url>http://ken-blog.krugler.org</url>
+      <organization>Bixo Labs</organization>
+      <organizationUrl>http://bixolabs.com</organizationUrl>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
       <name>Chris A. Mattmann</name>
       <id>mattmann</id>
       <email>mattmann@apache.org</email>
