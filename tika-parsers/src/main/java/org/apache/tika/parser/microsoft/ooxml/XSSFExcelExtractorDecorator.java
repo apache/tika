@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Locale;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
+import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Comment;
@@ -29,6 +30,7 @@ import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
 import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -85,11 +87,18 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         xhtml.characters(cell.getRichStringCellValue()
                                 .getString());
                     } else if (type == Cell.CELL_TYPE_NUMERIC) {
-                        CellStyle style = cell.getCellStyle();
-                	       xhtml.characters(
-                	    		formatter.formatRawCellContents(cell.getNumericCellValue(),
-                	    										style.getIndex(),
-                	    										style.getDataFormatString()));
+                    	// Get Cell Style Information from Document Style Table
+                        XSSFCellStyle style = document.getCellStyleAt(cell.getCellStyle().getIndex());
+                        short formatIndex = style.getDataFormat();
+                        String formatString = style.getDataFormatString();
+                        if (formatString == null) {
+                            formatString = BuiltinFormats.getBuiltinFormat(formatIndex);
+                        }
+
+                	    xhtml.characters(
+                	    	formatter.formatRawCellContents(cell.getNumericCellValue(),
+                	    									formatIndex,
+                	    									formatString));
                     } else {
                         XSSFCell xc = (XSSFCell) cell;
                         String rawValue = xc.getRawValue();
