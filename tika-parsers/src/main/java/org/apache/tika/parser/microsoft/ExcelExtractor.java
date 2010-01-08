@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
@@ -42,7 +43,6 @@ import org.apache.poi.hssf.record.FormulaRecord;
 import org.apache.poi.hssf.record.HyperlinkRecord;
 import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.UnicodeString;
-//import org.apache.poi.hssf.record.HyperlinkRecord;  // FIXME - requires POI release
 import org.apache.poi.hssf.record.LabelRecord;
 import org.apache.poi.hssf.record.LabelSSTRecord;
 import org.apache.poi.hssf.record.NumberRecord;
@@ -116,34 +116,8 @@ public class ExcelExtractor {
     protected void parse(
             POIFSFileSystem filesystem, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException {
-        // Set up listener and register the records we want to process
-        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale);
-        HSSFRequest hssfRequest = new HSSFRequest();
-        if (listenForAllRecords) {
-            hssfRequest.addListenerForAllRecords(listener);
-        } else {
-            hssfRequest.addListener(listener, BOFRecord.sid);
-            hssfRequest.addListener(listener, EOFRecord.sid);
-            hssfRequest.addListener(listener, DateWindow1904Record.sid);
-            hssfRequest.addListener(listener, CountryRecord.sid);
-            hssfRequest.addListener(listener, BoundSheetRecord.sid);
-            hssfRequest.addListener(listener, FormatRecord.sid);
-            hssfRequest.addListener(listener, ExtendedFormatRecord.sid);
-            hssfRequest.addListener(listener, SSTRecord.sid);
-            hssfRequest.addListener(listener, FormulaRecord.sid);
-            hssfRequest.addListener(listener, LabelRecord.sid);
-            hssfRequest.addListener(listener, LabelSSTRecord.sid);
-            hssfRequest.addListener(listener, NumberRecord.sid);
-            hssfRequest.addListener(listener, RKRecord.sid);
-            hssfRequest.addListener(listener, HyperlinkRecord.sid);
-            hssfRequest.addListener(listener, TextObjectRecord.sid);
-        }
-
-        // Create event factory and process Workbook (fire events)
-        DocumentInputStream documentInputStream = filesystem.createDocumentInputStream("Workbook");
-        HSSFEventFactory eventFactory = new HSSFEventFactory();
-
-        eventFactory.processEvents(hssfRequest, documentInputStream);
+    	TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale);
+    	listener.processFile(filesystem, isListenForAllRecords());
         listener.throwStoredException();
     }
 
@@ -168,6 +142,12 @@ public class ExcelExtractor {
         private SAXException exception = null;
 
         private SSTRecord sstRecord;
+
+        /**
+         * Internal <code>FormatTrackingHSSFListener</code> to handle cell
+         * formatting within the extraction.
+         */
+        private FormatTrackingHSSFListener formatListener;
 
         /**
          * List of worksheet names.
@@ -204,6 +184,47 @@ public class ExcelExtractor {
             this.handler = handler;
             this.format = NumberFormat.getInstance(locale);
         }
+
+        /**
+         * Entry point to listener to start the processing of a file.
+         *
+         * @param filesystem POI file system.
+         * @param listenForAllRecords sets whether the listener is configured to listen
+         * for all records types or not.
+         * @throws IOException on any IO errors.
+         * @throws SAXException on any SAX parsing errors.
+         */
+    	public void processFile(POIFSFileSystem filesystem, boolean listenForAllRecords)
+    		throws IOException,	SAXException {
+
+    		// Set up listener and register the records we want to process
+    		formatListener = new FormatTrackingHSSFListener(this);
+            HSSFRequest hssfRequest = new HSSFRequest();
+            if (listenForAllRecords) {
+                hssfRequest.addListenerForAllRecords(formatListener);
+            } else {
+                hssfRequest.addListener(formatListener, BOFRecord.sid);
+                hssfRequest.addListener(formatListener, EOFRecord.sid);
+                hssfRequest.addListener(formatListener, DateWindow1904Record.sid);
+                hssfRequest.addListener(formatListener, CountryRecord.sid);
+                hssfRequest.addListener(formatListener, BoundSheetRecord.sid);
+                hssfRequest.addListener(formatListener, SSTRecord.sid);
+                hssfRequest.addListener(formatListener, FormulaRecord.sid);
+                hssfRequest.addListener(formatListener, LabelRecord.sid);
+                hssfRequest.addListener(formatListener, LabelSSTRecord.sid);
+                hssfRequest.addListener(formatListener, NumberRecord.sid);
+                hssfRequest.addListener(formatListener, RKRecord.sid);
+                hssfRequest.addListener(formatListener, HyperlinkRecord.sid);
+                hssfRequest.addListener(formatListener, TextObjectRecord.sid);
+                hssfRequest.addListener(formatListener, FormatRecord.sid);
+                hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
+            }
+
+            // Create event factory and process Workbook (fire events)
+            DocumentInputStream documentInputStream = filesystem.createDocumentInputStream("Workbook");
+            HSSFEventFactory eventFactory = new HSSFEventFactory();
+            eventFactory.processEvents(hssfRequest, documentInputStream);
+    	}
 
         /**
          * Process a HSSF record.
@@ -273,7 +294,7 @@ public class ExcelExtractor {
 
             case NumberRecord.sid: // Contains a numeric cell value
                 NumberRecord number = (NumberRecord) record;
-                addCell(record, new NumberCell(number.getValue(), format));
+                addTextCell(record, formatListener.formatNumberDateCell(number));
                 break;
 
             case RKRecord.sid: // Excel internal number record
@@ -330,7 +351,7 @@ public class ExcelExtractor {
          *
          * @param record record that holds the text value
          * @param text text content, may be <code>null</code>
-         * @throws SAXException 
+         * @throws SAXException
          */
         private void addTextCell(Record record, String text) throws SAXException {
             if (text != null) {
@@ -380,12 +401,13 @@ public class ExcelExtractor {
             }
             handler.endElement("td");
             handler.endElement("tr");
-            
+
             // Sheet End
             handler.endElement("tbody");
             handler.endElement("table");
             handler.endElement("div");
         }
+
     }
 
     /**
