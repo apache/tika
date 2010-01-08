@@ -41,7 +41,7 @@ public class OOXMLParserTest extends TestCase {
 
         try {
             parser.parse(input, handler, metadata);
-            
+
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     metadata.get(Metadata.CONTENT_TYPE));
@@ -59,6 +59,73 @@ public class OOXMLParserTest extends TestCase {
         }
     }
 
+    public void testExcelFormats() throws Exception {
+        InputStream input = OOXMLParserTest.class
+                .getResourceAsStream("/test-documents/testEXCEL-formats.xlsx");
+
+        Parser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        // TODO: should auto-detect without the resource name
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "testEXCEL-formats.xlsx");
+        ContentHandler handler = new BodyContentHandler();
+
+        try {
+            parser.parse(input, handler, metadata);
+
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+            String content = handler.toString();
+
+            // Number #,##0.00
+            assertTrue(content.contains("1,599.99"));
+            assertTrue(content.contains("-1,599.99"));
+
+            // Currency $#,##0.00;[Red]($#,##0.00)
+            assertTrue(content.contains("$1,599.99"));
+            assertTrue(content.contains("($1,599.99)"));
+
+            // Scientific 0.00E+00
+            assertTrue(content.contains("1.98E08"));
+            assertTrue(content.contains("-1.98E08"));
+
+            // Percentage
+            assertTrue(content.contains("2%"));
+            assertTrue(content.contains("2.50%"));
+
+            // Time Format: h:mm
+            assertTrue(content.contains("6:15"));
+            assertTrue(content.contains("18:15"));
+
+            // Date Format: d-mmm-yy
+            assertTrue(content.contains("17-May-07"));
+
+            // Below assertions represent outstanding formatting issues to be addressed
+            // they are included to allow the issues to be progressed with the Apache POI
+            // team - See TIKA-103.
+
+            /*************************************************************************
+            // Date Format: m/d/yy
+            assertTrue(content.contains("03/10/2009"));
+
+            // Date/Time Format
+            assertTrue(content.contains("19/01/2008 04:35"));
+
+            // Custom Number (0 "dollars and" .00 "cents")
+            assertTrue(content.contains("19 dollars and .99 cents"));
+
+            // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
+            assertTrue(content.contains("At 4:20 AM on Thursday May 17, 2007"));
+
+            // Fraction (2.5): # ?/?
+            assertTrue(content.contains("2 1 / 2"));
+            **************************************************************************/
+        } finally {
+            input.close();
+        }
+    }
+
     public void testPowerPoint() throws Exception {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testPPT.pptx");
@@ -71,7 +138,7 @@ public class OOXMLParserTest extends TestCase {
 
         try {
             parser.parse(input, handler, metadata);
-            
+
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                     metadata.get(Metadata.CONTENT_TYPE));
@@ -98,7 +165,7 @@ public class OOXMLParserTest extends TestCase {
 
         try {
             parser.parse(input, handler, metadata);
-            
+
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     metadata.get(Metadata.CONTENT_TYPE));
