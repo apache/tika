@@ -17,13 +17,14 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
-import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.Locale;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
@@ -37,17 +38,14 @@ import org.xml.sax.SAXException;
 public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
     /**
-     * Format for rendering numbers in the worksheet. Currently we just
-     * use the platform default formatting.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
+     * Internal <code>DataFormatter</code> for formatting Numbers.
      */
-    private final NumberFormat format;
+	private final DataFormatter formatter = new DataFormatter();
+
 
     public XSSFExcelExtractorDecorator(
             XSSFExcelExtractor extractor, Locale locale) {
         super(extractor, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        this.format = NumberFormat.getInstance(locale);
     }
 
     /**
@@ -87,8 +85,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         xhtml.characters(cell.getRichStringCellValue()
                                 .getString());
                     } else if (type == Cell.CELL_TYPE_NUMERIC) {
-                        xhtml.characters(
-                                format.format(cell.getNumericCellValue()));
+                        CellStyle style = cell.getCellStyle();
+                	       xhtml.characters(
+                	    		formatter.formatRawCellContents(cell.getNumericCellValue(),
+                	    										style.getIndex(),
+                	    										style.getDataFormatString()));
                     } else {
                         XSSFCell xc = (XSSFCell) cell;
                         String rawValue = xc.getRawValue();
