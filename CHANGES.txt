@@ -21,7 +21,7 @@ The most notable changes in Tika 0.6 over the previous release are:
    (TIKA-332, TIKA-334, TIKA-335, TIKA-341) 
 
  * Some document types like Excel spreadsheets contain content like
-   numbers or dates whose exact text format depends on the current locale.
+   numbers or formulas whose exact text format depends on the current locale.
    So far Tika has used the platform default locale in such cases, but
    clients can now explicitly specify the locale by passing a Locale instance
    in the parse context. (TIKA-125)
@@ -33,6 +33,10 @@ The most notable changes in Tika 0.6 over the previous release are:
    the platform default encoding. (TIKA-324)
 
  * A flash video (video/x-flv) parser has been added. (TIKA-328)
+ 
+ * The handling of Number and Date cell formatting within the Microsoft Excel
+   documents has been added. This include currencies, percentages and
+   scientific formats. (TIKA-103)
 
 Release 0.5 - 11/14/2009
 ------------------------
