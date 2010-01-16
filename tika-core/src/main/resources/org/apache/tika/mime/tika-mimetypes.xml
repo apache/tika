@@ -3542,6 +3542,12 @@
   <mime-type type="text/example"/>
 
   <mime-type type="text/html">
+     <!-- TIKA-327: if you encounter tags in the HTML
+          with no declared namespace, it's not XHTML, it's just
+          bad HTML, unfortunately.
+     -->
+    <root-XML localName="html"/>
+    <root-XML localName="link"/>
     <magic priority="50">
       <match value="&lt;!DOCTYPE HTML" type="string" offset="0:64"/>
       <match value="&lt;!doctype html" type="string" offset="0:64"/>
