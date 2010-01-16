@@ -6,6 +6,9 @@ Release 0.6 (Current Development)
 
 The most notable changes in Tika 0.6 over the previous release are:
 
+ * Mime-type detection for HTML has been improved, allowing malformed
+   HTML files to be properly identified by the AutoDetectParser. (TIKA-327)
+
  * Tika now has an additional OSGi bundle packaging that includes all the
    required parser libraries. This bundle package makes it easy to use all
    Tika features in an OSGi environment. (TIKA-340, TIKA-342)

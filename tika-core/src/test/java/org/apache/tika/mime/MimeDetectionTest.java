@@ -55,6 +55,8 @@ public class MimeDetectionTest extends TestCase {
                 "application/rdf+xml",
                 "http://www.w3.org/2002/07/owl#",
                 "test-difficult-rdf2.xml");
+        // add evil test from TIKA-327
+        testFile("text/html", "evilhtml.html");
     }
     
     public void testAutosetSupertype() throws MimeTypeException {
@@ -84,7 +86,7 @@ public class MimeDetectionTest extends TestCase {
         try {
             Metadata metadata = new Metadata();
             String mime = this.mimeTypes.detect(in, metadata).toString();
-            assertEquals(urlOrFileName + " is not properly detected.", expected, mime);
+            assertEquals(urlOrFileName + " is not properly detected: detected.", expected, mime);
 
             //Add resource name and test again
             metadata.set(Metadata.RESOURCE_NAME_KEY, urlOrFileName);
