@@ -50,11 +50,12 @@ public class HtmlParser implements Parser {
 
     // Use the widest, most common charset as our default.
     private static final String DEFAULT_CHARSET = "windows-1252";
-    private static final int META_TAG_BUFFER_SIZE = 4096;
+    // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)
+    private static final int META_TAG_BUFFER_SIZE = 8192;
     private static final Pattern HTTP_EQUIV_PATTERN = Pattern.compile(
                     "(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*" +
                     "Content-Type['\\\"]\\s+content\\s*=\\s*['\\\"]" +
-                    "([^'\\\"]+)['\\\"]\\s*/>");
+                    "([^'\\\"]+)['\\\"]");
     
     /**
      * TIKA-332: Check for meta http-equiv tag with charset info in

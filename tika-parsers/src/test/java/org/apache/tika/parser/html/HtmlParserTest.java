@@ -359,4 +359,19 @@ public class HtmlParserTest extends TestCase {
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
+
+    /**
+     * Test case for TIKA-357
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-357">TIKA-357</a>
+     */
+    public void testMetaHttpEquivWithLotsOfPreambleText() throws Exception {
+        String path = "/test-documents/big-preamble.html";
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse(
+                HtmlParserTest.class.getResourceAsStream(path),
+                new BodyContentHandler(),  metadata, new ParseContext());
+
+        assertEquals("windows-1251", metadata.get(Metadata.CONTENT_ENCODING));
+    }
+
 }
