@@ -57,6 +57,8 @@ public class MimeDetectionTest extends TestCase {
                 "test-difficult-rdf2.xml");
         // add evil test from TIKA-327
         testFile("text/html", "evilhtml.html");
+        // add another evil html test from TIKA-357
+        testFile("text/html", "testlargerbuffer.html");
     }
     
     public void testAutosetSupertype() throws MimeTypeException {
