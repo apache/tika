@@ -42,6 +42,28 @@ The most notable changes in Tika 0.6 over the previous release are:
  * The handling of Number and Date cell formatting within the Microsoft Excel
    documents has been added. This include currencies, percentages and
    scientific formats. (TIKA-103)
+   
+The following people have contributed to Tika 0.6 by submitting or commenting
+on the issues resolved in this release:
+
+Andrzej Bialecki
+Bertrand Delacretaz
+Chris A. Mattmann
+Dave Meikle
+Erik Hetzner
+Felix Meschberger
+Jukka Zitting
+Julien Nioche
+Ken Krugler  
+Luke Nezda
+Maxim Valyanskiy
+Niall Pemberton
+Peter Wolanin 
+Piotr B.
+Sami Siren
+Yuan-Fang Li
+
+See http://tinyurl.com/yc3dk67 for more details on these contributions.
 
 Release 0.5 - 11/14/2009
 ------------------------
