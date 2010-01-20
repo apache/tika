@@ -223,6 +223,7 @@ public final class MimeTypes implements Detector {
                 break;
             }
         }
+        
         if (result != null) {
             // When detecting generic XML (or possibly XHTML),
             // extract the root element and match it against known types
@@ -483,7 +484,7 @@ public final class MimeTypes implements Detector {
     public int getMinLength() {
         // This needs to be reasonably large to be able to correctly detect
         // things like XML root elements after initial comment and DTDs
-        return 4 * 1024;
+        return 8 * 1024;
     }
 
     /**
