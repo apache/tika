@@ -1,0 +1,827 @@
+<script language="javascript">
+
+function addToList(from,to)
+{
+    if(from.selectedIndex >= 0) {
+        isPresent = false;
+        var options=to.getElementsByTagName("option");
+
+        if(from.item(from.selectedIndex).value == "0") {
+            for(i=to.options.length-1; i>= 0; i--) {
+                to.removeChild(options[i]);
+            }
+        }
+        for (i=0; i< to.options.length; i++)
+        {
+            if(options[i].value == from.item(from.selectedIndex).value || options[i].value == "0")
+                isPresent = true;
+        }
+        if(!isPresent) {
+            var oOption = document.createElement("option");;
+            to.appendChild(oOption);
+            oOption.value = from.item(from.selectedIndex).value;
+            oOption.text  = from.item(from.selectedIndex).text;
+        }
+    }
+}
+
+function delFromList(to)
+{
+    if(to.selectedIndex >= 0) {
+      var options=to.getElementsByTagName("option");
+      to.removeChild(options[to.selectedIndex]);
+    }
+}
+
+function fillListToGet(form, to)
+{
+    var options=to.getElementsByTagName("option");
+    for (i=0; i< to.options.length; i++)
+    {
+        form.action += "&"+to.name+"="+options[i].value;
+    }
+}
+
+</script>
+<script language="javascript">
+
+function addToList(from,to)
+{
+    if(from.selectedIndex >= 0) {
+        isPresent = false;
+        var options=to.getElementsByTagName("option");
+
+        if(from.item(from.selectedIndex).value == "0") {
+            for(i=to.options.length-1; i>= 0; i--) {
+                to.removeChild(options[i]);
+            }
+        }
+        for (i=0; i< to.options.length; i++)
+        {
+            if(options[i].value == from.item(from.selectedIndex).value || options[i].value == "0")
+                isPresent = true;
+        }
+        if(!isPresent) {
+            var oOption = document.createElement("option");;
+            to.appendChild(oOption);
+            oOption.value = from.item(from.selectedIndex).value;
+            oOption.text  = from.item(from.selectedIndex).text;
+        }
+    }
+}
+
+function delFromList(to)
+{
+    if(to.selectedIndex >= 0) {
+      var options=to.getElementsByTagName("option");
+      to.removeChild(options[to.selectedIndex]);
+    }
+}
+
+function fillListToGet(form, to)
+{
+    var options=to.getElementsByTagName("option");
+    for (i=0; i< to.options.length; i++)
+    {
+        form.action += "&"+to.name+"="+options[i].value;
+    }
+}
+
+function fillOtherGet(form)
+{
+  if (document.all.price_from != "") {
+    form.action += "&price_from="+document.all.price_from.value;
+  }
+  if (document.all.price_to != "") {
+    form.action += "&price_to="+document.all.price_to.value;
+  }
+  if (document.all.square_from != "") {
+    form.action += "&square_from="+document.all.square_from.value;
+  }
+  if (document.all.square_to != "") {
+    form.action += "&square_to="+document.all.square_to.value;
+  }
+  if (document.all.MKAD != "") {
+    form.action += "&MKAD="+document.all.MKAD.value;
+  }
+}
+
+</script>
+<script language="javascript">
+
+function addToList(from,to)
+{
+    if(from.selectedIndex >= 0) {
+        isPresent = false;
+        var options=to.getElementsByTagName("option");
+
+        if(from.item(from.selectedIndex).value == "0") {
+            for(i=to.options.length-1; i>= 0; i--) {
+                to.removeChild(options[i]);
+            }
+        }
+        for (i=0; i< to.options.length; i++)
+        {
+            if(options[i].value == from.item(from.selectedIndex).value || options[i].value == "0")
+                isPresent = true;
+        }
+        if(!isPresent) {
+            var oOption = document.createElement("option");
+            to.appendChild(oOption);
+            oOption.value = from.item(from.selectedIndex).value;
+            oOption.text  = from.item(from.selectedIndex).text;
+        }
+    }
+}
+
+function delFromList(to)
+{
+    if(to.selectedIndex >= 0) {
+      var options=to.getElementsByTagName("option");
+      to.removeChild(options[to.selectedIndex]);
+    }
+}
+
+function fillListToGet(form, to)
+{
+    var options=to.getElementsByTagName("option");
+    for (i=0; i< to.options.length; i++)
+    {
+        form.action += "&"+to.name+"="+options[i].value;
+    }
+}
+
+function fillOtherGet(form)
+{
+  if (document.all.price_from != "") {
+    form.action += "&price_from="+document.all.price_from.value;
+  }
+  if (document.all.price_to != "") {
+    form.action += "&price_to="+document.all.price_to.value;
+  }
+  if (document.all.square_from != "") {
+    form.action += "&square_from="+document.all.square_from.value;
+  }
+  if (document.all.square_to != "") {
+    form.action += "&square_to="+document.all.square_to.value;
+  }
+  if (document.all.MKAD != "") {
+    form.action += "&MKAD="+document.all.MKAD.value;
+  }
+}
+
+</script>
+
+<html>
+<head>
+<title>Аренда квартир, снять квартиру,  аренда офисов в Москве. Коммерческая недвижимость. Группа компаний "Континент-Недвижимость"
+
+</title>
+<link rel="SHORTCUT ICON" href="/favicon.ico" />
+<meta http-equiv="Content-Type" content="text/html; charset=windows-1251">
+<meta http-equiv="Content-Language" content="ru">
+<meta name="Keywords" content="Агентство недвижимости, аренда, снять, снять, офис, квартира,  комната,  помещение, склад, магазин, площадь, коттедж, дом, купить, продать, коммерческая, загородная, элитная, недвижимость, москва, маклер, сайт">
+<meta name="Description" content="Агентства недвижимости "КОНТИНЕНТ Недвижимость", "Хорошие дома" Москва. Аренда и продажа коммерческой и жилой недвижимости в Москве и Подмосковье: офисные, складские, производственные, торговые и другие нежилые помещения, квартиры, комнаты, коттеджи, дома, дачи. Аренда квартир, офисов, помещений. Снять квартиру. Офисы Москвы. Маклер сайт.">
+<meta http-equiv="description" content="Агентства недвижимости "КОНТИНЕНТ Недвижимость", "Хорошие дома" Москва. Аренда и продажа коммерческой и жилой недвижимости в Москве и Подмосковье: офисные, складские, производственные, торговые и другие нежилые помещения, квартиры, комнаты, коттеджи, дома, дачи. Аренда квартир, офисов, помещений. Снять квартиру. Офисы Москвы. Маклер сайт.">
+<meta name="revisit" content="7 days">
+<meta name='yandex-verification' content='77a043af80883202' />
+
+<link rel="stylesheet" href="continent.css" type="text/css">
+</head>
+<body bgcolor="#FFFFFF" text="#000000" leftmargin="0" topmargin="0" marginwidth="0" marginheight="0">
+<table width="100%" border="0" cellspacing="0" cellpadding="0" height="100%">
+  <tr>
+    <td height="10"> 
+      <noindex><table width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td><a title="Аренда продажа квартир офисов" href="/default.asp"><img src="imgs/logo2.gif" Alt="Аренда продажа квартир, комнат, офисов, складов, помещений" width="205" height="68" style="margin-top:13px; margin-bottom:3px; margin-left:13px;" border=0></a></td>
+          <td align=center valign=bottom>
+          
+            <a href='http://office.realty-guide.ru/rot/?key=289' target=_blank><img src='/imgs/banners/ban32.gif' border=0 width=500 height=75></a>
+          
+          </td>
+        </tr>
+      </table></noindex>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top" height="100%"> 
+      <table width="100%" border="0" cellspacing="0" cellpadding="0" height="100%">
+        <tr>
+          <td width="228" bgcolor="#546154" valign="top" align=center> 
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" height=402>
+              <tr> 
+                <td height="147" background="imgs/hd_bg2.gif" valign="top"><img src="imgs/h_fl.jpg" width="202" height="136" style="margin-top: 10px; margin-left: 14px;" alt="Аренда продажа квартир, комнат, офисов, складов, помещений"></td>
+              </tr>
+              <tr> 
+                <td height="255" valign="top">
+                  <OBJECT classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000"
+ codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab#version=6,0,0,0"
+ WIDTH="228" HEIGHT="250" id="menu10" ALIGN="">
+ <PARAM NAME=movie VALUE="menu10.swf"> <PARAM NAME=quality VALUE=high> <PARAM NAME=bgcolor VALUE=#525E52> <EMBED src="menu10.swf" quality=high bgcolor=#525E52  WIDTH="228" HEIGHT="250" NAME="menu10" ALIGN=""
+ TYPE="application/x-shockwave-flash" PLUGINSPAGE="http://www.macromedia.com/go/getflashplayer"></EMBED>
+</OBJECT>
+                </td>
+              </tr>
+            </table>
+<a href="/kommvip.asp"><img width=169 height=114 src="/imgs/vipbanner3.gif" border=0 alt="В данном разделе вы можете ознакомиться со предложениями БЕЗ КОМИССИИ по аренде коммерческой недвижимости: аренде офисов, складов, магазинов, кафе, ресторанов, помещений свободного назначения и т.п., арендодатели которых заключили эксклюзивный договор с агентством КОНТИНЕНТ-НЕДВИЖИМОСТЬ"></a>
+<br>
+<br>
+<a href="/arendavip.asp"><img width=169 height=114 src="/imgs/vipbanner_arenda.jpg" border=0 alt="В данном разделе вы можете ознакомиться со специальными предложениями по аренде жилья: аренде квартир, аренде коттеджей, аренде дач, аренде домов и т.п., арендодатели которых заключили эксклюзивный договор с агентством КОНТИНЕНТ-НЕДВИЖИМОСТЬ"></a>
+<br>
+<br>
+<noindex><a target=_blank title="Коттеджный поселок ЛАГУНА" href="http://www.lagunadom.ru"><img width=169 height=114 src="/ban/ban_169_114.gif" border=0 alt="Коттеджный поселок ЛАГУНА"></a></noindex>
+<br>
+<br>
+<br>
+<br>
+<noindex><!--a target=_blank title="Искусственные елки, новогодние елки, елки, искусственные ели, новогодние ели - ИНТЕРНЕТ-МАГАЗИН НОВОГОДНИХ ЕЛОК" href="http://www.nyelki.ru"><img width=169 height=94 src="/imgs/banner.jpg" border=0 alt="Искусственные елки, новогодние елки, елки, искусственные ели, новогодние ели - ИНТЕРНЕТ-МАГАЗИН НОВОГОДНИХ ЕЛОК"></a>
+<br>
+<br>
+<br>
+<br-->
+<!-- Yandex.Metrika -->
+<script src="//mc.yandex.ru/resource/watch.js" type="text/javascript"></script>
+<script type="text/javascript">
+try { var yaCounter177293 = new Ya.Metrika(177293); } catch(e){}
+</script>
+<noscript><div style="position: absolute;"><img src="//mc.yandex.ru/watch/177293" alt="" /></div></noscript>
+<!-- Yandex.Metrika -->
+<!--Rating@Mail.ru COUNTER--><script language="JavaScript" type="text/javascript"><!--
+d=document;var a='';a+=';r='+escape(d.referrer)
+js=10//--></script><script language="JavaScript1.1" type="text/javascript"><!--
+a+=';j='+navigator.javaEnabled()
+js=11//--></script><script language="JavaScript1.2" type="text/javascript"><!--
+s=screen;a+=';s='+s.width+'*'+s.height
+a+=';d='+(s.colorDepth?s.colorDepth:s.pixelDepth)
+js=12//--></script><script language="JavaScript1.3" type="text/javascript"><!--
+js=13//--></script><script language="JavaScript" type="text/javascript"><!--
+d.write('<a target=_blank href="http://top.mail.ru/jump?from=782596"'+
+' target=_top><img src="http://top.list.ru/counter'+
+'?id=782596;t=54;js='+js+a+';rand='+Math.random()+
+'" alt="Рейтинг@Mail.ru"'+' border=0 height=31 width=88/><\/a>')
+if(11<js)d.write('<'+'!-- ')//--></script><noscript><a
+target=_blank href="http://top.mail.ru/jump?from=782596"><img
+src="http://top.list.ru/counter?js=na;id=782596;t=54"
+border=0 height=31 width=88
+alt="Рейтинг@Mail.ru"/></a></noscript><script language="JavaScript" type="text/javascript"><!--
+if(11<js)d.write('--'+'>')//--></script><!--/COUNTER--></noindex>
+<br>
+ <br><br>
+          </td>
+          <td valign="top" bgcolor="#546154" height="100%"> 
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" height="100%">
+              <tr>
+                <td height="4" background="imgs/hd_bg1.gif" align="right" valign="top" style="padding-right:13px; font-size:4px;">&nbsp;</td>
+              </tr>
+              <tr>
+                <td valign="top" style="padding-right:13px;" height="20" align=right background="imgs/hd_bg1n.gif">
+                  <table border=0 cellspacing=0 cellpadding=0 height=20>
+                  <tr>
+
+                    <td><img src="/imgs/tabl1_p.gif" height=20></td>
+                    <td valign=bottom background="/imgs/tabl2_p.gif"><div style="padding-bottom:2px;"><a style="color:#000000; text-decoration:none;" href="/basket.asp">Блокнот</a></td>
+                    <td><img src="/imgs/tablr_pa.gif" height=20></td>
+                    <td valign=bottom background="/imgs/tabl2_a.gif"><div style="padding-bottom:2px; font-weight:bold; text-transform:uppercase;">Континент-Недвижимость</div></div></td>
+                    <td><img src="/imgs/tabl3_a.gif" height=20></td>
+
+                  </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td valign="top" style="padding-bottom:13px;padding-right:13px;" height="100%">
+
+<style>
+a:link {  color: #000000; text-decoration: none;}
+a:visited {  color: #000000; text-decoration: none;}
+a:active {  color: #000000; text-decoration: none;}
+a:hover {  color: #1FB21F; text-decoration: underline;}
+h2 { margin:0px; padding:0px; font-weight: normal; font-size: 8pt; text-decoration:none;}
+</style>
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor=#FFFFFF>
+<tr>
+  <td valign=top align=left><img src="/imgs/fp2.gif" width=37 height=31></td>
+  <td valign=top align=right><img src="/imgs/fp1.gif" width=257 height=24></td>
+</tr>
+</table>
+<table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+<tr>
+  <td valign=top>
+    <table width="100%" border="0" cellspacing="1" cellpadding="0" bgcolor=#FFFFFF>
+    <tr>
+      <td width=12 valign=top><img src="/imgs/fp_li2.gif" width=8 height=15></td>
+      <td>
+        <h1>КОНТИНЕНТ-Недвижимость:</h1>
+<p style="font-family:Times New Roman; font-size:14px; margin-top:10px; margin-bottom:0px;"><b>Агентство недвижимости "Континент-Недвижимость"</b>, основано в 1999 году, представляет собой команду профессионалов на рынке недвижимости г. Москвы, которая обеспечивает качественное обслуживание и индивидуальный подход к каждому клиенту.</p>
+<p style="font-family:Times New Roman; font-size:14px; margin-top:10px; margin-bottom:0px;">Компания "<b>Континент-Недвижимость</b>" награждена Российским фондом защиты прав потребителей дипломом "Лучшие в Москве и Подмосковье" за активное участие в формировании цивилизованного потребительского рынка в России.</p>
+<p style="font-family:Times New Roman; font-size:14px; margin-top:10px; margin-bottom:0px;">Мы предлагаем следующие <b>риэлторские услуги</b>:</p>
+<ul style="font-family:Times New Roman; font-size:14px; margin-top:10px; margin-bottom:0px;">
+<li><b>Аренда и продажа коммерческой недвижимости в Москве и Подмосковье</b>: офисные, складские, производственные, торговые и другие нежилые помещения.
+<li><b>Продажа, аренда офисов в бизнес-центрах</b>, прямая аренда офиса, аренда офиса без комиссии.
+<li><b>Аренда и продажа жилой недвижимости в Москве</b>: квартиры, комнаты.
+<li><b>Аренда и продажа загородной недвижимости в Подмосковье</b>: коттеджи, дома, дачи.
+<li><b>Юридическое сопровождение сделок по аренде и купле-продаже жилых и нежилых помещений</b>.
+<li><b>Оформление и регистрация правоустанавливающих документов</b>.
+<li><b>Доверительное управление недвижимостью</b>.
+</ul>
+<br>&nbsp;
+      </td>
+    </tr>
+    </table>
+    <table width="100%" border="0" cellspacing="0"  style="padding-left:12px;" cellpadding="0" bgcolor=#FFFFFF>
+    <tr>
+      <td valign=top width=50%><h1 style="color:red">Аренда жилой недвижимости</h1></td>
+      <td valign=top width=50%><h1 style="color:red">Аренда коммерческой недвижимости</h1></td>
+    </tr>
+    <tr>
+      <td valign=top><br><h1>Аренда квартир в Москве</h1></td>
+      <td valign=top><br><h1>Аренда офисов и особняков</h1></td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда квартир в Москве" border=0 class=img1 src="/imgs/fp_i1.jpg"></td>
+          <td valign=top class=fp_small>Снять квартиру в Москве наше агентство недвижимости поможет быстро и выгодно. 150 предложений сдать квартиру ежедневно. База по аренде квартир обновляется каждый час.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда квартир" href="arenda_all.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде квартир</h2></a></div>
+            <a title="квартиры в аренду" href="arenda_dball.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск квартир в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда офисов и особняков" border=0 class=img1 src="/imgs/fp_i2.jpg"></td>
+          <td valign=top class=fp_small>Аренда офисов. Снять офисное помещение в аренду. Более 2000 вариантов офисов в Москве. 100 новых предложений сдать офис каждый день. База по аренде офисов обновляется ежечасно. Фото офисов.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда офисов" href="komm.asp?kommtype_id=1&kommtype_id=8"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде офисов</h2></a></div>
+            <a title="офисы в аренду" href="komm_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск офисов в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td valign=top><br><h1>Аренда комнат в Москве</h1></td>
+      <td valign=top><br><h1>Аренда складов в Москве</h1></td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда комнат в Москве" border=0 class=img1 src="/imgs/fp_i3.jpg"></td>
+          <td valign=top class=fp_small>Аренда комнат в любом районе Москвы за 1 день с выездным агентом. У нас можно снять недорогую и уютную комнату в коммунальной квартире. Хотите сдать комнату? Просто оставьте заявку!</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда комнат" href="arenda_all.asp?roomamount=-1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде комнат</h2></a></div>
+            <a title="комнаты в аренду" href="arenda_dball.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск комнат в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда складов в Москве" border=0 class=img1 src="/imgs/fp_i4.jpg"></td>
+          <td valign=top class=fp_small>Снять склад в Москве или Подмосковье. На нашем сайте Вы можете найти множество предложений по аренде складских помещений и площадей. Фото складов.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда складов" href="komm.asp?kommtype_id=2"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде складов</h2></a></div>
+            <a title="склады в аренду" href="komm_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск складов в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td valign=top><br><h1>Аренда элитных квартир. Фото квартир.</h1></td>
+      <td valign=top><br><h1>Аренда производственных помещений</h1></td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда элитных квартир" border=0 class=img1 src="/imgs/fp_i5.jpg"></td>
+          <td valign=top class=fp_small>Для тех, кто хочет снять элитную квартиру или квартиру в центре. У нас на сайте более 1000 объектов элитной недвижимости в аренду. Фото квартир. Сдать элитную квартиру? Обращайтесь, мы поможем.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда квартир" href="arenda_all.asp?elit=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде элитных квартир</h2></a></div>
+            <a title="квартиры в аренду" href="arenda_dball.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск элитных квартир в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда производственных помещений" border=0 class=img1 src="/imgs/fp_i6.jpg"></td>
+          <td valign=top class=fp_small>Для тех, кто хочет сдать или снять производство в Москве или Подмосковье. У нас на сате вы можете найти широкий выбор помещений под производство . Фото помещений.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда производств" href="komm.asp?kommtype_id=4"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде производств</h2></a></div>
+            <a title="производства в аренду" href="komm_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск производств в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td valign=top><br><h1>Посуточная аренда квартир</h1></td>
+      <td valign=top><br><h1>Аренда магазинов</h1></td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Посуточная аренда квартир" border=0 class=img1 src="/imgs/fp_i7.jpg"></td>
+          <td valign=top class=fp_small>Гостям столицы, командированным и просто желающим отдохнуть, агентство недвижимости предлагает снять квартиру в аренду посуточно. Фото квартир в посуточную аренду.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда квартир" href="arendaday_results.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения посуточной аренды квартир</h2></a></div>
+            <a title="квартиры в аренду" href="arendaday_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск квартир в посуточную аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда магазинов" border=0 class=img1 src="/imgs/fp_i8.jpg"></td>
+          <td valign=top class=fp_small>Для тех, кто хочет сдать или снять магазин. Мы предлагаем широкий выбор торговых помещений и площадей в торговых центрах Москвы. Фото помещений.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда магазинов" href="komm.asp?kommtype_id=3"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде магазинов</h2></a></div>
+            <a title="магазины в аренду" href="komm_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск магазинов в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td valign=top><br><h1>Аренда коттеджей и дач в Подмосковье</h1></td>
+      <td valign=top><br><h1>Аренда помещений под рестораны и кафе</h1></td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда коттеджей и дач" border=0 class=img1 src="/imgs/fp_i9.jpg"></td>
+          <td valign=top class=fp_small>Тем, кого интересует аренда коттеджа или загородного дома в Подмосковье, агентство недвижимости предлагает широкий выбор загородной недвижимости . Сдать или снять коттедж с нами это просто. Фото.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда коттеджей дач" href="arenda_cottage.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения аренды коттеджей, дач</h2></a></div>
+            <a title="коттеджи дачи в аренду" href="cottage_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск коттеджей, дач, домов в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда ресторанов и кафе" border=0 class=img1 src="/imgs/fp_i10.jpg"></td>
+          <td valign=top class=fp_small>Хотите снять помещение под ресторан, бар или кафе. На этом сайте вы можете найти предложения по аренде коммерческой недвижимости для ресторанного бизнеса с ФОТО. Сдать или снять ресторан, кафе, бар в Москве.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда ресторанов кафе" href="komm.asp?kommtype_id=5&kommtype_id=6"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде ресторанов, кафе</h2></a></div>
+            <a title="рестораны и кафе в аренду" href="komm_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск ресторанов и кафе в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td valign=top><br><h1>Посуточная аренда коттеджей в Подмосковье</h1></td>
+      <td valign=top><br><h1>Аренда помещений свободного назначения</h1></td>
+    </tr>
+    <tr>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Посуточная аренда коттеджей" border=0 class=img1 src="/imgs/fp_i13.jpg"></td>
+          <td valign=top class=fp_small>Вы хотите провести выходные или праздники в загородном доме? Наше агентство недвижимости предлагает снять коттедж посуточно. Фото  коттеджей.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда коттеджей" href="arenda_cottageday.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения посуточной аренды коттеджей</h2></a></div>
+            <a title="коттеджи в аренду" href="cottageday_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск коттеджей в посуточную аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+      <td valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Аренда помещений свободного назначения" border=0 class=img1 src="/imgs/fp_i15.jpg"></td>
+          <td valign=top class=fp_small>Снять помещение свободного назначения. Десятки предложений сдать ПСН в Москве. База по коммерческой недвижимости обновляется ежедневно. ФОТО.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="аренда помещений" href="komm.asp?kommtype_id=7"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по аренде помещений свободного назначения</h2></a></div>
+            <a title="помещения в аренду" href="komm_db.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Поиск помещений свободного назначения в аренду</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td colspan=2 valign=top><br><h1 style="color:red">Продажа коммерческой недвижимости</h1></td>
+    </tr>
+    <tr>
+      <td colspan=2 align=center valign=top>
+        <table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+        <tr>
+          <td valign=top width=60><img width=60 height=60 alt="Продажа коммерческой недвижимости" border=0 class=img1 src="/imgs/fp_i14.jpg"></td>
+          <td valign=top class=fp_small>Если вы хотите купить помещение для бизнеса: офис, магазин, склад, производство, то Вы можете ознакомиться с предложениями по продаже коммерческой недвижимости или продаже прав аренды на нежилые помещения в Москве. ФОТО-каталог недвижимости на продажу.</td>
+        </tr>
+        <tr>
+          <td colspan=2>
+            <a title="продажа офисов" href="kommP.asp?kommtype_id=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по продаже офисов</h2></a></div>
+            <a title="продажа складов" href="kommP.asp?kommtype_id=2"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по продаже складов</h2></a></div>
+            <a title="продажа магазинов" href="kommP.asp?kommtype_id=3"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по продаже магазинов</h2></a></div>
+            <a title="продажа ресторанов" href="kommP.asp?kommtype_id=5"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по продаже ресторанов</h2></a></div>
+            <a title="продажа кафе" href="kommP.asp?kommtype_id=6"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по продаже кафе</h2></a></div>
+            <a title="продажа производств" href="kommP.asp?kommtype_id=4"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по продаже производственных помещений</h2></a></div>
+            <a title="продажа помещений" href="kommP.asp?kommtype_id=7"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Предложения по продаже ПСН</h2></a></div>
+          </td>
+        </tr>
+        </table>
+      </td>
+    </tr>
+    </table>
+    <table width="100%" border="0" cellspacing="1" cellpadding="0" bgcolor=#FFFFFF>
+    <tr>
+      <td width=12 valign=top><img src="/imgs/fp_li2.gif" width=8 height=15></td>
+      <td>
+        <h1>Новости недвижимости. Москва:</h1>
+        <br>
+
+    <li><a href="/news.asp?id=69&curr=1"><h2>Арендатор не платит - порядок действий арендодателя</h2></a>
+
+    <li><a href="/news.asp?id=68&curr=1"><h2>Аренда дорожает!</h2></a>
+
+    <li><a href="/news.asp?id=67&curr=1"><h2>Что делать арендатору, если новый собственник повышает арендную плату?</h2></a>
+
+    <li><a href="/news.asp?id=66&curr=1"><h2>5 способов снять дешевую квартиру в Москве</h2></a>
+
+    <li><a href="/news.asp?id=65&curr=1"><h2>Сдаём комнату в коммуналке: кого поселить и как?</h2></a>
+
+    <li><a title="новости недвижимости" href="news.asp"><h2><b>Другие новости недвижимости...</b></h2></a>
+    <br>
+      </td>
+    </tr>
+    </table>
+  </td>
+  <td width=5>&nbsp;</td>
+  <td valign=top width=300>
+    <h1><img src="/imgs/fp_li2.gif" width=8 height=15> Предложения <font color=red>БЕЗ КОМИССИИ</font>:</h1>
+    <br>
+
+
+<table cellspacing=0 cellpadding=0 border=0 width=100%>
+<tr>
+  <td width=1 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td>
+  <td valign=top width=100%  bgcolor=white>
+    <table cellspacing=1 cellpadding=3 border=0 width=100% style='margin-top:5px;'>
+    <tr>
+      <td width=1 valign=middle><img src='imgs/knop1.gif'></td>
+      <td class=text bgcolor=white valign=middle>
+          <a href="/arendaview_komm.asp?anketa_id=148110" class=menubig><b>Аренда склада</b></a>
+      </td>
+    </tr>
+    </table>
+    <table width=100% cellspacing=0 cellpadding=3 border=0>
+    <tr>
+      <td width=128 valign=top align=right nowrap>
+        <a href="/arendaview_komm.asp?anketa_id=148110"><img style="margin-right:11px; margin-left:5px;" width=9 height=100 src="/imgs/bez.gif" border=0><img class=img1 width=100 height=100 src="/imgs/Photos5/s_k_67491.jpg" border=0 alt="Аренда склада"></a>
+      </td>
+      <td valign=top nowrap style='padding-left:6px;'>
+        <a href='/arendaview_komm.asp?anketa_id=148110' style="color:#000000; text-decoration:none; font-size:11px;"><p class='viprow0'><b>Варшавское ш.</b></p><p class='viprow'>7 км от МКАД</p><p class='viprow'>2100 - 2500 кв.м</b></p><p class='viprow'><b style='font-size:11px;'>130 $/кв.м./год</b></p></a>
+      </td>
+    </tr>
+    </table>
+    &nbsp;
+  </td>
+</tr>
+<tr><td colspan=2 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td></tr>
+<tr><td colspan=2><img src='imgs/shadow1.gif'></td></tr>
+</table>
+    <br>
+
+
+<table cellspacing=0 cellpadding=0 border=0 width=300>
+<tr>
+  <td width=1 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td>
+  <td valign=top width=100%  bgcolor=white>
+    <table cellspacing=1 cellpadding=3 border=0 width=100% style='margin-top:5px;'>
+    <tr>
+      <td valign=top width=1 valign=middle><img src='imgs/knop1.gif'></td>
+      <td class=text bgcolor=white valign=middle>
+          <a href="/arendaview_kommp.asp?anketa_id=167792" class=menubig><b>Продажа офиса</b></a>
+      </td>
+    </tr>
+    </table>
+    <table width=100% cellspacing=0 cellpadding=3 border=0>
+    <tr>
+      <td width=128 valign=top align=right nowrap>
+        <a href="/arendaview_kommp.asp?anketa_id=167792"><img style="margin-right:11px; margin-left:5px;" width=9 height=100 src="/imgs/bez.gif" border=0><img class=img1 width=100 height=100 src="/imgs/Photos5/s_kp_96026.jpg" border=0 alt="Продажа офиса"></a>
+      </td>
+      <td valign=top nowrap style='padding-left:6px;'>
+        <a href='/arendaview_kommp.asp?anketa_id=167792' style="color:#000000; text-decoration:none; font-size:11px;"><p class='viprow0'><b>м. Славянский бульвар</b></p><p class='viprow'>918 кв.м</b></p><p class='viprow'><b style='font-size:11px;'>7&nbsp;344&nbsp;000 $</b></p></a>
+      </td>
+    </tr>
+    </table>
+    &nbsp;
+  </td>
+</tr>
+<tr><td colspan=2 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td></tr>
+<tr><td colspan=2><img src='imgs/shadow1.gif'></td></tr>
+</table>
+    <br>
+
+<table cellspacing=0 cellpadding=0 border=0 width=100%>
+<tr>
+  <td width=1 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td>
+  <td valign=top width=100%  bgcolor=white>
+    <table cellspacing=1 cellpadding=3 border=0 width=100% style='margin-top:5px;'>
+    <tr>
+      <td valign=top width=1 valign=middle><img src='imgs/knop1.gif'></td>
+      <td class=text bgcolor=white valign=middle>
+          <a href="/arendaview_all.asp?anketa_id=160328" class=menubig><b>Аренда 2-комн. квартиры</b></a>
+      </td>
+    </tr>
+    </table>
+    <table width=100% cellspacing=0 cellpadding=3 border=0>
+    <tr>
+      <td width=128 valign=top align=right nowrap>
+            <a href="/arendaview_all.asp?anketa_id=160328"><img style="margin-right:11px; margin-left:5px;" width=9 height=100 src="/imgs/bez.gif" border=0><img class=img1 width=100 height=100 src="/imgs/Photos1/s_ae_45253.jpg" border=0 alt="Аренда 2-комн. квартиры"></a>
+      </td>
+      <td valign=top nowrap style='padding-left:6px;'>
+        <a href='/arendaview_all.asp?anketa_id=160328' style="color:#000000; text-decoration:none; font-size:11px;"><p class='viprow0'><b>м. Тверская</b></p><p class='viprow'>10 минут пешком от метро</p><p class='viprow'>ул. Тверская, дом 25</p><p class='viprow'>общая площадь 60 кв.м</b></p><p class='viprow'><b style='font-size:11px;'>100 000 $/мес</b></p></a>
+      </td>
+    </tr>
+    </table>
+    &nbsp;
+  </td>
+</tr>
+<tr><td colspan=2 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td></tr>
+<tr><td colspan=2><img src='imgs/shadow1.gif'></td></tr>
+</table>
+<br>
+
+
+<table cellspacing=0 cellpadding=0 border=0 width=100%>
+<tr>
+  <td width=1 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td>
+  <td valign=top width=100%  bgcolor=white>
+    <table cellspacing=1 cellpadding=3 border=0 width=100% style='margin-top:5px;'>
+    <tr>
+      <td valign=top width=1 valign=middle><img src='imgs/knop1.gif'></td>
+      <td class=text bgcolor=white valign=middle>
+          <a href="/arendaview_cottage.asp?anketa_id=1761" class=menubig><b>Аренда КОТТЕДЖА</b></a>
+      </td>
+    </tr>
+    </table>
+    <table width=100% cellspacing=0 cellpadding=3 border=0>
+    <tr>
+      <td width=128 valign=top align=right nowrap>
+        <a href="/arendaview_cottage.asp?anketa_id=1761"><img style="margin-right:11px; margin-left:5px;" width=9 height=100 src="/imgs/bez.gif" border=0><img class=img1 width=100 height=100 src="/imgs/Photos61/vipcot1761.jpg" border=0 alt="Аренда КОТТЕДЖА"></a>
+      </td>
+      <td valign=top nowrap style='padding-left:6px;'>
+        <a href='/arendaview_cottage.asp?anketa_id=1761' style="color:#000000; text-decoration:none; font-size:11px;"><p class='viprow0'><b>Осташковское ш.</b></p><p class='viprow'>15 км от МКАД</p><p class='viprow'>520 кв.м</b></p><p class='viprow'><b style='font-size:11px;'>465 000 $/мес</b></p></a>
+      </td>
+    </tr>
+    </table>
+    &nbsp;
+  </td>
+</tr>
+<tr><td colspan=2 bgcolor=#CFCFCF><img src='imgs/blank.gif' width=1 height=1></td></tr>
+<tr><td colspan=2><img src='imgs/shadow1.gif'></td></tr>
+</table>
+<br>
+
+    <div class=ns><a title="аренда недвижимости" href="kommvip.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Все предложения по аренде коммерческой недвижимости без комиссии</h2></a></div>
+    <div class=ns><a title="аренда недвижимости " href="kommvipp.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Все предложения по продаже коммерческой недвижимости без комиссии</h2></a></div>
+    <div class=ns><a title="аренда квартир" href="arendavip.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Все предложения по аренде квартир без комиссии</h2></a></div>
+    <div class=ns><a title="аренда квартир " href="arendacotvip.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Все предложения по аренде коттеджей, дач, домов без комиссии</h2></a></div>
+    <br>
+    <h1><img src="/imgs/fp_li2.gif" width=8 height=15> Оставить заявку:</h1>
+    <p style="font-family:Times New Roman; font-size:12px; margin-top:10px; margin-bottom:0px;">
+    <b>Владельцам</b> недвижимости, желающим продать или сдать в аренду, мы поможем быстро продать или сдать помещение на выгодных условиях. Вы можете оставить заявку или связаться с нами по телефону.
+<br><i>Консутьтации по вопросам аренды и продажи недвижимости бесплатно</i>.
+</p>
+    <br>
+    <div class=ns><a target=_blank title="сдать квартиры " href="form_1.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать квартиру</h2></a></div>
+    <div class=ns><a target=_blank title="сдать комнаты " href="form_1.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать комнату</h2></a></div>
+    <div class=ns><a target=_blank title="сдать элитные квартиры" href="form_1.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать элитную квартиру</h2></a></div>
+    <div class=ns><a target=_blank title="сдать квартиры посуточно" href="form_1day.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать квартиру посуточно</h2></a></div>
+    <div class=ns><a target=_blank title="сдать коттеджи, дома, дачи" href="form_5s.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать коттедж, дом, дачу</h2></a></div>
+    <div class=ns><a target=_blank title="сдать офисы" href="form_1off.asp?kommtypeid=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать офис</h2></a></div>
+    <div class=ns><a target=_blank title="сдать склады и производства" href="form_1off.asp?kommtypeid=2&kommtypeid=4"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать склад, производство</h2></a></div>
+    <div class=ns nowrap><a target=_blank title="сдать магазины" href="form_1off.asp?kommtypeid=3&kommtypeid=5&kommtypeid=6&kommtypeid=7"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Сдать магазин, ресторан, кафе</h2></a></div>
+    <div class=ns><a target=_blank title="продать дачу" href="form_6s.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Продать коттедж, дачу, дом</h2></a></div>
+    <div class=ns><a target=_blank title="продать офисы" href="form_1off.asp?kommtypeid=1&own_type=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Продать офис</h2></a></div>
+    <div class=ns><a target=_blank title="продать склады" href="form_1off.asp?kommtypeid=2&kommtypeid=4&own_type=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Продать склад, производство</h2></a></div>
+    <div class=ns><a target=_blank title="продать помещение" href="form_1off.asp?kommtypeid=1&kommtypeid=2&kommtypeid=3&kommtypeid=4&kommtypeid=5&kommtypeid=6&kommtypeid=7&own_type=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Продать нежилое помещение</h2></a></div>
+    <br>
+    <p style="font-family:Times New Roman; font-size:12px; margin-top:10px; margin-bottom:0px;">
+    <b>Клиентам.</b> Если Вы хотите снять в аренду квартиру, коттедж, офис, склад, магазин... либо если Вас интересует продажа недвижимости, оставьте заявку и мы поможем Вам снять или купить помещение выгодно, надежно и в минимальные сроки. Вы можете ознакомиться с предложениями по аренде и продеже недвижимости на нашем сайте. База обновляется ежедневно. Вся предлагаемая недвижимость предварительно проверена нашими специалистами.
+<br><i>Внимание! Мы не берем предоплаты, не оказываем информационных услуг, просмотр помещений с агентом бесплатно, оплата комиссионных по факту сделки.</i>
+    </p>
+    <br>
+    <div class=ns><a target=_blank title="снять квартиру " href="form_3.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять квартиру</h2></a></div>
+    <div class=ns><a target=_blank title="снять комнату " href="form_3.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять комнату</h2></a></div>
+    <div class=ns><a target=_blank title="снять элитную квартиру " href="form_3.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять элитную квартиру</h2></a></div>
+    <div class=ns><a target=_blank title="снять квартиры посуточно" href="form_3day.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять квартиру посуточно</h2></a></div>
+    <div class=ns><a target=_blank title="снять дачу" href="form_5.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять коттедж, дом, дачу</h2></a></div>
+    <div class=ns><a target=_blank title="снять офис " href="form_3off.asp?kommtypeid=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять офис</h2></a></div>
+    <div class=ns><a target=_blank title="снять склад " href="form_3off.asp?kommtypeid=2&kommtypeid=4"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять склад, производство</h2></a></div>
+    <div class=ns><a target=_blank title="снять магазин " href="form_3off.asp?kommtypeid=3&kommtypeid=5&kommtypeid=6&kommtypeid=7"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Снять магазин, ресторан, кафе</h2></a></div>
+    <div class=ns><a target=_blank title="купить коттедж, дачу " href="form_6.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Купить коттедж, дачу, дом</h2></a></div>
+    <div class=ns><a target=_blank title="купить офис " href="form_3off.asp?kommtypeid=1&own_type=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Купить офис</h2></a></div>
+    <div class=ns><a target=_blank title="купить склад " href="form_3off.asp?kommtypeid=2&kommtypeid=4&own_type=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Купить склад, производство</h2></a></div>
+    <div class=ns><a target=_blank title="купить помещение " href="form_3off.asp?kommtypeid=1&kommtypeid=2&kommtypeid=3&kommtypeid=4&kommtypeid=5&kommtypeid=6&kommtypeid=7&own_type=1"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Купить нежилое помещение</h2></a></div>
+    <br>
+    <h1><img src="/imgs/fp_li2.gif" width=8 height=15> Бесплатные доски объявлений по аренде недвижимости:</h1>
+    <br>
+    <div class=ns><a title="аренда квартир" href="freetables.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Аренда квартир и комнат</h2></a></div>
+    <div class=ns><a title="аренда помещений" href="freetables_komm.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Аренда нежилых помещений</h2></a></div>
+    <div class=ns><a title="аренда коттеджей дач" href="freetables_cott.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Аренда коттеджей, дач, домов</h2></a></div>
+    <br>
+    <h1><img src="/imgs/fp_li2.gif" width=8 height=15> Вакансии:</h1>
+    <br>
+    <div class=ns><a href="vakansii.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Агент по аренде коммерческой недвижимости</h2></a></div>
+    <div class=ns><a href="vakansii.asp"><h2><img src="/imgs/fp_li.gif" width=4 height=9 border=0> Агент по аренде квартир и комнат</h2></a></div>
+    <br>
+  </td>
+</tr>
+</table>
+<table width="100%" border="0" cellspacing="5" cellpadding="0" bgcolor=#FFFFFF>
+<tr>
+  <td bgcolor="#FFFFFF" colspan=2 valign="top" style="padding-top: 5px; padding-right: 5px; padding-bottom: 5px; padding-left: 7px">
+    <br>
+<div align=center>
+<a style="font-size:10px;" href="/default.asp">Главная</a> ::
+<a style="font-size:10px;" href="/arenda_results.asp">Аренда жилья</a> ::  
+<a style="font-size:10px;" href="/prodaga.asp">Продажа/покупка жилья</a> ::  
+<a style="font-size:10px;" href="/komm.asp">Коммерческая недвижимость</a> ::  
+<a style="font-size:10px;" href="/nedvvrossii.asp">Недвижимость в России</a> ::  
+<a style="font-size:10px;" href="/docs.asp">Оформление документов</a> ::  
+<a style="font-size:10px;" href="/zemuchastki.asp">Земельные участки</a> ::  
+<a style="font-size:10px;" href="/vakansii.asp">Вакансии</a> ::  
+<a style="font-size:10px;" href="/questions.asp">Вопросы эксперту</a> ::
+<a style="font-size:10px;" href="/info.asp">Справочная информация</a> ::  
+<a style="font-size:10px;" href="/freetables.asp">Доски объявлений по недвижимости</a> ::  
+<a style="font-size:10px;" href="/links.asp">Каталог ссылок</a> ::  
+<a style="font-size:10px;" href="/kontakty.asp">Контакты</a>
+</div> 
+
+  </td>
+</tr>
+</table>
+</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+    <tr>
+    <td height="20" style="padding-left:13px; padding-right:13px;">
+<table width="100%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td class=copy>
+    &copy; 2001 — 2009 <a title="Агенство недвижимости" href="/">Агентства недвижимости</a> "Континент-Недвижимость", "Хорошие дома" -  Аренда квартир, аренда офисов, аренда помещений.<br>
+    Тел.: +7 495 737-7019&nbsp;&nbsp;&nbsp;Факс: +7 495 231-7755&nbsp;&nbsp;&nbsp;E-mail: <a href="mailto:info1@makler.su" style="color:black">info1@makler.su</a><br>
+</td>
+  </tr>
+</table>
+    </td>
+  </tr>
+</table><script type="text/javascript">
+var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+</script>
+<script type="text/javascript">
+try {
+var pageTracker = _gat._getTracker("UA-8971199-1");
+pageTracker._trackPageview();
+} catch(err) {}</script></body>
+</html>
+
+

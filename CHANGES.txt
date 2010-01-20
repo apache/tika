@@ -9,7 +9,7 @@ The most notable changes in Tika 0.6 over the previous release are:
  * Mime-type detection for HTML (and all types) has been improved, allowing malformed
    HTML files and those HTML files that require a bit more observed content
    before the type is properly detected, are now correctly identified by 
-   the AutoDetectParser. (TIKA-327, TIKA-366, TIKA-367)
+   the AutoDetectParser. (TIKA-327, TIKA-357, TIKA-366, TIKA-367)
 
  * Tika now has an additional OSGi bundle packaging that includes all the
    required parser libraries. This bundle package makes it easy to use all
