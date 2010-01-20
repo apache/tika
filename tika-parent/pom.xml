@@ -30,7 +30,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>0.6-SNAPSHOT</version>
+  <version>0.6</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -287,4 +287,10 @@
 
     </plugins>
   </reporting>
+
+  <scm>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/0.6</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/0.6</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/0.6</url>
+  </scm>
 </project>
