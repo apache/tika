@@ -297,10 +297,24 @@ public final class MimeType implements Comparable<MimeType> {
                     return false;
                 }
             }
+            else{
+                // else if it was empty then check to see if the provided namespaceURI
+                // is empty. If it is not, then these two aren't equal and return false
+                if(!isEmpty(namespaceURI)){
+                    return false;
+                }
+            }
 
             //Compare root element's local name
             if (!isEmpty(this.localName)) {
                 if (!this.localName.equals(localName)) {
+                    return false;
+                }
+            }
+            else{
+                // else if it was empty then check to see if the provided localName
+                // is empty. If it is not, then these two aren't equal and return false 
+                if(!isEmpty(localName)){
                     return false;
                 }
             }

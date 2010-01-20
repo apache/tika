@@ -367,6 +367,7 @@
 
   <mime-type type="application/rdf+xml">
     <root-XML localName="RDF"/>
+    <root-XML localName="RDF" namespaceURI="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>
     <sub-class-of type="application/xml"/>
     <acronym>RDF/XML</acronym>
     <comment>XML syntax for RDF graphs</comment>
@@ -2637,6 +2638,9 @@
   </mime-type>
 
   <mime-type type="application/xhtml+xml">
+    <magic priority="50">
+      <match value="&lt;html xmlns=" type="string" offset="0:8192"/>
+    </magic>    
     <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html"/>
     <glob pattern="*.xhtml"/>
     <glob pattern="*.xht"/>
