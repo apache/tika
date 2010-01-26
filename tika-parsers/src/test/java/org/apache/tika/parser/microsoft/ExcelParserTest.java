@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
+import java.util.Locale;
 
 import junit.framework.TestCase;
 
@@ -25,6 +26,18 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class ExcelParserTest extends TestCase {
+
+    // TODO: This is a workaround until TIKA-371 is fixed
+    private Locale defaultLocale;
+
+    protected void setUp() {
+        defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.US);
+    }
+
+    protected void tearDown() {
+        Locale.setDefault(defaultLocale);
+    }
 
     public void testExcelParser() throws Exception {
         InputStream input = ExcelParserTest.class.getResourceAsStream(
