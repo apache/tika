@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.InputStream;
+import java.util.Locale;
 
 import junit.framework.TestCase;
 
@@ -28,6 +29,18 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.parser.AutoDetectParser;
 
 public class OOXMLParserTest extends TestCase {
+
+    // TODO: This is a workaround until TIKA-371 is fixed
+    private Locale defaultLocale;
+
+    protected void setUp() {
+        defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.US);
+    }
+
+    protected void tearDown() {
+        Locale.setDefault(defaultLocale);
+    }
 
     public void testExcel() throws Exception {
         InputStream input = OOXMLParserTest.class
