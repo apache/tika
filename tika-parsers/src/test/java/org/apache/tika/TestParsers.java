@@ -161,7 +161,7 @@ public class TestParsers extends TestCase {
     }
 
     public void testMP3Extraction() throws Exception {
-        File file = getResourceAsFile("/test-documents/testMP3.mp3");
+        File file = getResourceAsFile("/test-documents/testMP3id3v1.mp3");
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "audio/mpeg");
         assertEquals(s1, s2);
