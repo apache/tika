@@ -17,6 +17,7 @@
 package org.apache.tika.parser.odf;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.xml.AttributeDependantMetadataHandler;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.parser.xml.MetadataHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -33,6 +34,8 @@ public class OpenDocumentMetaParser extends DcXMLParser {
 
     private static final XPathParser META_XPATH = new XPathParser(
             "meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
+    // eg <meta:user-defined meta:name="Info1">Text1</meta:user-defined> becomes custom:Info1=Text1
+    public static final String USER_DEFINED_METADATA_NAME_PREFIX = "custom:"; 
 
     private static ContentHandler getMeta(
             ContentHandler ch, Metadata md, String name, String element) {
@@ -41,6 +44,17 @@ public class OpenDocumentMetaParser extends DcXMLParser {
                 META_XPATH.parse("//meta:" + element + "//text()"));
         ContentHandler branch =
             new MatchingContentHandler(new MetadataHandler(md, name), matcher);
+        return new TeeContentHandler(ch, branch);
+    }
+
+    private static ContentHandler getUserDefined(
+            ContentHandler ch, Metadata md) {
+        Matcher matcher = new CompositeMatcher(
+                META_XPATH.parse("//meta:user-defined/@meta:name"),
+                META_XPATH.parse("//meta:user-defined//text()"));
+        ContentHandler branch = new MatchingContentHandler(
+              new AttributeDependantMetadataHandler(md, "meta:name", USER_DEFINED_METADATA_NAME_PREFIX),
+              matcher);
         return new TeeContentHandler(ch, branch);
     }
 
@@ -54,9 +68,18 @@ public class OpenDocumentMetaParser extends DcXMLParser {
     }
 
     protected ContentHandler getContentHandler(ContentHandler ch, Metadata md) {
+        // Process the Dublin Core Attributes 
         ch = super.getContentHandler(ch, md);
+        // Process the OO Meta Attributes
+        ch = getMeta(ch, md, Metadata.CREATION_DATE, "creation-date");
         ch = getMeta(ch, md, Metadata.KEYWORDS, "keyword");
+        ch = getMeta(ch, md, Metadata.EDIT_TIME, "editing-duration");
+        ch = getMeta(ch, md, "editing-cycles", "editing-cycles");
+        ch = getMeta(ch, md, "initial-creator", "initial-creator");
         ch = getMeta(ch, md, "generator", "generator");
+        // Process the user defined Meta Attributes
+        ch = getUserDefined(ch, md);
+        // Process the OO Statistics Attributes
         ch = getStatistic(ch, md, "nbTab", "table-count");
         ch = getStatistic(ch, md, "nbObject", "object-count");
         ch = getStatistic(ch, md, "nbImg", "image-count");
