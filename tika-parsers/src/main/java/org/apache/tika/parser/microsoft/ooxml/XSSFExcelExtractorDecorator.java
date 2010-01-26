@@ -32,6 +32,9 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.exception.TikaException;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
 
@@ -42,10 +45,14 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
 	private final DataFormatter formatter = new DataFormatter();
 
+    private final XSSFExcelExtractor extractor;
+    private static final String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     public XSSFExcelExtractorDecorator(
             XSSFExcelExtractor extractor, Locale locale) {
-        super(extractor, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        super(extractor, TYPE);
+
+        this.extractor = extractor;
     }
 
     /**
@@ -128,5 +135,27 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         if (content.length() > 0) {
             xhtml.element("p", content);
         }
+    }
+
+    @Override
+    public MetadataExtractor getMetadataExtractor() {
+        return new MetadataExtractor(extractor, TYPE) {
+            @Override
+            public void extract(Metadata metadata) throws TikaException {
+                super.extract(metadata);
+
+                metadata.set(TikaMetadataKeys.PROTECTED, "false");
+
+                XSSFWorkbook document = (XSSFWorkbook) extractor.getDocument();
+
+                for (int i = 0; i < document.getNumberOfSheets(); i++) {
+                    XSSFSheet sheet = document.getSheetAt(i);
+
+                    if (sheet.getProtect()) {
+                        metadata.set(TikaMetadataKeys.PROTECTED, "true");
+                    }
+                }
+            }
+        };
     }
 }

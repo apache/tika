@@ -22,6 +22,7 @@ import java.util.Locale;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -67,6 +68,7 @@ public class OOXMLParserTest extends TestCase {
             assertFalse(content.contains("9.0"));
             assertTrue(content.contains("196"));
             assertFalse(content.contains("196.0"));
+            assertEquals("false", metadata.get(TikaMetadataKeys.PROTECTED));
         } finally {
             input.close();
         }
@@ -185,6 +187,27 @@ public class OOXMLParserTest extends TestCase {
             assertEquals("Sample Word Document", metadata.get(Metadata.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
             assertTrue(handler.toString().contains("Sample Word Document"));
+        } finally {
+            input.close();
+        }
+    }
+
+    public void testProtectedExcel() throws Exception {
+        InputStream input = OOXMLParserTest.class
+                .getResourceAsStream("/test-documents/protected.xlsx");
+
+        Parser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+
+        try {
+            parser.parse(input, handler, metadata);
+
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+            assertEquals("true", metadata.get(TikaMetadataKeys.PROTECTED));
         } finally {
             input.close();
         }

@@ -23,4 +23,5 @@ public interface TikaMetadataKeys {
 
     String RESOURCE_NAME_KEY = "resourceName";
 
+    String PROTECTED = "protected";
 }
