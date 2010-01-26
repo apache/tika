@@ -59,6 +59,10 @@ public class Mp3ParserTest extends TestCase {
         assertTrue(content.contains("2008"));
         assertTrue(content.contains("Test Comment"));
         assertTrue(content.contains("Rock"));
+        
+        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("2", metadata.get("channels"));
     }
 
     /**
@@ -89,6 +93,10 @@ public class Mp3ParserTest extends TestCase {
         assertTrue(content.contains("2008"));
         assertTrue(content.contains("Test Comment"));
         assertTrue(content.contains("Rock"));
+        
+        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("2", metadata.get("channels"));
     }
 
     /**
@@ -119,6 +127,10 @@ public class Mp3ParserTest extends TestCase {
         assertTrue(content.contains("2008"));
         assertTrue(content.contains("Test Comment"));
         assertTrue(content.contains("Rock"));
+        
+        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("2", metadata.get("channels"));
     }
 
     public void testID3v2Frame() throws Exception {
@@ -130,7 +142,8 @@ public class Mp3ParserTest extends TestCase {
        assertEquals(11, ID3v2Frame.getInt(new byte[] {0,0,0,0x0b}));
        assertEquals(257, ID3v2Frame.getInt(new byte[] {0,0,1,1}));
        
-       ID3v2Frame f = ID3v2Frame.createFrameIfPresent(new ByteArrayInputStream(empty));
+       ID3v2Frame f = (ID3v2Frame)
+            ID3v2Frame.createFrameIfPresent(new ByteArrayInputStream(empty));
        assertEquals(3, f.getMajorVersion());
        assertEquals(1, f.getMinorVersion());
        assertEquals(0, f.getFlags());
