@@ -17,7 +17,6 @@
 package org.apache.tika.cli;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -40,6 +39,7 @@ import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.MetadataHelper;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -159,17 +159,10 @@ public class TikaCLI {
                 InputStream input;
                 File file = new File(arg);
                 if (file.isFile()) {
-                    metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
-                    input = new FileInputStream(file);
+                    input = MetadataHelper.getInputStream(file, metadata);
                 } else {
-                    URL url = new URL(arg);
-                    String path = url.getPath();
-                    int slash = path.lastIndexOf('/');
-                    String name = path.substring(slash + 1);
-                    if (name.length() > 0) {
-                        metadata.set(Metadata.RESOURCE_NAME_KEY, name);
-                    }
-                    input = url.openStream();
+                    input =
+                        MetadataHelper.getInputStream(new URL(arg), metadata);
                 }
                 try {
                     parser.parse(

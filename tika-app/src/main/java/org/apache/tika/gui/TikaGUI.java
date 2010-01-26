@@ -57,6 +57,11 @@ import org.xml.sax.SAXException;
 public class TikaGUI extends JFrame {
 
     /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = 5883906936187059495L;
+
+    /**
      * Main method. Sets the Swing look and feel to the operating system
      * settings, and starts the Tika GUI with an {@link AutoDetectParser}
      * instance as the default parser.
@@ -134,7 +139,8 @@ public class TikaGUI extends JFrame {
         this.context.set(Parser.class, parser);
     }
 
-   public void importStream(InputStream input) throws IOException {
+   public void importStream(InputStream input, Metadata md)
+           throws IOException {
         try {
             StringWriter htmlBuffer = new StringWriter();
             StringWriter textBuffer = new StringWriter();
@@ -145,7 +151,6 @@ public class TikaGUI extends JFrame {
                     getHtmlHandler(htmlBuffer),
                     getTextContentHandler(textBuffer),
                     getXmlContentHandler(xmlBuffer));
-            Metadata md = new Metadata();
 
             input = new ProgressMonitorInputStream(
                     this, "Parsing stream", input);
