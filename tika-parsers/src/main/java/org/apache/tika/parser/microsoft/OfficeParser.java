@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Locale;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
+import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hpsf.MarkUnsupportedException;
@@ -33,6 +34,7 @@ import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.hpsf.UnexpectedPropertySetTypeException;
 import org.apache.poi.hslf.extractor.PowerPointExtractor;
 import org.apache.poi.hwpf.extractor.WordExtractor;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
@@ -80,52 +82,59 @@ public class OfficeParser implements Parser {
         while (entries.hasNext()) {
             Entry entry = (Entry) entries.next();
             String name = entry.getName();
-            if (!(entry instanceof DocumentEntry)) {
-                // Skip directory entries
-            } else if ("WordDocument".equals(name)) {
-                setType(metadata, "application/msword");
-                WordExtractor extractor = new WordExtractor(filesystem);
-
-                addTextIfAny(xhtml, "header", extractor.getHeaderText());
-
-                for (String paragraph : extractor.getParagraphText()) {
-                    xhtml.element("p", paragraph);
-                }
-
-                for (String paragraph : extractor.getFootnoteText()) {
-                    xhtml.element("p", paragraph);
-                }
-
-                for (String paragraph : extractor.getCommentsText()) {
-                    xhtml.element("p", paragraph);
-                }
-
-                for (String paragraph : extractor.getEndnoteText()) {
-                    xhtml.element("p", paragraph);
-                }
-
-                addTextIfAny(xhtml, "footer", extractor.getFooterText());
-            } else if ("PowerPoint Document".equals(name)) {
-                setType(metadata, "application/vnd.ms-powerpoint");
-                PowerPointExtractor extractor =
-                    new PowerPointExtractor(filesystem);
-                xhtml.element("p", extractor.getText(true, true));
-            } else if ("Workbook".equals(name)) {
-                setType(metadata, "application/vnd.ms-excel");
-                Locale locale = context.get(Locale.class, Locale.getDefault());
-                new ExcelExtractor().parse(filesystem, xhtml, locale);
-            } else if ("VisioDocument".equals(name)) {
-                setType(metadata, "application/vnd.visio");
-                VisioTextExtractor extractor =
-                    new VisioTextExtractor(filesystem);
-                for (String text : extractor.getAllText()) {
-                    xhtml.element("p", text);
-                }
-            } else if (!outlookExtracted && name.startsWith("__substg1.0_")) {
-                // TODO: Cleaner mechanism for detecting Outlook
-                outlookExtracted = true;
-                setType(metadata, "application/vnd.ms-outlook");
-                new OutlookExtractor(filesystem).parse(xhtml, metadata);
+            if (entry instanceof DirectoryEntry) {
+               if ("Quill".equals(name)) {
+                  setType(metadata, "application/x-mspublisher");
+                  PublisherTextExtractor extractor =
+                      new PublisherTextExtractor(filesystem);
+                  xhtml.element("p", extractor.getText());
+               }
+            } else if (entry instanceof DocumentEntry) {
+               if ("WordDocument".equals(name)) {
+                   setType(metadata, "application/msword");
+                   WordExtractor extractor = new WordExtractor(filesystem);
+   
+                   addTextIfAny(xhtml, "header", extractor.getHeaderText());
+   
+                   for (String paragraph : extractor.getParagraphText()) {
+                       xhtml.element("p", paragraph);
+                   }
+   
+                   for (String paragraph : extractor.getFootnoteText()) {
+                       xhtml.element("p", paragraph);
+                   }
+   
+                   for (String paragraph : extractor.getCommentsText()) {
+                       xhtml.element("p", paragraph);
+                   }
+   
+                   for (String paragraph : extractor.getEndnoteText()) {
+                       xhtml.element("p", paragraph);
+                   }
+   
+                   addTextIfAny(xhtml, "footer", extractor.getFooterText());
+               } else if ("PowerPoint Document".equals(name)) {
+                   setType(metadata, "application/vnd.ms-powerpoint");
+                   PowerPointExtractor extractor =
+                       new PowerPointExtractor(filesystem);
+                   xhtml.element("p", extractor.getText(true, true));
+               } else if ("Workbook".equals(name)) {
+                   setType(metadata, "application/vnd.ms-excel");
+                   Locale locale = context.get(Locale.class, Locale.getDefault());
+                   new ExcelExtractor().parse(filesystem, xhtml, locale);
+               } else if ("VisioDocument".equals(name)) {
+                   setType(metadata, "application/vnd.visio");
+                   VisioTextExtractor extractor =
+                       new VisioTextExtractor(filesystem);
+                   for (String text : extractor.getAllText()) {
+                       xhtml.element("p", text);
+                   }
+               } else if (!outlookExtracted && name.startsWith("__substg1.0_")) {
+                   // TODO: Cleaner mechanism for detecting Outlook
+                   outlookExtracted = true;
+                   setType(metadata, "application/vnd.ms-outlook");
+                   new OutlookExtractor(filesystem).parse(xhtml, metadata);
+               }
             }
         }
 
