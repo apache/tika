@@ -21,25 +21,32 @@ import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * This adds Metadata entries with a specified name for
- *  the textual content of a node (if present), and 
- *  all attribute values passed through the matcher
- *  (but not their names). 
+ * This adds a Metadata entry for a given node.
+ * The textual content of the node is used as the
+ *  value, and the Metadata name is taken from
+ *  an attribute, with a prefix if required. 
  */
-public class MetadataHandler extends DefaultHandler {
+public class AttributeDependantMetadataHandler extends DefaultHandler {
 
     private final Metadata metadata;
 
-    private final String name;
+    private final String nameHoldingAttribute;
+    private final String namePrefix;
+    private String name;
 
     private final StringBuilder buffer = new StringBuilder();
 
-    public MetadataHandler(Metadata metadata, String name) {
+    public AttributeDependantMetadataHandler(Metadata metadata, String nameHoldingAttribute, String namePrefix) {
         this.metadata = metadata;
-        this.name = name;
+        this.nameHoldingAttribute = nameHoldingAttribute;
+        this.namePrefix = namePrefix;
     }
 
     public void addMetadata(String value) {
+        if(name == null || name.length() == 0) {
+           // We didn't find the attribute which holds the name
+           return;
+        }
         if (value.length() > 0) {
             String previous = metadata.get(name);
             if (previous != null && previous.length() > 0) {
@@ -56,9 +63,15 @@ public class MetadataHandler extends DefaultHandler {
 
     public void startElement(
             String uri, String localName, String name, Attributes attributes) {
-        for (int i = 0; i < attributes.getLength(); i++) {
-            addMetadata(attributes.getValue(i));
+        String rawName = attributes.getValue(nameHoldingAttribute);
+        if (rawName != null) {
+           if (namePrefix == null) {
+              this.name = rawName;
+           } else {
+              this.name = namePrefix + rawName;
+           }
         }
+        // All other attributes are ignored
     }
 
     
