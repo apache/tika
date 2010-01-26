@@ -88,13 +88,14 @@ class ParsingTransferHandler extends TransferHandler {
                         new URL(data.toString()), metadata);
                 tika.importStream(stream, metadata);
             } else if (transferable.isDataFlavorSupported(uriListFlavor)) {
-                files = uriToFileList((String) transferable.getTransferData(uriListFlavor));
+                files = uriToFileList(
+                        transferable.getTransferData(uriListFlavor).toString());
             }
 
             for (File file : files) {
                 Metadata metadata = new Metadata();
-                InputStream stream =
-                    MetadataHelper.getInputStream(file, metadata);
+                InputStream stream = MetadataHelper.getInputStream(
+                        file.toURI().toURL(), metadata);
                 tika.importStream(stream, metadata);
             }
             return true;

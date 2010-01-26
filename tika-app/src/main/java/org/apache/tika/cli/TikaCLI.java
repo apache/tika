@@ -156,14 +156,15 @@ public class TikaCLI {
                         System.in, type.getContentHandler(),
                         metadata, context);
             } else {
-                InputStream input;
+                URL url;
                 File file = new File(arg);
                 if (file.isFile()) {
-                    input = MetadataHelper.getInputStream(file, metadata);
+                    url = file.toURI().toURL();
                 } else {
-                    input =
-                        MetadataHelper.getInputStream(new URL(arg), metadata);
+                    url = new URL(arg);
                 }
+                InputStream input =
+                    MetadataHelper.getInputStream(url, metadata);
                 try {
                     parser.parse(
                             input, type.getContentHandler(),

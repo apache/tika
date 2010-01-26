@@ -18,7 +18,6 @@ package org.apache.tika;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
@@ -135,17 +134,10 @@ public class Tika {
      *
      * @param file the file
      * @return detected media type
-     * @throws FileNotFoundException if the file does not exist
      * @throws IOException if the file can not be read
      */
-    public String detect(File file) throws FileNotFoundException, IOException {
-        Metadata metadata = new Metadata();
-        InputStream stream = MetadataHelper.getInputStream(file, metadata);
-        try {
-            return detect(stream, metadata);
-        } finally {
-            stream.close();
-        }
+    public String detect(File file) throws IOException {
+        return detect(file.toURI().toURL());
     }
 
     /**
@@ -223,13 +215,10 @@ public class Tika {
      *
      * @param file the file to be parsed
      * @return extracted text content
-     * @throws FileNotFoundException if the given file does not exist
      * @throws IOException if the file can not be read or parsed
      */
-    public Reader parse(File file) throws FileNotFoundException, IOException {
-        Metadata metadata = new Metadata();
-        InputStream stream = MetadataHelper.getInputStream(file, metadata);
-        return parse(stream, metadata);
+    public Reader parse(File file) throws IOException {
+        return parse(file.toURI().toURL());
     }
 
     /**
@@ -291,15 +280,11 @@ public class Tika {
      *
      * @param file the file to be parsed
      * @return extracted text content
-     * @throws FileNotFoundException if the file does not exist
      * @throws IOException if the file can not be read
      * @throws TikaException if the file can not be parsed
      */
-    public String parseToString(File file)
-            throws FileNotFoundException, IOException, TikaException {
-        Metadata metadata = new Metadata();
-        InputStream stream = MetadataHelper.getInputStream(file, metadata);
-        return parseToString(stream, metadata);
+    public String parseToString(File file) throws IOException, TikaException {
+        return parseToString(file.toURI().toURL());
     }
 
     /**
