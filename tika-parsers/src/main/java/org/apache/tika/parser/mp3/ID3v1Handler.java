@@ -43,25 +43,33 @@ public class ID3v1Handler implements ID3Tags {
 
     public ID3v1Handler(InputStream stream, ContentHandler handler)
             throws IOException, SAXException, TikaException {
-        byte[] tag = getSuffix(stream, 128);
-        if (tag.length == 128
-                && tag[0] == 'T' && tag[1] == 'A' && tag[2] == 'G') {
+        this(getSuffix(stream, 128));
+    }
+
+    /**
+     * Creates from the last 128 bytes of a stream.
+     * @param tagData Must be the last 128 bytes 
+     */
+    protected ID3v1Handler(byte[] tagData)
+            throws IOException, SAXException, TikaException {
+        if (tagData.length == 128
+                && tagData[0] == 'T' && tagData[1] == 'A' && tagData[2] == 'G') {
             found = true;
 
-            title = getString(tag, 3, 33);
-            artist = getString(tag, 33, 63);
-            album = getString(tag, 63, 93);
-            year = getString(tag, 93, 97);
-            comment = getString(tag, 97, 127);
+            title = getString(tagData, 3, 33);
+            artist = getString(tagData, 33, 63);
+            album = getString(tagData, 63, 93);
+            year = getString(tagData, 93, 97);
+            comment = getString(tagData, 97, 127);
 
-            int genreID = (int) tag[127] & 0xff; // unsigned byte
+            int genreID = (int) tagData[127] & 0xff; // unsigned byte
             genre = GENRES[Math.min(genreID, GENRES.length - 1)];
 
             // ID3v1.1 Track addition
             // If the last two bytes of the comment field are zero and
             // non-zero, then the last byte is the track number
-            if (tag[125] == 0 && tag[126] != 0) {
-                int trackNum = (int) tag[126] & 0xff;
+            if (tagData[125] == 0 && tagData[126] != 0) {
+                int trackNum = (int) tagData[126] & 0xff;
                 trackNumber = Integer.toString(trackNum);
             }
         }
@@ -99,7 +107,6 @@ public class ID3v1Handler implements ID3Tags {
     public String getTrackNumber() {
         return trackNumber;
     }
-
 
     /**
      * Returns the identified ISO-8859-1 substring from the given byte buffer.

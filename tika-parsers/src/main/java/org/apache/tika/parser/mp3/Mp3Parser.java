@@ -47,19 +47,19 @@ public class Mp3Parser implements Parser {
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
-        
-        // Create handlers for the various kinds of ID3 tags
-        ID3Tags[] tags = getAllTagHandlers(stream, handler);
 
-        if (tags.length > 0) {
-           CompositeTagHandler tag = new CompositeTagHandler(tags);
-           
+        // Create handlers for the various kinds of ID3 tags
+        ID3TagsAndAudio audioAndTags = getAllTagHandlers(stream, handler);
+
+        if (audioAndTags.tags.length > 0) {
+           CompositeTagHandler tag = new CompositeTagHandler(audioAndTags.tags);
+
            metadata.set(Metadata.TITLE, tag.getTitle());
            metadata.set(Metadata.AUTHOR, tag.getArtist());
 
            xhtml.element("h1", tag.getTitle());
            xhtml.element("p", tag.getArtist());
-            
+
             // ID3v1.1 Track addition
             if (tag.getTrackNumber() != null) {
                 xhtml.element("p", tag.getAlbum() + ", track " + tag.getTrackNumber());
@@ -69,6 +69,11 @@ public class Mp3Parser implements Parser {
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getComment());
             xhtml.element("p", tag.getGenre());
+        }
+        if (audioAndTags.audio != null) {
+            metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
+            metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
+            metadata.set("version", audioAndTags.audio.getVersion());
         }
 
         xhtml.endDocument();
@@ -87,29 +92,35 @@ public class Mp3Parser implements Parser {
      * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers
      *  for each supported set of tags. 
      */
-    protected ID3Tags[] getAllTagHandlers(InputStream stream, ContentHandler handler)
+    protected static ID3TagsAndAudio getAllTagHandlers(InputStream stream, ContentHandler handler)
            throws IOException, SAXException, TikaException {
        ID3v24Handler v24 = null;
        ID3v23Handler v23 = null;
        ID3v22Handler v22 = null;
        ID3v1Handler v1 = null;
+       AudioFrame firstAudio = null;
 
        // ID3v2 tags live at the start of the file
        // You can apparently have several different ID3 tag blocks
        // So, keep going until we don't find any more
-       ID3v2Frame f;
-       while ((f = ID3v2Frame.createFrameIfPresent(stream)) != null) {
-          if (f.getMajorVersion() == 4) {
-             v24 = new ID3v24Handler(f);
-          } else if(f.getMajorVersion() == 3) {
-             v23 = new ID3v23Handler(f);
-          } else if(f.getMajorVersion() == 2) {
-             v22 = new ID3v22Handler(f);
-          }
+       MP3Frame f;
+       while ((f = ID3v2Frame.createFrameIfPresent(stream)) != null && firstAudio == null) {
+           if(f instanceof ID3v2Frame) {
+               ID3v2Frame id3F = (ID3v2Frame)f;
+               if (id3F.getMajorVersion() == 4) {
+                   v24 = new ID3v24Handler(id3F);
+               } else if(id3F.getMajorVersion() == 3) {
+                   v23 = new ID3v23Handler(id3F);
+               } else if(id3F.getMajorVersion() == 2) {
+                   v22 = new ID3v22Handler(id3F);
+               }
+           } else if(f instanceof AudioFrame) {
+               firstAudio = (AudioFrame)f;
+           }
        }
 
        // ID3v1 tags live at the end of the file
-       // Just let the handler run until it's finished
+       // Our handler handily seeks to the end for us
        v1 = new ID3v1Handler(stream, handler);
 
        // Go in order of preference
@@ -128,7 +139,16 @@ public class Mp3Parser implements Parser {
        if(v1 != null && v1.getTagsPresent()) {
           tags.add(v1);
        }
-       return tags.toArray(new ID3Tags[tags.size()]);
+       
+       ID3TagsAndAudio ret = new ID3TagsAndAudio();
+       ret.audio = firstAudio;
+       ret.tags = tags.toArray(new ID3Tags[tags.size()]);
+       return ret;
+    }
+
+    protected static class ID3TagsAndAudio {
+        private ID3Tags[] tags;
+        private AudioFrame audio;
     }
 
 }

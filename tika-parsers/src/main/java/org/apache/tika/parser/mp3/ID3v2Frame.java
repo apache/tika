@@ -25,7 +25,7 @@ import java.util.Iterator;
  * A frame of ID3v2 data, which is then passed to a handler to 
  * be turned into useful data.
  */
-public class ID3v2Frame {
+public class ID3v2Frame implements MP3Frame {
     private int majorVersion;
     private int minorVersion;
     private int flags;
@@ -59,15 +59,19 @@ public class ID3v2Frame {
     }
 
     /**
-     * Returns a frame of ID3v2 data, or null if the
-     *  next data to be read from the InputStream 
-     *  doesn't correspond to an ID3v2 Frame
+     * Returns the next Frame (ID3v2 or Audio) in
+     *  the file, or null if the next batch of data
+     *  doesn't correspond to either an ID3v2 Frame
+     *  or an Audio Frame.
+     * ID3v2 Frames should come before all Audio ones.
      */
-    public static ID3v2Frame createFrameIfPresent(InputStream inp)
+    public static MP3Frame createFrameIfPresent(InputStream inp)
             throws IOException {
         int h1 = inp.read();
         int h2 = inp.read();
         int h3 = inp.read();
+        
+        // Is it an ID3v2 Frame? 
         if (h1 == (int)'I' && h2 == (int)'D' && h3 == (int)'3') {
             int majorVersion = inp.read();
             int minorVersion = inp.read();
@@ -75,6 +79,12 @@ public class ID3v2Frame {
                 return null;
             }
             return new ID3v2Frame(majorVersion, minorVersion, inp);
+        }
+        
+        // Is it an Audio Frame?
+        int h4 = inp.read();
+        if (AudioFrame.isAudioHeader(h1, h2, h3, h4)) {
+            return new AudioFrame(h1, h2, h3, h4, inp);
         }
 
         // Not a frame header
@@ -88,7 +98,7 @@ public class ID3v2Frame {
 
         // Get the flags and the length
         flags = inp.read();
-        length = 4 * getInt(readFully(inp, 4));
+        length = get7BitsInt(readFully(inp, 4), 0);
 
         // Do we have an extended header?
         if ((flags & 0x02) == 0x02) {
@@ -123,6 +133,19 @@ public class ID3v2Frame {
         int b0 = data[offset+0] & 0xFF;
         int b1 = data[offset+1] & 0xFF;
         return (b0 << 8) + (b1 << 0);
+    }
+
+    /**
+     * AKA a Synchsafe integer.
+     * 4 bytes hold a 28 bit number. The highest
+     *  bit in each byte is always 0 and always ignored.
+     */
+    protected static int get7BitsInt(byte[] data, int offset) {
+        int b0 = data[offset+0] & 0x7F;
+        int b1 = data[offset+1] & 0x7F;
+        int b2 = data[offset+2] & 0x7F;
+        int b3 = data[offset+3] & 0x7F;
+        return (b0 << 21) + (b1 << 14) + (b2 << 7) + (b3 << 0);
     }
 
     protected static byte[] readFully(InputStream inp, int length)
