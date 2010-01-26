@@ -21,7 +21,7 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
@@ -32,10 +32,18 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.MetadataHelper;
+
 /**
  * Utility class that turns drag-and-drop events into Tika parse requests.
  */
 class ParsingTransferHandler extends TransferHandler {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -557932290014044494L;
 
     private final TransferHandler delegate;
 
@@ -65,20 +73,29 @@ class ParsingTransferHandler extends TransferHandler {
         return false;
     }
 
+    @SuppressWarnings("unchecked")
     public boolean importData(
             JComponent component, Transferable transferable) {
         try {
             List<File> files = null;
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                files = (List<File>) transferable.getTransferData(DataFlavor.javaFileListFlavor);
+                files = (List<File>) transferable.getTransferData(
+                        DataFlavor.javaFileListFlavor);
             } else if (transferable.isDataFlavorSupported(urlListFlavor)) {
-                tika.importStream(new URL((String) transferable.getTransferData(urlListFlavor)).openStream());
+                Object data = transferable.getTransferData(urlListFlavor);
+                Metadata metadata = new Metadata();
+                InputStream stream = MetadataHelper.getInputStream(
+                        new URL(data.toString()), metadata);
+                tika.importStream(stream, metadata);
             } else if (transferable.isDataFlavorSupported(uriListFlavor)) {
                 files = uriToFileList((String) transferable.getTransferData(uriListFlavor));
             }
 
             for (File file : files) {
-                tika.importStream(new FileInputStream(file));
+                Metadata metadata = new Metadata();
+                InputStream stream =
+                    MetadataHelper.getInputStream(file, metadata);
+                tika.importStream(stream, metadata);
             }
             return true;
         } catch (Exception e) {

@@ -18,7 +18,6 @@ package org.apache.tika;
 
 import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +28,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.MetadataHelper;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -139,9 +139,10 @@ public class Tika {
      * @throws IOException if the file can not be read
      */
     public String detect(File file) throws FileNotFoundException, IOException {
-        InputStream stream = new FileInputStream(file);
+        Metadata metadata = new Metadata();
+        InputStream stream = MetadataHelper.getInputStream(file, metadata);
         try {
-            return detect(stream, getFileMetadata(file));
+            return detect(stream, metadata);
         } finally {
             stream.close();
         }
@@ -160,9 +161,10 @@ public class Tika {
      * @throws IOException if the resource can not be read
      */
     public String detect(URL url) throws IOException {
-        InputStream stream = url.openStream();
+        Metadata metadata = new Metadata();
+        InputStream stream = MetadataHelper.getInputStream(url, metadata);
         try {
-            return detect(stream, getUrlMetadata(url));
+            return detect(stream, metadata);
         } finally {
             stream.close();
         }
@@ -225,7 +227,9 @@ public class Tika {
      * @throws IOException if the file can not be read or parsed
      */
     public Reader parse(File file) throws FileNotFoundException, IOException {
-        return parse(new FileInputStream(file), getFileMetadata(file));
+        Metadata metadata = new Metadata();
+        InputStream stream = MetadataHelper.getInputStream(file, metadata);
+        return parse(stream, metadata);
     }
 
     /**
@@ -237,7 +241,9 @@ public class Tika {
      * @throws IOException if the resource can not be read or parsed
      */
     public Reader parse(URL url) throws IOException {
-        return parse(url.openStream(), getUrlMetadata(url));
+        Metadata metadata = new Metadata();
+        InputStream stream = MetadataHelper.getInputStream(url, metadata);
+        return parse(stream, metadata);
     }
 
     /**
@@ -291,7 +297,9 @@ public class Tika {
      */
     public String parseToString(File file)
             throws FileNotFoundException, IOException, TikaException {
-        return parseToString(new FileInputStream(file), getFileMetadata(file));
+        Metadata metadata = new Metadata();
+        InputStream stream = MetadataHelper.getInputStream(file, metadata);
+        return parseToString(stream, metadata);
     }
 
     /**
@@ -304,23 +312,9 @@ public class Tika {
      * @throws TikaException if the resource can not be parsed
      */
     public String parseToString(URL url) throws IOException, TikaException {
-        return parseToString(url.openStream(), getUrlMetadata(url));
-    }
-
-    private static Metadata getFileMetadata(File file) {
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
-        return metadata;
-    }
-
-    private static Metadata getUrlMetadata(URL url) {
-        Metadata metadata = new Metadata();
-        String path = url.getPath();
-        int slash = path.lastIndexOf('/');
-        if (slash + 1 < path.length()) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, path.substring(slash + 1));
-        }
-        return metadata;
+        InputStream stream = MetadataHelper.getInputStream(url, metadata);
+        return parseToString(stream, metadata);
     }
 
 }
