@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.mp3;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
@@ -31,13 +32,16 @@ import org.xml.sax.ContentHandler;
  */
 public class Mp3ParserTest extends TestCase {
 
-    public void testMp3Parsing() throws Exception {
+    /**
+     * Test that with only ID3v1 tags, we get some information out   
+     */
+    public void testMp3ParsingID3v1() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
         InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3.mp3");
+                "/test-documents/testMP3id3v1.mp3");
         try {
             parser.parse(stream, handler, metadata);
         } finally {
@@ -57,4 +61,80 @@ public class Mp3ParserTest extends TestCase {
         assertTrue(content.contains("Rock"));
     }
 
+    /**
+     * Test that with only ID3v2 tags, we get the full
+     *  set of information out.
+     */
+    public void testMp3ParsingID3v2() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3id3v2.mp3");
+        try {
+            parser.parse(stream, handler, metadata);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
+
+        String content = handler.toString();
+        assertTrue(content.contains("Test Title"));
+        assertTrue(content.contains("Test Artist"));
+        assertTrue(content.contains("Test Album"));
+        assertTrue(content.contains("2008"));
+        assertTrue(content.contains("Test Comment"));
+        assertTrue(content.contains("Rock"));
+    }
+
+    /**
+     * Test that with both id3v2 and id3v1, we prefer the
+     *  details from id3v2
+     */
+    public void testMp3ParsingID3v1v2() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3id3v1_v2.mp3");
+        try {
+            parser.parse(stream, handler, metadata);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
+
+        String content = handler.toString();
+        assertTrue(content.contains("Test Title"));
+        assertTrue(content.contains("Test Artist"));
+        assertTrue(content.contains("Test Album"));
+        assertTrue(content.contains("2008"));
+        assertTrue(content.contains("Test Comment"));
+        assertTrue(content.contains("Rock"));
+    }
+
+    public void testID3v2Frame() throws Exception {
+       byte[] empty = new byte[] {
+             0x49, 0x44, 0x33, 3, 1, 0,
+             0, 0, 0, 0
+       };
+       
+       assertEquals(11, ID3v2Frame.getInt(new byte[] {0,0,0,0x0b}));
+       assertEquals(257, ID3v2Frame.getInt(new byte[] {0,0,1,1}));
+       
+       ID3v2Frame f = ID3v2Frame.createFrameIfPresent(new ByteArrayInputStream(empty));
+       assertEquals(3, f.getMajorVersion());
+       assertEquals(1, f.getMinorVersion());
+       assertEquals(0, f.getFlags());
+       assertEquals(0, f.getLength());
+       assertEquals(0, f.getData().length);
+    }
 }
