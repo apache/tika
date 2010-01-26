@@ -16,8 +16,6 @@
  */
 package org.apache.tika.metadata;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,30 +33,6 @@ public class MetadataHelper {
      * Private constructor to prevent instantiation.
      */
     private MetadataHelper() {
-    }
-
-    /**
-     * Returns the contents of the given file, and sets any related metadata
-     * entries.
-     *
-     * @param file the file to be read
-     * @param metadata where the file metadata is stored
-     * @return file content
-     * @throws FileNotFoundException if the file does not exist
-     */
-    public static InputStream getInputStream(File file, Metadata metadata)
-            throws FileNotFoundException {
-        String name = file.getName();
-        if (name.length() > 0) {
-            metadata.set(Metadata.RESOURCE_NAME_KEY, name);
-        }
-
-        long length = file.length();
-        if (length > 0) {
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
-        }
-
-        return new FileInputStream(file);
     }
 
     /**

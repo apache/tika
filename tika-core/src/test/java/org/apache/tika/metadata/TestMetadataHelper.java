@@ -28,21 +28,12 @@ public class TestMetadataHelper extends TestCase {
 
     public void testGetInputStream() throws Exception {
         URL url = TestMetadataHelper.class.getResource("test.txt");
-        File file = new File(url.toURI());
-
-        Metadata urlMetadata = new Metadata();
-        MetadataHelper.getInputStream(url, urlMetadata).close();
-        assertEquals("test.txt", urlMetadata.get(Metadata.RESOURCE_NAME_KEY));
+        Metadata metadata = new Metadata();
+        MetadataHelper.getInputStream(url, metadata).close();
+        assertEquals("test.txt", metadata.get(Metadata.RESOURCE_NAME_KEY));
         assertEquals(
-                Long.toString(file.length()),
-                urlMetadata.get(Metadata.CONTENT_LENGTH));
-
-        Metadata fileMetadata = new Metadata();
-        MetadataHelper.getInputStream(file, fileMetadata).close();
-        assertEquals("test.txt", fileMetadata.get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals(
-                Long.toString(file.length()),
-                fileMetadata.get(Metadata.CONTENT_LENGTH));
+                Long.toString(new File(url.toURI()).length()),
+                metadata.get(Metadata.CONTENT_LENGTH));
     }
 
 }
