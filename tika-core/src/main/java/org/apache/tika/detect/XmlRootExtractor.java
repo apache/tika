@@ -38,11 +38,10 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class XmlRootExtractor {
 
-    private final SAXParser parser;
+    private final SAXParserFactory factory;
 
     public XmlRootExtractor() throws SAXException, ParserConfigurationException {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-
+        factory = SAXParserFactory.newInstance();
         factory.setNamespaceAware(true);
         factory.setValidating(false);
         try {
@@ -54,13 +53,12 @@ public class XmlRootExtractor {
             // are inherently vulnerable to XML denial-of-service attacks.
         }
 
-        this.parser = factory.newSAXParser();
     }
 
     public QName extractRootElement(byte[] data) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
-            parser.parse(
+            factory.newSAXParser().parse(
                     new ByteArrayInputStream(data),
                     new OfflineContentHandler(handler));
         } catch (Exception ignore) {
