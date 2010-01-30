@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -56,6 +57,11 @@ public class Mp3Parser implements Parser {
 
            metadata.set(Metadata.TITLE, tag.getTitle());
            metadata.set(Metadata.AUTHOR, tag.getArtist());
+           metadata.set(XMPDM.ARTIST, tag.getArtist());
+           metadata.set(XMPDM.ALBUM, tag.getAlbum());
+           metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
+           metadata.set(XMPDM.GENRE, tag.getGenre());
+           metadata.set(XMPDM.LOG_COMMENT, tag.getComment());
 
            xhtml.element("h1", tag.getTitle());
            xhtml.element("p", tag.getArtist());
@@ -63,6 +69,7 @@ public class Mp3Parser implements Parser {
             // ID3v1.1 Track addition
             if (tag.getTrackNumber() != null) {
                 xhtml.element("p", tag.getAlbum() + ", track " + tag.getTrackNumber());
+                metadata.set(XMPDM.TRACK_NUMBER, tag.getTrackNumber());
             } else {
                 xhtml.element("p", tag.getAlbum());
             }
@@ -74,6 +81,9 @@ public class Mp3Parser implements Parser {
             metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
             metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
             metadata.set("version", audioAndTags.audio.getVersion());
+            metadata.set(
+                    XMPDM.AUDIO_SAMPLE_RATE,
+                    Integer.toString(audioAndTags.audio.getSampleRate()));
         }
 
         xhtml.endDocument();

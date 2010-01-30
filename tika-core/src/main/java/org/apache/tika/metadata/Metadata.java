@@ -77,6 +77,17 @@ public class Metadata implements CreativeCommons, DublinCore, HttpHeaders,
     }
 
     /**
+     * Returns the value (if any) of the identified metadata property.
+     *
+     * @since Apache Tika 0.7
+     * @param property property definition
+     * @return property value, or <code>null</code> if the property is not set
+     */
+    public String get(Property property) {
+        return get(property.getName());
+    }
+
+    /**
      * Get the values associated to a metadata name.
      * 
      * @param name
@@ -144,6 +155,17 @@ public class Metadata implements CreativeCommons, DublinCore, HttpHeaders,
      */
     public void set(String name, String value) {
         metadata.put(name, new String[] { value });
+    }
+
+    /**
+     * Sets the value of the identified metadata property.
+     *
+     * @since Apache Tika 0.7
+     * @param property property definition
+     * @param value    property value
+     */
+    public void set(Property property, String value) {
+        set(property.getName(), value);
     }
 
     /**
