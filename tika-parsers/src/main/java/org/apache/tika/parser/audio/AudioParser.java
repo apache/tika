@@ -21,12 +21,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map.Entry;
 
+import javax.sound.sampled.AudioFileFormat;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.sound.sampled.AudioFileFormat.Type;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -39,31 +42,46 @@ public class AudioParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-
         // AudioSystem expects the stream to support the mark feature
-        InputStream buffered = new BufferedInputStream(stream);
+        if (!stream.markSupported()) {
+            stream = new BufferedInputStream(stream);
+        }
         try {
-            AudioFormat format =
-                AudioSystem.getAudioFileFormat(buffered).getFormat();
-
-            float rate = format.getSampleRate();
-            if (rate != AudioSystem.NOT_SPECIFIED) {
-                metadata.set("samplerate", String.valueOf(rate));
+            AudioFileFormat fileFormat = AudioSystem.getAudioFileFormat(stream);
+            Type type = fileFormat.getType();
+            if (type == Type.AIFC || type == Type.AIFF) {
+                metadata.set(Metadata.CONTENT_TYPE, "audio/x-aiff");
+            } else if (type == Type.AU || type == Type.SND) {
+                metadata.set(Metadata.CONTENT_TYPE, "audio/basic");
+            } else if (type == Type.WAVE) {
+                metadata.set(Metadata.CONTENT_TYPE, "audio/x-wav");
             }
 
-            int channels = format.getChannels();
+            AudioFormat audioFormat = fileFormat.getFormat();
+            int channels = audioFormat.getChannels();
             if (channels != AudioSystem.NOT_SPECIFIED) {
                 metadata.set("channels", String.valueOf(channels));
+                // TODO: Use XMPDM.TRACKS? (see also frame rate in AudioFormat)
             }
-
-            int bits = format.getSampleSizeInBits();
+            float rate = audioFormat.getSampleRate();
+            if (rate != AudioSystem.NOT_SPECIFIED) {
+                metadata.set("samplerate", String.valueOf(rate));
+                metadata.set(
+                        XMPDM.AUDIO_SAMPLE_RATE,
+                        Integer.toString((int) rate));
+            }
+            int bits = audioFormat.getSampleSizeInBits();
             if (bits != AudioSystem.NOT_SPECIFIED) {
                 metadata.set("bits", String.valueOf(bits));
+                if (bits == 8) {
+                    metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, "8Int");
+                } else if (bits == 16) {
+                    metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, "16Int");
+                } else if (bits == 32) {
+                    metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, "32Int");
+                }
             }
-
-            metadata.set("encoding", format.getEncoding().toString());
+            metadata.set("encoding", audioFormat.getEncoding().toString());
 
             // Javadoc suggests that some of the following properties might
             // be available, but I had no success in finding any:
@@ -75,7 +93,10 @@ public class AudioParser implements Parser {
             // "date" Date date of the recording or release
             // "comment" String an arbitrary text
 
-            for (Entry<String, Object> entry : format.properties().entrySet()) {
+            for (Entry<String, Object> entry : fileFormat.properties().entrySet()) {
+                metadata.set(entry.getKey(), entry.getValue().toString());
+            }
+            for (Entry<String, Object> entry : audioFormat.properties().entrySet()) {
                 metadata.set(entry.getKey(), entry.getValue().toString());
             }
         } catch (UnsupportedAudioFileException e) {
@@ -84,6 +105,8 @@ public class AudioParser implements Parser {
             // just being unsupported. So we do nothing.
         }
 
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
         xhtml.endDocument();
     }
 

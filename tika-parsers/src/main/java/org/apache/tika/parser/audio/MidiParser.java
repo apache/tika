@@ -42,6 +42,8 @@ public class MidiParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        metadata.set(Metadata.CONTENT_TYPE, "audio/midi");
+
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
@@ -52,6 +54,7 @@ public class MidiParser implements Parser {
 
             Track[] tracks = sequence.getTracks();
             metadata.set("tracks", String.valueOf(tracks.length));
+            // TODO: Use XMPDM.TRACKS?
 
             Patch[] patches = sequence.getPatchList();
             metadata.set("patches", String.valueOf(patches.length));
