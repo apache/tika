@@ -121,7 +121,7 @@ public class NameDetector implements Detector {
                 try {
                     name = URLDecoder.decode(name, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
-                    throw new AssertionError("UTF-8 not supported");
+                    throw new IllegalStateException("UTF-8 not supported", e);
                 }
             }
 

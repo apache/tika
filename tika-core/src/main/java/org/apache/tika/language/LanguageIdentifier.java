@@ -38,7 +38,7 @@ public class LanguageIdentifier {
     /**
      * The available language profiles.
      */
-    private static final Map<String, LanguageProfile> profiles =
+    private static final Map<String, LanguageProfile> PROFILES =
         new HashMap<String, LanguageProfile>();
 
     private static void addProfile(String language) {
@@ -64,7 +64,7 @@ public class LanguageIdentifier {
                 stream.close();
             }
 
-            profiles.put(language, profile);
+            PROFILES.put(language, profile);
         } catch (Throwable t) {
             // Failed to load this language profile. Log the problem?
         }
@@ -98,7 +98,7 @@ public class LanguageIdentifier {
     public LanguageIdentifier(LanguageProfile profile) {
         String minLanguage = "unknown";
         double minDistance = 1.0;
-        for (Map.Entry<String, LanguageProfile> entry : profiles.entrySet()) {
+        for (Map.Entry<String, LanguageProfile> entry : PROFILES.entrySet()) {
             double distance = profile.distance(entry.getValue());
             if (distance < minDistance) {
                 minDistance = distance;

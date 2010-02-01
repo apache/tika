@@ -55,17 +55,17 @@ public final class MimeTypes implements Detector {
     /**
      * Name of the {@link #rootMimeType root} type, application/octet-stream.
      */
-    public final static String OCTET_STREAM = "application/octet-stream";
+    public static final String OCTET_STREAM = "application/octet-stream";
 
     /**
      * Name of the {@link #textMimeType text} type, text/plain.
      */
-    public final static String PLAIN_TEXT = "text/plain";
+    public static final String PLAIN_TEXT = "text/plain";
     
     /**
      * Name of the {@link #xml xml} type, application/xml.
      */
-    public final static String XML = "application/xml";
+    public static final String XML = "application/xml";
 
 
     

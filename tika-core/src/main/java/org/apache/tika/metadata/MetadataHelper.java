@@ -16,7 +16,6 @@
  */
 package org.apache.tika.metadata;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -42,7 +41,7 @@ public class MetadataHelper {
      * @param url the URL of the resource to be read
      * @param metadata where the resource metadata is stored
      * @return resource content
-     * @throws FileNotFoundException if the URL can not be accessed
+     * @throws IOException if the URL can not be accessed
      */
     public static InputStream getInputStream(URL url, Metadata metadata)
             throws IOException {

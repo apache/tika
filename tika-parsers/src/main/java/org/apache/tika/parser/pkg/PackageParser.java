@@ -17,7 +17,6 @@
 package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -35,11 +34,10 @@ import org.xml.sax.SAXException;
 /**
  * Abstract base class for parsers that deal with package formats.
  * Subclasses can call the
- * {@link #parseEntry(InputStream, XHTMLContentHandler, Metadata)}
- * method to parse the given package entry using the configured
- * entry parser. The entries will be written to the XHTML event stream
- * as &lt;div class="package-entry"&gt; elements that contain the
- * (optional) entry name as a &lt;h1&gt; element and the full
+ * {@link #parseArchive(ArchiveInputStream, ContentHandler, Metadata, ParseContext)}
+ * method to parse the package stream. Package entries will be written
+ * to the XHTML event stream as &lt;div class="package-entry"&gt; elements
+ * that contain the (optional) entry name as a &lt;h1&gt; element and the full
  * structured body content of the parsed entry.
  */
 public abstract class PackageParser extends DelegatingParser {

@@ -23,7 +23,7 @@ package org.apache.tika.mime;
  */
 public class HexCoDec {
 
-    private final static char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5',
+    private static final char[] HEX_CHARS = { '0', '1', '2', '3', '4', '5',
             '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
     /**
@@ -106,14 +106,15 @@ public class HexCoDec {
      * Internal method to turn a hex char into a nibble.
      */
     private static int hexCharToNibble(char ch) {
-        if ((ch >= '0') && (ch <= '9'))
+        if ((ch >= '0') && (ch <= '9')) {
             return ch - '0';
-        else if ((ch >= 'a') && (ch <= 'f'))
+        } else if ((ch >= 'a') && (ch <= 'f')) {
             return ch - 'a' + 10;
-        else if ((ch >= 'A') && (ch <= 'F'))
+        } else if ((ch >= 'A') && (ch <= 'F')) {
             return ch - 'A' + 10;
-        else
+        } else {
             throw new IllegalArgumentException("Not a hex char - '" + ch + "'");
+        }
     }
 
 }

@@ -238,13 +238,8 @@ public class ID3v2Frame implements MP3Frame {
         }
 
         public boolean hasNext() {
-            if (offset < data.length) {
-                // Check for padding at the end
-                if (data[offset] != 0) {
-                    return true;
-                }
-            }
-            return false;
+            // Check for padding at the end
+            return offset < data.length && data[offset] != 0;
         }
 
         public RawTag next() {

@@ -47,7 +47,7 @@ public class NSNormalizerContentHandler extends ContentHandlerDecorator {
         super(handler);
     }
 
-    private final String mapOldNS(String ns) {
+    private String mapOldNS(String ns) {
         if (ns != null && ns.startsWith(OLD_NS)) {
             return NEW_NS + ns.substring(OLD_NS.length()) + ":1.0";
         } else {
