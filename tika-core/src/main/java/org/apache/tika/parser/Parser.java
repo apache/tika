@@ -18,7 +18,6 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -57,9 +56,10 @@ public interface Parser {
 
     /**
      * The parse() method from Tika 0.4 and earlier. Please use the
-     * {@link #parse(InputStream, ContentHandler, Metadata, Map)} method
-     * instead in new code. Calls to this backwards compatibility method
-     * are forwarded to the new parse() method with an empty parse context.
+     * {@link #parse(InputStream, ContentHandler, Metadata, ParseContext)}
+     * method instead in new code. Calls to this backwards compatibility
+     * method are forwarded to the new parse() method with an empty parse
+     * context.
      *
      * @deprecated This method will be removed in Apache Tika 1.0.
      */

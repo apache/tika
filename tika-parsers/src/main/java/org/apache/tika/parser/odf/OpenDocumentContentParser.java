@@ -282,11 +282,10 @@ public class OpenDocumentContentParser implements Parser {
                     }
 
                     // special handling of tabulators
-                    if (TEXT_NS.equals(namespaceURI)) {
-                        if ("tab-stop".equals(localName)
-                                || "tab".equals(localName)) {
-                            this.characters(TAB, 0, TAB.length);
-                        }
+                    if (TEXT_NS.equals(namespaceURI)
+                            && ("tab-stop".equals(localName)
+                                    || "tab".equals(localName))) {
+                        this.characters(TAB, 0, TAB.length);
                     }
                 }
 

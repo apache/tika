@@ -26,8 +26,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.DublinCore;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -40,17 +38,18 @@ import org.xml.sax.SAXException;
  * Plain text parser. The text encoding of the document stream is
  * automatically detected based on the byte patterns found at the
  * beginning of the stream. The input metadata key
- * {@link HttpHeaders#CONTENT_ENCODING} is used as an encoding hint
- * if the automatic encoding detection fails.
+ * {@link org.apache.tika.metadata.HttpHeaders#CONTENT_ENCODING} is used
+ * as an encoding hint if the automatic encoding detection fails.
  * <p>
  * This parser sets the following output metadata entries:
  * <dl>
- *   <dt>{@link HttpHeaders#CONTENT_TYPE}</dt>
+ *   <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE}</dt>
  *   <dd><code>text/plain</code></dd>
- *   <dt>{@link HttpHeaders#CONTENT_ENCODING}</dt>
+ *   <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_ENCODING}</dt>
  *   <dd>The detected text encoding of the document.</dd>
  *   <dt>
- *     {@link HttpHeaders#CONTENT_LANGUAGE} and {@link DublinCore#LANGUAGE}
+ *     {@link org.apache.tika.metadata.HttpHeaders#CONTENT_LANGUAGE} and
+ *     {@link org.apache.tika.metadata.DublinCore#LANGUAGE}
  *   </dt>
  *   <dd>
  *     The default language of the detected encoding. Only set if the

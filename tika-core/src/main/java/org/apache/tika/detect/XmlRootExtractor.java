@@ -21,7 +21,6 @@ import java.io.ByteArrayInputStream;
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.tika.sax.OfflineContentHandler;
@@ -31,7 +30,7 @@ import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Utility class that uses a {@link SAXParser} to determine
+ * Utility class that uses a {@link javax.xml.parsers.SAXParser} to determine
  * the namespace URI and local name of the root element of an XML file.
  *
  * @since Apache Tika 0.4

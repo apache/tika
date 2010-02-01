@@ -117,8 +117,7 @@ public class FLVParser implements Parser {
         int size = input.readUnsignedShort();
         byte[] chars = new byte[size];
         input.readFully(chars);
-        String value = new String(chars);
-        return value;
+        return new String(chars);
     }
 
     private Object readAMFObject(DataInputStream input) throws IOException {
