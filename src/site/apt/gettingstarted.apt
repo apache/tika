@@ -25,8 +25,8 @@ Getting Started with Apache Tika
 Getting and building the sources
 
  To build Tika from sources you first need to either
- {{{download.html}download}} a source release or
- {{{source-repository.html}checkout}} the latest sources from
+ {{{../download.html}download}} a source release or
+ {{{../source-repository.html}checkout}} the latest sources from
  version control.
 
  Once you have the sources, you can build them using the
@@ -45,84 +45,77 @@ mvn install
 
 Build artifacts
 
- Starting with Tika 0.4, the build consists of a number of components
- and produces the following main binaries (x.y stands for the current
- Tika version number):
+ The Tika 0.6 build consists of a number of components and produces
+ the following main binaries:
 
- [tika-core/target/tika-core-x.y.jar]
+ [tika-core/target/tika-core-0.6.jar]
   Tika core library. Contains the core interfaces and classes of Tika,
   but none of the parser implementations. Depends only on Java 5.
 
- [tika-core/target/tika-core-x.y-jdk14.jar]
-  Java 1.4 version of the Tika core library.
-
- [tika-parsers/target/tika-parsers-x.y.jar]
+ [tika-parsers/target/tika-parsers-0.6.jar]
   Tika parsers. Collection of classes that implement the Tika Parser
   interface based on various external parser libraries.
 
- [tika-app/target/tika-app-x.y.jar]
+ [tika-app/target/tika-app-0.6.jar]
   Tika application. Combines the above libraries and all the external
   parser libraries into a single runnable jar with a GUI and a command
   line interface.
 
+ [tika-bundle/target/tika-bundle-0.6.jar]
+  Tika bundle. An OSGi bundle that includes everything you need to use all
+  Tika functionality in an OSGi environment.
+
 Using Tika as a Maven dependency
 
- Since the 0.4 release Tika has been split to components to give you
- more control over which parts of Tika you want to use in your application.
- The core library, tika-core, contains the key interfaces and classes, so
- you'll always want to include a dependency to it:
+ The core library, tika-core, contains the key interfaces and classes of Tika
+ and can be used by itself if you don't need the full set of parsers from
+ the tika-parsers component. The tika-core dependency looks like this:
 
 ---
   <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-core</artifactId>
-    <version>x.y</version>  <!-- 0.4 or higher -->
+    <version>0.6</version>
   </dependency>
 ---
 
- This dependency only gives you basic Tika functionality without any of
- the parser libraries. If you want to use Tika to parse documents (instead
- of simply detecting document types, etc.), you also need the tika-parsers
- dependency: 
+ If you want to use Tika to parse documents (instead  of simply detecting
+ document types, etc.), you'll want to depend on tika-parsers instead: 
 
 ---
   <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers</artifactId>
-    <version>x.y</version>  <!-- same version as in tika-core -->
+    <version>0.6</version>
   </dependency>
 ---
 
  Note that adding this dependency will introduce a number of
- transitive dependencies to your project. You need to make sure that
- these dependencies won't conflict with your existing project dependencies.
- The listing below shows all the compile-scope dependencies of the
- current Tika parsers release (0.4, July 2009). You can use the
- command "mvn dependency:tree" to check the latest tree of dependencies on any
- one of Tika's core, parsers and app projects.
+ transitive dependencies to your project, including one on tika-core.
+ You need to make sure that these dependencies won't conflict with your
+ existing project dependencies. The listing below shows all the
+ compile-scope dependencies of tika-parsers in the Tika 0.6 release.
 
 ---
-org.apache.tika:tika-parsers:bundle:0.4
-+- org.apache.tika:tika-core:jar:0.4:compile
+org.apache.tika:tika-parsers:bundle:0.6
++- org.apache.tika:tika-core:jar:0.6:compile
 +- org.apache.commons:commons-compress:jar:1.0:compile
-+- pdfbox:pdfbox:jar:0.7.3:compile
-|  +- org.fontbox:fontbox:jar:0.1.0:compile
-|  +- org.jempbox:jempbox:jar:0.2.0:compile
-|  +- bouncycastle:bcmail-jdk14:jar:136:compile
-|  \- bouncycastle:bcprov-jdk14:jar:136:compile
-+- org.apache.poi:poi:jar:3.5-beta6:compile
-+- org.apache.poi:poi-scratchpad:jar:3.5-beta6:compile
-+- org.apache.poi:poi-ooxml:jar:3.5-beta6:compile
-|  +- org.apache.poi:ooxml-schemas:jar:1.0:compile
++- org.apache.pdfbox:pdfbox:jar:0.8.0-incubating:compile
+|  +- org.apache.pdfbox:fontbox:jar:0.8.0-incubator:compile
+|  \- org.apache.pdfbox:jempbox:jar:0.8.0-incubator:compile
++- org.apache.poi:poi:jar:3.6:compile
++- org.apache.poi:poi-scratchpad:jar:3.6:compile
++- org.apache.poi:poi-ooxml:jar:3.6:compile
+|  +- org.apache.poi:poi-ooxml-schemas:jar:3.6:compile
 |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:compile
 |  \- dom4j:dom4j:jar:1.6.1:compile
 |     \- xml-apis:xml-apis:jar:1.0.b2:compile
-+- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0:compile
++- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:compile
 +- commons-logging:commons-logging:jar:1.1.1:compile
-+- net.sourceforge.nekohtml:nekohtml:jar:1.9.9:compile
-|  \- xerces:xercesImpl:jar:2.8.1:compile
++- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:compile
 +- asm:asm:jar:3.1:compile
-\- log4j:log4j:jar:1.2.14:compile
++- log4j:log4j:jar:1.2.14:compile
+\- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:compile
 ---
 
 Using Tika in an Ant project
@@ -134,32 +127,30 @@ Using Tika in an Ant project
 ---
 <classpath>
   ... <!-- your other classpath entries -->
-  <pathelement location="path/to/tika-core-0.4.jar"/>
-  <pathelement location="path/to/tika-parsers-0.4.jar"/>
+  <pathelement location="path/to/tika-core-0.6.jar"/>
+  <pathelement location="path/to/tika-parsers-0.6.jar"/>
   <pathelement location="path/to/commons-logging-1.1.1.jar"/>
   <pathelement location="path/to/commons-compress-1.0.jar"/>
-  <pathelement location="path/to/pdfbox-0.7.3.jar"/>
-  <pathelement location="path/to/fontbox-0.1.0.jar"/>
-  <pathelement location="path/to/jempbox-0.2.0.jar"/>
-  <pathelement location="path/to/bcmail-jdk14-136.jar"/>
-  <pathelement location="path/to/bcprov-jdk14-136.jar"/>
-  <pathelement location="path/to/poi-3.5-beta6.jar"/>
-  <pathelement location="path/to/poi-scratchpad-3.5-beta6.jar"/>
-  <pathelement location="path/to/poi-ooxml-3.5-beta6.jar"/>
-  <pathelement location="path/to/ooxml-schemas-1.0.jar"/>
+  <pathelement location="path/to/pdfbox-0.8.0-incubating.jar"/>
+  <pathelement location="path/to/fontbox-0.8.0-incubator.jar"/>
+  <pathelement location="path/to/jempbox-0.8.0-incubator.jar"/>
+  <pathelement location="path/to/poi-3.6.jar"/>
+  <pathelement location="path/to/poi-scratchpad-3.6.jar"/>
+  <pathelement location="path/to/poi-ooxml-3.6.jar"/>
+  <pathelement location="path/to/poi-ooxml-schemas-3.6.jar"/>
   <pathelement location="path/to/xmlbeans-2.3.0.jar"/>
   <pathelement location="path/to/dom4j-1.6.1.jar"/>
-  <pathelement location="path/to/nekohtml-1.9.9.jar"/>
-  <pathelement location="path/to/xercesImpl-2.8.1.jar"/>
   <pathelement location="path/to/xml-apis-1.0.b2.jar"/>
   <pathelement location="path/to/geronimo-stax-api_1.0_spec-1.0.jar"/>
+  <pathelement location="path/to/tagsoup-1.2.jar"/>
   <pathelement location="path/to/asm-3.1.jar"/>
   <pathelement location="path/to/log4j-1.2.14.jar"/>
+  <pathelement location="path/to/metadata-extractor-2.4.0-beta-1.jar"/>
 </classpath>
 ---
 
  An easy way to gather all these libraries is to run
- "mvn dependency:copy-dependencies" in the Tika source directory.
+ "mvn dependency:copy-dependencies" in the tika-parsers source directory.
  This will copy all Tika dependencies to the <<<target/dependencies>>>
  directory.
 
@@ -168,7 +159,7 @@ Using Tika in an Ant project
 
 Using Tika as a command line utility
 
- The Tika application jar (tika-app-x.y.jar) can be used as a command
+ The Tika application jar (tika-app-0.6.jar) can be used as a command
  line utility for extracting text content and metadata from all sorts of
  files. This runnable jar contains all the dependencies it needs, so
  you don't need to worry about classpath settings to run it.
@@ -176,7 +167,7 @@ Using Tika as a command line utility
  The usage instructions are shown below.
 
 ---
-usage: java -jar tika-app-x.y.jar [option] [file]
+usage: java -jar tika-app-0.6.jar [option] [file]
 
 Options:
     -? or --help       Print this usage message
@@ -211,6 +202,6 @@ Description:
 ---
 # Check if an Internet resource contains a specific keyword
 curl http://.../document.doc \
-  | java -jar tika-app-x.y.jar --text \
+  | java -jar tika-app-0.6.jar --text \
   | grep -q keyword
 ---
