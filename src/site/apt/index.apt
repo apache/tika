@@ -1,6 +1,6 @@
-                       -----------
-                       Apache Tika
-                       -----------
+                       ---------------
+                       Apache Tika 0.6
+                       ---------------
 
 ~~ Licensed to the Apache Software Foundation (ASF) under one or more
 ~~ contributor license agreements.  See the NOTICE file distributed with
@@ -17,167 +17,96 @@
 ~~ See the License for the specific language governing permissions and
 ~~ limitations under the License.
 
-Tika - Content Analysis Toolkit
+Apache Tika 0.6
 
-   Apache Tika is a toolkit for detecting and extracting metadata and
-   structured text content from various documents using existing parser
-   libraries. For more information about Tika, please see the
-   {{{formats.html}list of  supported document formats}} and the
-   {{{documentation.html}available documentation}}. You can find the
-   latest release on the {{{download.html}download page}}. See the
-   {{{gettingstarted.html}Getting Started}} guide for instructions on
-   how to start using Tika.
+   The most notable changes in Tika 0.6 over the previous release are:
 
-   Tika is a subproject of {{{http://lucene.apache.org/}Apache Lucene}}.
-   Lucene is a project of the
-   {{{http://www.apache.org/}Apache Software Foundation}}.
+      * Mime-type detection for HTML (and all types) has been improved,
+        allowing malformed HTML files and those HTML files that require
+        a bit more observed content before the type is properly detected,
+        are now correctly identified by the AutoDetectParser.
+        ({{{https://issues.apache.org/jira/browse/TIKA-327}TIKA-327}},
+         {{{https://issues.apache.org/jira/browse/TIKA-357}TIKA-357}},
+         {{{https://issues.apache.org/jira/browse/TIKA-366}TIKA-366}},
+         {{{https://issues.apache.org/jira/browse/TIKA-367}TIKA-367}})
 
-Latest News
+      * Tika now has an additional OSGi bundle packaging that includes all
+        the required parser libraries. This bundle package makes it easy to
+        use all Tika features in an OSGi environment.
+        ({{{https://issues.apache.org/jira/browse/TIKA-340}TIKA-340}},
+         {{{https://issues.apache.org/jira/browse/TIKA-342}TIKA-342}})
 
-   [14 August 2009 - Lucene at US ApacheCon]
-     ApacheCon US is once again in the Bay Area and Lucene is coming along for the ride! The 
-     Lucene community has planned two full days of talks, plus a meetup and the usual bevy 
-     of training.  With a well-balanced mix of first time and veteran ApacheCon speakers, the 
-     {{{http://www.us.apachecon.com/c/acus2009/schedule#lucene}Lucene track}} at ApacheCon US 
-     promises to have something for everyone.  Be sure not to miss:
+      * The Apache POI dependency used for parsing Microsoft Office file
+        formats has been upgraded to version 3.6. The most visible
+        improvement in this version is the notably reduced ooxml jar file
+        size. The tika-app jar size is now down to 15MB from the 25MB in
+        Tika 0.5.
+        ({{{https://issues.apache.org/jira/browse/TIKA-353}TIKA-353}})
 
-   Training:
-     
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/437}Lucene Boot Camp}} - A two 
-       day training session, Nov. 2nd & 3rd
+      * Handling of character encoding information in input metadata and
+        HTML \<meta\> tags has been improved. When no applicable encoding
+        information is available, the encoding is detected by looking at
+        the input data.
+        ({{{https://issues.apache.org/jira/browse/TIKA-332}TIKA-332}},
+         {{{https://issues.apache.org/jira/browse/TIKA-334}TIKA-334}},
+         {{{https://issues.apache.org/jira/browse/TIKA-335}TIKA-335}},
+         {{{https://issues.apache.org/jira/browse/TIKA-341}TIKA-341}}) 
 
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/375}Solr Day}} - A one day training 
-       session, Nov. 2nd
+      * Some document types like Excel spreadsheets contain content like
+        numbers or formulas whose exact text format depends on the current
+        locale. So far Tika has used the platform default locale in such
+        cases, but clients can now explicitly specify the locale by passing
+        a Locale instance in the parse context.
+        ({{{https://issues.apache.org/jira/browse/TIKA-125}TIKA-125}})
 
-   Thursday, Nov. 5th:
-   
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/428}Introduction to the Lucene Ecosystem}} - 
-     Grant Ingersoll @ 9:00
-     
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/461}Lucene Basics and New Features}} - Michael 
-     Busch @ 10:00
-     
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/331}Apache Solr: Out of the Box}} - Chris 
-     Hostetter @ 14:00
-     
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/427}Introduction to Nutch}} - Andrzej 
-     Bialecki @ 15:00
-     
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/430}Lucene and Solr Performance Tuning}} - 
-     Mark Miller @ 16:30
-     
-   Friday, Nov. 6th:
-   
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/332}Implementing an Information Retrieval Framework for an Organizational Repository}} 
-       - Sithu D Sudarsan @ 9:00
-       
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/333}Apache Mahout - Going from raw data to Information}}
-       - Isabel Drost @ 10:00
-       
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/334}MIME Magic with Apache Tika}} - Jukka 
-       Zitting @ 11:30
-       
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/335}Building Intelligent Search Applications with the Lucene Ecosystem}}
-       - Ted Dunning @ 14:00
-       
-     * {{{http://www.us.apachecon.com/c/acus2009/sessions/462}Realtime Search}} - Jason Rutherglen @ 
-       15:00
+      * The default text output encoding of the tika-app jar is now UTF-8
+        when running on Mac OS X. This is because the default encoding used
+        by Java is not compatible with the console application in Mac OS X.
+        On all other platforms the text output from tika-app still uses
+        the platform default encoding.
+        ({{{https://issues.apache.org/jira/browse/TIKA-324}TIKA-324}})
 
-   [July 2009: Apache Tika Release]
-     Apache Tika 0.4 has been released. Please see the download page for more details.
-
-   [March 2009: Apache Tika Release]
-     Apache Tika 0.3 has been released. Please see the download page for more details.
-  
-   [February 2009: Lucene at ApacheCon Europe 2009 in Amsterdam]
-     Lucene will be extremely well represented at {{{http://www.eu.apachecon.com/c/aceu2009/}ApacheCon EU 2009}} in Amsterdam, Netherlands this March 23-27, 2009:
-
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/197}Lucene Boot Camp}} - A two day training session, March 23 & 24th
+      * A flash video (video/x-flv) parser has been added.
+        ({{{https://issues.apache.org/jira/browse/TIKA-328}TIKA-328}})
  
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/201}Solr Boot Camp}} - A one day training session, March 24th
- 
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/136}Introducing Apache Mahout}} - Grant Ingersoll. March 25th @ 10:30
- 
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/137}Lucene/Solr Case Studies}} - Erik Hatcher. March 25th @ 11:30
- 
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/138}Advanced Indexing Techniques with Apache Lucene}} - Michael Busch. March 25th @ 14:00
- 
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/251}Apache Solr - A Case Study}} - Uri Boness. March 26th @ 17:30
- 
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/250}Best of breed - httpd, forrest, solr and droids}} - Thorsten Scherler. March 27th @ 17:30
- 
-     * {{{http://eu.apachecon.com/c/aceu2009/sessions/165}Apache Droids - an intelligent standalone robot framework}} - Thorsten Scherler. March 26th @ 15:00
+      * The handling of Number and Date cell formatting within the
+        Microsoft Excel documents has been added. This include currencies,
+        percentages and scientific formats.
+        ({{{https://issues.apache.org/jira/browse/TIKA-103}TIKA-103}})
 
+   The following people have contributed to Tika 0.6 by submitting or
+   commenting on the issues resolved in this release:
 
-   [December 2008: Apache Tika Release]
-     Apache Tika 0.2 has been released. Please see the download page for more details.
+      * Andrzej Bialecki
 
-   [November 2008: User mailing list created]
-     A new mailing list, tika-user@lucene.apache.org, has been created
-     for discussion about the use of the Tika toolkit. You can subscribe
-     this mailing list by sending a message to
-     tika-user-subscribe@lucene.apache.org.
+      * Bertrand Delacretaz
 
-   [October 2008: Tika graduates to a Lucene subproject]
-     Tika has graduated form the Incubator to become a subproject
-     of Apache Lucene. The project infrastructure will be migrated from
-     incubator.apache.org to lucene.apache.org.
+      * Chris A. Mattmann
 
-   [October 2008: Apache Tika status report]
-     Dave Meikle was just voted in as a new committer.
+      * Dave Meikle
 
-     Paolo Mottadelli will present Tika at ApacheCon US.
+      * Erik Hetzner
 
-     Tika 0.2 should be released soon.
+      * Felix Meschberger
 
-     Usage documentation has been added to the website.
+      * Jukka Zitting
 
-   [July 2008: Apache Tika status report]
-     Tika community remains relatively small, with just a handful
-     of active members
+      * Julien Nioche
 
-     Work towards Tika 0.2 continues, Chris Mattman has volunteered to be
-     the release manager
+      * Ken Krugler  
 
-   [April 2008: Apache Tika status report]
-     Niall Pemberton joined the project as a committer and PPMC member
+      * Luke Nezda
 
-     The number of issues reported by external contributors is growing
-     gradually.
+      * Maxim Valyanskiy
 
-     There was a Fast Feather Talk on Tika in ApacheCon EU 2008
+      * Niall Pemberton
 
-     We have good contacts especially with Apache POI and PDFBox
+      * Peter Wolanin 
 
-     We are working towards Tika 0.2
+      * Piotr B.
 
-     Metadata handling improvements are being discussed
+      * Sami Siren
 
-   [January 2008: Apache Tika status report]
-     No new committers since the last report, activity has been moderate
-     but steady, leading to the 0.1 release.
+      * Yuan-Fang Li
 
-     Tika 0.1 (incubating) has just been released.
-
-     Chris Mattmann intends to use that release in Nutch, That's good
-     progress towards Tika's goal of providing data extraction functionality
-     to other projects.
-
-     A new Tika logo was created by Google Highly Open Participation
-     student, hasn't been integrated yet.
-
-   [December 27th, 2007: Tika 0.1-incubating Released!]
-     Tika has made its first official release, titled 0.1-incubating. See
-     the {{{http://www.apache.org/dist/incubator/tika/CHANGES-0.1-incubating.txt}CHANGES.txt}}
-     file for more information on the list of updates in this initial release. Thanks to all
-     who contributed! You can download the official source tarball {{{http://www.apache.org/dyn/closer.cgi/incubator/tika}here}}.
-
-   [October 8th, 2007: Welcome Keith Bennett!]
-     The Tika PPMC has {{{http://www.nabble.com/Please-welcome-Keith-Bennett-as-a-Tika-committer%21-tf4586151.html#a13107428}elected}}
-     Keith Bennett as our new committer. Welcome!
-
-   [March 22nd, 2007: Apache Tika project started]
-     The Apache Tika project was formally started when the
-     {{{http://wiki.apache.org/incubator/TikaProposal}Tika proposal}} was
-     {{{http://mail-archives.apache.org/mod_mbox/incubator-general/200703.mbox/%3c510143ac0703221130p4341aa78vd6608c13ffc95a82@mail.gmail.com%3e}accepted}}
-     by the {{{http://incubator.apache.org/}Apache Incubator PMC}}. 
+   See {{http://tinyurl.com/yc3dk67}} for more details on these contributions.

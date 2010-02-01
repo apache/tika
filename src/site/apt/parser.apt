@@ -1,6 +1,6 @@
-                       -------------------------
-                       Apache Tika Documentation
-                       -------------------------
+                       --------------------
+                       The Parser interface
+                       --------------------
 
 ~~ Licensed to the Apache Software Foundation (ASF) under one or more
 ~~ contributor license agreements.  See the NOTICE file distributed with
@@ -17,13 +17,10 @@
 ~~ See the License for the specific language governing permissions and
 ~~ limitations under the License.
 
-Apache Tika Documentation
-
-   This document describes the key abstractions and usage of Apache Tika.
-
 The Parser interface
 
-   The {{{apidocs/org/apache/tika/parser/Parser.html}org.apache.tika.parser.Parser}}
+   The
+   {{{api/org/apache/tika/parser/Parser.html}org.apache.tika.parser.Parser}}
    interface is the key concept of Apache Tika. It hides the complexity of
    different file formats and parsing libraries while providing a simple and
    powerful mechanism for client applications to extract structured text
@@ -31,12 +28,15 @@ The Parser interface
    with a single method:
 
 ---
-void parse(InputStream stream, ContentHandler handler, Metadata metadata)
-    throws IOException, SAXException, TikaException;
+void parse(
+    InputStream stream, ContentHandler handler, Metadata metadata,
+    ParseContext context) throws IOException, SAXException, TikaException;
 ---
 
    The <<<parse>>> method takes the document to be parsed and related metadata
    as input and outputs the results as XHTML SAX events and extra metadata.
+   The parse context argument is used to specify context information (like
+   the current local) that is not related to any individual document.
    The main criteria that lead to this design were:
 
    [Streamed parsing] The interface should require neither the client
@@ -59,11 +59,17 @@ void parse(InputStream stream, ContentHandler handler, Metadata metadata)
      formats contain metadata like the name of the author that may be useful
      to client applications.
 
+   [Context sensitivity] While the default settings and behaviour of Tika
+     parsers should work well for most use cases, there are still situations
+     where more fine-grained control over the parsing process is desirable.
+     It should be easy to inject such context-specific information to the
+     parsing process without breaking the layers of abstraction.
+
    []
 
    These criteria are reflected in the arguments of the <<<parse>>> method.
 
-Document input stream
+* Document input stream
 
    The first argument is an
    {{{http://java.sun.com/j2se/1.5.0/docs/api/java/io/InputStream.html}InputStream}}
@@ -73,7 +79,7 @@ Document input stream
    {{{http://java.sun.com/j2se/1.5.0/docs/api/java/io/IOException.html}IOException}}
    is passed up to the client application. If the stream can be read but
    not parsed (for example if the document is corrupted), then the parser
-   throws a {{{apidocs/org/apache/tika/exception/TikaException.html}TikaException}}.
+   throws a {{{api/org/apache/tika/exception/TikaException.html}TikaException}}.
 
    The parser implementation will consume this stream but <will not close it>.
    Closing the stream is the responsibility of the client application that
@@ -98,7 +104,7 @@ try {
    {{{https://issues.apache.org/jira/browse/TIKA-153}TIKA-153}} for the status
    of this feature request.
 
-XHTML SAX events
+* XHTML SAX events
 
    The parsed content of the document stream is returned to the client
    application as a sequence of XHTML SAX events. XHTML is used to express
@@ -131,12 +137,12 @@ XHTML SAX events
    {{{apidocs/org/apache/tika/sax/XHTMLContentHandler.html}XHTMLContentHandler}}
    utility class to generate the XHTML output.
 
-   Dealing with the raw SAX events can be a bit complex, so Apache Tika (since
-   version 0.2) comes with a number of utility classes that can be used to
-   process and convert the event stream to other representations.
+   Dealing with the raw SAX events can be a bit complex, so Apache Tika
+   comes with a number of utility classes that can be used to process and
+   convert the event stream to other representations.
 
    For example, the
-   {{{apidocs/org/apache/tika/sax/BodyContentHandler.html}BodyContentHandler}}
+   {{{api/org/apache/tika/sax/BodyContentHandler.html}BodyContentHandler}}
    class can be used to extract just the body part of the XHTML output and
    feed it either as SAX events to another content handler or as characters
    to an output stream, a writer, or simply a string. The following code
@@ -149,7 +155,7 @@ parser.parse(System.in, handler, ...);
 ---
 
    Another useful class is
-   {{{apidocs/org/apache/tika/parser/ParsingReader.html}ParsingReader}} that
+   {{{api/org/apache/tika/parser/ParsingReader.html}ParsingReader}} that
    uses a background thread to parse the document and returns the extracted
    text content as a character stream:
 
@@ -163,11 +169,11 @@ try {
 }
 ---
 
-Document metadata
+* Document metadata
 
-   The final argument to the <<<parse>>> method is used to pass document
+   The third argument to the <<<parse>>> method is used to pass document
    metadata both in and out of the parser. Document metadata is expressed
-   as an {{{apidocs/org/apache/tika/metadata/Metadata.html}Metadata}} object.
+   as an {{{api/org/apache/tika/metadata/Metadata.html}Metadata}} object.
 
    The following are some of the more interesting metadata properties:
 
@@ -206,7 +212,19 @@ Document metadata
    team, and it is likely that there will be some (backwards incompatible)
    changes in metadata handling before Tika 1.0.
 
-Parser implementations
+* Parse context
+
+   The final argument to the <<<parse>>> method is used to inject
+   context-specific information to the parsing process. This is useful
+   for example when dealing with locale-specific date and number formats
+   in Microsoft Excel spreadsheets. Another important use of the parse
+   context is passing in the delegate parser instance to be used by
+   two-phase parsers like the
+   {{{api/org/apache/parser/pkg/PackageParser.html}PackageParser}} subclasses.
+   Some parser classes allow customization of the parsing process through
+   strategy objects in the parse context.
+
+* Parser implementations
 
    Apache Tika comes with a number of parser classes for parsing
    {{{formats.html}various document formats}}. You can also extend Tika
