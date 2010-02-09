@@ -64,7 +64,7 @@
                 <mime>application/x-asp</mime>
         </parser>
 
-        <parser mame="parse-rtf" class="org.apache.tika.parser.rtf.RTFParser">
+        <parser name="parse-rtf" class="org.apache.tika.parser.rtf.RTFParser">
                 <mime>application/rtf</mime>
         </parser>
 
