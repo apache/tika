@@ -18,9 +18,11 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -28,6 +30,16 @@ import org.xml.sax.SAXException;
  * Tika parser interface.
  */
 public interface Parser {
+
+    /**
+     * Returns the set of media types supported by this parser when used
+     * with the given parse context.
+     *
+     * @since Apache Tika 0.7
+     * @param context parse context
+     * @return immutable set of media types
+     */
+    Set<MediaType> getSupportedTypes(ParseContext context);
 
     /**
      * Parses a document stream into a sequence of XHTML SAX events.

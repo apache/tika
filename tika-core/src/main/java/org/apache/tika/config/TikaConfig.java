@@ -28,8 +28,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -106,8 +108,15 @@ public class TikaConfig {
                 Parser parser = (Parser) parserClass.newInstance();
 
                 NodeList mimes = node.getElementsByTagName("mime");
-                for (int j = 0; j < mimes.getLength(); j++) {
-                    parsers.put(getText(mimes.item(j)).trim(), parser);
+                if (mimes.getLength() > 0) {
+                    for (int j = 0; j < mimes.getLength(); j++) {
+                        parsers.put(getText(mimes.item(j)).trim(), parser);
+                    }
+                } else {
+                    ParseContext context = new ParseContext();
+                    for (MediaType type : parser.getSupportedTypes(context)) {
+                        parsers.put(type.toString(), parser);
+                    }
                 }
             } catch (Throwable t) {
                 // TODO: Log warning about an invalid parser configuration

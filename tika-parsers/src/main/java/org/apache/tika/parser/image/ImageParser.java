@@ -18,7 +18,11 @@ package org.apache.tika.parser.image;
 
  import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
@@ -27,6 +31,7 @@ import javax.imageio.ImageReader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -34,6 +39,21 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class ImageParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                MediaType.image("bmp"),
+                MediaType.image("gif"),
+                MediaType.image("png"),
+                MediaType.image("tiff"),
+                MediaType.image("vnd.wap.wbmp"),
+                MediaType.image("x-icon"),
+                MediaType.image("x-psd"),
+                MediaType.image("x-xcf"))));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

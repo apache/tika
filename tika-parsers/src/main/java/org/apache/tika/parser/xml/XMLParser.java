@@ -18,6 +18,10 @@ package org.apache.tika.parser.xml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
@@ -27,6 +31,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.OfflineContentHandler;
@@ -55,6 +60,15 @@ import org.xml.sax.SAXNotSupportedException;
  * </dl>
  */
 public class XMLParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                MediaType.application("xml"),
+                MediaType.image("svg+xml"))));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

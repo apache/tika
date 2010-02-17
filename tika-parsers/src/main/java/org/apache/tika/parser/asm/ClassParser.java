@@ -18,9 +18,12 @@ package org.apache.tika.parser.asm;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.objectweb.asm.ClassReader;
@@ -32,6 +35,13 @@ import org.xml.sax.SAXException;
  * Parser for Java .class files.
  */
 public class ClassParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.application("java-vm"));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

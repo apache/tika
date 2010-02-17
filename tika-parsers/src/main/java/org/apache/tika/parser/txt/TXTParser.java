@@ -24,6 +24,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -59,6 +61,13 @@ import org.xml.sax.SAXException;
  * </dl>
  */
 public class TXTParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.TEXT_PLAIN);
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

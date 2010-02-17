@@ -18,7 +18,11 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
@@ -26,6 +30,7 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.xmlbeans.XmlException;
@@ -37,6 +42,29 @@ import org.xml.sax.SAXException;
  * 
  */
 public class OOXMLParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                MediaType.application("x-tika-ooxml"),
+                MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
+                MediaType.application("vnd.ms-powerpoint.presentation.macroenabled.12"),
+                MediaType.application("vnd.openxmlformats-officedocument.presentationml.template"),
+                MediaType.application("vnd.openxmlformats-officedocument.presentationml.slideshow"),
+                MediaType.application("vnd.ms-powerpoint.slideshow.macroenabled.12"),
+                MediaType.application("vnd.ms-powerpoint.addin.macroenabled.12"),
+                MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                MediaType.application("vnd.ms-excel.sheet.macroenabled.12"),
+                MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.template"),
+                MediaType.application("vnd.ms-excel.template.macroenabled.12"),
+                MediaType.application("vnd.ms-excel.addin.macroenabled.12"),
+                MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
+                MediaType.application("vnd.ms-word.document.macroenabled.12"),
+                MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.template"),
+                MediaType.application("vnd.ms-word.template.macroenabled.12"))));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

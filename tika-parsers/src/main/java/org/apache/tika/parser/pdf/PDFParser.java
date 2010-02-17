@@ -19,11 +19,14 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Set;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
@@ -45,6 +48,13 @@ public class PDFParser implements Parser {
      * @since Apache Tika 0.5
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.application("pdf"));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

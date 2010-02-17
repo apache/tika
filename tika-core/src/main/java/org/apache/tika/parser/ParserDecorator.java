@@ -18,9 +18,11 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -44,6 +46,15 @@ public class ParserDecorator implements Parser {
      */
     public ParserDecorator(Parser parser) {
         this.parser = parser;
+    }
+
+    /**
+     * Delegates the method call to the decorated parser. Subclasses should
+     * override this method (and use <code>super.getSupportedTypes()</code>
+     * to invoke the decorated parser) to implement extra decoration.
+     */
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return parser.getSupportedTypes(context);
     }
 
     /**

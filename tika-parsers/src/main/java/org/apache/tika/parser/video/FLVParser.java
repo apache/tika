@@ -21,13 +21,16 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -62,6 +65,13 @@ public class FLVParser implements Parser {
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
     private static byte MASK_VIDEO = 4;
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.video("x-flv"));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     private long readUInt32(DataInputStream input) throws IOException {
         return input.readInt() & 0xFFFFFFFFL;

@@ -18,9 +18,11 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -33,6 +35,25 @@ import org.xml.sax.SAXException;
  * @since Apache Tika 0.4, major changes in Tika 0.5
  */
 public class DelegatingParser implements Parser {
+
+    /**
+     * Returns the parser instance to which parsing tasks should be delegated.
+     * The default implementation looks up the delegate parser from the given
+     * parse context, and uses an {@link EmptyParser} instance as a fallback.
+     * Subclasses can override this method to implement alternative delegation
+     * strategies.
+     *
+     * @since Apache Tika 0.7
+     * @param context parse context
+     * @return delegate parser
+     */
+    protected Parser getDelegateParser(ParseContext context) {
+        return context.get(Parser.class, EmptyParser.INSTANCE);
+    }
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return getDelegateParser(context).getSupportedTypes(context);
+    }
 
     /**
      * Looks up the delegate parser from the parsing context and
@@ -48,8 +69,7 @@ public class DelegatingParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws SAXException, IOException, TikaException {
-        Parser parser =  context.get(Parser.class, EmptyParser.INSTANCE);
-        parser.parse(stream, handler, metadata, context);
+        getDelegateParser(context).parse(stream, handler, metadata, context);
     }
 
     /**

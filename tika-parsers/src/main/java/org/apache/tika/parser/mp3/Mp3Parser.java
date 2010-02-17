@@ -19,11 +19,14 @@ package org.apache.tika.parser.mp3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -39,6 +42,14 @@ import org.xml.sax.SAXException;
  * @see <a href="http://www.id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 Frames Specification</a>
  */
 public class Mp3Parser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.audio("mpeg"));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
+
 
     public void parse(
             InputStream stream, ContentHandler handler,
