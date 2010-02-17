@@ -18,12 +18,17 @@ package org.apache.tika.parser.odf;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
@@ -34,6 +39,42 @@ import org.xml.sax.helpers.DefaultHandler;
  * OpenOffice parser
  */
 public class OpenDocumentParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                MediaType.application("vnd.sun.xml.writer"),
+                MediaType.application("vnd.oasis.opendocument.text"),
+                MediaType.application("vnd.oasis.opendocument.graphics"),
+                MediaType.application("vnd.oasis.opendocument.presentation"),
+                MediaType.application("vnd.oasis.opendocument.spreadsheet"),
+                MediaType.application("vnd.oasis.opendocument.chart"),
+                MediaType.application("vnd.oasis.opendocument.image"),
+                MediaType.application("vnd.oasis.opendocument.formula"),
+                MediaType.application("vnd.oasis.opendocument.text-master"),
+                MediaType.application("vnd.oasis.opendocument.text-web"),
+                MediaType.application("vnd.oasis.opendocument.text-template"),
+                MediaType.application("vnd.oasis.opendocument.graphics-template"),
+                MediaType.application("vnd.oasis.opendocument.presentation-template"),
+                MediaType.application("vnd.oasis.opendocument.spreadsheet-template"),
+                MediaType.application("vnd.oasis.opendocument.chart-template"),
+                MediaType.application("vnd.oasis.opendocument.image-template"),
+                MediaType.application("vnd.oasis.opendocument.formula-template"),
+                MediaType.application("x-vnd.oasis.opendocument.text"),
+                MediaType.application("x-vnd.oasis.opendocument.graphics"),
+                MediaType.application("x-vnd.oasis.opendocument.presentation"),
+                MediaType.application("x-vnd.oasis.opendocument.spreadsheet"),
+                MediaType.application("x-vnd.oasis.opendocument.chart"),
+                MediaType.application("x-vnd.oasis.opendocument.image"),
+                MediaType.application("x-vnd.oasis.opendocument.formula"),
+                MediaType.application("x-vnd.oasis.opendocument.text-master"),
+                MediaType.application("x-vnd.oasis.opendocument.text-web"),
+                MediaType.application("x-vnd.oasis.opendocument.text-template"),
+                MediaType.application("x-vnd.oasis.opendocument.graphics-template"),
+                MediaType.application("x-vnd.oasis.opendocument.presentation-template"),
+                MediaType.application("x-vnd.oasis.opendocument.spreadsheet-template"),
+                MediaType.application("x-vnd.oasis.opendocument.chart-template"),
+                MediaType.application("x-vnd.oasis.opendocument.image-template"),
+                MediaType.application("x-vnd.oasis.opendocument.formula-template"))));
 
     private Parser meta = new OpenDocumentMetaParser();
 
@@ -53,6 +94,10 @@ public class OpenDocumentParser implements Parser {
 
     public void setContentParser(Parser content) {
         this.content = content;
+    }
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
     }
 
     public void parse(

@@ -19,9 +19,13 @@ package org.apache.tika.parser.microsoft;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Set;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
@@ -41,6 +45,7 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -57,6 +62,20 @@ public class OfficeParser implements Parser {
 
     private static final String DOCUMENT_SUMMARY_INFORMATION =
         DocumentSummaryInformation.DEFAULT_STREAM_NAME;
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                MediaType.application("x-tika-msoffice"),
+                MediaType.application("vnd.visio"),
+                MediaType.application("vnd.ms-powerpoint"),
+                MediaType.application("vnd.ms-excel"),
+                MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12"),
+                MediaType.application("msword"),
+                MediaType.application("vnd.ms-outlook"))));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     /**
      * Extracts properties and text from an MS Document input stream
@@ -93,25 +112,25 @@ public class OfficeParser implements Parser {
                if ("WordDocument".equals(name)) {
                    setType(metadata, "application/msword");
                    WordExtractor extractor = new WordExtractor(filesystem);
-   
+
                    addTextIfAny(xhtml, "header", extractor.getHeaderText());
-   
+
                    for (String paragraph : extractor.getParagraphText()) {
                        xhtml.element("p", paragraph);
                    }
-   
+
                    for (String paragraph : extractor.getFootnoteText()) {
                        xhtml.element("p", paragraph);
                    }
-   
+
                    for (String paragraph : extractor.getCommentsText()) {
                        xhtml.element("p", paragraph);
                    }
-   
+
                    for (String paragraph : extractor.getEndnoteText()) {
                        xhtml.element("p", paragraph);
                    }
-   
+
                    addTextIfAny(xhtml, "footer", extractor.getFooterText());
                } else if ("PowerPoint Document".equals(name)) {
                    setType(metadata, "application/vnd.ms-powerpoint");

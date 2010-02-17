@@ -21,11 +21,15 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.NullOutputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -37,10 +41,36 @@ import org.xml.sax.SAXException;
 public class ExternalParser implements Parser {
 
     /**
+     * Media types supported by the external program.
+     */
+    private Set<MediaType> supportedTypes = Collections.emptySet();
+
+    /**
      * The external command to invoke.
      * @see Runtime#exec(String)
      */
     private String command = "cat";
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return getSupportedTypes();
+    }
+
+    public Set<MediaType> getSupportedTypes() {
+        return supportedTypes;
+    }
+
+    public void setSupportedTypes(Set<MediaType> supportedTypes) {
+        this.supportedTypes =
+            Collections.unmodifiableSet(new HashSet<MediaType>(supportedTypes));
+    }
+
+    public String getCommand() {
+        return command;
+    }
+
+    public void setCommand(String command) {
+        this.command = command;
+    }
 
     /**
      * Executes the configured external command and passes the given document

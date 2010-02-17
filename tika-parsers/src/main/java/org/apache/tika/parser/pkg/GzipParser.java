@@ -18,12 +18,15 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -36,6 +39,14 @@ import org.xml.sax.SAXException;
  * Gzip parser.
  */
 public class GzipParser extends DelegatingParser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.application("x-gzip"));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
+
 
     /**
      * Parses the given stream as a gzip file.

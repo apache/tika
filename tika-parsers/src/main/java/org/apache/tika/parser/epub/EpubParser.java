@@ -18,12 +18,15 @@ package org.apache.tika.parser.epub;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
@@ -35,6 +38,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * Epub parser
  */
 public class EpubParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.application("epub+zip"));
 
     private Parser meta = new DcXMLParser();
 
@@ -54,6 +60,10 @@ public class EpubParser implements Parser {
 
     public void setContentParser(Parser content) {
         this.content = content;
+    }
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
     }
 
     public void parse(
@@ -85,4 +95,5 @@ public class EpubParser implements Parser {
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }
+
 }

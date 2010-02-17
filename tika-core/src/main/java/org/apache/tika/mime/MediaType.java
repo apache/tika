@@ -48,14 +48,31 @@ public final class MediaType {
     private static final Pattern CONTENT_TYPE_CHARSET_FIRST_PATTERN = Pattern.compile(
                     "(?i)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*" + MIME_TYPE_PATTERN_STRING);
 
-    public static final MediaType OCTET_STREAM =
-        new MediaType("application", "octet-stream", NO_PARAMETERS);
+    public static final MediaType OCTET_STREAM = application("octet-stream");
 
-    public static final MediaType TEXT_PLAIN =
-        new MediaType("text", "plain", NO_PARAMETERS);
+    public static final MediaType TEXT_PLAIN = text("plain");
 
-    public static final MediaType APPLICATION_XML =
-        new MediaType("application", "xml", NO_PARAMETERS);
+    public static final MediaType APPLICATION_XML = application("xml");
+
+    public static MediaType application(String type) {
+        return new MediaType("application", type);
+    }
+
+    public static MediaType audio(String type) {
+        return new MediaType("audio", type);
+    }
+
+    public static MediaType image(String type) {
+        return new MediaType("image", type);
+    }
+
+    public static MediaType text(String type) {
+        return new MediaType("text", type);
+    }
+
+    public static MediaType video(String type) {
+        return new MediaType("video", type);
+    }
 
     /**
      * Parses the given string to a media type. The string is expected to be of

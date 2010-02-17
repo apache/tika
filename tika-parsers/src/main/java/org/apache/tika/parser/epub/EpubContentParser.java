@@ -18,6 +18,8 @@ package org.apache.tika.parser.epub;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Set;
 
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
@@ -27,6 +29,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.OfflineContentHandler;
@@ -41,6 +44,10 @@ import org.xml.sax.SAXNotRecognizedException;
  * For the time being, assume XHTML (TODO: DTBook)
  */
 public class EpubContentParser implements Parser {
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return Collections.emptySet(); // not a top-level parser
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

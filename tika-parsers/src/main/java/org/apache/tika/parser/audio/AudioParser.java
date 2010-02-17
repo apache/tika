@@ -19,6 +19,10 @@ package org.apache.tika.parser.audio;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Map.Entry;
 
 import javax.sound.sampled.AudioFileFormat;
@@ -30,6 +34,7 @@ import javax.sound.sampled.AudioFileFormat.Type;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -37,6 +42,16 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class AudioParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                MediaType.audio("basic"),
+                MediaType.audio("x-wav"),
+                MediaType.audio("x-aiff"))));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
     public void parse(
             InputStream stream, ContentHandler handler,

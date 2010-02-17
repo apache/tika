@@ -18,10 +18,13 @@ package org.apache.tika.parser.jpeg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -35,6 +38,14 @@ import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
 
 public class JpegParser implements Parser {
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.image("jpeg"));
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
+
     /**
      * @deprecated This method will be removed in Apache Tika 1.0.
      */

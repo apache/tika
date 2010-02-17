@@ -21,12 +21,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -38,7 +41,11 @@ import org.xml.sax.SAXException;
  * via metadata, which means headers from subsequent emails will be lost.
  */
 public class MboxParser implements Parser {
+
     private static final Logger LOGGER = Logger.getLogger(MboxParser.class);
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.application("mbox"));
 
     public static final String MBOX_MIME_TYPE = "application/mbox";
     public static final String MBOX_RECORD_DIVIDER = "From ";
@@ -49,6 +56,10 @@ public class MboxParser implements Parser {
 
     private enum ParseStates {
         START, IN_HEADER, IN_CONTENT
+    }
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
     }
 
     public void parse(

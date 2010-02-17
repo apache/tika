@@ -21,7 +21,9 @@ import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Set;
 import java.util.Stack;
 
 import javax.xml.XMLConstants;
@@ -33,6 +35,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ElementMappingContentHandler;
@@ -161,6 +164,10 @@ public class OpenDocumentContentParser implements Parser {
         MAPPINGS.put(
                 new QName(TABLE_NS, "table-cell"),
                 new TargetElement(XHTML, "td", tableCellAttsMapping));
+    }
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return Collections.emptySet(); // not a top-level parser
     }
 
     public void parse(

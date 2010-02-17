@@ -18,12 +18,16 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -99,6 +103,14 @@ public class CompositeParser implements Parser {
             parser = fallback;
         }
         return parser;
+    }
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        Set<MediaType> supportedTypes = new HashSet<MediaType>();
+        for (String type : parsers.keySet()) {
+            supportedTypes.add(MediaType.parse(type));
+        }
+        return Collections.unmodifiableSet(supportedTypes);
     }
 
     /**
