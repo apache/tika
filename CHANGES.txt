@@ -2,6 +2,10 @@ Apache Tika Change Log
 ======================
 Release 0.7 (Current Development)
 
+The most notable changes in Tika 0.7 over previous releases are:
+
+ * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
+   performance and fixes a number of text extraction issues. (TIKA-380)
 
 Release 0.6 - 01/20/2010
 ---------------------------------
