@@ -21,14 +21,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
+import javax.imageio.spi.ServiceRegistry;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
 import org.apache.tika.parser.ParseContext;
@@ -49,7 +52,7 @@ public class TikaConfig {
 
     private final Map<String, Parser> parsers = new HashMap<String, Parser>();
 
-    private static MimeTypes mimeTypes;
+    private final MimeTypes mimeTypes;
 
     public TikaConfig(String file)
             throws TikaException, IOException, SAXException {
@@ -95,8 +98,10 @@ public class TikaConfig {
 
     public TikaConfig(Element element) throws TikaException, IOException {
         Element mtr = getChild(element, "mimeTypeRepository");
-        if (mtr != null) {
+        if (mtr != null && mtr.hasAttribute("resource")) {
             mimeTypes = MimeTypesFactory.create(mtr.getAttribute("resource"));
+        } else {
+            mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
         }
 
         NodeList nodes = element.getElementsByTagName("parser");
@@ -123,6 +128,19 @@ public class TikaConfig {
                 // For now we just ignore this parser class
             }
         }
+    }
+
+    public TikaConfig() throws MimeTypeException, IOException {
+        ParseContext context = new ParseContext();
+        Iterator<Parser> iterator =
+            ServiceRegistry.lookupProviders(Parser.class);
+        while (iterator.hasNext()) {
+            Parser parser = iterator.next();
+            for (MediaType type : parser.getSupportedTypes(context)) {
+                parsers.put(type.toString(), parser);
+            }
+        }
+        mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
     }
 
     /**
@@ -177,15 +195,10 @@ public class TikaConfig {
      */
     public static TikaConfig getDefaultConfig() {
         try {
-            InputStream stream =
-                TikaConfig.class.getResourceAsStream(DEFAULT_CONFIG_LOCATION);
-            return new TikaConfig(stream);
+            return new TikaConfig();
         } catch (IOException e) {
             throw new RuntimeException(
                     "Unable to read default configuration", e);
-        } catch (SAXException e) {
-            throw new RuntimeException(
-                    "Unable to parse default configuration", e);
         } catch (TikaException e) {
             throw new RuntimeException(
                     "Unable to access default configuration", e);
