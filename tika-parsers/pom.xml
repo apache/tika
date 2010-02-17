@@ -54,6 +54,19 @@
       <artifactId>pdfbox</artifactId>
       <version>1.0.0</version>
     </dependency>
+    <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
+         as optional, but we prefer to have them always to avoid
+         problems with encrypted PDFs. -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcmail-jdk15</artifactId>
+      <version>1.44</version>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk15</artifactId>
+      <version>1.44</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.poi</groupId>
       <artifactId>poi</artifactId>
