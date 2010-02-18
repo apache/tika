@@ -108,9 +108,15 @@ public class TikaConfig {
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node = (Element) nodes.item(i);
             String name = node.getAttribute("class");
+
             try {
                 Class<?> parserClass = Class.forName(name);
-                Parser parser = (Parser) parserClass.newInstance();
+                Object instance = parserClass.newInstance();
+                if (!(instance instanceof Parser)) {
+                    throw new TikaException(
+                            "Configured class is not a Tika Parser: " + name);
+                }
+                Parser parser = (Parser) instance;
 
                 NodeList mimes = node.getElementsByTagName("mime");
                 if (mimes.getLength() > 0) {
@@ -123,9 +129,15 @@ public class TikaConfig {
                         parsers.put(type.toString(), parser);
                     }
                 }
-            } catch (Throwable t) {
-                // TODO: Log warning about an invalid parser configuration
-                // For now we just ignore this parser class
+            } catch (ClassNotFoundException e) {
+                throw new TikaException(
+                        "Configured parser class not found: " + name, e);
+            } catch (IllegalAccessException e) {
+                throw new TikaException(
+                        "Unable to access a parser class: " + name, e);
+            } catch (InstantiationException e) {
+                throw new TikaException(
+                        "Unable to instantiate a parser class: " + name, e);
             }
         }
     }
