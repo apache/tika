@@ -24,16 +24,11 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
-import org.apache.poi.POIXMLTextExtractor;
-import org.apache.poi.extractor.ExtractorFactory;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -70,20 +65,8 @@ public class OOXMLParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        try {
-            Locale locale = context.get(Locale.class, Locale.getDefault());
-            OOXMLExtractor extractor = OOXMLExtractorFactory.createExtractor(
-                    (POIXMLTextExtractor) ExtractorFactory.createExtractor(stream),
-                    locale);
-            extractor.getMetadataExtractor().extract(metadata);
-            extractor.getXHTML(handler, metadata);
-        } catch (InvalidFormatException e) {
-            throw new TikaException("Error creating OOXML extractor", e);
-        } catch (OpenXML4JException e) {
-            throw new TikaException("Error creating OOXML extractor", e);
-        } catch (XmlException e) {
-            throw new TikaException("Error creating OOXML extractor", e);
-        }
+        Locale locale = context.get(Locale.class, Locale.getDefault());
+        OOXMLExtractorFactory.parse(stream, handler, metadata, locale);
     }
 
     /**
