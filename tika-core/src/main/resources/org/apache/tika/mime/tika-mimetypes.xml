@@ -2198,7 +2198,11 @@
 
   <mime-type type="application/x-cpio">
     <magic priority="50">
-      <match value="070707" type="host16" offset="0"/>
+      <match value="070707" type="little16" offset="0"/>
+      <match value="070707" type="big16" offset="0"/>
+      <match value="070707" type="string" offset="0"/>
+      <match value="070701" type="string" offset="0"/>
+      <match value="070702" type="string" offset="0"/>
     </magic>
     <glob pattern="*.cpio"/>
   </mime-type>
