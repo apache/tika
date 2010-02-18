@@ -16,16 +16,26 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Locale;
 
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.xmlbeans.XmlException;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Figures out the correct {@link OOXMLExtractor} for the supplied document and
@@ -33,20 +43,39 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
  */
 public class OOXMLExtractorFactory {
 
-    public static OOXMLExtractor createExtractor(
-            POIXMLTextExtractor extractor, Locale locale) {
-        POIXMLDocument document = extractor.getDocument();
+    public static void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, Locale locale)
+            throws IOException, SAXException, TikaException {
+        try {
+            OOXMLExtractor extractor;
 
-        if (document instanceof XSLFSlideShow) {
-            return new XSLFPowerPointExtractorDecorator(
-                    (XSLFPowerPointExtractor) extractor);
-        } else if (document instanceof XSSFWorkbook) {
-            return new XSSFExcelExtractorDecorator(
-                    (XSSFExcelExtractor) extractor, locale);
-        } else if (document instanceof XWPFDocument) {
-            return new XWPFWordExtractorDecorator((XWPFWordExtractor) extractor);
-        } else {
-            return new POIXMLTextExtractorDecorator(extractor);
+            POIXMLTextExtractor poiExtractor =
+                (POIXMLTextExtractor) ExtractorFactory.createExtractor(stream);
+            POIXMLDocument document = poiExtractor.getDocument();
+            if (document instanceof XSLFSlideShow) {
+                extractor = new XSLFPowerPointExtractorDecorator(
+                        (XSLFPowerPointExtractor) poiExtractor);
+            } else if (document instanceof XSSFWorkbook) {
+                extractor = new XSSFExcelExtractorDecorator(
+                        (XSSFExcelExtractor) poiExtractor, locale);
+            } else if (document instanceof XWPFDocument) {
+                extractor = new XWPFWordExtractorDecorator(
+                        (XWPFWordExtractor) poiExtractor);
+            } else {
+                extractor = new POIXMLTextExtractorDecorator(poiExtractor);
+            }
+
+            extractor.getMetadataExtractor().extract(metadata);
+            extractor.getXHTML(handler, metadata);
+        } catch (InvalidFormatException e) {
+            throw new TikaException("Error creating OOXML extractor", e);
+        } catch (OpenXML4JException e) {
+            throw new TikaException("Error creating OOXML extractor", e);
+        } catch (XmlException e) {
+            throw new TikaException("Error creating OOXML extractor", e);
+
         }
     }
+
 }

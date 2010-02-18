@@ -16,12 +16,10 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
@@ -29,18 +27,10 @@ import java.util.Set;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
-import org.apache.poi.hpsf.CustomProperties;
-import org.apache.poi.hpsf.DocumentSummaryInformation;
-import org.apache.poi.hpsf.MarkUnsupportedException;
-import org.apache.poi.hpsf.NoPropertySetStreamException;
-import org.apache.poi.hpsf.PropertySet;
-import org.apache.poi.hpsf.SummaryInformation;
-import org.apache.poi.hpsf.UnexpectedPropertySetTypeException;
 import org.apache.poi.hslf.extractor.PowerPointExtractor;
 import org.apache.poi.hwpf.extractor.WordExtractor;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
-import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
@@ -56,12 +46,6 @@ import org.xml.sax.SAXException;
  * Defines a Microsoft document content extractor.
  */
 public class OfficeParser implements Parser {
-
-    private static final String SUMMARY_INFORMATION =
-        SummaryInformation.DEFAULT_STREAM_NAME;
-
-    private static final String DOCUMENT_SUMMARY_INFORMATION =
-        DocumentSummaryInformation.DEFAULT_STREAM_NAME;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
@@ -90,10 +74,7 @@ public class OfficeParser implements Parser {
         POIFSFileSystem filesystem = new POIFSFileSystem(stream);
 
         // Parse summary entries first, to make metadata available early
-        parseSummaryEntryIfExists(
-                filesystem, SUMMARY_INFORMATION, metadata);
-        parseSummaryEntryIfExists(
-                filesystem, DOCUMENT_SUMMARY_INFORMATION, metadata);
+        new SummaryExtractor(metadata).parseSummaries(filesystem);
 
         // Parse remaining document entries
         boolean outlookExtracted = false;
@@ -169,89 +150,8 @@ public class OfficeParser implements Parser {
         parse(stream, handler, metadata, new ParseContext());
     }
 
-    private void parseSummaryEntryIfExists(
-            POIFSFileSystem filesystem, String entryName, Metadata metadata)
-            throws IOException, TikaException {
-        try {
-            DocumentEntry entry =
-                (DocumentEntry) filesystem.getRoot().getEntry(entryName);
-            PropertySet properties =
-                new PropertySet(new DocumentInputStream(entry));
-            if (properties.isSummaryInformation()) {
-                parse(new SummaryInformation(properties), metadata);
-            }
-            if (properties.isDocumentSummaryInformation()) {
-                parse(new DocumentSummaryInformation(properties), metadata);
-            }
-        } catch (FileNotFoundException e) {
-            // entry does not exist, just skip it
-        } catch (NoPropertySetStreamException e) {
-            throw new TikaException("Not a HPSF document", e);
-        } catch (UnexpectedPropertySetTypeException e) {
-            throw new TikaException("Unexpected HPSF document", e);
-        } catch (MarkUnsupportedException e) {
-            throw new TikaException("Invalid DocumentInputStream", e);
-        }
-    }
-
-    private void parse(SummaryInformation summary, Metadata metadata) {
-        set(metadata, Metadata.TITLE, summary.getTitle());
-        set(metadata, Metadata.AUTHOR, summary.getAuthor());
-        set(metadata, Metadata.KEYWORDS, summary.getKeywords());
-        set(metadata, Metadata.SUBJECT, summary.getSubject());
-        set(metadata, Metadata.LAST_AUTHOR, summary.getLastAuthor());
-        set(metadata, Metadata.COMMENTS, summary.getComments());
-        set(metadata, Metadata.TEMPLATE, summary.getTemplate());
-        set(metadata, Metadata.APPLICATION_NAME, summary.getApplicationName());
-        set(metadata, Metadata.REVISION_NUMBER, summary.getRevNumber());
-        set(metadata, Metadata.CREATION_DATE, summary.getCreateDateTime());
-        set(metadata, Metadata.CHARACTER_COUNT, summary.getCharCount());
-        set(metadata, Metadata.EDIT_TIME, summary.getEditTime());
-        set(metadata, Metadata.LAST_SAVED, summary.getLastSaveDateTime());
-        set(metadata, Metadata.PAGE_COUNT, summary.getPageCount());
-        set(metadata, Metadata.SECURITY, summary.getSecurity());
-        set(metadata, Metadata.WORD_COUNT, summary.getWordCount());
-        set(metadata, Metadata.LAST_PRINTED, summary.getLastPrinted());
-    }
-
-    private void parse(DocumentSummaryInformation summary, Metadata metadata) {
-        set(metadata, Metadata.COMPANY, summary.getCompany());
-        set(metadata, Metadata.MANAGER, summary.getManager());
-        set(metadata, Metadata.LANGUAGE, getLanguage(summary));
-        set(metadata, Metadata.CATEGORY, summary.getCategory());
-    }
-
-    private String getLanguage(DocumentSummaryInformation summary) {
-        CustomProperties customProperties = summary.getCustomProperties();
-        if (customProperties != null) {
-            Object value = customProperties.get("Language");
-            if (value instanceof String) {
-                return (String) value;
-            }
-        }
-        return null;
-    }
-
     private void setType(Metadata metadata, String type) {
         metadata.set(Metadata.CONTENT_TYPE, type);
-    }
-
-    private void set(Metadata metadata, String name, String value) {
-        if (value != null) {
-            metadata.set(name, value);
-        }
-    }
-
-    private void set(Metadata metadata, String name, Date value) {
-        if (value != null) {
-            metadata.set(name, value.toString());
-        }
-    }
-
-    private void set(Metadata metadata, String name, long value) {
-        if (value > 0) {
-            metadata.set(name, Long.toString(value));
-        }
     }
 
     /**
