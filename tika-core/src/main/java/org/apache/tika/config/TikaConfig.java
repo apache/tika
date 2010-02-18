@@ -47,9 +47,6 @@ import org.xml.sax.SAXException;
  */
 public class TikaConfig {
 
-    public static final String DEFAULT_CONFIG_LOCATION = 
-        "/org/apache/tika/tika-config.xml";
-
     private final Map<String, Parser> parsers = new HashMap<String, Parser>();
 
     private final MimeTypes mimeTypes;
