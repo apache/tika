@@ -19,7 +19,6 @@ package org.apache.tika.parser.jpeg;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -30,12 +29,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import com.drew.imaging.jpeg.JpegMetadataReader;
-import com.drew.imaging.jpeg.JpegProcessingException;
-import com.drew.metadata.Directory;
-import com.drew.metadata.MetadataException;
-import com.drew.metadata.Tag;
 
 public class JpegParser implements Parser {
 
@@ -59,25 +52,7 @@ public class JpegParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        try {
-            com.drew.metadata.Metadata jpegMetadata = JpegMetadataReader.readMetadata(stream);
-
-            Iterator<?> directories = jpegMetadata.getDirectoryIterator();
-            while (directories.hasNext()) {
-                Directory directory = (Directory) directories.next();
-                Iterator<?> tags = directory.getTagIterator();
-
-                while (tags.hasNext()) {
-                    Tag tag = (Tag)tags.next();
-                    
-                    metadata.set(tag.getTagName(), tag.getDescription());
-                }
-            }
-        } catch (JpegProcessingException e) {
-            throw new TikaException("Can't read JPEG metadata", e);
-        } catch (MetadataException e) {
-            throw new TikaException("Can't read JPEG metadata", e);
-        }
+        new JpegExtractor(metadata).parse(stream);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
