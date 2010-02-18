@@ -42,13 +42,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Abstract base class for parsers that deal with package formats.
- * Subclasses can call the
- * {@link #parseArchive(ArchiveInputStream, ContentHandler, Metadata, ParseContext)}
- * method to parse the package stream. Package entries will be written
- * to the XHTML event stream as &lt;div class="package-entry"&gt; elements
- * that contain the (optional) entry name as a &lt;h1&gt; element and the full
- * structured body content of the parsed entry.
+ * Extractor for packaging and compression formats.
  */
 class PackageExtractor {
 
@@ -78,62 +72,43 @@ class PackageExtractor {
         // stream should not be closed
         stream = new CloseShieldInputStream(stream);
 
-        // Capture the first byte to determine the packaging/compression format
+        // Capture two bytes to determine the packaging/compression format
         if (!stream.markSupported()) {
             stream = new BufferedInputStream(stream);
         }
-        stream.mark(1);
+        stream.mark(2);
+        int a = stream.read();
         int b = stream.read();
         stream.reset();
 
-        if (b == 'B') { // BZh...
+        // Select decompression or unpacking mechanism based on the two bytes
+        if (a == 'B' && b == 'Z') {
             metadata.set(Metadata.CONTENT_TYPE, "application/x-bzip");
-            parseBZip2(stream, xhtml);
-        } else if (b == 0x1f) { // \037\213...
+            decompress(new BZip2CompressorInputStream(stream), xhtml);
+        } else if (a == 0x1f && b == 0x8b) {
             metadata.set(Metadata.CONTENT_TYPE, "application/x-gzip");
-            parseGZIP(stream, xhtml);
-        } else if (b == 'P') { // PK\003\004...
+            decompress(new GZIPInputStream(stream), xhtml);
+        } else if (a == 'P' && b == 'K') {
             metadata.set(Metadata.CONTENT_TYPE, "application/zip");
-            parse(new ZipArchiveInputStream(stream), xhtml);
-        } else if (b == '0' || b == 0x71 || b == 0xc7) { // looks like cpio
+            unpack(new ZipArchiveInputStream(stream), xhtml);
+        } else if ((a == '0' && b == '7')
+                || (a == 0x71 && b == 0xc7)
+                || (a == 0xc7 && b == 0x71)) {
             metadata.set(Metadata.CONTENT_TYPE, "application/x-cpio");
-            parse(new CpioArchiveInputStream(stream), xhtml);
-        } else if (b == '=') { // =<ar> or =!<arch>
+            unpack(new CpioArchiveInputStream(stream), xhtml);
+        } else if (a == '=' && (b == '<' || b == '!')) {
             metadata.set(Metadata.CONTENT_TYPE, "application/x-archive");
-            parse(new ArArchiveInputStream(stream), xhtml);
-        } else { // assume tar
+            unpack(new ArArchiveInputStream(stream), xhtml);
+        } else {
             metadata.set(Metadata.CONTENT_TYPE, "application/x-tar");
-            parse(new TarArchiveInputStream(stream), xhtml);
+            unpack(new TarArchiveInputStream(stream), xhtml);
         }
 
         xhtml.endDocument();
     }
 
-    private void parseGZIP(InputStream stream, XHTMLContentHandler xhtml)
+    private void decompress(InputStream stream, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-        InputStream gzip = new GZIPInputStream(stream);
-        try {
-            Metadata entrydata = new Metadata();
-            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
-            if (name != null && name.length() > 0) {
-                entrydata.set(
-                        Metadata.RESOURCE_NAME_KEY,
-                        GzipUtils.getUncompressedFilename(name));
-            }
-            // Use the delegate parser to parse the compressed document
-            parser.parse(
-                    new CloseShieldInputStream(gzip),
-                    new EmbeddedContentHandler(
-                            new BodyContentHandler(xhtml)),
-                    entrydata, context);
-        } finally {
-            gzip.close();
-        }
-    }
-
-    private void parseBZip2(InputStream stream, XHTMLContentHandler xhtml)
-            throws IOException, SAXException, TikaException {
-        InputStream bzip2 = new BZip2CompressorInputStream(stream);
         try {
             Metadata entrydata = new Metadata();
             String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
@@ -146,17 +121,19 @@ class PackageExtractor {
                     name = name.substring(0, name.length() - 3);
                 } else if (name.endsWith(".bz2")) {
                     name = name.substring(0, name.length() - 4);
+                } else if (name.length() > 0) {
+                    name = GzipUtils.getUncompressedFilename(name);
                 }
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
             }
             // Use the delegate parser to parse the compressed document
             parser.parse(
-                    new CloseShieldInputStream(bzip2),
+                    new CloseShieldInputStream(stream),
                     new EmbeddedContentHandler(
                             new BodyContentHandler(xhtml)),
                     entrydata, context);
         } finally {
-            bzip2.close();
+            stream.close();
         }
     }
 
@@ -172,7 +149,7 @@ class PackageExtractor {
      * @throws IOException if an IO error occurs
      * @throws SAXException if a SAX error occurs
      */
-    public void parse(ArchiveInputStream archive, XHTMLContentHandler xhtml)
+    public void unpack(ArchiveInputStream archive, XHTMLContentHandler xhtml)
             throws IOException, SAXException {
         try {
             ArchiveEntry entry = archive.getNextEntry();
