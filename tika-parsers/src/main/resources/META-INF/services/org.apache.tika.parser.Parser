@@ -26,10 +26,7 @@ org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.pdf.PDFParser
-org.apache.tika.parser.pkg.Bzip2Parser
-org.apache.tika.parser.pkg.GzipParser
-org.apache.tika.parser.pkg.TarParser
-org.apache.tika.parser.pkg.ZipParser
+org.apache.tika.parser.pkg.PackageParser
 org.apache.tika.parser.rtf.RTFParser
 org.apache.tika.parser.txt.TXTParser
 org.apache.tika.parser.video.FLVParser
