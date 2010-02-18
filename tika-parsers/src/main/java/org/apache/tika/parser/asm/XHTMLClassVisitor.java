@@ -16,10 +16,15 @@
  */
 package org.apache.tika.parser.asm;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
+import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
@@ -45,6 +50,20 @@ class XHTMLClassVisitor implements ClassVisitor {
     public XHTMLClassVisitor(ContentHandler handler, Metadata metadata) {
         this.xhtml = new XHTMLContentHandler(handler, metadata);
         this.metadata = metadata;
+    }
+
+    public void parse(InputStream stream)
+            throws TikaException, SAXException, IOException {
+        try {
+            ClassReader reader = new ClassReader(stream);
+            reader.accept(this, ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof SAXException) {
+                throw (SAXException) e.getCause();
+            } else {
+                throw new TikaException("Failed to parse a Java class", e);
+            }
+        }
     }
 
     public void visit(

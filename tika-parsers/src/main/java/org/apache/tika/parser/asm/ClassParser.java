@@ -26,8 +26,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -47,17 +45,7 @@ public class ClassParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        try {
-            ClassVisitor visitor = new XHTMLClassVisitor(handler, metadata);
-            ClassReader reader = new ClassReader(stream);
-            reader.accept(visitor, ClassReader.SKIP_FRAMES | ClassReader.SKIP_CODE);
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof SAXException) {
-                throw (SAXException) e.getCause();
-            } else {
-                throw new TikaException("Failed to parse a Java class", e);
-            }
-        }
+        new XHTMLClassVisitor(handler, metadata).parse(stream);
     }
 
     /**
