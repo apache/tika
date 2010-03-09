@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -64,6 +64,16 @@ public class RTFParser implements Parser {
         } catch (InternalError e) {
             throw new TikaException(
                     "Internal error parsing an RTF document, see TIKA-282", e);
+        } catch (NoClassDefFoundError e) {
+            if (Boolean.getBoolean("java.awt.headless")) {
+                throw new TikaException(
+                        "Unexpected RTF parsing error in headless mode", e);
+            } else {
+                throw new TikaException(
+                        "GUI environment expected by the javax.swing.text.rtf"
+                        + " package is not available, see JCR-386;"
+                        + " try running with -Djava.awt.headless=true", e);
+            }
         }
     }
 
