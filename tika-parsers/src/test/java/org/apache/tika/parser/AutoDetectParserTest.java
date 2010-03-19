@@ -181,7 +181,7 @@ public class AutoDetectParserTest extends TestCase {
                 "/test-documents/TIKA-216.tgz");
         try {
             Metadata metadata = new Metadata();
-            ContentHandler handler = new BodyContentHandler();
+            ContentHandler handler = new BodyContentHandler(-1);
             new AutoDetectParser().parse(tgz, handler, metadata);
             fail("Zip bomb was not detected");
         } catch (TikaException e) {

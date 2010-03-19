@@ -23,6 +23,7 @@ import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Content handler decorator that only passes everything inside
@@ -77,6 +78,25 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      * Creates a content handler that writes XHTML body character events to
      * an internal string buffer. The contents of the buffer can be retrieved
      * using the {@link #toString()} method.
+     * <p>
+     * The internal string buffer is bounded at the given number of characters.
+     * If this write limit is reached, then a {@link SAXException} is thrown.
+     *
+     * @since Apache Tika 0.7
+     * @param writeLimit maximum number of characters to include in the string,
+     *                   or -1 to disable the write limit
+     */
+    public BodyContentHandler(int writeLimit) {
+        this(new WriteOutContentHandler(writeLimit));
+    }
+
+    /**
+     * Creates a content handler that writes XHTML body character events to
+     * an internal string buffer. The contents of the buffer can be retrieved
+     * using the {@link #toString()} method.
+     * <p>
+     * The internal string buffer is bounded at 100k characters. If this write
+     * limit is reached, then a {@link SAXException} is thrown.
      */
     public BodyContentHandler() {
         this(new WriteOutContentHandler());
