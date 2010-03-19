@@ -83,10 +83,8 @@ public class AutoDetectParser extends CompositeParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        // We need buffering to enable MIME magic detection before parsing
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
+        // We need (reliable!) mark support for type detection before parsing
+        stream = new BufferedInputStream(stream);
 
         // Automatically detect the MIME type of the document 
         MediaType type = detector.detect(stream, metadata);
