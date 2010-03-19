@@ -33,7 +33,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParsingReader;
 import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.SAXException;
 
 /**
@@ -56,6 +56,13 @@ public class Tika {
      * The parser instance used by this facade.
      */
     private final Parser parser;
+
+    /**
+     * Maximum length of the strings returned by the parseToString methods.
+     * Used to prevent out of memory problems with huge input documents.
+     * The default setting is 100k characters.
+     */
+    private int maxStringLength = 100 * 1000;
 
     /**
      * Creates a Tika facade using the given configuration.
@@ -238,6 +245,11 @@ public class Tika {
     /**
      * Parses the given document and returns the extracted text content.
      * The given input stream is closed by this method.
+     * <p>
+     * To avoid unpredictable excess memory use, the returned string contains
+     * only up to {@link #getMaxStringLength()} first characters extracted
+     * from the input document. Use the {@link #setMaxStringLength(int)}
+     * method to adjust this limitation.
      *
      * @param stream the document to be parsed
      * @param metadata document metadata
@@ -247,23 +259,32 @@ public class Tika {
      */
     public String parseToString(InputStream stream, Metadata metadata)
             throws IOException, TikaException {
+        WriteOutContentHandler handler =
+            new WriteOutContentHandler(maxStringLength);
         try {
-            ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
             context.set(Parser.class, parser);
-            parser.parse(stream, handler, metadata, context);
-            return handler.toString();
+            parser.parse(
+                    stream, new BodyContentHandler(handler), metadata, context);
         } catch (SAXException e) {
-            // This should never happen with BodyContentHandler...
-            throw new TikaException("Unexpected SAX processing failure", e);
+            if (!handler.isWriteLimitReached(e)) {
+                // This should never happen with BodyContentHandler...
+                throw new TikaException("Unexpected SAX processing failure", e);
+            }
         } finally {
             stream.close();
         }
+        return handler.toString();
     }
 
     /**
      * Parses the given document and returns the extracted text content.
      * The given input stream is closed by this method.
+     * <p>
+     * To avoid unpredictable excess memory use, the returned string contains
+     * only up to {@link #getMaxStringLength()} first characters extracted
+     * from the input document. Use the {@link #setMaxStringLength(int)}
+     * method to adjust this limitation.
      *
      * @param stream the document to be parsed
      * @return extracted text content
@@ -277,6 +298,11 @@ public class Tika {
 
     /**
      * Parses the given file and returns the extracted text content.
+     * <p>
+     * To avoid unpredictable excess memory use, the returned string contains
+     * only up to {@link #getMaxStringLength()} first characters extracted
+     * from the input document. Use the {@link #setMaxStringLength(int)}
+     * method to adjust this limitation.
      *
      * @param file the file to be parsed
      * @return extracted text content
@@ -290,6 +316,11 @@ public class Tika {
     /**
      * Parses the resource at the given URL and returns the extracted
      * text content.
+     * <p>
+     * To avoid unpredictable excess memory use, the returned string contains
+     * only up to {@link #getMaxStringLength()} first characters extracted
+     * from the input document. Use the {@link #setMaxStringLength(int)}
+     * method to adjust this limitation.
      *
      * @param url the URL of the resource to be parsed
      * @return extracted text content
@@ -300,6 +331,29 @@ public class Tika {
         Metadata metadata = new Metadata();
         InputStream stream = MetadataHelper.getInputStream(url, metadata);
         return parseToString(stream, metadata);
+    }
+
+    /**
+     * Returns the maximum length of strings returned by the
+     * parseToString methods.
+     *
+     * @since Apache Tika 0.7
+     * @return maximum string length, or -1 if the limit has been disabled
+     */
+    public int getMaxStringLength() {
+        return maxStringLength;
+    }
+
+    /**
+     * Sets the maximum length of strings returned by the parseToString
+     * methods.
+     *
+     * @since Apache Tika 0.7
+     * @param maxStringLength maximum string length,
+     *                        or -1 to disable this limit
+     */
+    public void setMaxStringLength(int maxStringLength) {
+        this.maxStringLength = maxStringLength;
     }
 
 }

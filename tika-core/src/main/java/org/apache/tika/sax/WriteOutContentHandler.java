@@ -37,13 +37,29 @@ public class WriteOutContentHandler extends DefaultHandler {
     private final Writer writer;
 
     /**
+     * The maximum number of characters to write to the character stream.
+     * Set to -1 for no limit.
+     */
+    private final int writeLimit;
+
+    /**
+     * Number of characters written so far.
+     */
+    private int writeCount = 0;
+
+    private WriteOutContentHandler(Writer writer, int writeLimit) {
+        this.writer = writer;
+        this.writeLimit = writeLimit;
+    }
+
+    /**
      * Creates a content handler that writes character events to
      * the given writer.
      *
      * @param writer writer
      */
     public WriteOutContentHandler(Writer writer) {
-        this.writer = writer;
+        this(writer, -1);
     }
 
     /**
@@ -60,9 +76,32 @@ public class WriteOutContentHandler extends DefaultHandler {
      * Creates a content handler that writes character events
      * to an internal string buffer. Use the {@link #toString()}
      * method to access the collected character content.
+     * <p>
+     * The internal string buffer is bounded at the given number of characters.
+     * If this write limit is reached, then a {@link SAXException} is thrown.
+     * The {@link #isWriteLimitReached(Throwable)} method can be used to
+     * detect this case.
+     *
+     * @since Apache Tika 0.7
+     * @param writeLimit maximum number of characters to include in the string,
+     *                   or -1 to disable the write limit
+     */
+    public WriteOutContentHandler(int writeLimit) {
+        this(new StringWriter(), writeLimit);
+    }
+
+    /**
+     * Creates a content handler that writes character events
+     * to an internal string buffer. Use the {@link #toString()}
+     * method to access the collected character content.
+     * <p>
+     * The internal string buffer is bounded at 100k characters. If this
+     * write limit is reached, then a {@link SAXException} is thrown. The
+     * {@link #isWriteLimitReached(Throwable)} method can be used to detect
+     * this case.
      */
     public WriteOutContentHandler() {
-        this(new StringWriter());
+        this(100 * 1000);
     }
 
     /**
@@ -72,7 +111,14 @@ public class WriteOutContentHandler extends DefaultHandler {
     public void characters(char[] ch, int start, int length)
             throws SAXException {
         try {
-            writer.write(ch, start, length);
+            if (writeLimit == -1 || writeCount + length <= writeLimit) {
+                writer.write(ch, start, length);
+                writeCount += length;
+            } else {
+                writer.write(ch, start, writeLimit - writeCount);
+                writeCount = writeLimit;
+                throw new WriteLimitReachedException();
+            }
         } catch (IOException e) {
             throw new SAXException("Error writing out character content", e);
         }
@@ -85,11 +131,7 @@ public class WriteOutContentHandler extends DefaultHandler {
     @Override
     public void ignorableWhitespace(char[] ch, int start, int length)
             throws SAXException {
-        try {
-            writer.write(ch, start, length);
-        } catch (IOException e) {
-            throw new SAXException("Error writing out character content", e);
-        }
+        characters(ch, start, length);
     }
 
     /**
@@ -118,6 +160,34 @@ public class WriteOutContentHandler extends DefaultHandler {
     @Override
     public String toString() {
         return writer.toString();
+    }
+
+    /**
+     * Checks whether the given exception (or any of it's root causes) was
+     * thrown by this handler as a signal of reaching the write limit.
+     *
+     * @since Apache Tika 0.7
+     * @param t throwable
+     * @return <code>true</code> if the write limit was reached,
+     *         <code>false</code> otherwise
+     */
+    public boolean isWriteLimitReached(Throwable t) {
+        if (t instanceof WriteLimitReachedException) {
+            return this == ((WriteLimitReachedException) t).getSource();
+        } else {
+            return t.getCause() != null && isWriteLimitReached(t.getCause());
+        }
+    }
+
+    /**
+     * The exception used as a signal when the write limit has been reached.
+     */
+    private class WriteLimitReachedException extends SAXException {
+
+        public WriteOutContentHandler getSource() {
+            return WriteOutContentHandler.this;
+        }
+
     }
 
 }
