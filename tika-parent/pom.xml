@@ -103,6 +103,13 @@
       </roles>
     </developer>
     <developer>
+      <name>Ken Krugler</name>
+      <id>kkrugler</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
       <name>Mark Harwood</name>
       <id>mharwood</id>
       <roles>
