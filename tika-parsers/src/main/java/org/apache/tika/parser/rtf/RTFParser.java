@@ -16,13 +16,24 @@
  */
 package org.apache.tika.parser.rtf;
 
+import java.awt.Color;
+import java.awt.Font;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import javax.swing.event.DocumentListener;
+import javax.swing.event.UndoableEditListener;
+import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Element;
+import javax.swing.text.Position;
+import javax.swing.text.Segment;
+import javax.swing.text.Style;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 import javax.swing.text.rtf.RTFEditorKit;
 
 import org.apache.tika.exception.TikaException;
@@ -51,7 +62,8 @@ public class RTFParser implements Parser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         try {
-            DefaultStyledDocument sd = new DefaultStyledDocument();
+            DefaultStyledDocument sd =
+                new DefaultStyledDocument(new NoReclaimStyleContext());
             new RTFEditorKit().read(stream, sd, 0);
 
             XHTMLContentHandler xhtml =
@@ -86,4 +98,18 @@ public class RTFParser implements Parser {
         parse(stream, handler, metadata, new ParseContext());
     }
 
+    /**
+     * A workaround to
+     * <a href="https://issues.apache.org/jira/browse/TIKA-282">TIKA-282</a>:
+     * RTF parser expects a GUI environment. This class simply disables the
+     * troublesome SwingUtilities.isEventDispatchThread() call that's made in
+     * the {@link StyleContext#reclaim(AttributeSet)} method.
+     */
+    private static class NoReclaimStyleContext extends StyleContext {
+
+        /** Ignored. */
+        public void reclaim(AttributeSet a) {
+        }
+
+    }
 }
