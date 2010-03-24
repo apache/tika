@@ -24,6 +24,7 @@ import java.util.Set;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
 import javax.swing.text.StyleContext;
 import javax.swing.text.rtf.RTFEditorKit;
 
@@ -53,8 +54,7 @@ public class RTFParser implements Parser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         try {
-            DefaultStyledDocument sd =
-                new DefaultStyledDocument(new NoReclaimStyleContext());
+            Document sd = new CustomStyledDocument();
             new RTFEditorKit().read(stream, sd, 0);
 
             XHTMLContentHandler xhtml =
@@ -77,6 +77,33 @@ public class RTFParser implements Parser {
     }
 
     /**
+     * Customized version of {@link DefaultStyledDocument}. Adds whitespace
+     * to places where words otherwise could have run together (see
+     * <a href="https://issues.apache.org/jira/browse/TIKA-392">TIKA-392</a>),
+     * and works around the problem of Swing expecting a GUI environment (see
+     * <a href="https://issues.apache.org/jira/browse/TIKA-282">TIKA-282</a>).
+     */
+    private static class CustomStyledDocument extends DefaultStyledDocument {
+
+        public CustomStyledDocument() {
+            super(new NoReclaimStyleContext());
+        }
+
+        @Override
+        public void insertString(
+                int offs, String str, AttributeSet a)
+        throws BadLocationException {
+            if (offs > 0 && offs == getLength()) {
+                super.insertString(offs, " ", a);
+                super.insertString(getLength(), str, a);
+            } else {
+                super.insertString(offs, str, a);
+            }
+        }
+
+    }
+
+    /**
      * A workaround to
      * <a href="https://issues.apache.org/jira/browse/TIKA-282">TIKA-282</a>:
      * RTF parser expects a GUI environment. This class simply disables the
@@ -90,4 +117,5 @@ public class RTFParser implements Parser {
         }
 
     }
+
 }
