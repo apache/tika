@@ -16,24 +16,15 @@
  */
 package org.apache.tika.parser.rtf;
 
-import java.awt.Color;
-import java.awt.Font;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import javax.swing.event.DocumentListener;
-import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.Element;
-import javax.swing.text.Position;
-import javax.swing.text.Segment;
-import javax.swing.text.Style;
 import javax.swing.text.StyleContext;
-import javax.swing.text.StyledDocument;
 import javax.swing.text.rtf.RTFEditorKit;
 
 import org.apache.tika.exception.TikaException;
@@ -73,19 +64,6 @@ public class RTFParser implements Parser {
             xhtml.endDocument();
         } catch (BadLocationException e) {
             throw new TikaException("Error parsing an RTF document", e);
-        } catch (InternalError e) {
-            throw new TikaException(
-                    "Internal error parsing an RTF document, see TIKA-282", e);
-        } catch (NoClassDefFoundError e) {
-            if (Boolean.getBoolean("java.awt.headless")) {
-                throw new TikaException(
-                        "Unexpected RTF parsing error in headless mode", e);
-            } else {
-                throw new TikaException(
-                        "GUI environment expected by the javax.swing.text.rtf"
-                        + " package is not available, see JCR-386;"
-                        + " try running with -Djava.awt.headless=true", e);
-            }
         }
     }
 
