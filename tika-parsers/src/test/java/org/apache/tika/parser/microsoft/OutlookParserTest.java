@@ -93,4 +93,35 @@ public class OutlookParserTest extends TestCase {
         assertFalse(matcher.find());
     }
 
+    /**
+     * Test case for TIKA-395, to ensure parser works for new Outlook formats. 
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-395">TIKA-395</a>
+     */
+    public void testOutlookNew() throws Exception {
+        Parser parser = new AutoDetectParser();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/test-outlook2003.msg");
+        try {
+            parser.parse(stream, handler, metadata);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals(
+                "application/vnd.ms-outlook",
+                metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(
+                "Welcome to Microsoft Office Outlook 2003",
+                metadata.get(Metadata.TITLE));
+
+        String content = handler.toString();
+        assertTrue(content.contains("Outlook 2003"));
+        assertTrue(content.contains("Streamlined Mail Experience"));
+        assertTrue(content.contains("Navigation Pane"));
+    }
+
 }

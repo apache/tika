@@ -33,13 +33,14 @@ import org.xml.sax.SAXException;
  */
 class OutlookExtractor {
 
-    private static final Chunks CHUNKS = Chunks.getInstance(false);
+    private final Chunks chunks;
 
     private final POIFSChunkParser parser;
 
     public OutlookExtractor(POIFSFileSystem filesystem) throws TikaException {
         try {
             this.parser = new POIFSChunkParser(filesystem);
+            this.chunks = parser.identifyChunks();
         } catch (IOException e) {
             throw new TikaException("Failed to parse Outlook chunks", e);
         }
@@ -47,23 +48,23 @@ class OutlookExtractor {
 
     public void parse(XHTMLContentHandler xhtml, Metadata metadata)
             throws TikaException, SAXException {
-        String subject = getChunk(CHUNKS.subjectChunk);
-        String from = getChunk(CHUNKS.displayFromChunk);
+        String subject = getChunk(chunks.subjectChunk);
+        String from = getChunk(chunks.displayFromChunk);
 
         metadata.set(Metadata.AUTHOR, from);
         metadata.set(Metadata.TITLE, subject);
-        metadata.set(Metadata.SUBJECT, getChunk(CHUNKS.conversationTopic));
+        metadata.set(Metadata.SUBJECT, getChunk(chunks.conversationTopic));
 
         xhtml.element("h1", subject);
 
         xhtml.startElement("dl");
         header(xhtml, "From", from);
-        header(xhtml, "To", getChunk(CHUNKS.displayToChunk));
-        header(xhtml, "Cc", getChunk(CHUNKS.displayCCChunk));
-        header(xhtml, "Bcc", getChunk(CHUNKS.displayBCCChunk));
+        header(xhtml, "To", getChunk(chunks.displayToChunk));
+        header(xhtml, "Cc", getChunk(chunks.displayCCChunk));
+        header(xhtml, "Bcc", getChunk(chunks.displayBCCChunk));
         xhtml.endElement("dl");
 
-        xhtml.element("p", getChunk(CHUNKS.textBodyChunk));
+        xhtml.element("p", getChunk(chunks.textBodyChunk));
     }
 
     private void header(XHTMLContentHandler xhtml, String key, String value)
