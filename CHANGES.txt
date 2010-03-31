@@ -8,12 +8,12 @@ The most notable changes in Tika 0.7 over previous releases are:
 
  * MP3 file parsing was improved, including Channel and SampleRate 
    extraction and ID3v2 support (TIKA-368, TIKA-372). Further, audio
-   parsing mime detection was also improved for the MIDI format (TIKA-199).
+   parsing mime detection was also improved for the MIDI format. (TIKA-199)
 
- * Tika no longer relies on X11 for its RTF parsing functionality (TIKA-386)
+ * Tika no longer relies on X11 for its RTF parsing functionality. (TIKA-386)
 
  * A Thread-safe bug in the AutoDetectParser was discovered and 
-   addressed (TIKA-374)
+   addressed. (TIKA-374)
 
  * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
    performance and fixes a number of text extraction issues. (TIKA-380)
