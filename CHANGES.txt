@@ -1,11 +1,44 @@
 Apache Tika Change Log
 ======================
-Release 0.7 (Current Development)
+
+Release 0.7 - 3/31/2010
+---------------------------------
 
 The most notable changes in Tika 0.7 over previous releases are:
 
+ * MP3 file parsing was improved, including Channel and SampleRate 
+   extraction and ID3v2 support (TIKA-368, TIKA-372). Further, audio
+   parsing mime detection was also improved for the MIDI format (TIKA-199).
+
+ * Tika no longer relies on X11 for its RTF parsing functionality (TIKA-386)
+
+ * A Thread-safe bug in the AutoDetectParser was discovered and 
+   addressed (TIKA-374)
+
  * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
    performance and fixes a number of text extraction issues. (TIKA-380)
+   
+The following people have contributed to Tika 0.7 by submitting or commenting
+on the issues resolved in this release:
+
+Adam Rauch 
+Benson Margulies 
+Brett S. 
+Chris A. Mattmann 
+Daan de Wit 
+Dave Meikle 
+Durville 
+Ingo Renner 
+Jukka Zitting 
+Ken Krugler 
+Kenny Neal 
+Markus Goldbach
+Maxim Valyanskiy 
+Nick Burch  
+Sami Siren 
+Uwe Schindler 
+
+See http://tinyurl.com/yklopby for more details on these contributions.
 
 Release 0.6 - 01/20/2010
 ---------------------------------
