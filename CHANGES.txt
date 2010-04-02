@@ -1,5 +1,44 @@
 Apache Tika Change Log
 ======================
+Release 0.8 - Current Development
+
+The most notable changes in Tika 0.8 over previous releases are:
+
+TODO
+
+Tika relies on the current set of major dependencies (generated using 
+mvn dependency:tree from the top-level tika src dir):
+
+org.apache.tika:tika-parsers:bundle:0.7
++- org.apache.tika:tika-core:jar:0.7:compile
++- org.apache.commons:commons-compress:jar:1.0:compile
++- org.apache.pdfbox:pdfbox:jar:1.1.0:compile
+|  +- org.apache.pdfbox:fontbox:jar:1.1.0:compile
+|  \- org.apache.pdfbox:jempbox:jar:1.1.0:compile
++- org.bouncycastle:bcmail-jdk15:jar:1.45:compile
++- org.bouncycastle:bcprov-jdk15:jar:1.45:compile
++- org.apache.poi:poi:jar:3.6:compile
++- org.apache.poi:poi-scratchpad:jar:3.6:compile
++- org.apache.poi:poi-ooxml:jar:3.6:compile
+|  +- org.apache.poi:poi-ooxml-schemas:jar:3.6:compile
+|  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:compile
+|  \- dom4j:dom4j:jar:1.6.1:compile
+|     \- xml-apis:xml-apis:jar:1.0.b2:compile
++- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:compile
++- commons-logging:commons-logging:jar:1.1.1:compile
++- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:compile
++- asm:asm:jar:3.1:compile
++- log4j:log4j:jar:1.2.14:compile
++- junit:junit:jar:3.8.1:test
++- org.mockito:mockito-core:jar:1.7:test
+|  +- org.hamcrest:hamcrest-core:jar:1.1:test
+|  \- org.objenesis:objenesis:jar:1.0:test
+\- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:compile
+
+The following people have contributed to Tika 0.8 by submitting or commenting
+on the issues resolved in this release:
+
+TODO
 
 Release 0.7 - 3/31/2010
 ---------------------------------
