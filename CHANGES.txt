@@ -4,7 +4,8 @@ Release 0.8 - Current Development
 
 The most notable changes in Tika 0.8 over previous releases are:
 
-TODO
+ * Unit tests for Windows have been fixed, allowing TestParsers
+   to complete. (TIKA-398)
 
 Tika relies on the current set of major dependencies (generated using 
 mvn dependency:tree from the top-level tika src dir):
