@@ -19,6 +19,7 @@ package org.apache.tika;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import junit.framework.TestCase;
@@ -180,20 +181,16 @@ public class TestParsers extends TestCase {
      * @return an absolute path incl. the name which is in the same directory as
      *         the the class you've called it from.
      */
-    public String getFileResource(String name) {
+    public File getResourceAsFile(String name) throws URISyntaxException {
         URL url = this.getClass().getResource(name);
         if (url != null) {
-            return url.getFile();
+            return new File(url.toURI());
         } else {
             // We have a file which does not exists
             // We got the path
             url = this.getClass().getResource(".");
-            return url.getFile() + name;
+            return new File(new File(url.toURI()), name);
         }
-    }
-
-    public File getResourceAsFile(String filename) {
-        return new File(getFileResource(filename));
     }
 
     public InputStream getResourceAsStream(String name) {
