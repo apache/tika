@@ -25,7 +25,7 @@ import java.util.Properties;
  * A multi-valued metadata container.
  */
 public class Metadata implements CreativeCommons, DublinCore, HttpHeaders,
-        MSOffice, TikaMetadataKeys, TikaMimeKeys {
+        MSOffice, ClimateForcast, TikaMetadataKeys, TikaMimeKeys {
 
     /**
      * A map of all metadata attributes.
