@@ -44,6 +44,27 @@
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
     </dependency>
+	<dependency>
+	  <groupId>essi-unidata</groupId>
+	  <artifactId>netcdf-java</artifactId>
+	  <version>4.0.41</version>
+	</dependency>
+	<dependency>
+	  <groupId>commons-httpclient</groupId>
+	  <artifactId>commons-httpclient</artifactId>
+	  <version>3.1</version>
+	</dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.5.6</version>
+    </dependency>
+	<dependency>
+	  <groupId>org.slf4j</groupId>
+	  <artifactId>slf4j-log4j12</artifactId>
+	  <version>1.5.6</version>
+	  <scope>test</scope>
+	</dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>

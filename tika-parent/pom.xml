@@ -27,6 +27,20 @@
     <artifactId>apache</artifactId>
     <version>6</version>
   </parent>
+  
+  <repositories>
+   <repository>
+     <id>netcdf-m2-repo</id>
+     <name>netCDF Java Maven2 Repository</name>
+     <url>http://ulisse.pin.unifi.it:8081/nexus/content/groups/open.repos</url>
+     <releases>
+       <enabled>true</enabled>
+     </releases>
+     <snapshots>
+       <enabled>true</enabled>
+     </snapshots>
+  </repository> 
+ </repositories>
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
