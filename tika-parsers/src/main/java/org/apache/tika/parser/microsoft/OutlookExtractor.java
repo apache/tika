@@ -17,6 +17,8 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
 
 import org.apache.poi.hsmf.datatypes.Chunks;
 import org.apache.poi.hsmf.datatypes.StringChunk;
@@ -25,6 +27,9 @@ import org.apache.poi.hsmf.parsers.POIFSChunkParser;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -37,9 +42,12 @@ class OutlookExtractor {
 
     private final POIFSChunkParser parser;
 
+    private final AutoDetectParser attachmentParser;
+
     public OutlookExtractor(POIFSFileSystem filesystem) throws TikaException {
         try {
             this.parser = new POIFSChunkParser(filesystem);
+            this.attachmentParser = new AutoDetectParser();
             this.chunks = parser.identifyChunks();
         } catch (IOException e) {
             throw new TikaException("Failed to parse Outlook chunks", e);
@@ -65,6 +73,28 @@ class OutlookExtractor {
         xhtml.endElement("dl");
 
         xhtml.element("p", getChunk(chunks.textBodyChunk));
+
+        Map<String, InputStream> attachments =  parser.getAttachmentList();
+        for (String key : attachments.keySet())
+        {
+            xhtml.startElement("div", "class", "attachment-entry");
+            Metadata entrydata = new Metadata();
+            if (key != null && key.length() > 0) {
+                entrydata.set(Metadata.RESOURCE_NAME_KEY, key);
+                xhtml.element("h1", key);
+            }
+            try {
+                // Use the delegate parser to parse this entry
+                attachmentParser.parse(
+                        attachments.get(key),
+                        new EmbeddedContentHandler(
+                                new BodyContentHandler(xhtml)),
+                                entrydata);
+            } catch (Exception e) {
+                // Could not parse the entry, just skip the content
+            }
+            xhtml.endElement("div");
+        }
     }
 
     private void header(XHTMLContentHandler xhtml, String key, String value)
