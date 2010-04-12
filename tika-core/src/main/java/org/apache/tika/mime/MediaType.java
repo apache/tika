@@ -18,6 +18,7 @@ package org.apache.tika.mime;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -133,8 +134,8 @@ public final class MediaType {
 
     public MediaType(
             String type, String subtype, Map<String, String> parameters) {
-        this.type = type.trim().toLowerCase();
-        this.subtype = subtype.trim().toLowerCase();
+        this.type = type.trim().toLowerCase(Locale.ENGLISH);
+        this.subtype = subtype.trim().toLowerCase(Locale.ENGLISH);
         this.parameters = new TreeMap<String, String>();
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             this.parameters.put(
