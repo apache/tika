@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -191,7 +192,7 @@ public final class MimeTypes implements Detector {
         if (type != null) {
             return type;
         }
-        type = patterns.matches(name.toLowerCase());
+        type = patterns.matches(name.toLowerCase(Locale.ENGLISH));
         if (type != null) {
             return type;
         } else {
@@ -397,7 +398,7 @@ public final class MimeTypes implements Detector {
     public synchronized MimeType forName(String name)
             throws MimeTypeException {
         if (MimeType.isValid(name)) {
-            name = name.toLowerCase();
+            name = name.toLowerCase(Locale.ENGLISH);
             MimeType type = types.get(name);
             if (type == null) {
                 type = new MimeType(this, name);
