@@ -63,9 +63,10 @@
             </_exportcontents>
             <Embed-Dependency>
               tika-core,tika-parsers,
+              netcdf-java,
               commons-compress,
-              pdfbox,fontbox,jempbox,
-              poi,poi-scratchpad,poi-ooxml,ooxml-schemas,
+              pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
+              poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               xmlbeans,
               dom4j,
               tagsoup,
