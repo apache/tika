@@ -133,7 +133,9 @@ public class OfficeParser implements Parser {
                    // TODO: Cleaner mechanism for detecting Outlook
                    outlookExtracted = true;
                    setType(metadata, "application/vnd.ms-outlook");
-                   new OutlookExtractor(filesystem).parse(xhtml, metadata);
+                   OutlookExtractor extractor =
+                       new OutlookExtractor(filesystem, context);
+                   extractor.parse(xhtml, metadata);
                }
             }
         }
