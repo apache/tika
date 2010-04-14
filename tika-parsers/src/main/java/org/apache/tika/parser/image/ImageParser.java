@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.image;
 
- import java.io.IOException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,6 +27,7 @@ import java.util.Set;
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
@@ -35,6 +36,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -70,6 +73,9 @@ public class ImageParser implements Parser {
                             new CloseShieldInputStream(stream)));
                     metadata.set("height", Integer.toString(reader.getHeight(0)));
                     metadata.set("width", Integer.toString(reader.getWidth(0)));
+
+                    loadMetadata(reader.getImageMetadata(0), metadata);
+
                     reader.dispose();
                 }
             } catch (IIOException e) {
@@ -89,6 +95,53 @@ public class ImageParser implements Parser {
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
+    }
+
+    private static void loadMetadata(IIOMetadata imageMetadata, Metadata metadata) {
+        String[] names = imageMetadata.getMetadataFormatNames();
+        if (names == null) {
+            return;
+        }
+        int length = names.length;
+        for (int i = 0; i < length; i++) {
+            loadNode(metadata, imageMetadata.getAsTree(names[i]), "", false);
+        }
+    }
+
+    private static void loadNode(
+            Metadata metadata, Node node, String parents,
+            boolean addThisNodeName) {
+        if (addThisNodeName) {
+            if (parents.length() > 0) {
+                parents += " ";
+            }
+            parents += node.getNodeName();
+        }
+        NamedNodeMap map = node.getAttributes();
+        if (map != null) {
+
+            int length = map.getLength();
+            if (length == 1) {
+                metadata.add(parents, map.item(0).getNodeValue());
+            } else if (length > 1) {
+                StringBuffer value = new StringBuffer();
+                for (int i = 0; i < length; i++) {
+                    if (i > 0) {
+                        value.append(", ");
+                    }
+                    Node attr = map.item(i);
+                    value.append(attr.getNodeName()).append("=").append(attr.getNodeValue());
+                }
+                metadata.add(parents, value.toString());
+            }
+        }
+
+        Node child = node.getFirstChild();
+        while (child != null) {
+            // print children recursively
+            loadNode(metadata, child, parents, true);
+            child = child.getNextSibling();
+        }
     }
 
 }
