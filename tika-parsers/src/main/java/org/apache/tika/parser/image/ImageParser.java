@@ -48,7 +48,6 @@ public class ImageParser implements Parser {
                 MediaType.image("bmp"),
                 MediaType.image("gif"),
                 MediaType.image("png"),
-                MediaType.image("tiff"),
                 MediaType.image("vnd.wap.wbmp"),
                 MediaType.image("x-icon"),
                 MediaType.image("x-psd"),
