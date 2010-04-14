@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -41,8 +40,6 @@ import org.xml.sax.SAXException;
  * via metadata, which means headers from subsequent emails will be lost.
  */
 public class MboxParser implements Parser {
-
-    private static final Logger LOGGER = Logger.getLogger(MboxParser.class);
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("mbox"));
@@ -70,10 +67,9 @@ public class MboxParser implements Parser {
         InputStreamReader isr;
         try {
             // Headers are going to be 7-bit ascii
-            isr = new InputStreamReader(stream, "us-ascii");
+            isr = new InputStreamReader(stream, "US-ASCII");
         } catch (UnsupportedEncodingException e) {
-            LOGGER.error("Unexpected exception setting up MboxParser", e);
-            isr = new InputStreamReader(stream);
+            throw new TikaException("US-ASCII is not supported!", e);
         }
 
         BufferedReader reader = new BufferedReader(isr);
@@ -186,8 +182,7 @@ public class MboxParser implements Parser {
 
         Matcher headerMatcher = EMAIL_HEADER_PATTERN.matcher(curLine);
         if (!headerMatcher.matches()) {
-            LOGGER.warn("Malformed email header in mbox file: " + curLine);
-            return;
+            return; // ignore malformed header lines
         }
 
         String headerTag = headerMatcher.group(1).toLowerCase();
