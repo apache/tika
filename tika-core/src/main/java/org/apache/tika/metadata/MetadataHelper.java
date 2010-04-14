@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
+import org.apache.tika.io.TikaInputStream;
+
 /**
  * Collection of static helper methods for handling metadata.
  *
@@ -68,7 +70,7 @@ public class MetadataHelper {
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
         }
 
-        return connection.getInputStream();
+        return new TikaInputStream(connection.getInputStream());
     }
 
 }
