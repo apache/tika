@@ -27,7 +27,9 @@ import org.apache.poi.hsmf.parsers.POIFSChunkParser;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.EmptyParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -42,18 +44,21 @@ class OutlookExtractor {
 
     private final POIFSChunkParser parser;
 
-    private final AutoDetectParser attachmentParser;
+    private final ParseContext context;
 
-    public OutlookExtractor(POIFSFileSystem filesystem) throws TikaException {
+    public OutlookExtractor(
+            POIFSFileSystem filesystem, ParseContext context)
+            throws TikaException {
         try {
+            this.context = context;
             this.parser = new POIFSChunkParser(filesystem);
-            this.attachmentParser = new AutoDetectParser();
             this.chunks = parser.identifyChunks();
         } catch (IOException e) {
             throw new TikaException("Failed to parse Outlook chunks", e);
         }
     }
 
+    @SuppressWarnings("unchecked")
     public void parse(XHTMLContentHandler xhtml, Metadata metadata)
             throws TikaException, SAXException {
         String subject = getChunk(chunks.subjectChunk);
@@ -85,11 +90,11 @@ class OutlookExtractor {
             }
             try {
                 // Use the delegate parser to parse this entry
-                attachmentParser.parse(
+                context.get(Parser.class, EmptyParser.INSTANCE).parse(
                         attachments.get(key),
-                        new EmbeddedContentHandler(
-                                new BodyContentHandler(xhtml)),
-                                entrydata);
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                        entrydata,
+                        context);
             } catch (Exception e) {
                 // Could not parse the entry, just skip the content
             }
