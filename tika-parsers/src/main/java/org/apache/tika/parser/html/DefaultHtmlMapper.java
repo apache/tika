@@ -23,6 +23,11 @@ package org.apache.tika.parser.html;
  */
 public class DefaultHtmlMapper implements HtmlMapper {
 
+    /**
+     * @since Apache Tika 0.8
+     */
+    public static final HtmlMapper INSTANCE = new DefaultHtmlMapper();
+
     public String mapSafeElement(String name) {
         // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
 

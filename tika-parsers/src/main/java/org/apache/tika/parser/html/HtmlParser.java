@@ -54,11 +54,6 @@ public class HtmlParser implements Parser {
                 MediaType.application("vnd.wap.xhtml+xml"),
                 MediaType.application("x-asp"))));
 
-    /**
-     * The default HTML mapping.
-     */
-    private static final HtmlMapper mapper = new DefaultHtmlMapper();
-
     // Use the widest, most common charset as our default.
     private static final String DEFAULT_CHARSET = "windows-1252";
     // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)
@@ -219,7 +214,7 @@ public class HtmlParser implements Parser {
      *         <code>null</code> if the element is unsafe 
      */
     protected String mapSafeElement(String name) {
-        return mapper.mapSafeElement(name);
+        return DefaultHtmlMapper.INSTANCE.mapSafeElement(name);
     }
 
     /**
@@ -235,7 +230,7 @@ public class HtmlParser implements Parser {
      *         should be ignored, <code>false</code> otherwise
      */
     protected boolean isDiscardElement(String name) {
-        return "STYLE".equals(name) || "SCRIPT".equals(name);
+        return DefaultHtmlMapper.INSTANCE.isDiscardElement(name);
     }
 
     /**
