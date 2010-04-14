@@ -55,17 +55,6 @@
       <version>3.1</version>
     </dependency>
     <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.5.6</version>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <version>1.5.6</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
       <version>1.0</version>
@@ -125,6 +114,11 @@
       <version>3.1</version>
     </dependency>
     <dependency>
+       <groupId>com.drewnoakes</groupId>
+       <artifactId>metadata-extractor</artifactId>
+       <version>2.4.0-beta-1</version>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
@@ -136,9 +130,10 @@
        <scope>test</scope>
     </dependency>
     <dependency>
-       <groupId>com.drewnoakes</groupId>
-       <artifactId>metadata-extractor</artifactId>
-       <version>2.4.0-beta-1</version>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.5.6</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
