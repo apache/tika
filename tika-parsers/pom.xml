@@ -96,6 +96,10 @@
           <groupId>stax</groupId>
           <artifactId>stax-api</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>xml-apis</groupId>
+          <artifactId>xml-apis</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
