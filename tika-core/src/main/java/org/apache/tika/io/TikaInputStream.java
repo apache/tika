@@ -23,8 +23,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ *
+ * @since Apache Tika 0.8
+ */
 public class TikaInputStream extends ProxyInputStream {
 
+    /**
+     * Casts or wraps the given stream to a TikaInputStream instance.
+     * This method can be used to access the functionality of this class
+     * even when given just a normal input stream instance.
+     *
+     * @param stream normal input stream
+     * @return a TikaInputStream instance
+     */
     public static TikaInputStream get(InputStream stream) {
         if (stream instanceof TikaInputStream) {
             return (TikaInputStream) stream;
@@ -33,10 +45,24 @@ public class TikaInputStream extends ProxyInputStream {
         }
     }
 
+    /**
+     * The file that contains the contents of this stream. This is either
+     * the original file passed to the {@link #TikaInputStream(File)}
+     * constructor or a temporary file created by a call to the
+     * {@link #getFile()} method. If neither has been called, then
+     * the value is <code>null</code>.
+     */
     private File file;
 
+    /**
+     * Flag to indicate that {@link #file} is a temporary file that should
+     * be removed when this stream is {@link #close() closed}.
+     */
     private boolean temporary;
 
+    /**
+     * Current read position within this stream.
+     */
     private long position = 0;
 
     public TikaInputStream(InputStream stream) {
