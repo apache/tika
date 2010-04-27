@@ -16,12 +16,14 @@
  */
 package org.apache.tika.io;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
 
 /**
  *
@@ -60,21 +62,34 @@ public class TikaInputStream extends ProxyInputStream {
      */
     private boolean temporary;
 
+    private long length;
+
     /**
      * Current read position within this stream.
      */
     private long position = 0;
 
-    public TikaInputStream(InputStream stream) {
+    private TikaInputStream(InputStream stream, File file, long length) {
         super(stream);
-        this.file = null;
-        this.temporary = true;
+        this.file = file;
+        this.temporary = (file == null);
+        this.length = length;
     }
 
-    public TikaInputStream(File file) {
-        super(null);
-        this.file = file;
-        this.temporary = false;
+    public TikaInputStream(InputStream stream) {
+        this(stream, null, -1);
+    }
+
+    public TikaInputStream(byte[] data) {
+        this(new ByteArrayInputStream(data), null, data.length);
+    }
+
+    public TikaInputStream(File file) throws IOException {
+        this(new FileInputStream(file), file, file.length());
+    }
+
+    public TikaInputStream(URL url) throws IOException {
+        this(url.openStream(), null, -1);
     }
 
     public File getFile() throws IOException {
@@ -96,6 +111,13 @@ public class TikaInputStream extends ProxyInputStream {
             }
         }
         return file;
+    }
+
+    public long getLength() throws IOException {
+        if (length == -1) {
+            length = getFile().length();
+        }
+        return length;
     }
 
     @Override
