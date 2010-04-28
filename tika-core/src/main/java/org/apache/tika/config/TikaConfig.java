@@ -191,7 +191,7 @@ public class TikaConfig {
      * @param mimeType MIME type
      * @return configured Parser instance, or <code>null</code>
      */
-    public Parser getParser(String mimeType) {
+    public Parser getParser(MediaType mimeType) {
         return parsers.get(mimeType);
     }
 

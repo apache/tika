@@ -156,7 +156,13 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
                     readMagic(nodeElement, type);
                 } else if (nodeElement.getTagName().equals(ALIAS_TAG)) {
                     String alias = nodeElement.getAttribute(ALIAS_TYPE_ATTR);
-                    type.addAlias(alias);
+                    MediaType aliasType = MediaType.parse(alias);
+                    if (aliasType != null) {
+                        type.addAlias(aliasType);
+                    } else {
+                        throw new MimeTypeException(
+                                "Invalid media type alias: " + alias);
+                    }
                 } else if (nodeElement.getTagName().equals(ROOT_XML_TAG)) {
                     readRootXML(nodeElement, type);
                 } else if (nodeElement.getTagName().equals(SUB_CLASS_OF_TAG)) {

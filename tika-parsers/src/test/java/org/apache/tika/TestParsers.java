@@ -26,6 +26,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ParseUtils;
 import org.xml.sax.helpers.DefaultHandler;
@@ -78,7 +79,8 @@ public class TestParsers extends TestCase {
         String s2 = ParseUtils.getStringContent(file, tc,
                 "application/vnd.ms-powerpoint");
         assertEquals(s1, s2);
-        Parser parser = tc.getParser("application/vnd.ms-powerpoint");
+        Parser parser =
+            tc.getParser(MediaType.parse("application/vnd.ms-powerpoint"));
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
@@ -94,7 +96,7 @@ public class TestParsers extends TestCase {
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/msword");
         assertEquals(s1, s2);
-        Parser parser = tc.getParser("application/msword");
+        Parser parser = tc.getParser(MediaType.parse("application/msword"));
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
@@ -114,7 +116,8 @@ public class TestParsers extends TestCase {
         assertEquals(s1, s2);
         assertTrue("Text does not contain '" + expected + "'", s1
                 .contains(expected));
-        Parser parser = tc.getParser("application/vnd.ms-excel");
+        Parser parser =
+            tc.getParser(MediaType.parse("application/vnd.ms-excel"));
         Metadata metadata = new Metadata();
         InputStream stream = new FileInputStream(file);
         try {
@@ -147,7 +150,7 @@ public class TestParsers extends TestCase {
         String s2 = ParseUtils.getStringContent(file, tc, "text/html");
         assertEquals(s1, s2);
 
-        Parser parser = tc.getParser("text/html");
+        Parser parser = tc.getParser(MediaType.parse("text/html"));
         assertNotNull(parser);
     }
 
@@ -157,7 +160,7 @@ public class TestParsers extends TestCase {
         String s2 = ParseUtils.getStringContent(file, tc, "application/zip");
         assertEquals(s1, s2);
 
-        Parser parser = tc.getParser("application/zip");
+        Parser parser = tc.getParser(MediaType.parse("application/zip"));
         assertNotNull(parser);
     }
 
@@ -167,7 +170,7 @@ public class TestParsers extends TestCase {
         String s2 = ParseUtils.getStringContent(file, tc, "audio/mpeg");
         assertEquals(s1, s2);
 
-        Parser parser = tc.getParser("audio/mpeg");
+        Parser parser = tc.getParser(MediaType.parse("audio/mpeg"));
         assertNotNull(parser);
     }
 

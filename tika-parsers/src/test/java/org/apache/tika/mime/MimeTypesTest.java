@@ -35,7 +35,7 @@ public class MimeTypesTest extends TestCase {
         types = new MimeTypes();
         binary = types.forName("application/octet-stream");
         text = types.forName("text/plain");
-        text.addAlias("text/x-plain");
+        text.addAlias(MediaType.parse("text/x-plain"));
         html = types.forName("text/html");
         html.setSuperType(text);
     }
@@ -47,16 +47,6 @@ public class MimeTypesTest extends TestCase {
         try {
             types.forName("invalid");
             fail("MimeTypeException not thrown on invalid type name");
-        } catch (MimeTypeException e) {
-            // expected
-        }
-    }
-
-    public void testAddAlias() throws MimeTypeException {
-        assertEquals(text, types.forName("text/x-plain"));
-        try {
-            text.addAlias("invalid");
-            fail("MimeTypeException not thrown on invalid alias name");
         } catch (MimeTypeException e) {
             // expected
         }

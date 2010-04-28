@@ -28,6 +28,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMimeKeys;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -52,7 +53,7 @@ public class ParseUtils implements TikaMimeKeys {
      */
     public static Parser getParser(String mimeType, TikaConfig config)
             throws TikaException {
-        return config.getParser(mimeType);
+        return config.getParser(MediaType.parse(mimeType));
     }
 
     /**
@@ -106,7 +107,7 @@ public class ParseUtils implements TikaMimeKeys {
             InputStream stream, TikaConfig config, String mimeType)
             throws TikaException, IOException {
         try {
-            Parser parser = config.getParser(mimeType);
+            Parser parser = config.getParser(MediaType.parse(mimeType));
             ContentHandler handler = new BodyContentHandler();
             parser.parse(stream, handler, new Metadata());
             return handler.toString();

@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -28,7 +28,7 @@ import java.util.regex.Pattern;
 /**
  * Internet media type.
  */
-public final class MediaType {
+public final class MediaType implements Comparable<MediaType> {
 
     private static final Map<String, String> NO_PARAMETERS =
         new TreeMap<String, String>();
@@ -252,6 +252,10 @@ public final class MediaType {
         hash = hash * 31 + subtype.hashCode();
         hash = hash * 31 + parameters.hashCode();
         return hash;
+    }
+
+    public int compareTo(MediaType that) {
+        return toString().compareTo(that.toString());
     }
 
 }
