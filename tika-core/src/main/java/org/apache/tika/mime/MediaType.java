@@ -139,7 +139,8 @@ public final class MediaType {
         this.parameters = new TreeMap<String, String>();
         for (Map.Entry<String, String> entry : parameters.entrySet()) {
             this.parameters.put(
-                    entry.getKey().trim().toLowerCase(), entry.getValue());
+                    entry.getKey().trim().toLowerCase(Locale.ENGLISH),
+                    entry.getValue());
         }
     }
 
