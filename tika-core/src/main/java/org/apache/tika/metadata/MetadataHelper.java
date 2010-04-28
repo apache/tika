@@ -19,13 +19,13 @@ package org.apache.tika.metadata;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.net.URLConnection;
 
 import org.apache.tika.io.TikaInputStream;
 
 /**
  * Collection of static helper methods for handling metadata.
  *
+ * @deprecated Use {@link TikaInputStream} instead
  * @since Apache Tika 0.7
  */
 public class MetadataHelper {
@@ -47,30 +47,7 @@ public class MetadataHelper {
      */
     public static InputStream getInputStream(URL url, Metadata metadata)
             throws IOException {
-        URLConnection connection = url.openConnection();
-
-        String path = url.getPath();
-        int slash = path.lastIndexOf('/');
-        if (slash + 1 < path.length()) { // works even with -1!
-            metadata.set(Metadata.RESOURCE_NAME_KEY, path.substring(slash + 1));
-        }
-
-        String type = connection.getContentType();
-        if (type != null) {
-            metadata.set(Metadata.CONTENT_TYPE, type);
-        }
-
-        String encoding = connection.getContentEncoding();
-        if (encoding != null) {
-            metadata.set(Metadata.CONTENT_TYPE, encoding);
-        }
-
-        int length = connection.getContentLength();
-        if (length >= 0) {
-            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
-        }
-
-        return new TikaInputStream(connection.getInputStream());
+        return TikaInputStream.get(url, metadata);
     }
 
 }

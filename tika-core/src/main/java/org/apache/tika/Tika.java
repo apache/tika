@@ -26,8 +26,8 @@ import java.net.URL;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.MetadataHelper;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -161,7 +161,7 @@ public class Tika {
      */
     public String detect(URL url) throws IOException {
         Metadata metadata = new Metadata();
-        InputStream stream = MetadataHelper.getInputStream(url, metadata);
+        InputStream stream = TikaInputStream.get(url, metadata);
         try {
             return detect(stream, metadata);
         } finally {
@@ -238,7 +238,7 @@ public class Tika {
      */
     public Reader parse(URL url) throws IOException {
         Metadata metadata = new Metadata();
-        InputStream stream = MetadataHelper.getInputStream(url, metadata);
+        InputStream stream = TikaInputStream.get(url, metadata);
         return parse(stream, metadata);
     }
 
@@ -329,7 +329,7 @@ public class Tika {
      */
     public String parseToString(URL url) throws IOException, TikaException {
         Metadata metadata = new Metadata();
-        InputStream stream = MetadataHelper.getInputStream(url, metadata);
+        InputStream stream = TikaInputStream.get(url, metadata);
         return parseToString(stream, metadata);
     }
 

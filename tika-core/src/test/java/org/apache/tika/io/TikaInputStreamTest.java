@@ -30,7 +30,7 @@ public class TikaInputStreamTest extends TestCase {
 
     public void testFileBased() throws IOException {
         File file = createTempFile("Hello, World!");
-        InputStream stream = new TikaInputStream(file);
+        InputStream stream = TikaInputStream.get(file);
 
         assertEquals(
                 "The file returned by the getFile() method should"
@@ -54,7 +54,7 @@ public class TikaInputStreamTest extends TestCase {
     public void testStreamBased() throws IOException {
         InputStream input =
             new ByteArrayInputStream("Hello, World!".getBytes("UTF-8"));
-        InputStream stream = new TikaInputStream(input);
+        InputStream stream = TikaInputStream.get(input);
 
         File file = TikaInputStream.get(stream).getFile();
         assertTrue(file != null && file.isFile());
