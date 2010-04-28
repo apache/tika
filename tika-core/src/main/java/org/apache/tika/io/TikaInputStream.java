@@ -16,6 +16,7 @@
  */
 package org.apache.tika.io;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -48,7 +49,8 @@ public class TikaInputStream extends ProxyInputStream {
         if (stream instanceof TikaInputStream) {
             return (TikaInputStream) stream;
         } else {
-            return new TikaInputStream(stream, null, -1);
+            return new TikaInputStream(
+                    new BufferedInputStream(stream), null, -1);
         }
     }
 
@@ -58,8 +60,17 @@ public class TikaInputStream extends ProxyInputStream {
     }
 
     public static TikaInputStream get(File file) throws IOException {
+        return get(file, new Metadata());
+    }
+
+    public static TikaInputStream get(File file, Metadata metadata)
+            throws IOException {
+        metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
+
         return new TikaInputStream(
-                new FileInputStream(file), file, file.length());
+                new BufferedInputStream(new FileInputStream(file)),
+                file, file.length());
     }
 
     /**
@@ -69,15 +80,20 @@ public class TikaInputStream extends ProxyInputStream {
      * @throws IOException
      */
     public static TikaInputStream get(URI uri) throws IOException {
+        return get(uri, new Metadata());
+    }
+
+    public static TikaInputStream get(URI uri, Metadata metadata)
+            throws IOException {
         // Special handling for file:// URIs
         if ("file".equalsIgnoreCase(uri.getScheme())) {
             File file = new File(uri);
             if (file.isFile()) {
-                return get(file);
+                return get(file, metadata);
             }
         }
 
-        return get(uri.toURL());
+        return get(uri.toURL(), metadata);
     }
 
     public static TikaInputStream get(URL url) throws IOException {
@@ -91,7 +107,7 @@ public class TikaInputStream extends ProxyInputStream {
             try {
                 File file = new File(url.toURI());
                 if (file.isFile()) {
-                    return get(file);
+                    return get(file, metadata);
                 }
             } catch (URISyntaxException e) {
                 // fall through
@@ -121,7 +137,9 @@ public class TikaInputStream extends ProxyInputStream {
             metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
         }
 
-        return new TikaInputStream(connection.getInputStream(), null, length);
+        return new TikaInputStream(
+                new BufferedInputStream(connection.getInputStream()),
+                null, length);
     }
 
     /**
@@ -146,11 +164,47 @@ public class TikaInputStream extends ProxyInputStream {
      */
     private long position = 0;
 
+    /**
+     * 
+     * @param stream <em>buffered</em> stream (must support the mark feature)
+     * @param file
+     * @param length
+     */
     private TikaInputStream(InputStream stream, File file, long length) {
         super(stream);
         this.file = file;
         this.temporary = (file == null);
         this.length = length;
+    }
+
+    /**
+     * Fills the given buffer with upcoming bytes from this stream without
+     * advancing the current stream position. The buffer is filled up unless
+     * the end of stream is encountered before that. This method will block
+     * if not enough bytes are immediately available.
+     *
+     * @param buffer byte buffer
+     * @return number of bytes written to the buffer
+     * @throws IOException if the stream can not be read
+     */
+    public int peek(byte[] buffer) throws IOException {
+        int n = 0;
+
+        mark(buffer.length);
+
+        int m = read(buffer);
+        while (m != -1) {
+            n += m;
+            if (n < buffer.length) {
+                m = read(buffer, n, buffer.length - n);
+            } else {
+                m = -1;
+            }
+        }
+
+        reset();
+
+        return n;
     }
 
     public File getFile() throws IOException {
