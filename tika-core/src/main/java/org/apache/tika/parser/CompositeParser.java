@@ -18,9 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,7 +41,7 @@ public class CompositeParser implements Parser {
     /**
      * Set of component parsers, keyed by the supported media types.
      */
-    private Map<String, Parser> parsers = new HashMap<String, Parser>();
+    private Map<MediaType, Parser> parsers = new HashMap<MediaType, Parser>();
 
     /**
      * The fallback parser, used when no better parser is available.
@@ -55,7 +53,7 @@ public class CompositeParser implements Parser {
      *
      * @return component parsers, keyed by media type
      */
-    public Map<String, Parser> getParsers() {
+    public Map<MediaType, Parser> getParsers() {
         return parsers;
     }
 
@@ -64,7 +62,7 @@ public class CompositeParser implements Parser {
      *
      * @param parsers component parsers, keyed by media type
      */
-    public void setParsers(Map<String, Parser> parsers) {
+    public void setParsers(Map<MediaType, Parser> parsers) {
         this.parsers = parsers;
     }
 
@@ -98,19 +96,31 @@ public class CompositeParser implements Parser {
      * @return matching parser
      */
     protected Parser getParser(Metadata metadata) {
-        Parser parser = parsers.get(metadata.get(Metadata.CONTENT_TYPE));
-        if (parser == null) {
-            parser = fallback;
+        MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+        if (type != null) {
+            Parser parser = parsers.get(type);
+
+            if (parser == null && type.hasParameters()) {
+                type = type.getBaseType();
+                parser = parsers.get(type);
+            }
+
+            if (parser != null) {
+                return parser;
+            } else {
+                for (MediaType parserType : parsers.keySet()) {
+                    if (parserType != null
+                            && type.isSpecializationOf(parserType)) {
+                        return parsers.get(parserType);
+                    }
+                }
+            }
         }
-        return parser;
+        return fallback;
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        Set<MediaType> supportedTypes = new HashSet<MediaType>();
-        for (String type : parsers.keySet()) {
-            supportedTypes.add(MediaType.parse(type));
-        }
-        return Collections.unmodifiableSet(supportedTypes);
+        return parsers.keySet();
     }
 
     /**
