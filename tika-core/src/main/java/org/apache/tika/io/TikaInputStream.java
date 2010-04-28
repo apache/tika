@@ -23,7 +23,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
+
+import org.apache.tika.metadata.Metadata;
 
 /**
  *
@@ -43,8 +48,80 @@ public class TikaInputStream extends ProxyInputStream {
         if (stream instanceof TikaInputStream) {
             return (TikaInputStream) stream;
         } else {
-            return new TikaInputStream(stream);
+            return new TikaInputStream(stream, null, -1);
         }
+    }
+
+    public static TikaInputStream get(byte[] data) throws IOException {
+        return new TikaInputStream(
+                new ByteArrayInputStream(data), null, data.length);
+    }
+
+    public static TikaInputStream get(File file) throws IOException {
+        return new TikaInputStream(
+                new FileInputStream(file), file, file.length());
+    }
+
+    /**
+     * 
+     * @param uri
+     * @return
+     * @throws IOException
+     */
+    public static TikaInputStream get(URI uri) throws IOException {
+        // Special handling for file:// URIs
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            File file = new File(uri);
+            if (file.isFile()) {
+                return get(file);
+            }
+        }
+
+        return get(uri.toURL());
+    }
+
+    public static TikaInputStream get(URL url) throws IOException {
+        return get(url, new Metadata());
+    }
+
+    public static TikaInputStream get(URL url, Metadata metadata)
+            throws IOException {
+        // Special handling for file:// URLs
+        if ("file".equalsIgnoreCase(url.getProtocol())) {
+            try {
+                File file = new File(url.toURI());
+                if (file.isFile()) {
+                    return get(file);
+                }
+            } catch (URISyntaxException e) {
+                // fall through
+            }
+        }
+
+        URLConnection connection = url.openConnection();
+
+        String path = url.getPath();
+        int slash = path.lastIndexOf('/');
+        if (slash + 1 < path.length()) { // works even with -1!
+            metadata.set(Metadata.RESOURCE_NAME_KEY, path.substring(slash + 1));
+        }
+
+        String type = connection.getContentType();
+        if (type != null) {
+            metadata.set(Metadata.CONTENT_TYPE, type);
+        }
+
+        String encoding = connection.getContentEncoding();
+        if (encoding != null) {
+            metadata.set(Metadata.CONTENT_TYPE, encoding);
+        }
+
+        int length = connection.getContentLength();
+        if (length >= 0) {
+            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
+        }
+
+        return new TikaInputStream(connection.getInputStream(), null, length);
     }
 
     /**
@@ -76,22 +153,6 @@ public class TikaInputStream extends ProxyInputStream {
         this.length = length;
     }
 
-    public TikaInputStream(InputStream stream) {
-        this(stream, null, -1);
-    }
-
-    public TikaInputStream(byte[] data) {
-        this(new ByteArrayInputStream(data), null, data.length);
-    }
-
-    public TikaInputStream(File file) throws IOException {
-        this(new FileInputStream(file), file, file.length());
-    }
-
-    public TikaInputStream(URL url) throws IOException {
-        this(url.openStream(), null, -1);
-    }
-
     public File getFile() throws IOException {
         if (file == null) {
             if (in == null) {
@@ -113,6 +174,16 @@ public class TikaInputStream extends ProxyInputStream {
         return file;
     }
 
+    /**
+     * Returns the length (in bytes) of this stream. Note that if the length
+     * was not available when this stream was instantiated, then this method
+     * will use the {@link #getFile()} method to buffer the entire stream to
+     * a temporary file in order to calculate the stream length. This case
+     * will only work if the stream has not yet been consumed.
+     *
+     * @return stream length
+     * @throws IOException if the length can not be determined
+     */
     public long getLength() throws IOException {
         if (length == -1) {
             length = getFile().length();
