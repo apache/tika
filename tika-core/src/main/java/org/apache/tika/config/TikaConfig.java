@@ -47,7 +47,8 @@ import org.xml.sax.SAXException;
  */
 public class TikaConfig {
 
-    private final Map<String, Parser> parsers = new HashMap<String, Parser>();
+    private final Map<MediaType, Parser> parsers =
+        new HashMap<MediaType, Parser>();
 
     private final MimeTypes mimeTypes;
 
@@ -118,12 +119,19 @@ public class TikaConfig {
                 NodeList mimes = node.getElementsByTagName("mime");
                 if (mimes.getLength() > 0) {
                     for (int j = 0; j < mimes.getLength(); j++) {
-                        parsers.put(getText(mimes.item(j)).trim(), parser);
+                        String mime = getText(mimes.item(j));
+                        MediaType type = MediaType.parse(mime);
+                        if (type != null) {
+                            parsers.put(type, parser);
+                        } else {
+                            throw new TikaException(
+                                    "Invalid media type name: " + mime);
+                        }
                     }
                 } else {
                     ParseContext context = new ParseContext();
                     for (MediaType type : parser.getSupportedTypes(context)) {
-                        parsers.put(type.toString(), parser);
+                        parsers.put(type, parser);
                     }
                 }
             } catch (ClassNotFoundException e) {
@@ -146,7 +154,7 @@ public class TikaConfig {
         while (iterator.hasNext()) {
             Parser parser = iterator.next();
             for (MediaType type : parser.getSupportedTypes(context)) {
-                parsers.put(type.toString(), parser);
+                parsers.put(type, parser);
             }
         }
         mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
@@ -187,7 +195,7 @@ public class TikaConfig {
         return parsers.get(mimeType);
     }
 
-    public Map<String, Parser> getParsers() {
+    public Map<MediaType, Parser> getParsers() {
         return parsers;
     }
 

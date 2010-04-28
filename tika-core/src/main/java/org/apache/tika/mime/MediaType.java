@@ -182,6 +182,17 @@ public final class MediaType {
         return subtype;
     }
 
+    /**
+     * Checks whether this media type contains parameters.
+     *
+     * @since Apache Tika 0.8
+     * @return <code>true</code> if this type has one or more parameters,
+     *         <code>false</code> otherwise
+     */
+    public boolean hasParameters() {
+        return !parameters.isEmpty();
+    }
+
     public Map<String, String> getParameters() {
         return Collections.unmodifiableMap(parameters);
     }
