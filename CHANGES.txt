@@ -4,6 +4,9 @@ Release 0.8 - Current Development
 
 The most notable changes in Tika 0.8 over previous releases are:
 
+ * Media type hierarchy information is now taken into account when
+   selecting the best parser for a given input document. (TIKA-298)
+
  * Support for parsing common scientific data formats including netCDF
    was added (TIKA-400).
 
