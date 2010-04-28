@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -67,9 +67,9 @@ public final class MimeType implements Comparable<MimeType> {
     private final MimeTypes registry;
 
     /**
-     * Lower case name of this media type.
+     * The normalized media type name.
      */
-    private final String name;
+    private final MediaType type;
 
     /**
      * Description of this media type.
@@ -99,17 +99,26 @@ public final class MimeType implements Comparable<MimeType> {
      * up to date.
      *
      * @param registry the media type registry that contains this type
-     * @param name media type name
+     * @param type normalized media type name
      */
-    MimeType(MimeTypes registry, String name) {
+    MimeType(MimeTypes registry, MediaType type) {
         if (registry == null) {
             throw new IllegalArgumentException("Registry is missing");
         }
-        if (!MimeType.isValid(name) || !name.equals(name.toLowerCase())) {
-            throw new IllegalArgumentException("Media type name is invalid");
+        if (type == null) {
+            throw new IllegalArgumentException("Media type name is missing");
         }
         this.registry = registry;
-        this.name = name;
+        this.type = type;
+    }
+
+    /**
+     * Returns the normalized media type name.
+     *
+     * @return media type
+     */
+    public MediaType getType() {
+        return type;
     }
 
     /**
@@ -118,7 +127,7 @@ public final class MimeType implements Comparable<MimeType> {
      * @return media type name (lower case)
      */
     public String getName() {
-        return name;
+        return type.toString();
     }
 
     /**
@@ -197,14 +206,9 @@ public final class MimeType implements Comparable<MimeType> {
      * @throws MimeTypeException if the alias is invalid or
      *                           already registered for another media type
      */
-    public void addAlias(String alias) throws MimeTypeException {
-        if (isValid(alias)) {
-            alias = alias.toLowerCase();
-            if (!name.equals(alias)) {
-                registry.addAlias(this, alias);
-            }
-        } else {
-            throw new MimeTypeException("Invalid media type alias: " + alias);
+    public void addAlias(MediaType alias) throws MimeTypeException {
+        if (!alias.isSpecializationOf(type)) {
+            registry.addAlias(this, alias);
         }
     }
 
@@ -347,22 +351,21 @@ public final class MimeType implements Comparable<MimeType> {
 
     //----------------------------------------------------------< Comparable >
 
-    public int compareTo(MimeType type) {
-        if (type == null) {
+    public int compareTo(MimeType mime) {
+        if (mime == null) {
             throw new IllegalArgumentException("MimeType is missing");
-        }
-        if (type == this) {
+        } else if (mime == this) {
             return 0;
-        } else if (this.isDescendantOf(type)) {
+        } else if (this.isDescendantOf(mime)) {
             return 1;
-        } else if (type.isDescendantOf(this)) {
+        } else if (mime.isDescendantOf(this)) {
             return -1;
         } else if (superType != null) {
-            return superType.compareTo(type);
-        } else if (type.superType != null) {
-            return compareTo(type.superType);
+            return superType.compareTo(mime);
+        } else if (mime.superType != null) {
+            return compareTo(mime.superType);
         } else {
-            return name.compareTo(type.name);
+            return type.compareTo(mime.type);
         }
     }
 
@@ -374,7 +377,7 @@ public final class MimeType implements Comparable<MimeType> {
      * @return media type name
      */
     public String toString() {
-        return name;
+        return type.toString();
     }
 
 }

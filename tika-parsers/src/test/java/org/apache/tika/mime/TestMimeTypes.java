@@ -250,16 +250,16 @@ public class TestMimeTypes extends TestCase {
      * @since TIKA-194
      */
     public void testJavaRegex() throws Exception{
-        MimeType testType = new MimeType(this.repo, "foo/bar");
+        MimeType testType = new MimeType(this.repo, MediaType.parse("foo/bar"));
         this.repo.add(testType);
         assertNotNull(repo.forName("foo/bar"));
         String pattern = "rtg_sst_grb_0\\.5\\.\\d{8}";
         this.repo.addPattern(testType, pattern, true);
         String testFileName = "rtg_sst_grb_0.5.12345678";
         assertNotNull(this.repo.getMimeType(testFileName));
-        assertEquals(this.repo.getMimeType(testFileName).getName(), "foo/bar");    
+        assertEquals(this.repo.getMimeType(testFileName).getName(), "foo/bar");
         
-        MimeType testType2 = new MimeType(this.repo, "foo/bar2");
+        MimeType testType2 = new MimeType(this.repo, MediaType.parse("foo/bar2"));
         this.repo.add(testType2);
         assertNotNull(repo.forName("foo/bar2"));
         this.repo.addPattern(testType2, pattern, false);

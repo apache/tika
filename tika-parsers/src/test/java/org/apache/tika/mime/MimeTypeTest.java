@@ -33,7 +33,7 @@ public class MimeTypeTest extends TestCase {
 
         // Missing registry
         try {
-            new MimeType(null, "text/plain");
+            new MimeType(null, MediaType.TEXT_PLAIN);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // expected result
@@ -42,22 +42,6 @@ public class MimeTypeTest extends TestCase {
         // Missing name
         try {
             new MimeType(types, null);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
-
-        // Invalid name (no slash)
-        try {
-            new MimeType(types, "application");
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
-
-        // Invalid name (not lower case)
-        try {
-            new MimeType(types, "TEXT/PLAIN");
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // expected result

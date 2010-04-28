@@ -119,7 +119,8 @@ public final class MimeTypes implements Detector {
     private final MimeType xmlMimeType;
     
     /** All the registered MimeTypes indexed on their name */
-    private final Map<String, MimeType> types = new HashMap<String, MimeType>();
+    private final Map<MediaType, MimeType> types =
+        new HashMap<MediaType, MimeType>();
 
     /** The patterns matcher */
     private Patterns patterns = new Patterns();
@@ -133,9 +134,9 @@ public final class MimeTypes implements Detector {
     private final XmlRootExtractor xmlRootExtractor;
 
     public MimeTypes() {
-        rootMimeType = new MimeType(this, OCTET_STREAM);
-        textMimeType = new MimeType(this, PLAIN_TEXT);
-        xmlMimeType = new MimeType(this, XML);
+        rootMimeType = new MimeType(this, MediaType.OCTET_STREAM);
+        textMimeType = new MimeType(this, MediaType.TEXT_PLAIN);
+        xmlMimeType = new MimeType(this, MediaType.APPLICATION_XML);
         
         try {
             textMimeType.setSuperType(rootMimeType);
@@ -144,9 +145,9 @@ public final class MimeTypes implements Detector {
             throw new IllegalStateException("Error in MimeType logic", e);
         }
 
-        types.put(rootMimeType.getName(), rootMimeType);
-        types.put(textMimeType.getName(), textMimeType);
-        types.put(xmlMimeType.getName(), xmlMimeType);
+        types.put(rootMimeType.getType(), rootMimeType);
+        types.put(textMimeType.getType(), textMimeType);
+        types.put(xmlMimeType.getType(), xmlMimeType);
 
         try {
             xmlRootExtractor = new XmlRootExtractor();
@@ -397,21 +398,21 @@ public final class MimeTypes implements Detector {
      */
     public synchronized MimeType forName(String name)
             throws MimeTypeException {
-        if (MimeType.isValid(name)) {
-            name = name.toLowerCase(Locale.ENGLISH);
-            MimeType type = types.get(name);
-            if (type == null) {
-                type = new MimeType(this, name);
-                if (name.startsWith("text/")) {
-                    type.setSuperType(textMimeType);
-                } else if (name.endsWith("+xml")) {
-                	type.setSuperType(xmlMimeType);
+        MediaType type = MediaType.parse(name);
+        if (type != null) {
+            MimeType mime = types.get(type);
+            if (mime == null) {
+                mime = new MimeType(this, type);
+                if ("text".equals(type.getType())) {
+                    mime.setSuperType(textMimeType);
+                } else if (type.getSubtype().endsWith("+xml")) {
+                    mime.setSuperType(xmlMimeType);
                 } else {
-                    type.setSuperType(rootMimeType);
+                    mime.setSuperType(rootMimeType);
                 }
-                types.put(name, type);
+                types.put(type, mime);
             }
-            return type;
+            return mime;
         } else {
             throw new MimeTypeException("Invalid media type name: " + name);
         }
@@ -425,7 +426,7 @@ public final class MimeTypes implements Detector {
      * @param alias media type alias (normalized to lower case)
      * @throws MimeTypeException if the alias already exists
      */
-    synchronized void addAlias(MimeType type, String alias)
+    synchronized void addAlias(MimeType type, MediaType alias)
             throws MimeTypeException {
         if (!types.containsKey(alias)) {
             types.put(alias, type);
