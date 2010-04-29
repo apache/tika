@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -20,23 +20,73 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Registry of Internet media types.
+ * Registry of known Internet media types.
  */
-public final class MediaTypeRegistry {
+public class MediaTypeRegistry {
 
-    private final Map<MediaType, MediaType> aliases =
+    /**
+     * Registry of known media types, including type aliases. All the types
+     * in this map are base types, i.e. they have no parameters. A canonical
+     * media type is handled as an identity mapping, while an alias is stored
+     * as a mapping from the alias to the corresponding canonical type.
+     */
+    private final Map<MediaType, MediaType> registry =
         new HashMap<MediaType, MediaType>();
 
-    public void addAlias(MediaType canonical, MediaType alias) {
-        aliases.put(alias, canonical);
+    /**
+     * Known type inheritance relationships. The mapping is from a media type
+     * to the closest supertype. All types in this map are canonical and have
+     * no parameters.
+     */
+    private final Map<MediaType, MediaType> inheritance =
+        new HashMap<MediaType, MediaType>();
+
+    public void addType(MediaType type) {
+        if (type == null || type.hasParameters()) {
+            throw new IllegalArgumentException();
+        } else if (registry.containsKey(type)) {
+            throw new IllegalStateException();
+        } else {
+            registry.put(type, type);
+        }
     }
 
-    public MediaType unalias(MediaType type) {
-        MediaType canonical = aliases.get(type.getBaseType());
-        if (canonical != null) {
+    public void addAlias(MediaType type, MediaType alias) {
+        if (type == null || alias == null
+                || type.hasParameters() || alias.hasParameters()) {
+            throw new IllegalArgumentException();
+        } else if (!registry.containsKey(type) || registry.containsKey(alias)) {
+            throw new IllegalStateException();
+        } else {
+            registry.put(alias, type);
+        }
+    }
+
+    public MediaType normalize(MediaType type) {
+        MediaType canonical = registry.get(type.getBaseType());
+        if (canonical == null) {
+            return type;
+        } else if (type.hasParameters()) {
             return new MediaType(canonical, type.getParameters());
         } else {
+            return canonical;
+        }
+    }
+
+    public MediaType getSuperType(MediaType type) {
+        if (type.hasParameters()) {
             return type;
+        } else if (inheritance.containsKey(type)) {
+            return inheritance.get(type);
+        } else if (type.getSubtype().endsWith("+xml")) {
+            return MediaType.APPLICATION_XML;
+        } else if ("text".equals(type.getType())
+                && !MediaType.TEXT_PLAIN.equals(type)) {
+            return MediaType.TEXT_PLAIN;
+        } else if (!MediaType.OCTET_STREAM.equals(type)) {
+            return MediaType.OCTET_STREAM;
+        } else {
+            return null;
         }
     }
 
