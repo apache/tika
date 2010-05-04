@@ -147,10 +147,21 @@ public class TikaConfig {
         }
     }
 
-    public TikaConfig() throws MimeTypeException, IOException {
+    /**
+     * Creates a Tika configuration from the built-in media type rules
+     * and all the {@link Parser} implementations available through the
+     * {@link ServiceRegistry service provider mechanism} in the given
+     * class loader.
+     *
+     * @since Apache Tika 0.8
+     * @throws MimeTypeException if the built-in media type rules are broken
+     * @throws IOException  if the built-in media type rules can not be read
+     */
+    public TikaConfig(ClassLoader loader)
+            throws MimeTypeException, IOException {
         ParseContext context = new ParseContext();
         Iterator<Parser> iterator =
-            ServiceRegistry.lookupProviders(Parser.class);
+            ServiceRegistry.lookupProviders(Parser.class, loader);
         while (iterator.hasNext()) {
             Parser parser = iterator.next();
             for (MediaType type : parser.getSupportedTypes(context)) {
@@ -158,6 +169,19 @@ public class TikaConfig {
             }
         }
         mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
+    }
+
+    /**
+     * Creates a Tika configuration from the built-in media type rules
+     * and all the {@link Parser} implementations available through the
+     * {@link ServiceRegistry service provider mechanism} in the context
+     * class loader of the current thread.
+     *
+     * @throws MimeTypeException if the built-in media type rules are broken
+     * @throws IOException  if the built-in media type rules can not be read
+     */
+    public TikaConfig() throws MimeTypeException, IOException {
+        this(Thread.currentThread().getContextClassLoader());
     }
 
     /**
