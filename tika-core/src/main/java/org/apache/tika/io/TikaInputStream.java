@@ -165,6 +165,11 @@ public class TikaInputStream extends ProxyInputStream {
     private long position = 0;
 
     /**
+     * Marked position, or -1 if there is no current mark.
+     */
+    private long mark = -1;
+
+    /**
      * 
      * @param stream <em>buffered</em> stream (must support the mark feature)
      * @param file
@@ -246,6 +251,63 @@ public class TikaInputStream extends ProxyInputStream {
     }
 
     @Override
+    public int available() throws IOException {
+        if (in == null && file == null) {
+            return 0;
+        } else {
+            return super.available();
+        }
+    }
+
+    @Override
+    public long skip(long ln) throws IOException {
+        if (in == null && file == null) {
+            return 0;
+        } else {
+            long n = super.skip(ln);
+            position += n;
+            return n;
+        }
+    }
+
+    @Override
+    public int read() throws IOException {
+        if (in == null && file == null) {
+            return -1;
+        } else {
+            return super.read();
+        }
+    }
+
+    @Override
+    public int read(byte[] bts, int off, int len) throws IOException {
+        if (in == null && file == null) {
+            return -1;
+        } else {
+            return super.read(bts, off, len);
+        }
+    }
+
+    @Override
+    public int read(byte[] bts) throws IOException {
+        return read(bts, 0, bts.length);
+    }
+
+    @Override
+    public void mark(int readlimit) {
+        super.mark(readlimit);
+        mark = position;
+    }
+
+    @Override
+    public void reset() throws IOException {
+        super.reset();
+        position = mark;
+        mark = -1;
+    }
+
+
+    @Override
     public void close() throws IOException {
         if (in != null) {
             in.close();
@@ -274,7 +336,7 @@ public class TikaInputStream extends ProxyInputStream {
     protected void afterRead(int n) throws IOException {
         if (n != -1) {
             position += n;
-        } else {
+        } else if (mark == -1) {
             close();
         }
     }
