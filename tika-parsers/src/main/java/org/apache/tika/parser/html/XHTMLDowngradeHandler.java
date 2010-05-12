@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.html;
 
+import java.util.Locale;
+
 import javax.xml.XMLConstants;
 
 import org.apache.tika.sax.ContentHandlerDecorator;
@@ -41,18 +43,18 @@ class XHTMLDowngradeHandler extends ContentHandlerDecorator {
     public void startElement(
             String uri, String localName, String name, Attributes atts)
             throws SAXException {
-        String upper = localName.toUpperCase();
+        String upper = localName.toUpperCase(Locale.ENGLISH);
 
         AttributesImpl attributes = new AttributesImpl();
         for (int i = 0; i < atts.getLength(); i++) {
+            String auri = atts.getURI(i);
             String local = atts.getLocalName(i);
             String qname = atts.getQName(i);
-            if (!XMLConstants.NULL_NS_URI.equals(atts.getURI(i).length())
+            if (XMLConstants.NULL_NS_URI.equals(auri)
                     && !local.equals(XMLConstants.XMLNS_ATTRIBUTE)
                     && !qname.startsWith(XMLConstants.XMLNS_ATTRIBUTE + ":")) {
                 attributes.addAttribute(
-                        atts.getURI(i), local, qname,
-                        atts.getType(i), atts.getValue(i));
+                        auri, local, qname, atts.getType(i), atts.getValue(i));
             }
         }
 
@@ -62,7 +64,7 @@ class XHTMLDowngradeHandler extends ContentHandlerDecorator {
     @Override
     public void endElement(String uri, String localName, String name)
             throws SAXException {
-        String upper = localName.toUpperCase();
+        String upper = localName.toUpperCase(Locale.ENGLISH);
         super.endElement(XMLConstants.NULL_NS_URI, upper, upper);
     }
 
