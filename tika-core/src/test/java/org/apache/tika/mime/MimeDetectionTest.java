@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -60,7 +61,19 @@ public class MimeDetectionTest extends TestCase {
         // add another evil html test from TIKA-357
         testFile("text/html", "testlargerbuffer.html");
     }
-    
+
+    public void testByteOrderMark() throws Exception {
+        assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
+                new ByteArrayInputStream("\ufffetest".getBytes("UTF-16LE")),
+                new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
+                new ByteArrayInputStream("\ufffetest".getBytes("UTF-16BE")),
+                new Metadata()));
+        assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
+                new ByteArrayInputStream("\ufffetest".getBytes("UTF-8")),
+                new Metadata()));
+    }
+
     public void testAutosetSupertype() throws MimeTypeException {
     	MimeTypes types = new MimeTypes();
     	MimeType type = types.forName("application/something+xml");
