@@ -2818,7 +2818,8 @@
       <match value="0xfffb" type="string" offset="0"/> <!-- V1, L3      -->
       <match value="0xfffc" type="string" offset="0"/> <!-- V1, L2, CRC -->
       <match value="0xfffd" type="string" offset="0"/> <!-- V1, L2      -->
-      <match value="0xfffe" type="string" offset="0"/> <!-- V1, L1, CRC -->
+      <!-- TIKA-417: This is the UTF-16 LE byte order mark! -->
+      <!-- match value="0xfffe" type="string" offset="0"/ --> <!-- V1, L1, CRC -->
       <match value="0xffff" type="string" offset="0"/> <!-- V1, L1      -->
       <match value="ID3" type="string" offset="0"/>
     </magic>
