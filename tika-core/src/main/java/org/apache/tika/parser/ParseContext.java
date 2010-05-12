@@ -19,6 +19,16 @@ package org.apache.tika.parser;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.tika.exception.TikaException;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+
 /**
  * Parse context. Used to pass context information to Tika parsers.
  *
@@ -46,6 +56,62 @@ public class ParseContext {
         } else {
             return defaultValue;
         }
+    }
+
+    /**
+     * Returns the SAX parser specified in this parsing context. If a parser
+     * is not explicitly specified, then one is created using the specified
+     * or the default SAX parser factory.
+     *
+     * @see #getSAXParserFactory()
+     * @since Apache Tika 0.8
+     * @return SAX parser
+     * @throws TikaException if a SAX parser could not be created
+     */
+    public SAXParser getSAXParser() throws TikaException {
+        SAXParser parser = get(SAXParser.class);
+        if (parser != null) {
+            return parser;
+        } else {
+            try {
+                return getSAXParserFactory().newSAXParser();
+            } catch (ParserConfigurationException e) {
+                throw new TikaException("Unable to configure a SAX parser", e);
+            } catch (SAXException e) {
+                throw new TikaException("Unable to create a SAX parser", e);
+            }
+        }
+    }
+
+    /**
+     * Returns the SAX parser factory specified in this parsing context.
+     * If a factory is not explicitly specified, then a default factory
+     * instance is created and returned. The default factory instance is
+     * configured to be namespace-aware and to use
+     * {@link XMLConstants#FEATURE_SECURE_PROCESSING secure XML processing}.
+     *
+     * @since Apache Tika 0.8
+     * @return SAX parser factory
+     */
+    public SAXParserFactory getSAXParserFactory() {
+        SAXParserFactory factory = get(SAXParserFactory.class);
+        if (factory == null) {
+            factory = SAXParserFactory.newInstance();
+            factory.setNamespaceAware(true);
+            try {
+                factory.setFeature(
+                        XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            } catch (ParserConfigurationException e) {
+            } catch (SAXNotSupportedException e) {
+            } catch (SAXNotRecognizedException e) {
+                // TIKA-271: Some XML parsers do not support the
+                // secure-processing feature, even though it's required by
+                // JAXP in Java 5. Ignoring the exception is fine here, as
+                // deployments without this feature are inherently vulnerable
+                // to XML denial-of-service attacks.
+            }
+        }
+        return factory;
     }
 
 }

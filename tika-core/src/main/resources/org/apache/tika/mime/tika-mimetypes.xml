@@ -556,6 +556,17 @@
   <mime-type type="application/vnd.apple.installer+xml">
     <glob pattern="*.mpkg"/>
   </mime-type>
+  <mime-type type="application/vnd.apple.keynote">
+    <sub-class-of type="application/zip"/>
+    <alias type="application/vnd.apple.pages"/>
+    <alias type="application/vnd.apple.numbers"/>
+    <magic priority="40">
+      <match value="0x504b0304140000000000" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.key"/>
+    <glob pattern="*.pages"/>
+    <glob pattern="*.numbers"/>
+  </mime-type>
   <mime-type type="application/vnd.arastra.swi">
     <glob pattern="*.swi"/>
   </mime-type>

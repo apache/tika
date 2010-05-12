@@ -16,15 +16,14 @@
  */
 package org.apache.tika.parser;
 
-import java.io.IOException;
-import java.io.InputStream;
-
+import junit.framework.TestCase;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
-import junit.framework.TestCase;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class AutoDetectParserTest extends TestCase {
 
@@ -34,6 +33,7 @@ public class AutoDetectParserTest extends TestCase {
     private static final String HTML       = "text/html";
     private static final String PDF        = "application/pdf";
     private static final String POWERPOINT = "application/vnd.ms-powerpoint";
+    private static final String KEYNOTE = "application/vnd.apple.keynote";
     private static final String RTF        = "application/rtf";
     private static final String PLAINTEXT  = "text/plain";
     private static final String WORD       = "application/msword";
@@ -121,6 +121,10 @@ public class AutoDetectParserTest extends TestCase {
         assertAutoDetect(resource, badResource, type, type,          content);
         assertAutoDetect(resource, badResource, type, null,          content);
         assertAutoDetect(resource, badResource, type, wrongMimeType, content);
+    }
+
+    public void testKeynote() throws Exception {
+      assertAutoDetect("testKeynote.key", KEYNOTE, "A sample presentation");  
     }
 
     public void testEpub() throws Exception {
