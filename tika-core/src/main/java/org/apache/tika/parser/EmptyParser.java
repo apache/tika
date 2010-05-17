@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
 
@@ -33,7 +34,12 @@ import org.xml.sax.SAXException;
  * attempting to parse the given document stream. Useful as a sentinel parser
  * for unknown document types.
  */
-public class EmptyParser implements Parser {
+public class EmptyParser implements Parser, Serializable {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -4218649699095732123L;
 
     /**
      * Singleton instance of this class.
