@@ -3,3 +3,7 @@ Copyright 2009 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
+
+Copyright 1993-2010 University Corporation for Atmospheric Research/Unidata
+This software contains code derived from UCAR/Unidata's NetCDF library.
+
