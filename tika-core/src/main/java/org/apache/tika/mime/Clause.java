@@ -16,10 +16,12 @@
  */
 package org.apache.tika.mime;
 
+import java.io.Serializable;
+
 /**
  * Defines a clause to be evaluated.
  */
-interface Clause {
+interface Clause extends Serializable {
 
     /**
      * Evaluates this clause with the specified chunk of data.

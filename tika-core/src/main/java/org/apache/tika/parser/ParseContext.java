@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,7 +36,12 @@ import org.xml.sax.SAXNotSupportedException;
  * @since Apache Tika 0.5
  * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
  */
-public class ParseContext {
+public class ParseContext implements Serializable {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -5921436862145826534L;
 
     private final Map<Class<?>, Object> context =
         new HashMap<Class<?>, Object>();

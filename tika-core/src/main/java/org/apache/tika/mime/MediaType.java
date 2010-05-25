@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -28,7 +29,12 @@ import java.util.regex.Pattern;
 /**
  * Internet media type.
  */
-public final class MediaType implements Comparable<MediaType> {
+public final class MediaType implements Comparable<MediaType>, Serializable {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -3831000556189036392L;
 
     private static final Map<String, String> NO_PARAMETERS =
         new TreeMap<String, String>();

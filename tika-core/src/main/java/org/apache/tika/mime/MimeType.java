@@ -16,12 +16,18 @@
  */
 package org.apache.tika.mime;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * Internet media type.
  */
-public final class MimeType implements Comparable<MimeType> {
+public final class MimeType implements Comparable<MimeType>, Serializable {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = 4357830439860729201L;
 
     /**
      * Checks that the given string is a valid Internet media type name
@@ -276,7 +282,12 @@ public final class MimeType implements Comparable<MimeType> {
      * Defines a RootXML description. RootXML is made of a localName and/or a
      * namespaceURI.
      */
-    class RootXML {
+    class RootXML implements Serializable {
+
+        /**
+         * Serial version UID.
+         */
+        private static final long serialVersionUID = 5140496601491000730L;
 
         private MimeType type = null;
 
