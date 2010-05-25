@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -29,7 +30,7 @@ import org.apache.tika.mime.MediaType;
  *
  * @since Apache Tika 0.3
  */
-public interface Detector {
+public interface Detector extends Serializable {
 
     /**
      * Detects the content type of the given input document. Returns

@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -32,10 +33,12 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.xml.namespace.QName;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.metadata.Metadata;
+import org.xml.sax.SAXException;
 
 /**
  * This class is a MimeType repository. It gathers a set of MimeTypes and
@@ -51,7 +54,12 @@ import org.apache.tika.metadata.Metadata;
  * (if available) to restore the stream back to the state it was before type
  * detection if it wants to process the stream based on the detected type.
  */
-public final class MimeTypes implements Detector {
+public final class MimeTypes implements Detector, Serializable {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -1350863170146349036L;
 
     /**
      * Name of the {@link #rootMimeType root} type, application/octet-stream.
@@ -131,7 +139,7 @@ public final class MimeTypes implements Detector {
     /** List of all registered rootXML */
     private SortedSet<MimeType> xmls = new TreeSet<MimeType>();
 
-    private final XmlRootExtractor xmlRootExtractor;
+    private transient XmlRootExtractor xmlRootExtractor = null;
 
     public MimeTypes() {
         rootMimeType = new MimeType(this, MediaType.OCTET_STREAM);
@@ -148,13 +156,6 @@ public final class MimeTypes implements Detector {
         types.put(rootMimeType.getType(), rootMimeType);
         types.put(textMimeType.getType(), textMimeType);
         types.put(xmlMimeType.getType(), xmlMimeType);
-
-        try {
-            xmlRootExtractor = new XmlRootExtractor();
-        } catch (Exception e) {
-            throw new IllegalStateException(
-                    "Unable to create a XmlRootExtractor", e);
-        }
     }
 
     /**
@@ -225,25 +226,35 @@ public final class MimeTypes implements Detector {
                 break;
             }
         }
-        
+ 
         if (result != null) {
-            // When detecting generic XML (or possibly XHTML),
-            // extract the root element and match it against known types
-            if ("application/xml".equals(result.getName())
-                    || "text/html".equals(result.getName())) {
-                QName rootElement = xmlRootExtractor.extractRootElement(data);
-                if (rootElement != null) {
-                    for (MimeType type : xmls) {
-                        if (type.matchesXML(
-                                rootElement.getNamespaceURI(),
-                                rootElement.getLocalPart())) {
-                            result = type;
-                            break;
+            try {
+                XmlRootExtractor extractor = xmlRootExtractor;
+                if (extractor  == null) {
+                    extractor = new XmlRootExtractor();
+                    xmlRootExtractor = extractor;
+                }
+
+                // When detecting generic XML (or possibly XHTML),
+                // extract the root element and match it against known types
+                if ("application/xml".equals(result.getName())
+                        || "text/html".equals(result.getName())) {
+                    QName rootElement = xmlRootExtractor.extractRootElement(data);
+                    if (rootElement != null) {
+                        for (MimeType type : xmls) {
+                            if (type.matchesXML(
+                                    rootElement.getNamespaceURI(),
+                                    rootElement.getLocalPart())) {
+                                result = type;
+                                break;
+                            }
                         }
                     }
                 }
+                return result;
+            } catch (SAXException e) {
+            } catch (ParserConfigurationException e) {
             }
-            return result;
         }
 
 

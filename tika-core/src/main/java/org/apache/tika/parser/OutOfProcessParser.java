@@ -17,10 +17,16 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Queue;
 
-public class OutOfProcessParser {
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+public class OutOfProcessParser extends DelegatingParser {
 
     private final ClassLoader loader;
 
@@ -33,9 +39,9 @@ public class OutOfProcessParser {
         OutOfProcessParser parser = new OutOfProcessParser(
                 Thread.currentThread().getContextClassLoader());
         try {
-            OutOfProcessClient client = parser.acquireClient();
-            System.out.println(client.echo(EmptyParser.INSTANCE));
-            parser.releaseClient(client);
+            ParseContext context = new ParseContext();
+            context.set(Parser.class, new AutoDetectParser());
+            parser.parse(null, null, null, context);
         } finally {
             parser.close();
         }
@@ -45,14 +51,32 @@ public class OutOfProcessParser {
         this.loader = loader;
     }
 
+    /**
+     * 
+     */
+    @Override
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        OutOfProcessClient client = acquireClient();
+        try {
+            System.out.println(client.echo(getDelegateParser(context)));
+        } finally {
+            releaseClient(client);
+        }
+    }
+
     public synchronized void close() {
         for (OutOfProcessClient client : pool) {
             client.close();
         }
         pool.clear();
+        poolSize = 0;
     }
 
-    private OutOfProcessClient acquireClient() throws IOException {
+    private synchronized OutOfProcessClient acquireClient()
+            throws IOException {
         OutOfProcessClient client = pool.poll();
         if (client == null) {
             client = new OutOfProcessClient(loader);

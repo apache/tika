@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,7 +16,7 @@
  */
 package org.apache.tika.mime;
 
-// JDK imports
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +26,12 @@ import java.util.TreeMap;
 /**
  * Defines a MimeType pattern.
  */
-class Patterns {
+class Patterns implements Serializable {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -5778015347278111140L;
 
     /**
      * Index of exact name patterns.
@@ -47,16 +52,25 @@ class Patterns {
      * Index of generic glob patterns, sorted by length.
      */
     private final SortedMap<String, MimeType> globs =
-        new TreeMap<String, MimeType>(new Comparator<String>() {
-            public int compare(String a, String b) {
-                int diff = b.length() - a.length();
-                if (diff == 0) {
-                    diff = a.compareTo(b);
-                }
-                return diff;
-            }
-        });
+        new TreeMap<String, MimeType>(new LengthComparator());
 
+    private final class LengthComparator
+            implements Comparator<String>, Serializable {
+
+        /**
+         * Serial version UID.
+         */
+        private static final long serialVersionUID = 8468289702915532359L;
+
+        public int compare(String a, String b) {
+            int diff = b.length() - a.length();
+            if (diff == 0) {
+                diff = a.compareTo(b);
+            }
+            return diff;
+        }
+
+    }
 
     public void add(String pattern, MimeType type) throws MimeTypeException {
         this.add(pattern, false, type);
