@@ -25,7 +25,7 @@ import org.xml.sax.ContentHandler;
 import java.io.InputStream;
 
 /**
- * 
+ * Tests if the different iwork parsers parse the content and metadata properly. 
  */
 public class IWorkParserTest extends TestCase {
 
@@ -46,20 +46,30 @@ public class IWorkParserTest extends TestCase {
 
         assertEquals(6, metadata.size());
         assertEquals("application/vnd.apple.keynote", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("2", metadata.get(Metadata.SLIDE_COUNT));
+        assertEquals("3", metadata.get(Metadata.SLIDE_COUNT));
         assertEquals("1024", metadata.get(KeynoteContentHandler.PRESENTATION_WIDTH));
         assertEquals("768", metadata.get(KeynoteContentHandler.PRESENTATION_HEIGHT));
         assertEquals("Tika user", metadata.get(Metadata.AUTHOR));
         assertEquals("Apache tika", metadata.get(Metadata.TITLE));
 
         String content = handler.toString();
-        System.out.println(content);
         assertTrue(content.contains("A sample presentation"));
         assertTrue(content.contains("For the Apache Tika project"));
         assertTrue(content.contains("Slide 1"));
-        //assertTrue(content.contains("Some random text for the sake of testability."));
+        assertTrue(content.contains("Some random text for the sake of testability."));
         assertTrue(content.contains("A nice comment"));
         assertTrue(content.contains("A nice note"));
+
+        // test table data
+        assertTrue(content.contains("Cell one"));
+        assertTrue(content.contains("Cell two"));
+        assertTrue(content.contains("Cell three"));
+        assertTrue(content.contains("Cell four"));
+        assertTrue(content.contains("Cell 5"));
+        assertTrue(content.contains("Cell six"));
+        assertTrue(content.contains("7"));
+        assertTrue(content.contains("Cell eight"));
+        assertTrue(content.contains("5/5/1985"));
     }
 
     public void testParsePages() throws Exception {
@@ -80,7 +90,24 @@ public class IWorkParserTest extends TestCase {
         assertEquals("2", metadata.get(Metadata.PAGE_COUNT));
 
         String content = handler.toString();
-        //System.out.println(content);
+
+        // text on page 1
+        assertTrue(content.contains("Sample pages document"));
+        assertTrue(content.contains("Some plain text to parse."));
+        assertTrue(content.contains("Cell one"));
+        assertTrue(content.contains("Cell two"));
+        assertTrue(content.contains("Cell three"));
+        assertTrue(content.contains("Cell four"));
+        assertTrue(content.contains("Cell five"));
+        assertTrue(content.contains("Cell six"));
+        assertTrue(content.contains("Cell seven"));
+        assertTrue(content.contains("Cell eight"));
+        assertTrue(content.contains("Cell nine"));
+        assertTrue(content.contains("Both Pages 1.x and Keynote 2.x")); // ...
+
+        // text on page 2
+        assertTrue(content.contains("A second page...."));
+        assertTrue(content.contains("Extensible Markup Language")); // ...
     }
 
 }
