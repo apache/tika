@@ -200,10 +200,20 @@ public class XHTMLContentHandler extends SafeContentHandler {
         ignorableWhitespace(NL, 0, NL.length);
     }
 
+    /**
+     * Emits an XHTML element with the given text content. If the given
+     * text value is null or empty, then the element is not written.
+     *
+     * @param name XHTML element name
+     * @param value element value, possibly <code>null</code>
+     * @throws SAXException if the content element could not be written
+     */
     public void element(String name, String value) throws SAXException {
-        startElement(name);
-        characters(value);
-        endElement(name);
+        if (value != null && value.length() > 0) {
+            startElement(name);
+            characters(value);
+            endElement(name);
+        }
     }
 
 }
