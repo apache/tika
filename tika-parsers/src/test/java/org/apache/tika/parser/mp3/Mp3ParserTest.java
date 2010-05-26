@@ -149,5 +149,9 @@ public class Mp3ParserTest extends TestCase {
        assertEquals(0, f.getFlags());
        assertEquals(0, f.getLength());
        assertEquals(0, f.getData().length);
+       
+       assertEquals("", ID3v2Frame.getTagString(f.getData(), 0, 0));
+       assertEquals("", ID3v2Frame.getTagString(new byte[] {0,0,0,0}, 0, 3));
+       assertEquals("A", ID3v2Frame.getTagString(new byte[] {(byte)'A',0,0,0}, 0, 3));
     }
 }
