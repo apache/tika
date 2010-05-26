@@ -34,13 +34,13 @@ class KeynoteContentHandler extends DefaultHandler {
     private boolean inTheme = false;
     private boolean inTitle = false;
     private boolean inBody = false;
+    private String tableId;
+    private Integer numberOfColumns = null;
+    private Integer currentColumn = null;
 
     private boolean inMetadata = false;
     private boolean inMetaDataTitle = false;
     private boolean inMetaDataAuthors = false;
-
-    private boolean stickNote = false;
-    private boolean notes = false;
 
     private boolean inParsableText = false;
 
@@ -93,6 +93,16 @@ class KeynoteContentHandler extends DefaultHandler {
             metadata.set(Metadata.TITLE, attributes.getValue("sfa:string"));
         } else if (inMetaDataAuthors && "key:string".equals(qName)) {
             metadata.add(Metadata.AUTHOR, attributes.getValue("sfa:string"));
+        } else if (inSlide && "sf:tabular-model".equals(qName)) {
+            tableId = attributes.getValue("sfa:ID");
+            xhtml.startElement("table");
+        } else if (tableId != null && "sf:columns".equals(qName)) {
+            numberOfColumns = Integer.parseInt(attributes.getValue("sf:count"));
+            currentColumn = 0;
+        } else if (tableId != null && "sf:ct".equals(qName)) {
+            parseTableData(attributes.getValue("sfa:s"));
+        } else if (tableId != null && "sf:n".equals(qName)) {
+            parseTableData(attributes.getValue("sf:v"));
         }
     }
 
@@ -122,6 +132,11 @@ class KeynoteContentHandler extends DefaultHandler {
             inMetaDataTitle = false;
         } else if (inMetadata && "key:authors".equals(qName)) {
             inMetaDataAuthors = false;
+        } else if (inSlide && "sf:tabular-model".equals(qName)) {
+            xhtml.endElement("table");
+            tableId = null;
+            numberOfColumns = null;
+            currentColumn = null;
         }
     }
 
@@ -136,6 +151,18 @@ class KeynoteContentHandler extends DefaultHandler {
         if (text.length() != 0) {
             xhtml.characters(text);
         }
+    }
+
+    private void parseTableData(String value) throws SAXException {
+      if (currentColumn == 0) {
+          xhtml.startElement("tr");
+      }
+
+      xhtml.element("td", value);
+
+      if (currentColumn.equals(numberOfColumns)) {
+          xhtml.endElement("tr");
+      }
     }
 
 }
