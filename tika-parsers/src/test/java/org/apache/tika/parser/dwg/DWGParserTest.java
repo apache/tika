@@ -25,32 +25,33 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class DWGParserTest extends TestCase {
+
     public void testDWG2004Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2004.dwg");
         testParser(input);
     }
+
     public void testDWG2007Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2007.dwg");
         testParser(input);
     }
+
     public void testDWG2010Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2010.dwg");
         testParser(input);
     }
-    
+
     private void testParser(InputStream input) throws Exception {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(input, handler, metadata);
 
-//            assertEquals(
-//                    "application/dwg",
-//                    metadata.get(Metadata.CONTENT_TYPE));
-            
+            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+
             assertEquals("The quick brown fox jumps over the lazy dog", 
                     metadata.get(Metadata.TITLE));
             assertEquals("Gym class featuring a brown fox and lazy dog",
@@ -63,7 +64,7 @@ public class DWGParserTest extends TestCase {
                     metadata.get(Metadata.COMMENTS).substring(0,11));
             assertEquals("http://www.alfresco.com",
                     metadata.get(Metadata.RELATION));
-            
+
             String content = handler.toString();
             assertTrue(content.contains("The quick brown fox jumps over the lazy dog"));
             assertTrue(content.contains("Gym class"));
