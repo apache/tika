@@ -171,8 +171,11 @@ public class ID3v2Frame implements MP3Frame {
      */
     protected static String getTagString(byte[] data, int offset, int length) {
         int actualLength = length;
-        while (data[actualLength-1] == 0) {
+        while (actualLength > 0 && data[actualLength-1] == 0) {
             actualLength--;
+        }
+        if (actualLength == 0) {
+            return "";
         }
 
         // Does it have an encoding flag?
