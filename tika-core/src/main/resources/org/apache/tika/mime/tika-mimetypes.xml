@@ -3177,9 +3177,25 @@
     <glob pattern="*.djvu"/>
     <glob pattern="*.djv"/>
   </mime-type>
+
   <mime-type type="image/vnd.dwg">
+    <acronym>DWG</acronym>
+    <comment>AutoCad Drawing</comment>
+    <alias type="image/x-dwg"/>
+    <alias type="application/acad"/>
+    <alias type="application/x-acad"/>
+    <alias type="application/autocad_dwg"/>
+    <alias type="application/dwg"/>
+    <alias type="application/x-dwg"/>
+    <alias type="application/x-autocad"/>
     <glob pattern="*.dwg"/>
+    <magic priority="50">
+      <!-- "AC" followed by four numbers -->
+      <match value="AC0000" type="string" offset="0"
+             mask="0xFFFFF0F0F0F0"/>
+    </magic>
   </mime-type>
+
   <mime-type type="image/vnd.dxf">
     <glob pattern="*.dxf"/>
   </mime-type>

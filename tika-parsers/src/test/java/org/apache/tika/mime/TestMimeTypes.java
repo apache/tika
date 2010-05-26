@@ -222,6 +222,13 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/x-shockwave-flash", "x.SWF");
     }
 
+    public void testDwgDetection() throws Exception {
+        assertTypeByName("image/vnd.dwg", "x.dwg");
+        assertTypeByData("image/vnd.dwg", "testDWG2004.dwg");
+        assertTypeByData("image/vnd.dwg", "testDWG2007.dwg");
+        assertTypeByData("image/vnd.dwg", "testDWG2010.dwg");
+    }
+
     public void testWmfDetection() throws Exception {
         // TODO: Need a test wmf file
         assertTypeByName("application/x-msmetafile", "x.wmf");
