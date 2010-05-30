@@ -234,6 +234,14 @@ public class HtmlParser implements Parser {
     }
 
     /**
+    * @deprecated Use the {@link HtmlMapper} mechanism to customize
+    *             the HTML mapping. This method will be removed in Tika 1.0.
+    **/
+    public String mapSafeAttribute(String elementName, String attributeName) {
+        return DefaultHtmlMapper.INSTANCE.mapSafeAttribute(elementName,attributeName) ;
+    }    
+    
+    /**
      * Adapter class that maintains backwards compatibility with the
      * protected HtmlParser methods. Making HtmlParser implement HtmlMapper
      * directly would require those methods to be public, which would break
@@ -248,6 +256,9 @@ public class HtmlParser implements Parser {
         }
         public boolean isDiscardElement(String name) {
             return HtmlParser.this.isDiscardElement(name);
+        }
+        public String mapSafeAttribute(String elementName, String attributeName){
+            return HtmlParser.this.mapSafeAttribute(elementName,attributeName);
         }
     }
 

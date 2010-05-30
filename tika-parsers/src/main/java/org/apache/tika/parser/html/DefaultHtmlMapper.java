@@ -62,6 +62,12 @@ public class DefaultHtmlMapper implements HtmlMapper {
         return null;
     }
 
+    /** Normalises an attribute name. Assumes that the element name 
+     * is valid and normalised **/
+    public String mapSafeAttribute(String elementName, String attributeName) {
+        return null;
+    }    
+    
     public boolean isDiscardElement(String name) {
         return "STYLE".equals(name) || "SCRIPT".equals(name);
     }
