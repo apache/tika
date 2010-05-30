@@ -50,5 +50,20 @@ public interface HtmlMapper {
      *         should be ignored, <code>false</code> otherwise
      */
     boolean isDiscardElement(String name);
+    
+    
+    /**
+     * Maps "safe" HTML attribute names to semantic XHTML equivalents. If the
+     * given attribute is unknown or deemed unsafe for inclusion in the parse
+     * output, then this method returns <code>null</code> and the attribute
+     * will be ignored. This method assumes that the element name 
+     * is valid and normalised.
+     *
+     * @param elementName HTML element name (lower case)
+     * @param attributeName HTML attribute name (lower case)
+     * @return XHTML attribute name (lower case), or
+     *         <code>null</code> if the element is unsafe 
+     */
+    String mapSafeAttribute(String elementName, String attributeName);
 
 }

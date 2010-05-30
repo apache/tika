@@ -25,6 +25,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 class HtmlHandler extends TextContentHandler {
 
@@ -89,23 +90,40 @@ class HtmlHandler extends TextContentHandler {
                     metadata.set(
                             atts.getValue("http-equiv"),
                             atts.getValue("content"));
+                    xhtml.startElement(uri, local, "meta", atts);
                 }
                 if (atts.getValue("name") != null) {
                     metadata.set(
                             atts.getValue("name"),
                             atts.getValue("content"));
+                    xhtml.startElement(uri, local, "meta", atts);
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
                 metadata.set(
                         Metadata.CONTENT_LOCATION,
                         resolve(atts.getValue("href").trim()));
+                xhtml.startElement(uri, local, "base", atts);
+            } else if ("LINK".equals(name) && atts.getValue("href") != null) {
+                xhtml.startElement(uri, local, "link", atts);
             }
         }
 
         if (bodyLevel > 0 && discardLevel == 0) {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
-                xhtml.startElement(safe);
+                // check if there are any attributes to process
+                if (atts.getLength()==0) xhtml.startElement(safe);
+                else {
+                    AttributesImpl newAttributes = new AttributesImpl(atts);
+                    for (int att=0;att<newAttributes.getLength();att++){
+                        String normAttrName = mapper.mapSafeAttribute(safe, newAttributes.getLocalName(att));
+                        if (normAttrName==null){
+                            newAttributes.removeAttribute(att);
+                            att--;
+                        }
+                    }
+                    xhtml.startElement(safe, newAttributes);
+                }
             } else if ("A".equals(name)) {
                 String href = atts.getValue("href");
                 if (href != null) {
@@ -127,6 +145,15 @@ class HtmlHandler extends TextContentHandler {
     @Override
     public void endElement(
             String uri, String local, String name) throws SAXException {
+        if (bodyLevel == 0 && discardLevel == 0) {
+            if ("LINK".equals(name)) {
+                xhtml.endElement("link");
+            } else if ("BASE".equals(name)) {
+                xhtml.endElement("base");
+            } else if ("META".equals(name)) {
+                xhtml.endElement("meta");
+            }
+        }
         if (bodyLevel > 0 && discardLevel == 0) {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {

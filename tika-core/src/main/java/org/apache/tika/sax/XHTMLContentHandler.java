@@ -188,6 +188,11 @@ public class XHTMLContentHandler extends SafeContentHandler {
         startElement(XHTML, name, name, attributes);
     }
 
+    public void startElement(String name, AttributesImpl attributes)
+            throws SAXException {
+        startElement(XHTML, name, name, attributes);
+    }
+
     public void endElement(String name) throws SAXException {
         endElement(XHTML, name, name);
     }

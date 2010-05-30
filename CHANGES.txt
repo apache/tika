@@ -4,6 +4,8 @@ Release 0.8 - Current Development
 
 The most notable changes in Tika 0.8 over previous releases are:
 
+ * An approach for plumbing through XHTML attributes was added (TIKA-379)
+
  * Media type hierarchy information is now taken into account when
    selecting the best parser for a given input document. (TIKA-298)
 

@@ -17,9 +17,9 @@
 package org.apache.tika.parser.html;
 
 /**
- * Alternative HTML mapping rules that pass the input HTML
- * as-is without any modifications.
- *
+ * Alternative HTML mapping rules that pass the input HTML as-is without any
+ * modifications.
+ * 
  * @since Apache Tika 0.8
  */
 public class IdentityHtmlMapper implements HtmlMapper {
@@ -28,6 +28,10 @@ public class IdentityHtmlMapper implements HtmlMapper {
 
     public boolean isDiscardElement(String name) {
         return false;
+    }
+
+    public String mapSafeAttribute(String elementName, String attributeName) {
+        return attributeName.toLowerCase();
     }
 
     public String mapSafeElement(String name) {
