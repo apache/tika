@@ -25,7 +25,7 @@ import org.xml.sax.ContentHandler;
 import java.io.InputStream;
 
 /**
- * Tests if the different iwork parsers parse the content and metadata properly. 
+ * Tests if the different iwork parsers parse the content and metadata properly.
  */
 public class IWorkParserTest extends TestCase {
 
@@ -108,6 +108,35 @@ public class IWorkParserTest extends TestCase {
         // text on page 2
         assertTrue(content.contains("A second page...."));
         assertTrue(content.contains("Extensible Markup Language")); // ...
+    }
+
+    public void testParseNumbers() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testNumbers.numbers");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext parseContext = new ParseContext();
+
+        iWorkParser.parse(input, handler, metadata, parseContext);
+
+        String content = handler.toString();
+
+        assertEquals(9, metadata.size());
+        assertEquals("2", metadata.get(Metadata.PAGE_COUNT));
+        assertEquals("Tika User", metadata.get(Metadata.AUTHOR));
+        assertEquals("Account checking", metadata.get(Metadata.TITLE));
+        assertEquals("a comment", metadata.get(Metadata.COMMENT));
+
+        assertTrue(content.contains("Category"));
+        assertTrue(content.contains("Home"));
+        assertTrue(content.contains("-226"));
+        assertTrue(content.contains("-137.5"));
+        assertTrue(content.contains("Checking Account: 300545668"));
+        assertTrue(content.contains("4650"));
+        assertTrue(content.contains("Credit Card"));
+        assertTrue(content.contains("Groceries"));
+        assertTrue(content.contains("-210"));
+        assertTrue(content.contains("Food"));
+        assertTrue(content.contains("Try adding your own account transactions to this table."));
     }
 
 }

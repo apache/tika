@@ -42,7 +42,8 @@ import java.util.zip.ZipInputStream;
  * Currently supported formats:
  * <ol>
  * <li>Keynote format version 2.x. Currently only tested with Keynote version 5.x
- * <li>Pages format version 1.x. Currently only tested with Keynote version 4.0.x
+ * <li>Pages format version 1.x. Currently only tested with Pages version 4.0.x
+ * <li>Numbers format version 1.x. Currently only tested with Numbers version 2.0.x
  * </ol>
  */
 public class IWorkParser implements Parser {
@@ -81,20 +82,16 @@ public class IWorkParser implements Parser {
                         new OfflineContentHandler(
                                 new KeynoteContentHandler(xhtml, metadata)));
             } else if ("index.xml".equals(entry.getName())) {
-                // TODO: Numbers has index.xml as well. Therefore the filename
-                // cannot be used for detecting type. The xml file should be
-                // sniffed before determining the extractor
-
-                if (metadata.get(Metadata.CONTENT_TYPE) == null) {
-                    metadata.set(
-                            Metadata.CONTENT_TYPE,
-                            "application/vnd.apple.pages");
-                }
+                // Numbers and Pages have both index.xml as file, so the appropriate content handler can only be
+                // selected based on the content in the file. In this case the content handler is selected
+                // based on root element.
+                IWorkRootElementDetectContentHandler detectHandler = new IWorkRootElementDetectContentHandler(metadata);
+                detectHandler.addHandler("sl:document", new PagesContentHandler(xhtml, metadata), "application/vnd.apple.pages");
+                detectHandler.addHandler("ls:document", new NumbersContentHandler(xhtml, metadata), "application/vnd.apple.numbers");
 
                 context.getSAXParser().parse(
                         new CloseShieldInputStream(zip),
-                        new OfflineContentHandler(
-                                new PagesContentHandler(xhtml, metadata)));
+                        new OfflineContentHandler(detectHandler));
             }
             entry = zip.getNextEntry();
         }
