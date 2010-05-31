@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.iwork;
 
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -33,8 +36,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * A parser for the IWork formats.
@@ -66,9 +67,9 @@ public class IWorkParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        ZipInputStream zip =
-            new ZipInputStream(new CloseShieldInputStream(stream));
-        ZipEntry entry = zip.getNextEntry();
+        ArchiveInputStream zip =
+            new ZipArchiveInputStream(new CloseShieldInputStream(stream));
+        ArchiveEntry entry = zip.getNextEntry();
         while (entry != null) {
             if ("index.apxl".equals(entry.getName())) {
                 metadata.set(
