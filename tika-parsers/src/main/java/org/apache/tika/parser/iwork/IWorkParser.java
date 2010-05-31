@@ -82,11 +82,15 @@ public class IWorkParser implements Parser {
                 // Numbers and Pages have both index.xml as file, so the appropriate content handler can only be
                 // selected based on the content in the file. In this case the content handler is selected
                 // based on root element.
-                IWorkRootElementDetectContentHandler detectHandler =
-                    new IWorkRootElementDetectContentHandler(xhtml, metadata);
-                context.getSAXParser().parse(
-                        new CloseShieldInputStream(zip),
-                        new OfflineContentHandler(detectHandler));
+                try {
+                    IWorkRootElementDetectContentHandler detectHandler =
+                        new IWorkRootElementDetectContentHandler(xhtml, metadata);
+                    context.getSAXParser().parse(
+                            new CloseShieldInputStream(zip),
+                            new OfflineContentHandler(detectHandler));
+                } catch (IWorkSAXException e) {
+                    e.throwAsTikaException();
+                }
             }
             entry = zip.getNextEntry();
         }
