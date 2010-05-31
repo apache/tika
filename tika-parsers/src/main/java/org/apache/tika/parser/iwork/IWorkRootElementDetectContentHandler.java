@@ -55,8 +55,8 @@ class IWorkRootElementDetectContentHandler extends ContentHandlerDecorator {
                         Metadata.CONTENT_TYPE, "application/vnd.apple.numbers");
                 setContentHandler(new NumbersContentHandler(xhtml, metadata));
             } else {
-                throw new RuntimeException(
-                        "Could not find handler to parse document"
+                throw new IWorkSAXException(
+                        "Could not find handler to parse iWork document"
                         + " based on root element " + qName);
             }
             unknownType = false;
