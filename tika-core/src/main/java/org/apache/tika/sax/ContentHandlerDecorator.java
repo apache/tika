@@ -33,7 +33,7 @@ public class ContentHandlerDecorator extends DefaultHandler {
     /**
      * Decorated SAX event handler.
      */
-    private final ContentHandler handler;
+    private ContentHandler handler;
 
     /**
      * Creates a decorator for the given SAX event handler.
@@ -41,6 +41,28 @@ public class ContentHandlerDecorator extends DefaultHandler {
      * @param handler SAX event handler to be decorated
      */
     public ContentHandlerDecorator(ContentHandler handler) {
+        assert handler != null;
+        this.handler = handler;
+    }
+
+    /**
+     * Creates a decorator that by default forwards incoming SAX events to
+     * a dummy content handler that simply ignores all the events. Subclasses
+     * should use the {@link #setContentHandler(ContentHandler)} method to
+     * switch to a more usable underlying content handler.
+     */
+    protected ContentHandlerDecorator() {
+        this(new DefaultHandler());
+    }
+
+    /**
+     * Sets the underlying content handler. All future SAX events will be
+     * directed to this handler instead of the one that was previously used.
+     *
+     * @param handler content handler
+     */
+    protected void setContentHandler(ContentHandler handler) {
+        assert handler != null;
         this.handler = handler;
     }
 

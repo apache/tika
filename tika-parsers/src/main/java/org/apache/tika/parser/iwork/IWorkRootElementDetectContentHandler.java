@@ -17,102 +17,52 @@
 package org.apache.tika.parser.iwork;
 
 import org.apache.tika.metadata.Metadata;
-import org.xml.sax.*;
-import org.xml.sax.helpers.DefaultHandler;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
 
 /**
  * A handler that detects based on the root element which encapsulated handler to use.
  *
  * If during parsing no handler can be matched to the rootElement an exception is thrown.
  */
-class IWorkRootElementDetectContentHandler extends DefaultHandler {
+class IWorkRootElementDetectContentHandler extends ContentHandlerDecorator {
 
-    private final Map<String, DefaultHandler> handlers = new HashMap<String, DefaultHandler>();
-    private final Map<String, String> contentTypes = new HashMap<String, String>();
+    private final XHTMLContentHandler xhtml;
 
-    private DefaultHandler chosenHandler;
     private final Metadata metadata;
 
-    IWorkRootElementDetectContentHandler(Metadata metadata) {
+    private boolean unknownType = true;
+
+    IWorkRootElementDetectContentHandler(
+            XHTMLContentHandler xhtml, Metadata metadata) {
+        this.xhtml = xhtml;
         this.metadata = metadata;
     }
 
-    /**
-     * Adds a handler to this auto detect parser that handles parsing when the specified rootElement is encountered.
-     *
-     * @param rootElement The root element the identifies the specified handler
-     * @param handler The handler that does the actual parsing of the auto detected content
-     * @param contentType The content type that belongs to the auto detected content
-     */
-    public void addHandler(String rootElement, DefaultHandler handler, String contentType) {
-        handlers.put(rootElement, handler);
-        contentTypes.put(rootElement, contentType);
-    }
-
     @Override
-    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-        if (chosenHandler != null) {
-            chosenHandler.startElement(uri, localName, qName, attributes);
-            return;
-        }
-
-        DefaultHandler candidateHandler = handlers.get(qName);
-        if (candidateHandler != null) {
-            chosenHandler = candidateHandler;
-            if (metadata.get(Metadata.CONTENT_TYPE) == null) {
-                metadata.add(Metadata.CONTENT_TYPE, contentTypes.get(qName));
+    public void startElement(
+            String uri, String localName, String qName, Attributes attributes)
+            throws SAXException {
+        if (unknownType) {
+            if ("sl:document".equals(qName)) {
+                metadata.set(
+                        Metadata.CONTENT_TYPE, "application/vnd.apple.pages");
+                setContentHandler(new PagesContentHandler(xhtml, metadata));
+            } else if ("ls:document".equals(qName)) {
+                metadata.set(
+                        Metadata.CONTENT_TYPE, "application/vnd.apple.numbers");
+                setContentHandler(new NumbersContentHandler(xhtml, metadata));
+            } else {
+                throw new RuntimeException(
+                        "Could not find handler to parse document"
+                        + " based on root element " + qName);
             }
-            chosenHandler.startElement(uri, localName, qName, attributes);
-        } else {
-            throw new RuntimeException("Could not find handler to parse document based on root element");
+            unknownType = false;
         }
+
+        super.startElement(uri, localName, qName, attributes);
     }
 
-    @Override
-    public void endDocument() throws SAXException {
-        chosenHandler.endDocument();
-    }
-
-    @Override
-    public void endElement(String uri, String localName, String qName) throws SAXException {
-        chosenHandler.endElement(uri, localName, qName);
-    }
-
-    @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
-        chosenHandler.characters(ch, start, length);
-    }
-
-    @Override
-    public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
-        chosenHandler.ignorableWhitespace(ch, start, length);
-    }
-
-    @Override
-    public void processingInstruction(String target, String data) throws SAXException {
-        chosenHandler.processingInstruction(target, data);
-    }
-
-    @Override
-    public void skippedEntity(String name) throws SAXException {
-        chosenHandler.skippedEntity(name);
-    }
-
-    @Override
-    public void warning(SAXParseException e) throws SAXException {
-        chosenHandler.warning(e);
-    }
-
-    @Override
-    public void error(SAXParseException e) throws SAXException {
-        chosenHandler.error(e);
-    }
-
-    @Override
-    public void fatalError(SAXParseException e) throws SAXException {
-        chosenHandler.fatalError(e);
-    }
 }

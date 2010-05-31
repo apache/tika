@@ -71,12 +71,8 @@ public class IWorkParser implements Parser {
         ZipEntry entry = zip.getNextEntry();
         while (entry != null) {
             if ("index.apxl".equals(entry.getName())) {
-                if (metadata.get(Metadata.CONTENT_TYPE) == null) {
-                    metadata.set(
-                            Metadata.CONTENT_TYPE,
-                            "application/vnd.apple.keynote");
-                }
-
+                metadata.set(
+                        Metadata.CONTENT_TYPE, "application/vnd.apple.keynote");
                 context.getSAXParser().parse(
                         new CloseShieldInputStream(zip),
                         new OfflineContentHandler(
@@ -85,10 +81,8 @@ public class IWorkParser implements Parser {
                 // Numbers and Pages have both index.xml as file, so the appropriate content handler can only be
                 // selected based on the content in the file. In this case the content handler is selected
                 // based on root element.
-                IWorkRootElementDetectContentHandler detectHandler = new IWorkRootElementDetectContentHandler(metadata);
-                detectHandler.addHandler("sl:document", new PagesContentHandler(xhtml, metadata), "application/vnd.apple.pages");
-                detectHandler.addHandler("ls:document", new NumbersContentHandler(xhtml, metadata), "application/vnd.apple.numbers");
-
+                IWorkRootElementDetectContentHandler detectHandler =
+                    new IWorkRootElementDetectContentHandler(xhtml, metadata);
                 context.getSAXParser().parse(
                         new CloseShieldInputStream(zip),
                         new OfflineContentHandler(detectHandler));
