@@ -46,6 +46,11 @@ public class AutoDetectParser extends CompositeParser {
         this(TikaConfig.getDefaultConfig());
     }
 
+    public AutoDetectParser(Detector detector) {
+        setParsers(TikaConfig.getDefaultConfig().getParsers());
+        setDetector(detector);
+    }
+
     public AutoDetectParser(TikaConfig config) {
         setConfig(config);
     }

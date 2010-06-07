@@ -65,13 +65,24 @@ public class Tika {
     private int maxStringLength = 100 * 1000;
 
     /**
+     * Creates a Tika facade using the given detector and parser instances.
+     *
+     * @since Apache Tika 0.8
+     * @param detector type detector
+     * @param parser document parser
+     */
+    public Tika(Detector detector, Parser parser) {
+        this.detector = detector;
+        this.parser = parser;
+    }
+
+    /**
      * Creates a Tika facade using the given configuration.
      *
      * @param config Tika configuration
      */
     public Tika(TikaConfig config) {
-        this.detector = config.getMimeRepository();
-        this.parser = new AutoDetectParser(config);
+        this(config.getMimeRepository(), new AutoDetectParser(config));
     }
 
     /**
@@ -81,6 +92,18 @@ public class Tika {
         this(TikaConfig.getDefaultConfig());
     }
 
+    /**
+     * Creates a Tika facade using the given detector instance and the
+     * default parser configuration.
+     *
+     * @since Apache Tika 0.8
+     * @param detector type detector
+     */
+    public Tika(Detector detector) {
+        this(detector, new AutoDetectParser(detector));
+    }
+
+    
     /**
      * Detects the media type of the given document. The type detection is
      * based on the content of the given document stream and any given
