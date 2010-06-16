@@ -16,15 +16,18 @@
 org.apache.tika.parser.asm.ClassParser
 org.apache.tika.parser.audio.AudioParser
 org.apache.tika.parser.audio.MidiParser
+org.apache.tika.parser.dwg.DWGParser
 org.apache.tika.parser.epub.EpubParser
 org.apache.tika.parser.html.HtmlParser
 org.apache.tika.parser.image.ImageParser
 org.apache.tika.parser.image.TiffParser
+org.apache.tika.parser.iwork.IWorkParser
 org.apache.tika.parser.jpeg.JpegParser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.microsoft.OfficeParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.mp3.Mp3Parser
+org.apache.tika.parser.netcdf.NetCDFParser
 org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.pdf.PDFParser
 org.apache.tika.parser.pkg.PackageParser
@@ -32,4 +35,3 @@ org.apache.tika.parser.rtf.RTFParser
 org.apache.tika.parser.txt.TXTParser
 org.apache.tika.parser.video.FLVParser
 org.apache.tika.parser.xml.DcXMLParser
-org.apache.tika.parser.iwork.IWorkParser
