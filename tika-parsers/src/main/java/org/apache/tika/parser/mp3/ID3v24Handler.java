@@ -27,7 +27,7 @@ import org.xml.sax.SAXException;
  * This is used to parse ID3 Version 2.4 Tag information from an MP3 file,
  * if available.
  *
- * @see <a href="http://www.id3.org/id3v2.4.0-structures">MP3 ID3 Version 2.4 specification</a>
+ * @see <a href="http://www.id3.org/id3v2.4.0-structure">MP3 ID3 Version 2.4 specification</a>
  * @see <a href="http://www.id3.org/id3v2.4.0-frames">MP3 ID3 Version 2.4 frames/tags</a>
  */
 public class ID3v24Handler implements ID3Tags {
@@ -35,6 +35,7 @@ public class ID3v24Handler implements ID3Tags {
     private String artist;
     private String album;
     private String year;
+    private String composer;
     private String comment;
     private String genre;
     private String trackNumber;
@@ -52,6 +53,8 @@ public class ID3v24Handler implements ID3Tags {
                 album = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TYER")) {
                 year = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TCOM")) {
+                composer = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("COMM")) {
                 comment = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TRCK")) {
@@ -93,6 +96,10 @@ public class ID3v24Handler implements ID3Tags {
 
     public String getYear() {
         return year;
+    }
+
+    public String getComposer() {
+        return composer;
     }
 
     public String getComment() {

@@ -34,6 +34,7 @@ public class ID3v23Handler implements ID3Tags {
     private String artist;
     private String album;
     private String year;
+    private String composer;
     private String comment;
     private String genre;
     private String trackNumber;
@@ -51,6 +52,8 @@ public class ID3v23Handler implements ID3Tags {
                 album = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TYER")) {
                 year = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TCOM")) {
+                composer = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("COMM")) {
                 comment = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TRCK")) {
@@ -92,6 +95,10 @@ public class ID3v23Handler implements ID3Tags {
 
     public String getYear() {
         return year;
+    }
+
+    public String getComposer() {
+        return composer;
     }
 
     public String getComment() {

@@ -173,6 +173,8 @@ public interface ID3Tags {
     String getArtist();
 
     String getAlbum();
+    
+    String getComposer();
 
     String getComment();
 
