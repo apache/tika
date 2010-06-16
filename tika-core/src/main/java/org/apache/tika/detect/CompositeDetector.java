@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
@@ -32,6 +33,10 @@ public class CompositeDetector implements Detector {
 
     public CompositeDetector(List<Detector> detectors) {
         this.detectors = detectors;
+    }
+
+    public CompositeDetector(Detector... detectors) {
+        this.detectors = Arrays.asList(detectors);
     }
 
     public MediaType detect(InputStream input, Metadata metadata)
