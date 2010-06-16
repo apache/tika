@@ -107,6 +107,14 @@ public class ID3v1Handler implements ID3Tags {
     public String getTrackNumber() {
         return trackNumber;
     }
+    
+    /**
+     * ID3v1 doesn't have composers,
+     *  so returns null;
+     */
+    public String getComposer() {
+        return null;
+    }
 
     /**
      * Returns the identified ISO-8859-1 substring from the given byte buffer.
