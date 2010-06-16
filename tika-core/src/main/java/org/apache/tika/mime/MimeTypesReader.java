@@ -99,10 +99,6 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
         this.types = types;
     }
 
-    void read(String filepath) throws IOException, MimeTypeException {
-        read(MimeTypesReader.class.getClassLoader().getResourceAsStream(filepath));
-    }
-
     void read(InputStream stream) throws IOException, MimeTypeException {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

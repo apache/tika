@@ -154,18 +154,22 @@ public class TikaConfig {
      * class loader.
      *
      * @since Apache Tika 0.8
+     * @param loader the class loader through which parser implementations
+     *               are loaded, or <code>null</code> for no parsers
      * @throws MimeTypeException if the built-in media type rules are broken
      * @throws IOException  if the built-in media type rules can not be read
      */
     public TikaConfig(ClassLoader loader)
             throws MimeTypeException, IOException {
-        ParseContext context = new ParseContext();
-        Iterator<Parser> iterator =
-            ServiceRegistry.lookupProviders(Parser.class, loader);
-        while (iterator.hasNext()) {
-            Parser parser = iterator.next();
-            for (MediaType type : parser.getSupportedTypes(context)) {
-                parsers.put(type, parser);
+        if (loader != null) {
+            ParseContext context = new ParseContext();
+            Iterator<Parser> iterator =
+                ServiceRegistry.lookupProviders(Parser.class, loader);
+            while (iterator.hasNext()) {
+                Parser parser = iterator.next();
+                for (MediaType type : parser.getSupportedTypes(context)) {
+                    parsers.put(type, parser);
+                }
             }
         }
         mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
@@ -181,7 +185,27 @@ public class TikaConfig {
      * @throws IOException  if the built-in media type rules can not be read
      */
     public TikaConfig() throws MimeTypeException, IOException {
-        this(Thread.currentThread().getContextClassLoader());
+        this(getContextClassLoader());
+    }
+
+    /**
+     * Returns the context class loader of the current thread. If such
+     * a class loader is not available, then the loader of this class or
+     * finally the system class loader is returned.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-441">TIKA-441</a>
+     * @return context class loader, or <code>null</code> if no loader
+     *         is available
+     */
+    private static ClassLoader getContextClassLoader() {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+            loader = TikaConfig.class.getClassLoader();
+        }
+        if (loader == null) {
+            loader = ClassLoader.getSystemClassLoader();
+        }
+        return loader;
     }
 
     /**
