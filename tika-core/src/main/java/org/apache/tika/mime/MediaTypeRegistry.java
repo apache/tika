@@ -21,10 +21,22 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.tika.config.TikaConfig;
+
 /**
  * Registry of known Internet media types.
  */
 public class MediaTypeRegistry {
+
+    /**
+     * Returns the built-in media type registry included in Tika.
+     *
+     * @since Apache Tika 0.8
+     * @return default media type registry
+     */
+    public static MediaTypeRegistry getDefaultRegistry() {
+        return TikaConfig.getDefaultConfig().getMediaTypeRegistry();
+    }
 
     /**
      * Registry of known media types, including type aliases. A canonical
