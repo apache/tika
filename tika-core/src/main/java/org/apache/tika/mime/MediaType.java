@@ -205,23 +205,6 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         return Collections.unmodifiableMap(parameters);
     }
 
-    public boolean isSpecializationOf(MediaType that) {
-        if (OCTET_STREAM.equals(that)) {
-            return true;
-        } else if (!type.equals(that.type)) {
-            return false;
-        } else if (!parameters.entrySet().containsAll(that.parameters.entrySet())) {
-            return false;
-        } else if (TEXT_PLAIN.equals(that.getBaseType())) {
-            return true;
-        } else if (APPLICATION_XML.equals(that.getBaseType())
-                && subtype.endsWith("+xml")) {
-            return true;
-        } else {
-            return subtype.equals(that.subtype);
-        }
-    }
-
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(type);

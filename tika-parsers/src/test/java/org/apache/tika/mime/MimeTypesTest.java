@@ -16,6 +16,9 @@
  */
 package org.apache.tika.mime;
 
+import static org.apache.tika.mime.MediaType.OCTET_STREAM;
+import static org.apache.tika.mime.MediaType.TEXT_PLAIN;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -25,6 +28,8 @@ public class MimeTypesTest extends TestCase {
 
     private MimeTypes types;
 
+    private MediaTypeRegistry registry;
+
     private MimeType binary;
 
     private MimeType text;
@@ -33,11 +38,12 @@ public class MimeTypesTest extends TestCase {
 
     protected void setUp() throws MimeTypeException {
         types = new MimeTypes();
+        registry = types.getMediaTypeRegistry();
         binary = types.forName("application/octet-stream");
         text = types.forName("text/plain");
-        text.addAlias(MediaType.parse("text/x-plain"));
+        types.addAlias(text, MediaType.parse("text/x-plain"));
         html = types.forName("text/html");
-        html.setSuperType(text);
+        types.setSuperType(html, TEXT_PLAIN);
     }
 
     public void testForName() throws MimeTypeException {
@@ -53,52 +59,38 @@ public class MimeTypesTest extends TestCase {
     }
 
     public void testSuperType() throws MimeTypeException {
-        assertNull(binary.getSuperType());
-        assertEquals(binary, text.getSuperType());
-        assertEquals(text, html.getSuperType());
+        assertNull(registry.getSuperType(OCTET_STREAM));
+        assertEquals(OCTET_STREAM, registry.getSuperType(TEXT_PLAIN));
+        assertEquals(TEXT_PLAIN, registry.getSuperType(html.getType()));
    }
 
     public void testIsDescendantOf() {
-        assertFalse(binary.isDescendantOf(binary));
-        assertFalse(text.isDescendantOf(text));
-        assertFalse(html.isDescendantOf(html));
+        assertFalse(registry.isSpecializationOf(OCTET_STREAM, OCTET_STREAM));
+        assertFalse(registry.isSpecializationOf(TEXT_PLAIN, TEXT_PLAIN));
+        assertFalse(registry.isSpecializationOf(html.getType(), html.getType()));
 
-        assertTrue(text.isDescendantOf(binary));
-        assertFalse(binary.isDescendantOf(text));
-        
-        assertTrue(html.isDescendantOf(binary));
-        assertFalse(binary.isDescendantOf(html));
+        assertTrue(registry.isSpecializationOf(html.getType(), OCTET_STREAM));
+        assertFalse(registry.isSpecializationOf(OCTET_STREAM, html.getType()));
 
-        assertTrue(html.isDescendantOf(text));
-        assertFalse(text.isDescendantOf(html));
+        assertTrue(registry.isSpecializationOf(html.getType(), TEXT_PLAIN));
+        assertFalse(registry.isSpecializationOf(TEXT_PLAIN, html.getType()));
 
-        try {
-            binary.isDescendantOf(null);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
+        assertTrue(registry.isSpecializationOf(TEXT_PLAIN, OCTET_STREAM));
+        assertFalse(registry.isSpecializationOf(OCTET_STREAM, TEXT_PLAIN));
     }
 
     public void testCompareTo() {
         assertTrue(binary.compareTo(binary) == 0);
-        assertTrue(binary.compareTo(text) < 0);
-        assertTrue(binary.compareTo(html) < 0);
+        assertTrue(binary.compareTo(text) != 0);
+        assertTrue(binary.compareTo(html) != 0);
 
-        assertTrue(text.compareTo(binary) > 0);
+        assertTrue(text.compareTo(binary) != 0);
         assertTrue(text.compareTo(text) == 0);
-        assertTrue(text.compareTo(html) < 0);
+        assertTrue(text.compareTo(html) != 0);
 
-        assertTrue(html.compareTo(binary) > 0);
-        assertTrue(html.compareTo(text) > 0);
+        assertTrue(html.compareTo(binary) != 0);
+        assertTrue(html.compareTo(text) != 0);
         assertTrue(html.compareTo(html) == 0);
-
-        try {
-            binary.compareTo(null);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
     }
 
     /** Test getMimeType(byte[]) */

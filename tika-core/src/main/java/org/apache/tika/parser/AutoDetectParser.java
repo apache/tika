@@ -33,6 +33,11 @@ import org.xml.sax.SAXException;
 public class AutoDetectParser extends CompositeParser {
 
     /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = 6110455808615143122L;
+
+    /**
      * The type detector used by this parser to auto-detect the type
      * of a document.
      */
@@ -47,7 +52,7 @@ public class AutoDetectParser extends CompositeParser {
     }
 
     public AutoDetectParser(Detector detector) {
-        setParsers(TikaConfig.getDefaultConfig().getParsers());
+        this(TikaConfig.getDefaultConfig());
         setDetector(detector);
     }
 
@@ -58,6 +63,7 @@ public class AutoDetectParser extends CompositeParser {
     public void setConfig(TikaConfig config) {
         setParsers(config.getParsers());
         setDetector(config.getMimeRepository());
+        setMediaTypeRegistry(config.getMediaTypeRegistry());
     }
 
     /**

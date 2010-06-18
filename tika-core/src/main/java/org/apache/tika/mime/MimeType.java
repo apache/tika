@@ -68,11 +68,6 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     }
 
     /**
-     * The media type registry that contains this type.
-     */
-    private final MimeTypes registry;
-
-    /**
      * The normalized media type name.
      */
     private final MediaType type;
@@ -81,12 +76,6 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * Description of this media type.
      */
     private String description = "";
-
-    /**
-     * The parent type of this media type, or <code>null</code> if this
-     * is a top-level type.
-     */
-    private MimeType superType = null;
 
     /** The magics associated to this Mime-Type */
     private final ArrayList<Magic> magics = new ArrayList<Magic>();
@@ -104,17 +93,12 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * {@link MimeTypes#forName(String)} to keep the media type registry
      * up to date.
      *
-     * @param registry the media type registry that contains this type
      * @param type normalized media type name
      */
-    MimeType(MimeTypes registry, MediaType type) {
-        if (registry == null) {
-            throw new IllegalArgumentException("Registry is missing");
-        }
+    MimeType(MediaType type) {
         if (type == null) {
             throw new IllegalArgumentException("Media type name is missing");
         }
-        this.registry = registry;
         this.type = type;
     }
 
@@ -137,54 +121,6 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     }
 
     /**
-     * Returns the parent of this media type.
-     *
-     * @return parent media type, or <code>null</code>
-     */
-    public MimeType getSuperType() {
-        return superType;
-    }
-
-    public void setSuperType(MimeType type) throws MimeTypeException {
-        if (type == null) {
-            throw new IllegalArgumentException("MimeType is missing");
-        }
-        if (type.registry != registry) {
-            throw new IllegalArgumentException("MimeType is from a different registry");
-        }
-        if (this.isDescendantOf(type)) {
-            // ignore, already a descendant of the given type
-        } else if (this == type) {
-            throw new MimeTypeException(
-                    "Media type can not inherit itself: " + type);
-        } else if (type.isDescendantOf(this)) {
-            throw new MimeTypeException(
-                    "Media type can not inherit its descendant: " + type);
-        } else if (superType == null) {
-            superType = type;
-        } else if (type.isDescendantOf(superType)) {
-            superType = type;
-        } else {
-            throw new MimeTypeException(
-                    "Conflicting media type inheritance: " + type);
-        }
-    }
-
-    public boolean isDescendantOf(MimeType type) {
-        if (type == null) {
-            throw new IllegalArgumentException("MimeType is missing");
-        }
-        synchronized (registry) {
-            for (MimeType t = superType; t != null; t = t.superType) {
-                if (t == type) {
-                    return true;
-                }
-            }
-            return false;
-        }
-    }
-
-    /**
      * Returns the description of this media type.
      *
      * @return media type description
@@ -203,19 +139,6 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
             throw new IllegalArgumentException("Description is missing");
         }
         this.description = description;
-    }
-
-    /**
-     * Adds an alias name for this media type.
-     *
-     * @param alias media type alias (case insensitive)
-     * @throws MimeTypeException if the alias is invalid or
-     *                           already registered for another media type
-     */
-    public void addAlias(MediaType alias) throws MimeTypeException {
-        if (!alias.isSpecializationOf(type)) {
-            registry.addAlias(this, alias);
-        }
     }
 
     /**
@@ -363,21 +286,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     //----------------------------------------------------------< Comparable >
 
     public int compareTo(MimeType mime) {
-        if (mime == null) {
-            throw new IllegalArgumentException("MimeType is missing");
-        } else if (mime == this) {
-            return 0;
-        } else if (this.isDescendantOf(mime)) {
-            return 1;
-        } else if (mime.isDescendantOf(this)) {
-            return -1;
-        } else if (superType != null) {
-            return superType.compareTo(mime);
-        } else if (mime.superType != null) {
-            return compareTo(mime.superType);
-        } else {
-            return type.compareTo(mime.type);
-        }
+        return type.compareTo(mime.type);
     }
 
     //--------------------------------------------------------------< Object >

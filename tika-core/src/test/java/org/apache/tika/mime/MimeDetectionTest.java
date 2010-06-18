@@ -29,12 +29,14 @@ public class MimeDetectionTest extends TestCase {
 
     private MimeTypes mimeTypes;
 
+    private MediaTypeRegistry registry;
+
     /** @inheritDoc */
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
-        //this.mimeTypes = MimeTypesFactory.create("/org/apache/tika/mime/tika-mimetypes-minimal.xml");
+        this.registry = mimeTypes.getMediaTypeRegistry();
     }
 
     public void testDetection() throws Exception {
@@ -74,13 +76,38 @@ public class MimeDetectionTest extends TestCase {
                 new Metadata()));
     }
 
-    public void testAutosetSupertype() throws MimeTypeException {
-    	MimeTypes types = new MimeTypes();
-    	MimeType type = types.forName("application/something+xml");
-    	assertEquals("application/xml", type.getSuperType().getName());
-    	
-    	type = types.forName("text/something");
-    	assertEquals("text/plain", type.getSuperType().getName());
+    public void testSuperTypes() {
+        assertTrue(registry.isSpecializationOf(
+                MediaType.parse("text/something; charset=UTF-8"),
+                MediaType.parse("text/something")));
+
+        assertTrue(registry.isSpecializationOf(
+                MediaType.parse("text/something; charset=UTF-8"),
+                MediaType.TEXT_PLAIN));
+
+        assertTrue(registry.isSpecializationOf(
+                MediaType.parse("text/something; charset=UTF-8"),
+                MediaType.OCTET_STREAM));
+
+        assertTrue(registry.isSpecializationOf(
+                MediaType.parse("text/something"),
+                MediaType.TEXT_PLAIN));
+
+        assertTrue(registry.isSpecializationOf(
+                MediaType.parse("application/something+xml"),
+                MediaType.APPLICATION_XML));
+
+        assertTrue(registry.isSpecializationOf(
+                MediaType.parse("application/something+zip"),
+                MediaType.APPLICATION_ZIP));
+
+        assertTrue(registry.isSpecializationOf(
+                MediaType.APPLICATION_XML,
+                MediaType.TEXT_PLAIN));
+
+        assertTrue(registry.isSpecializationOf(
+                MediaType.parse("application/vnd.apple.keynote"),
+                MediaType.APPLICATION_ZIP));
     }
 
     private void testUrl(String expected, String url, String file) throws IOException{
@@ -92,7 +119,7 @@ public class MimeDetectionTest extends TestCase {
         InputStream in = getClass().getResourceAsStream(filename);
         testStream(expected, filename, in);
     }
-    
+
     private void testStream(String expected, String urlOrFileName, InputStream in) throws IOException{
         assertNotNull("Test stream: ["+urlOrFileName+"] is null!", in);
         if (!in.markSupported()) {

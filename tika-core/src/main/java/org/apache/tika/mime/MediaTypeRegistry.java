@@ -18,6 +18,8 @@ package org.apache.tika.mime;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Registry of known Internet media types.
@@ -25,8 +27,7 @@ import java.util.Map;
 public class MediaTypeRegistry {
 
     /**
-     * Registry of known media types, including type aliases. All the types
-     * in this map are base types, i.e. they have no parameters. A canonical
+     * Registry of known media types, including type aliases. A canonical
      * media type is handled as an identity mapping, while an alias is stored
      * as a mapping from the alias to the corresponding canonical type.
      */
@@ -35,31 +36,49 @@ public class MediaTypeRegistry {
 
     /**
      * Known type inheritance relationships. The mapping is from a media type
-     * to the closest supertype. All types in this map are canonical and have
-     * no parameters.
+     * to the closest supertype.
      */
     private final Map<MediaType, MediaType> inheritance =
         new HashMap<MediaType, MediaType>();
 
-    public void addType(MediaType type) {
-        if (type == null || type.hasParameters()) {
-            throw new IllegalArgumentException();
-        } else if (registry.containsKey(type)) {
-            throw new IllegalStateException();
-        } else {
-            registry.put(type, type);
+    /**
+     * Returns the set of all known canonical media types. Type aliases are
+     * not included in the returned set.
+     *
+     * @since Apache Tika 0.8
+     * @return canonical media types
+     */
+    public SortedSet<MediaType> getTypes() {
+        return new TreeSet<MediaType>(registry.values());
+    }
+
+    /**
+     * Returns the set of known aliases of the given canonical media type.
+     *
+     * @since Apache Tika 0.8
+     * @param type canonical media type
+     * @return known aliases
+     */
+    public SortedSet<MediaType> getAliases(MediaType type) {
+        SortedSet<MediaType> aliases = new TreeSet<MediaType>();
+        for (Map.Entry<MediaType, MediaType> entry : registry.entrySet()) {
+            if (entry.getValue().equals(type) && !entry.getKey().equals(type)) {
+                aliases.add(entry.getKey());
+            }
         }
+        return aliases;
+    }
+
+    public void addType(MediaType type) {
+        registry.put(type, type);
     }
 
     public void addAlias(MediaType type, MediaType alias) {
-        if (type == null || alias == null
-                || type.hasParameters() || alias.hasParameters()) {
-            throw new IllegalArgumentException();
-        } else if (!registry.containsKey(type) || registry.containsKey(alias)) {
-            throw new IllegalStateException();
-        } else {
-            registry.put(alias, type);
-        }
+        registry.put(alias, type);
+    }
+
+    public void addSuperType(MediaType type, MediaType supertype) {
+        inheritance.put(type, supertype);
     }
 
     public MediaType normalize(MediaType type) {
@@ -71,6 +90,20 @@ public class MediaTypeRegistry {
         } else {
             return canonical;
         }
+    }
+
+    /**
+     * Checks whether the given media type a is a specialization of a more
+     * generic type b.
+     *
+     * @param a media type
+     * @param b suspected supertype
+     * @return <code>true</code> if b is a supertype of a,
+     *         <code>false</code> otherwise
+     */
+    public boolean isSpecializationOf(MediaType a, MediaType b) {
+        MediaType x = getSuperType(a);
+        return x != null && (x.equals(b) || isSpecializationOf(x, b));
     }
 
     /**

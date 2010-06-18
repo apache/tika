@@ -16,9 +16,6 @@
  */
 package org.apache.tika.mime;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import junit.framework.TestCase;
 
 /**
@@ -33,7 +30,7 @@ public class PatternsTest extends TestCase {
     private MimeType text;
 
     protected void setUp() throws MimeTypeException {
-        patterns = new Patterns();
+        patterns = new Patterns(new MediaTypeRegistry());
         types = new MimeTypes();
         text = types.forName("text/plain");
     }
