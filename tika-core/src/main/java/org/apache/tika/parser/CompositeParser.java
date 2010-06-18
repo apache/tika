@@ -118,7 +118,9 @@ public class CompositeParser implements Parser {
     /**
      * Returns the parser that best matches the given metadata. By default
      * looks for a parser that matches the content type metadata property,
-     * and uses the fallback parser if a better match is not found.
+     * and uses the fallback parser if a better match is not found. The
+     * type hierarchy information included in the configured media type
+     * registry is used when looking for a matching parser instance.
      * <p>
      * Subclasses can override this method to provide more accurate
      * parser resolution.
@@ -128,24 +130,12 @@ public class CompositeParser implements Parser {
      */
     protected Parser getParser(Metadata metadata) {
         MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
-        if (type != null) {
+        while (type != null) {
             Parser parser = parsers.get(type);
-
-            if (parser == null && type.hasParameters()) {
-                type = type.getBaseType();
-                parser = parsers.get(type);
-            }
-
             if (parser != null) {
                 return parser;
-            } else {
-                for (MediaType parserType : parsers.keySet()) {
-                    if (parserType != null
-                            && registry.isSpecializationOf(type, parserType)) {
-                        return parsers.get(parserType);
-                    }
-                }
             }
+            type = registry.getSuperType(type);
         }
         return fallback;
     }
