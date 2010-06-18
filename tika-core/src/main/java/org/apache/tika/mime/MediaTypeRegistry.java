@@ -88,7 +88,7 @@ public class MediaTypeRegistry {
      */
     public MediaType getSuperType(MediaType type) {
         if (type.hasParameters()) {
-            return type;
+            return type.getBaseType();
         } else if (inheritance.containsKey(type)) {
             return inheritance.get(type);
         } else if (type.getSubtype().endsWith("+xml")) {
