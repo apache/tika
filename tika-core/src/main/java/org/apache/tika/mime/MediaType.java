@@ -36,8 +36,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      */
     private static final long serialVersionUID = -3831000556189036392L;
 
-    private static final Map<String, String> NO_PARAMETERS =
-        new TreeMap<String, String>();
+    private static final SortedMap<String, String> NO_PARAMETERS =
+        Collections.unmodifiableSortedMap(new TreeMap<String, String>());
 
     private static final Pattern SPECIAL =
         Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
@@ -116,39 +116,44 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
                 return null;
             }
         }
-        
-        MediaType result = new MediaType(type, subtype);
-        String[] paramPieces = params.split(";");
-        for (String paramPiece : paramPieces) {
-            String[] keyValue = paramPiece.split("=");
-            if (keyValue.length != 2) {
-                continue;
-            }
-            
+
+        Map<String, String> parameters = new HashMap<String, String>();
+        for (String paramPiece : params.split(";")) {
+            String[] keyValue = paramPiece.split("=", 2);
             String key = keyValue[0].trim();
             if (key.length() > 0) {
-                result.parameters.put(key, keyValue[1].trim());
+                if (keyValue.length > 1) {
+                    parameters.put(key, keyValue[1].trim());
+                } else {
+                    parameters.put(key, "");
+                }
             }
         }
-        
-        return result;
+        return new MediaType(type, subtype, parameters);
     }
 
     private final String type;
 
     private final String subtype;
 
+    /**
+     * Immutable map of media type parameters.
+     */
     private final SortedMap<String, String> parameters;
 
     public MediaType(
             String type, String subtype, Map<String, String> parameters) {
         this.type = type.trim().toLowerCase(Locale.ENGLISH);
         this.subtype = subtype.trim().toLowerCase(Locale.ENGLISH);
-        this.parameters = new TreeMap<String, String>();
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            this.parameters.put(
-                    entry.getKey().trim().toLowerCase(Locale.ENGLISH),
-                    entry.getValue());
+        if (parameters.isEmpty()) {
+            this.parameters = NO_PARAMETERS;
+        } else {
+            SortedMap<String, String> map = new TreeMap<String, String>();
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                map.put(entry.getKey().trim().toLowerCase(Locale.ENGLISH),
+                        entry.getValue());
+            }
+            this.parameters = Collections.unmodifiableSortedMap(map);
         }
     }
 
@@ -201,8 +206,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         return !parameters.isEmpty();
     }
 
-    public Map<String, String> getParameters() {
-        return Collections.unmodifiableMap(parameters);
+    public SortedMap<String, String> getParameters() {
+        return parameters;
     }
 
     public String toString() {
