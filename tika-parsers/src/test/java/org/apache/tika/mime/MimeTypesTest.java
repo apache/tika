@@ -59,9 +59,9 @@ public class MimeTypesTest extends TestCase {
     }
 
     public void testSuperType() throws MimeTypeException {
-        assertNull(registry.getSuperType(OCTET_STREAM));
-        assertEquals(OCTET_STREAM, registry.getSuperType(TEXT_PLAIN));
-        assertEquals(TEXT_PLAIN, registry.getSuperType(html.getType()));
+        assertNull(registry.getSupertype(OCTET_STREAM));
+        assertEquals(OCTET_STREAM, registry.getSupertype(TEXT_PLAIN));
+        assertEquals(TEXT_PLAIN, registry.getSupertype(html.getType()));
    }
 
     public void testIsDescendantOf() {

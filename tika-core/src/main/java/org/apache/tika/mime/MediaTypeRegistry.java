@@ -108,13 +108,14 @@ public class MediaTypeRegistry {
      * Checks whether the given media type a is a specialization of a more
      * generic type b.
      *
+     * @since Apache Tika 0.8
      * @param a media type
      * @param b suspected supertype
      * @return <code>true</code> if b is a supertype of a,
      *         <code>false</code> otherwise
      */
     public boolean isSpecializationOf(MediaType a, MediaType b) {
-        MediaType x = getSuperType(a);
+        MediaType x = getSupertype(a);
         return x != null && (x.equals(b) || isSpecializationOf(x, b));
     }
 
@@ -128,10 +129,11 @@ public class MediaTypeRegistry {
      * supertype is known, and the return value for application/octet-stream
      * is <code>null</code>.
      *
+     * @since Apache Tika 0.8
      * @param type media type
      * @return supertype, or <code>null</code> for application/octet-stream
      */
-    public MediaType getSuperType(MediaType type) {
+    public MediaType getSupertype(MediaType type) {
         if (type.hasParameters()) {
             return type.getBaseType();
         } else if (inheritance.containsKey(type)) {
