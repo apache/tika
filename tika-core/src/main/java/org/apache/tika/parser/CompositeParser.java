@@ -135,7 +135,7 @@ public class CompositeParser implements Parser {
             if (parser != null) {
                 return parser;
             }
-            type = registry.getSuperType(type);
+            type = registry.getSupertype(type);
         }
         return fallback;
     }
