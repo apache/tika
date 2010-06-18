@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -125,13 +125,18 @@ public final class MimeTypes implements Detector, Serializable {
      * xml type, application/xml
      */
     private final MimeType xmlMimeType;
-    
-    /** All the registered MimeTypes indexed on their name */
+
+    /**
+     * Registered media types and their aliases.
+     */
+    private final MediaTypeRegistry registry = new MediaTypeRegistry();
+
+    /** All the registered MimeTypes indexed on their canonical names */
     private final Map<MediaType, MimeType> types =
         new HashMap<MediaType, MimeType>();
 
     /** The patterns matcher */
-    private Patterns patterns = new Patterns();
+    private Patterns patterns = new Patterns(registry);
 
     /** List of all registered magics */
     private SortedSet<Magic> magics = new TreeSet<Magic>();
@@ -142,20 +147,13 @@ public final class MimeTypes implements Detector, Serializable {
     private transient XmlRootExtractor xmlRootExtractor = null;
 
     public MimeTypes() {
-        rootMimeType = new MimeType(this, MediaType.OCTET_STREAM);
-        textMimeType = new MimeType(this, MediaType.TEXT_PLAIN);
-        xmlMimeType = new MimeType(this, MediaType.APPLICATION_XML);
+        rootMimeType = new MimeType(MediaType.OCTET_STREAM);
+        textMimeType = new MimeType(MediaType.TEXT_PLAIN);
+        xmlMimeType = new MimeType(MediaType.APPLICATION_XML);
         
-        try {
-            textMimeType.setSuperType(rootMimeType);
-            xmlMimeType.setSuperType(rootMimeType);
-        } catch (MimeTypeException e) {
-            throw new IllegalStateException("Error in MimeType logic", e);
-        }
-
-        types.put(rootMimeType.getType(), rootMimeType);
-        types.put(textMimeType.getType(), textMimeType);
-        types.put(xmlMimeType.getType(), xmlMimeType);
+        add(rootMimeType);
+        add(textMimeType);
+        add(xmlMimeType);
     }
 
     /**
@@ -411,16 +409,10 @@ public final class MimeTypes implements Detector, Serializable {
             throws MimeTypeException {
         MediaType type = MediaType.parse(name);
         if (type != null) {
-            MimeType mime = types.get(type);
+            MimeType mime = types.get(registry.normalize(type));
             if (mime == null) {
-                mime = new MimeType(this, type);
-                if ("text".equals(type.getType())) {
-                    mime.setSuperType(textMimeType);
-                } else if (type.getSubtype().endsWith("+xml")) {
-                    mime.setSuperType(xmlMimeType);
-                } else {
-                    mime.setSuperType(rootMimeType);
-                }
+                mime = new MimeType(type);
+                add(mime);
                 types.put(type, mime);
             }
             return mime;
@@ -429,22 +421,19 @@ public final class MimeTypes implements Detector, Serializable {
         }
     }
 
+    public synchronized void setSuperType(MimeType type, MediaType parent) {
+        registry.addSuperType(type.getType(), parent);
+    }
+
     /**
      * Adds an alias for the given media type. This method should only
      * be called from {@link MimeType#addAlias(String)}.
      *
      * @param type media type
      * @param alias media type alias (normalized to lower case)
-     * @throws MimeTypeException if the alias already exists
      */
-    synchronized void addAlias(MimeType type, MediaType alias)
-            throws MimeTypeException {
-        if (!types.containsKey(alias)) {
-            types.put(alias, type);
-        } else {
-            throw new MimeTypeException(
-                    "Media type alias already exists: " + alias);
-        }
+    synchronized void addAlias(MimeType type, MediaType alias) {
+        registry.addAlias(type.getType(), alias);
     }
 
     /**
@@ -486,6 +475,10 @@ public final class MimeTypes implements Detector, Serializable {
         patterns.add(pattern, isRegex, type);
     }
 
+    public MediaTypeRegistry getMediaTypeRegistry() {
+        return registry;
+    }
+
     /**
      * Return the minimum length of data to provide to analyzing methods based
      * on the document's content in order to check all the known MimeTypes.
@@ -507,6 +500,9 @@ public final class MimeTypes implements Detector, Serializable {
      *            is the mime-type to add.
      */
     void add(MimeType type) {
+        registry.addType(type.getType());
+        types.put(type.getType(), type);
+
         // Update the magics index...
         if (type.hasMagic()) {
             magics.addAll(Arrays.asList(type.getMagics()));
@@ -533,14 +529,14 @@ public final class MimeTypes implements Detector, Serializable {
      */
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        MimeType type = rootMimeType;
+        MediaType type = MediaType.OCTET_STREAM;
 
         // Get type based on magic prefix
         if (input != null) {
             input.mark(getMinLength());
             try {
                 byte[] prefix = readMagicHeader(input);
-                type = getMimeType(prefix);
+                type = getMimeType(prefix).getType();
             } finally {
                 input.reset();
             }
@@ -566,8 +562,8 @@ public final class MimeTypes implements Detector, Serializable {
             }
 
             if (name != null) {
-                MimeType hint = getMimeType(name);
-                if (hint.isDescendantOf(type)) {
+                MediaType hint = getMimeType(name).getType();
+                if (registry.isSpecializationOf(hint, type)) {
                     type = hint;
                 }
             }
@@ -577,8 +573,8 @@ public final class MimeTypes implements Detector, Serializable {
         String typeName = metadata.get(Metadata.CONTENT_TYPE);
         if (typeName != null) {
             try {
-                MimeType hint = forName(typeName);
-                if (hint.isDescendantOf(type)) {
+                MediaType hint = forName(typeName).getType();
+                if (registry.isSpecializationOf(hint, type)) {
                     type = hint;
                 }
             } catch (MimeTypeException e) {
@@ -586,7 +582,7 @@ public final class MimeTypes implements Detector, Serializable {
             }
         }
 
-        return MediaType.parse(type.getName());
+        return type;
     }
 
 }

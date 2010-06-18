@@ -30,18 +30,9 @@ public class MimeTypeTest extends TestCase {
 
     /** Test MimeType constructor */
     public void testConstrctor() {
-
-        // Missing registry
-        try {
-            new MimeType(null, MediaType.TEXT_PLAIN);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
-
         // Missing name
         try {
-            new MimeType(types, null);
+            new MimeType(null);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // expected result
@@ -75,16 +66,6 @@ public class MimeTypeTest extends TestCase {
     public void testSetDescription() {
         try {
             text.setDescription(null);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
-    }
-
-    /** Test MimeType setSuperType() */
-    public void testSetSuperType() throws MimeTypeException {
-        try {
-            text.setSuperType(null);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // expected result

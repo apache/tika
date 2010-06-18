@@ -31,6 +31,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
@@ -249,6 +250,10 @@ public class TikaConfig {
 
     public MimeTypes getMimeRepository(){
         return mimeTypes;
+    }
+
+    public MediaTypeRegistry getMediaTypeRegistry() {
+        return mimeTypes.getMediaTypeRegistry();
     }
 
     /**

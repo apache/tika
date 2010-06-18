@@ -154,7 +154,7 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
                     String alias = nodeElement.getAttribute(ALIAS_TYPE_ATTR);
                     MediaType aliasType = MediaType.parse(alias);
                     if (aliasType != null) {
-                        type.addAlias(aliasType);
+                        types.addAlias(type, aliasType);
                     } else {
                         throw new MimeTypeException(
                                 "Invalid media type alias: " + alias);
@@ -163,7 +163,7 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
                     readRootXML(nodeElement, type);
                 } else if (nodeElement.getTagName().equals(SUB_CLASS_OF_TAG)) {
                     String parent = nodeElement.getAttribute(SUB_CLASS_TYPE_ATTR);
-                    type.setSuperType(types.forName(parent));
+                    types.setSuperType(type, MediaType.parse(parent));
                 }
             }
         }

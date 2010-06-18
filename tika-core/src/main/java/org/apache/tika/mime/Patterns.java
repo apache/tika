@@ -33,6 +33,8 @@ class Patterns implements Serializable {
      */
     private static final long serialVersionUID = -5778015347278111140L;
 
+    private final MediaTypeRegistry registry;
+
     /**
      * Index of exact name patterns.
      */
@@ -72,6 +74,10 @@ class Patterns implements Serializable {
 
     }
 
+    public Patterns(MediaTypeRegistry registry) {
+        this.registry = registry;
+    }
+
     public void add(String pattern, MimeType type) throws MimeTypeException {
         this.add(pattern, false, type);
     }
@@ -103,9 +109,11 @@ class Patterns implements Serializable {
     
     private void addName(String name, MimeType type) throws MimeTypeException {
         MimeType previous = names.get(name);
-        if (previous == null || previous.isDescendantOf(type)) {
+        if (previous == null
+                || registry.isSpecializationOf(previous.getType(), type.getType())) {
             names.put(name, type);
-        } else if (previous == type || type.isDescendantOf(previous)) {
+        } else if (previous == type
+                || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting name pattern: " + name);
@@ -115,12 +123,14 @@ class Patterns implements Serializable {
     private void addExtension(String extension, MimeType type)
             throws MimeTypeException {
         MimeType previous = extensions.get(extension);
-        if (previous == null || previous.isDescendantOf(type)) {
+        if (previous == null
+                || registry.isSpecializationOf(previous.getType(), type.getType())) {
             extensions.put(extension, type);
             int length = extension.length();
             minExtensionLength = Math.min(minExtensionLength, length);
             maxExtensionLength = Math.max(maxExtensionLength, length);
-        } else if (previous == type || type.isDescendantOf(previous)) {
+        } else if (previous == type
+                || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException(
@@ -131,9 +141,11 @@ class Patterns implements Serializable {
     private void addGlob(String glob, MimeType type)
             throws MimeTypeException {
         MimeType previous = globs.get(glob);
-        if (previous == null || previous.isDescendantOf(type)) {
+        if (previous == null
+                || registry.isSpecializationOf(previous.getType(), type.getType())) {
             globs.put(glob, type);
-        } else if (previous == type || type.isDescendantOf(previous)) {
+        } else if (previous == type
+                || registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
         } else {
             throw new MimeTypeException("Conflicting glob pattern: " + glob);

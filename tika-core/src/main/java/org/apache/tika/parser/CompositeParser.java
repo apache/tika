@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -26,6 +26,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -39,6 +40,16 @@ import org.xml.sax.SAXException;
 public class CompositeParser implements Parser {
 
     /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = 5613173903360405824L;
+
+    /**
+     * Media type registry.
+     */
+    private MediaTypeRegistry registry = new MediaTypeRegistry();
+
+    /**
      * Set of component parsers, keyed by the supported media types.
      */
     private Map<MediaType, Parser> parsers = new HashMap<MediaType, Parser>();
@@ -47,6 +58,26 @@ public class CompositeParser implements Parser {
      * The fallback parser, used when no better parser is available.
      */
     private Parser fallback = new EmptyParser();
+
+    /**
+     * Returns the media type registry used to infer type relationships.
+     *
+     * @since Apache Tika 0.8
+     * @return media type registry
+     */
+    public MediaTypeRegistry getMediaTypeRegistry() {
+        return registry;
+    }
+
+    /**
+     * Sets the media type registry used to infer type relationships.
+     *
+     * @since Apache Tika 0.8
+     * @param registry media type registry
+     */
+    public void setMediaTypeRegistry(MediaTypeRegistry registry) {
+        this.registry = registry;
+    }
 
     /**
      * Returns the component parsers.
@@ -110,7 +141,7 @@ public class CompositeParser implements Parser {
             } else {
                 for (MediaType parserType : parsers.keySet()) {
                     if (parserType != null
-                            && type.isSpecializationOf(parserType)) {
+                            && registry.isSpecializationOf(type, parserType)) {
                         return parsers.get(parserType);
                     }
                 }

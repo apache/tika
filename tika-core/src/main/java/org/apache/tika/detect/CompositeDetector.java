@@ -23,20 +23,34 @@ import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 
 /**
  * Content type detector that combines multiple different detection mechanisms.
  */
 public class CompositeDetector implements Detector {
 
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = 5980683158436430252L;
+
+    private final MediaTypeRegistry registry;
+
     private final List<Detector> detectors;
 
-    public CompositeDetector(List<Detector> detectors) {
+    public CompositeDetector(
+            MediaTypeRegistry registry, List<Detector> detectors) {
+        this.registry = registry;
         this.detectors = detectors;
     }
 
+    public CompositeDetector(List<Detector> detectors) {
+        this(new MediaTypeRegistry(), detectors);
+    }
+
     public CompositeDetector(Detector... detectors) {
-        this.detectors = Arrays.asList(detectors);
+        this(Arrays.asList(detectors));
     }
 
     public MediaType detect(InputStream input, Metadata metadata)
@@ -44,7 +58,7 @@ public class CompositeDetector implements Detector {
         MediaType type = MediaType.OCTET_STREAM;
         for (Detector detector : detectors) {
             MediaType detected = detector.detect(input, metadata);
-            if (detected.isSpecializationOf(type)) {
+            if (registry.isSpecializationOf(detected, type)) {
                 type = detected;
             }
         }
