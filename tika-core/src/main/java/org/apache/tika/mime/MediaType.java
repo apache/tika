@@ -61,6 +61,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
 
     public static final MediaType APPLICATION_XML = application("xml");
 
+    public static final MediaType APPLICATION_ZIP = application("zip");
+
     public static MediaType application(String type) {
         return new MediaType("application", type);
     }
