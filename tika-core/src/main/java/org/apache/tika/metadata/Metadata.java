@@ -169,6 +169,19 @@ public class Metadata implements CreativeCommons, DublinCore, HttpHeaders,
     }
 
     /**
+     * Sets the integer value of the identified metadata property.
+     *
+     * @since Apache Tika 0.8
+     * @param property simple integer property definition
+     * @param value    property value
+     */
+    public void set(Property property, int value) {
+        assert property.getPropertyType() == Property.PropertyType.SIMPLE;
+        assert property.getValueType() == Property.ValueType.INTEGER;
+        set(property.getName(), Integer.toString(value));
+    }
+
+    /**
      * Remove a metadata and all its associated values.
      * 
      * @param name

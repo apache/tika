@@ -32,6 +32,10 @@ import java.util.Set;
  */
 public final class Property {
 
+    public static enum PropertyType {
+        SIMPLE, STRUCTURE, BAG, SEQ, ALT
+    }
+
     public static enum ValueType {
         BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE,
         MIME_TYPE, PROPER_NAME, RATIONAL, REAL, TEXT, URI, URL, XPATH
@@ -41,6 +45,8 @@ public final class Property {
 
     private final boolean internal;
 
+    private final PropertyType propertyType;
+
     private final ValueType valueType;
 
     /**
@@ -49,10 +55,11 @@ public final class Property {
     private final Set<String> choices;
 
     private Property(
-            String name, boolean internal,
+            String name, boolean internal, PropertyType propertyType,
             ValueType valueType, String[] choices) {
         this.name = name;
         this.internal = internal;
+        this.propertyType = propertyType;
         this.valueType = valueType;
         if (choices != null) {
             this.choices = Collections.unmodifiableSet(
@@ -60,6 +67,22 @@ public final class Property {
         } else {
             this.choices = null;
         }
+    }
+
+    private Property(
+            String name, boolean internal,
+            ValueType valueType, String[] choices) {
+        this(name, internal, PropertyType.SIMPLE, valueType, choices);
+    }
+
+    private Property(String name, boolean internal, ValueType valueType) {
+        this(name, internal, PropertyType.SIMPLE, valueType, null);
+    }
+
+    private Property(
+            String name, boolean internal,
+            PropertyType propertyType, ValueType valueType) {
+        this(name, internal, propertyType, valueType, null);
     }
 
     public String getName() {
@@ -72,6 +95,10 @@ public final class Property {
 
     public boolean isExternal() {
         return !internal;
+    }
+
+    public PropertyType getPropertyType() {
+        return propertyType;
     }
 
     public ValueType getValueType() {
@@ -89,10 +116,6 @@ public final class Property {
         return choices;
     }
 
-    private Property( String name, boolean internal, ValueType valueType) {
-        this(name, internal, valueType, null);
-    }
-
     public static Property internalBoolean(String name) {
         return new Property(name, true, ValueType.BOOLEAN);
     }
@@ -108,6 +131,10 @@ public final class Property {
 
     public static Property internalInteger(String name) {
         return new Property(name, true, ValueType.INTEGER);
+    }
+
+    public static Property internalIntegerSequence(String name) {
+        return new Property(name, true, PropertyType.SEQ, ValueType.INTEGER);
     }
 
     public static Property internalRational(String name) {
