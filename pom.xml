@@ -32,16 +32,16 @@
   <artifactId>tika</artifactId>
   <packaging>pom</packaging>
   <name>Apache Tika</name>
-  <url>http://lucene.apache.org/tika/</url>
+  <url>http://tika.apache.org</url>
 
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/lucene/tika/trunk
+      scm:svn:http://svn.apache.org/repos/asf/tika/trunk
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/lucene/tika/trunk
+      scm:svn:https://svn.apache.org/repos/asf/tika/trunk
     </developerConnection>
-    <url>http://svn.apache.org/viewvc/lucene/tika/trunk</url>
+    <url>http://svn.apache.org/viewvc/tika/trunk</url>
   </scm>
 
   <modules>
