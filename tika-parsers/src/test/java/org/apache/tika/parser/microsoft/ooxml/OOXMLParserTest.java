@@ -46,6 +46,7 @@ public class OOXMLParserTest extends TestCase {
     public void testExcel() throws Exception {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testEXCEL.xlsx");
+        assertNotNull(input);
 
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
@@ -99,14 +100,14 @@ public class OOXMLParserTest extends TestCase {
 
             // Currency $#,##0.00;[Red]($#,##0.00)
             assertTrue(content.contains("$1,599.99"));
-            assertTrue(content.contains("($1,599.99)"));
+            assertTrue(content.contains("$1,599.99)"));
 
             // Scientific 0.00E+00
             assertTrue(content.contains("1.98E08"));
             assertTrue(content.contains("-1.98E08"));
 
             // Percentage
-            assertTrue(content.contains("2%"));
+            assertTrue(content.contains("3%"));
             assertTrue(content.contains("2.50%"));
 
             // Time Format: h:mm
@@ -127,6 +128,10 @@ public class OOXMLParserTest extends TestCase {
             // Date/Time Format
             assertTrue(content.contains("19/01/2008 04:35"));
 
+            // Currency $#,##0.00;[Red]($#,##0.00)
+            assertTrue(content.contains("$1,599.99"));
+            assertTrue(content.contains("($1,599.99)"));
+            
             // Custom Number (0 "dollars and" .00 "cents")
             assertTrue(content.contains("19 dollars and .99 cents"));
 

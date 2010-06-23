@@ -92,7 +92,7 @@ public class ExcelParserTest extends TestCase {
             assertTrue(content.contains("-1.98E08"));
 
             // Percentage
-            assertTrue(content.contains("2%"));
+            assertTrue(content.contains("3%"));
             assertTrue(content.contains("2.50%"));
 
             // Time Format: h:mm

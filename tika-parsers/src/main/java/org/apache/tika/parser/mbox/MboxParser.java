@@ -47,6 +47,7 @@ public class MboxParser implements Parser {
     public static final String MBOX_MIME_TYPE = "application/mbox";
     public static final String MBOX_RECORD_DIVIDER = "From ";
     private static final Pattern EMAIL_HEADER_PATTERN = Pattern.compile("([^ ]+):[ \t]*(.*)");
+    private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile("<(.*@.*)>");
 
     private static final String EMAIL_HEADER_METADATA_PREFIX = MboxParser.class.getSimpleName() + "-";
     private static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
@@ -191,6 +192,23 @@ public class MboxParser implements Parser {
         if (headerTag.equalsIgnoreCase("From")) {
             metadata.add(Metadata.AUTHOR, headerContent);
             metadata.add(Metadata.CREATOR, headerContent);
+        } else if (headerTag.equalsIgnoreCase("To") ||
+        	headerTag.equalsIgnoreCase("Cc") ||
+        	headerTag.equalsIgnoreCase("Bcc")) {
+            Matcher address = EMAIL_ADDRESS_PATTERN.matcher(headerContent);
+            if(address.find()) {
+        	metadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, address.group(1));
+            } else if(headerContent.indexOf('@') > -1) {
+        	metadata.add(Metadata.MESSAGE_RECIPIENT_ADDRESS, headerContent);
+            }
+            
+            String property = Metadata.MESSAGE_TO;
+            if (headerTag.equalsIgnoreCase("Cc")) {
+        	property = Metadata.MESSAGE_CC;
+            } else if (headerTag.equalsIgnoreCase("Bcc")) {
+        	property = Metadata.MESSAGE_BCC;
+            }
+            metadata.add(property, headerContent);
         } else if (headerTag.equalsIgnoreCase("Subject")) {
             metadata.add(Metadata.SUBJECT, headerContent);
             metadata.add(Metadata.TITLE, headerContent);

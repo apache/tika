@@ -19,12 +19,10 @@ package org.apache.tika.parser.mbox;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -32,7 +30,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
-
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -76,6 +73,7 @@ public class MboxParserTest extends TestCase {
             assertEquals("subject", metadata.get(Metadata.SUBJECT));
             assertEquals("<author@domain.com>", metadata.get(Metadata.AUTHOR));
             assertEquals("<author@domain.com>", metadata.get(Metadata.CREATOR));
+            assertEquals(null, metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
             assertEquals("<name@domain.com>", metadata.get("MboxParser-return-path"));
             assertEquals("Tue, 9 Jun 2009 23:58:45 -0400", metadata.get(Metadata.DATE));
         } catch (Exception e) {
@@ -134,6 +132,12 @@ public class MboxParserTest extends TestCase {
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
 
+            assertEquals("Re: question about when shuffle/sort start working", metadata.get(Metadata.TITLE));
+            assertEquals("Re: question about when shuffle/sort start working", metadata.get(Metadata.SUBJECT));
+            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(Metadata.AUTHOR));
+            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(Metadata.CREATOR));
+            assertEquals("core-user@hadoop.apache.org", metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+            
             verify(handler).startDocument();
             verify(handler, times(3)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
             verify(handler, times(3)).endElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"));
