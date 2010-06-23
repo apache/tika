@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,8 +30,9 @@ import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.hslf.extractor.PowerPointExtractor;
 import org.apache.poi.hwpf.extractor.WordExtractor;
-import org.apache.poi.poifs.filesystem.DirectoryEntry;
-import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.crypt.Decryptor;
+import org.apache.poi.poifs.crypt.EncryptionInfo;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
@@ -38,6 +40,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -46,16 +51,92 @@ import org.xml.sax.SAXException;
  * Defines a Microsoft document content extractor.
  */
 public class OfficeParser implements Parser {
-
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                MediaType.application("x-tika-msoffice"),
-                MediaType.application("vnd.visio"),
-                MediaType.application("vnd.ms-powerpoint"),
-                MediaType.application("vnd.ms-excel"),
-                MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12"),
-                MediaType.application("msword"),
-                MediaType.application("vnd.ms-outlook"))));
+        	POIFSDocumentType.WORKBOOK.type,
+        	POIFSDocumentType.OLE10_NATIVE.type,
+        	POIFSDocumentType.WORDDOCUMENT.type,
+        	POIFSDocumentType.UNKNOWN.type,
+        	POIFSDocumentType.ENCRYPTED.type,
+        	POIFSDocumentType.POWERPOINT.type,
+        	POIFSDocumentType.PUBLISHER.type,
+        	POIFSDocumentType.VISIO.type,
+        	POIFSDocumentType.OUTLOOK.type,
+                MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12")
+         )));
+    
+    public enum POIFSDocumentType {
+        WORKBOOK("xls", MediaType.application("vnd.ms-excel")),
+        OLE10_NATIVE("ole", MediaType.application("x-tika-msoffice")),
+        WORDDOCUMENT("doc", MediaType.application("msword")),
+        UNKNOWN("unknown", MediaType.application("x-tika-msoffice")),
+        ENCRYPTED("ole", MediaType.application("x-tika-msoffice")),
+        POWERPOINT("ppt", MediaType.application("vnd.ms-powerpoint")),
+        PUBLISHER("pub", MediaType.application("x-mspublisher")),
+        VISIO("vsd", MediaType.application("vnd.visio")),
+        OUTLOOK("msg", MediaType.application("vnd.ms-outlook"));
+
+        private final String extension;
+        private final MediaType type;
+
+        POIFSDocumentType(String extension, MediaType type) {
+            this.extension = extension;
+            this.type = type;
+        }
+
+        public String getExtension() {
+            return extension;
+        }
+
+        public MediaType getType() {
+            return type;
+        }
+
+        public static POIFSDocumentType detectType(POIFSFileSystem fs) {
+            return detectType(fs.getRoot());
+        }
+
+        public static POIFSDocumentType detectType(DirectoryNode node) {
+            for (Entry entry : node) {
+                POIFSDocumentType type = detectType(entry);
+                if (type!=UNKNOWN) {
+                    return type;
+                }
+            }
+            return UNKNOWN;
+        }
+
+        public static POIFSDocumentType detectType(Entry entry) {
+            String name = entry.getName();
+
+            if ("Workbook".equals(name)) {
+                return WORKBOOK;
+            }
+            if ("EncryptedPackage".equals(name)) {
+                return ENCRYPTED;
+            }
+            if ("WordDocument".equals(name)) {
+                return WORDDOCUMENT;
+            }
+            if ("Quill".equals(name)) {
+                return PUBLISHER;
+            }
+            if ("PowerPoint Document".equals(entry.getName())) {
+                return POWERPOINT;
+            }
+            if ("VisioDocument".equals(entry.getName())) {
+                return VISIO;
+            }
+            if (entry.getName().startsWith("__substg1.0_")) {
+                return OUTLOOK;
+            }
+            if ("\u0001Ole10Native".equals(name)) {
+              return POIFSDocumentType.OLE10_NATIVE;
+            }
+
+            return UNKNOWN;
+        }
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -78,65 +159,85 @@ public class OfficeParser implements Parser {
 
         // Parse remaining document entries
         boolean outlookExtracted = false;
-        Iterator<?> entries = filesystem.getRoot().getEntries();
-        while (entries.hasNext()) {
-            Entry entry = (Entry) entries.next();
-            String name = entry.getName();
-            if (entry instanceof DirectoryEntry) {
-               if ("Quill".equals(name)) {
-                  setType(metadata, "application/x-mspublisher");
-                  PublisherTextExtractor extractor =
-                      new PublisherTextExtractor(filesystem);
-                  xhtml.element("p", extractor.getText());
-               }
-            } else if (entry instanceof DocumentEntry) {
-               if ("WordDocument".equals(name)) {
-                   setType(metadata, "application/msword");
-                   WordExtractor extractor = new WordExtractor(filesystem);
+        for (Entry entry : filesystem.getRoot()) {
+            POIFSDocumentType type = POIFSDocumentType.detectType(entry);
 
-                   addTextIfAny(xhtml, "header", extractor.getHeaderText());
+            if (type!=POIFSDocumentType.UNKNOWN) {
+                setType(metadata, type.getType());
+            }
 
-                   for (String paragraph : extractor.getParagraphText()) {
-                       xhtml.element("p", paragraph);
-                   }
+            switch (type) {
+                case PUBLISHER:
+                    PublisherTextExtractor publisherTextExtractor =
+                        new PublisherTextExtractor(filesystem);
+                    xhtml.element("p", publisherTextExtractor.getText());
+                    break;
+                case WORDDOCUMENT:
+                    WordExtractor wordExtractor = new WordExtractor(filesystem);
 
-                   for (String paragraph : extractor.getFootnoteText()) {
-                       xhtml.element("p", paragraph);
-                   }
+                    addTextIfAny(xhtml, "header", wordExtractor.getHeaderText());
 
-                   for (String paragraph : extractor.getCommentsText()) {
-                       xhtml.element("p", paragraph);
-                   }
+                    for (String paragraph : wordExtractor.getParagraphText()) {
+                        xhtml.element("p", paragraph);
+                    }
 
-                   for (String paragraph : extractor.getEndnoteText()) {
-                       xhtml.element("p", paragraph);
-                   }
+                    for (String paragraph : wordExtractor.getFootnoteText()) {
+                        xhtml.element("p", paragraph);
+                    }
 
-                   addTextIfAny(xhtml, "footer", extractor.getFooterText());
-               } else if ("PowerPoint Document".equals(name)) {
-                   setType(metadata, "application/vnd.ms-powerpoint");
-                   PowerPointExtractor extractor =
-                       new PowerPointExtractor(filesystem);
-                   xhtml.element("p", extractor.getText(true, true));
-               } else if ("Workbook".equals(name)) {
-                   setType(metadata, "application/vnd.ms-excel");
-                   Locale locale = context.get(Locale.class, Locale.getDefault());
-                   new ExcelExtractor().parse(filesystem, xhtml, locale);
-               } else if ("VisioDocument".equals(name)) {
-                   setType(metadata, "application/vnd.visio");
-                   VisioTextExtractor extractor =
-                       new VisioTextExtractor(filesystem);
-                   for (String text : extractor.getAllText()) {
-                       xhtml.element("p", text);
-                   }
-               } else if (!outlookExtracted && name.startsWith("__substg1.0_")) {
-                   // TODO: Cleaner mechanism for detecting Outlook
-                   outlookExtracted = true;
-                   setType(metadata, "application/vnd.ms-outlook");
-                   OutlookExtractor extractor =
-                       new OutlookExtractor(filesystem, context);
-                   extractor.parse(xhtml, metadata);
-               }
+                    for (String paragraph : wordExtractor.getCommentsText()) {
+                        xhtml.element("p", paragraph);
+                    }
+
+                    for (String paragraph : wordExtractor.getEndnoteText()) {
+                        xhtml.element("p", paragraph);
+                    }
+
+                    addTextIfAny(xhtml, "footer", wordExtractor.getFooterText());
+                    break;
+                case POWERPOINT:
+                    PowerPointExtractor powerPointExtractor =
+                        new PowerPointExtractor(filesystem);
+                    xhtml.element("p", powerPointExtractor.getText(true, true));
+                    break;
+                case WORKBOOK:
+                    Locale locale = context.get(Locale.class, Locale.getDefault());
+                    new ExcelExtractor().parse(filesystem, xhtml, locale);
+                    break;
+                case VISIO:
+                    VisioTextExtractor visioTextExtractor =
+                        new VisioTextExtractor(filesystem);
+                    for (String text : visioTextExtractor.getAllText()) {
+                        xhtml.element("p", text);
+                    }
+                    break;
+                case OUTLOOK:
+                    if (!outlookExtracted) {
+                        outlookExtracted = true;
+
+                        OutlookExtractor extractor =
+                            new OutlookExtractor(filesystem, context);
+
+                        extractor.parse(xhtml, metadata);
+                    }
+                    break;
+                case ENCRYPTED:
+                    EncryptionInfo info = new EncryptionInfo(filesystem);
+                    Decryptor d = new Decryptor(info);
+
+                    try {
+                        if (!d.verifyPassword(Decryptor.DEFAULT_PASSWORD)) {
+                            throw new TikaException("Unable to process: document is encrypted");
+                        }
+
+                        OOXMLParser parser = new OOXMLParser();
+
+                        parser.parse(d.getDataStream(filesystem), new EmbeddedContentHandler(
+                                        new BodyContentHandler(xhtml)),
+                                        metadata, context);
+                    } catch (GeneralSecurityException ex) {
+                        throw new TikaException("Unable to process encrypted document", ex);
+                    }
             }
         }
 
@@ -152,8 +253,8 @@ public class OfficeParser implements Parser {
         parse(stream, handler, metadata, new ParseContext());
     }
 
-    private void setType(Metadata metadata, String type) {
-        metadata.set(Metadata.CONTENT_TYPE, type);
+    private void setType(Metadata metadata, MediaType type) {
+        metadata.set(Metadata.CONTENT_TYPE, type.toString());
     }
 
     /**

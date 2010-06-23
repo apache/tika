@@ -197,9 +197,13 @@ public class OOXMLParserTest extends TestCase {
         }
     }
 
-    public void testProtectedExcel() throws Exception {
+    /**
+     * Documents with some sheets are protected, but not all. 
+     * See TIKA-364.
+     */
+    public void testProtectedExcelSheets() throws Exception {
         InputStream input = OOXMLParserTest.class
-                .getResourceAsStream("/test-documents/protected.xlsx");
+                .getResourceAsStream("/test-documents/protectedSheets.xlsx");
 
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
@@ -213,6 +217,34 @@ public class OOXMLParserTest extends TestCase {
                     metadata.get(Metadata.CONTENT_TYPE));
 
             assertEquals("true", metadata.get(TikaMetadataKeys.PROTECTED));
+        } finally {
+            input.close();
+        }
+    }
+
+    /**
+     * An excel document which is password protected. 
+     * See TIKA-437.
+     */
+    public void testProtectedExcelFile() throws Exception {
+        InputStream input = OOXMLParserTest.class
+                .getResourceAsStream("/test-documents/protectedFile.xlsx");
+
+        Parser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+
+        try {
+            parser.parse(input, handler, metadata);
+
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+            assertEquals("true", metadata.get(TikaMetadataKeys.PROTECTED));
+            
+            String content = handler.toString();
+            assertTrue(content.contains("Office"));
         } finally {
             input.close();
         }
