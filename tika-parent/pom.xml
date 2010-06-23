@@ -121,13 +121,6 @@
       </roles>
     </developer>
     <developer>
-      <name>Ken Krugler</name>
-      <id>kkrugler</id>
-      <roles>
-        <role>committer</role>
-      </roles>
-    </developer>
-    <developer>
       <name>Mark Harwood</name>
       <id>mharwood</id>
       <roles>
@@ -175,6 +168,15 @@
     <developer>
       <name>Jukka Zitting</name>
       <id>jukka</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Nick Burch</name>
+      <id>nick</id>
+      <organization>Alfresco</organization>
+      <organizationUrl>http://alfresco.com</organizationUrl>
       <roles>
         <role>committer</role>
       </roles>
