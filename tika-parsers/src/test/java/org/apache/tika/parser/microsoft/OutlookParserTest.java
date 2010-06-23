@@ -52,14 +52,17 @@ public class OutlookParserTest extends TestCase {
         assertEquals(
                 "Microsoft Outlook Express 6",
                 metadata.get(Metadata.TITLE));
-        // TODO: There's apparently some encoding issue in POI
-        //assertEquals(
-        //        "L'\u00C9quipe Microsoft Outlook Express",
-        //        metadata.get(Metadata.AUTHOR));
+        assertEquals(
+                "Nouvel utilisateur de Outlook Express",
+                metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+        assertEquals(
+                "L'\u00C9quipe Microsoft Outlook Express",
+                metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
+        assertTrue(content.contains(""));
         assertTrue(content.contains("Microsoft Outlook Express 6"));
-        //assertTrue(content.contains("L'\u00C9quipe Microsoft Outlook Express"));
+        assertTrue(content.contains("L'\u00C9quipe Microsoft Outlook Express"));
         assertTrue(content.contains("Nouvel utilisateur de Outlook Express"));
         assertTrue(content.contains("Messagerie et groupes de discussion"));
     }
