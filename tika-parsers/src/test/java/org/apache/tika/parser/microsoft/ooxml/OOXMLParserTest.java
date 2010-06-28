@@ -23,6 +23,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -30,19 +31,6 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.parser.AutoDetectParser;
 
 public class OOXMLParserTest extends TestCase {
-
-    // TODO: This is a workaround until TIKA-371 is fixed
-    private Locale defaultLocale;
-
-    protected void setUp() {
-        defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.US);
-    }
-
-    protected void tearDown() {
-        Locale.setDefault(defaultLocale);
-    }
-
     public void testExcel() throws Exception {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testEXCEL.xlsx");
@@ -53,9 +41,12 @@ public class OOXMLParserTest extends TestCase {
         // TODO: should auto-detect without the resource name
         metadata.set(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
+
 
         try {
-            parser.parse(input, handler, metadata);
+            parser.parse(input, handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -107,8 +98,13 @@ public class OOXMLParserTest extends TestCase {
             assertTrue(content.contains("-1.98E08"));
 
             // Percentage
-            assertTrue(content.contains("3%"));
             assertTrue(content.contains("2.50%"));
+            // Excel rounds up to 3%, but that requires Java 1.6 or later
+            if(System.getProperty("java.version").startsWith("1.5")) {
+                assertTrue(content.contains("2%"));
+            } else {
+                assertTrue(content.contains("3%"));
+            }
 
             // Time Format: h:mm
             assertTrue(content.contains("6:15"));
