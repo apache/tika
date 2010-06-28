@@ -19,9 +19,12 @@ package org.apache.tika.parser.image;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.xml.sax.SAXException;
 
 import com.drew.imaging.tiff.TiffMetadataReader;
@@ -30,15 +33,15 @@ import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
 
-class TiffExtractor {
+public class TiffExtractor {
 
     private final Metadata metadata;
 
-    public TiffExtractor(Metadata metadata) {
+    protected TiffExtractor(Metadata metadata) {
         this.metadata = metadata;
     }
 
-    public void parse(InputStream stream)
+    protected void parse(InputStream stream)
             throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata tiffMetadata =
@@ -52,6 +55,7 @@ class TiffExtractor {
                 while (tags.hasNext()) {
                     Tag tag = (Tag)tags.next();
                     metadata.set(tag.getTagName(), tag.getDescription());
+                    handleCommonImageTags(metadata, tag);
                 }
             }
         } catch (TiffProcessingException e) {
@@ -61,4 +65,55 @@ class TiffExtractor {
         }
     }
 
+
+    /**
+     * Maps common TIFF and EXIF tags onto the Tika
+     *  TIFF image metadata namespace.
+     */
+    public static void handleCommonImageTags(Metadata metadata, Tag tag) throws MetadataException {
+	// Core tags
+	if(tag.getTagName().equals("Date/Time") ||
+		tag.getTagType() == 306) {
+	    // Ensure it's in the right format
+	    String date = tag.getDescription();
+	    int splitAt = date.indexOf(' '); 
+	    if(splitAt > -1) {
+		date = date.substring(0, splitAt).replace(':', '/') +
+			date.substring(splitAt);
+	    }
+	    metadata.set(Metadata.DATE, date);
+	    return;
+	}
+	if(tag.getTagName().equals("Keywords") ||
+	        tag.getTagType() == 537) {
+	    metadata.set(Metadata.KEYWORDS, tag.getDescription());
+	}
+	
+	// EXIF / TIFF Tags
+	Property key = null;
+	if(tag.getTagName().equals("Image Width") ||
+		tag.getTagType() == 256) { 
+	    key = Metadata.IMAGE_WIDTH;
+	}
+	if(tag.getTagName().equals("Image Height") ||
+		tag.getTagType() == 257) {
+	    key = Metadata.IMAGE_LENGTH;
+	}
+	if(tag.getTagName().equals("Data Precision") ||
+		tag.getTagName().equals("Bits Per Sample") ||
+		tag.getTagType() == 258) {
+	    key = Metadata.BITS_PER_SAMPLE;
+	}
+	if(tag.getTagType() == 277) {
+	    key = Metadata.SAMPLES_PER_PIXEL;
+	}
+	
+	if(key != null) {
+	    Matcher m = LEADING_NUMBERS.matcher(tag.getDescription());
+	    if(m.matches()) {
+		metadata.set(key, m.group(1));
+	    }
+	}
+    }
+    private static final Pattern LEADING_NUMBERS = Pattern.compile("(\\d+)\\s*.*");
 }

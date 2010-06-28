@@ -43,6 +43,10 @@ public class ImageParserTest extends TestCase {
         assertEquals("0", metadata.get("Dimension HorizontalPhysicalPixelSpacing"));
         assertEquals("BI_RGB", metadata.get("Compression CompressionTypeName"));
         assertEquals("image/bmp", metadata.get("Content-Type"));
+        
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
     }
 
     public void testGIF() throws Exception {
@@ -69,6 +73,10 @@ public class ImageParserTest extends TestCase {
         assertEquals("disposalMethod=none, userInputFlag=false, transparentColorFlag=false, delayTime=0, transparentColorIndex=0", metadata.get("GraphicControlExtension"));
         assertEquals("0", metadata.get("Dimension VerticalPixelOffset"));
         assertEquals("image/gif", metadata.get("Content-Type"));
+        
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(Metadata.COMMENTS));
     }
 
     public void testJPEG() throws Exception {
@@ -100,6 +108,10 @@ public class ImageParserTest extends TestCase {
         assertEquals("keyword=comment, value=Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get("Text TextEntry"));
         assertEquals("image/jpeg", metadata.get("Content-Type"));
         assertEquals("process=0, samplePrecision=8, numLines=75, samplesPerLine=100, numFrameComponents=3", metadata.get("markerSequence sof"));
+        
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(Metadata.COMMENTS));
     }
 
     public void testPNG() throws Exception {
@@ -133,6 +145,10 @@ public class ImageParserTest extends TestCase {
         assertEquals("true", metadata.get("Chroma BlackIsZero"));
         assertEquals("year=2008, month=5, day=6, hour=6, minute=18, second=47", metadata.get("Document ImageModificationTime"));
         assertEquals("image/png", metadata.get("Content-Type"));
+        
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
     }
 
 // TODO: Add TIFF support
@@ -145,6 +161,11 @@ public class ImageParserTest extends TestCase {
 //
 //        assertEquals("75", metadata.get("height"));
 //        assertEquals("100", metadata.get("width"));
+//    
+//        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+//        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+//        assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
+//        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(Metadata.COMMENTS));
 //    }
 
 }

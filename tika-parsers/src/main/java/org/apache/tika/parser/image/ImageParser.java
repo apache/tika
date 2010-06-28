@@ -32,6 +32,7 @@ import javax.imageio.metadata.IIOMetadata;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -70,6 +71,9 @@ public class ImageParser implements Parser {
                     ImageReader reader = iterator.next();
                     reader.setInput(ImageIO.createImageInputStream(
                             new CloseShieldInputStream(stream)));
+                    
+                    metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
+                    metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
                     metadata.set("height", Integer.toString(reader.getHeight(0)));
                     metadata.set("width", Integer.toString(reader.getWidth(0)));
 
@@ -77,6 +81,12 @@ public class ImageParser implements Parser {
 
                     reader.dispose();
                 }
+                
+                // Translate certain Metadata tags from the ImageIO
+                //  specific namespace into the general Tika one
+                setIfPresent(metadata, "CommentExtensions CommentExtension", Metadata.COMMENTS);
+                setIfPresent(metadata, "markerSequence com", Metadata.COMMENTS);
+                setIfPresent(metadata, "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
             } catch (IIOException e) {
                 throw new TikaException(type + " parse error", e);
             }
@@ -94,6 +104,21 @@ public class ImageParser implements Parser {
             InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
+    }
+    
+    private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
+	if(metadata.get(imageIOkey) != null) {
+	    metadata.set(tikaKey, metadata.get(imageIOkey));
+	}
+    }
+    private static void setIfPresent(Metadata metadata, String imageIOkey, Property tikaProp) {
+	if(metadata.get(imageIOkey) != null) {
+	    String v = metadata.get(imageIOkey);
+	    if(v.endsWith(" ")) {
+		v = v.substring(0, v.lastIndexOf(' '));
+	    }
+	    metadata.set(tikaProp, v);
+	}
     }
 
     private static void loadMetadata(IIOMetadata imageMetadata, Metadata metadata) {
