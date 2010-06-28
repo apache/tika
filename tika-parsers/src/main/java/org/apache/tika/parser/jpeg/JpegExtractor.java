@@ -22,6 +22,7 @@ import java.util.Iterator;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.image.TiffExtractor;
 import org.xml.sax.SAXException;
 
 import com.drew.imaging.jpeg.JpegMetadataReader;
@@ -52,6 +53,7 @@ class JpegExtractor {
                 while (tags.hasNext()) {
                     Tag tag = (Tag)tags.next();
                     metadata.set(tag.getTagName(), tag.getDescription());
+                    TiffExtractor.handleCommonImageTags(metadata, tag);
                 }
             }
         } catch (JpegProcessingException e) {
@@ -60,5 +62,4 @@ class JpegExtractor {
             throw new TikaException("Can't read JPEG metadata", e);
         }
     }
-
 }

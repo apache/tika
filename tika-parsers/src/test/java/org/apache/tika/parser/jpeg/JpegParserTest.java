@@ -33,7 +33,18 @@ public class JpegParserTest extends TestCase {
             getClass().getResourceAsStream("/test-documents/testJPEG_EXIF.jpg");
         parser.parse(stream, new DefaultHandler(), metadata);
 
+        // All EXIF/TIFF tags
         assertEquals("Canon EOS 40D", metadata.get("Model"));
+        
+        // Core EXIF/TIFF tags
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("68", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
+        
+        // Common tags
+        assertEquals("2009/10/02 23:02:49", metadata.get(Metadata.DATE));
+        assertEquals("canon-55-250 moscow-birds serbor", metadata.get(Metadata.KEYWORDS));
     }
 
 }

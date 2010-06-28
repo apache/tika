@@ -38,5 +38,14 @@ public class TiffParserTest extends TestCase {
         		"more contributor license agreements.  See the NOTICE file " +
         		"distributed with this work for additional information regarding " +
         		"copyright ownership.", metadata.get("Image Description"));
+        
+        // All EXIF/TIFF tags
+        assertEquals("Inch", metadata.get("Resolution Unit"));
+        
+        // Core EXIF/TIFF tags
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("3", metadata.get(Metadata.SAMPLES_PER_PIXEL));
     }
 }
