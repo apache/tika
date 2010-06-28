@@ -116,8 +116,8 @@ public class ExcelExtractor {
     protected void parse(
             POIFSFileSystem filesystem, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException {
-    	TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale);
-    	listener.processFile(filesystem, isListenForAllRecords());
+        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale);
+        listener.processFile(filesystem, isListenForAllRecords());
         listener.throwStoredException();
     }
 
@@ -183,6 +183,7 @@ public class ExcelExtractor {
         private TikaHSSFListener(XHTMLContentHandler handler, Locale locale) {
             this.handler = handler;
             this.format = NumberFormat.getInstance(locale);
+            this.formatListener = new FormatTrackingHSSFListener(this, locale);
         }
 
         /**
@@ -198,7 +199,6 @@ public class ExcelExtractor {
     		throws IOException,	SAXException {
 
     		// Set up listener and register the records we want to process
-    		formatListener = new FormatTrackingHSSFListener(this);
             HSSFRequest hssfRequest = new HSSFRequest();
             if (listenForAllRecords) {
                 hssfRequest.addListenerForAllRecords(formatListener);

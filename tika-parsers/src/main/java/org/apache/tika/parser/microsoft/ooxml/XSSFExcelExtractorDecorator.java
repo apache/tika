@@ -43,7 +43,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     /**
      * Internal <code>DataFormatter</code> for formatting Numbers.
      */
-	private final DataFormatter formatter = new DataFormatter();
+    private final DataFormatter formatter;
 
     private final XSSFExcelExtractor extractor;
     private static final String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
@@ -53,6 +53,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         super(extractor, TYPE);
 
         this.extractor = extractor;
+        formatter = new DataFormatter(locale);
     }
 
     /**
@@ -92,11 +93,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                         xhtml.characters(cell.getRichStringCellValue()
                                 .getString());
                     } else if (type == Cell.CELL_TYPE_NUMERIC) {
-                    	CellStyle style = cell.getCellStyle();
-                	    xhtml.characters(
-                	    	formatter.formatRawCellContents(cell.getNumericCellValue(),
-															style.getDataFormat(),
-															style.getDataFormatString()));
+                        CellStyle style = cell.getCellStyle();
+                        xhtml.characters(
+                            formatter.formatRawCellContents(cell.getNumericCellValue(),
+                                                            style.getDataFormat(),
+                                                            style.getDataFormatString()));
                     } else {
                         XSSFCell xc = (XSSFCell) cell;
                         String rawValue = xc.getRawValue();
