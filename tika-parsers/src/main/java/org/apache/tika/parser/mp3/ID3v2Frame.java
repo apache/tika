@@ -86,7 +86,7 @@ public class ID3v2Frame implements MP3Frame {
         if (AudioFrame.isAudioHeader(h1, h2, h3, h4)) {
             return new AudioFrame(h1, h2, h3, h4, inp);
         }
-
+        
         // Not a frame header
         return null;
     }
