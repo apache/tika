@@ -133,6 +133,44 @@ public class Mp3ParserTest extends TestCase {
         assertEquals("2", metadata.get("channels"));
     }
 
+    /**
+     * Tests that a file with both lyrics and
+     *  ID3v2 tags gets both extracted correctly
+     */
+    public void testMp3ParsingLyrics() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        // Note - our test file has a lyrics tag, but lacks any
+        //  lyrics in the tags, so we can't test that bit
+        // TODO Find a better sample file
+        
+        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3lyrics.mp3");
+        try {
+            parser.parse(stream, handler, metadata);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
+
+        String content = handler.toString();
+        assertTrue(content.contains("Test Title"));
+        assertTrue(content.contains("Test Artist"));
+        assertTrue(content.contains("Test Album"));
+        assertTrue(content.contains("2008"));
+        assertTrue(content.contains("Test Comment"));
+        assertTrue(content.contains("Rock"));
+        
+        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("2", metadata.get("channels"));
+    }
+    
     public void testID3v2Frame() throws Exception {
        byte[] empty = new byte[] {
              0x49, 0x44, 0x33, 3, 1, 0,

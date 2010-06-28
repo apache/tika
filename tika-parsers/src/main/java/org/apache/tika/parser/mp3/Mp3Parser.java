@@ -97,6 +97,9 @@ public class Mp3Parser implements Parser {
                     XMPDM.AUDIO_SAMPLE_RATE,
                     Integer.toString(audioAndTags.audio.getSampleRate()));
         }
+        if (audioAndTags.lyrics != null && audioAndTags.lyrics.hasLyrics()) {
+        	xhtml.element("p", audioAndTags.lyrics.lyricsText);
+        }
 
         xhtml.endDocument();
     }
@@ -120,6 +123,7 @@ public class Mp3Parser implements Parser {
        ID3v23Handler v23 = null;
        ID3v22Handler v22 = null;
        ID3v1Handler v1 = null;
+       LyricsHandler lyrics = null;
        AudioFrame firstAudio = null;
 
        // ID3v2 tags live at the start of the file
@@ -142,8 +146,10 @@ public class Mp3Parser implements Parser {
        }
 
        // ID3v1 tags live at the end of the file
-       // Our handler handily seeks to the end for us
-       v1 = new ID3v1Handler(stream, handler);
+       // Lyrics live just before ID3v1, at the end of the file
+       // Search for both (handlers seek to the end for us)
+       lyrics = new LyricsHandler(stream, handler);
+       v1 = lyrics.id3v1;
 
        // Go in order of preference
        // Currently, that's newest to oldest
@@ -164,6 +170,7 @@ public class Mp3Parser implements Parser {
        
        ID3TagsAndAudio ret = new ID3TagsAndAudio();
        ret.audio = firstAudio;
+       ret.lyrics = lyrics;
        ret.tags = tags.toArray(new ID3Tags[tags.size()]);
        return ret;
     }
@@ -171,6 +178,7 @@ public class Mp3Parser implements Parser {
     protected static class ID3TagsAndAudio {
         private ID3Tags[] tags;
         private AudioFrame audio;
+        private LyricsHandler lyrics;
     }
 
 }

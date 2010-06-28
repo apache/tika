@@ -43,7 +43,7 @@ public class ID3v1Handler implements ID3Tags {
 
     public ID3v1Handler(InputStream stream, ContentHandler handler)
             throws IOException, SAXException, TikaException {
-        this(getSuffix(stream, 128));
+        this(LyricsHandler.getSuffix(stream, 128));
     }
 
     /**
@@ -155,37 +155,4 @@ public class ID3v1Handler implements ID3Tags {
             throw new TikaException("ISO-8859-1 encoding is not available", e);
         }
     }
-
-    /**
-     * Reads and returns the last <code>length</code> bytes from the
-     * given stream.
-     * @param stream input stream
-     * @param length number of bytes from the end to read and return
-     * @return stream the <code>InputStream</code> to read from.
-     * @throws IOException if the stream could not be read from.
-     */
-    private static byte[] getSuffix(InputStream stream, int length)
-            throws IOException {
-        byte[] buffer = new byte[2 * length];
-        int bytesInBuffer = 0;
-
-        int n = stream.read(buffer);
-        while (n != -1) {
-            bytesInBuffer += n;
-            if (bytesInBuffer == buffer.length) {
-                System.arraycopy(buffer, bytesInBuffer - length, buffer, 0, length);
-                bytesInBuffer = length;
-            }
-            n = stream.read(buffer, bytesInBuffer, buffer.length - bytesInBuffer);
-        }
-
-        if (bytesInBuffer < length) {
-            length = bytesInBuffer;
-        }
-
-        byte[] result = new byte[length];
-        System.arraycopy(buffer, bytesInBuffer - length, result, 0, length);
-        return result;
-    }
-
 }
