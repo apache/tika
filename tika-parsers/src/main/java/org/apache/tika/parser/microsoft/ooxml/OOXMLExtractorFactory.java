@@ -72,7 +72,7 @@ public class OOXMLExtractorFactory {
             if (e.getMessage().startsWith("No supported documents found")) {
                 throw new TikaException(
                         "TIKA-418: RuntimeException while getting content"
-                        + " for ppsx, ppsm, pptm, thmx and xps file types", e);
+                        + " for thmx and xps file types", e);
             } else {
                 throw new TikaException("Error creating OOXML extractor", e);
             }

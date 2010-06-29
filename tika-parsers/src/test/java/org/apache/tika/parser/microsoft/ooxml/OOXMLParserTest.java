@@ -75,9 +75,10 @@ public class OOXMLParserTest extends TestCase {
         // TODO: should auto-detect without the resource name
         metadata.set(Metadata.RESOURCE_NAME_KEY, "testEXCEL-formats.xlsx");
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
 
         try {
-            parser.parse(input, handler, metadata);
+            parser.parse(input, handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -142,33 +143,69 @@ public class OOXMLParserTest extends TestCase {
         }
     }
 
+    /**
+     * We have a number of different powerpoint files,
+     *  such as presentation, macro-enabled etc
+     */
     public void testPowerPoint() throws Exception {
-        InputStream input = OOXMLParserTest.class
-                .getResourceAsStream("/test-documents/testPPT.pptx");
-
-        Parser parser = new AutoDetectParser();
-        Metadata metadata = new Metadata();
-        // TODO: should auto-detect without the resource name
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "testPPT.pptx");
-        ContentHandler handler = new BodyContentHandler();
-
-        try {
-            parser.parse(input, handler, metadata);
-
-            assertEquals(
-                    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Sample Powerpoint Slide", metadata.get(Metadata.TITLE));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
-            String content = handler.toString();
-            assertTrue(content.contains("Sample Powerpoint Slide"));
-            assertTrue(content.contains("Powerpoint X for Mac"));
-        } finally {
-            input.close();
-        }
-
+	String[] extensions = new String[] {
+		"pptx", "pptm", "ppsm", "ppsx",
+		//"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2 
+		//"xps" // TIKA-418: Not yet supported by POI
+	};
+	for(String extension : extensions) {
+	    String filename = "testPPT." + extension;
+            InputStream input = OOXMLParserTest.class
+                    .getResourceAsStream("/test-documents/"+filename);
+    
+            Parser parser = new AutoDetectParser();
+            Metadata metadata = new Metadata();
+            // TODO: should auto-detect without the resource name
+            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+    
+            try {
+                parser.parse(input, handler, metadata, context);
+    
+                assertEquals(
+                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        metadata.get(Metadata.CONTENT_TYPE));
+                assertEquals("Attachment Test", metadata.get(Metadata.TITLE));
+                assertEquals("Rajiv", metadata.get(Metadata.AUTHOR));
+                
+                String content = handler.toString();
+                // Theme files don't have the text in them
+                if(extension.equals("thmx")) {
+                    assertEquals("", content);
+                } else {
+                    assertTrue(
+                    	"Text missing for " + filename + "\n" + content, 
+                    	content.contains("Attachment Test")
+                    );
+                    assertTrue(
+                    	"Text missing for " + filename + "\n" + content, 
+                    	content.contains("This is a test file data with the same content")
+                    );
+                    assertTrue(
+                    	"Text missing for " + filename + "\n" + content, 
+                    	content.contains("content parsing")
+                    );
+                    assertTrue(
+                    	"Text missing for " + filename + "\n" + content, 
+                    	content.contains("Different words to test against")
+                    );
+                    assertTrue(
+                    	"Text missing for " + filename + "\n" + content, 
+                    	content.contains("Mystery")
+                    );
+                }
+            } finally {
+                input.close();
+            }
+	}
     }
-
+    
     public void testWord() throws Exception {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testWORD.docx");
@@ -178,9 +215,10 @@ public class OOXMLParserTest extends TestCase {
         // TODO: should auto-detect without the resource name
         metadata.set(Metadata.RESOURCE_NAME_KEY, "testWORD.docx");
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
 
         try {
-            parser.parse(input, handler, metadata);
+            parser.parse(input, handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -204,9 +242,10 @@ public class OOXMLParserTest extends TestCase {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
 
         try {
-            parser.parse(input, handler, metadata);
+            parser.parse(input, handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -229,9 +268,10 @@ public class OOXMLParserTest extends TestCase {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
 
         try {
-            parser.parse(input, handler, metadata);
+            parser.parse(input, handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
