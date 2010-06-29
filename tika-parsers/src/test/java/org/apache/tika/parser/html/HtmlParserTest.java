@@ -71,6 +71,9 @@ public class HtmlParserTest extends TestCase {
                 "Title : Test Indexation Html", metadata.get(Metadata.TITLE));
         assertEquals("Tika Developers", metadata.get("Author"));
         assertEquals("5", metadata.get("refresh"));
+        
+        assertEquals("51.2312", metadata.get(Metadata.LATITUDE));
+        assertEquals("-5.1987", metadata.get(Metadata.LONGITUDE));
 
         assertEquals("http://www.apache.org/", href.toString());
         assertEquals("test-anchor", name.toString());

@@ -18,6 +18,7 @@ package org.apache.tika.parser.image;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -57,6 +58,7 @@ public class TiffExtractor {
                     metadata.set(tag.getTagName(), tag.getDescription());
                     handleCommonImageTags(metadata, tag);
                 }
+                handleGeoImageTags(metadata);
             }
         } catch (TiffProcessingException e) {
             throw new TikaException("Can't read TIFF metadata", e);
@@ -64,6 +66,52 @@ public class TiffExtractor {
             throw new TikaException("Can't read TIFF metadata", e);
         }
     }
+    
+    /**
+     * Maps EXIF Geo Tags onto the Tika Geo metadata namespace.
+     * Needs to be run at the end, because the GPS information
+     *  is spread across several EXIF tags.
+     */
+    public static void handleGeoImageTags(Metadata metadata) {
+	String lat = metadata.get("GPS Latitude");
+	String latNS = metadata.get("GPS Latitude Ref");
+	if(lat != null) {
+	    Double latitude = parseHMS(lat);
+	    if(latitude != null) {
+		if(latNS != null && latNS.equalsIgnoreCase("S") &&
+			latitude > 0) {
+		    latitude *= -1;
+		}
+		metadata.set(Metadata.LATITUDE, LAT_LONG_FORMAT.format(latitude)); 
+	    }
+	}
+	
+	String lng = metadata.get("GPS Longitude");
+	String lngEW = metadata.get("GPS Longitude Ref");
+	if(lng != null) {
+	    Double longitude = parseHMS(lng);
+	    if(longitude != null) {
+		if(lngEW != null && lngEW.equalsIgnoreCase("W") &&
+			longitude > 0) {
+		    longitude *= -1;
+		}
+		metadata.set(Metadata.LONGITUDE, LAT_LONG_FORMAT.format(longitude));
+	    }
+	}
+    }
+    private static Double parseHMS(String hms) {
+       Matcher m = HOURS_MINUTES_SECONDS.matcher(hms);
+       if(m.matches()) {
+          double value = 
+            Integer.parseInt(m.group(1)) +
+            (Integer.parseInt(m.group(2))/60.0) +
+            (Double.parseDouble(m.group(3))/60.0/60.0);
+          return value;
+       }
+       return null;
+    }
+    private static final Pattern HOURS_MINUTES_SECONDS = Pattern.compile("(-?\\d+)\"(\\d+)'(\\d+\\.?\\d*)");
+    private static final DecimalFormat LAT_LONG_FORMAT = new DecimalFormat("##0.0####");
 
 
     /**

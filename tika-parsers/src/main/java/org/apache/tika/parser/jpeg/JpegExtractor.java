@@ -55,6 +55,7 @@ class JpegExtractor {
                     metadata.set(tag.getTagName(), tag.getDescription());
                     TiffExtractor.handleCommonImageTags(metadata, tag);
                 }
+                TiffExtractor.handleGeoImageTags(metadata);
             }
         } catch (JpegProcessingException e) {
             throw new TikaException("Can't read JPEG metadata", e);
