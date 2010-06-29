@@ -60,8 +60,10 @@ public class ExcelParserTest extends TestCase {
                 "/test-documents/testEXCEL-formats.xls");
         try {
             Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
             ContentHandler handler = new BodyContentHandler();
-            new OfficeParser().parse(input, handler, metadata);
+            new OfficeParser().parse(input, handler, metadata, context);
 
             assertEquals(
                     "application/vnd.ms-excel",
