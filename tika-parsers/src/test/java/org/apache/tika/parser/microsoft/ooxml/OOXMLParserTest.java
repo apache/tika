@@ -76,6 +76,7 @@ public class OOXMLParserTest extends TestCase {
         metadata.set(Metadata.RESOURCE_NAME_KEY, "testEXCEL-formats.xlsx");
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
 
         try {
             parser.parse(input, handler, metadata, context);
