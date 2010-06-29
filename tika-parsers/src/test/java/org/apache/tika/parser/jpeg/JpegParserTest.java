@@ -17,6 +17,8 @@
 package org.apache.tika.parser.jpeg;
 
 import junit.framework.TestCase;
+
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.helpers.DefaultHandler;
@@ -31,7 +33,7 @@ public class JpegParserTest extends TestCase {
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
         InputStream stream =
             getClass().getResourceAsStream("/test-documents/testJPEG_EXIF.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata);
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         // All EXIF/TIFF tags
         assertEquals("Canon EOS 40D", metadata.get("Model"));
@@ -47,4 +49,28 @@ public class JpegParserTest extends TestCase {
         assertEquals("canon-55-250 moscow-birds serbor", metadata.get(Metadata.KEYWORDS));
     }
 
+    public void testJPEGGeo() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        InputStream stream =
+            getClass().getResourceAsStream("/test-documents/testJPEG_GEO.jpg");
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        
+        // Geo tags
+        assertEquals("12.54321", metadata.get(Metadata.LATITUDE));
+        assertEquals("-54.1234", metadata.get(Metadata.LONGITUDE));
+
+        // All EXIF/TIFF tags
+        assertEquals("Canon EOS 40D", metadata.get("Model"));
+        
+        // Core EXIF/TIFF tags
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("68", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
+        
+        // Common tags
+        assertEquals("2009/10/02 23:02:49", metadata.get(Metadata.DATE));
+        assertEquals("canon-55-250 moscow-birds serbor", metadata.get(Metadata.KEYWORDS));
+    }
 }

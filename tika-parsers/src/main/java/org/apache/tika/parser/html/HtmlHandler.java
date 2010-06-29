@@ -18,6 +18,8 @@ package org.apache.tika.parser.html;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.TextContentHandler;
@@ -93,9 +95,21 @@ class HtmlHandler extends TextContentHandler {
                     xhtml.startElement(uri, local, "meta", atts);
                 }
                 if (atts.getValue("name") != null) {
+                    // Record the meta tag in the metadata
                     metadata.set(
                             atts.getValue("name"),
                             atts.getValue("content"));
+                    // Normalise if possible
+                    if(atts.getValue("name").equalsIgnoreCase("ICBM")) {
+                        Matcher m = Pattern.compile(
+                              "\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*"
+                        ).matcher(atts.getValue("content"));
+                        if(m.matches()) {
+                            metadata.set(Metadata.LATITUDE, m.group(1));
+                            metadata.set(Metadata.LONGITUDE, m.group(2));
+                        }
+                    }
+                    // Allow downstream processing
                     xhtml.startElement(uri, local, "meta", atts);
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
