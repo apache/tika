@@ -18,10 +18,16 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
+import org.apache.pdfbox.cos.COSArray;
+import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
@@ -103,6 +109,7 @@ public class PDFParser implements Parser {
         addMetadata(metadata, "trapped", info.getTrapped());
         try {
             addMetadata(metadata, "created", info.getCreationDate());
+            addMetadata(metadata, Metadata.CREATION_DATE, info.getCreationDate());
         } catch (IOException e) {
             // Invalid date format, just ignore
         }
@@ -111,6 +118,19 @@ public class PDFParser implements Parser {
             addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
         } catch (IOException e) {
             // Invalid date format, just ignore
+        }
+        
+        // All remaining metadata is custom
+        // Copy this over as-is
+        List<String> handledMetadata = Arrays.asList(new String[] {
+             "Author", "Creator", "CreationData", "ModDate",
+             "Keywords", "Producer", "Subject", "Title", "Trapped"
+        });
+        for(COSName key : info.getDictionary().keySet()) {
+            String name = key.getName();
+            if(! handledMetadata.contains(name)) {
+        	addMetadata(metadata, name, info.getDictionary().getDictionaryObject(key));
+            }
         }
     }
 
@@ -126,4 +146,19 @@ public class PDFParser implements Parser {
         }
     }
 
+    /**
+     * Used when processing custom metadata entries, as PDFBox won't do
+     *  the conversion for us in the way it does for the standard ones
+     */
+    private void addMetadata(Metadata metadata, String name, COSBase value) {
+        if(value instanceof COSArray) {
+            for(COSBase v : ((COSArray)value).toList()) {
+                addMetadata(metadata, name, v);
+            }
+        } else if(value instanceof COSString) {
+            addMetadata(metadata, name, ((COSString)value).getString());
+        } else {
+            addMetadata(metadata, name, value.toString());
+        }
+    }
 }
