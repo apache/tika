@@ -123,7 +123,7 @@ public class PDFParser implements Parser {
         // All remaining metadata is custom
         // Copy this over as-is
         List<String> handledMetadata = Arrays.asList(new String[] {
-             "Author", "Creator", "CreationData", "ModDate",
+             "Author", "Creator", "CreationDate", "ModDate",
              "Keywords", "Producer", "Subject", "Title", "Trapped"
         });
         for(COSName key : info.getDictionary().keySet()) {
