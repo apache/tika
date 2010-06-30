@@ -19,11 +19,14 @@ package org.apache.tika.parser.image;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.xml.sax.SAXException;
@@ -111,7 +114,14 @@ public class TiffExtractor {
        return null;
     }
     private static final Pattern HOURS_MINUTES_SECONDS = Pattern.compile("(-?\\d+)\"(\\d+)'(\\d+\\.?\\d*)");
-    private static final DecimalFormat LAT_LONG_FORMAT = new DecimalFormat("##0.0####");
+    /**
+     * The decimal format used for expressing latitudes and longitudes.
+     * The basic geo vocabulary defined by W3C (@see {@link Geographic})
+     * refers to the "float" type in XML Schema as the recommended format
+     * for latitude and longitude values.
+     */
+    private static final DecimalFormat LAT_LONG_FORMAT =
+        new DecimalFormat("##0.0####", new DecimalFormatSymbols(Locale.US));
 
 
     /**
