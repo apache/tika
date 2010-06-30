@@ -60,4 +60,32 @@ public class PDFParserTest extends TestCase {
         assertTrue(content.contains("incubator"));
         assertTrue(content.contains("Apache Software Foundation"));
     }
+
+    public void testCustomMetadata() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+
+        InputStream stream = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDF-custommetadata.pdf");
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Document author", metadata.get(Metadata.AUTHOR));
+        assertEquals("Document title", metadata.get(Metadata.TITLE));
+        
+        assertEquals("Custom Value", metadata.get("Custom Property"));
+        assertEquals("Array Entry 1", metadata.get("Custom Array"));
+        assertEquals(2, metadata.getValues("Custom Array").length);
+        assertEquals("Array Entry 1", metadata.getValues("Custom Array")[0]);
+        assertEquals("Array Entry 2", metadata.getValues("Custom Array")[1]);
+        
+        String content = handler.toString();
+        assertTrue(content.contains("Hello World!"));
+    }
 }
