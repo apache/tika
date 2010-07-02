@@ -145,6 +145,11 @@ public class TiffExtractor {
 	if(tag.getTagName().equals("Keywords") ||
 	        tag.getTagType() == 537) {
 	    metadata.set(Metadata.KEYWORDS, tag.getDescription());
+	    return;
+	}
+	if(tag.getTagName().equals("Jpeg Comment")) {
+	    metadata.set(Metadata.COMMENTS, tag.getDescription());
+	    return;
 	}
 	
 	// EXIF / TIFF Tags
