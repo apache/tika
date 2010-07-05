@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -90,11 +91,15 @@ public class HtmlParser implements Parser {
                 for (String attr : attrs) {
                     String[] keyValue = attr.trim().split("=");
                     if ((keyValue.length == 2) && keyValue[0].equalsIgnoreCase("charset")) {
-                        String charset = keyValue[1];
-                        if (Charset.isSupported(charset)) {
-                            metadata.set(Metadata.CONTENT_ENCODING, charset);
-                            return charset;
-                        }
+                    	String charset = keyValue[1];
+                    	try {
+                    		if (Charset.isSupported(charset)) {
+                    			metadata.set(Metadata.CONTENT_ENCODING, charset);
+                    			return charset;
+                    		}
+                    	} catch (IllegalCharsetNameException e){
+                    		// Ignore malformed charset names
+                    	}
                     }
                 }
             }
