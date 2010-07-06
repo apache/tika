@@ -23,7 +23,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.InputStream;
 
