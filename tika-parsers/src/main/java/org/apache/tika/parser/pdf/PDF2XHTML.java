@@ -17,14 +17,11 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.util.PDFOperator;
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.util.TextPosition;
-import org.apache.pdfbox.util.operator.OperatorProcessor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.metadata.Metadata;
