@@ -22,6 +22,7 @@ org.apache.tika.parser.html.HtmlParser
 org.apache.tika.parser.image.ImageParser
 org.apache.tika.parser.image.TiffParser
 org.apache.tika.parser.iwork.IWorkParser
+org.apache.tika.parser.iwork.IWorkPackageParser
 org.apache.tika.parser.jpeg.JpegParser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.microsoft.OfficeParser

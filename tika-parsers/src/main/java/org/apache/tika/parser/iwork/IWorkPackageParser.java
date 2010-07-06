@@ -23,10 +23,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -38,53 +37,38 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * A parser for the IWork formats.
- *
- * Currently supported formats:
- * <ol>
- * <li>Keynote format version 2.x. Currently only tested with Keynote version 5.x
- * <li>Pages format version 1.x. Currently only tested with Pages version 4.0.x
- * <li>Numbers format version 1.x. Currently only tested with Numbers version 2.0.x
- * </ol>
+ * A parser for the IWork container files. This includes *.key, *.pages and *.numbers files.
+ * This parser delegates the relevant files to {@link IWorkParser} that parsers the content.
  */
-public class IWorkParser implements Parser {
+public class IWorkPackageParser implements Parser {
 
     private final static Set<MediaType> supportedTypes =
-        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                MediaType.application("vnd.apple.keynote"),
-                MediaType.application("vnd.apple.pages"),
-                MediaType.application("vnd.apple.numbers")
-        )));
+            Collections.singleton(MediaType.application("vnd.apple.iwork"));
+
+    private final static Set<String> relevantFileNames = Collections.unmodifiableSet(
+            new HashSet<String>(Arrays.asList("index.apxl", "index.xml", "presentation.apxl"))
+    );
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return supportedTypes;
     }
 
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        ContentHandler contentHandler;
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        if ("application/vnd.apple.keynote".equals(contentType)) {
-          contentHandler = new KeynoteContentHandler(xhtml, metadata);
-        } else if ("application/vnd.apple.pages".equals(contentType)) {
-          contentHandler = new PagesContentHandler(xhtml, metadata);
-        } else if ("application/vnd.apple.numbers".equals(contentType)) {
-          contentHandler = new NumbersContentHandler(xhtml, metadata);
-        } else {
-          return;
+        ArchiveInputStream zip = new ZipArchiveInputStream(stream);
+        ArchiveEntry entry = zip.getNextEntry();
+        Parser parser = context.get(Parser.class, EmptyParser.INSTANCE);
+        while (entry != null) {
+            if (!relevantFileNames.contains(entry.getName())) {
+                entry = zip.getNextEntry();
+                continue;
+            }
+
+            parser.parse(new CloseShieldInputStream(zip), handler, metadata, context);
+            entry = zip.getNextEntry();
         }
-
-        xhtml.startDocument();
-        context.getSAXParser().parse(
-                new CloseShieldInputStream(stream),
-                new OfflineContentHandler(contentHandler)
-        );
-        xhtml.endDocument();
+        zip.close();
     }
-
 
     /**
      * @deprecated This method will be removed in Apache Tika 1.0.

@@ -106,7 +106,7 @@ public class MimeDetectionTest extends TestCase {
                 MediaType.TEXT_PLAIN));
 
         assertTrue(registry.isSpecializationOf(
-                MediaType.parse("application/vnd.apple.keynote"),
+                MediaType.parse("application/vnd.apple.iwork"),
                 MediaType.APPLICATION_ZIP));
     }
 
