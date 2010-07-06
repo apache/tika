@@ -34,6 +34,8 @@ public class AutoDetectParserTest extends TestCase {
     private static final String PDF        = "application/pdf";
     private static final String POWERPOINT = "application/vnd.ms-powerpoint";
     private static final String KEYNOTE = "application/vnd.apple.keynote";
+    private static final String PAGES = "application/vnd.apple.pages";
+    private static final String NUMBERS = "application/vnd.apple.numbers";
     private static final String RTF        = "application/rtf";
     private static final String PLAINTEXT  = "text/plain";
     private static final String WORD       = "application/msword";
@@ -125,6 +127,14 @@ public class AutoDetectParserTest extends TestCase {
 
     public void testKeynote() throws Exception {
       assertAutoDetect("testKeynote.key", KEYNOTE, "A sample presentation");  
+    }
+
+    public void testPages() throws Exception {
+      assertAutoDetect("testPages.pages", PAGES, "Sample pages document");
+    }
+
+    public void testNumbers() throws Exception {
+      assertAutoDetect("testNumbers.numbers", NUMBERS, "Checking Account: 300545668");  
     }
 
     public void testEpub() throws Exception {

@@ -556,16 +556,23 @@
   <mime-type type="application/vnd.apple.installer+xml">
     <glob pattern="*.mpkg"/>
   </mime-type>
-  <mime-type type="application/vnd.apple.keynote">
+  <mime-type type="application/vnd.apple.iwork">
     <sub-class-of type="application/zip"/>
-    <alias type="application/vnd.apple.pages"/>
-    <alias type="application/vnd.apple.numbers"/>
     <magic priority="40">
       <match value="0x504b0304140000000000" type="string" offset="0"/>
     </magic>
     <glob pattern="*.key"/>
     <glob pattern="*.pages"/>
     <glob pattern="*.numbers"/>
+  </mime-type>
+  <mime-type type="application/vnd.apple.keynote">
+    <root-XML localName="presentation" namespaceURI="http://developer.apple.com/namespaces/keynote2" />
+  </mime-type>
+  <mime-type type="application/vnd.apple.pages">
+    <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/sl" />
+  </mime-type>
+  <mime-type type="application/vnd.apple.numbers">
+    <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/ls" />
   </mime-type>
   <mime-type type="application/vnd.arastra.swi">
     <glob pattern="*.swi"/>
@@ -2655,7 +2662,7 @@
   <mime-type type="application/xhtml+xml">
     <magic priority="50">
       <match value="&lt;html xmlns=" type="string" offset="0:8192"/>
-    </magic>    
+    </magic>
     <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html"/>
     <glob pattern="*.xhtml"/>
     <glob pattern="*.xht"/>
@@ -3599,7 +3606,7 @@
       <match value="&lt;title" type="string" offset="0:64"/>
       <!-- note on the offset value here: this can only be as big as
            MimeTypes#getMinLength(). If you set the offset value to larger
-           than that size, the magic will only be compared to up to 
+           than that size, the magic will only be compared to up to
            MimeTypes#getMinLength() bytes.
        -->
       <match value="&lt;html" type="string" offset="0:8192"/>

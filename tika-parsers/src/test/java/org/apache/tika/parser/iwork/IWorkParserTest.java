@@ -18,30 +18,34 @@ package org.apache.tika.parser.iwork;
 
 import junit.framework.TestCase;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.InputStream;
 
 /**
- * Tests if the different iwork parsers parse the content and metadata properly.
+ * Tests if the IWork parser parses the content and metadata properly of the supported formats.
  */
 public class IWorkParserTest extends TestCase {
 
-    private IWorkParser iWorkParser;
+    private IWorkPackageParser iWorkParser;
+    private ParseContext parseContext;
 
     @Override
     protected void setUp() throws Exception {
-        iWorkParser = new IWorkParser();
+        iWorkParser = new IWorkPackageParser();
+        parseContext = new ParseContext();
+        parseContext.set(Parser.class, new AutoDetectParser());
     }
 
     public void testParseKeynote() throws Exception {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        ParseContext parseContext = new ParseContext();
-
         iWorkParser.parse(input, handler, metadata, parseContext);
 
         assertEquals(6, metadata.size());
@@ -76,8 +80,6 @@ public class IWorkParserTest extends TestCase {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPages.pages");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        ParseContext parseContext = new ParseContext();
-
         iWorkParser.parse(input, handler, metadata, parseContext);
 
         assertEquals(51, metadata.size());
@@ -114,12 +116,10 @@ public class IWorkParserTest extends TestCase {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testNumbers.numbers");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        ParseContext parseContext = new ParseContext();
 
         iWorkParser.parse(input, handler, metadata, parseContext);
 
         String content = handler.toString();
-
         assertEquals(9, metadata.size());
         assertEquals("2", metadata.get(Metadata.PAGE_COUNT));
         assertEquals("Tika User", metadata.get(Metadata.AUTHOR));
