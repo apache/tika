@@ -16,16 +16,16 @@
  */
 package org.apache.tika.parser.iwork;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 class PagesContentHandler extends DefaultHandler {
 
@@ -132,7 +132,7 @@ class PagesContentHandler extends DefaultHandler {
             return;
         }
 
-        String text = new String(ch, start, length).trim();
+        String text = new String(ch, start, length);
         if (text.length() != 0) {
             xhtml.characters(text);
         }

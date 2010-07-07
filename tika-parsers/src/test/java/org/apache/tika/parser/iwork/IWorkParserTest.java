@@ -104,8 +104,7 @@ public class IWorkParserTest extends TestCase {
         assertTrue(content.contains("Cell seven"));
         assertTrue(content.contains("Cell eight"));
         assertTrue(content.contains("Cell nine"));
-        // FIXME: This assertion fails on Java 5, probably due to XML parsing
-        // assertTrue(content.contains("Both Pages 1.x and Keynote 2.x")); // ...
+        assertTrue(content.contains("Both Pages 1.x and Keynote 2.x")); // ...
 
         // text on page 2
         assertTrue(content.contains("A second page...."));
