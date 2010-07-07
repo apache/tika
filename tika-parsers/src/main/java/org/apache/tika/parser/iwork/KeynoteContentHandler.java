@@ -147,7 +147,7 @@ class KeynoteContentHandler extends DefaultHandler {
             return;
         }
 
-        String text = new String(ch, start, length).trim();
+        String text = new String(ch, start, length);
         if (text.length() != 0) {
             xhtml.characters(text);
         }
