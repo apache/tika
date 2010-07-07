@@ -143,13 +143,8 @@ class KeynoteContentHandler extends DefaultHandler {
     @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
-        if (!inParsableText || !inSlide) {
-            return;
-        }
-
-        String text = new String(ch, start, length);
-        if (text.length() != 0) {
-            xhtml.characters(text);
+        if (inParsableText && inSlide && length != 0) {
+            xhtml.characters(ch, start, length);
         }
     }
 

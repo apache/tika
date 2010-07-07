@@ -128,13 +128,8 @@ class PagesContentHandler extends DefaultHandler {
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
-        if (!inParsableText) {
-            return;
-        }
-
-        String text = new String(ch, start, length);
-        if (text.length() != 0) {
-            xhtml.characters(text);
+        if (inParsableText && length > 0) {
+            xhtml.characters(ch, start, length);
         }
     }
 
