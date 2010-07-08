@@ -37,6 +37,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
+import org.apache.tika.utils.CharsetUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -91,21 +92,18 @@ public class HtmlParser implements Parser {
                 for (String attr : attrs) {
                     String[] keyValue = attr.trim().split("=");
                     if ((keyValue.length == 2) && keyValue[0].equalsIgnoreCase("charset")) {
-                    	String charset = keyValue[1];
-                    	try {
-                    		if (Charset.isSupported(charset)) {
-                    			metadata.set(Metadata.CONTENT_ENCODING, charset);
-                    			return charset;
-                    		}
-                    	} catch (IllegalCharsetNameException e){
-                    		// Ignore malformed charset names
+                        // TIKA-459: improve charset handling.
+                    	String charset = CharsetUtils.clean(keyValue[1]);
+                    	if (CharsetUtils.isSupported(charset)) {
+                    	    metadata.set(Metadata.CONTENT_ENCODING, charset);
+                    	    return charset;
                     	}
                     }
                 }
             }
         }
 
-        // No charset in a meta http-equiv tag, see if it's in the passed content-encoding
+        // No (valid) charset in a meta http-equiv tag, see if it's in the passed content-encoding
         // hint, or the passed content-type hint.
         CharsetDetector detector = new CharsetDetector();
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
