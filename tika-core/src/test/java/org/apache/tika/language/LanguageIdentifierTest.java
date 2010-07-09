@@ -34,7 +34,9 @@ import org.apache.tika.io.IOUtils;
 public class LanguageIdentifierTest extends TestCase {
 
     private static final String[] languages = new String[] {
-        "da", "de", /* "el", */ "en", "es", "fi", "fr", "it", "nl", "pt", "sv"
+        // TODO - currently Estonian and Greek fail these tests. Reeable
+        // when language detection works better.
+        "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it", "nl", "pt", "sv"
     };
 
     public void testLanguageDetection() throws IOException {
@@ -63,6 +65,16 @@ public class LanguageIdentifierTest extends TestCase {
         }
     }
 
+    // TIKA-453: Fix up language identifier used for Estonian
+    public void testEstonia() throws Exception {
+        final String estonian = "et";
+        ProfilingWriter writer = new ProfilingWriter();
+        writeTo(estonian, writer);
+        LanguageIdentifier identifier =
+            new LanguageIdentifier(writer.getProfile());
+        assertEquals(estonian, identifier.getLanguage());
+    }
+    
     private void writeTo(String language, Writer writer) throws IOException {
         InputStream stream =
             LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
