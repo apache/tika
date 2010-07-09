@@ -73,7 +73,7 @@ public class LanguageIdentifier {
     static {
         addProfile("da"); // Danish
         addProfile("de"); // German
-        addProfile("ee");
+        addProfile("et"); // Estonian
         addProfile("el"); // Greek
         addProfile("en"); // English
         addProfile("es"); // Spanish
