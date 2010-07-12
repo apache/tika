@@ -31,6 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -375,6 +376,26 @@ public class HtmlParserTest extends TestCase {
                 new BodyContentHandler(),  metadata, new ParseContext());
 
         assertEquals("windows-1251", metadata.get(Metadata.CONTENT_ENCODING));
+    }
+
+    /**
+     * Test case for TIKA-420
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-420">TIKA-420</a>
+     */
+    public void testBoilerplateRemoval() throws Exception {
+        String path = "/test-documents/boilerplate.html";
+        
+        Metadata metadata = new Metadata();
+        WriteOutContentHandler handler = new WriteOutContentHandler();
+        new HtmlParser().parse(
+                HtmlParserTest.class.getResourceAsStream(path),
+                new BoilerpipeContentHandler(handler),  metadata, new ParseContext());
+        
+        String content = handler.toString();
+        assertTrue(content.startsWith("This is the real meat"));
+        assertTrue(content.endsWith("This is the end of the text."));
+        assertFalse(content.contains("boilerplate"));
+        assertFalse(content.contains("footer"));
     }
 
 }

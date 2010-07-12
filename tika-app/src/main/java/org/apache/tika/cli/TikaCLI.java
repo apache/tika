@@ -43,6 +43,7 @@ import org.apache.tika.metadata.MetadataHelper;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -88,6 +89,12 @@ public class TikaCLI {
         }
     };
 
+    private final OutputType TEXT_MAIN = new OutputType() {
+        public ContentHandler getContentHandler() throws Exception {
+            return new BoilerpipeContentHandler(getSystemOutWriter(encoding));
+        }
+    };
+    
     private final OutputType METADATA = new OutputType() {
         public ContentHandler getContentHandler() throws Exception {
             final PrintWriter writer =
@@ -146,6 +153,8 @@ public class TikaCLI {
             type = HTML;
         } else if (arg.equals("-t") || arg.equals("--text")) {
             type = TEXT;
+        } else if (arg.equals("-T") || arg.equals("--text-main")) {
+            type = TEXT_MAIN;
         } else if (arg.equals("-m") || arg.equals("--metadata")) {
             type = METADATA;
         } else {
@@ -171,6 +180,7 @@ public class TikaCLI {
                             metadata, context);
                 } finally {
                     input.close();
+                    System.out.flush();
                 }
             }
         }
@@ -188,6 +198,7 @@ public class TikaCLI {
         out.println("    -x  or --xml         Output XHTML content (default)");
         out.println("    -h  or --html        Output HTML content");
         out.println("    -t  or --text        Output plain text content");
+        out.println("    -T  or --text-main   Output plain text content (main content only)");
         out.println("    -m  or --metadata    Output only metadata");
         out.println();
         out.println("Description:");
