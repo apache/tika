@@ -16,8 +16,13 @@
  */
 package org.apache.tika.metadata;
 
+import java.text.DateFormatSymbols;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 
@@ -31,6 +36,12 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * A map of all metadata attributes.
      */
     private Map<String, String[]> metadata = null;
+    
+    /**
+     * The ISO-8601 format string we use for Dates
+     */
+    private SimpleDateFormat iso8601Format = new SimpleDateFormat(
+            "yyyy-MM-dd'T'HH:mm:ss'Z'Z", new DateFormatSymbols(Locale.US));
 
     /**
      * Constructs a new, empty metadata.
@@ -85,6 +96,54 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      */
     public String get(Property property) {
         return get(property.getName());
+    }
+    
+    /**
+     * Returns the value of the identified Integer based metadata property.
+     * 
+     * @since Apache Tika 0.8
+     * @param property simple integer property definition
+     * @return property value as a Integer, or <code>null</code> if the property is not set, or not a valid Integer
+     */
+    public Integer getInt(Property property) {
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+            return null;
+        if(property.getValueType() != Property.ValueType.INTEGER)
+            return null;
+        
+        String v = get(property);
+        if(v == null) {
+            return null;
+        }
+        try {
+            return new Integer(v);
+        } catch(NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the value of the identified Date based metadata property.
+     * 
+     * @since Apache Tika 0.8
+     * @param property simple date property definition
+     * @return property value as a Date, or <code>null</code> if the property is not set, or not a valid Date
+     */
+    public Date getDate(Property property) {
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+            return null;
+        if(property.getValueType() != Property.ValueType.DATE)
+            return null;
+        
+        String v = get(property);
+        if(v == null) {
+            return null;
+        }
+        try {
+            return iso8601Format.parse(v);
+        } catch(ParseException e) {
+            return null;
+        }
     }
 
     /**
@@ -176,9 +235,26 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * @param value    property value
      */
     public void set(Property property, int value) {
-        assert property.getPropertyType() == Property.PropertyType.SIMPLE;
-        assert property.getValueType() == Property.ValueType.INTEGER;
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
+        if(property.getValueType() != Property.ValueType.INTEGER)
+            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getValueType());
         set(property.getName(), Integer.toString(value));
+    }
+
+    /**
+     * Sets the date value of the identified metadata property.
+     *
+     * @since Apache Tika 0.8
+     * @param property simple integer property definition
+     * @param value    property value
+     */
+    public void set(Property property, Date date) {
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
+        if(property.getValueType() != Property.ValueType.DATE)
+            throw new PropertyTypeException(Property.ValueType.DATE, property.getValueType());
+        set(property.getName(), iso8601Format.format(date));
     }
 
     /**

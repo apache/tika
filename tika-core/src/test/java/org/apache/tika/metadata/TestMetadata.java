@@ -17,6 +17,7 @@
 package org.apache.tika.metadata;
 
 //JDK imports
+import java.util.Date;
 import java.util.Properties;
 
 //Junit imports
@@ -208,4 +209,85 @@ public class TestMetadata extends TestCase {
         assertFalse(meta1.equals(meta2));
     }
 
+    /**
+     * Tests for getting and setting integer
+     *  based properties
+     */
+    public void testGetSetInt() {
+        Metadata meta = new Metadata();
+        
+        // Isn't initially set, will get null back
+        assertEquals(null, meta.get(Metadata.IMAGE_WIDTH));
+        assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
+        
+        // Can only set as a single valued int
+        try {
+            meta.set(Metadata.BITS_PER_SAMPLE, 1);
+            fail("Shouldn't be able to set a multi valued property as an int");
+        } catch(PropertyTypeException e) {}
+        try {
+            meta.set(Metadata.CREATION_DATE, 1);
+            fail("Shouldn't be able to set a date property as an int");
+        } catch(PropertyTypeException e) {}
+        
+        // Can set it and retrieve it
+        meta.set(Metadata.IMAGE_WIDTH, 22);
+        assertEquals("22", meta.get(Metadata.IMAGE_WIDTH));
+        assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
+        
+        // If you save a non int value, you get null
+        meta.set(Metadata.IMAGE_WIDTH, "INVALID");
+        assertEquals("INVALID", meta.get(Metadata.IMAGE_WIDTH));
+        assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
+        
+        // If you try to retrieve a non simple int value, you get null
+        meta.set(Metadata.IMAGE_WIDTH, 22);
+        assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
+        assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
+        assertEquals(null, meta.getInt(Metadata.CREATION_DATE));
+    }
+    
+    /**
+     * Tests for getting and setting date
+     *  based properties
+     */
+    public void testGetSetDate() {
+        Metadata meta = new Metadata();
+        
+        // Isn't initially set, will get null back
+        assertEquals(null, meta.get(Metadata.CREATION_DATE));
+        assertEquals(null, meta.getInt(Metadata.CREATION_DATE));
+        
+        // Can only set as a single valued date
+        try {
+            meta.set(Metadata.BITS_PER_SAMPLE, new Date(1000));
+            fail("Shouldn't be able to set a multi valued property as a date");
+        } catch(PropertyTypeException e) {}
+        try {
+            meta.set(Metadata.IMAGE_WIDTH, new Date(1000));
+            fail("Shouldn't be able to set an int property as an date");
+        } catch(PropertyTypeException e) {}
+        
+        // Can set it and retrieve it
+        meta.set(Metadata.CREATION_DATE, new Date(1000));
+        assertEquals("1970-01-01T00:00:01Z+0000", meta.get(Metadata.CREATION_DATE));
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        // If you save a non date value, you get null
+        meta.set(Metadata.CREATION_DATE, "INVALID");
+        assertEquals("INVALID", meta.get(Metadata.CREATION_DATE));
+        assertEquals(null, meta.getDate(Metadata.CREATION_DATE));
+        
+        // If you try to retrieve a non simple date value, you get null
+        meta.set(Metadata.CREATION_DATE, new Date(1000));
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
+        assertEquals(null, meta.getInt(Metadata.CREATION_DATE));
+        
+        // Our format doesn't include milliseconds
+        // This means things get rounded 
+        meta.set(Metadata.CREATION_DATE, new Date(1050));
+        assertEquals("1970-01-01T00:00:01Z+0000", meta.get(Metadata.CREATION_DATE));
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+    }
 }

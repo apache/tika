@@ -16,31 +16,22 @@
  */
 package org.apache.tika.metadata;
 
+import org.apache.tika.metadata.Property.PropertyType;
+import org.apache.tika.metadata.Property.ValueType;
+
+
 /**
- * A collection of HTTP header names.
- * 
- * @see <a href="http://rfc-ref.org/RFC-TEXTS/2616/">Hypertext Transfer Protocol --
- *      HTTP/1.1 (RFC 2616)</a>
+ * XMP property definition violation exception. This is thrown when
+ * you try to set a {@link Property} value with an incorrect type,
+ * such as storing an Integer when the property is of type Date.
+ *
+ * @since Apache Tika 0.8
  */
-public interface HttpHeaders {
-
-    String CONTENT_ENCODING = "Content-Encoding";
-
-    String CONTENT_LANGUAGE = "Content-Language";
-
-    String CONTENT_LENGTH = "Content-Length";
-
-    String CONTENT_LOCATION = "Content-Location";
-
-    String CONTENT_DISPOSITION = "Content-Disposition";
-
-    String CONTENT_MD5 = "Content-MD5";
-
-    String CONTENT_TYPE = "Content-Type";
-
-    Property LAST_MODIFIED = 
-        Property.internalDate("Last-Modified");
-
-    String LOCATION = "Location";
-
+public final class PropertyTypeException extends IllegalArgumentException {
+    public PropertyTypeException(PropertyType expected, PropertyType found) {
+        super("Expected a property of type " + expected + ", but received " + found);
+    }
+    public PropertyTypeException(ValueType expected, ValueType found) {
+        super("Expected a property with a " + expected + " value, but received a " + found);
+    }
 }
