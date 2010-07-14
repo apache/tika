@@ -17,6 +17,7 @@
 package org.apache.tika.parser.iwork;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -66,8 +67,12 @@ class PagesContentHandler extends DefaultHandler {
         if (parseProperty) {
             String value = parsePrimitiveElementValue(qName, attributes);
             if (value != null) {
-                String metaDataKey = resolveMetaDataKey(metaDataLocalName);
-                metadata.add(metaDataKey, value);
+                Object metaDataKey = resolveMetaDataKey(metaDataLocalName);
+                if(metaDataKey instanceof Property) {
+                    metadata.set((Property)metaDataKey, value);
+                } else {
+                    metadata.add((String)metaDataKey, value);
+                }
             }
         }
 
@@ -165,12 +170,13 @@ class PagesContentHandler extends DefaultHandler {
     /**
      * Returns a resolved key that is common in other document types or
      * returns the specified metaDataLocalName if no common key could be found.
+     * The key could be a simple String key, or could be a {@link Property}
      *
      * @param metaDataLocalName The localname of the element containing metadata
      * @return a resolved key that is common in other document types
      */
-    private String resolveMetaDataKey(String metaDataLocalName) {
-        String metaDataKey = metaDataLocalName;
+    private Object resolveMetaDataKey(String metaDataLocalName) {
+        Object metaDataKey = metaDataLocalName;
         if ("sf:authors".equals(metaDataQName)) {
             metaDataKey = Metadata.AUTHOR;
         } else if ("sf:title".equals(metaDataQName)) {

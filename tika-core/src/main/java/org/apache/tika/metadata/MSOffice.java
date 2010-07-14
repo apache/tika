@@ -73,8 +73,10 @@ public interface MSOffice {
 
     String SECURITY = "Security";
 
-    String EDIT_TIME = "Edit-Time";
+    Property EDIT_TIME = 
+        Property.internalDate("Edit-Time");
 
-    String CREATION_DATE = "Creation-Date";
+    Property CREATION_DATE = 
+        Property.internalDate("Creation-Date");
 
 }
