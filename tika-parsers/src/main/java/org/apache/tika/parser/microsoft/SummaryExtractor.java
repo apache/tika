@@ -32,6 +32,7 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 
 /**
  * Outlook Message Parser.
@@ -122,6 +123,12 @@ class SummaryExtractor {
     private void set(String name, String value) {
         if (value != null) {
             metadata.set(name, value);
+        }
+    }
+
+    private void set(Property property, Date value) {
+        if (value != null) {
+            metadata.set(property, value.toString());
         }
     }
 
