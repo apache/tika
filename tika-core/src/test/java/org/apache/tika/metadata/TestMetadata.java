@@ -289,5 +289,24 @@ public class TestMetadata extends TestCase {
         meta.set(Metadata.CREATION_DATE, new Date(1050));
         assertEquals("1970-01-01T00:00:01Z", meta.get(Metadata.CREATION_DATE));
         assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        // We can accept a number of different ISO-8601 variants
+        meta.set(Metadata.CREATION_DATE, "1970-01-01T00:00:01Z");
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        meta.set(Metadata.CREATION_DATE, "1970-01-01 00:00:01Z");
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        meta.set(Metadata.CREATION_DATE, "1970-01-01T01:00:01+01:00");
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        meta.set(Metadata.CREATION_DATE, "1970-01-01 01:00:01+01:00");
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        meta.set(Metadata.CREATION_DATE, "1970-01-01T12:00:01+12:00");
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        meta.set(Metadata.CREATION_DATE, "1969-12-31T12:00:01-12:00");
+        assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
     }
 }
