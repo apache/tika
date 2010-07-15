@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 
 /**
  * A multi-valued metadata container.
@@ -38,10 +39,14 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
     private Map<String, String[]> metadata = null;
     
     /**
-     * The ISO-8601 format string we use for Dates
+     * The ISO-8601 format string we use for Dates.
+     * All dates are represented as UTC
      */
     private SimpleDateFormat iso8601Format = new SimpleDateFormat(
-            "yyyy-MM-dd'T'HH:mm:ss'Z'Z", new DateFormatSymbols(Locale.US));
+            "yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
+    {
+	iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
+    }
 
     /**
      * Constructs a new, empty metadata.

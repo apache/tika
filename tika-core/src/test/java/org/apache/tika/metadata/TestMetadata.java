@@ -270,7 +270,7 @@ public class TestMetadata extends TestCase {
         
         // Can set it and retrieve it
         meta.set(Metadata.CREATION_DATE, new Date(1000));
-        assertEquals("1970-01-01T00:00:01Z+0000", meta.get(Metadata.CREATION_DATE));
+        assertEquals("1970-01-01T00:00:01Z", meta.get(Metadata.CREATION_DATE));
         assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
         
         // If you save a non date value, you get null
@@ -287,7 +287,7 @@ public class TestMetadata extends TestCase {
         // Our format doesn't include milliseconds
         // This means things get rounded 
         meta.set(Metadata.CREATION_DATE, new Date(1050));
-        assertEquals("1970-01-01T00:00:01Z+0000", meta.get(Metadata.CREATION_DATE));
+        assertEquals("1970-01-01T00:00:01Z", meta.get(Metadata.CREATION_DATE));
         assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
     }
 }
