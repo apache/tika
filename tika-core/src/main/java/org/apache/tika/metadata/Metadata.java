@@ -44,9 +44,34 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      */
     private SimpleDateFormat iso8601Format = new SimpleDateFormat(
             "yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
+    private SimpleDateFormat iso8601SpaceFormat = new SimpleDateFormat(
+	           "yyyy-MM-dd' 'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
     {
 	iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
+	iso8601SpaceFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
+    /**
+     * Some parsers will have the date as a ISO-8601 string
+     *  already, and will set that into the Metadata object.
+     * So we can return Date objects for these, this is the
+     *  list (in preference order) of the various ISO-8601
+     *  variants that we try when processing a date based
+     *  property.
+     */
+    private SimpleDateFormat[] iso8601InputFormats = new SimpleDateFormat[] {
+	// yyyy-mm-ddThh...
+        iso8601Format, // UTC/Zulu
+        new SimpleDateFormat(
+           "yyyy-MM-dd'T'HH:mm:ssZ", new DateFormatSymbols(Locale.US)), // With timezone
+        new SimpleDateFormat(
+           "yyyy-MM-dd'T'HH:mm:ss", new DateFormatSymbols(Locale.US)), // Without timezone
+   	// yyyy-mm-dd hh...
+        iso8601SpaceFormat, // UTC/Zulu
+        new SimpleDateFormat(
+           "yyyy-MM-dd' 'HH:mm:ssZ", new DateFormatSymbols(Locale.US)), // With timezone
+        new SimpleDateFormat(
+           "yyyy-MM-dd' 'HH:mm:ss", new DateFormatSymbols(Locale.US)), // Without timezone
+    };
 
     /**
      * Constructs a new, empty metadata.
@@ -144,11 +169,22 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
         if(v == null) {
             return null;
         }
-        try {
-            return iso8601Format.parse(v);
-        } catch(ParseException e) {
-            return null;
+        // Java doesn't like timezones in the form ss+hh:mm
+        // It only likes the hhmm form, without the colon
+        if(v.charAt(v.length()-3) == ':' && 
+            (v.charAt(v.length()-6) == '+' ||
+             v.charAt(v.length()-6) == '-')) {
+            v = v.substring(0, v.length()-3) + v.substring(v.length()-2);
         }
+        
+        // Try several different ISO-8601 variants
+        for(SimpleDateFormat format : iso8601InputFormats) {
+            try {
+                return format.parse(v);
+            } catch(ParseException e) {}
+        }
+        // It isn't in a supported date format, sorry
+        return null;
     }
 
     /**
