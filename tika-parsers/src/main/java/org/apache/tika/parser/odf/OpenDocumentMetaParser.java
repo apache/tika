@@ -71,7 +71,7 @@ public class OpenDocumentMetaParser extends DcXMLParser {
         // Process the Dublin Core Attributes 
         ch = super.getContentHandler(ch, md);
         // Process the OO Meta Attributes
-        ch = getMeta(ch, md, Metadata.CREATION_DATE, "creation-date");
+        ch = getMeta(ch, md, Metadata.CREATION_DATE.getName(), "creation-date");
         ch = getMeta(ch, md, Metadata.KEYWORDS, "keyword");
         ch = getMeta(ch, md, Metadata.EDIT_TIME, "editing-duration");
         ch = getMeta(ch, md, "editing-cycles", "editing-cycles");
