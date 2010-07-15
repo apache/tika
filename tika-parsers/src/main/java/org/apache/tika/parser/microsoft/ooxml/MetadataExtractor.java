@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.util.Date;
+
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.POIXMLProperties.CoreProperties;
 import org.apache.poi.POIXMLProperties.ExtendedProperties;
@@ -23,6 +25,7 @@ import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
 /**
@@ -58,6 +61,8 @@ public class MetadataExtractor {
                 .getContentStatusProperty());
         addProperty(metadata, Metadata.DATE, propsHolder
                 .getCreatedPropertyString());
+        addProperty(metadata, Metadata.CREATION_DATE, propsHolder
+                .getCreatedProperty());
         addProperty(metadata, Metadata.CREATOR, propsHolder
                 .getCreatorProperty());
         addProperty(metadata, Metadata.AUTHOR, propsHolder
@@ -75,7 +80,7 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.LAST_PRINTED, propsHolder
                 .getLastPrintedPropertyString());
         addProperty(metadata, Metadata.LAST_MODIFIED, propsHolder
-                .getModifiedPropertyString());
+                .getModifiedProperty());
         addProperty(metadata, Metadata.REVISION_NUMBER, propsHolder
                 .getRevisionProperty());
         addProperty(metadata, Metadata.SUBJECT, propsHolder
@@ -108,6 +113,12 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.TEMPLATE, propsHolder.getTemplate());
         addProperty(metadata, Metadata.TOTAL_TIME, propsHolder.getTotalTime());
         addProperty(metadata, Metadata.WORD_COUNT, propsHolder.getWords());
+    }
+
+    private void addProperty(Metadata metadata, Property property, Nullable<Date> value) {
+        if (value.getValue() != null) {
+            metadata.set(property, value.getValue());
+        }
     }
 
     private void addProperty(Metadata metadata, String name, Nullable<?> value) {

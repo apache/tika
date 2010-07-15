@@ -32,6 +32,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -143,6 +144,12 @@ public class PDFParser implements Parser {
     private void addMetadata(Metadata metadata, String name, Calendar value) {
         if (value != null) {
             metadata.set(name, value.getTime().toString());
+        }
+    }
+
+    private void addMetadata(Metadata metadata, Property property, Calendar value) {
+        if (value != null) {
+            metadata.set(property, value.getTime());
         }
     }
 

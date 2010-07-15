@@ -73,9 +73,10 @@ public interface MSOffice {
 
     String SECURITY = "Security";
 
-    Property EDIT_TIME = 
-        Property.internalDate("Edit-Time");
+    /** How long has been spent editing the document? */ 
+    String EDIT_TIME = "Edit-Time"; 
 
+    /** When was the document created? */
     Property CREATION_DATE = 
         Property.internalDate("Creation-Date");
 
