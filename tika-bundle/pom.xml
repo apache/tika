@@ -72,6 +72,7 @@
               tagsoup,
               asm,
               metadata-extractor,
+              boilerpipe,
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
