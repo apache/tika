@@ -45,23 +45,23 @@ mvn install
 
 Build artifacts
 
- The Tika 0.6 build consists of a number of components and produces
+ The Tika 0.8 build consists of a number of components and produces
  the following main binaries:
 
- [tika-core/target/tika-core-0.6.jar]
+ [tika-core/target/tika-core-0.8.jar]
   Tika core library. Contains the core interfaces and classes of Tika,
   but none of the parser implementations. Depends only on Java 5.
 
- [tika-parsers/target/tika-parsers-0.6.jar]
+ [tika-parsers/target/tika-parsers-0.8.jar]
   Tika parsers. Collection of classes that implement the Tika Parser
   interface based on various external parser libraries.
 
- [tika-app/target/tika-app-0.6.jar]
+ [tika-app/target/tika-app-0.8.jar]
   Tika application. Combines the above libraries and all the external
   parser libraries into a single runnable jar with a GUI and a command
   line interface.
 
- [tika-bundle/target/tika-bundle-0.6.jar]
+ [tika-bundle/target/tika-bundle-0.8.jar]
   Tika bundle. An OSGi bundle that includes everything you need to use all
   Tika functionality in an OSGi environment.
 
@@ -75,7 +75,7 @@ Using Tika as a Maven dependency
   <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-core</artifactId>
-    <version>0.6</version>
+    <version>0.8</version>
   </dependency>
 ---
 
@@ -86,7 +86,7 @@ Using Tika as a Maven dependency
   <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers</artifactId>
-    <version>0.6</version>
+    <version>0.8</version>
   </dependency>
 ---
 
@@ -94,11 +94,11 @@ Using Tika as a Maven dependency
  transitive dependencies to your project, including one on tika-core.
  You need to make sure that these dependencies won't conflict with your
  existing project dependencies. The listing below shows all the
- compile-scope dependencies of tika-parsers in the Tika 0.6 release.
+ compile-scope dependencies of tika-parsers in the Tika 0.8 release.
 
 ---
-org.apache.tika:tika-parsers:bundle:0.6
-+- org.apache.tika:tika-core:jar:0.6:compile
+org.apache.tika:tika-parsers:bundle:0.8
++- org.apache.tika:tika-core:jar:0.8:compile
 +- org.apache.commons:commons-compress:jar:1.0:compile
 +- org.apache.pdfbox:pdfbox:jar:0.8.0-incubating:compile
 |  +- org.apache.pdfbox:fontbox:jar:0.8.0-incubator:compile
@@ -127,8 +127,8 @@ Using Tika in an Ant project
 ---
 <classpath>
   ... <!-- your other classpath entries -->
-  <pathelement location="path/to/tika-core-0.6.jar"/>
-  <pathelement location="path/to/tika-parsers-0.6.jar"/>
+  <pathelement location="path/to/tika-core-0.8.jar"/>
+  <pathelement location="path/to/tika-parsers-0.8.jar"/>
   <pathelement location="path/to/commons-logging-1.1.1.jar"/>
   <pathelement location="path/to/commons-compress-1.0.jar"/>
   <pathelement location="path/to/pdfbox-0.8.0-incubating.jar"/>
@@ -159,7 +159,7 @@ Using Tika in an Ant project
 
 Using Tika as a command line utility
 
- The Tika application jar (tika-app-0.6.jar) can be used as a command
+ The Tika application jar (tika-app-0.8.jar) can be used as a command
  line utility for extracting text content and metadata from all sorts of
  files. This runnable jar contains all the dependencies it needs, so
  you don't need to worry about classpath settings to run it.
@@ -167,7 +167,7 @@ Using Tika as a command line utility
  The usage instructions are shown below.
 
 ---
-usage: java -jar tika-app-0.6.jar [option] [file]
+usage: java -jar tika-app-0.8.jar [option] [file]
 
 Options:
     -? or --help       Print this usage message
@@ -202,6 +202,6 @@ Description:
 ---
 # Check if an Internet resource contains a specific keyword
 curl http://.../document.doc \
-  | java -jar tika-app-0.6.jar --text \
+  | java -jar tika-app-0.8.jar --text \
   | grep -q keyword
 ---
