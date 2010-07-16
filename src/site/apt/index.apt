@@ -1,5 +1,5 @@
                        ---------------
-                       Apache Tika 0.6
+                       Apache Tika 0.7
                        ---------------
 
 ~~ Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,96 +17,62 @@
 ~~ See the License for the specific language governing permissions and
 ~~ limitations under the License.
 
-Apache Tika 0.6
+Apache Tika 0.7
 
-   The most notable changes in Tika 0.6 over the previous release are:
 
-      * Mime-type detection for HTML (and all types) has been improved,
-        allowing malformed HTML files and those HTML files that require
-        a bit more observed content before the type is properly detected,
-        are now correctly identified by the AutoDetectParser.
-        ({{{https://issues.apache.org/jira/browse/TIKA-327}TIKA-327}},
-         {{{https://issues.apache.org/jira/browse/TIKA-357}TIKA-357}},
-         {{{https://issues.apache.org/jira/browse/TIKA-366}TIKA-366}},
-         {{{https://issues.apache.org/jira/browse/TIKA-367}TIKA-367}})
+   The most notable changes in Tika 0.7 over the previous release are:
 
-      * Tika now has an additional OSGi bundle packaging that includes all
-        the required parser libraries. This bundle package makes it easy to
-        use all Tika features in an OSGi environment.
-        ({{{https://issues.apache.org/jira/browse/TIKA-340}TIKA-340}},
-         {{{https://issues.apache.org/jira/browse/TIKA-342}TIKA-342}})
+      * MP3 file parsing was improved, including Channel and SampleRate 
+        extraction and ID3v2 support ({{{https://issues.apache.org/jira/browse/TIKA-368}TIKA-368}}, 
+        {{{https://issues.apache.org/jira/browse/TIKA-372}TIKA-372}}). Further, audio
+        parsing mime detection was also improved for the MIDI format. 
+        ({{{https://issues.apache.org/jira/browse/TIKA-199}TIKA-199}})
 
-      * The Apache POI dependency used for parsing Microsoft Office file
-        formats has been upgraded to version 3.6. The most visible
-        improvement in this version is the notably reduced ooxml jar file
-        size. The tika-app jar size is now down to 15MB from the 25MB in
-        Tika 0.5.
-        ({{{https://issues.apache.org/jira/browse/TIKA-353}TIKA-353}})
+      * Tika no longer relies on X11 for its RTF parsing functionality. 
+        ({{{https://issues.apache.org/jira/browse/TIKA-386}TIKA-386}})
 
-      * Handling of character encoding information in input metadata and
-        HTML \<meta\> tags has been improved. When no applicable encoding
-        information is available, the encoding is detected by looking at
-        the input data.
-        ({{{https://issues.apache.org/jira/browse/TIKA-332}TIKA-332}},
-         {{{https://issues.apache.org/jira/browse/TIKA-334}TIKA-334}},
-         {{{https://issues.apache.org/jira/browse/TIKA-335}TIKA-335}},
-         {{{https://issues.apache.org/jira/browse/TIKA-341}TIKA-341}}) 
+      * A Thread-safe bug in the AutoDetectParser was discovered and 
+        addressed. ({{{https://issues.apache.org/jira/browse/TIKA-374}TIKA-374}})
 
-      * Some document types like Excel spreadsheets contain content like
-        numbers or formulas whose exact text format depends on the current
-        locale. So far Tika has used the platform default locale in such
-        cases, but clients can now explicitly specify the locale by passing
-        a Locale instance in the parse context.
-        ({{{https://issues.apache.org/jira/browse/TIKA-125}TIKA-125}})
+      * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
+        performance and fixes a number of text extraction issues. 
+        ({{{https://issues.apache.org/jira/browse/TIKA-380}TIKA-380}})
+   
 
-      * The default text output encoding of the tika-app jar is now UTF-8
-        when running on Mac OS X. This is because the default encoding used
-        by Java is not compatible with the console application in Mac OS X.
-        On all other platforms the text output from tika-app still uses
-        the platform default encoding.
-        ({{{https://issues.apache.org/jira/browse/TIKA-324}TIKA-324}})
-
-      * A flash video (video/x-flv) parser has been added.
-        ({{{https://issues.apache.org/jira/browse/TIKA-328}TIKA-328}})
- 
-      * The handling of Number and Date cell formatting within the
-        Microsoft Excel documents has been added. This include currencies,
-        percentages and scientific formats.
-        ({{{https://issues.apache.org/jira/browse/TIKA-103}TIKA-103}})
-
-   The following people have contributed to Tika 0.6 by submitting or
+   The following people have contributed to Tika 0.7 by submitting or
    commenting on the issues resolved in this release:
 
-      * Andrzej Bialecki
+      * Adam Rauch 
+      
+      * Benson Margulies 
 
-      * Bertrand Delacretaz
+      * Brett S. 
+      
+      * Chris A. Mattmann 
+      
+      * Daan de Wit 
+      
+      * Dave Meikle 
+      
+      * Durville 
+      
+      * Ingo Renner 
+      
+      * Jukka Zitting 
+      
+      * Ken Krugler 
+      
+      * Kenny Neal 
+      
+      * Markus Goldbach
+      
+      * Maxim Valyanskiy 
+      
+      * Nick Burch  
+      
+      * Sami Siren 
+      
+      * Uwe Schindler 
 
-      * Chris A. Mattmann
 
-      * Dave Meikle
-
-      * Erik Hetzner
-
-      * Felix Meschberger
-
-      * Jukka Zitting
-
-      * Julien Nioche
-
-      * Ken Krugler  
-
-      * Luke Nezda
-
-      * Maxim Valyanskiy
-
-      * Niall Pemberton
-
-      * Peter Wolanin 
-
-      * Piotr B.
-
-      * Sami Siren
-
-      * Yuan-Fang Li
-
-   See {{http://tinyurl.com/yc3dk67}} for more details on these contributions.
+   See {{http://tinyurl.com/yklopby}} for more details on these contributions.
