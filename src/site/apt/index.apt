@@ -1,5 +1,5 @@
                        ---------------
-                       Apache Tika 0.7
+                       Apache Tika 0.8
                        ---------------
 
 ~~ Licensed to the Apache Software Foundation (ASF) under one or more
@@ -17,62 +17,18 @@
 ~~ See the License for the specific language governing permissions and
 ~~ limitations under the License.
 
-Apache Tika 0.7
+Apache Tika 0.8
 
 
-   The most notable changes in Tika 0.7 over the previous release are:
+   The most notable changes in Tika 0.8 over the previous release are:
 
-      * MP3 file parsing was improved, including Channel and SampleRate 
-        extraction and ID3v2 support ({{{https://issues.apache.org/jira/browse/TIKA-368}TIKA-368}}, 
-        {{{https://issues.apache.org/jira/browse/TIKA-372}TIKA-372}}). Further, audio
-        parsing mime detection was also improved for the MIDI format. 
-        ({{{https://issues.apache.org/jira/browse/TIKA-199}TIKA-199}})
-
-      * Tika no longer relies on X11 for its RTF parsing functionality. 
-        ({{{https://issues.apache.org/jira/browse/TIKA-386}TIKA-386}})
-
-      * A Thread-safe bug in the AutoDetectParser was discovered and 
-        addressed. ({{{https://issues.apache.org/jira/browse/TIKA-374}TIKA-374}})
-
-      * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
-        performance and fixes a number of text extraction issues. 
-        ({{{https://issues.apache.org/jira/browse/TIKA-380}TIKA-380}})
+      * TBD
    
 
-   The following people have contributed to Tika 0.7 by submitting or
+   The following people have contributed to Tika 0.8 by submitting or
    commenting on the issues resolved in this release:
 
-      * Adam Rauch 
-      
-      * Benson Margulies 
-
-      * Brett S. 
-      
-      * Chris A. Mattmann 
-      
-      * Daan de Wit 
-      
-      * Dave Meikle 
-      
-      * Durville 
-      
-      * Ingo Renner 
-      
-      * Jukka Zitting 
-      
-      * Ken Krugler 
-      
-      * Kenny Neal 
-      
-      * Markus Goldbach
-      
-      * Maxim Valyanskiy 
-      
-      * Nick Burch  
-      
-      * Sami Siren 
-      
-      * Uwe Schindler 
+      * TBD
 
 
-   See {{http://tinyurl.com/yklopby}} for more details on these contributions.
+   See TBD for more details on these contributions.
