@@ -4,6 +4,9 @@ Release 0.8 - Current Development
 
 The most notable changes in Tika 0.8 over previous releases are:
 
+ * Tika now supports parsing Feeds by wrapping the underlying
+   Rome library. (TIKA-466)
+
  * A quick-start guide for Tika parsing was contributed. (TIKA-464)
 
  * An approach for plumbing through XHTML attributes was added. (TIKA-379)
