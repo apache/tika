@@ -20,13 +20,13 @@
 <project name="Apache Tika">
   <bannerLeft>
     <alt>Apache Tika</alt>
-    <src>http://lucene.apache.org/tika/tika.png</src>
-    <href>http://lucene.apache.org/tika/</href>
+    <src>http://tika.apache.org/tika.png</src>
+    <href>http://tika.apache.org</href>
   </bannerLeft>
   <bannerRight>
-    <alt>Apache Lucene</alt>
-    <src>http://lucene.apache.org/images/lucene_green_300.gif</src>
-    <href>http://lucene.apache.org/</href>
+    <alt>Apache</alt>
+    <src>http://www.apache.org/images/feather-small.gif</src>
+    <href>www.apache.org</href>
   </bannerRight>
   <body>
     <head>
@@ -40,6 +40,7 @@
       <item name="Getting Started" href="gettingstarted.html"/>
       <item name="Supported Formats" href="formats.html"/>
       <item name="Parser API" href="parser.html"/>
+      <item name="Parser 5min Quick Start Guide" href="parser_guide.html"/>
     </menu>
     <menu ref="reports"/>
   </body>

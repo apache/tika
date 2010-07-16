@@ -1,0 +1,135 @@
+                       --------------------------------------------
+                       Get Tika parsing up and running in 5 minutes
+                       --------------------------------------------
+					   Arturo Beltran
+					   --------------------------------------------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one or more
+~~ contributor license agreements.  See the NOTICE file distributed with
+~~ this work for additional information regarding copyright ownership.
+~~ The ASF licenses this file to You under the Apache License, Version 2.0
+~~ (the "License"); you may not use this file except in compliance with
+~~ the License.  You may obtain a copy of the License at
+~~
+~~     http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+
+Get Tika parsing up and running in 5 minutes
+
+   This page is a quick start guide showing how to add a new parser to Apache Tika.
+   Following the simple steps listed below your new parser can be running in only 5 minutes.
+
+%{toc|section=1|fromDepth=1}
+
+* {Getting Started}
+
+   The {{{gettingstarted.html}Getting Started}} document describes how to 
+   build Apache Tika from sources and how to start using Tika in an application. Pay close attention 
+   and follow the instructions in the "Getting and building the sources" section.
+   
+
+* {Add your MIME-Type}
+
+   You first need to modify {{{http://svn.apache.org/repos/asf/tika/trunk/tika-core/src/main/resources/org/apache/tika/mime/tika-mimetypes.xml}tika-core/src/main/resources/org/apache/tika/mime/tika-mimetypes.xml}}
+   in order to Tika can map the file extension with its MIME-Type. You should add something like this:
+   
+---
+ <mime-type type="application/hello">
+	<glob pattern="*.hi"/>
+ </mime-type>
+---
+
+* {Create your Parser class}
+
+   Now, you need to create your new parser. This is a class that must implement the Parser interface 
+   offered by Tika. A very simple Tika Parser looks like this:
+   
+---
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * @Author: Arturo Beltran
+ */
+package org.apache.tika.parser.hello;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collections;
+import java.util.Set;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+public class HelloParser implements Parser {
+
+	private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("hello"));
+	public static final String HELLO_MIME_TYPE = "application/hello";
+	
+	public Set<MediaType> getSupportedTypes(ParseContext context) {
+		return SUPPORTED_TYPES;
+	}
+
+	public void parse(
+			InputStream stream, ContentHandler handler,
+			Metadata metadata, ParseContext context)
+			throws IOException, SAXException, TikaException {
+
+		metadata.set(Metadata.CONTENT_TYPE, HELLO_MIME_TYPE);
+		metadata.set("Hello", "World");
+
+		XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+		xhtml.startDocument();
+		xhtml.endDocument();
+	}
+
+	/**
+	 * @deprecated This method will be removed in Apache Tika 1.0.
+	 */
+	public void parse(
+			InputStream stream, ContentHandler handler, Metadata metadata)
+			throws IOException, SAXException, TikaException {
+		parse(stream, handler, metadata, new ParseContext());
+	}
+}
+---
+   
+   Pay special attention to the definition of the SUPPORTED_TYPES static class 
+   field in the parser class that defines what MIME-Types it supports. 
+   
+   Is in the "parse" method where you will do all your work. This is, extract 
+   the information of the resource and then set the metadata.
+
+* {List the new parser}
+
+   Finally, you should explicitly tell the AutoDetectParser to include your new 
+   parser. This step is only needed if you want to use the AutoDetectParser functionality. 
+   If you figure out the correct parser in a different way, it isn't needed. 
+   
+   List your new parser in:
+    {{{http://svn.apache.org/repos/asf/tika/trunk/tika-parsers/src/main/resources/META-INF/services/org.apache.tika.parser.Parser}tika-parsers/src/main/resources/META-INF/services/org.apache.tika.parser.Parser}}
+   
+
