@@ -24,7 +24,15 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
@@ -40,6 +48,7 @@ import org.apache.log4j.WriterAppender;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.MetadataHelper;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -115,7 +124,7 @@ public class TikaCLI {
 
     private ParseContext context;
 
-    private Parser parser;
+    private AutoDetectParser parser;
 
     private Metadata metadata;
 
@@ -143,6 +152,12 @@ public class TikaCLI {
         } else if (arg.equals("-g") || arg.equals("--gui")) {
             pipeMode = false;
             TikaGUI.main(new String[0]);
+        } else if (arg.equals("--list-parser") || arg.equals("--list-parsers")) {
+            pipeMode = false;
+            displayParsers(false);
+        } else if (arg.equals("--list-parser-detail") || arg.equals("--list-parser-details")) {
+            pipeMode = false;
+            displayParsers(true);
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -200,6 +215,10 @@ public class TikaCLI {
         out.println("    -t  or --text        Output plain text content");
         out.println("    -T  or --text-main   Output plain text content (main content only)");
         out.println("    -m  or --metadata    Output only metadata");
+        out.println("    --list-parsers");
+        out.println("         List the available document parsers");
+        out.println("    --list-parser-details");
+        out.println("         List the available document parsers, and their supported mime types");
         out.println();
         out.println("Description:");
         out.println("    Apache Tika will parse the file(s) specified on the");
@@ -219,6 +238,40 @@ public class TikaCLI {
         out.println("    extract text content and metadata from the files.");
     }
 
+    private void displayParsers(boolean includeMimeTypes) {
+        PrintStream out = System.out;
+        
+        // Invert the map
+        Map<MediaType,Parser> supported = parser.getParsers();
+        Map<Parser,Set<MediaType>> parsers = new HashMap<Parser, Set<MediaType>>();
+        for(Entry<MediaType, Parser> e : supported.entrySet()) {
+            if(! parsers.containsKey(e.getValue())) {
+        	parsers.put(e.getValue(), new HashSet<MediaType>());
+            }
+            parsers.get(e.getValue()).add(e.getKey());
+        }
+        
+        // Get a nicely sorted list of the parsers
+        Parser[] sortedParsers = parsers.keySet().toArray(new Parser[parsers.size()]);
+        Arrays.sort(sortedParsers, new Comparator<Parser>() {
+	    public int compare(Parser p1, Parser p2) {
+		String name1 = p1.getClass().getName();
+		String name2 = p2.getClass().getName();
+		return name1.compareTo(name2);
+	    }
+	});
+        
+        // Display
+        for(Parser p : sortedParsers) {
+            out.println(p.getClass().getName());
+            if(includeMimeTypes) {
+        	for(MediaType mt : parsers.get(p)) {
+        	    out.println("  " + mt);
+        	}
+            }
+        }
+    }
+    
     /**
      * Returns a {@link System#out} writer with the given output encoding.
      *
