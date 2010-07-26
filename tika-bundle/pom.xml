@@ -67,12 +67,11 @@
               commons-compress,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
-              xmlbeans,
-              dom4j,
+              xmlbeans, dom4j,
               tagsoup,
               asm,
               metadata-extractor,
-              boilerpipe,
+              boilerpipe, rome,
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
