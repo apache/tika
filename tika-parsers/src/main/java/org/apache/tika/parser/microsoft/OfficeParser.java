@@ -35,6 +35,7 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -151,7 +152,13 @@ public class OfficeParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        POIFSFileSystem filesystem = new POIFSFileSystem(stream);
+        POIFSFileSystem filesystem;
+        if(stream instanceof TikaInputStream && 
+        	((TikaInputStream)stream).getOpenContainer() != null) {
+            filesystem = (POIFSFileSystem)((TikaInputStream)stream).getOpenContainer();
+        } else {
+            filesystem = new POIFSFileSystem(stream);
+        }
 
         // Parse summary entries first, to make metadata available early
         new SummaryExtractor(metadata).parseSummaries(filesystem);

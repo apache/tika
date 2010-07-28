@@ -168,6 +168,13 @@ public class TikaInputStream extends ProxyInputStream {
      * Marked position, or -1 if there is no current mark.
      */
     private long mark = -1;
+    
+    /**
+     * A opened container, such as a POIFS FileSystem
+     *  for an OLE2 document, or a Zip file for a
+     *  zip based (eg ooxml, odf) document.
+     */
+    private Object openContainer;
 
     /**
      * 
@@ -210,6 +217,26 @@ public class TikaInputStream extends ProxyInputStream {
         reset();
 
         return n;
+    }
+    
+    /**
+     * Returns the open container object, such as a
+     *  POIFS FileSystem in the event of an OLE2
+     *  document being detected and processed by
+     *  the OLE2 detector. 
+     */
+    public Object getOpenContainer() {
+        return openContainer;
+    }
+    
+    /**
+     * Stores the open container object against
+     *  the stream, eg after a Zip contents 
+     *  detector has loaded the file to decide
+     *  what it contains.
+     */
+    public void setOpenContainer(Object container) {
+        openContainer = container;
     }
 
     public File getFile() throws IOException {
@@ -298,6 +325,11 @@ public class TikaInputStream extends ProxyInputStream {
         super.mark(readlimit);
         mark = position;
     }
+    
+    @Override
+    public boolean markSupported() {
+	return true;
+    }
 
     @Override
     public void reset() throws IOException {
@@ -309,6 +341,9 @@ public class TikaInputStream extends ProxyInputStream {
 
     @Override
     public void close() throws IOException {
+        if (openContainer != null) {
+            openContainer = null;
+        }
         if (in != null) {
             in.close();
             in = null;
