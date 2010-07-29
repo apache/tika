@@ -209,6 +209,7 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/msword -->
   <mime-type type="application/msword">
+    <!-- Use org.apache.tika.detect.ContainerAwareDetector for more reliable detection of OLE2 documents -->
     <alias type="application/vnd.ms-word"/>
     <comment>Microsoft Word Document</comment>
     <magic priority="50">
@@ -222,7 +223,9 @@
       <match value="\354\245\301" type="string" offset="512"/>
       <match value="\320\317\021\340\241\261\032\341" type="string" offset="0"/>
       <match value="\224\246\056" type="string" offset="0"/>
-      <match value="R\0o\0o\0t\0\ \0E\0n\0t\0r\0y" type="string" offset="512"/>
+      <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
+         <match value="W\x00o\x00r\x00d\x00D\x00o\x00c\x00u\x00m\x00e\x00n\x00t" type="string" offset="1152:4096" />
+      </match>
     </magic>
     <glob pattern="*.doc"/>
     <glob pattern="*.dot"/>
@@ -1158,6 +1161,7 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-excel -->
   <mime-type type="application/vnd.ms-excel">
+    <!-- Use org.apache.tika.detect.ContainerAwareDetector for more reliable detection of OLE2 documents -->
     <alias type="application/msexcel" />
     <comment>Microsoft Excel Spreadsheet</comment>
     <magic priority="50">
@@ -1166,6 +1170,9 @@
       <match value="Biff5" type="string" offset="2114"/>
       <match value="Biff5" type="string" offset="2121"/>
       <match value="\x09\x04\x06\x00\x00\x00\x10\x00" type="string" offset="0"/>
+      <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
+         <match value="W\x00o\x00r\x00k\x00b\x00o\x00o\x00k" type="string" offset="1152:4096" />
+      </match>
     </magic>
     <glob pattern="*.xls"/>
     <glob pattern="*.xlm"/>
@@ -1230,8 +1237,14 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-powerpoint -->
   <mime-type type="application/vnd.ms-powerpoint">
+    <!-- Use org.apache.tika.detect.ContainerAwareDetector for more reliable detection of OLE2 documents -->
     <alias type="application/mspowerpoint"/>
     <comment>Microsoft Powerpoint Presentation</comment>
+    <magic priority="50">
+      <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
+         <match value="P\x00o\x00w\x00e\x00r\x00P\x00o\x00i\x00n\x00t\x00 D\x00o\x00c\x00u\x00m\x00e\x00n\x00t" type="string" offset="1152:4096" />
+      </match>
+    </magic>
     <glob pattern="*.ppz"/>
     <glob pattern="*.ppt"/>
     <glob pattern="*.pps"/>
