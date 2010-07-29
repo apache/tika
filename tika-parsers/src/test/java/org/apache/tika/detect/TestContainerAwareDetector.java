@@ -42,7 +42,7 @@ public class TestContainerAwareDetector extends TestCase {
     private InputStream getTestDoc(String filename) {
         InputStream input = TestContainerAwareDetector.class.getResourceAsStream(
             "/test-documents/" + filename);
-        assertNotNull(input);
+        assertNotNull("Test file not found - " + filename, input);
         return input;
     }
     
@@ -135,7 +135,23 @@ public class TestContainerAwareDetector extends TestCase {
         );
     }
     
+    public void testDetectIWork() throws Exception {
+	// TODO
+    }
+    
     public void testDetectZip() throws Exception {
+	TikaInputStream tis;
 	
+	tis = TikaInputStream.get(getTestDoc("test-documents.zip"));
+        assertEquals(
+                MediaType.application("zip"),
+                d.detect(tis, new Metadata())
+        );
+	
+        tis = TikaInputStream.get(getTestDoc("testJAR.jar"));
+        assertEquals(
+                MediaType.application("java-archive"),
+                d.detect(tis, new Metadata())
+        );
     }
 }
