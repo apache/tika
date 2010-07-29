@@ -20,6 +20,8 @@ import java.io.InputStream;
 
 import junit.framework.TestCase;
 
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -70,7 +72,9 @@ public class TestContainerAwareDetector extends TestCase {
         	MediaType.application("vnd.ms-powerpoint"),
         	d.detect(tis, new Metadata())
         );
+        
         assertNotNull(tis.getOpenContainer());
+        assertEquals(POIFSFileSystem.class, tis.getOpenContainer().getClass());
     }
     
     public void testDetectODF() throws Exception {
@@ -98,7 +102,37 @@ public class TestContainerAwareDetector extends TestCase {
     }
     
     public void testDetectOOXML() throws Exception {
-	
+        InputStream input;
+        
+        input = getTestDoc("testEXCEL.xlsx");
+        assertEquals(
+        	MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        	d.detect(input, new Metadata())
+        );
+        
+        input = getTestDoc("testWORD.docx");
+        assertEquals(
+        	MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
+        	d.detect(input, new Metadata())
+        );
+        
+        input = getTestDoc("testPPT.pptx");
+        assertEquals(
+        	MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
+        	d.detect(input, new Metadata())
+        );
+        
+        TikaInputStream tis = TikaInputStream.get(getTestDoc("testPPT.pptx"));
+        assertEquals(
+        	MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
+        	d.detect(tis, new Metadata())
+        );
+        
+        assertNotNull(tis.getOpenContainer());
+        assertTrue(
+                "Open container should be OPCPackage, not " + tis.getOpenContainer().getClass(), 
+                tis.getOpenContainer() instanceof OPCPackage
+        );
     }
     
     public void testDetectZip() throws Exception {

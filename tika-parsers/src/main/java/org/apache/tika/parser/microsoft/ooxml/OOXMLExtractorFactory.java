@@ -25,6 +25,7 @@ import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
+import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
@@ -32,6 +33,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
@@ -50,8 +52,16 @@ public class OOXMLExtractorFactory {
         try {
             OOXMLExtractor extractor;
 
-            POIXMLTextExtractor poiExtractor =
-                (POIXMLTextExtractor) ExtractorFactory.createExtractor(stream);
+            POIXMLTextExtractor poiExtractor;
+            if(stream instanceof TikaInputStream && 
+            	    ((TikaInputStream)stream).getOpenContainer() != null) {
+               poiExtractor = ExtractorFactory.createExtractor(
+                    (OPCPackage)((TikaInputStream)stream).getOpenContainer()
+               );
+            } else {
+               poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(stream);
+            }
+            
             POIXMLDocument document = poiExtractor.getDocument();
             if (document instanceof XSLFSlideShow) {
                 extractor = new XSLFPowerPointExtractorDecorator(
