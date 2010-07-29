@@ -138,5 +138,16 @@ public class MimeDetectionTest extends TestCase {
             in.close();
         }        
     }
+    
+    /**
+     * Tests that when we repeatedly test the detection of a document
+     *  that can be detected with Mime Magic, that we consistently
+     *  detect it correctly. See TIKA-391 for more details.
+     */
+    public void testMimeMagicStability() throws IOException {
+       for(int i=0; i<100; i++) {
+          testFile("application/vnd.ms-excel", "test.xls");
+       }
+    }
 
 }
