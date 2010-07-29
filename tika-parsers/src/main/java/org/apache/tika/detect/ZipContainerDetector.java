@@ -77,7 +77,7 @@ public class ZipContainerDetector implements Detector {
                     String docType = coreType.substring(0, coreType.lastIndexOf('.'));
                     return fromString(docType);
                 } catch(InvalidFormatException e) {
-                    throw new IOException("Office Open XML File detected, but corrupted", e);
+                    throw new IOException("Office Open XML File detected, but corrupted - " + e.getMessage());
                 }
             } else if(entry.getName().equals("buildVersionHistory.plist")) {
                 // TODO - iWork
