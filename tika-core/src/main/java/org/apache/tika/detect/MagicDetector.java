@@ -69,6 +69,8 @@ public class MagicDetector implements Detector {
      * starts at this offset.
      */
     private final int offsetRangeEnd;
+    
+    private final String asString;
 
     /**
      * Creates a detector for input documents that have the exact given byte
@@ -134,6 +136,13 @@ public class MagicDetector implements Detector {
 
         this.offsetRangeBegin = offsetRangeBegin;
         this.offsetRangeEnd = offsetRangeEnd;
+        
+        // Build the string representation. Needs to be unique, as
+        //  these get compared. Compute now as may get compared a lot!
+        this.asString = "Magic Detection for " + type.toString() +
+          " looking for " + pattern.length + 
+          " bytes = " + this.pattern + 
+          " mask = " + this.mask;
     }
 
     /**
@@ -196,4 +205,12 @@ public class MagicDetector implements Detector {
         }
     }
 
+    /**
+     * Returns a string representation of the Detection Rule.
+     * Should sort nicely by type and details, as we sometimes
+     *  compare these.
+     */
+    public String toString() {
+       return asString;
+    }
 }

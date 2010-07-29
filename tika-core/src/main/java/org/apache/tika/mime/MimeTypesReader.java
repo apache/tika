@@ -183,7 +183,7 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
             priority = Integer.parseInt(value);
         }
 
-        for (Clause clause : readMatches(element)) {
+        for (Clause clause : readMatches(element, mimeType.getType())) {
             Magic magic = new Magic(mimeType);
             magic.setPriority(priority);
             magic.setClause(clause);
@@ -191,7 +191,7 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
         }
     }
 
-    private List<Clause> readMatches(Element element) throws MimeTypeException {
+    private List<Clause> readMatches(Element element, MediaType mediaType) throws MimeTypeException {
         List<Clause> clauses = new ArrayList<Clause>();
         NodeList nodes = element.getChildNodes();
         for (int i = 0; i < nodes.getLength(); i++) {
@@ -199,7 +199,7 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element nodeElement = (Element) node;
                 if (nodeElement.getTagName().equals(MATCH_TAG)) {
-                    clauses.add(readMatch(nodeElement));
+                    clauses.add(readMatch(nodeElement, mediaType));
                 }
             }
         }
@@ -207,7 +207,7 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
     }
 
     /** Read Element named match. */
-    private Clause readMatch(Element element) throws MimeTypeException {
+    private Clause readMatch(Element element, MediaType mediaType) throws MimeTypeException {
         String type = "string";
         int start = 0;
         int end = 0;
@@ -252,10 +252,10 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
         }
 
         MagicDetector detector = new MagicDetector(
-                MediaType.TEXT_PLAIN, patternBytes, maskBytes, start, end);
+                mediaType, patternBytes, maskBytes, start, end);
         Clause clause = new MagicMatch(detector, length);
 
-        List<Clause> subClauses = readMatches(element);
+        List<Clause> subClauses = readMatches(element, mediaType);
         if (subClauses.size() == 0) {
             return clause;
         } else if (subClauses.size() == 1) {

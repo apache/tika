@@ -70,6 +70,9 @@ class Magic implements Clause, Comparable<Magic> {
             diff = o.size() - size();
         }
         if (diff == 0) {
+            diff = o.type.compareTo(type);
+        }
+        if (diff == 0) {
             diff = o.toString().compareTo(toString());
         }
         return diff;
