@@ -79,7 +79,13 @@ public class ZipContainerDetector implements Detector {
                 } catch(InvalidFormatException e) {
                     throw new IOException("Office Open XML File detected, but corrupted", e);
                 }
+            } else if(entry.getName().equals("buildVersionHistory.plist")) {
+                // TODO - iWork
+            } else if(entry.getName().equals("META-INF/")) {
+        	// Java Jar
+        	return MediaType.application("java-archive");
             }
+            
             entry = zip.getNextEntry();
         }
         
