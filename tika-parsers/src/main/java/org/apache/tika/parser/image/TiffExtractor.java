@@ -76,31 +76,31 @@ public class TiffExtractor {
      *  is spread across several EXIF tags.
      */
     public static void handleGeoImageTags(Metadata metadata) {
-	String lat = metadata.get("GPS Latitude");
-	String latNS = metadata.get("GPS Latitude Ref");
-	if(lat != null) {
-	    Double latitude = parseHMS(lat);
-	    if(latitude != null) {
-		if(latNS != null && latNS.equalsIgnoreCase("S") &&
-			latitude > 0) {
-		    latitude *= -1;
-		}
-		metadata.set(Metadata.LATITUDE, LAT_LONG_FORMAT.format(latitude)); 
-	    }
-	}
-	
-	String lng = metadata.get("GPS Longitude");
-	String lngEW = metadata.get("GPS Longitude Ref");
-	if(lng != null) {
-	    Double longitude = parseHMS(lng);
-	    if(longitude != null) {
-		if(lngEW != null && lngEW.equalsIgnoreCase("W") &&
-			longitude > 0) {
-		    longitude *= -1;
-		}
-		metadata.set(Metadata.LONGITUDE, LAT_LONG_FORMAT.format(longitude));
-	    }
-	}
+        String lat = metadata.get("GPS Latitude");
+        String latNS = metadata.get("GPS Latitude Ref");
+        if(lat != null) {
+            Double latitude = parseHMS(lat);
+            if(latitude != null) {
+                if(latNS != null && latNS.equalsIgnoreCase("S") &&
+                        latitude > 0) {
+                    latitude *= -1;
+                }
+                metadata.set(Metadata.LATITUDE, LAT_LONG_FORMAT.format(latitude)); 
+            }
+        }
+
+        String lng = metadata.get("GPS Longitude");
+        String lngEW = metadata.get("GPS Longitude Ref");
+        if(lng != null) {
+            Double longitude = parseHMS(lng);
+            if(longitude != null) {
+                if(lngEW != null && lngEW.equalsIgnoreCase("W") &&
+                        longitude > 0) {
+                    longitude *= -1;
+                }
+                metadata.set(Metadata.LONGITUDE, LAT_LONG_FORMAT.format(longitude));
+            }
+        }
     }
     private static Double parseHMS(String hms) {
        Matcher m = HOURS_MINUTES_SECONDS.matcher(hms);
@@ -129,54 +129,73 @@ public class TiffExtractor {
      *  TIFF image metadata namespace.
      */
     public static void handleCommonImageTags(Metadata metadata, Tag tag) throws MetadataException {
-	// Core tags
-	if(tag.getTagName().equals("Date/Time") ||
-		tag.getTagType() == 306) {
-	    // Ensure it's in the right format
-	    String date = tag.getDescription();
-	    int splitAt = date.indexOf(' '); 
-	    if(splitAt > -1) {
-		date = date.substring(0, splitAt).replace(':', '/') +
-			date.substring(splitAt);
-	    }
-	    metadata.set(Metadata.DATE, date);
-	    return;
-	}
-	if(tag.getTagName().equals("Keywords") ||
-	        tag.getTagType() == 537) {
-	    metadata.set(Metadata.KEYWORDS, tag.getDescription());
-	    return;
-	}
-	if(tag.getTagName().equals("Jpeg Comment")) {
-	    metadata.set(Metadata.COMMENTS, tag.getDescription());
-	    return;
-	}
-	
-	// EXIF / TIFF Tags
-	Property key = null;
-	if(tag.getTagName().equals("Image Width") ||
-		tag.getTagType() == 256) { 
-	    key = Metadata.IMAGE_WIDTH;
-	}
-	if(tag.getTagName().equals("Image Height") ||
-		tag.getTagType() == 257) {
-	    key = Metadata.IMAGE_LENGTH;
-	}
-	if(tag.getTagName().equals("Data Precision") ||
-		tag.getTagName().equals("Bits Per Sample") ||
-		tag.getTagType() == 258) {
-	    key = Metadata.BITS_PER_SAMPLE;
-	}
-	if(tag.getTagType() == 277) {
-	    key = Metadata.SAMPLES_PER_PIXEL;
-	}
-	
-	if(key != null) {
-	    Matcher m = LEADING_NUMBERS.matcher(tag.getDescription());
-	    if(m.matches()) {
-		metadata.set(key, m.group(1));
-	    }
-	}
+        // Core tags
+        if(tag.getTagName().equals("Date/Time") ||
+                tag.getTagType() == 306) {
+            // Ensure it's in the right format
+            String date = tag.getDescription();
+            int splitAt = date.indexOf(' '); 
+            if(splitAt > -1) {
+                date = date.substring(0, splitAt).replace(':', '/') +
+                date.substring(splitAt);
+            }
+            metadata.set(Metadata.DATE, date);
+            return;
+        }
+        if(tag.getTagName().equals("Keywords") ||
+                tag.getTagType() == 537) {
+            metadata.set(Metadata.KEYWORDS, tag.getDescription());
+            return;
+        }
+        if(tag.getTagName().equals("Jpeg Comment")) {
+            metadata.set(Metadata.COMMENTS, tag.getDescription());
+            return;
+        }
+
+        // File info
+        // Metadata Extractor does not read XMP so we need to use the values from Iptc or EXIF
+        if("Iptc".equals(tag.getDirectoryName())) {
+            if("Object Name".equals(tag.getTagName())) {
+                metadata.set(Metadata.TITLE, tag.getDescription());
+                return;
+            }
+            if("By-line".equals(tag.getTagName())) {
+                metadata.set(Metadata.AUTHOR, tag.getDescription());
+                return;
+            }		
+            if("Caption/Abstract".equals(tag.getTagName())) {
+                // Looks like metadata extractor returns IPTC newlines as a single carriage return,
+                // but the exiv2 command does not so we change to line feed here because that is less surprising to users
+                metadata.set(Metadata.DESCRIPTION, tag.getDescription().replaceAll("\r\n?", "\n"));
+                return;
+            }
+        }
+
+        // EXIF / TIFF Tags
+        Property key = null;
+        if(tag.getTagName().equals("Image Width") ||
+                tag.getTagType() == 256) { 
+            key = Metadata.IMAGE_WIDTH;
+        }
+        if(tag.getTagName().equals("Image Height") ||
+                tag.getTagType() == 257) {
+            key = Metadata.IMAGE_LENGTH;
+        }
+        if(tag.getTagName().equals("Data Precision") ||
+                tag.getTagName().equals("Bits Per Sample") ||
+                tag.getTagType() == 258) {
+            key = Metadata.BITS_PER_SAMPLE;
+        }
+        if(tag.getTagType() == 277) {
+            key = Metadata.SAMPLES_PER_PIXEL;
+        }
+
+        if(key != null) {
+            Matcher m = LEADING_NUMBERS.matcher(tag.getDescription());
+            if(m.matches()) {
+                metadata.set(key, m.group(1));
+            }
+        }
     }
     private static final Pattern LEADING_NUMBERS = Pattern.compile("(\\d+)\\s*.*");
 }
