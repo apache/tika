@@ -39,4 +39,7 @@ public class NumberCell implements Cell {
         handler.characters(format.format(number));
     }
 
+    public String toString() {
+        return "Numeric Cell: " + format.format(number);
+    }
 }
