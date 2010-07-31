@@ -48,6 +48,7 @@ import org.apache.poi.hssf.record.NumberRecord;
 import org.apache.poi.hssf.record.RKRecord;
 import org.apache.poi.hssf.record.Record;
 import org.apache.poi.hssf.record.SSTRecord;
+import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -142,6 +143,8 @@ public class ExcelExtractor {
         private SAXException exception = null;
 
         private SSTRecord sstRecord;
+        
+        private short previousSid;
 
         /**
          * Internal <code>FormatTrackingHSSFListener</code> to handle cell
@@ -165,6 +168,12 @@ public class ExcelExtractor {
          * worksheet is currently active.
          */
         private SortedMap<Point, Cell> currentSheet = null;
+        
+        /**
+         * Extra text or cells that crops up, typically as part of a
+         *  worksheet but not always.
+         */
+        private List<Cell> extraTextCells = new ArrayList<Cell>();
 
         /**
          * Format for rendering numbers in the worksheet. Currently we just
@@ -216,6 +225,7 @@ public class ExcelExtractor {
                 hssfRequest.addListener(formatListener, RKRecord.sid);
                 hssfRequest.addListener(formatListener, HyperlinkRecord.sid);
                 hssfRequest.addListener(formatListener, TextObjectRecord.sid);
+                hssfRequest.addListener(formatListener, SeriesTextRecord.sid);
                 hssfRequest.addListener(formatListener, FormatRecord.sid);
                 hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
             }
@@ -224,6 +234,9 @@ public class ExcelExtractor {
             DocumentInputStream documentInputStream = filesystem.createDocumentInputStream("Workbook");
             HSSFEventFactory eventFactory = new HSSFEventFactory();
             eventFactory.processEvents(hssfRequest, documentInputStream);
+            
+            // Output any extra text that came after all the sheets
+            processExtraText(); 
     	}
 
         /**
@@ -253,10 +266,21 @@ public class ExcelExtractor {
                 BOFRecord bof = (BOFRecord) record;
                 if (bof.getType() == BOFRecord.TYPE_WORKBOOK) {
                     currentSheetIndex = -1;
+                } else if (bof.getType() == BOFRecord.TYPE_CHART) {
+                    if(previousSid == EOFRecord.sid) {
+                        // This is a sheet which contains only a chart
+                        newSheet();
+                    } else {
+                        // This is a chart within a normal sheet
+                        // Handling of this is a bit hacky...
+                        if (currentSheet != null) {
+                            processSheet();
+                            currentSheetIndex--;
+                            newSheet();
+                        }
+                    }
                 } else if (bof.getType() == BOFRecord.TYPE_WORKSHEET) {
-                    currentSheetIndex++;
-                    currentSheet =
-                        new TreeMap<Point, Cell>(new PointComparator());
+                    newSheet();
                 }
                 break;
 
@@ -313,13 +337,34 @@ public class ExcelExtractor {
                     }
                 }
                 break;
+                
             case TextObjectRecord.sid:
                 TextObjectRecord tor = (TextObjectRecord) record;
                 addTextCell(record, tor.getStr().getString());
                 break;
+                
+            case SeriesTextRecord.sid: // Chart label or title
+                SeriesTextRecord str = (SeriesTextRecord) record;
+                addTextCell(record, str.getText());
+                break;
+            }
+            
+            previousSid = record.getSid();
+        }
+        
+        private void processExtraText() throws SAXException {
+            if(extraTextCells.size() > 0) {
+                for(Cell cell : extraTextCells) {
+                    handler.startElement("div", "class", "outside");
+                    cell.render(handler);
+                    handler.endElement("div");
+                }
+                
+                // Reset
+                extraTextCells.clear();
             }
         }
-
+        
         /**
          * Adds the given cell (unless <code>null</code>) to the current
          * worksheet (if any) at the position (if any) of the given record.
@@ -339,9 +384,7 @@ public class ExcelExtractor {
                 currentSheet.put(point, cell);
             } else {
                 // Cell outside the worksheets
-                handler.startElement("div", "class", "outside");
-                cell.render(handler);
-                handler.endElement("div");
+                extraTextCells.add(cell);
             }
         }
 
@@ -360,6 +403,11 @@ public class ExcelExtractor {
                     addCell(record, new TextCell(text));
                 }
             }
+        }
+
+        private void newSheet() {
+            currentSheetIndex++;
+            currentSheet = new TreeMap<Point, Cell>(new PointComparator());
         }
 
         /**
@@ -405,6 +453,9 @@ public class ExcelExtractor {
             // Sheet End
             handler.endElement("tbody");
             handler.endElement("table");
+            
+            // Finish up
+            processExtraText();
             handler.endElement("div");
         }
 

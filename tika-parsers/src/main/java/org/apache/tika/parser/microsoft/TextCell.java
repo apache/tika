@@ -34,4 +34,7 @@ public class TextCell implements Cell {
         handler.characters(text);
     }
 
+    public String toString() {
+        return "Text Cell: \"" + text + "\"";
+    }
 }
