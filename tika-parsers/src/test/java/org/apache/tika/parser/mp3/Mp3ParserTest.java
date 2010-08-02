@@ -23,6 +23,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -43,7 +44,7 @@ public class Mp3ParserTest extends TestCase {
         InputStream stream = Mp3ParserTest.class.getResourceAsStream(
                 "/test-documents/testMP3id3v1.mp3");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }
@@ -77,7 +78,7 @@ public class Mp3ParserTest extends TestCase {
         InputStream stream = Mp3ParserTest.class.getResourceAsStream(
                 "/test-documents/testMP3id3v2.mp3");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }
@@ -111,7 +112,7 @@ public class Mp3ParserTest extends TestCase {
         InputStream stream = Mp3ParserTest.class.getResourceAsStream(
                 "/test-documents/testMP3id3v1_v2.mp3");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }
@@ -149,7 +150,7 @@ public class Mp3ParserTest extends TestCase {
         InputStream stream = Mp3ParserTest.class.getResourceAsStream(
                 "/test-documents/testMP3lyrics.mp3");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }
@@ -191,5 +192,45 @@ public class Mp3ParserTest extends TestCase {
        assertEquals("", ID3v2Frame.getTagString(f.getData(), 0, 0));
        assertEquals("", ID3v2Frame.getTagString(new byte[] {0,0,0,0}, 0, 3));
        assertEquals("A", ID3v2Frame.getTagString(new byte[] {(byte)'A',0,0,0}, 0, 3));
+    }
+    
+    /**
+     * This test will do nothing, unless you've downloaded the
+     *  mp3 file from TIKA-424 - the file cannot be
+     *  distributed with Tika.
+     * This file has corrupt ID3v2.4 tags in it - the length
+     *  parameters are written in bytes, not bytes/4
+     * Check that we can at least read the file without breaking,
+     *  even if the tags are going to be junk...
+     */
+    public void testTIKA424() throws Exception {
+       Parser parser = new AutoDetectParser(); // Should auto-detect!
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+
+       InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+               "/test-documents/test2.mp3");
+       if(stream == null) {
+          // You haven't downloaded the file
+          // Skip the test
+          return;
+       }
+       
+       try {
+           parser.parse(stream, handler, metadata, new ParseContext());
+       } finally {
+           stream.close();
+       }
+
+       assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("Plus loin vers l'ouestTPE1\u0000\u0000", metadata.get(Metadata.TITLE).substring(0,28));
+       assertEquals(null, metadata.get(Metadata.AUTHOR));
+
+       String content = handler.toString();
+       assertTrue(content.contains("Plus loin vers l'ouest"));
+       
+       assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+       assertEquals("44100", metadata.get("samplerate"));
+       assertEquals("2", metadata.get("channels"));
     }
 }
