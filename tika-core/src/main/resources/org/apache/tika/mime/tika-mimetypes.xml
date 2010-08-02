@@ -3610,6 +3610,10 @@
     <root-XML localName="BODY"/>
     <root-XML localName="p"/>
     <root-XML localName="P"/>
+    <root-XML localName="script"/>
+    <root-XML localName="SCRIPT"/>
+    <root-XML localName="frameset"/>
+    <root-XML localName="FRAMESET"/>
     <magic priority="50">
       <match value="&lt;!DOCTYPE HTML" type="string" offset="0:64"/>
       <match value="&lt;!doctype html" type="string" offset="0:64"/>
