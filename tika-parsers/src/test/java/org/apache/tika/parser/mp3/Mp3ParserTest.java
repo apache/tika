@@ -135,6 +135,40 @@ public class Mp3ParserTest extends TestCase {
     }
 
     /**
+     * Test that with only ID3v2 tags, of version 2.4, we get the full
+     *  set of information out.
+     */
+    public void testMp3ParsingID3v24() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3id3v24.mp3");
+        try {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
+
+        String content = handler.toString();
+        assertTrue(content.contains("Test Title"));
+        assertTrue(content.contains("Test Artist"));
+        assertTrue(content.contains("Test Album"));
+        assertTrue(content.contains("2008"));
+        assertTrue(content.contains("Test Comment"));
+        assertTrue(content.contains("Rock"));
+        
+        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
+        assertEquals("44100", metadata.get("samplerate"));
+        assertEquals("2", metadata.get("channels"));
+    }
+    
+    /**
      * Tests that a file with both lyrics and
      *  ID3v2 tags gets both extracted correctly
      */
@@ -198,10 +232,8 @@ public class Mp3ParserTest extends TestCase {
      * This test will do nothing, unless you've downloaded the
      *  mp3 file from TIKA-424 - the file cannot be
      *  distributed with Tika.
-     * This file has corrupt ID3v2.4 tags in it - the length
-     *  parameters are written in bytes, not bytes/4
-     * Check that we can at least read the file without breaking,
-     *  even if the tags are going to be junk...
+     * This test will check for the complicated set of ID3v2.4
+     *  tags.
      */
     public void testTIKA424() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
@@ -223,8 +255,8 @@ public class Mp3ParserTest extends TestCase {
        }
 
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("Plus loin vers l'ouestTPE1\u0000\u0000", metadata.get(Metadata.TITLE).substring(0,28));
-       assertEquals(null, metadata.get(Metadata.AUTHOR));
+       assertEquals("Plus loin vers l'ouest", metadata.get(Metadata.TITLE));
+       assertEquals("Merzhin", metadata.get(Metadata.AUTHOR));
 
        String content = handler.toString();
        assertTrue(content.contains("Plus loin vers l'ouest"));

@@ -53,6 +53,10 @@ public class ID3v24Handler implements ID3Tags {
                 album = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TYER")) {
                 year = getTagString(tag.data, 0, tag.data.length); 
+            } else if (tag.name.equals("TDRC")) {
+               if(year == null) {
+                  year = getTagString(tag.data, 0, tag.data.length);
+               }
             } else if (tag.name.equals("TCOM")) {
                 composer = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("COMM")) {
@@ -63,7 +67,9 @@ public class ID3v24Handler implements ID3Tags {
                 String rawGenre = getTagString(tag.data, 0, tag.data.length);
                 int open = rawGenre.indexOf("(");
                 int close = rawGenre.indexOf(")");
-                if (open < close) {
+                if (open == -1 && close == -1) {
+                   genre = rawGenre;
+                } else if (open < close) {
                     try {
                         int genreID = Integer.parseInt(rawGenre.substring(open+1, close));
                         genre = ID3Tags.GENRES[genreID];
@@ -116,7 +122,7 @@ public class ID3v24Handler implements ID3Tags {
 
     private class RawV24TagIterator extends RawTagIterator {
         private RawV24TagIterator(ID3v2Frame frame) {
-            frame.super(4, 4, 4, 2);
+            frame.super(4, 4, 1, 2);
         }
     }
 
