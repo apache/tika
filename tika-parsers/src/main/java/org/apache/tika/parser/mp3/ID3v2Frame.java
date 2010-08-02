@@ -182,7 +182,8 @@ public class ID3v2Frame implements MP3Frame {
         // Detect by the first byte being sub 0x20
         String encoding = "ISO-8859-1";
         byte maybeEncodingFlag = data[offset];
-        if (maybeEncodingFlag == 0 || maybeEncodingFlag == 1) {
+        if (maybeEncodingFlag == 0 || maybeEncodingFlag == 1 ||
+              maybeEncodingFlag == 2 || maybeEncodingFlag == 3) {
             offset++;
             actualLength--;
             if (maybeEncodingFlag == 1) {
@@ -290,9 +291,10 @@ public class ID3v2Frame implements MP3Frame {
             }
 
             // Now data
+            int copyFrom = offset+nameLength+sizeLength+flagLength;
+            size = Math.min(size, frameData.length-copyFrom);
             data = new byte[size];
-            System.arraycopy(frameData, 
-                    offset+nameLength+sizeLength+flagLength, data, 0, size);
+            System.arraycopy(frameData, copyFrom, data, 0, size);
         }
 
         protected int getSize() {
