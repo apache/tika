@@ -18,8 +18,9 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.ZipFile;
 
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -37,29 +38,32 @@ import org.apache.tika.mime.MediaType;
  *  to figure out exactly what the file is
  */
 public class ZipContainerDetector implements Detector {
+
     public MediaType detect(InputStream input, Metadata metadata)
              throws IOException {
-	if(input instanceof TikaInputStream) {
-	    return detect((TikaInputStream)input, metadata);
-	}
-	return detect( TikaInputStream.get(input), metadata );
+        if (TikaInputStream.isTikaInputStream(input)) {
+            return detect(TikaInputStream.get(input));
+        } else {
+            return MediaType.APPLICATION_ZIP;
+        }
     }
-    public MediaType detect(TikaInputStream input, Metadata metadata)
-             throws IOException {
-        ZipInputStream zip = new ZipInputStream(input);
-        ZipEntry entry = zip.getNextEntry();
-        while (entry != null) {
+
+    private MediaType detect(TikaInputStream input) throws IOException {
+        ZipFile zip = new ZipFile(input.getFile());
+        for (ZipEntry entry : Collections.list(zip.entries())) {
             // Is it an Open Document file?
             if (entry.getName().equals("mimetype")) {
-                String type = IOUtils.toString(zip, "UTF-8");
-                return fromString(type);
+                InputStream stream = zip.getInputStream(entry);
+                try {
+                    return fromString(IOUtils.toString(stream, "UTF-8"));
+                } finally {
+                    stream.close();
+                }
             } else if (entry.getName().equals("_rels/.rels") || 
         	    entry.getName().equals("[Content_Types].xml")) {
                 // Office Open XML File
         	// As POI to open and investigate it for us
         	try {
-        	    input.reset();
-        	    
         	    OPCPackage pkg = OPCPackage.open(input);
         	    input.setOpenContainer(pkg);
         	    
@@ -85,8 +89,6 @@ public class ZipContainerDetector implements Detector {
         	// Java Jar
         	return MediaType.application("java-archive");
             }
-            
-            entry = zip.getNextEntry();
         }
         
         return MediaType.APPLICATION_ZIP;

@@ -38,6 +38,19 @@ import org.apache.tika.metadata.Metadata;
 public class TikaInputStream extends ProxyInputStream {
 
     /**
+     * Checks whether the given stream is a TikaInputStream instance.
+     * The given stream can be <code>null</code>, in which case the return
+     * value is <code>false</code>.
+     * 
+     * @param stream input stream, possibly <code>null</code>
+     * @return <code>true</code> if the stream is a TikaInputStream instance,
+     *         <code>false</code> otherwise
+     */
+    public static boolean isTikaInputStream(InputStream stream) {
+        return stream instanceof TikaInputStream;
+    }
+
+    /**
      * Casts or wraps the given stream to a TikaInputStream instance.
      * This method can be used to access the functionality of this class
      * even when given just a normal input stream instance.
