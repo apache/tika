@@ -16,6 +16,7 @@
  */
 package org.apache.tika.detect;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -23,7 +24,6 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 
 
@@ -32,20 +32,21 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
  *  to figure out exactly what the file is
  */
 public class POIFSContainerDetector implements Detector {
+
     public MediaType detect(InputStream input, Metadata metadata)
              throws IOException {
-        POIFSFileSystem fs = new POIFSFileSystem(input);
+        if (TikaInputStream.isTikaInputStream(input)) {
+            TikaInputStream stream = TikaInputStream.get(input);
 
-        POIFSDocumentType type =
-            OfficeParser.POIFSDocumentType.detectType(fs);
-        
-        if(input instanceof TikaInputStream) {
-            ((TikaInputStream)input).setOpenContainer(fs);
+            // NOTE: POIFSFileSystem will close the FileInputStream
+            POIFSFileSystem fs =
+                new POIFSFileSystem(new FileInputStream(stream.getFile()));
+            stream.setOpenContainer(fs);
+
+            return POIFSDocumentType.detectType(fs).getType();
         } else {
-            fs = null;
+            return MediaType.application("x-tika-msoffice");
         }
-        
-        return type.getType();
     }
-}
 
+}
