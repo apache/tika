@@ -101,6 +101,7 @@ public class PDFParser implements Parser {
     private void extractMetadata(PDDocument document, Metadata metadata)
             throws TikaException {
         PDDocumentInformation info = document.getDocumentInformation();
+        addMetadata(metadata, Metadata.PAGE_COUNT, String.valueOf( document.getNumberOfPages() ) );
         addMetadata(metadata, Metadata.TITLE, info.getTitle());
         addMetadata(metadata, Metadata.AUTHOR, info.getAuthor());
         addMetadata(metadata, Metadata.CREATOR, info.getCreator());
