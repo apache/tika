@@ -265,4 +265,43 @@ public class Mp3ParserTest extends TestCase {
        assertEquals("44100", metadata.get("samplerate"));
        assertEquals("2", metadata.get("channels"));
     }
+    
+    /**
+     * This tests that we can handle without errors (but perhaps not
+     *  all content) a file with a very very large ID3 frame that
+     *  has been truncated before the end of the ID3 tags.
+     * In this case, it is a file with JPEG data in the ID3, which
+     *  is trunacted before the end of the JPEG bit of the ID3 frame.
+     */
+    public void testTIKA474() throws Exception {
+       Parser parser = new AutoDetectParser(); // Should auto-detect!
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+
+       InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+               "/test-documents/testMP3truncated.mp3");
+       
+       
+       try {
+           parser.parse(stream, handler, metadata, new ParseContext());
+       } finally {
+           stream.close();
+       }
+
+       // Check we coud get the headers from the start
+       assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("Girl you have no faith in medicine", metadata.get(Metadata.TITLE));
+       assertEquals("The White Stripes", metadata.get(Metadata.AUTHOR));
+
+       String content = handler.toString();
+       assertTrue(content.contains("Girl you have no faith in medicine"));
+       assertTrue(content.contains("The White Stripes"));
+       assertTrue(content.contains("Elephant"));
+       assertTrue(content.contains("2003"));
+       
+       // File lacks any audio frames, so we can't know these
+       assertEquals(null, metadata.get("version"));
+       assertEquals(null, metadata.get("samplerate"));
+       assertEquals(null, metadata.get("channels"));
+    }
 }
