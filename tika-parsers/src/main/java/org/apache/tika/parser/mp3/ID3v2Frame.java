@@ -106,8 +106,9 @@ public class ID3v2Frame implements MP3Frame {
             extendedHeader = readFully(inp, size);
         }
 
-        // Get the frame's data
-        data = readFully(inp, length);
+        // Get the frame's data, or at least as much
+        //  of it as we could do
+        data = readFully(inp, length, false);
     }
 
     protected static int getInt(byte[] data) {
@@ -150,6 +151,10 @@ public class ID3v2Frame implements MP3Frame {
 
     protected static byte[] readFully(InputStream inp, int length)
             throws IOException {
+       return readFully(inp, length, true);
+    }
+    protected static byte[] readFully(InputStream inp, int length, boolean shortDataIsFatal)
+            throws IOException {
         byte[] b = new byte[length];
 
         int pos = 0;
@@ -157,7 +162,13 @@ public class ID3v2Frame implements MP3Frame {
         while (pos < length) {
             read = inp.read(b, pos, length-pos);
             if (read == -1) {
-                throw new IOException("Tried to read " + length + " bytes, but only " + pos + " bytes present"); 
+                if(shortDataIsFatal) {
+                   throw new IOException("Tried to read " + length + " bytes, but only " + pos + " bytes present");
+                } else {
+                   // Give them what we found
+                   // TODO Log the short read
+                   return b;
+                }
             }
             pos += read;
         }
