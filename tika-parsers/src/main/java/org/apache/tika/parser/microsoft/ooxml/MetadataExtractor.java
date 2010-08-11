@@ -25,6 +25,7 @@ import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
@@ -106,6 +107,7 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.MANAGER, propsHolder.getManager());
         addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
         addProperty(metadata, Metadata.PAGE_COUNT, propsHolder.getPages());
+        metadata.set(PagedText.N_PAGES, propsHolder.getPages());
         addProperty(metadata, Metadata.PARAGRAPH_COUNT, propsHolder.getParagraphs());
         addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder
                 .getPresentationFormat());

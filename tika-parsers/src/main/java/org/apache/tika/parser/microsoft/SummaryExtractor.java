@@ -32,6 +32,7 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 
 /**
@@ -97,6 +98,7 @@ class SummaryExtractor {
         set(Metadata.EDIT_TIME, summary.getEditTime());
         set(Metadata.LAST_SAVED, summary.getLastSaveDateTime());
         set(Metadata.PAGE_COUNT, summary.getPageCount());
+        metadata.set(PagedText.N_PAGES, summary.getPageCount());
         set(Metadata.SECURITY, summary.getSecurity());
         set(Metadata.WORD_COUNT, summary.getWordCount());
         set(Metadata.LAST_PRINTED, summary.getLastPrinted());
