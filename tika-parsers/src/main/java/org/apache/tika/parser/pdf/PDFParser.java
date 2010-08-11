@@ -32,6 +32,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -101,7 +102,7 @@ public class PDFParser implements Parser {
     private void extractMetadata(PDDocument document, Metadata metadata)
             throws TikaException {
         PDDocumentInformation info = document.getDocumentInformation();
-        addMetadata(metadata, Metadata.PAGE_COUNT, String.valueOf( document.getNumberOfPages() ) );
+        metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
         addMetadata(metadata, Metadata.TITLE, info.getTitle());
         addMetadata(metadata, Metadata.AUTHOR, info.getAuthor());
         addMetadata(metadata, Metadata.CREATOR, info.getCreator());
