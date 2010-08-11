@@ -49,7 +49,7 @@ public class MboxParser implements Parser {
     private static final Pattern EMAIL_HEADER_PATTERN = Pattern.compile("([^ ]+):[ \t]*(.*)");
     private static final Pattern EMAIL_ADDRESS_PATTERN = Pattern.compile("<(.*@.*)>");
 
-    private static final String EMAIL_HEADER_METADATA_PREFIX = MboxParser.class.getSimpleName() + "-";
+    private static final String EMAIL_HEADER_METADATA_PREFIX = "MboxParser-";
     private static final String EMAIL_FROMLINE_METADATA = EMAIL_HEADER_METADATA_PREFIX + "from";
 
     private enum ParseStates {
