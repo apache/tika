@@ -206,7 +206,13 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         return !parameters.isEmpty();
     }
 
-    public SortedMap<String, String> getParameters() {
+    /**
+     * Returns an immutable sorted map of the parameters of this media type.
+     * The parameter names are guaranteed to be trimmed and in lower case.
+     *
+     * @return sorted map of parameters
+     */
+    public Map<String, String> getParameters() {
         return parameters;
     }
 
