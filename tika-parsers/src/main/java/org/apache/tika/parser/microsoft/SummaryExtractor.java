@@ -98,7 +98,9 @@ class SummaryExtractor {
         set(Metadata.EDIT_TIME, summary.getEditTime());
         set(Metadata.LAST_SAVED, summary.getLastSaveDateTime());
         set(Metadata.PAGE_COUNT, summary.getPageCount());
-        metadata.set(PagedText.N_PAGES, summary.getPageCount());
+        if (summary.getPageCount() > 0) {
+            metadata.set(PagedText.N_PAGES, summary.getPageCount());
+        }
         set(Metadata.SECURITY, summary.getSecurity());
         set(Metadata.WORD_COUNT, summary.getWordCount());
         set(Metadata.LAST_PRINTED, summary.getLastPrinted());
@@ -109,6 +111,10 @@ class SummaryExtractor {
         set(Metadata.MANAGER, summary.getManager());
         set(Metadata.LANGUAGE, getLanguage(summary));
         set(Metadata.CATEGORY, summary.getCategory());
+        set(Metadata.SLIDE_COUNT, summary.getSlideCount());
+        if (summary.getSlideCount() > 0) {
+            metadata.set(PagedText.N_PAGES, summary.getSlideCount());
+        }
     }
 
     private String getLanguage(DocumentSummaryInformation summary) {

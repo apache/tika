@@ -107,7 +107,11 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.MANAGER, propsHolder.getManager());
         addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
         addProperty(metadata, Metadata.PAGE_COUNT, propsHolder.getPages());
-        metadata.set(PagedText.N_PAGES, propsHolder.getPages());
+        if (propsHolder.getPages() > 0) {
+            metadata.set(PagedText.N_PAGES, propsHolder.getPages());
+        } else if (propsHolder.getSlides() > 0) {
+            metadata.set(PagedText.N_PAGES, propsHolder.getSlides());
+        }
         addProperty(metadata, Metadata.PARAGRAPH_COUNT, propsHolder.getParagraphs());
         addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder
                 .getPresentationFormat());
