@@ -49,6 +49,19 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private static final char[] TAB = new char[] { '\t' };
 
     /**
+     * The elements that are in the <head> section.
+     */
+    private static final Set<String> HEAD =
+        unmodifiableSet("title", "link", "base", "meta");
+
+    /**
+     * The elements that are automatically emitted by lazyStartHead, so
+     * skip them if they get sent to startElement/endElement by mistake.
+     */
+    private static final Set<String> AUTO =
+        unmodifiableSet("html", "head", "body");
+
+    /**
      * The elements that get prepended with the {@link #TAB} character.
      */
     private static final Set<String> INDENT =
@@ -62,6 +75,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
             "pre", "hr", "blockquote", "address", "fieldset", "table", "form",
             "noscript", "li", "dt", "dd", "noframes", "br", "tr");
 
+    private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
+
     private static Set<String> unmodifiableSet(String... elements) {
         return Collections.unmodifiableSet(
                 new HashSet<String>(Arrays.asList(elements)));
@@ -74,9 +89,10 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private final Metadata metadata;
 
     /**
-     * Flag to indicate whether the document element has been started.
+     * Flags to indicate whether the document head element has been started/ended.
      */
-    private boolean started = false;
+    private boolean headStarted = false;
+    private boolean headEnded = false;
 
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         super(handler);
@@ -104,19 +120,59 @@ public class XHTMLContentHandler extends SafeContentHandler {
      *   &lt;body&gt;
      * </pre>
      */
-    private void lazyStartDocument() throws SAXException {
-        if (!started) {
-            started = true;
-            startElement("html");
-            startElement("head");
-            startElement("title");
+    private void lazyStartHead() throws SAXException {
+        if (!headStarted) {
+            headStarted = true;
+            
+            // Call directly, so we don't go through our startElement(), which will
+            // ignore these elements.
+            super.startElement(XHTML, "html", "html", EMPTY_ATTRIBUTES);
+            super.startElement(XHTML, "head", "head", EMPTY_ATTRIBUTES);
+        }
+    }
+
+    /**
+     * Generates the following XHTML prefix when called for the first time:
+     * <pre>
+     * &lt;html&gt;
+     *   &lt;head&gt;
+     *     &lt;title&gt;...&lt;/title&gt;
+     *   &lt;/head&gt;
+     *   &lt;body&gt;
+     * </pre>
+     */
+    private void lazyEndHead() throws SAXException {
+        lazyStartHead();
+        
+        if (!headEnded) {
+            headEnded = true;
+            
+            // TIKA-478: Emit all metadata values (other than title). We have to call
+            // startElement() and characters() directly to avoid recursive problems.
+            for (String name : metadata.names()) {
+                if (name.equals("title")) {
+                    continue;
+                }
+                
+                for (String value : metadata.getValues(name)) {
+                    AttributesImpl attributes = new AttributesImpl();
+                    attributes.addAttribute("", name, name, "CDATA", value);
+                    super.startElement(XHTML, "meta", "meta", attributes);
+                    super.endElement(XHTML, "meta", "meta");
+                }
+            }
+            
+            super.startElement(XHTML, "title", "title", EMPTY_ATTRIBUTES);
             String title = metadata.get(Metadata.TITLE);
             if (title != null && title.length() > 0) {
-                characters(title);
+                char[] titleChars = title.toCharArray();
+                super.characters(titleChars, 0, titleChars.length);
             }
-            endElement("title");
-            endElement("head");
-            startElement("body");
+            
+            super.endElement(XHTML, "title", "title");
+            
+            super.endElement(XHTML, "head", "head");
+            super.startElement(XHTML, "body", "body", EMPTY_ATTRIBUTES);
         }
     }
 
@@ -130,7 +186,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
      */
     @Override
     public void endDocument() throws SAXException {
-        lazyStartDocument();
+        lazyEndHead();
+        
         endElement("body");
         endElement("html");
         endPrefixMapping("");
@@ -145,11 +202,20 @@ public class XHTMLContentHandler extends SafeContentHandler {
     public void startElement(
             String uri, String local, String name, Attributes attributes)
             throws SAXException {
-        lazyStartDocument();
-        if (XHTML.equals(uri) && INDENT.contains(local)) {
-            ignorableWhitespace(TAB, 0, TAB.length);
+        
+        if (!AUTO.contains(name)) {
+            if (HEAD.contains(name)) {
+                lazyStartHead();
+            } else {
+                lazyEndHead();
+            }
+
+            if (XHTML.equals(uri) && INDENT.contains(name)) {
+                ignorableWhitespace(TAB, 0, TAB.length);
+            }
+            
+            super.startElement(uri, local, name, attributes);
         }
-        super.startElement(uri, local, name, attributes);
     }
 
     /**
@@ -157,11 +223,12 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * by a newline character.
      */
     @Override
-    public void endElement(String uri, String local, String name)
-            throws SAXException {
-        super.endElement(uri, local, name);
-        if (XHTML.equals(uri) && ENDLINE.contains(local)) {
-            newline();
+    public void endElement(String uri, String local, String name) throws SAXException {
+        if (!AUTO.contains(name)) {
+            super.endElement(uri, local, name);
+            if (XHTML.equals(uri) && ENDLINE.contains(name)) {
+                newline();
+            }
         }
     }
 
@@ -169,16 +236,15 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-210">TIKA-210</a>
      */
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
-        lazyStartDocument();
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        lazyEndHead();
         super.characters(ch, start, length);
     }
 
     //------------------------------------------< public convenience methods >
 
     public void startElement(String name) throws SAXException {
-        startElement(XHTML, name, name, new AttributesImpl());
+        startElement(XHTML, name, name, EMPTY_ATTRIBUTES);
     }
 
     public void startElement(String name, String attribute, String value)
