@@ -23,10 +23,16 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+
 import junit.framework.TestCase;
 
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -73,8 +79,8 @@ public class HtmlParserTest extends TestCase {
         assertEquals("Tika Developers", metadata.get("Author"));
         assertEquals("5", metadata.get("refresh"));
         
-        assertEquals("51.2312", metadata.get(Metadata.LATITUDE));
-        assertEquals("-5.1987", metadata.get(Metadata.LONGITUDE));
+        assertEquals("51.2312", metadata.get(Geographic.LATITUDE));
+        assertEquals("-5.1987", metadata.get(Geographic.LONGITUDE));
 
         assertEquals("http://www.apache.org/", href.toString());
         assertEquals("test-anchor", name.toString());
@@ -393,9 +399,11 @@ public class HtmlParserTest extends TestCase {
         
         String content = handler.toString();
         assertTrue(content.startsWith("This is the real meat"));
-        assertTrue(content.endsWith("This is the end of the text."));
+        assertTrue(content.endsWith("This is the end of the text.\n"));
         assertFalse(content.contains("boilerplate"));
         assertFalse(content.contains("footer"));
     }
+    
+    
 
 }
