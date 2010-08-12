@@ -188,8 +188,9 @@ public class XHTMLContentHandler extends SafeContentHandler {
     public void endDocument() throws SAXException {
         lazyEndHead();
         
-        endElement("body");
-        endElement("html");
+        super.endElement(XHTML, "body", "body");
+        super.endElement(XHTML, "html", "html");
+        
         endPrefixMapping("");
         super.endDocument();
     }
