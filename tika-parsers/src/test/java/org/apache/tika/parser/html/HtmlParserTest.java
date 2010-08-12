@@ -444,7 +444,12 @@ public class HtmlParserTest extends TestCase {
         
         // link element should be in <head> section
         assertTrue(Pattern.matches("(?s)<html.*<head>.*<link .*</head>.*$", result));
+        
+        // There should be ending elements.
+        assertTrue(Pattern.matches("(?s).*</body>.*</html>$", result));
+
     }
+
 
 
 }
