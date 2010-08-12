@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -405,5 +406,45 @@ public class HtmlParserTest extends TestCase {
     }
     
     
+    /**
+     * Test case for TIKA-478. Don't emit <head> sub-elements inside of <body>.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-478">TIKA-478</a>
+     */
+    public void testElementOrdering() throws Exception {
+        final String test = "<html><head><title>Title</title>" +
+        "<meta http-equiv=\"content-type\" content=\"text/html\">" +
+        "<link rel=\"next\" href=\"next.html\" />" +
+        "</head><body><p>Simple Content</p></body></html>";
+
+        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
+        StringWriter sw = new StringWriter();
+        handler.setResult(new StreamResult(sw));
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                handler, new Metadata(), new ParseContext());
+
+        String result = sw.toString();
+        
+        // Title element in <head> section
+        assertTrue(Pattern.matches("(?s)<html.*<head>.*<title>Title</title>.*</head>.*$", result));
+
+        // No meta elements in body
+        assertFalse(Pattern.matches("(?s).*<body>.*<meta. *</body>.*$", result));
+        
+        // meta elements should show up in <head> section
+        assertTrue(Pattern.matches("(?s)<html.*<head>.*<meta .*</head>.*$", result));
+        
+        // No link elements in body
+        assertFalse(Pattern.matches("(?s).*<body>.*<link .*</body>.*$", result));
+        
+        // link element should be in <head> section
+        assertTrue(Pattern.matches("(?s)<html.*<head>.*<link .*</head>.*$", result));
+    }
+
 
 }

@@ -88,18 +88,20 @@ class HtmlHandler extends TextContentHandler {
 
         if (bodyLevel == 0 && discardLevel == 0) {
             if ("META".equals(name) && atts.getValue("content") != null) {
+                
+                // TIKA-478: For cases where we have either a name or "http-equiv", assume
+                // that XHTMLContentHandler will emit these in the <head>, thus passing them
+                // through safely.
                 if (atts.getValue("http-equiv") != null) {
                     metadata.set(
                             atts.getValue("http-equiv"),
                             atts.getValue("content"));
-                    xhtml.startElement(uri, local, "meta", atts);
-                }
-                if (atts.getValue("name") != null) {
+                } else if (atts.getValue("name") != null) {
                     // Record the meta tag in the metadata
                     metadata.set(
                             atts.getValue("name"),
                             atts.getValue("content"));
-                    // Normalise if possible
+                    // Normalize if possible
                     if(atts.getValue("name").equalsIgnoreCase("ICBM")) {
                         Matcher m = Pattern.compile(
                               "\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*"
@@ -109,8 +111,6 @@ class HtmlHandler extends TextContentHandler {
                             metadata.set(Metadata.LONGITUDE, m.group(2));
                         }
                     }
-                    // Allow downstream processing
-                    xhtml.startElement(uri, local, "meta", atts);
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
                 metadata.set(
@@ -126,8 +126,9 @@ class HtmlHandler extends TextContentHandler {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
                 // check if there are any attributes to process
-                if (atts.getLength()==0) xhtml.startElement(safe);
-                else {
+                if (atts.getLength() == 0) {
+                    xhtml.startElement(safe);
+                } else {
                     AttributesImpl newAttributes = new AttributesImpl(atts);
                     for (int att=0;att<newAttributes.getLength();att++){
                         String normAttrName = mapper.mapSafeAttribute(safe, newAttributes.getLocalName(att));
@@ -164,8 +165,6 @@ class HtmlHandler extends TextContentHandler {
                 xhtml.endElement("link");
             } else if ("BASE".equals(name)) {
                 xhtml.endElement("base");
-            } else if ("META".equals(name)) {
-                xhtml.endElement("meta");
             }
         }
         if (bodyLevel > 0 && discardLevel == 0) {
