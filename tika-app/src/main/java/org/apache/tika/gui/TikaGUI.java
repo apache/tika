@@ -42,6 +42,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.TeeContentHandler;
@@ -104,6 +105,11 @@ public class TikaGUI extends JFrame {
     private final JEditorPane text;
 
     /**
+     * Main content output.
+     */
+    private final JEditorPane textMain;
+    
+    /**
      * Raw XHTML source.
      */
     private final JEditorPane xml;
@@ -127,6 +133,7 @@ public class TikaGUI extends JFrame {
 
         html = createEditor("Formatted text", "text/html");
         text = createEditor("Plain text", "text/plain");
+        textMain = createEditor("Main content", "text/plain");
         xml = createEditor("Structured text", "text/plain");
         metadata = createEditor("Metadata", "text/plain");
         errors = createEditor("Errors", "text/plain");
@@ -144,12 +151,14 @@ public class TikaGUI extends JFrame {
         try {
             StringWriter htmlBuffer = new StringWriter();
             StringWriter textBuffer = new StringWriter();
+            StringWriter textMainBuffer = new StringWriter();
             StringWriter xmlBuffer = new StringWriter();
             StringBuilder metadataBuffer = new StringBuilder();
 
             ContentHandler handler = new TeeContentHandler(
                     getHtmlHandler(htmlBuffer),
                     getTextContentHandler(textBuffer),
+                    getTextMainContentHandler(textMainBuffer),
                     getXmlContentHandler(xmlBuffer));
 
             input = new ProgressMonitorInputStream(
@@ -169,6 +178,7 @@ public class TikaGUI extends JFrame {
             setText(metadata, metadataBuffer.toString());
             setText(xml, xmlBuffer.toString());
             setText(text, textBuffer.toString());
+            setText(textMain, textMainBuffer.toString());
             setText(html, htmlBuffer.toString());
             tabs.setSelectedIndex(0);
         } catch (Exception e) {
@@ -264,6 +274,9 @@ public class TikaGUI extends JFrame {
 
     private ContentHandler getTextContentHandler(Writer writer) {
         return new BodyContentHandler(writer);
+    }
+    private ContentHandler getTextMainContentHandler(Writer writer) {
+        return new BoilerpipeContentHandler(writer);
     }
 
     private ContentHandler getXmlContentHandler(Writer writer)

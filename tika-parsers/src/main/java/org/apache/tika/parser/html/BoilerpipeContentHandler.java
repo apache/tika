@@ -41,6 +41,11 @@ import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
  */
 public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
+    /**
+     * The newline character that gets inserted after block elements.
+     */
+    private static final char[] NL = new char[] { '\n' };
+
     private ContentHandler delegate;
     private BoilerpipeExtractor extractor;
 
@@ -99,6 +104,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                 char[] chars = block.getText().toCharArray();
                 delegate.characters(chars, 0, chars.length);
                 delegate.endElement(XHTMLContentHandler.XHTML, "p", "p");
+                delegate.ignorableWhitespace(NL, 0, NL.length);
             }
         }
         
