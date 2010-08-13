@@ -62,6 +62,8 @@ public class DefaultHtmlMapper implements HtmlMapper {
         // TIKA-463 - add additional elements that contain URLs
         put("AREA", "area");
         put("IMG", "img");
+        put("FRAMESET", "frameset");
+        put("FRAME", "frame");
 
     }};
     
@@ -73,6 +75,7 @@ public class DefaultHtmlMapper implements HtmlMapper {
     private static final Map<String, Set<String>> SAFE_ATTRIBUTES = new HashMap<String, Set<String>>() {{
         put("a", attrSet("rel", "name"));
         put("img", attrSet("src"));
+        put("frame", attrSet("src"));
         // TODO KKr - fill out this set.
     }};
     

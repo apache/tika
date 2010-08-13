@@ -477,5 +477,88 @@ public class HtmlParserTest extends TestCase {
         assertTrue(Pattern.matches("(?s).*<img src=\"http://domain.com/image.jpg\"/>.*$", result));
     }
 
+    /**
+     * Test case for TIKA-463. Don't skip elements that have URLs.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
+     */
+    public void testFrameSrcExtraction() throws Exception {
+        final String test = "<html><head><title>Title</title>" +
+        "<base href=\"http://domain.com\" />" +
+        "</head><frameset><frame src=\"frame.html\" /></frameset></html>";
+
+        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
+        StringWriter sw = new StringWriter();
+        handler.setResult(new StreamResult(sw));
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                handler, new Metadata(), new ParseContext());
+
+        String result = sw.toString();
+        
+        // <frame> tag should exist, with fully resolved URL
+        assertTrue(Pattern.matches("(?s).*<frame src=\"http://domain.com/frame.html\"/>.*$", result));
+    }
+
+    /**
+     * Test case for TIKA-457. Better handling for broken HTML that has <frameset> inside of <body>.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-457">TIKA-457</a>
+     */
+    public void testFBrokenrameset() throws Exception {
+        final String test2 = "<html><head><title> my title </title></head><body>" +
+            "<frameset rows=\"20,*\"><frame src=\"top.html\"></frame>" +
+            "<frameset cols=\"20,*\"><frame src=\"left.html\"></frame>" +
+            "<frame src=\"invalid.html\"/></frame>" +
+            "<frame src=\"right.html\"></frame>" +
+            "</frameset></frameset></body></html>";
+
+        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
+        
+        final String test1 = "<html><head><title>Title</title>" +
+        "<base href=\"http://domain.com\" />" +
+        "</head><body><frameset><frame src=\"frame.html\" /></frameset></body></html>";
+
+        StringWriter sw1 = new StringWriter();
+        handler.setResult(new StreamResult(sw1));
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test1.getBytes("UTF-8")),
+                handler, new Metadata(), new ParseContext());
+
+        String result = sw1.toString();
+        
+        // <frame> tag should exist, with fully resolved URL
+        assertTrue(Pattern.matches("(?s).*<frame src=\"http://domain.com/frame.html\"/>.*$", result));
+        
+        // <body> tag should not exist.
+        assertFalse(Pattern.matches("(?s).*<body>.*$", result));
+
+        StringWriter sw2 = new StringWriter();
+        handler.setResult(new StreamResult(sw2));
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                handler, new Metadata(), new ParseContext());
+
+        result = sw2.toString();
+        
+        // <frame> tags should exist, with relative URL (no base element specified)
+        assertTrue(Pattern.matches("(?s).*<frame src=\"top.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame src=\"left.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame src=\"invalid.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame src=\"right.html\"/>.*$", result));
+
+        // <body> tag should not exist.
+        assertFalse(Pattern.matches("(?s).*<body>.*$", result));
+    }
+
 
 }
