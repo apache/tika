@@ -130,11 +130,19 @@ class HtmlHandler extends TextContentHandler {
                     xhtml.startElement(safe);
                 } else {
                     AttributesImpl newAttributes = new AttributesImpl(atts);
-                    for (int att=0;att<newAttributes.getLength();att++){
+                    for (int att = 0; att < newAttributes.getLength(); att++) {
                         String normAttrName = mapper.mapSafeAttribute(safe, newAttributes.getLocalName(att));
-                        if (normAttrName==null){
+                        if (normAttrName == null) {
                             newAttributes.removeAttribute(att);
                             att--;
+                        } else {
+                            // We have a remapped attribute name, so set it as it might have changed.
+                            newAttributes.setLocalName(att, normAttrName);
+                            
+                            // And resolve relative links for the src attribute.
+                            if (normAttrName.equals("src")) {
+                                newAttributes.setValue(att, resolve(newAttributes.getValue(att).trim()));
+                            }
                         }
                     }
                     xhtml.startElement(safe, newAttributes);

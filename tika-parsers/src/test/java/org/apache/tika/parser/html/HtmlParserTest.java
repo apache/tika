@@ -450,6 +450,32 @@ public class HtmlParserTest extends TestCase {
 
     }
 
+    /**
+     * Test case for TIKA-463. Don't skip elements that have URLs.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
+     */
+    public void testImgUrlExtraction() throws Exception {
+        final String test = "<html><head><title>Title</title>" +
+        "<base href=\"http://domain.com\" />" +
+        "</head><body><img src=\"image.jpg\" /></body></html>";
+
+        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
+        StringWriter sw = new StringWriter();
+        handler.setResult(new StreamResult(sw));
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                handler, new Metadata(), new ParseContext());
+
+        String result = sw.toString();
+        
+        // <img> tag should exist, with fully resolved URL
+        assertTrue(Pattern.matches("(?s).*<img src=\"http://domain.com/image.jpg\"/>.*$", result));
+    }
 
 
 }

@@ -16,60 +16,97 @@
  */
 package org.apache.tika.parser.html;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 /**
  * The default HTML mapping rules in Tika.
  *
  * @since Apache Tika 0.6
  */
+@SuppressWarnings("serial")
 public class DefaultHtmlMapper implements HtmlMapper {
 
+    // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
+    private static final Map<String, String> SAFE_ELEMENTS = new HashMap<String, String>() {{
+        put("H1", "h1");
+        put("H2", "h2");
+        put("H3", "h3");
+        put("H4", "h4");
+        put("H5", "h5");
+        put("H6", "h6");
+
+        put("P", "p");
+        put("PRE", "pre");
+        put("BLOCKQUOTE", "blockquote");
+
+        put("UL", "ul");
+        put("OL", "ol");
+        put("MENU", "ul");
+        put("LI", "li");
+        put("DL", "dl");
+        put("DT", "dt");
+        put("DD", "dd");
+
+        put("TABLE", "table");
+        put("THEAD", "thead");
+        put("TBODY", "tbody");
+        put("TR", "tr");
+        put("TH", "th");
+        put("TD", "td");
+
+        put("ADDRESS", "address");
+        
+        // TIKA-463 - add additional elements that contain URLs
+        put("AREA", "area");
+        put("IMG", "img");
+
+    }};
+    
+    private static final Set<String> DISCARDABLE_ELEMENTS = new HashSet<String>() {{
+        add("STYLE");
+        add("SCRIPT");
+    }};
+
+    private static final Map<String, Set<String>> SAFE_ATTRIBUTES = new HashMap<String, Set<String>>() {{
+        put("a", attrSet("rel", "name"));
+        put("img", attrSet("src"));
+        // TODO KKr - fill out this set.
+    }};
+    
+    private static Set<String> attrSet(String... attrs) {
+        Set<String> result = new HashSet<String>();
+        for (String attr : attrs) {
+            result.add(attr);
+        }
+        return result;
+    }
+    
     /**
      * @since Apache Tika 0.8
      */
     public static final HtmlMapper INSTANCE = new DefaultHtmlMapper();
 
     public String mapSafeElement(String name) {
-        // Based on http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd
-
-        if ("H1".equals(name)) return "h1";
-        if ("H2".equals(name)) return "h2";
-        if ("H3".equals(name)) return "h3";
-        if ("H4".equals(name)) return "h4";
-        if ("H5".equals(name)) return "h5";
-        if ("H6".equals(name)) return "h6";
-
-        if ("P".equals(name)) return "p";
-        if ("PRE".equals(name)) return "pre";
-        if ("BLOCKQUOTE".equals(name)) return "blockquote";
-
-        if ("UL".equals(name)) return "ul";
-        if ("OL".equals(name)) return "ol";
-        if ("MENU".equals(name)) return "ul";
-        if ("LI".equals(name)) return "li";
-        if ("DL".equals(name)) return "dl";
-        if ("DT".equals(name)) return "dt";
-        if ("DD".equals(name)) return "dd";
-
-        if ("TABLE".equals(name)) return "table";
-        if ("THEAD".equals(name)) return "thead";
-        if ("TBODY".equals(name)) return "tbody";
-        if ("TR".equals(name)) return "tr";
-        if ("TH".equals(name)) return "th";
-        if ("TD".equals(name)) return "td";
-
-        if ("ADDRESS".equals(name)) return "address";
-
-        return null;
+        return SAFE_ELEMENTS.get(name);
     }
 
-    /** Normalises an attribute name. Assumes that the element name 
-     * is valid and normalised **/
+    /** Normalizes an attribute name. Assumes that the element name 
+     * is valid and normalized 
+     */
     public String mapSafeAttribute(String elementName, String attributeName) {
-        return null;
-    }    
+        Set<String> safeAttrs = SAFE_ATTRIBUTES.get(elementName);
+        if ((safeAttrs != null) && safeAttrs.contains(attributeName)) {
+            return attributeName;
+        } else {
+            return null;
+        }
+    }
     
     public boolean isDiscardElement(String name) {
-        return "STYLE".equals(name) || "SCRIPT".equals(name);
+        return DISCARDABLE_ELEMENTS.contains(name);
     }
 
 }
