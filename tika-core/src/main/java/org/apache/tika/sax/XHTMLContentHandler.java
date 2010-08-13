@@ -59,13 +59,13 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * skip them if they get sent to startElement/endElement by mistake.
      */
     private static final Set<String> AUTO =
-        unmodifiableSet("html", "head", "body");
+        unmodifiableSet("html", "head", "body", "frameset");
 
     /**
      * The elements that get prepended with the {@link #TAB} character.
      */
     private static final Set<String> INDENT =
-        unmodifiableSet("li", "dd", "dt", "td", "th");
+        unmodifiableSet("li", "dd", "dt", "td", "th", "frame");
 
     /**
      * The elements that get appended with the {@link #NL} character.
@@ -93,7 +93,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
      */
     private boolean headStarted = false;
     private boolean headEnded = false;
-
+    private boolean useFrameset = false;
+    
     public XHTMLContentHandler(ContentHandler handler, Metadata metadata) {
         super(handler);
         this.metadata = metadata;
@@ -138,14 +139,15 @@ public class XHTMLContentHandler extends SafeContentHandler {
      *   &lt;head&gt;
      *     &lt;title&gt;...&lt;/title&gt;
      *   &lt;/head&gt;
-     *   &lt;body&gt;
+     *   &lt;body&gt; (or &lt;frameset&gt;
      * </pre>
      */
-    private void lazyEndHead() throws SAXException {
+    private void lazyEndHead(boolean isFrameset) throws SAXException {
         lazyStartHead();
         
         if (!headEnded) {
             headEnded = true;
+            useFrameset = isFrameset;
             
             // TIKA-478: Emit all metadata values (other than title). We have to call
             // startElement() and characters() directly to avoid recursive problems.
@@ -156,7 +158,8 @@ public class XHTMLContentHandler extends SafeContentHandler {
                 
                 for (String value : metadata.getValues(name)) {
                     AttributesImpl attributes = new AttributesImpl();
-                    attributes.addAttribute("", name, name, "CDATA", value);
+                    attributes.addAttribute("", "name", "name", "CDATA", name);
+                    attributes.addAttribute("", "content", "content", "CDATA", value);
                     super.startElement(XHTML, "meta", "meta", attributes);
                     super.endElement(XHTML, "meta", "meta");
                 }
@@ -172,7 +175,12 @@ public class XHTMLContentHandler extends SafeContentHandler {
             super.endElement(XHTML, "title", "title");
             
             super.endElement(XHTML, "head", "head");
-            super.startElement(XHTML, "body", "body", EMPTY_ATTRIBUTES);
+            
+            if (useFrameset) {
+                super.startElement(XHTML, "frameset", "frameset", EMPTY_ATTRIBUTES);
+            } else {
+                super.startElement(XHTML, "body", "body", EMPTY_ATTRIBUTES);
+            }
         }
     }
 
@@ -186,9 +194,14 @@ public class XHTMLContentHandler extends SafeContentHandler {
      */
     @Override
     public void endDocument() throws SAXException {
-        lazyEndHead();
+        lazyEndHead(useFrameset);
         
-        super.endElement(XHTML, "body", "body");
+        if (useFrameset) {
+            super.endElement(XHTML, "frameset", "frameset");
+        } else {
+            super.endElement(XHTML, "body", "body");
+        }
+        
         super.endElement(XHTML, "html", "html");
         
         endPrefixMapping("");
@@ -204,11 +217,13 @@ public class XHTMLContentHandler extends SafeContentHandler {
             String uri, String local, String name, Attributes attributes)
             throws SAXException {
         
-        if (!AUTO.contains(name)) {
+        if (name.equals("frameset")) {
+            lazyEndHead(true);
+        } else if (!AUTO.contains(name)) {
             if (HEAD.contains(name)) {
                 lazyStartHead();
             } else {
-                lazyEndHead();
+                lazyEndHead(false);
             }
 
             if (XHTML.equals(uri) && INDENT.contains(name)) {
@@ -238,7 +253,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
      */
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
-        lazyEndHead();
+        lazyEndHead(useFrameset);
         super.characters(ch, start, length);
     }
 
