@@ -125,8 +125,22 @@ class HtmlHandler extends TextContentHandler {
         if (bodyLevel > 0 && discardLevel == 0) {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
+                // special treatment for anchors
+                if ("a".equals(safe)) {
+                    String href = atts.getValue("href");
+                    if (href != null) {
+                        xhtml.startElement("a", "href", resolve(href.trim()));
+                    } else {
+                        String anchor = atts.getValue("name");
+                        if (anchor != null) {
+                            xhtml.startElement("a", "name", anchor.trim());
+                        } else {
+                            xhtml.startElement("a");
+                        }
+                    }
+                }
                 // check if there are any attributes to process
-                if (atts.getLength() == 0) {
+                else if (atts.getLength() == 0) {
                     xhtml.startElement(safe);
                 } else {
                     AttributesImpl newAttributes = new AttributesImpl(atts);
@@ -146,18 +160,6 @@ class HtmlHandler extends TextContentHandler {
                         }
                     }
                     xhtml.startElement(safe, newAttributes);
-                }
-            } else if ("A".equals(name)) {
-                String href = atts.getValue("href");
-                if (href != null) {
-                    xhtml.startElement("a", "href", resolve(href.trim()));
-                } else {
-                    String anchor = atts.getValue("name");
-                    if (anchor != null) {
-                        xhtml.startElement("a", "name", anchor.trim());
-                    } else {
-                        xhtml.startElement("a");
-                    }
                 }
             }
         }
@@ -179,8 +181,6 @@ class HtmlHandler extends TextContentHandler {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
                 xhtml.endElement(safe);
-            } else if ("A".equals(name)) {
-                xhtml.endElement("a");
             } else if (XHTMLContentHandler.ENDLINE.contains(
                     name.toLowerCase())) {
                 // TIKA-343: Replace closing block tags (and <br/>) with a
