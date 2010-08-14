@@ -59,6 +59,8 @@ public class DefaultHtmlMapper implements HtmlMapper {
 
         put("ADDRESS", "address");
         
+        // TIKA-460 - add anchors
+        put("A", "a");
         // TIKA-463 - add additional elements that contain URLs
         put("AREA", "area");
         put("IMG", "img");
