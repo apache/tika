@@ -211,6 +211,9 @@
       <div id="navcolumn">
        #mainMenu( $decoration.body.menus )
       </div>
+      <div id="bookpromo">  
+        <a href="http://manning.com/mattmann"><img src="http://www.manning.com/mattmann/mattmann_cover150.jpg" border="0"/></a>
+      </div>
     </div>
     <div id="bodyColumn">
       <div id="contentBox">
