@@ -1,0 +1,152 @@
+                          -----------------
+                          Content Detection
+                          -----------------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one or more
+~~ contributor license agreements.  See the NOTICE file distributed with
+~~ this work for additional information regarding copyright ownership.
+~~ The ASF licenses this file to You under the Apache License, Version 2.0
+~~ (the "License"); you may not use this file except in compliance with
+~~ the License.  You may obtain a copy of the License at
+~~
+~~     http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+
+Content Detection
+
+   This page gives you information on how content and language detection
+   works with Apache Tika, and how to tune the behaviour of Tika.
+
+%{toc|section=1|fromDepth=1}
+
+* {The Detector Interface}
+
+  The
+  {{{./api/org/apache/tika/detect/Detector.html}org.apache.tika.detect.Detector}}
+  interface is the basis for most of the content type detection in Apache
+  Tika. All the different ways of detecting content all implement the
+  same common method:
+
+---
+MediaType detect(java.io.InputStream input,
+                 Metadata metadata) throws java.io.IOException
+---
+
+   The <<<detect>>> method takes the stream to inspect, and a 
+   <<<Metadata>>> object that holds any additional information on
+   the content. The detector will return a 
+   {{{./api/org/apache/tika/mime/MediaType.html}MediaType}} object describing
+   its best guess as to the type of the file.
+
+   In general, only two keys on the Metadata object are used by Detectors.
+   These are <<<Metadata.RESOURCE_NAME_KEY>>> which should hold the name
+   of the file (where known), and <<<Metadata.CONTENT_TYPE>>> which should
+   hold the advertised content type of the file (eg from a webserver or
+   a content repository).
+
+
+* {Mime Magic Detction}
+
+  By looking for special ("magic") patterns of bytes near the start of
+  the file, it is often possible to detect the type of the file. For
+  some file types, this is a simple process. For others, typically
+  container based formats, the magic detection may not be enough. (More
+  detail on detecting container formats below)
+
+  Tika is able to make use of a a mime magic info file, in the 
+  {{{http://www.freedesktop.org/standards/shared-mime-info}Freedesktop MIME-info}} 
+  format to peform mime magic detection.
+
+  This is provided within Tika by
+  {{{./api/org/apache/tika/detect/MagicDetector.html}org.apache.tika.detect.MagicDetector}}. It is most commonly access via
+  {{{./api/org/apache/tika/mime/MimeTypes.html}org.apache.tika.mime.MimeTypes}},
+  normally sourced from the <<<tika-mimetypes.xml>>> file.
+   
+
+* {Resource Name Based Detection}
+
+  Where the name of the file is known, it is sometimes possible to guess 
+  the file type from the name or extension. Within the 
+  <<<tika-mimetypes.xml>>> file is a list of patterns which are used to
+  identify the type from the filename.
+
+  However, because files may be renamed, this method of detection is quick
+  but not always as accurate.
+
+  This is provided within Tika by
+  {{{./api/org/apache/tika/detect/NameDetector.html}org.apache.tika.detect.NameDetector}}.
+
+
+* {Known Content Type "Detection}
+
+  Sometimes, the mime type for a file is already known, such as when
+  downloading from a webserver, or when retrieving from a content store.
+  This information can be used by detectors, such as
+  {{{./api/org/apache/tika/mime/MimeTypes.html}org.apache.tika.mime.MimeTypes}},
+
+
+* {The default Mime Types Detector}
+
+  By default, the mime type detection in Tika is provided by
+  {{{./api/org/apache/tika/mime/MimeTypes.html}org.apache.tika.mime.MimeTypes}}.
+  This detector makes use of <<<tika-mimetypes.xml>>> to power
+  magic based and filename based detection.
+
+  Firstly, magic based detection is used on the start of the file.
+  If the file is an XML file, then the start of the XML is processed
+  to look for root elements. Next, if available, the filename 
+  (from <<<Metadata.RESOURCE_NAME_KEY>>>) is
+  then used to improve the detail of the detection, such as when magic
+  detects a text file, and the filename hints it's really a CSV. Finally,
+  if available, the supplied content type (from <<<Metadata.CONTENT_TYPE>>>)
+  is used to further refine the type.
+
+
+* {Container Aware Detection}
+
+  Several common file formats are actually held within a common container
+  format. One example is the PowerPoint .ppt and Word .doc formats, which
+  are both held within an OLE2 container. Another is Apple iWork formats,
+  which are actually a series of XML files within a Zip file.
+
+  Using magic detection, it is easy to spot that a given file is an OLE2
+  document, or a Zip file. Using magic detection alone, it is very difficult
+  (and often impossible) to tell what kind of file lives inside the container.
+
+  For some use cases, speed is important, so having a quick way to know the
+  container type is sufficient. For other cases however, you don't mind 
+  spending a bit of time (and memory!) processing the container to get a 
+  more accurate answer on its contents. For these cases, a container
+  aware detector should be used.
+
+  Tika provides a wrapping detector in the parsers bundle, of
+  {{{./api/org/apache/tika/detect/ContainerAwareDetector.html}org.apache.tika.detect.ContainerAwareDetector}}.
+  This detector will check for certain known containers, and if found,
+  will open them and detect the appropriate type based on the contents.
+  If the file isn't a known container, it will fall back to another
+  detector for the answer (most commonly the default 
+  <<<MimeTypes>>> detector)
+
+  Because this detector needs to read the whole file to process the
+  container, it must be used with a 
+  {{{./api/org/apache/tika/io/TikaInputStream.html}org.apache.tika.io.TikaInputStream}}.
+  If called with a regular <<<InputStream>>>, then all work will be done
+  by the fallback detector.
+
+  For more information on container formats and Tika, see
+  {{{http://wiki.apache.org/tika/MetadataDiscussion}}}
+
+
+* {Language Detection}
+
+  Tika is able to help identify the language of a piece of text, which
+  is useful when extracting text from document formats which do not include
+  language information in their metadata.
+
+  The language detection is provided by
+  {{{./api/org/apache/tika/language/LanguageIdentifier.html}org.apache.tika.language.LanguageIdentifier}}
