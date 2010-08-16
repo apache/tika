@@ -577,6 +577,26 @@ public class HtmlParserTest extends TestCase {
         assertTrue(Pattern.matches("(?s).*<body>.*</body>.*$", content));
     }
     
+    /**
+     * Test case for TIKA-481. Verify href in <link> is resolved.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-481">TIKA-481</a>
+     */
+    public void testLinkHrefResolution() throws Exception {
+        final String test = "<html><head><title>Title</title>" +
+        "<base href=\"http://domain.com\" />" +
+        "<link rel=\"next\" href=\"next.html\" />" +
+        "</head><body></body></html>";
+
+        StringWriter sw = new StringWriter();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                makeHtmlTransformer(sw), new Metadata(), new ParseContext());
+
+        String result = sw.toString();
+        
+        // <link> tag should exist in <head>, with fully resolved URL
+        assertTrue(Pattern.matches("(?s).*<head>.*<link rel=\"next\" href=\"http://domain.com/next.html\"/>.*</head>.*$", result));
+    }
     
 
     /**

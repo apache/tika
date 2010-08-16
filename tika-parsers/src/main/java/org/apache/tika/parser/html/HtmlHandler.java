@@ -118,7 +118,7 @@ class HtmlHandler extends TextContentHandler {
                         resolve(atts.getValue("href").trim()));
                 xhtml.startElement(uri, local, "base", atts);
             } else if ("LINK".equals(name) && atts.getValue("href") != null) {
-                xhtml.startElement(uri, local, "link", atts);
+                startElementWithSafeAttributes("link", atts);
             }
         }
 
@@ -143,28 +143,33 @@ class HtmlHandler extends TextContentHandler {
                 else if (atts.getLength() == 0) {
                     xhtml.startElement(safe);
                 } else {
-                    AttributesImpl newAttributes = new AttributesImpl(atts);
-                    for (int att = 0; att < newAttributes.getLength(); att++) {
-                        String normAttrName = mapper.mapSafeAttribute(safe, newAttributes.getLocalName(att));
-                        if (normAttrName == null) {
-                            newAttributes.removeAttribute(att);
-                            att--;
-                        } else {
-                            // We have a remapped attribute name, so set it as it might have changed.
-                            newAttributes.setLocalName(att, normAttrName);
-                            
-                            // And resolve relative links for the src attribute.
-                            if (normAttrName.equals("src")) {
-                                newAttributes.setValue(att, resolve(newAttributes.getValue(att).trim()));
-                            }
-                        }
-                    }
-                    xhtml.startElement(safe, newAttributes);
+                    startElementWithSafeAttributes(safe, atts);
                 }
             }
         }
 
         title.setLength(0);
+    }
+
+    private void startElementWithSafeAttributes(String name, Attributes atts) throws SAXException {
+        AttributesImpl newAttributes = new AttributesImpl(atts);
+        for (int att = 0; att < newAttributes.getLength(); att++) {
+            String normAttrName = mapper.mapSafeAttribute(name, newAttributes.getLocalName(att));
+            if (normAttrName == null) {
+                newAttributes.removeAttribute(att);
+                att--;
+            } else {
+                // We have a remapped attribute name, so set it as it might have changed.
+                newAttributes.setLocalName(att, normAttrName);
+                
+                // And resolve relative links for the href & src attributes.
+                if (normAttrName.equals("src") || normAttrName.equals("href")) {
+                    newAttributes.setValue(att, resolve(newAttributes.getValue(att).trim()));
+                }
+            }
+        }
+        
+        xhtml.startElement(name, newAttributes);
     }
 
     @Override
