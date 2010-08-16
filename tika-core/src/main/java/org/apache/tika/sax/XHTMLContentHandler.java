@@ -157,11 +157,15 @@ public class XHTMLContentHandler extends SafeContentHandler {
                 }
                 
                 for (String value : metadata.getValues(name)) {
-                    AttributesImpl attributes = new AttributesImpl();
-                    attributes.addAttribute("", "name", "name", "CDATA", name);
-                    attributes.addAttribute("", "content", "content", "CDATA", value);
-                    super.startElement(XHTML, "meta", "meta", attributes);
-                    super.endElement(XHTML, "meta", "meta");
+                    // Putting null values into attributes causes problems, but is
+                    // allowed by Metadata, so guard against that.
+                    if (value != null) {
+                        AttributesImpl attributes = new AttributesImpl();
+                        attributes.addAttribute("", "name", "name", "CDATA", name);
+                        attributes.addAttribute("", "content", "content", "CDATA", value);
+                        super.startElement(XHTML, "meta", "meta", attributes);
+                        super.endElement(XHTML, "meta", "meta");
+                    }
                 }
             }
             

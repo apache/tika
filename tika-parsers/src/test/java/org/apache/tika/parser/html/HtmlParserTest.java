@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -416,17 +417,10 @@ public class HtmlParserTest extends TestCase {
         "<link rel=\"next\" href=\"next.html\" />" +
         "</head><body><p>Simple Content</p></body></html>";
 
-        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
         StringWriter sw = new StringWriter();
-        handler.setResult(new StreamResult(sw));
-
         new HtmlParser().parse(
                 new ByteArrayInputStream(test.getBytes("UTF-8")),
-                handler, new Metadata(), new ParseContext());
+                makeHtmlTransformer(sw), new Metadata(), new ParseContext());
 
         String result = sw.toString();
         
@@ -459,17 +453,10 @@ public class HtmlParserTest extends TestCase {
         "<base href=\"http://domain.com\" />" +
         "</head><body><img src=\"image.jpg\" /></body></html>";
 
-        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
         StringWriter sw = new StringWriter();
-        handler.setResult(new StreamResult(sw));
-
         new HtmlParser().parse(
                 new ByteArrayInputStream(test.getBytes("UTF-8")),
-                handler, new Metadata(), new ParseContext());
+                makeHtmlTransformer(sw), new Metadata(), new ParseContext());
 
         String result = sw.toString();
         
@@ -486,17 +473,10 @@ public class HtmlParserTest extends TestCase {
         "<base href=\"http://domain.com\" />" +
         "</head><frameset><frame src=\"frame.html\" /></frameset></html>";
 
-        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
         StringWriter sw = new StringWriter();
-        handler.setResult(new StreamResult(sw));
-
         new HtmlParser().parse(
                 new ByteArrayInputStream(test.getBytes("UTF-8")),
-                handler, new Metadata(), new ParseContext());
+                makeHtmlTransformer(sw), new Metadata(), new ParseContext());
 
         String result = sw.toString();
         
@@ -505,33 +485,41 @@ public class HtmlParserTest extends TestCase {
     }
 
     /**
+     * Test case for change related to TIKA-463. Verify proper handling of <meta> tags.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
+     */
+    public void testMetaTagHandling() throws Exception {
+        final String test = "<html><body><h1>header</h1><p>some text</p></body></html>";
+
+        Metadata metadata = new Metadata();
+        metadata.add("Content-Type", "text/html; charset=utf-8");
+        metadata.add("Language", null);
+        
+        StringWriter sw = new StringWriter();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                makeHtmlTransformer(sw), metadata, new ParseContext());
+
+        String result = sw.toString();
+        
+        // <meta> tag for Content-Type should exist, but nothing for Language
+        assertTrue(Pattern.matches("(?s).*<meta name=\"Content-Type\" content=\"text/html; charset=utf-8\"/>.*$", result));
+        assertFalse(Pattern.matches("(?s).*<meta name=\"Language\".*$", result));
+    }
+
+    /**
      * Test case for TIKA-457. Better handling for broken HTML that has <frameset> inside of <body>.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-457">TIKA-457</a>
      */
     public void testFBrokenrameset() throws Exception {
-        final String test2 = "<html><head><title> my title </title></head><body>" +
-            "<frameset rows=\"20,*\"><frame src=\"top.html\"></frame>" +
-            "<frameset cols=\"20,*\"><frame src=\"left.html\"></frame>" +
-            "<frame src=\"invalid.html\"/></frame>" +
-            "<frame src=\"right.html\"></frame>" +
-            "</frameset></frameset></body></html>";
-
-        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
-        
         final String test1 = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
         "</head><body><frameset><frame src=\"frame.html\" /></frameset></body></html>";
 
         StringWriter sw1 = new StringWriter();
-        handler.setResult(new StreamResult(sw1));
-
         new HtmlParser().parse(
                 new ByteArrayInputStream(test1.getBytes("UTF-8")),
-                handler, new Metadata(), new ParseContext());
+                makeHtmlTransformer(sw1), new Metadata(), new ParseContext());
 
         String result = sw1.toString();
         
@@ -541,12 +529,18 @@ public class HtmlParserTest extends TestCase {
         // <body> tag should not exist.
         assertFalse(Pattern.matches("(?s).*<body>.*$", result));
 
-        StringWriter sw2 = new StringWriter();
-        handler.setResult(new StreamResult(sw2));
+        // Test the example from the Nutch project.
+        final String test2 = "<html><head><title> my title </title></head><body>" +
+        "<frameset rows=\"20,*\"><frame src=\"top.html\"></frame>" +
+        "<frameset cols=\"20,*\"><frame src=\"left.html\"></frame>" +
+        "<frame src=\"invalid.html\"/></frame>" +
+        "<frame src=\"right.html\"></frame>" +
+        "</frameset></frameset></body></html>";
 
+        StringWriter sw2 = new StringWriter();
         new HtmlParser().parse(
                 new ByteArrayInputStream(test2.getBytes("UTF-8")),
-                handler, new Metadata(), new ParseContext());
+                makeHtmlTransformer(sw2), new Metadata(), new ParseContext());
 
         result = sw2.toString();
         
@@ -560,5 +554,21 @@ public class HtmlParserTest extends TestCase {
         assertFalse(Pattern.matches("(?s).*<body>.*$", result));
     }
 
-
+    /**
+     * Create ContentHandler that transforms SAX events into textual HTML output,
+     * and writes it out to <writer> - typically this is a StringWriter.
+     * 
+     * @param writer Where to write resulting HTML text.
+     * @return ContentHandler suitable for passing to parse() methods.
+     * @throws Exception
+     */
+    private ContentHandler makeHtmlTransformer(Writer writer) throws Exception {
+        SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "utf-8");
+        handler.setResult(new StreamResult(writer));
+        return handler;
+    }
 }
