@@ -78,6 +78,7 @@ public class DefaultHtmlMapper implements HtmlMapper {
         put("a", attrSet("rel", "name"));
         put("img", attrSet("src"));
         put("frame", attrSet("src"));
+        put("link", attrSet("charset", "href", "hreflang", "type", "rel", "rev", "media"));
         // TODO KKr - fill out this set.
     }};
     
