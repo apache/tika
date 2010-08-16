@@ -21,8 +21,10 @@ import java.io.Writer;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 import de.l3s.boilerpipe.BoilerpipeExtractor;
 import de.l3s.boilerpipe.BoilerpipeProcessingException;
@@ -96,11 +98,28 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             throw new SAXException(e);
         }
         
+        Attributes emptyAttrs = new AttributesImpl();
+
         delegate.startDocument();
+        delegate.startPrefixMapping("", XHTMLContentHandler.XHTML);
+
+        delegate.startElement(XHTMLContentHandler.XHTML, "html", "html", emptyAttrs);
+        delegate.startElement(XHTMLContentHandler.XHTML, "head", "head", emptyAttrs);
+        delegate.startElement(XHTMLContentHandler.XHTML, "title", "title", emptyAttrs);
         
+        if (td.getTitle() != null) {
+            char[] titleChars = td.getTitle().toCharArray();
+            delegate.characters(titleChars, 0, titleChars.length);
+        }
+        
+        delegate.endElement(XHTMLContentHandler.XHTML, "title", "title");
+        delegate.endElement(XHTMLContentHandler.XHTML, "head", "head");
+        
+        delegate.startElement(XHTMLContentHandler.XHTML, "body", "body", emptyAttrs);
+
         for (TextBlock block : td.getTextBlocks()) {
             if (block.isContent()) {
-                delegate.startElement(XHTMLContentHandler.XHTML, "p", "p", null);
+                delegate.startElement(XHTMLContentHandler.XHTML, "p", "p", emptyAttrs);
                 char[] chars = block.getText().toCharArray();
                 delegate.characters(chars, 0, chars.length);
                 delegate.endElement(XHTMLContentHandler.XHTML, "p", "p");
@@ -108,6 +127,11 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             }
         }
         
+        delegate.endElement(XHTMLContentHandler.XHTML, "body", "body");
+        delegate.endElement(XHTMLContentHandler.XHTML, "html", "html");
+        
+        delegate.endPrefixMapping("");
+
         delegate.endDocument();
     }
 }
