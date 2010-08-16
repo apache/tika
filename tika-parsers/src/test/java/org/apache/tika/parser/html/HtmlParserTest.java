@@ -555,6 +555,31 @@ public class HtmlParserTest extends TestCase {
     }
 
     /**
+     * Test case for TIKA-480: fix NPE when using BodyContentHandler or HtmlTransformer
+     * as delegate for BoilerpipeContentHandler
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-480">TIKA-480</a>
+     */
+    public void testBoilerplateDelegation() throws Exception {
+        String path = "/test-documents/boilerplate.html";
+        
+        Metadata metadata = new Metadata();
+        StringWriter sw = new StringWriter();
+        new HtmlParser().parse(
+                HtmlParserTest.class.getResourceAsStream(path),
+                makeHtmlTransformer(sw),  metadata, new ParseContext());
+        
+        String content = sw.toString();
+        
+        // Should have <html>, <head>, <title>, <body> elements
+        assertTrue(Pattern.matches("(?s).*<html xmlns=\"http://www.w3.org/1999/xhtml\">.*</html>.*$", content));
+        assertTrue(Pattern.matches("(?s).*<head>.*</head>.*$", content));
+        assertTrue(Pattern.matches("(?s).*<title>Title</title>.*$", content));
+        assertTrue(Pattern.matches("(?s).*<body>.*</body>.*$", content));
+    }
+    
+    
+
+    /**
      * Create ContentHandler that transforms SAX events into textual HTML output,
      * and writes it out to <writer> - typically this is a StringWriter.
      * 
