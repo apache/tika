@@ -18,6 +18,8 @@ package org.apache.tika.parser.html;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,7 +31,20 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+@SuppressWarnings("serial")
 class HtmlHandler extends TextContentHandler {
+
+    // List of attributes that need to be resolved.
+    private static final Set<String> URI_ATTRIBUTES = new HashSet<String>() {{
+        add("src");
+        add("href");
+        add("longdesc");
+        add("usemap");
+        add("data");
+        add("cite");
+        add("codebase");
+        add("classid");
+    }};
 
     private final HtmlMapper mapper;
 
@@ -115,9 +130,9 @@ class HtmlHandler extends TextContentHandler {
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
                 metadata.set(
                         Metadata.CONTENT_LOCATION,
-                        resolve(atts.getValue("href").trim()));
+                        resolve(atts.getValue("href")));
                 xhtml.startElement(uri, local, "base", atts);
-            } else if ("LINK".equals(name) && atts.getValue("href") != null) {
+            } else if ("LINK".equals(name)) {
                 startElementWithSafeAttributes("link", atts);
             }
         }
@@ -125,26 +140,7 @@ class HtmlHandler extends TextContentHandler {
         if (bodyLevel > 0 && discardLevel == 0) {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
-                // special treatment for anchors
-                if ("a".equals(safe)) {
-                    String href = atts.getValue("href");
-                    if (href != null) {
-                        xhtml.startElement("a", "href", resolve(href.trim()));
-                    } else {
-                        String anchor = atts.getValue("name");
-                        if (anchor != null) {
-                            xhtml.startElement("a", "name", anchor.trim());
-                        } else {
-                            xhtml.startElement("a");
-                        }
-                    }
-                }
-                // check if there are any attributes to process
-                else if (atts.getLength() == 0) {
-                    xhtml.startElement(safe);
-                } else {
-                    startElementWithSafeAttributes(safe, atts);
-                }
+                startElementWithSafeAttributes(safe, atts);
             }
         }
 
@@ -152,6 +148,11 @@ class HtmlHandler extends TextContentHandler {
     }
 
     private void startElementWithSafeAttributes(String name, Attributes atts) throws SAXException {
+        if (atts.getLength() == 0) {
+            xhtml.startElement(name);
+            return;
+        }
+        
         AttributesImpl newAttributes = new AttributesImpl(atts);
         for (int att = 0; att < newAttributes.getLength(); att++) {
             String normAttrName = mapper.mapSafeAttribute(name, newAttributes.getLocalName(att));
@@ -162,9 +163,10 @@ class HtmlHandler extends TextContentHandler {
                 // We have a remapped attribute name, so set it as it might have changed.
                 newAttributes.setLocalName(att, normAttrName);
                 
-                // And resolve relative links for the href & src attributes.
-                if (normAttrName.equals("src") || normAttrName.equals("href")) {
-                    newAttributes.setValue(att, resolve(newAttributes.getValue(att).trim()));
+                // And resolve relative links. Eventually this should be pushed
+                // into the HtmlMapper code.
+                if (URI_ATTRIBUTES.contains(normAttrName)) {
+                    newAttributes.setValue(att, resolve(newAttributes.getValue(att)));
                 }
             }
         }
@@ -229,6 +231,8 @@ class HtmlHandler extends TextContentHandler {
     }
 
     private String resolve(String url) {
+        url = url.trim();
+        
         // Return the URL as-is if no base URL is available
         if (metadata.get(Metadata.CONTENT_LOCATION) == null) {
             return url;

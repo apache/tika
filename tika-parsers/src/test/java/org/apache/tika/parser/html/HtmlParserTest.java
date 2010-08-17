@@ -481,7 +481,72 @@ public class HtmlParserTest extends TestCase {
         String result = sw.toString();
         
         // <frame> tag should exist, with fully resolved URL
-        assertTrue(Pattern.matches("(?s).*<frame src=\"http://domain.com/frame.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame .* src=\"http://domain.com/frame.html\"/>.*$", result));
+    }
+
+    /**
+     * Test case for TIKA-463. Don't skip elements that have URLs.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
+     */
+    public void testIFrameSrcExtraction() throws Exception {
+        final String test = "<html><head><title>Title</title>" +
+        "<base href=\"http://domain.com\" />" +
+        "</head><body><iframe src =\"framed.html\" width=\"100%\" height=\"300\">" +
+        "<p>Your browser doesn't support iframes!</p></body></html>";
+
+        StringWriter sw = new StringWriter();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                makeHtmlTransformer(sw), new Metadata(), new ParseContext());
+
+        String result = sw.toString();
+        
+        // <iframe> tag should exist, with fully resolved URL
+        assertTrue(Pattern.matches("(?s).*<iframe .* src=\"http://domain.com/framed.html\".*$", result));
+    }
+
+    /**
+     * Test case for TIKA-463. Don't skip elements that have URLs.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
+     */
+    public void testAreaExtraction() throws Exception {
+        final String test = "<html><head><title>Title</title>" +
+        "<base href=\"http://domain.com\" />" +
+        "</head><body><p><map name=\"map\" id=\"map\">" +
+        "<area shape=\"rect\" href=\"map.html\" alt=\"\" />" +
+        "</map></p></body></html>";
+
+        StringWriter sw = new StringWriter();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                makeHtmlTransformer(sw), new Metadata(), new ParseContext());
+
+        String result = sw.toString();
+        
+        // <map> tag should exist, with <area> tag with fully resolved URL
+        assertTrue(Pattern.matches("(?s).*<map .*<area .* href=\"http://domain.com/map.html\".*</map>.*$", result));
+    }
+
+    /**
+     * Test case for TIKA-463. Don't skip elements that have URLs.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
+     */
+    public void testObjectExtraction() throws Exception {
+        final String test = "<html><head><title>Title</title>" +
+        "<base href=\"http://domain.com\" />" +
+        "</head><body><p><object data=\"object.data\" type=\"text/html\">" +
+        "<param name=\"name\" value=\"value\" />" +
+        "</object></p></body></html>";
+
+        StringWriter sw = new StringWriter();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                makeHtmlTransformer(sw), new Metadata(), new ParseContext());
+
+        String result = sw.toString();
+        
+        // <object> tag should exist with fully resolved URLs
+        assertTrue(Pattern.matches("(?s).*<object data=\"http://domain.com/object.data\".*<param .* name=\"name\" value=\"value\"/>.*</object>.*$", result));
     }
 
     /**
@@ -511,7 +576,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-457. Better handling for broken HTML that has <frameset> inside of <body>.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-457">TIKA-457</a>
      */
-    public void testFBrokenrameset() throws Exception {
+    public void testBrokenFrameset() throws Exception {
         final String test1 = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
         "</head><body><frameset><frame src=\"frame.html\" /></frameset></body></html>";
@@ -524,7 +589,7 @@ public class HtmlParserTest extends TestCase {
         String result = sw1.toString();
         
         // <frame> tag should exist, with fully resolved URL
-        assertTrue(Pattern.matches("(?s).*<frame src=\"http://domain.com/frame.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame .* src=\"http://domain.com/frame.html\"/>.*$", result));
         
         // <body> tag should not exist.
         assertFalse(Pattern.matches("(?s).*<body>.*$", result));
@@ -545,10 +610,10 @@ public class HtmlParserTest extends TestCase {
         result = sw2.toString();
         
         // <frame> tags should exist, with relative URL (no base element specified)
-        assertTrue(Pattern.matches("(?s).*<frame src=\"top.html\"/>.*$", result));
-        assertTrue(Pattern.matches("(?s).*<frame src=\"left.html\"/>.*$", result));
-        assertTrue(Pattern.matches("(?s).*<frame src=\"invalid.html\"/>.*$", result));
-        assertTrue(Pattern.matches("(?s).*<frame src=\"right.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame .* src=\"top.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame .* src=\"left.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame .* src=\"invalid.html\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<frame .* src=\"right.html\"/>.*$", result));
 
         // <body> tag should not exist.
         assertFalse(Pattern.matches("(?s).*<body>.*$", result));
