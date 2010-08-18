@@ -138,7 +138,28 @@ public class MimeDetectionTest extends TestCase {
             in.close();
         }        
     }
-    
+
+    /**
+     * Test for type detection of empty documents.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
+     */
+    public void testEmptyDocument() throws IOException {
+        assertEquals(MediaType.OCTET_STREAM, mimeTypes.detect(
+                new ByteArrayInputStream(new byte[0]), new Metadata()));
+
+        Metadata namehint = new Metadata();
+        namehint.set(Metadata.RESOURCE_NAME_KEY, "test.txt");
+        assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
+                new ByteArrayInputStream(new byte[0]), namehint));
+
+        Metadata typehint = new Metadata();
+        typehint.set(Metadata.CONTENT_TYPE, "text/plain");
+        assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
+                new ByteArrayInputStream(new byte[0]), typehint));
+
+    }
+
     /**
      * Tests that when we repeatedly test the detection of a document
      *  that can be detected with Mime Magic, that we consistently

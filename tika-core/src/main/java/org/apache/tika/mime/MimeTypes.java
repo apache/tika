@@ -214,6 +214,9 @@ public final class MimeTypes implements Detector, Serializable {
     public MimeType getMimeType(byte[] data) {
         if (data == null) {
             throw new IllegalArgumentException("Data is missing");
+        } else if (data.length == 0) {
+            // See https://issues.apache.org/jira/browse/TIKA-483
+            return rootMimeType;
         }
 
         // Then, check for magic bytes
