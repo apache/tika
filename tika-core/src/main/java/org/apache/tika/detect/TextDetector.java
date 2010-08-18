@@ -96,7 +96,12 @@ public class TextDetector implements Detector {
             for (int i = 0; i < NUMBER_OF_BYTES_TO_TEST; i++) {
                 int ch = input.read();
                 if (ch == -1) {
-                    return MediaType.TEXT_PLAIN;
+                    if (i > 0) {
+                        return MediaType.TEXT_PLAIN;
+                    } else {
+                        // See https://issues.apache.org/jira/browse/TIKA-483
+                        return MediaType.OCTET_STREAM;
+                    }
                 } else if (ch < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[ch]) {
                     return MediaType.OCTET_STREAM;
                 }

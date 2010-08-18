@@ -39,9 +39,16 @@ public class TextDetectorTest extends TestCase {
                 detector.detect(null, new Metadata()));
     }
 
-    public void testDetectText() throws Exception {
-        assertText(new byte[0]);
+    /**
+     * Test for type detection of empty documents.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
+     */
+    public void testDetectEmpty() throws Exception {
+        assertNotText(new byte[0]);
+    }
 
+    public void testDetectText() throws Exception {
         assertText("Hello, World!".getBytes("UTF-8"));
         assertText(" \t\r\n".getBytes("UTF-8"));
         assertText(new byte[] { -1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B });
