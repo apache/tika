@@ -16,6 +16,7 @@
  */
 package org.apache.tika.metadata;
 
+import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -37,19 +38,14 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * A map of all metadata attributes.
      */
     private Map<String, String[]> metadata = null;
-    
+
     /**
      * The ISO-8601 format string we use for Dates.
      * All dates are represented as UTC
      */
-    private SimpleDateFormat iso8601Format = new SimpleDateFormat(
-            "yyyy-MM-dd'T'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
-    private SimpleDateFormat iso8601SpaceFormat = new SimpleDateFormat(
-	           "yyyy-MM-dd' 'HH:mm:ss'Z'", new DateFormatSymbols(Locale.US));
-    {
-	iso8601Format.setTimeZone(TimeZone.getTimeZone("UTC"));
-	iso8601SpaceFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
+    private static final DateFormat iso8601Format =
+        createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", "UTF");
+
     /**
      * Some parsers will have the date as a ISO-8601 string
      *  already, and will set that into the Metadata object.
@@ -58,20 +54,65 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      *  variants that we try when processing a date based
      *  property.
      */
-    private SimpleDateFormat[] iso8601InputFormats = new SimpleDateFormat[] {
-	// yyyy-mm-ddThh...
-        iso8601Format, // UTC/Zulu
-        new SimpleDateFormat(
-           "yyyy-MM-dd'T'HH:mm:ssZ", new DateFormatSymbols(Locale.US)), // With timezone
-        new SimpleDateFormat(
-           "yyyy-MM-dd'T'HH:mm:ss", new DateFormatSymbols(Locale.US)), // Without timezone
-   	// yyyy-mm-dd hh...
-        iso8601SpaceFormat, // UTC/Zulu
-        new SimpleDateFormat(
-           "yyyy-MM-dd' 'HH:mm:ssZ", new DateFormatSymbols(Locale.US)), // With timezone
-        new SimpleDateFormat(
-           "yyyy-MM-dd' 'HH:mm:ss", new DateFormatSymbols(Locale.US)), // Without timezone
+    private static final DateFormat[] iso8601InputFormats = new DateFormat[] {
+        // yyyy-mm-ddThh...
+        iso8601Format,                                       // UTC/Zulu
+        createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null),    // With timezone
+        createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null),     // Without timezone
+        // yyyy-mm-dd hh...
+        createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", "UTF"), // UTC/Zulu
+        createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null),    // With timezone
+        createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null),     // Without timezone
     };
+
+    private static DateFormat createDateFormat(String format, String timezone) {
+        SimpleDateFormat sdf =
+            new SimpleDateFormat(format, new DateFormatSymbols(Locale.US));
+        if (timezone != null) {
+            sdf.setTimeZone(TimeZone.getTimeZone(timezone));
+        }
+        return sdf;
+    }
+
+    /**
+     * Parses the given date string. This method is synchronized to prevent
+     * concurrent access to the thread-unsafe date formats.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
+     * @param date date string
+     * @return parsed date, or <code>null</code> if the date can't be parsed
+     */
+    private static synchronized Date parseDate(String date) {
+        // Java doesn't like timezones in the form ss+hh:mm
+        // It only likes the hhmm form, without the colon
+        int n = date.length();
+        if (date.charAt(n - 3) == ':'
+            && (date.charAt(n - 6) == '+' || date.charAt(n - 6) == '-')) {
+            date = date.substring(0, n - 3) + date.substring(n - 2);
+        }
+
+        // Try several different ISO-8601 variants
+        for (DateFormat format : iso8601InputFormats) {
+            try {
+                return format.parse(date);
+            } catch (ParseException ignore) {
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns a ISO 8601 representation of the given date. This method is
+     * synchronized to prevent concurrent access to the thread-unsafe date
+     * formats.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
+     * @param date given date
+     * @return ISO 8601 date string
+     */
+    private static synchronized String formatDate(Date date) {
+        return iso8601Format.format(date);
+    }
 
     /**
      * Constructs a new, empty metadata.
@@ -166,25 +207,11 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
             return null;
         
         String v = get(property);
-        if(v == null) {
+        if (v != null) {
+            return parseDate(v);
+        } else {
             return null;
         }
-        // Java doesn't like timezones in the form ss+hh:mm
-        // It only likes the hhmm form, without the colon
-        if(v.charAt(v.length()-3) == ':' && 
-            (v.charAt(v.length()-6) == '+' ||
-             v.charAt(v.length()-6) == '-')) {
-            v = v.substring(0, v.length()-3) + v.substring(v.length()-2);
-        }
-        
-        // Try several different ISO-8601 variants
-        for(SimpleDateFormat format : iso8601InputFormats) {
-            try {
-                return format.parse(v);
-            } catch(ParseException e) {}
-        }
-        // It isn't in a supported date format, sorry
-        return null;
     }
 
     /**
@@ -295,7 +322,7 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
             throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
         if(property.getValueType() != Property.ValueType.DATE)
             throw new PropertyTypeException(Property.ValueType.DATE, property.getValueType());
-        set(property.getName(), iso8601Format.format(date));
+        set(property.getName(), formatDate(date));
     }
 
     /**
