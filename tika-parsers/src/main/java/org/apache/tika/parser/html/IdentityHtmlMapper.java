@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.html;
 
+import java.util.Locale;
+
 /**
  * Alternative HTML mapping rules that pass the input HTML as-is without any
  * modifications.
@@ -31,7 +33,7 @@ public class IdentityHtmlMapper implements HtmlMapper {
     }
 
     public String mapSafeAttribute(String elementName, String attributeName) {
-        return attributeName.toLowerCase();
+        return attributeName.toLowerCase(Locale.ENGLISH);
     }
 
     public String mapSafeElement(String name) {

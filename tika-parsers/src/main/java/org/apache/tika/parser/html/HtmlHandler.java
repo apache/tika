@@ -19,6 +19,7 @@ package org.apache.tika.parser.html;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -189,7 +190,7 @@ class HtmlHandler extends TextContentHandler {
             if (safe != null) {
                 xhtml.endElement(safe);
             } else if (XHTMLContentHandler.ENDLINE.contains(
-                    name.toLowerCase())) {
+                    name.toLowerCase(Locale.ENGLISH))) {
                 // TIKA-343: Replace closing block tags (and <br/>) with a
                 // newline unless the HtmlMapper above has already mapped
                 // them to something else
@@ -239,7 +240,7 @@ class HtmlHandler extends TextContentHandler {
         }
 
         // Check for common non-hierarchical and pseudo URI prefixes
-        String lower = url.toLowerCase();
+        String lower = url.toLowerCase(Locale.ENGLISH);
         if (lower.startsWith("urn:")
                 || lower.startsWith("mailto:")
                 || lower.startsWith("tel:")
