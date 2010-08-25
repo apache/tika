@@ -16,6 +16,7 @@
  */
 package org.apache.tika.detect;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
@@ -26,6 +27,8 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.mime.MimeTypesFactory;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
@@ -154,4 +157,16 @@ public class TestContainerAwareDetector extends TestCase {
                 d.detect(tis, new Metadata())
         );
     }
+    
+    public void testTruncatedOOXMLFile() throws Exception {
+        MimeTypes mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
+        ContainerAwareDetector detector = new ContainerAwareDetector(mimeTypes);
+        InputStream input = getTestDoc("testWORD.docx");
+        byte [] buffer = new byte[300];
+        assertEquals(300,input.read(buffer));
+        Metadata metadata = new Metadata();
+        MediaType mt = detector.detect(new ByteArrayInputStream(buffer), metadata);
+        // no exception should be thrown
+        assertEquals(MediaType.application("x-tika-ooxml"),mt);
+   }
 }

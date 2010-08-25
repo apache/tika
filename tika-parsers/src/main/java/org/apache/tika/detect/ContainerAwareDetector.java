@@ -18,6 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.ZipException;
 
 import org.apache.poi.poifs.common.POIFSConstants;
 import org.apache.poi.poifs.storage.HeaderBlockConstants;
@@ -73,7 +74,14 @@ public class ContainerAwareDetector implements Detector {
            first8[1] == POIFSConstants.OOXML_FILE_HEADER[1] &&
            first8[2] == POIFSConstants.OOXML_FILE_HEADER[2] &&
            first8[3] == POIFSConstants.OOXML_FILE_HEADER[3]) {
-            return zipDetector.detect(input, metadata);
+        	try {
+        		return zipDetector.detect(input, metadata);
+        	} catch (ZipException e) {
+        		// Problem with the zip file, eg corrupt or truncated
+            // Try the fallback in case there is enough data for that
+            //  to be able to offer something useful
+        		input = TikaInputStream.get(input.getFile());
+        	}
         }
         
         // Is this an ole2 file?
