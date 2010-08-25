@@ -59,7 +59,7 @@
         <configuration>
           <instructions>
             <Export-Package>org.apache.tika.*</Export-Package>
-            <Embed-Dependency>*;scope=provided;inline=javax/**|org/**|com/**|font_metrics.properties|repackage/**|schema*/**|META-INF/services/**</Embed-Dependency>
+            <Embed-Dependency>*;scope=provided;inline=javax/**|org/**|com/**|de/**|font_metrics.properties|repackage/**|schema*/**|META-INF/services/**</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Main-Class>org.apache.tika.cli.TikaCLI</Main-Class>
