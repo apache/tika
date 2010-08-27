@@ -53,13 +53,9 @@ import org.xml.sax.SAXException;
  *     {@link org.apache.tika.metadata.HttpHeaders#CONTENT_LANGUAGE} and
  *     {@link org.apache.tika.metadata.DublinCore#LANGUAGE}
  *   </dt>
- *   <dd>
- *     The default language of the detected encoding. Only set if the
- *     detected encoding is associated with some specific language
- *     (for example KOI8-R with Russian or SJIS with Japanese).
- *   </dd>
  * </dl>
  */
+@SuppressWarnings("serial")
 public class TXTParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
@@ -99,14 +95,6 @@ public class TXTParser implements Parser {
         for (CharsetMatch match : detector.detectAll()) {
             if (Charset.isSupported(match.getName())) {
                 metadata.set(Metadata.CONTENT_ENCODING, match.getName());
-
-                // Is the encoding language-specific (KOI8-R, SJIS, etc.)?
-                String language = match.getLanguage();
-                if (language != null) {
-                    metadata.add(Metadata.CONTENT_LANGUAGE, language);
-                    metadata.add(Metadata.LANGUAGE, language);
-                }
-
                 break;
             }
         }
