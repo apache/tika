@@ -48,11 +48,10 @@ public class TXTParserTest extends TestCase {
         String content = writer.toString();
 
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("en", metadata.get(Metadata.CONTENT_LANGUAGE));
-        assertEquals("en", metadata.get(Metadata.LANGUAGE));
-        // TODO: ICU reports the content encoding as ISO-8859-1, even though
-        // it could just as well be ASCII or UTF-8, so  for now we won't
-        // test for the Metadata.CONTENT_ENCODING field
+        
+        // TIKA-501: Remove language detection from TXTParser
+        assertNull(metadata.get(Metadata.CONTENT_LANGUAGE));
+        assertNull(metadata.get(Metadata.LANGUAGE));
 
         assertTrue(content.contains("Hello"));
         assertTrue(content.contains("World"));
