@@ -199,9 +199,53 @@
       </div>
     </div>
     <div id="search">
+      <script type="text/javascript">
+        function selectProvider(form) {
+          provider = form.elements['searchProvider'].value;
+          if (provider == "any") {
+            if (Math.random() > 0.5) {
+              provider = "lucid";
+            } else {
+              provider = "sl";
+            }
+          }
+
+          if (provider == "lucid") {
+            form.action = "http://search.lucidimagination.com/p:tika";
+          } else if (provider == "sl") {
+            form.action = "http://search-lucene.com/tika";
+          }
+
+          days = 90;
+          date = new Date();
+          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+          expires = "; expires=" + date.toGMTString();
+          document.cookie = "searchProvider=" + provider + expires + "; path=/";
+        }
+      </script>
       <form action="http://search.lucidimagination.com/p:tika" method="get" id="searchform">
         <input type="text" id="query" name="q" size="30" onFocus="getBlank (this, 'Search with Apache Solr');" value="Search with Apache Solr"></input>
-        <input type="submit" value="Search" name="Search"/>
+        <input type="submit" value="Search" name="Search" onclick="selectProvider(this.form)"/>
+        @
+        <select name="searchProvider" id="searchProvider">
+          <option value="any">select provider</option>
+          <option value="lucid">Lucid Find</option>
+          <option value="sl">Search-Lucene</option>
+        </select>
+        <script type="text/javascript">
+          if (document.cookie.length>0) {
+            cStart=document.cookie.indexOf("searchProvider=");
+            if (cStart!=-1) {
+              cStart=cStart + "searchProvider=".length;
+              cEnd=document.cookie.indexOf(";", cStart);
+              if (cEnd==-1) {
+                cEnd=document.cookie.length;
+              }
+              provider = unescape(document.cookie.substring(cStart,cEnd));
+              document.forms['searchform'].elements['searchProvider'].value = provider;
+            }
+          }
+        </script>
       </form>
       <div class="clear">
         <hr/>
@@ -229,7 +273,7 @@
         Copyright $currentYear
         <a href="http://www.apache.org/">The Apache Software Foundation</a>.
         Site powered by <a href="http://maven.apache.org/">Apache Maven</a>. 
-        Search powered by <a href="http://www.lucidimagination.com">Lucid Imagination</a>.
+        Search powered by <a href="http://www.lucidimagination.com">Lucid Imagination</a> & <a href="http://sematext.com">Sematext</a>.
       </p>
       <div class="clear">
         <hr/>
