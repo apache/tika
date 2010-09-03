@@ -44,6 +44,20 @@ public class JpegParserTest extends TestCase {
         assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
         assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
         
+        assertEquals("6.25E-4", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1600
+        assertEquals("5.6", metadata.get(Metadata.F_NUMBER));
+        assertEquals("194.0", metadata.get(Metadata.FOCAL_LENGTH));
+        assertEquals("400", metadata.get(Metadata.ISO_SPEED_RATINGS));
+        assertEquals("Canon", metadata.get(Metadata.EQUIPMENT_MAKE));
+        assertEquals("Canon EOS 40D", metadata.get(Metadata.EQUIPMENT_MODEL));
+        assertEquals("Adobe Photoshop CS3 Macintosh", metadata.get(Metadata.SOFTWARE));
+        assertEquals(null, metadata.get(Metadata.ORIENTATION)); // Not present
+        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
+        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
+        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
+        
+        // TODO - Flash
+        
         // Common tags
         assertEquals("Date/Time for when the photo was taken, unspecified time zone",
                 "2009-10-02T23:02:49", metadata.get(Metadata.DATE));
@@ -72,6 +86,18 @@ public class JpegParserTest extends TestCase {
         assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
         assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
         
+        assertEquals("6.25E-4", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1600
+        assertEquals("5.6", metadata.get(Metadata.F_NUMBER));
+        assertEquals("194.0", metadata.get(Metadata.FOCAL_LENGTH));
+        assertEquals("400", metadata.get(Metadata.ISO_SPEED_RATINGS));
+        assertEquals("Canon", metadata.get(Metadata.EQUIPMENT_MAKE));
+        assertEquals("Canon EOS 40D", metadata.get(Metadata.EQUIPMENT_MODEL));
+        assertEquals("Adobe Photoshop CS3 Macintosh", metadata.get(Metadata.SOFTWARE));
+        assertEquals(null, metadata.get(Metadata.ORIENTATION)); // Not present
+        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
+        assertEquals("240.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
+        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
+        
         // Common tags
         assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
                 "2009-08-11T09:09:45", metadata.get(Metadata.ORIGINAL_DATE));
@@ -95,5 +121,23 @@ public class JpegParserTest extends TestCase {
         		"ne, Sweden.\n(new line)", metadata.get(Metadata.DESCRIPTION));
         assertEquals("Some Tourist", metadata.get(Metadata.AUTHOR));
         assertEquals("grazelands nature reserve bird watching coast", metadata.get(Metadata.KEYWORDS));
+        
+        // Core EXIF/TIFF tags
+        assertEquals("103", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("77", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
+        
+        assertEquals("1.0E-6", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1000000
+        assertEquals("2.8", metadata.get(Metadata.F_NUMBER));
+        assertEquals("4.6", metadata.get(Metadata.FOCAL_LENGTH));
+        assertEquals("114", metadata.get(Metadata.ISO_SPEED_RATINGS));
+        assertEquals(null, metadata.get(Metadata.EQUIPMENT_MAKE));
+        assertEquals(null, metadata.get(Metadata.EQUIPMENT_MODEL));
+        assertEquals(null, metadata.get(Metadata.SOFTWARE));
+        assertEquals("1", metadata.get(Metadata.ORIENTATION)); // Not present
+        assertEquals("300.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
+        assertEquals("300.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
+        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
     }
 }
