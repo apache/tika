@@ -311,6 +311,22 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
     }
 
     /**
+     * Sets the real or rational value of the identified metadata property.
+     *
+     * @since Apache Tika 0.8
+     * @param property simple real or simple rational property definition
+     * @param value    property value
+     */
+    public void set(Property property, double value) {
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
+        if(property.getValueType() != Property.ValueType.REAL &&
+              property.getValueType() != Property.ValueType.RATIONAL)
+            throw new PropertyTypeException(Property.ValueType.REAL, property.getValueType());
+        set(property.getName(), Double.toString(value));
+    }
+
+    /**
      * Sets the date value of the identified metadata property.
      *
      * @since Apache Tika 0.8
