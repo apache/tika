@@ -185,6 +185,21 @@ public class ImageMetadataExtractor {
            return;
         }
         
+        if(tag.getTagName().equals("Flash") ||
+                tag.getTagType() == 37385) {
+           String flash = tag.getDescription();
+           if(flash.indexOf("Flash fired") > -1) {
+              metadata.set(Metadata.FLASH_FIRED, Boolean.TRUE.toString());
+           }
+           else if(flash.indexOf("Flash did not fire") > -1) {
+              metadata.set(Metadata.FLASH_FIRED, Boolean.FALSE.toString());
+           }
+           else {
+              metadata.set(Metadata.FLASH_FIRED, flash);
+           }
+           return;
+        }
+
         if(tag.getTagName().equals("F-Number") ||
                 tag.getTagType() == 33437) {
            Object fnumber = directory.getObject(tag.getTagType());
