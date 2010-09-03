@@ -61,7 +61,7 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.CONTENT_STATUS, propsHolder
                 .getContentStatusProperty());
         addProperty(metadata, Metadata.DATE, propsHolder
-                .getCreatedPropertyString());
+                .getCreatedProperty());
         addProperty(metadata, Metadata.CREATION_DATE, propsHolder
                 .getCreatedProperty());
         addProperty(metadata, Metadata.CREATOR, propsHolder

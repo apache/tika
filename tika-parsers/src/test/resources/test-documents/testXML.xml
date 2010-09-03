@@ -35,7 +35,7 @@
 
 	<dc:identifier>http://www.apache.org</dc:identifier>
 
-	<dc:date>2000-12</dc:date>
+	<dc:date>2000-12-01T00:00:00.000Z</dc:date>
 
 	<dc:type>test</dc:type>
 

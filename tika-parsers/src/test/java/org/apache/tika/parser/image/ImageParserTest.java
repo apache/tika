@@ -151,21 +151,4 @@ public class ImageParserTest extends TestCase {
         assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
     }
 
-// TODO: Add TIFF support
-//    public void testTIFF() throws Exception {
-//        Metadata metadata = new Metadata();
-//        metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
-//        InputStream stream =
-//            getClass().getResourceAsStream("/test-documents/testTIFF.tif");
-//        parser.parse(stream, new DefaultHandler(), metadata);
-//
-//        assertEquals("75", metadata.get("height"));
-//        assertEquals("100", metadata.get("width"));
-//    
-//        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
-//        assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
-//        assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
-//        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(Metadata.COMMENTS));
-//    }
-
 }

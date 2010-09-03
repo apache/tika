@@ -309,4 +309,17 @@ public class TestMetadata extends TestCase {
         meta.set(Metadata.CREATION_DATE, "1969-12-31T12:00:01-12:00");
         assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
     }
+    
+    /**
+     * Some documents, like jpegs, might have date in unspecified time zone
+     * which should be handled like strings but verified to have parseable ISO 8601 format
+     */
+    public void testGetSetDateUnspecifiedTimezone() {
+        Metadata meta = new Metadata();    
+        
+        meta.set(Metadata.DATE, "1970-01-01T00:00:01");
+        assertEquals("should return string without time zone specifier because zone is not known",
+        		"1970-01-01T00:00:01", meta.get(Metadata.DATE));
+    }
+    
 }

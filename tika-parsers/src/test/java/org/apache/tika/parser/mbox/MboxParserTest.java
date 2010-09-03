@@ -75,7 +75,8 @@ public class MboxParserTest extends TestCase {
             assertEquals("<author@domain.com>", metadata.get(Metadata.CREATOR));
             assertEquals(null, metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
             assertEquals("<name@domain.com>", metadata.get("MboxParser-return-path"));
-            assertEquals("Tue, 9 Jun 2009 23:58:45 -0400", metadata.get(Metadata.DATE));
+            assertEquals("Should be ISO date in UTC, converted from 'Tue, 9 Jun 2009 23:58:45 -0400'", 
+                    "2009-06-10T03:58:45Z", metadata.get(Metadata.DATE));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }

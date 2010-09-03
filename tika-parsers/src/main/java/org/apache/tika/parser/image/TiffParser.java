@@ -52,7 +52,7 @@ public class TiffParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        new TiffExtractor(metadata).parse(stream);
+        new ImageMetadataExtractor(metadata).parseTiff(stream);
 
         for (String s : metadata.names()) {
             if (s.startsWith("Unknown tag")) {
