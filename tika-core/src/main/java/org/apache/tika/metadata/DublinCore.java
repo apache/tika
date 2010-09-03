@@ -82,9 +82,8 @@ public interface DublinCore {
      * the resource. Recommended best practice for encoding the date value is
      * defined in a profile of ISO 8601 [W3CDTF] and follows the YYYY-MM-DD
      * format.
-     * TODO Make me a Date Property
      */
-    String DATE = "date";
+    Property DATE = Property.internalDate("date");
 
     /**
      * An account of the content of the resource. Description may include

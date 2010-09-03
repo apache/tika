@@ -51,4 +51,9 @@ public interface TIFF {
     Property SAMPLES_PER_PIXEL =
         Property.internalInteger("tiff:SamplesPerPixel");
 
+    /**
+     * "Date and time when original image was generated"
+     */
+    Property ORIGINAL_DATE =
+       Property.internalDate("exif:DateTimeOriginal");
 }

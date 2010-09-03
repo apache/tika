@@ -21,7 +21,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -213,8 +217,11 @@ public class MboxParser implements Parser {
             metadata.add(Metadata.SUBJECT, headerContent);
             metadata.add(Metadata.TITLE, headerContent);
         } else if (headerTag.equalsIgnoreCase("Date")) {
-            // TODO - parse and convert to ISO format YYYY-MM-DD
-            metadata.add(Metadata.DATE, headerContent);
+            try {
+                metadata.set(Metadata.DATE, parseDate(headerContent));
+            } catch (ParseException e) {
+                // ignoring date because format was not understood
+            }
         } else if (headerTag.equalsIgnoreCase("Message-Id")) {
             metadata.add(Metadata.IDENTIFIER, headerContent);
         } else if (headerTag.equalsIgnoreCase("In-Reply-To")) {
@@ -228,6 +235,11 @@ public class MboxParser implements Parser {
         } else {
             metadata.add(EMAIL_HEADER_METADATA_PREFIX + headerTag, headerContent);
         }
+    }
+    
+    private Date parseDate(String headerContent) throws ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
+        return dateFormat.parse(headerContent);
     }
 
     public void parse(

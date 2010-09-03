@@ -51,7 +51,12 @@ public class DcXMLParser extends XMLParser {
         ch = getDublinCore(ch, md, DublinCore.DESCRIPTION, "description");
         ch = getDublinCore(ch, md, DublinCore.PUBLISHER, "publisher");
         ch = getDublinCore(ch, md, DublinCore.CONTRIBUTOR, "contributor");
-        ch = getDublinCore(ch, md, DublinCore.DATE, "date");
+        try {
+            ch = getDublinCore(ch, md, DublinCore.DATE.getName(), "date");
+        } catch (Exception e) {
+            // Date format and parsing behavior was undefined and untested when DublinCare
+            // date was converted to Property.internalDate so we silently skip date on parse error
+        }
         ch = getDublinCore(ch, md, DublinCore.TYPE, "type");
         ch = getDublinCore(ch, md, DublinCore.FORMAT, "format");
         ch = getDublinCore(ch, md, DublinCore.IDENTIFIER, "identifier");

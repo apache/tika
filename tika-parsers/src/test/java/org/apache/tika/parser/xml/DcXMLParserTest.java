@@ -56,6 +56,8 @@ public class DcXMLParserTest extends TestCase {
 
             String content = handler.toString();
             assertTrue(content.contains("Tika test document"));
+            
+            assertEquals("2000-12-01T00:00:00.000Z", metadata.get(Metadata.DATE));
         } finally {
             input.close();
         }

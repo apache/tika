@@ -45,7 +45,10 @@ public class JpegParserTest extends TestCase {
         assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
         
         // Common tags
-        assertEquals("2009/10/02 23:02:49", metadata.get(Metadata.DATE));
+        assertEquals("Date/Time for when the photo was taken, unspecified time zone",
+                "2009-10-02T23:02:49", metadata.get(Metadata.DATE));
+        assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
+                "2009-08-11T09:09:45", metadata.get(Metadata.ORIGINAL_DATE));
         assertEquals("canon-55-250 moscow-birds serbor", metadata.get(Metadata.KEYWORDS));
     }
 
@@ -70,7 +73,10 @@ public class JpegParserTest extends TestCase {
         assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
         
         // Common tags
-        assertEquals("2009/10/02 23:02:49", metadata.get(Metadata.DATE));
+        assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
+                "2009-08-11T09:09:45", metadata.get(Metadata.ORIGINAL_DATE));
+        assertEquals("This image has different Date/Time than Date/Time Original, so it is probably modification date",
+                "2009-10-02T23:02:49", metadata.get(Metadata.DATE));
         assertEquals("canon-55-250 moscow-birds serbor", metadata.get(Metadata.KEYWORDS));
     }
     
@@ -88,9 +94,6 @@ public class JpegParserTest extends TestCase {
         assertEquals("Bird site in north eastern Sk" + new String(new byte[]{-61, -91}) + 
         		"ne, Sweden.\n(new line)", metadata.get(Metadata.DESCRIPTION));
         assertEquals("Some Tourist", metadata.get(Metadata.AUTHOR));
-        // xmp handles spaces in keywords, returns "bird watching, nature reserve, coast, grazelands"
-        //assertEquals("bird watching nature reserve coast grazelands", metadata.get(Metadata.KEYWORDS));
-        // ordering is odd when returned from parser as one string
         assertEquals("grazelands nature reserve bird watching coast", metadata.get(Metadata.KEYWORDS));
     }
 }

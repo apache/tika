@@ -31,45 +31,64 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.xml.sax.SAXException;
 
+import com.drew.imaging.jpeg.JpegMetadataReader;
+import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.imaging.tiff.TiffMetadataReader;
 import com.drew.imaging.tiff.TiffProcessingException;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
 
-public class TiffExtractor {
+public class ImageMetadataExtractor {
 
     private final Metadata metadata;
 
-    protected TiffExtractor(Metadata metadata) {
+    public ImageMetadataExtractor(Metadata metadata) {
         this.metadata = metadata;
     }
 
-    protected void parse(InputStream stream)
+    public void parseTiff(InputStream stream)
             throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata tiffMetadata =
                 TiffMetadataReader.readMetadata(stream);
-
-            Iterator<?> directories = tiffMetadata.getDirectoryIterator();
-            while (directories.hasNext()) {
-                Directory directory = (Directory) directories.next();
-                Iterator<?> tags = directory.getTagIterator();
-
-                while (tags.hasNext()) {
-                    Tag tag = (Tag)tags.next();
-                    metadata.set(tag.getTagName(), tag.getDescription());
-                    handleCommonImageTags(metadata, tag);
-                }
-                handleGeoImageTags(metadata);
-            }
+            parse(tiffMetadata);
         } catch (TiffProcessingException e) {
-            throw new TikaException("Can't read TIFF metadata", e);
-        } catch (MetadataException e) {
             throw new TikaException("Can't read TIFF metadata", e);
         }
     }
     
+    public void parseJpeg(InputStream stream)
+            throws IOException, SAXException, TikaException {
+       try {
+          com.drew.metadata.Metadata jpegMetadata =
+             JpegMetadataReader.readMetadata(stream);
+          parse(jpegMetadata);
+       } catch (JpegProcessingException e) {
+          throw new TikaException("Can't read JPEG metadata", e);
+       }
+    }
+    
+    protected void parse(com.drew.metadata.Metadata imageMetadata)
+            throws IOException, SAXException, TikaException {
+       try {
+          Iterator<?> directories = imageMetadata.getDirectoryIterator();
+          while (directories.hasNext()) {
+             Directory directory = (Directory) directories.next();
+             Iterator<?> tags = directory.getTagIterator();
+
+             while (tags.hasNext()) {
+                Tag tag = (Tag)tags.next();
+                metadata.set(tag.getTagName(), tag.getDescription());
+                handleCommonImageTags(metadata, tag);
+             }
+             handleGeoImageTags(metadata);
+          }
+       } catch (MetadataException e) {
+          throw new TikaException("Can't read TIFF/JPEG metadata", e);
+       }
+    }
+
     /**
      * Maps EXIF Geo Tags onto the Tika Geo metadata namespace.
      * Needs to be run at the end, because the GPS information
@@ -123,6 +142,17 @@ public class TiffExtractor {
     private static final DecimalFormat LAT_LONG_FORMAT =
         new DecimalFormat("##0.0####", new DecimalFormatSymbols(Locale.US));
 
+    private static void handleDate(Metadata metadata, Property property, Tag tag) throws MetadataException {
+       // Ensure it's in the right format
+       String date = tag.getDescription();
+       int splitAt = date.indexOf(' '); 
+       if(splitAt > -1) {
+           String datePart = date.substring(0, splitAt);
+           String timePart = date.substring(splitAt+1);
+           date = datePart.replace(':', '-') + 'T' + timePart;
+       }
+       metadata.set(property, date);
+    }
 
     /**
      * Maps common TIFF and EXIF tags onto the Tika
@@ -132,16 +162,15 @@ public class TiffExtractor {
         // Core tags
         if(tag.getTagName().equals("Date/Time") ||
                 tag.getTagType() == 306) {
-            // Ensure it's in the right format
-            String date = tag.getDescription();
-            int splitAt = date.indexOf(' '); 
-            if(splitAt > -1) {
-                date = date.substring(0, splitAt).replace(':', '/') +
-                date.substring(splitAt);
-            }
-            metadata.set(Metadata.DATE, date);
+            handleDate(metadata, Metadata.DATE, tag);
+            handleDate(metadata, Metadata.LAST_MODIFIED, tag);
             return;
         }
+        if(tag.getTagName().equals("Date/Time Original") ||
+              tag.getTagType() == 36867) {
+          handleDate(metadata, Metadata.ORIGINAL_DATE, tag);
+          return;
+      }
         if(tag.getTagName().equals("Keywords") ||
                 tag.getTagType() == 537) {
             metadata.set(Metadata.KEYWORDS, tag.getDescription());
