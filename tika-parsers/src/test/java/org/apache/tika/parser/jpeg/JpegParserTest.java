@@ -46,6 +46,7 @@ public class JpegParserTest extends TestCase {
         
         assertEquals("6.25E-4", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1600
         assertEquals("5.6", metadata.get(Metadata.F_NUMBER));
+        assertEquals("false", metadata.get(Metadata.FLASH_FIRED));
         assertEquals("194.0", metadata.get(Metadata.FOCAL_LENGTH));
         assertEquals("400", metadata.get(Metadata.ISO_SPEED_RATINGS));
         assertEquals("Canon", metadata.get(Metadata.EQUIPMENT_MAKE));
@@ -55,8 +56,6 @@ public class JpegParserTest extends TestCase {
         assertEquals("240.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
         assertEquals("240.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
         assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
-        
-        // TODO - Flash
         
         // Common tags
         assertEquals("Date/Time for when the photo was taken, unspecified time zone",
@@ -88,6 +87,7 @@ public class JpegParserTest extends TestCase {
         
         assertEquals("6.25E-4", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1600
         assertEquals("5.6", metadata.get(Metadata.F_NUMBER));
+        assertEquals("false", metadata.get(Metadata.FLASH_FIRED));
         assertEquals("194.0", metadata.get(Metadata.FOCAL_LENGTH));
         assertEquals("400", metadata.get(Metadata.ISO_SPEED_RATINGS));
         assertEquals("Canon", metadata.get(Metadata.EQUIPMENT_MAKE));

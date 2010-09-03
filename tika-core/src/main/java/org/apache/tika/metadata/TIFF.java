@@ -52,12 +52,16 @@ public interface TIFF {
         Property.internalInteger("tiff:SamplesPerPixel");
 
     /**
+     * Did the Flash fire when taking this image?
+     */
+    Property FLASH_FIRED =
+       Property.internalBoolean("exif:Flash");
+    
+    /**
      * "Exposure time in seconds."
      */
     Property EXPOSURE_TIME =
        Property.internalRational("exif:ExposureTime");
-    
-    //  TODO "exif:Flash"
     
     /**
      * "F-Number."
