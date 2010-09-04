@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
+package org.apache.tika.fork;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,20 +23,24 @@ import java.util.Queue;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DelegatingParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class OutOfProcessParser extends DelegatingParser {
+public class ForkParser extends DelegatingParser {
 
     private final ClassLoader loader;
 
-    private final Queue<OutOfProcessClient> pool =
-        new LinkedList<OutOfProcessClient>();
+    private final Queue<ForkClient> pool =
+        new LinkedList<ForkClient>();
 
     private int poolSize = 5;
 
     public static void main(String[] args) throws Exception {
-        OutOfProcessParser parser = new OutOfProcessParser(
+        ForkParser parser = new ForkParser(
                 Thread.currentThread().getContextClassLoader());
         try {
             ParseContext context = new ParseContext();
@@ -47,7 +51,7 @@ public class OutOfProcessParser extends DelegatingParser {
         }
     }
 
-    public OutOfProcessParser(ClassLoader loader) {
+    public ForkParser(ClassLoader loader) {
         this.loader = loader;
     }
 
@@ -59,7 +63,7 @@ public class OutOfProcessParser extends DelegatingParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        OutOfProcessClient client = acquireClient();
+        ForkClient client = acquireClient();
         try {
             System.out.println(client.echo(getDelegateParser(context)));
         } finally {
@@ -68,23 +72,23 @@ public class OutOfProcessParser extends DelegatingParser {
     }
 
     public synchronized void close() {
-        for (OutOfProcessClient client : pool) {
+        for (ForkClient client : pool) {
             client.close();
         }
         pool.clear();
         poolSize = 0;
     }
 
-    private synchronized OutOfProcessClient acquireClient()
+    private synchronized ForkClient acquireClient()
             throws IOException {
-        OutOfProcessClient client = pool.poll();
+        ForkClient client = pool.poll();
         if (client == null) {
-            client = new OutOfProcessClient(loader);
+            client = new ForkClient(loader);
         }
         return client;
     }
 
-    private synchronized void releaseClient(OutOfProcessClient client) {
+    private synchronized void releaseClient(ForkClient client) {
         if (pool.size() < poolSize) {
             pool.offer(client);
         } else {
