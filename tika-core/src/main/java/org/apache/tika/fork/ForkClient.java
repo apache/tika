@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
+package org.apache.tika.fork;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -30,7 +30,7 @@ import java.util.Enumeration;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
 
-class OutOfProcessClient {
+class ForkClient {
 
     private final ClassLoader loader;
 
@@ -44,7 +44,7 @@ class OutOfProcessClient {
 
     private final InputStream error;
 
-    public OutOfProcessClient(ClassLoader loader) throws IOException {
+    public ForkClient(ClassLoader loader) throws IOException {
         this.loader = loader;
 
         this.directory = File.createTempFile("apache-tika-", "-oop");
@@ -53,12 +53,12 @@ class OutOfProcessClient {
 
         boolean ok = false;
         try {
-            copyClassToDirectory(OutOfProcessServer.class);
-            copyClassToDirectory(OutOfProcessSerializer.class);
+            copyClassToDirectory(ForkServer.class);
+            copyClassToDirectory(ForkSerializer.class);
 
             ProcessBuilder builder = new ProcessBuilder();
             builder.directory(directory);
-            builder.command("java", OutOfProcessServer.class.getName());
+            builder.command("java", ForkServer.class.getName());
             this.process = builder.start();
             this.output = new DataOutputStream(process.getOutputStream());
             this.input = new DataInputStream(process.getInputStream());
@@ -92,13 +92,13 @@ class OutOfProcessClient {
 
     public synchronized Object echo(Object message) throws IOException {
         consumeErrors();
-        output.write(OutOfProcessServer.ECHO);
-        OutOfProcessSerializer.serialize(output, message);
+        output.write(ForkServer.ECHO);
+        ForkSerializer.serialize(output, message);
         output.flush();
 
         readResponseType();
         try {
-            return OutOfProcessSerializer.deserialize(input, loader).toString();
+            return ForkSerializer.deserialize(input, loader).toString();
         } catch (ClassNotFoundException e) {
             throw new IOExceptionWithCause("Unable to read echo response", e);
         }
@@ -122,9 +122,9 @@ class OutOfProcessClient {
             int type = input.read();
             if (type == -1) {
                 throw new IOException("Unexpected end of stream encountered");
-            } else if (type == OutOfProcessServer.FIND_RESOURCE) {
+            } else if (type == ForkServer.FIND_RESOURCE) {
                 findResource(input.readUTF());
-            } else if (type == OutOfProcessServer.FIND_RESOURCES) {
+            } else if (type == ForkServer.FIND_RESOURCES) {
                 findResources(input.readUTF());
             } else {
                 return (byte) type;

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
+package org.apache.tika.fork;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -26,11 +26,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 
-class OutOfProcessSerializer extends ObjectInputStream {
+class ForkSerializer extends ObjectInputStream {
 
     private final ClassLoader loader;
 
-    public OutOfProcessSerializer(InputStream input, ClassLoader loader)
+    public ForkSerializer(InputStream input, ClassLoader loader)
             throws IOException {
         super(input);
         this.loader = loader;
@@ -62,7 +62,7 @@ class OutOfProcessSerializer extends ObjectInputStream {
         input.readFully(data);
 
         ObjectInputStream deserializer =
-            new OutOfProcessSerializer(new ByteArrayInputStream(data), loader);
+            new ForkSerializer(new ByteArrayInputStream(data), loader);
         return deserializer.readObject();
     }
 

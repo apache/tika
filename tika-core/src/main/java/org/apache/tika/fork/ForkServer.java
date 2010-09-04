@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser;
+package org.apache.tika.fork;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 
-class OutOfProcessServer extends ClassLoader {
+class ForkServer extends ClassLoader {
 
     public static final byte ERROR = -1;
 
@@ -44,8 +44,8 @@ class OutOfProcessServer extends ClassLoader {
     public static final byte FIND_RESOURCES = 3;
 
     public static void main(String[] args) throws Exception {
-        OutOfProcessServer server =
-            new OutOfProcessServer(System.in, System.out);
+        ForkServer server =
+            new ForkServer(System.in, System.out);
         Thread.currentThread().setContextClassLoader(server);
 
         // Redirect standard input and output streams to prevent
@@ -62,7 +62,7 @@ class OutOfProcessServer extends ClassLoader {
 
     private int count = 0;
 
-    public OutOfProcessServer(InputStream input, OutputStream output)
+    public ForkServer(InputStream input, OutputStream output)
             throws IOException {
         this.input = new DataInputStream(input);
         this.output = new DataOutputStream(output);
@@ -74,12 +74,12 @@ class OutOfProcessServer extends ClassLoader {
             if (b == ECHO) {
                 try {
                     Object message =
-                        OutOfProcessSerializer.deserialize(input, this);
+                        ForkSerializer.deserialize(input, this);
                     output.write(ECHO);
-                    OutOfProcessSerializer.serialize(output, "echo: " + message);
+                    ForkSerializer.serialize(output, "echo: " + message);
                 } catch (ClassNotFoundException e) {
                     output.write(ERROR);
-                    OutOfProcessSerializer.serialize(output, e);
+                    ForkSerializer.serialize(output, e);
                 }
                 output.flush();
             }
