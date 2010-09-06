@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +33,24 @@ import java.net.URLConnection;
 import org.apache.tika.metadata.Metadata;
 
 /**
+ * Input stream with extended capabilities. The purpose of this class is
+ * to allow files and other resources and information to be associated with
+ * the {@link InputStream} instance passed through the
+ * {@link org.apache.tika.parser.Parser} interface and other similar APIs.
+ * <p>
+ * TikaInputStream instances can be created using the various static
+ * <code>get()</code> factory methods. Most of these methods take an optional
+ * {@link Metadata} argument that is then filled with the available input
+ * metadata from the given resource. The created TikaInputStream instance
+ * keeps track of the original resource used to create it, while behaving
+ * otherwise just like a normal, buffered {@link InputStream}.
+ * A TikaInputStream instance is also guaranteed to support the
+ * {@link #mark(int)} feature.
+ * <p>
+ * Code that wants to access the underlying file or other resources
+ * associated with a TikaInputStream should first use the
+ * {@link #get(InputStream)} factory method to cast or wrap a given
+ * {@link InputStream} into a TikaInputStream instance.
  *
  * @since Apache Tika 0.8
  */
@@ -67,17 +86,55 @@ public class TikaInputStream extends ProxyInputStream {
         }
     }
 
-    public static TikaInputStream get(byte[] data) throws IOException {
+    /**
+     * Creates a TikaInputStream from the given array of bytes.
+     *
+     * @param data input data
+     * @return a TikaInputStream instance
+     * @throws IOException
+     */
+    public static TikaInputStream get(byte[] data) {
+        return get(data, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the given array of bytes. The length of
+     * the array is stored as input metadata in the given metadata instance.
+     *
+     * @param data input data
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException
+     */
+    public static TikaInputStream get(byte[] data, Metadata metadata) {
+        metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
+
         return new TikaInputStream(
                 new ByteArrayInputStream(data), null, data.length);
     }
 
-    public static TikaInputStream get(File file) throws IOException {
+    /**
+     * Creates a TikaInputStream from the given file.
+     *
+     * @param file input file
+     * @return a TikaInputStream instance
+     * @throws FileNotFoundException if the file does not exist
+     */
+    public static TikaInputStream get(File file) throws FileNotFoundException {
         return get(file, new Metadata());
     }
 
+    /**
+     * Creates a TikaInputStream from the given file. The file name and
+     * length are stored as input metadata in the given metadata instance.
+     *
+     * @param file input file
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws FileNotFoundException if the file does not exist
+     */
     public static TikaInputStream get(File file, Metadata metadata)
-            throws IOException {
+            throws FileNotFoundException {
         metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
 
@@ -87,15 +144,25 @@ public class TikaInputStream extends ProxyInputStream {
     }
 
     /**
-     * 
-     * @param uri
-     * @return
-     * @throws IOException
+     * Creates a TikaInputStream from the resource at the given URI.
+     *
+     * @param uri resource URI
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
      */
     public static TikaInputStream get(URI uri) throws IOException {
         return get(uri, new Metadata());
     }
 
+    /**
+     * Creates a TikaInputStream from the resource at the given URI. The
+     * available input metadata is stored in the given metadata instance.
+     *
+     * @param uri resource URI
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
+     */
     public static TikaInputStream get(URI uri, Metadata metadata)
             throws IOException {
         // Special handling for file:// URIs
@@ -109,10 +176,26 @@ public class TikaInputStream extends ProxyInputStream {
         return get(uri.toURL(), metadata);
     }
 
+    /**
+     * Creates a TikaInputStream from the resource at the given URL.
+     *
+     * @param url resource URL
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
+     */
     public static TikaInputStream get(URL url) throws IOException {
         return get(url, new Metadata());
     }
 
+    /**
+     * Creates a TikaInputStream from the resource at the given URL. The
+     * available input metadata is stored in the given metadata instance.
+     *
+     * @param url resource URL
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException if the resource can not be accessed
+     */
     public static TikaInputStream get(URL url, Metadata metadata)
             throws IOException {
         // Special handling for file:// URLs
@@ -142,7 +225,7 @@ public class TikaInputStream extends ProxyInputStream {
 
         String encoding = connection.getContentEncoding();
         if (encoding != null) {
-            metadata.set(Metadata.CONTENT_TYPE, encoding);
+            metadata.set(Metadata.CONTENT_ENCODING, encoding);
         }
 
         int length = connection.getContentLength();
@@ -170,6 +253,9 @@ public class TikaInputStream extends ProxyInputStream {
      */
     private boolean temporary;
 
+    /**
+     * Total length of the stream, or -1 if unknown.
+     */
     private long length;
 
     /**
@@ -190,10 +276,12 @@ public class TikaInputStream extends ProxyInputStream {
     private Object openContainer;
 
     /**
-     * 
+     * Creates a TikaInputStream instance. This private constructor is used
+     * by the static factory methods based on the available information.
+     *
      * @param stream <em>buffered</em> stream (must support the mark feature)
-     * @param file
-     * @param length
+     * @param file the file that contains the stream, or <code>null</code>
+     * @param length total length of the stream, or -1 if unknown
      */
     private TikaInputStream(InputStream stream, File file, long length) {
         super(stream);
