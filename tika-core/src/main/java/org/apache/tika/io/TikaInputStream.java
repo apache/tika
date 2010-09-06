@@ -29,6 +29,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.sql.Blob;
+import java.sql.SQLException;
 
 import org.apache.tika.metadata.Metadata;
 
@@ -141,6 +143,61 @@ public class TikaInputStream extends ProxyInputStream {
         return new TikaInputStream(
                 new BufferedInputStream(new FileInputStream(file)),
                 file, file.length());
+    }
+
+    /**
+     * Creates a TikaInputStream from the given database BLOB.
+     * <p>
+     * Note that the result set containing the BLOB may need to be kept open
+     * until the returned TikaInputStream has been processed and closed.
+     *
+     * @param blob database BLOB
+     * @return a TikaInputStream instance
+     * @throws SQLException if BLOB data can not be accessed
+     */
+    public static TikaInputStream get(Blob blob) throws SQLException {
+        return get(blob, new Metadata());
+    }
+
+    /**
+     * Blob size threshold that limits the largest BLOB size to be
+     * buffered fully in memory by the {@link #get(Blob, Metadata)}
+     * method.
+     */
+    private static final int BLOB_SIZE_THRESHOLD = 1024 * 1024;
+
+    /**
+     * Creates a TikaInputStream from the given database BLOB. The BLOB
+     * length (if available) is stored as input metadata in the given
+     * metadata instance.
+     * <p>
+     * Note that the result set containing the BLOB may need to be kept open
+     * until the returned TikaInputStream has been processed and closed.
+     *
+     * @param blob database BLOB
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws SQLException if BLOB data can not be accessed
+     */
+    public static TikaInputStream get(Blob blob, Metadata metadata)
+            throws SQLException {
+        long length = -1;
+        try {
+            length = blob.length();
+            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        } catch (SQLException ignore) {
+        }
+
+        // Prefer an in-memory buffer for reasonably sized blobs to reduce
+        // the likelihood of problems caused by long-lived database accesses
+        if (0 <= length && length <= BLOB_SIZE_THRESHOLD) {
+            // the offset in Blob.getBytes() starts at 1
+            return get(blob.getBytes(1, (int) length), metadata);
+        } else {
+            return new TikaInputStream(
+                    new BufferedInputStream(blob.getBinaryStream()),
+                    null, length);
+        }
     }
 
     /**
