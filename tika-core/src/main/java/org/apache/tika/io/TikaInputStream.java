@@ -267,7 +267,8 @@ public class TikaInputStream extends ProxyInputStream {
                     out.close();
                 }
                 in.close();
-                in = null;
+                // Re-point the stream at the file now we have it
+                in = new BufferedInputStream(new FileInputStream(file));
             }
         }
         return file;

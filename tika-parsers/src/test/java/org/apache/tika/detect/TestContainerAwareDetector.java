@@ -78,6 +78,31 @@ public class TestContainerAwareDetector extends TestCase {
         
         assertNotNull(tis.getOpenContainer());
         assertEquals(POIFSFileSystem.class, tis.getOpenContainer().getClass());
+        
+        // Try some ones that POI doesn't handle, that are still OLE2 based
+        tis = TikaInputStream.get(getTestDoc("testWORKS.wps"));
+        assertEquals(
+           MediaType.application("vnd.ms-works"),
+           d.detect(tis, new Metadata())
+        );
+        
+        tis = TikaInputStream.get(getTestDoc("testCOREL.shw"));
+        assertEquals(
+           MediaType.application("x-corelpresentations"),
+           d.detect(tis, new Metadata())
+        );
+        
+        tis = TikaInputStream.get(getTestDoc("testQUATTRO.qpw"));
+        assertEquals(
+           MediaType.application("x-quattro-pro"),
+           d.detect(tis, new Metadata())
+        );
+        
+        tis = TikaInputStream.get(getTestDoc("testQUATTRO.wb3"));
+        assertEquals(
+           MediaType.application("x-quattro-pro"),
+           d.detect(tis, new Metadata())
+        );
     }
     
     public void testDetectODF() throws Exception {
@@ -143,19 +168,19 @@ public class TestContainerAwareDetector extends TestCase {
     }
     
     public void testDetectZip() throws Exception {
-	TikaInputStream tis;
-	
-	tis = TikaInputStream.get(getTestDoc("test-documents.zip"));
-        assertEquals(
-                MediaType.application("zip"),
-                d.detect(tis, new Metadata())
-        );
-	
-        tis = TikaInputStream.get(getTestDoc("testJAR.jar"));
-        assertEquals(
-                MediaType.application("java-archive"),
-                d.detect(tis, new Metadata())
-        );
+       TikaInputStream tis;
+
+       tis = TikaInputStream.get(getTestDoc("test-documents.zip"));
+       assertEquals(
+             MediaType.application("zip"),
+             d.detect(tis, new Metadata())
+       );
+
+       tis = TikaInputStream.get(getTestDoc("testJAR.jar"));
+       assertEquals(
+             MediaType.application("java-archive"),
+             d.detect(tis, new Metadata())
+       );
     }
     
     public void testTruncatedOOXMLFile() throws Exception {

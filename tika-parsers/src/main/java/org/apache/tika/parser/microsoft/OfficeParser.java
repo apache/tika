@@ -74,6 +74,7 @@ public class OfficeParser implements Parser {
         POWERPOINT("ppt", MediaType.application("vnd.ms-powerpoint")),
         PUBLISHER("pub", MediaType.application("x-mspublisher")),
         VISIO("vsd", MediaType.application("vnd.visio")),
+        WORKS("wps", MediaType.application("vnd.ms-works")),
         OUTLOOK("msg", MediaType.application("vnd.ms-outlook"));
 
         private final String extension;
@@ -127,6 +128,9 @@ public class OfficeParser implements Parser {
             if ("VisioDocument".equals(entry.getName())) {
                 return VISIO;
             }
+            if ("CONTENTS".equals(entry.getName())) {
+               return WORKS;
+           }
             if (entry.getName().startsWith("__substg1.0_")) {
                 return OUTLOOK;
             }
