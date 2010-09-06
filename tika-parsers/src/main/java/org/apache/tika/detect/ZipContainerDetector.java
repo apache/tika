@@ -37,61 +37,64 @@ import org.apache.tika.mime.MediaType;
  * A detector that works on a Zip document
  *  to figure out exactly what the file is
  */
-public class ZipContainerDetector implements Detector {
+public class ZipContainerDetector implements ContainerDetector {
+    public MediaType getDefault() {
+       return MediaType.APPLICATION_ZIP;
+    }
 
     public MediaType detect(InputStream input, Metadata metadata)
              throws IOException {
         if (TikaInputStream.isTikaInputStream(input)) {
-            return detect(TikaInputStream.get(input));
+            return detect(TikaInputStream.get(input), metadata);
         } else {
             return MediaType.APPLICATION_ZIP;
         }
     }
 
-    private MediaType detect(TikaInputStream input) throws IOException {
-        ZipFile zip = new ZipFile(input.getFile());
-        for (ZipEntry entry : Collections.list(zip.entries())) {
-            // Is it an Open Document file?
-            if (entry.getName().equals("mimetype")) {
-                InputStream stream = zip.getInputStream(entry);
-                try {
-                    return fromString(IOUtils.toString(stream, "UTF-8"));
-                } finally {
-                    stream.close();
-                }
-            } else if (entry.getName().equals("_rels/.rels") || 
-        	    entry.getName().equals("[Content_Types].xml")) {
-                // Office Open XML File
-        	// As POI to open and investigate it for us
-        	try {
-        	    OPCPackage pkg = OPCPackage.open(input);
-        	    input.setOpenContainer(pkg);
-        	    
-                    PackageRelationshipCollection core = 
-                         pkg.getRelationshipsByType(ExtractorFactory.CORE_DOCUMENT_REL);
-                    if(core.size() != 1) {
-                       throw new IOException("Invalid OOXML Package received - expected 1 core document, found " + core.size());
-                    }
+    public MediaType detect(TikaInputStream input, Metadata metadata) throws IOException {
+       ZipFile zip = new ZipFile(input.getFile());
+       for (ZipEntry entry : Collections.list(zip.entries())) {
+          // Is it an Open Document file?
+          if (entry.getName().equals("mimetype")) {
+             InputStream stream = zip.getInputStream(entry);
+             try {
+                return fromString(IOUtils.toString(stream, "UTF-8"));
+             } finally {
+                stream.close();
+             }
+          } else if (entry.getName().equals("_rels/.rels") || 
+                entry.getName().equals("[Content_Types].xml")) {
+             // Office Open XML File
+             // As POI to open and investigate it for us
+             try {
+                OPCPackage pkg = OPCPackage.open(input);
+                input.setOpenContainer(pkg);
 
-                    // Get the type of the core document part
-                    PackagePart corePart = pkg.getPart(core.getRelationship(0));
-                    String coreType = corePart.getContentType();
-                    
-                    // Turn that into the type of the overall document
-                    String docType = coreType.substring(0, coreType.lastIndexOf('.'));
-                    return fromString(docType);
-                } catch(InvalidFormatException e) {
-                    throw new IOException("Office Open XML File detected, but corrupted - " + e.getMessage());
+                PackageRelationshipCollection core = 
+                   pkg.getRelationshipsByType(ExtractorFactory.CORE_DOCUMENT_REL);
+                if(core.size() != 1) {
+                   throw new IOException("Invalid OOXML Package received - expected 1 core document, found " + core.size());
                 }
-            } else if(entry.getName().equals("buildVersionHistory.plist")) {
-                // TODO - iWork
-            } else if(entry.getName().equals("META-INF/")) {
-        	// Java Jar
-        	return MediaType.application("java-archive");
-            }
-        }
-        
-        return MediaType.APPLICATION_ZIP;
+
+                // Get the type of the core document part
+                PackagePart corePart = pkg.getPart(core.getRelationship(0));
+                String coreType = corePart.getContentType();
+
+                // Turn that into the type of the overall document
+                String docType = coreType.substring(0, coreType.lastIndexOf('.'));
+                return fromString(docType);
+             } catch(InvalidFormatException e) {
+                throw new IOException("Office Open XML File detected, but corrupted - " + e.getMessage());
+             }
+          } else if(entry.getName().equals("buildVersionHistory.plist")) {
+             // TODO - iWork
+          } else if(entry.getName().equals("META-INF/")) {
+             // Java Jar
+             return MediaType.application("java-archive");
+          }
+       }
+
+       return MediaType.APPLICATION_ZIP;
     }
     
     private static MediaType fromString(String type) {
@@ -105,4 +108,3 @@ public class ZipContainerDetector implements Detector {
         return MediaType.APPLICATION_ZIP;
     }
 }
-

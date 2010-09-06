@@ -75,7 +75,7 @@ public class ContainerAwareDetector implements Detector {
            first8[2] == POIFSConstants.OOXML_FILE_HEADER[2] &&
            first8[3] == POIFSConstants.OOXML_FILE_HEADER[3]) {
         	try {
-        		return zipDetector.detect(input, metadata);
+        	   return detect(input, metadata, zipDetector);
         	} catch (ZipException e) {
         		// Problem with the zip file, eg corrupt or truncated
             // Try the fallback in case there is enough data for that
@@ -87,12 +87,35 @@ public class ContainerAwareDetector implements Detector {
         // Is this an ole2 file?
         long ole2Signature = LittleEndian.getLong(first8, 0);
         if(ole2Signature == HeaderBlockConstants._signature) {
-            return poifsDetector.detect(input, metadata);
+           return detect(input, metadata, poifsDetector);
         }
+        
+        // Add further container detection (eg tar.gz, ogg, avi) here
         
         // Not a supported container, ask our fall back
         //  detector to figure it out
         return fallbackDetector.detect(input, metadata);
+    }
+    
+    /**
+     * Does container-detector based detection, handling
+     *  fallback in case of the default.
+     */
+    private MediaType detect(TikaInputStream input, Metadata metadata, 
+               ContainerDetector detector) throws IOException {
+       MediaType detected = detector.detect(input, metadata);
+       MediaType defaultType = detector.getDefault(); 
+       if(! detected.equals(defaultType)) {
+          return detected;
+       }
+       
+       // See if the fallback can do better
+       detected = fallbackDetector.detect(input, metadata);
+       if(! detected.equals(MediaType.OCTET_STREAM)) {
+          return detected;
+       } else {
+          return defaultType;
+       }
     }
 }
 
