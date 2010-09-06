@@ -87,7 +87,14 @@ public class ContainerAwareDetector implements Detector {
         // Is this an ole2 file?
         long ole2Signature = LittleEndian.getLong(first8, 0);
         if(ole2Signature == HeaderBlockConstants._signature) {
-           return detect(input, metadata, poifsDetector);
+           try {
+              return detect(input, metadata, poifsDetector);
+           } catch(IOException e) {
+              // Problem with the ole file, eg corrupt or truncated
+              // Try the fallback in case there is enough data for that
+              //  to be able to offer something useful
+              input = TikaInputStream.get(input.getFile());
+           }
         }
         
         // Add further container detection (eg tar.gz, ogg, avi) here

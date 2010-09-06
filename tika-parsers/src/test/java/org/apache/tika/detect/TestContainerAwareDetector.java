@@ -183,9 +183,11 @@ public class TestContainerAwareDetector extends TestCase {
        );
     }
     
-    public void testTruncatedOOXMLFile() throws Exception {
+    public void testTruncatedFiles() throws Exception {
         MimeTypes mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
         ContainerAwareDetector detector = new ContainerAwareDetector(mimeTypes);
+        
+        // First up a truncated OOXML (zip) file
         InputStream input = getTestDoc("testWORD.docx");
         byte [] buffer = new byte[300];
         assertEquals(300,input.read(buffer));
@@ -193,5 +195,14 @@ public class TestContainerAwareDetector extends TestCase {
         MediaType mt = detector.detect(new ByteArrayInputStream(buffer), metadata);
         // no exception should be thrown
         assertEquals(MediaType.application("x-tika-ooxml"),mt);
+        
+        // Now a truncated OLE2 file 
+        input = getTestDoc("testEXCEL.xls");
+        buffer = new byte[400];
+        assertEquals(400,input.read(buffer));
+        metadata = new Metadata();
+        mt = detector.detect(new ByteArrayInputStream(buffer), metadata);
+        // no exception should be thrown
+        assertEquals(MediaType.application("x-tika-msoffice"),mt);
    }
 }
