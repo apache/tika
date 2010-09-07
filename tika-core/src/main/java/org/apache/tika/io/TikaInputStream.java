@@ -397,6 +397,10 @@ public class TikaInputStream extends ProxyInputStream {
         openContainer = container;
     }
 
+    public boolean hasFile() {
+        return file != null;
+    }
+
     public File getFile() throws IOException {
         if (file == null) {
             if (in == null) {
@@ -417,6 +421,10 @@ public class TikaInputStream extends ProxyInputStream {
             }
         }
         return file;
+    }
+
+    public boolean hasLength() {
+        return length != -1;
     }
 
     /**
