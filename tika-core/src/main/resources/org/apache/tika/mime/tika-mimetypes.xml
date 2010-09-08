@@ -2309,9 +2309,13 @@
   <mime-type type="application/x-font-linux-psf">
     <glob pattern="*.psf"/>
   </mime-type>
+
   <mime-type type="application/x-font-otf">
+    <acronym>OTF</acronym>
+    <comment>OpenType Font</comment>
     <glob pattern="*.otf"/>
   </mime-type>
+
   <mime-type type="application/x-font-pcf">
     <glob pattern="*.pcf"/>
   </mime-type>
@@ -2320,10 +2324,17 @@
   </mime-type>
   <mime-type type="application/x-font-speedo"/>
   <mime-type type="application/x-font-sunos-news"/>
+
   <mime-type type="application/x-font-ttf">
+    <acronym>TTF</acronym>
+    <comment>TrueType Font</comment>
     <glob pattern="*.ttf"/>
     <glob pattern="*.ttc"/>
+    <magic priority="40">
+      <match value="0x00010000" type="string" offset="0"/>
+    </magic>
   </mime-type>
+
   <mime-type type="application/x-font-type1">
     <glob pattern="*.pfa"/>
     <glob pattern="*.pfb"/>
