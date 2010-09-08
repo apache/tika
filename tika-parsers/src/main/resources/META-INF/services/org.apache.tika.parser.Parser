@@ -19,6 +19,7 @@ org.apache.tika.parser.audio.MidiParser
 org.apache.tika.parser.dwg.DWGParser
 org.apache.tika.parser.epub.EpubParser
 org.apache.tika.parser.feed.FeedParser
+org.apache.tika.parser.font.TrueTypeParser
 org.apache.tika.parser.html.HtmlParser
 org.apache.tika.parser.image.ImageParser
 org.apache.tika.parser.image.TiffParser
