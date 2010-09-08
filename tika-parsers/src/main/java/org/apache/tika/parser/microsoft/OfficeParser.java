@@ -31,7 +31,7 @@ import org.apache.poi.hslf.extractor.PowerPointExtractor;
 import org.apache.poi.hwpf.extractor.WordExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
-import org.apache.poi.poifs.filesystem.DirectoryNode;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
@@ -51,7 +51,9 @@ import org.xml.sax.SAXException;
  * Defines a Microsoft document content extractor.
  */
 public class OfficeParser implements Parser {
-    private static final Set<MediaType> SUPPORTED_TYPES =
+   private static final long serialVersionUID = 7393462244028653479L;
+   
+   private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
         	POIFSDocumentType.WORKBOOK.type,
         	POIFSDocumentType.OLE10_NATIVE.type,
@@ -97,7 +99,7 @@ public class OfficeParser implements Parser {
             return detectType(fs.getRoot());
         }
 
-        public static POIFSDocumentType detectType(DirectoryNode node) {
+        public static POIFSDocumentType detectType(DirectoryEntry node) {
             for (Entry entry : node) {
                 POIFSDocumentType type = detectType(entry);
                 if (type!=UNKNOWN) {
