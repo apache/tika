@@ -41,17 +41,21 @@ import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FormatRecord;
 import org.apache.poi.hssf.record.FormulaRecord;
 import org.apache.poi.hssf.record.HyperlinkRecord;
-import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.LabelRecord;
 import org.apache.poi.hssf.record.LabelSSTRecord;
 import org.apache.poi.hssf.record.NumberRecord;
 import org.apache.poi.hssf.record.RKRecord;
 import org.apache.poi.hssf.record.Record;
 import org.apache.poi.hssf.record.SSTRecord;
+import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
+import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -72,7 +76,7 @@ import org.xml.sax.SAXException;
  * @see <a href="http://poi.apache.org/hssf/how-to.html#event_api">
  * POI Event API How To</a>
  */
-public class ExcelExtractor {
+public class ExcelExtractor extends AbstractPOIFSExtractor {
 
     /**
      * <code>true</code> if the HSSFListener should be registered
@@ -81,6 +85,10 @@ public class ExcelExtractor {
      * records.
      */
     private boolean listenForAllRecords = false;
+
+    public ExcelExtractor(ParseContext context) {
+        super(context);
+    }
 
     /**
      * Returns <code>true</code> if this parser is configured to listen
@@ -120,6 +128,17 @@ public class ExcelExtractor {
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale);
         listener.processFile(filesystem, isListenForAllRecords());
         listener.throwStoredException();
+
+        for (Entry entry : filesystem.getRoot()) {
+            if (entry.getName().startsWith("MBD")
+                    && entry instanceof DirectoryEntry) {
+                try {
+                    handleEmbededOfficeDoc((DirectoryEntry) entry, xhtml);
+                } catch (TikaException e) {
+                    // ignore parse errors from embedded documents
+                }
+            }
+         }
     }
 
     // ======================================================================
