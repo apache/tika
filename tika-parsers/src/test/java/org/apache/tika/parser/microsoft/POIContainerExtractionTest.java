@@ -24,10 +24,15 @@ import junit.framework.TestCase;
 
 import org.apache.tika.extractor.ContainerEmbededResourceHandler;
 import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
-public class POIFSContainerExtractorTest extends TestCase {
+/**
+ * Tests that the various POI powered parsers are
+ *  able to extract their embeded contents.
+ */
+public class POIContainerExtractionTest extends TestCase {
     private static final MediaType TYPE_DOC = MediaType.application("msword");
     private static final MediaType TYPE_PPT = MediaType.application("vnd.ms-powerpoint");
     private static final MediaType TYPE_XLS = MediaType.application("vnd.ms-excel");
@@ -36,7 +41,7 @@ public class POIFSContainerExtractorTest extends TestCase {
      * For office files which don't have anything embeded in them
      */
     public void testWithoutEmbeded() throws Exception {
-       POIFSContainerExtractor extractor = new POIFSContainerExtractor();
+       ContainerExtractor extractor = new ParserContainerExtractor();
        
        String[] files = new String[] {
              "testEXCEL.xls", "testWORD.doc", "testPPT.ppt",
@@ -62,7 +67,7 @@ public class POIFSContainerExtractorTest extends TestCase {
      *  office files in them
      */
     public void testEmbededImages() throws Exception {
-       POIFSContainerExtractor extractor = new POIFSContainerExtractor();
+       ContainerExtractor extractor = new ParserContainerExtractor();
        TrackingHandler handler;
        
        // Excel with 1 image
@@ -95,7 +100,7 @@ public class POIFSContainerExtractorTest extends TestCase {
      *           -> image
      */
     public void testEmbededOfficeFiles() throws Exception {
-       POIFSContainerExtractor extractor = new POIFSContainerExtractor();
+       ContainerExtractor extractor = new ParserContainerExtractor();
        TrackingHandler handler;
        
        // Excel with a word doc and a powerpoint doc, both of which have images in them
@@ -148,7 +153,7 @@ public class POIFSContainerExtractorTest extends TestCase {
     }
     
     private TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
-       InputStream input = POIFSContainerExtractorTest.class.getResourceAsStream(
+       InputStream input = POIContainerExtractionTest.class.getResourceAsStream(
              "/test-documents/" + filename);
         TikaInputStream stream = TikaInputStream.get(input);
         

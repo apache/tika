@@ -28,7 +28,6 @@ import java.util.Set;
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.hslf.extractor.PowerPointExtractor;
-import org.apache.poi.hwpf.extractor.WordExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
@@ -185,27 +184,7 @@ public class OfficeParser implements Parser {
                     xhtml.element("p", publisherTextExtractor.getText());
                     break;
                 case WORDDOCUMENT:
-                    WordExtractor wordExtractor = new WordExtractor(filesystem);
-
-                    addTextIfAny(xhtml, "header", wordExtractor.getHeaderText());
-
-                    for (String paragraph : wordExtractor.getParagraphText()) {
-                        xhtml.element("p", paragraph);
-                    }
-
-                    for (String paragraph : wordExtractor.getFootnoteText()) {
-                        xhtml.element("p", paragraph);
-                    }
-
-                    for (String paragraph : wordExtractor.getCommentsText()) {
-                        xhtml.element("p", paragraph);
-                    }
-
-                    for (String paragraph : wordExtractor.getEndnoteText()) {
-                        xhtml.element("p", paragraph);
-                    }
-
-                    addTextIfAny(xhtml, "footer", wordExtractor.getFooterText());
+                    new WordExtractor(context).parse(filesystem, xhtml);
                     break;
                 case POWERPOINT:
                     PowerPointExtractor powerPointExtractor =
@@ -214,7 +193,7 @@ public class OfficeParser implements Parser {
                     break;
                 case WORKBOOK:
                     Locale locale = context.get(Locale.class, Locale.getDefault());
-                    new ExcelExtractor().parse(filesystem, xhtml, locale);
+                    new ExcelExtractor(context).parse(filesystem, xhtml, locale);
                     break;
                 case VISIO:
                     VisioTextExtractor visioTextExtractor =
@@ -267,24 +246,6 @@ public class OfficeParser implements Parser {
 
     private void setType(Metadata metadata, MediaType type) {
         metadata.set(Metadata.CONTENT_TYPE, type.toString());
-    }
-
-    /**
-     * Outputs a section of text if the given text is non-empty.
-     *
-     * @param xhtml XHTML content handler
-     * @param section the class of the &lt;div/&gt; section emitted
-     * @param text text to be emitted, if any
-     * @throws SAXException if an error occurs
-     */
-    private void addTextIfAny(
-            XHTMLContentHandler xhtml, String section, String text)
-            throws SAXException {
-        if (text != null && text.length() > 0) {
-            xhtml.startElement("div", "class", section);
-            xhtml.element("p", text);
-            xhtml.endElement("div");
-        }
     }
 
 }
