@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,9 +27,11 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.tika.detect.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -44,6 +47,28 @@ abstract class AbstractPOIFSExtractor {
     protected AbstractPOIFSExtractor(ParseContext context) {
         this.context = context;
     }
+    
+    protected void handleEmbededResource(TikaInputStream resource,
+          String filename, String mediaType, XHTMLContentHandler xhtml)
+          throws IOException, SAXException, TikaException {
+       try {
+           Metadata metadata = new Metadata();
+           if(filename != null) {
+              metadata.set(Metadata.TIKA_MIME_FILE, filename);
+           }
+           if(mediaType != null) {
+              metadata.set(Metadata.CONTENT_TYPE, mediaType);
+           }
+           
+           Parser parser = context.get(Parser.class, EmptyParser.INSTANCE);
+           parser.parse(
+                   resource, new EmbeddedContentHandler(xhtml),
+                   metadata, context
+           );
+       } finally {
+           resource.close();
+       }
+    }
 
     /**
      * Handle an office document that's embedded at the POIFS level
@@ -51,6 +76,22 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbededOfficeDoc(
             DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
+       // Is it an embeded OLE2 document, or an embeded OOXML document?
+       try {
+          Entry ooxml = dir.getEntry("Package");
+          
+          // It's OOXML
+          TikaInputStream ooxmlStream = TikaInputStream.get(
+                new DocumentInputStream((DocumentEntry)ooxml)
+          );
+          ZipContainerDetector detector = new ZipContainerDetector();
+          MediaType type = detector.detect(ooxmlStream, new Metadata());
+          handleEmbededResource(ooxmlStream, null, type.toString(), xhtml);
+          return;
+       } catch(FileNotFoundException e) {
+          // It's regular OLE2
+       }
+       
        // Need to dump the directory out to a new temp file, so
        //  it's stand along
        POIFSFileSystem newFS = new POIFSFileSystem();

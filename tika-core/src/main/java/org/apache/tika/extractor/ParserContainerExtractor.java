@@ -71,8 +71,8 @@ public class ParserContainerExtractor implements ContainerExtractor {
     }
 
     public void extract(
-            TikaInputStream stream, ContainerExtractor recurseExtractor,
-            final ContainerEmbededResourceHandler handler)
+            TikaInputStream stream, final ContainerExtractor recurseExtractor,
+            final EmbededResourceHandler handler)
             throws IOException, TikaException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, new Parser() {
@@ -82,9 +82,24 @@ public class ParserContainerExtractor implements ContainerExtractor {
             public void parse(InputStream stream, ContentHandler ignored,
                     Metadata metadata, ParseContext context)
                     throws IOException, SAXException, TikaException {
+                // Figure out what we have to process
                 String filename = metadata.get(Metadata.RESOURCE_NAME_KEY);
-                MediaType type = detector.detect(stream, metadata);
+                MediaType type;
+                if(metadata.get(Metadata.CONTENT_TYPE) != null) {
+                   type = MediaType.parse( metadata.get(Metadata.CONTENT_TYPE) );
+                } else {
+                   type = detector.detect(stream, metadata);
+                }
+                
+                // Let the handler process the embeded resource 
                 handler.handle(filename, type, stream);
+                
+                // Recurse if requested
+                if(recurseExtractor != null) {
+                   recurseExtractor.extract(
+                         TikaInputStream.get(stream), recurseExtractor, handler
+                   );
+                }
             }
             public void parse(InputStream stream, ContentHandler handler,
                     Metadata metadata) throws IOException, SAXException,

@@ -45,7 +45,7 @@ public interface ContainerExtractor extends Serializable {
      * Processes a container file, and extracts all the embeded
      * resources from within it.
      * <p>
-     * The {@link ContainerEmbededResourceHandler} you supply will
+     * The {@link EmbededResourceHandler} you supply will
      * be called for each embeded resource in the container. It is
      * up to you whether you process the contents of the resource or not. 
      * <p>
@@ -66,6 +66,6 @@ public interface ContainerExtractor extends Serializable {
      */
     void extract(
             TikaInputStream stream, ContainerExtractor recurseExtractor,
-            ContainerEmbededResourceHandler handler)
+            EmbededResourceHandler handler)
             throws IOException, TikaException;
 }

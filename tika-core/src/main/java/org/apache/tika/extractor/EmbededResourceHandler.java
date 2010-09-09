@@ -25,7 +25,7 @@ import org.apache.tika.mime.MediaType;
  * To work with a {@link ContainerExtractor}, your code needs
  *  to implement this interface.
  */
-public interface ContainerEmbededResourceHandler {
+public interface EmbededResourceHandler {
     /**
      * Called to process an embeded resource within the container.
      * This will be called once per embeded resource within the
