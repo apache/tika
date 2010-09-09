@@ -22,8 +22,8 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.tika.extractor.ContainerEmbededResourceHandler;
 import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.EmbededResourceHandler;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
@@ -36,6 +36,13 @@ public class POIContainerExtractionTest extends TestCase {
     private static final MediaType TYPE_DOC = MediaType.application("msword");
     private static final MediaType TYPE_PPT = MediaType.application("vnd.ms-powerpoint");
     private static final MediaType TYPE_XLS = MediaType.application("vnd.ms-excel");
+    private static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
+    private static final MediaType TYPE_PPTX = MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
+    private static final MediaType TYPE_XLSX = MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    
+    private static final MediaType TYPE_JPG = MediaType.image("jpg");
+    private static final MediaType TYPE_PNG = MediaType.image("png");
+    private static final MediaType TYPE_EMF = MediaType.application("x-emf");
    
     /**
      * For office files which don't have anything embeded in them
@@ -72,9 +79,11 @@ public class POIContainerExtractionTest extends TestCase {
        
        // Excel with 1 image
        handler = process("testEXCEL_1img.xls", extractor, false);
-       // TODO
-       assertEquals(0, handler.filenames.size());
-       assertEquals(0, handler.mediaTypes.size());
+       assertEquals(1, handler.filenames.size());
+       assertEquals(1, handler.mediaTypes.size());
+       
+       assertEquals(null, handler.filenames.get(0));
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
        
        // PowerPoint with 2 images + sound
        // TODO
@@ -103,20 +112,27 @@ public class POIContainerExtractionTest extends TestCase {
        ContainerExtractor extractor = new ParserContainerExtractor();
        TrackingHandler handler;
        
+       
        // Excel with a word doc and a powerpoint doc, both of which have images in them
-       // Without recursion, should see both
+       // Without recursion, should see both documents + the images
        handler = process("testEXCEL_embeded.xls", extractor, false);
-       assertEquals(2, handler.filenames.size());
-       assertEquals(2, handler.mediaTypes.size());
+       assertEquals(5, handler.filenames.size());
+       assertEquals(5, handler.mediaTypes.size());
        
        // We don't know their filenames
        assertEquals(null, handler.filenames.get(0));
        assertEquals(null, handler.filenames.get(1));
+       assertEquals(null, handler.filenames.get(2));
+       assertEquals(null, handler.filenames.get(3));
+       assertEquals(null, handler.filenames.get(4));
        // But we do know their types
-       assertEquals(TYPE_PPT, handler.mediaTypes.get(0));
-       assertEquals(TYPE_DOC, handler.mediaTypes.get(1));
+       assertEquals(TYPE_EMF, handler.mediaTypes.get(0)); // Icon of embeded office doc
+       assertEquals(TYPE_EMF, handler.mediaTypes.get(1)); // Icon of embeded office doc
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(2)); // Embeded image
+       assertEquals(TYPE_PPT, handler.mediaTypes.get(3)); // Embeded office doc
+       assertEquals(TYPE_DOC, handler.mediaTypes.get(4)); // Embeded office doc
        
-       // With recursion, should get their images too
+       // With recursion, should get the images embeded in the office files too
        handler = process("testEXCEL_embeded.xls", extractor, true);
        // TODO
        
@@ -131,14 +147,27 @@ public class POIContainerExtractionTest extends TestCase {
        assertEquals(null, handler.filenames.get(1));
        assertEquals(null, handler.filenames.get(2));
        // But we do know their types
-       assertEquals(MediaType.application("x-tika-msoffice"), handler.mediaTypes.get(0)); // TODO
+       assertEquals(TYPE_DOCX, handler.mediaTypes.get(0));
        assertEquals(TYPE_PPT, handler.mediaTypes.get(1));
        assertEquals(TYPE_XLS, handler.mediaTypes.get(2));
        
+       
        // With recursion, should get their images too
        handler = process("testWORD_embeded.doc", extractor, true);
-       // TODO
+       // TODO - Not all resources of embeded files are currently extracted 
+       assertEquals(4, handler.filenames.size());
+       assertEquals(4, handler.mediaTypes.size());
        
+       // We don't know their filenames
+       assertEquals(null, handler.filenames.get(0));
+       assertEquals(null, handler.filenames.get(1));
+       assertEquals(null, handler.filenames.get(2));
+       assertEquals(null, handler.filenames.get(3));
+       // But we do know their types
+       assertEquals(TYPE_DOCX, handler.mediaTypes.get(0));
+       assertEquals(TYPE_PPT, handler.mediaTypes.get(1));
+       assertEquals(TYPE_XLS, handler.mediaTypes.get(2));
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(3)); // From xls
        
        // PowerPoint with excel and word
        // TODO
@@ -161,13 +190,17 @@ public class POIContainerExtractionTest extends TestCase {
         
         // Process it
         TrackingHandler handler = new TrackingHandler();
-        extractor.extract(stream, null, handler);
+        if(recurse) {
+           extractor.extract(stream, extractor, handler);
+        } else {
+           extractor.extract(stream, null, handler);
+        }
         
         // So they can check what happened
         return handler;
     }
     
-    private static class TrackingHandler implements ContainerEmbededResourceHandler {
+    private static class TrackingHandler implements EmbededResourceHandler {
        private List<String> filenames = new ArrayList<String>();
        private List<MediaType> mediaTypes = new ArrayList<MediaType>();
        

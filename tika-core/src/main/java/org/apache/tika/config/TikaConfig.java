@@ -20,10 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import javax.imageio.spi.ServiceRegistry;
@@ -32,7 +30,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
@@ -54,9 +51,6 @@ public class TikaConfig {
     private final Map<MediaType, Parser> parsers =
         new HashMap<MediaType, Parser>();
     
-    private final List<ContainerExtractor> containerExtractors =
-        new ArrayList<ContainerExtractor>();
-
     private final MimeTypes mimeTypes;
 
     public TikaConfig(String file)
@@ -254,10 +248,6 @@ public class TikaConfig {
         return parsers;
     }
     
-    public List<ContainerExtractor> getContainerExtractors() {
-        return containerExtractors;
-    }
-
     public MimeTypes getMimeRepository(){
         return mimeTypes;
     }

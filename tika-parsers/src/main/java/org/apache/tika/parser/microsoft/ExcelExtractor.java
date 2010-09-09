@@ -27,15 +27,22 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.poi.ddf.EscherBSERecord;
+import org.apache.poi.ddf.EscherBitmapBlip;
+import org.apache.poi.ddf.EscherBlipRecord;
+import org.apache.poi.ddf.EscherMetafileBlip;
+import org.apache.poi.ddf.EscherRecord;
 import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
+import org.apache.poi.hssf.record.AbstractEscherHolderRecord;
 import org.apache.poi.hssf.record.BOFRecord;
 import org.apache.poi.hssf.record.BoundSheetRecord;
 import org.apache.poi.hssf.record.CellValueRecordInterface;
 import org.apache.poi.hssf.record.CountryRecord;
 import org.apache.poi.hssf.record.DateWindow1904Record;
+import org.apache.poi.hssf.record.DrawingGroupRecord;
 import org.apache.poi.hssf.record.EOFRecord;
 import org.apache.poi.hssf.record.ExtendedFormatRecord;
 import org.apache.poi.hssf.record.FormatRecord;
@@ -50,11 +57,13 @@ import org.apache.poi.hssf.record.SSTRecord;
 import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
+import org.apache.poi.hssf.usermodel.HSSFPictureData;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -124,8 +133,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
      */
     protected void parse(
             POIFSFileSystem filesystem, XHTMLContentHandler xhtml,
-            Locale locale) throws IOException, SAXException {
-        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale);
+            Locale locale) throws IOException, SAXException, TikaException {
+        TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
         listener.processFile(filesystem, isListenForAllRecords());
         listener.throwStoredException();
 
@@ -152,6 +161,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * XHTML content handler to which the document content is rendered.
          */
         private final XHTMLContentHandler handler;
+        
+        /**
+         * The POIFS Extractor, used for embeded resources.
+         */
+        private final AbstractPOIFSExtractor extractor;
 
         /**
          * Potential exception thrown by the content handler. When set to
@@ -159,7 +173,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * ignored and the stored exception to be thrown when
          * {@link #throwStoredException()} is invoked.
          */
-        private SAXException exception = null;
+        private Exception exception = null;
 
         private SSTRecord sstRecord;
         
@@ -201,6 +215,13 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
          */
         private final NumberFormat format;
+        
+        /**
+         * These aren't complete when we first see them, as the
+         *  depend on continue records that aren't always
+         *  contiguous. Collect them for later processing.
+         */
+        private List<DrawingGroupRecord> drawingGroups = new ArrayList<DrawingGroupRecord>();
 
         /**
          * Construct a new listener instance outputting parsed data to
@@ -208,8 +229,9 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          *
          * @param handler Destination to write the parsed output to
          */
-        private TikaHSSFListener(XHTMLContentHandler handler, Locale locale) {
+        private TikaHSSFListener(XHTMLContentHandler handler, Locale locale, AbstractPOIFSExtractor extractor) {
             this.handler = handler;
+            this.extractor = extractor;
             this.format = NumberFormat.getInstance(locale);
             this.formatListener = new FormatTrackingHSSFListener(this, locale);
         }
@@ -224,7 +246,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * @throws SAXException on any SAX parsing errors.
          */
     	public void processFile(POIFSFileSystem filesystem, boolean listenForAllRecords)
-    		throws IOException,	SAXException {
+    		throws IOException, SAXException, TikaException {
 
     		// Set up listener and register the records we want to process
             HSSFRequest hssfRequest = new HSSFRequest();
@@ -247,6 +269,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 hssfRequest.addListener(formatListener, SeriesTextRecord.sid);
                 hssfRequest.addListener(formatListener, FormatRecord.sid);
                 hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
+                hssfRequest.addListener(formatListener, DrawingGroupRecord.sid);
             }
 
             // Create event factory and process Workbook (fire events)
@@ -256,6 +279,13 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             
             // Output any extra text that came after all the sheets
             processExtraText(); 
+            
+            // Look for embeded images, now that the drawing records
+            //  have been fully matched with their continue data
+            for(DrawingGroupRecord dgr : drawingGroups) {
+               dgr.decode();
+               findPictures(dgr.getEscherRecords());
+            }
     	}
 
         /**
@@ -267,19 +297,29 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             if (exception == null) {
                 try {
                     internalProcessRecord(record);
-                } catch (SAXException e) {
-                    exception = e;
+                } catch (TikaException te) {
+                   exception = te;
+                } catch (IOException ie) {
+                    exception = ie;
+                } catch (SAXException se) {
+                    exception = se;
                 }
             }
         }
 
-        public void throwStoredException() throws SAXException {
+        public void throwStoredException() throws TikaException, SAXException, IOException {
             if (exception != null) {
-                throw exception;
+                if(exception instanceof IOException)
+                   throw (IOException)exception;
+                if(exception instanceof SAXException)
+                   throw (SAXException)exception;
+                if(exception instanceof TikaException)
+                   throw (TikaException)exception;
+                throw new TikaException(exception.getMessage());
             }
         }
 
-        private void internalProcessRecord(Record record) throws SAXException {
+        private void internalProcessRecord(Record record) throws SAXException, TikaException, IOException {
             switch (record.getSid()) {
             case BOFRecord.sid: // start of workbook, worksheet etc. records
                 BOFRecord bof = (BOFRecord) record;
@@ -366,6 +406,13 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 SeriesTextRecord str = (SeriesTextRecord) record;
                 addTextCell(record, str.getText());
                 break;
+                
+            case DrawingGroupRecord.sid:
+               // Collect this now, we'll process later when all
+               //  the continue records are in
+               drawingGroups.add( (DrawingGroupRecord)record );
+               break;
+           
             }
             
             previousSid = record.getSid();
@@ -478,6 +525,55 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             handler.endElement("div");
         }
 
+        private void findPictures(List<EscherRecord> records) throws IOException, SAXException, TikaException {
+           for(EscherRecord escherRecord : records) {
+              if (escherRecord instanceof EscherBSERecord) {
+                 EscherBlipRecord blip = ((EscherBSERecord) escherRecord).getBlipRecord();
+                 if (blip != null) {
+                    // TODO When we have upgraded POI, we can use this code instead
+                    //HSSFPictureData picture = new HSSFPictureData(blip);
+                    //String mimeType = picture.getMimeType();
+                    //TikaInputStream stream = TikaInputStream.get(picture.getData());
+                    
+                    // This code is cut'n'paste from a newer version of POI
+                    String mimeType = "";
+                    switch (blip.getRecordId()) {
+                    case EscherMetafileBlip.RECORD_ID_WMF:
+                       mimeType =  "application/x-wmf";
+                       break;
+                    case EscherMetafileBlip.RECORD_ID_EMF:
+                       mimeType =  "application/x-emf";
+                       break;
+                    case EscherMetafileBlip.RECORD_ID_PICT:
+                       mimeType =  "image/x-pict";
+                       break;
+                    case EscherBitmapBlip.RECORD_ID_PNG:
+                       mimeType =  "image/png";
+                       break;
+                    case EscherBitmapBlip.RECORD_ID_JPEG:
+                       mimeType =  "image/jpeg";
+                       break;
+                    case EscherBitmapBlip.RECORD_ID_DIB:
+                       mimeType =  "image/bmp";
+                       break;
+                    default:
+                       mimeType =  "image/unknown";
+                       break;
+                    }
+                    TikaInputStream stream = TikaInputStream.get(blip.getPicturedata());
+                    
+                    // Handle the embeded resource
+                    extractor.handleEmbededResource(
+                          stream, null, mimeType,
+                          handler
+                    );
+                 }
+              }
+
+              // Recursive call.
+              findPictures(escherRecord.getChildRecords());
+           }
+        }
     }
 
     /**
