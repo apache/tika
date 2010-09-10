@@ -30,13 +30,10 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -50,16 +47,13 @@ class PackageExtractor {
 
     private final Metadata metadata;
 
-    private final ParseContext context;
-
-    private final Parser parser;
+    private final EmbeddedDocumentExtractor extractor;
 
     public PackageExtractor(
             ContentHandler handler, Metadata metadata, ParseContext context) {
         this.handler = handler;
         this.metadata = metadata;
-        this.context = context;
-        this.parser = context.get(Parser.class, EmptyParser.INSTANCE);
+        this.extractor = new EmbeddedDocumentExtractor(context);
     }
 
     public void parse(InputStream stream)
@@ -126,12 +120,11 @@ class PackageExtractor {
                 }
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
             }
+
             // Use the delegate parser to parse the compressed document
-            parser.parse(
-                    new CloseShieldInputStream(stream),
-                    new EmbeddedContentHandler(
-                            new BodyContentHandler(xhtml)),
-                    entrydata, context);
+            if (extractor.shouldParseEmbedded(entrydata)) {
+                extractor.parseEmbedded(stream, xhtml, entrydata);
+            }
         } finally {
             stream.close();
         }
@@ -155,24 +148,15 @@ class PackageExtractor {
             ArchiveEntry entry = archive.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
-                    xhtml.startElement("div", "class", "package-entry");
                     Metadata entrydata = new Metadata();
                     String name = entry.getName();
                     if (name != null && name.length() > 0) {
                         entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
-                        xhtml.element("h1", name);
                     }
-                    try {
-                        // Use the delegate parser to parse this entry
-                        parser.parse(
-                                new CloseShieldInputStream(archive),
-                                new EmbeddedContentHandler(
-                                        new BodyContentHandler(xhtml)),
-                                        entrydata, context);
-                    } catch (TikaException e) {
-                        // Could not parse the entry, just skip the content
+
+                    if (extractor.shouldParseEmbedded(entrydata)) {
+                        extractor.parseEmbedded(archive, xhtml, entrydata);
                     }
-                    xhtml.endElement("div");
                 }
                 entry = archive.getNextEntry();
             }

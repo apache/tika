@@ -29,6 +29,7 @@ import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.detect.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -42,10 +43,10 @@ import org.xml.sax.SAXException;
 
 abstract class AbstractPOIFSExtractor {
 
-    private final ParseContext context;
+    private final EmbeddedDocumentExtractor extractor;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
-        this.context = context;
+        this.extractor = new EmbeddedDocumentExtractor(context);
     }
     
     protected void handleEmbeddedResource(TikaInputStream resource,
@@ -55,16 +56,15 @@ abstract class AbstractPOIFSExtractor {
            Metadata metadata = new Metadata();
            if(filename != null) {
               metadata.set(Metadata.TIKA_MIME_FILE, filename);
+              metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
            }
            if(mediaType != null) {
               metadata.set(Metadata.CONTENT_TYPE, mediaType);
            }
-           
-           Parser parser = context.get(Parser.class, EmptyParser.INSTANCE);
-           parser.parse(
-                   resource, new EmbeddedContentHandler(xhtml),
-                   metadata, context
-           );
+
+           if (extractor.shouldParseEmbedded(metadata)) {
+               extractor.parseEmbedded(resource, xhtml, metadata);
+           }
        } finally {
            resource.close();
        }
@@ -76,10 +76,10 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbededOfficeDoc(
             DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-       // Is it an embeded OLE2 document, or an embeded OOXML document?
+       // Is it an embedded OLE2 document, or an embedded OOXML document?
        try {
           Entry ooxml = dir.getEntry("Package");
-          
+
           // It's OOXML
           TikaInputStream ooxmlStream = TikaInputStream.get(
                 new DocumentInputStream((DocumentEntry)ooxml)
@@ -91,7 +91,7 @@ abstract class AbstractPOIFSExtractor {
        } catch(FileNotFoundException e) {
           // It's regular OLE2
        }
-       
+
        // Need to dump the directory out to a new temp file, so
        //  it's stand along
        POIFSFileSystem newFS = new POIFSFileSystem();
@@ -109,14 +109,13 @@ abstract class AbstractPOIFSExtractor {
            metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
 
            // Trigger for the document itself 
-           TikaInputStream embeded = TikaInputStream.get(tmpFile);
+           TikaInputStream embedded = TikaInputStream.get(tmpFile);
            try {
-               Parser parser = context.get(Parser.class, EmptyParser.INSTANCE);
-               parser.parse(
-                       embeded, new EmbeddedContentHandler(xhtml),
-                       metadata, context);
+               if (extractor.shouldParseEmbedded(metadata)) {
+                   extractor.parseEmbedded(embedded, xhtml, metadata);
+               }
            } finally {
-               embeded.close();
+               embedded.close();
            }
        } finally {
            tmpFile.delete();
