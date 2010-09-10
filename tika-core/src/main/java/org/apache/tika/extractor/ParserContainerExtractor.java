@@ -36,7 +36,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * An implementation of {@link ContainerExtractor} powered by the
  *  regular {@link Parser} classes.
- * This allows you to easily extract out all the embeded resources
+ * This allows you to easily extract out all the embedded resources
  *  from within contain files, whilst using the normal parsers
  *  to do the work.
  * By default the {@link AutoDetectParser} will be used, to allow
@@ -72,7 +72,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
 
     public void extract(
             TikaInputStream stream, final ContainerExtractor recurseExtractor,
-            final EmbededResourceHandler handler)
+            final EmbeddedResourceHandler handler)
             throws IOException, TikaException {
         ParseContext context = new ParseContext();
         context.set(Parser.class, new Parser() {
@@ -88,17 +88,24 @@ public class ParserContainerExtractor implements ContainerExtractor {
                 if(metadata.get(Metadata.CONTENT_TYPE) != null) {
                    type = MediaType.parse( metadata.get(Metadata.CONTENT_TYPE) );
                 } else {
+                   if(! stream.markSupported()) {
+                      stream = TikaInputStream.get(stream);
+                   }
                    type = detector.detect(stream, metadata);
                 }
                 
-                // Let the handler process the embeded resource 
+                // Let the handler process the embedded resource 
                 handler.handle(filename, type, stream);
                 
                 // Recurse if requested
                 if(recurseExtractor != null) {
-                   recurseExtractor.extract(
-                         TikaInputStream.get(stream), recurseExtractor, handler
-                   );
+                   if(recurseExtractor == ParserContainerExtractor.this) {
+                      parser.parse(stream, new DefaultHandler(), metadata, context);
+                   } else {
+                      recurseExtractor.extract(
+                            TikaInputStream.get(stream), recurseExtractor, handler
+                      );
+                   }
                 }
             }
             public void parse(InputStream stream, ContentHandler handler,

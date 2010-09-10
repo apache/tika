@@ -35,6 +35,7 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -47,8 +48,10 @@ public class OOXMLExtractorFactory {
 
     public static void parse(
             InputStream stream, ContentHandler handler,
-            Metadata metadata, Locale locale)
+            Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        Locale locale = context.get(Locale.class, Locale.getDefault());
+       
         try {
             OOXMLExtractor extractor;
 
@@ -77,7 +80,7 @@ public class OOXMLExtractorFactory {
             }
 
             extractor.getMetadataExtractor().extract(metadata);
-            extractor.getXHTML(handler, metadata);
+            extractor.getXHTML(handler, metadata, context);
         } catch (IllegalArgumentException e) {
             if (e.getMessage().startsWith("No supported documents found")) {
                 throw new TikaException(

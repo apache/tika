@@ -17,8 +17,11 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
+import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.model.XWPFCommentsDecorator;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
@@ -153,6 +156,20 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.endElement("table");
         }
     }
+
+    /**
+     * Word documents are simple, they only have the one
+     *  main part
+     */
+    @Override
+    protected List<PackagePart> getMainDocumentParts() {
+       XWPFDocument document = (XWPFDocument) extractor.getDocument();
+       
+       List<PackagePart> parts = new ArrayList<PackagePart>();
+       parts.add( document.getPackagePart() );
+       return parts;
+    }
+
 
     /**
      * Private wrapper class that makes the protected {@link XWPFParagraph}

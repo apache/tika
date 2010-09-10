@@ -99,7 +99,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
               }
               
               TikaInputStream stream = TikaInputStream.get(picture.getContent());
-              handleEmbededResource(stream, null, mimeType, xhtml);
+              handleEmbeddedResource(stream, null, mimeType, xhtml);
            }
         }
         

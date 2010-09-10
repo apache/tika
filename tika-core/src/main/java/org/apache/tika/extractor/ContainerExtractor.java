@@ -17,20 +17,14 @@
 package org.apache.tika.extractor;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
-import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Tika container extractor interface.
- * Container Extractors provide access to the embeded
+ * Container Extractors provide access to the embedded
  *  resources within container formats such as .zip and .doc 
  */
 public interface ContainerExtractor extends Serializable {
@@ -42,11 +36,11 @@ public interface ContainerExtractor extends Serializable {
     boolean isSupported(TikaInputStream input) throws IOException;
 
     /**
-     * Processes a container file, and extracts all the embeded
+     * Processes a container file, and extracts all the embedded
      * resources from within it.
      * <p>
-     * The {@link EmbededResourceHandler} you supply will
-     * be called for each embeded resource in the container. It is
+     * The {@link EmbeddedResourceHandler} you supply will
+     * be called for each embedded resource in the container. It is
      * up to you whether you process the contents of the resource or not. 
      * <p>
      * The given document stream is consumed but not closed by this method.
@@ -55,17 +49,17 @@ public interface ContainerExtractor extends Serializable {
      * If required, nested containers (such as a .docx within a .zip)
      * can automatically be recursed into, and processed inline. If
      * no recurseExtractor is given, the nested containers will be
-     * treated as with any other embeded resources.
+     * treated as with any other embedded resources.
      *
      * @since Apache Tika 0.8
      * @param stream the document stream (input)
-     * @param recurseExtractor the extractor to use on any embeded containers 
-     * @param handler handler for the embeded files (output)
+     * @param recurseExtractor the extractor to use on any embedded containers 
+     * @param handler handler for the embedded files (output)
      * @throws IOException if the document stream could not be read
      * @throws TikaException if the container could not be parsed
      */
     void extract(
             TikaInputStream stream, ContainerExtractor recurseExtractor,
-            EmbededResourceHandler handler)
+            EmbeddedResourceHandler handler)
             throws IOException, TikaException;
 }

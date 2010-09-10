@@ -16,7 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -30,5 +34,10 @@ public class POIXMLTextExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException {
         // extract document content as a single string (not structured)
         xhtml.element("p", extractor.getText());
+    }
+
+    @Override
+    protected List<PackagePart> getMainDocumentParts() {
+       return new ArrayList<PackagePart>();
     }
 }

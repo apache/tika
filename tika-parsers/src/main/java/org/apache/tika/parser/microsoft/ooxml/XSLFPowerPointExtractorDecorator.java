@@ -17,7 +17,10 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
@@ -92,5 +95,11 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 }
             }
         }
+    }
+    
+    @Override
+    protected List<PackagePart> getMainDocumentParts() {
+       // TODO
+       return new ArrayList<PackagePart>();
     }
 }
