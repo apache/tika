@@ -19,7 +19,9 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 
 import org.apache.poi.POIXMLDocument;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -48,6 +50,6 @@ public interface OOXMLExtractor {
      * Parses the document into a sequence of XHTML SAX events sent to the
      * given content handler.
      */
-    void getXHTML(ContentHandler handler, Metadata metadata)
-            throws SAXException, XmlException, IOException;
+    void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
+            throws SAXException, XmlException, IOException, TikaException;
 }

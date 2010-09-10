@@ -65,8 +65,7 @@ public class OOXMLParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        Locale locale = context.get(Locale.class, Locale.getDefault());
-        OOXMLExtractorFactory.parse(stream, handler, metadata, locale);
+        OOXMLExtractorFactory.parse(stream, handler, metadata, context);
     }
 
     /**

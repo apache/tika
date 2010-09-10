@@ -17,10 +17,24 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackagePartName;
+import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.openxml4j.opc.PackagingURIHelper;
+import org.apache.poi.openxml4j.opc.TargetMode;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.EmptyParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
@@ -35,6 +49,11 @@ import org.xml.sax.SAXException;
  * populates the {@link XHTMLContentHandler} object received as parameter.
  */
 public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
+    static final String RELATION_AUDIO = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/audio";
+    static final String RELATION_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
+    static final String RELATION_OLE_OBJECT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
+    static final String RELATION_PACKAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
+   
     protected POIXMLTextExtractor extractor;
 
     private final String type;
@@ -62,12 +81,70 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getXHTML(org.xml.sax.ContentHandler,
      *      org.apache.tika.metadata.Metadata)
      */
-    public void getXHTML(ContentHandler handler, Metadata metadata)
-            throws SAXException, XmlException, IOException {
+    public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
+            throws SAXException, XmlException, IOException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         buildXHTML(xhtml);
         xhtml.endDocument();
+        
+        // Now do any embedded parts
+        List<PackagePart> mainParts = getMainDocumentParts();
+        for(PackagePart part : mainParts) {
+           PackageRelationshipCollection rels;
+           try {
+              rels = part.getRelationships();
+           } catch(InvalidFormatException e) {
+              throw new TikaException("Corrupt OOXML file", e);
+           }
+           
+           for(PackageRelationship rel : rels) {
+              // Is it an embedded type (not part of the document)
+              if( rel.getRelationshipType().equals(RELATION_AUDIO) ||
+                  rel.getRelationshipType().equals(RELATION_IMAGE) ||
+                  rel.getRelationshipType().equals(RELATION_OLE_OBJECT) ||
+                  rel.getRelationshipType().equals(RELATION_PACKAGE) ) {
+                 if(rel.getTargetMode() == TargetMode.INTERNAL) {
+                    PackagePartName relName;
+                    try {
+                       relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                    } catch(InvalidFormatException e) {
+                       throw new TikaException("Broken OOXML file", e);
+                    }
+                    PackagePart relPart = rel.getPackage().getPart(relName);
+                    handleEmbedded(rel, relPart, handler, context);
+                 }
+              }
+           }
+        }
+    }
+    
+    /**
+     * Handles an embedded resource in the file
+     */
+    protected void handleEmbedded(PackageRelationship rel, PackagePart part, 
+            ContentHandler handler, ParseContext context)
+            throws SAXException, XmlException, IOException, TikaException {
+       // Get the name
+       String name = rel.getTargetURI().toString();
+       if(name.indexOf('/') > -1) {
+          name = name.substring(name.lastIndexOf('/')+1);
+       }
+       
+       // Get the content type
+       String type = part.getContentType();
+       
+       // Call the recursing handler
+       Metadata metadata = new Metadata();
+       metadata.set(Metadata.TIKA_MIME_FILE, name);
+       metadata.set(Metadata.CONTENT_TYPE, type);
+       
+       Parser parser = context.get(Parser.class, EmptyParser.INSTANCE);
+       parser.parse(
+               TikaInputStream.get(part.getInputStream()), 
+               new EmbeddedContentHandler(handler),
+               metadata, context
+       );
     }
 
     /**
@@ -75,4 +152,13 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      */
     protected abstract void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException;
+    
+    /**
+     * Return a list of the main parts of the document, used
+     *  when searching for embedded resources.
+     * This should be all the parts of the document that end
+     *  up with things embedded into them.
+     */
+    protected abstract List<PackagePart> getMainDocumentParts()
+            throws TikaException;
 }

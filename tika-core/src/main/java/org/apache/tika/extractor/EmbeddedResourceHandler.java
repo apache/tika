@@ -25,20 +25,17 @@ import org.apache.tika.mime.MediaType;
  * To work with a {@link ContainerExtractor}, your code needs
  *  to implement this interface.
  */
-public interface EmbededResourceHandler {
+public interface EmbeddedResourceHandler {
     /**
-     * Called to process an embeded resource within the container.
-     * This will be called once per embeded resource within the
+     * Called to process an embedded resource within the container.
+     * This will be called once per embedded resource within the
      *  container, along with whatever details are available on
-     *  the embeded resource.
+     *  the embedded resource.
      *  
-     * TODO Don't pass in the input stream, so that if the entry
-     *  isn't desired then work isn't done to extract it
-     * 
      * @since Apache Tika 0.8
-     * @param filename The filename of the embeded resource, if known
-     * @param mediaType The media type of the embeded resource, if known
-     * @param stream The contents of the embeded resource
+     * @param filename The filename of the embedded resource, if known
+     * @param mediaType The media type of the embedded resource, if known
+     * @param stream The contents of the embedded resource
      */
     void handle(String filename, MediaType mediaType, InputStream stream);
 }

@@ -17,10 +17,18 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
 
 import org.apache.poi.hssf.extractor.ExcelExtractor;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackagePartName;
+import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackagingURIHelper;
+import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Comment;
@@ -29,6 +37,7 @@ import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
 import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -136,6 +145,42 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         if (content.length() > 0) {
             xhtml.element("p", content);
         }
+    }
+    
+    /**
+     * In Excel files, sheets have things embedded in them,
+     *  and sheet drawings which have the images
+     */
+    @Override
+    protected List<PackagePart> getMainDocumentParts() throws TikaException {
+       List<PackagePart> parts = new ArrayList<PackagePart>();
+       XSSFWorkbook document = (XSSFWorkbook) extractor.getDocument();
+       for(XSSFSheet sheet : document) {
+          PackagePart part = sheet.getPackagePart();
+          
+          // Add the sheet
+          parts.add(part);
+          
+          // If it has drawings, return those too
+          try {
+             for(PackageRelationship rel : part.getRelationshipsByType(XSSFRelation.DRAWINGS.getRelation())) {
+                if(rel.getTargetMode() == TargetMode.INTERNAL) {
+                   PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                   parts.add( rel.getPackage().getPart(relName) );
+                }
+             }
+             for(PackageRelationship rel : part.getRelationshipsByType(XSSFRelation.VML_DRAWINGS.getRelation())) {
+                if(rel.getTargetMode() == TargetMode.INTERNAL) {
+                   PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                   parts.add( rel.getPackage().getPart(relName) );
+                }
+             }
+          } catch(InvalidFormatException e) {
+             throw new TikaException("Broken OOXML file", e);
+          }
+       }
+
+       return parts;
     }
 
     @Override

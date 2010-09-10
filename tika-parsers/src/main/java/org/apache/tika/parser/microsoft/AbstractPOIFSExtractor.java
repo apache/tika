@@ -48,7 +48,7 @@ abstract class AbstractPOIFSExtractor {
         this.context = context;
     }
     
-    protected void handleEmbededResource(TikaInputStream resource,
+    protected void handleEmbeddedResource(TikaInputStream resource,
           String filename, String mediaType, XHTMLContentHandler xhtml)
           throws IOException, SAXException, TikaException {
        try {
@@ -86,7 +86,7 @@ abstract class AbstractPOIFSExtractor {
           );
           ZipContainerDetector detector = new ZipContainerDetector();
           MediaType type = detector.detect(ooxmlStream, new Metadata());
-          handleEmbededResource(ooxmlStream, null, type.toString(), xhtml);
+          handleEmbeddedResource(ooxmlStream, null, type.toString(), xhtml);
           return;
        } catch(FileNotFoundException e) {
           // It's regular OLE2

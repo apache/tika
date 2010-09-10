@@ -563,7 +563,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     TikaInputStream stream = TikaInputStream.get(blip.getPicturedata());
                     
                     // Handle the embeded resource
-                    extractor.handleEmbededResource(
+                    extractor.handleEmbeddedResource(
                           stream, null, mimeType,
                           handler
                     );
