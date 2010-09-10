@@ -67,7 +67,7 @@ public class ZipContainerDetector implements ContainerDetector {
              // Office Open XML File
              // As POI to open and investigate it for us
              try {
-                OPCPackage pkg = OPCPackage.open(input);
+                OPCPackage pkg = OPCPackage.open(input.getFile().toString());
                 input.setOpenContainer(pkg);
 
                 PackageRelationshipCollection core = 

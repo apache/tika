@@ -134,32 +134,40 @@ public class TestContainerAwareDetector extends TestCase {
         
         input = getTestDoc("testEXCEL.xlsx");
         assertEquals(
-        	MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-        	d.detect(input, new Metadata())
+              MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+              d.detect(input, new Metadata())
         );
         
         input = getTestDoc("testWORD.docx");
         assertEquals(
-        	MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
-        	d.detect(input, new Metadata())
+              MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
+              d.detect(input, new Metadata())
         );
         
         input = getTestDoc("testPPT.pptx");
         assertEquals(
-        	MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
-        	d.detect(input, new Metadata())
+              MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
+              d.detect(input, new Metadata())
         );
-        
+
+        // Try with a tika input stream
         TikaInputStream tis = TikaInputStream.get(getTestDoc("testPPT.pptx"));
         assertEquals(
-        	MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
-        	d.detect(tis, new Metadata())
+              MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
+              d.detect(tis, new Metadata())
         );
         
+        // There should be an attached OPCPackage as an open container
         assertNotNull(tis.getOpenContainer());
         assertTrue(
-                "Open container should be OPCPackage, not " + tis.getOpenContainer().getClass(), 
-                tis.getOpenContainer() instanceof OPCPackage
+              "Open container should be OPCPackage, not " + tis.getOpenContainer().getClass(), 
+              tis.getOpenContainer() instanceof OPCPackage
+        );
+        
+        // The underlying TikaInputStream should still be open, and file based
+        assertTrue(
+              "TikaInputStream should still have a file",
+              tis.hasFile()
         );
     }
     
