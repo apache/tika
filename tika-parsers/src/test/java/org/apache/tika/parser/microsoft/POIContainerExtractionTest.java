@@ -16,33 +16,15 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
-
-import junit.framework.TestCase;
-
 import org.apache.tika.extractor.ContainerExtractor;
-import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.extractor.ParserContainerExtractor;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.mime.MediaType;
 
 /**
  * Tests that the various POI powered parsers are
  *  able to extract their embedded contents.
  */
-public class POIContainerExtractionTest extends TestCase {
-    private static final MediaType TYPE_DOC = MediaType.application("msword");
-    private static final MediaType TYPE_PPT = MediaType.application("vnd.ms-powerpoint");
-    private static final MediaType TYPE_XLS = MediaType.application("vnd.ms-excel");
-    private static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
-    private static final MediaType TYPE_PPTX = MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
-    private static final MediaType TYPE_XLSX = MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    
-    private static final MediaType TYPE_JPG = MediaType.image("jpeg");
-    private static final MediaType TYPE_PNG = MediaType.image("png");
-    private static final MediaType TYPE_EMF = MediaType.application("x-emf");
+public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTest {
    
     /**
      * For office files which don't have anything embedded in them
@@ -221,36 +203,5 @@ public class POIContainerExtractionTest extends TestCase {
        
        // Outlook with a pdf and another outlook message
        // TODO
-    }
-    
-    private TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
-        InputStream input = POIContainerExtractionTest.class.getResourceAsStream(
-             "/test-documents/" + filename);
-        assertNotNull(filename + " not found", input);
-        TikaInputStream stream = TikaInputStream.get(input);
-        
-        assertEquals(true, extractor.isSupported(stream));
-        
-        // Process it
-        TrackingHandler handler = new TrackingHandler();
-        if(recurse) {
-           extractor.extract(stream, extractor, handler);
-        } else {
-           extractor.extract(stream, null, handler);
-        }
-        
-        // So they can check what happened
-        return handler;
-    }
-    
-    private static class TrackingHandler implements EmbeddedResourceHandler {
-       private List<String> filenames = new ArrayList<String>();
-       private List<MediaType> mediaTypes = new ArrayList<MediaType>();
-       
-       public void handle(String filename, MediaType mediaType,
-            InputStream stream) {
-          filenames.add(filename);
-          mediaTypes.add(mediaType);
-      }
     }
 }
