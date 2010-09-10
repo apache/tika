@@ -24,6 +24,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CountingInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.SecureContentHandler;
@@ -94,10 +95,14 @@ public class AutoDetectParser extends CompositeParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        // We need (reliable!) mark support for type detection before parsing
-        stream = new BufferedInputStream(stream);
+        if(stream instanceof TikaInputStream || stream instanceof BufferedInputStream) {
+           // Input stream can be trusted for type detection
+        } else {
+           // We need (reliable!) mark support for type detection before parsing
+           stream = new BufferedInputStream(stream);
+        }
 
-        // Automatically detect the MIME type of the document 
+        // Automatically detect the MIME type of the document
         MediaType type = detector.detect(stream, metadata);
         metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
