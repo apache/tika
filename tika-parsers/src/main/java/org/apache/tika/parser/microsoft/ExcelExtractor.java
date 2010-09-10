@@ -539,10 +539,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     String mimeType = "";
                     switch (blip.getRecordId()) {
                     case EscherMetafileBlip.RECORD_ID_WMF:
-                       mimeType =  "application/x-wmf";
+                       mimeType =  "image/x-wmf";
                        break;
                     case EscherMetafileBlip.RECORD_ID_EMF:
-                       mimeType =  "application/x-emf";
+                       mimeType =  "image/x-emf";
                        break;
                     case EscherMetafileBlip.RECORD_ID_PICT:
                        mimeType =  "image/x-pict";

@@ -92,10 +92,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                  mimeType =  "image/tiff";
               }
               if("wmf".equals(extension)) {
-                 mimeType =  "application/x-wmf";
+                 mimeType =  "image/x-wmf";
               }
               if("emf".equals(extension)) {
-                 mimeType =  "application/x-emf";
+                 mimeType =  "image/x-emf";
               }
               
               TikaInputStream stream = TikaInputStream.get(picture.getContent());

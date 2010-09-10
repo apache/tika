@@ -2488,6 +2488,8 @@
     <glob pattern="*.m14"/>
   </mime-type>
   <mime-type type="application/x-msmetafile">
+    <alias type="image/x-emf"/>
+    <alias type="image/x-wmf"/>
     <acronym>WMF</acronym>
     <comment>Windows Metafile</comment>
     <glob pattern="*.wmf"/>
