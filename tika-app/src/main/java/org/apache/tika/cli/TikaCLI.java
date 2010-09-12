@@ -23,13 +23,12 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -158,7 +157,12 @@ public class TikaCLI {
         } else if (arg.equals("--list-parser-detail") || arg.equals("--list-parser-details")) {
             pipeMode = false;
             displayParsers(true);
-        } else if (arg.startsWith("-e")) {
+        } 
+          else if(arg.equals("--list-met-models")){
+            pipeMode = false;
+            displayMetModels();
+        }
+          else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
             encoding = arg.substring("--encoding=".length());
@@ -219,6 +223,8 @@ public class TikaCLI {
         out.println("         List the available document parsers");
         out.println("    --list-parser-details");
         out.println("         List the available document parsers, and their supported mime types");
+        out.println("    --list-met-models");
+        out.println("         List the available metadata models, and their supported keys");
         out.println();
         out.println("Description:");
         out.println("    Apache Tika will parse the file(s) specified on the");
@@ -236,6 +242,35 @@ public class TikaCLI {
         out.println("    the Apache Tika GUI. You can drag and drop files");
         out.println("    from a normal file explorer to the GUI window to");
         out.println("    extract text content and metadata from the files.");
+    }
+    
+    private void displayMetModels(){
+        PrintStream out = System.out;
+        Class[] modelClasses = Metadata.class.getInterfaces();
+        Arrays.sort(modelClasses, new Comparator<Class>() {
+        
+            public int compare(Class o1, Class o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        
+        for(Class modelClass: modelClasses){
+            if(!modelClass.getSimpleName().contains("Tika")) // we don't care about internal Tika met classes
+                out.println(modelClass.getSimpleName());     // if we do, then we can take this conditional out
+            else continue;
+            Field[] keyFields = modelClass.getFields();
+            Arrays.sort(keyFields, new Comparator<Field>() {
+            
+                public int compare(Field o1, Field o2) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+            });
+            
+            for(Field keyField: keyFields){
+                System.out.println(" "+keyField.getName());
+            }
+            
+        }
     }
 
     private void displayParsers(boolean includeMimeTypes) {
