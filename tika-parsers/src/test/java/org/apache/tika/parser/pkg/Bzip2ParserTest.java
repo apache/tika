@@ -18,8 +18,6 @@ package org.apache.tika.parser.pkg;
 
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
@@ -29,7 +27,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Test case for parsing bzip2 files.
  */
-public class Bzip2ParserTest extends TestCase {
+public class Bzip2ParserTest extends AbstractPkgTest {
 
     public void testBzip2Parsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
@@ -39,7 +37,7 @@ public class Bzip2ParserTest extends TestCase {
         InputStream stream = Bzip2ParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.tbz2");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, recursingContext);
         } finally {
             stream.close();
         }
@@ -66,4 +64,32 @@ public class Bzip2ParserTest extends TestCase {
         assertTrue(content.contains("Rida Benjelloun"));
     }
 
+
+    /**
+     * Tests that the ParseContext parser is correctly
+     *  fired for all the embedded entries.
+     */
+    public void testEmbedded() throws Exception {
+       Parser parser = new AutoDetectParser(); // Should auto-detect!
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+
+       InputStream stream = ZipParserTest.class.getResourceAsStream(
+               "/test-documents/test-documents.tbz2");
+       try {
+           parser.parse(stream, handler, metadata, trackingContext);
+       } finally {
+           stream.close();
+       }
+       
+       // Should find a single entry, for the (compressed) tar file
+       assertEquals(1, tracker.filenames.size());
+       assertEquals(1, tracker.mediatypes.size());
+       
+       assertEquals(null, tracker.filenames.get(0));
+       assertEquals(null, tracker.mediatypes.get(0));
+
+       // Tar file starts with the directory name
+       assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, "ASCII"));
+    }
 }
