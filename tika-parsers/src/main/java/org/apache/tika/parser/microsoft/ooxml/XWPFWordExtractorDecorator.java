@@ -78,8 +78,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             XWPFParagraphDecorator decorator = new XWPFCommentsDecorator(
                     new XWPFHyperlinkDecorator(paragraph, null, true));
 
-            CTBookmark[] bookmarks = paragraph.getCTP().getBookmarkStartArray();
-            for (CTBookmark bookmark : bookmarks) {
+            for (CTBookmark bookmark : paragraph.getCTP().getBookmarkStartArray()) {
                 xhtml.element("p", bookmark.getName());
             }
 

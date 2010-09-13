@@ -196,7 +196,7 @@ public class TestContainerAwareDetector extends TestCase {
         ContainerAwareDetector detector = new ContainerAwareDetector(mimeTypes);
         
         // First up a truncated OOXML (zip) file
-        InputStream input = getTestDoc("testWORD.docx");
+        InputStream input = getTestDoc("testEXCEL.xlsx");
         byte [] buffer = new byte[300];
         assertEquals(300,input.read(buffer));
         Metadata metadata = new Metadata();
