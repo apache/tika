@@ -21,6 +21,9 @@ import java.util.Locale;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.ContainerAwareDetector;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.ParseContext;
@@ -31,22 +34,29 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.parser.AutoDetectParser;
 
 public class OOXMLParserTest extends TestCase {
-    public void testExcel() throws Exception {
+    private Parser parser;
+   
+    @Override
+    protected void setUp() throws Exception {
+       TikaConfig config = TikaConfig.getDefaultConfig();
+       ContainerAwareDetector detector = new ContainerAwareDetector(
+             config.getMimeRepository()
+       );
+       parser = new AutoDetectParser(detector);
+    }
+
+   public void testExcel() throws Exception {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testEXCEL.xlsx");
         assertNotNull(input);
 
-        Parser parser = new AutoDetectParser();
-        Metadata metadata = new Metadata();
-        // TODO: should auto-detect without the resource name
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
+        Metadata metadata = new Metadata(); 
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.US);
 
-
         try {
-            parser.parse(input, handler, metadata, context);
+            parser.parse(TikaInputStream.get(input), handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -70,16 +80,13 @@ public class OOXMLParserTest extends TestCase {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testEXCEL-formats.xlsx");
 
-        Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        // TODO: should auto-detect without the resource name
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "testEXCEL-formats.xlsx");
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
         context.set(Locale.class, Locale.US);
 
         try {
-            parser.parse(input, handler, metadata, context);
+            parser.parse(TikaInputStream.get(input), handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -115,6 +122,10 @@ public class OOXMLParserTest extends TestCase {
             // Date Format: d-mmm-yy
             assertTrue(content.contains("17-May-07"));
 
+            // Currency $#,##0.00;[Red]($#,##0.00)
+            assertTrue(content.contains("$1,599.99"));
+            assertTrue(content.contains("($1,599.99)"));
+            
             // Below assertions represent outstanding formatting issues to be addressed
             // they are included to allow the issues to be progressed with the Apache POI
             // team - See TIKA-103.
@@ -126,10 +137,6 @@ public class OOXMLParserTest extends TestCase {
             // Date/Time Format
             assertTrue(content.contains("19/01/2008 04:35"));
 
-            // Currency $#,##0.00;[Red]($#,##0.00)
-            assertTrue(content.contains("$1,599.99"));
-            assertTrue(content.contains("($1,599.99)"));
-            
             // Custom Number (0 "dollars and" .00 "cents")
             assertTrue(content.contains("19 dollars and .99 cents"));
 
@@ -211,15 +218,12 @@ public class OOXMLParserTest extends TestCase {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/testWORD.docx");
 
-        Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        // TODO: should auto-detect without the resource name
-        metadata.set(Metadata.RESOURCE_NAME_KEY, "testWORD.docx");
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
 
         try {
-            parser.parse(input, handler, metadata, context);
+            parser.parse(TikaInputStream.get(input), handler, metadata, context);
 
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

@@ -118,10 +118,21 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "x.ppsm");
     }
 
+    /**
+     * Note - detecting container formats by mime magic is very very
+     *  iffy, as we can't be sure where things will end up.
+     * People really ought to use the container aware detection...
+     */
     public void testOoxmlDetection() throws Exception {
-        assertTypeByData("application/x-tika-ooxml", "testWORD.docx");
+        // These two do luckily have [Content_Types].xml near the start,
+        //  so our mime magic will spot them
         assertTypeByData("application/x-tika-ooxml", "testEXCEL.xlsx");
         assertTypeByData("application/x-tika-ooxml", "testPPT.pptx");
+        
+        // This one quite legitimately doesn't have its [Content_Types].xml
+        //  file as one of the first couple of entries
+        // As such, our mime magic can't figure it out...
+        assertTypeByData("application/zip", "testWORD.docx");
     }
 
     public void testJpegDetection() throws Exception {
