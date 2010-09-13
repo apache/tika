@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import org.apache.poi.hsmf.MAPIMessage;
@@ -24,33 +23,30 @@ import org.apache.poi.hsmf.datatypes.AttachmentChunks;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
 /**
  * Outlook Message Parser.
  */
-public class OutlookExtractor {
+public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final MAPIMessage msg;
-    private final ParseContext context;
 
     public OutlookExtractor(POIFSFileSystem filesystem, ParseContext context) throws TikaException {
+        super(context);
+        
         try {
             this.msg = new MAPIMessage(filesystem);
-            this.context = context;
         } catch (IOException e) {
             throw new TikaException("Failed to parse Outlook message", e);
         }
     }
 
     public void parse(XHTMLContentHandler xhtml, Metadata metadata)
-            throws TikaException, SAXException {
+            throws TikaException, SAXException, IOException {
         try {
            msg.setReturnNullOnMissingChunk(true);
           
@@ -116,30 +112,31 @@ public class OutlookExtractor {
            
            for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
                xhtml.startElement("div", "class", "attachment-entry");
-               Metadata entrydata = new Metadata();
                
                String filename = null;
                if (attachment.attachLongFileName != null) {
-        	   filename = attachment.attachLongFileName.getValue();
+                  filename = attachment.attachLongFileName.getValue();
                } else if (attachment.attachFileName != null) {
-        	   filename = attachment.attachFileName.getValue();
+                  filename = attachment.attachFileName.getValue();
                }
                if (filename != null && filename.length() > 0) {
-                   entrydata.set(Metadata.RESOURCE_NAME_KEY, filename);
                    xhtml.element("h1", filename);
                }
                
-               try {
-                   // Use the delegate parser to parse this entry
-                   context.get(Parser.class, EmptyParser.INSTANCE).parse(
-                	   new ByteArrayInputStream(attachment.attachData.getValue()),
-                           new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                           entrydata,
-                           context
-                   );
-               } catch (Exception e) {
-                   // Could not parse the entry, just skip the content
+               if(attachment.attachData != null) {
+                  handleEmbeddedResource(
+                        TikaInputStream.get(attachment.attachData.getValue()),
+                        filename,
+                        null, xhtml
+                  );
                }
+               if(attachment.attachmentDirectory != null) {
+                  handleEmbededOfficeDoc(
+                        attachment.attachmentDirectory.getDirectory(),
+                        xhtml
+                  );
+               }
+
                xhtml.endElement("div");
                
            }

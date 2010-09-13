@@ -20,11 +20,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackagePartName;
+import org.apache.poi.openxml4j.opc.PackageRelationship;
+import org.apache.poi.openxml4j.opc.PackagingURIHelper;
+import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xssf.usermodel.XSSFRelation;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTRegularTextRun;
@@ -97,9 +107,42 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
     
+    /**
+     * In PowerPoint files, slides have things embedded in them,
+     *  and slide drawings which have the images
+     */
     @Override
-    protected List<PackagePart> getMainDocumentParts() {
-       // TODO
-       return new ArrayList<PackagePart>();
+    protected List<PackagePart> getMainDocumentParts() throws TikaException {
+       List<PackagePart> parts = new ArrayList<PackagePart>();
+       XSLFSlideShow document = (XSLFSlideShow) extractor.getDocument();
+       
+       for (CTSlideIdListEntry ctSlide : document.getSlideReferences().getSldIdList()) {
+          // Add the slide
+          PackagePart slidePart;
+          try {
+             slidePart = document.getSlidePart(ctSlide);
+          } catch(IOException e) {
+             throw new TikaException("Broken OOXML file", e);
+          } catch(XmlException xe) {
+             throw new TikaException("Broken OOXML file", xe);
+          }
+          parts.add(slidePart);
+          
+          // If it has drawings, return those too
+          try {
+             // TODO Improve when we upgrade POI
+//             for(PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
+             for(PackageRelationship rel : slidePart.getRelationshipsByType("http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing")) {
+                if(rel.getTargetMode() == TargetMode.INTERNAL) {
+                   PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                   parts.add( rel.getPackage().getPart(relName) );
+                }
+             }
+          } catch(InvalidFormatException e) {
+             throw new TikaException("Broken OOXML file", e);
+          }
+       }
+
+       return parts;
     }
 }

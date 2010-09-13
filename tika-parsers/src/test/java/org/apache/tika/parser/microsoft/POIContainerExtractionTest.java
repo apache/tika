@@ -71,6 +71,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        // PowerPoint with 2 images + sound
        // TODO
        
+       
        // Word with 1 image
        handler = process("testWORD_1img.doc", extractor, false);
        assertEquals(1, handler.filenames.size());
@@ -172,7 +173,6 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        
        // With recursion, should get their images too
        handler = process("testWORD_embeded.doc", extractor, true);
-       // TODO - Not all resources of embedded files are currently extracted 
        assertEquals(12, handler.filenames.size());
        assertEquals(12, handler.mediaTypes.size());
        
@@ -193,15 +193,32 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(TYPE_XLS, handler.mediaTypes.get(10)); // Embedded office doc
        assertEquals(TYPE_PNG, handler.mediaTypes.get(11)); //    PNG inside .xls
        
+       
        // PowerPoint with excel and word
        // TODO
        
        
        // Outlook with a text file and a word document
-       // TODO
+       handler = process("testMSG_att_doc.msg", extractor, true);
+       assertEquals(2, handler.filenames.size());
+       assertEquals(2, handler.mediaTypes.size());
+       
+       assertEquals("test-unicode.doc", handler.filenames.get(0));
+       assertEquals(TYPE_DOC, handler.mediaTypes.get(0));
+       
+       assertEquals("pj1.txt", handler.filenames.get(1));
+       assertEquals(TYPE_TXT, handler.mediaTypes.get(1));
        
        
        // Outlook with a pdf and another outlook message
-       // TODO
+       handler = process("testMSG_att_msg.msg", extractor, true);
+       assertEquals(2, handler.filenames.size());
+       assertEquals(2, handler.mediaTypes.size());
+       
+       assertEquals(null, handler.filenames.get(0));
+       assertEquals(TYPE_MSG, handler.mediaTypes.get(0));
+       
+       assertEquals("smbprn.00009008.KdcPjl.pdf", handler.filenames.get(1));
+       assertEquals(TYPE_PDF, handler.mediaTypes.get(1));
     }
 }

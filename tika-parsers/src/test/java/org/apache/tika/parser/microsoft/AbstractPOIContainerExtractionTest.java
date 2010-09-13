@@ -38,8 +38,13 @@ public abstract class AbstractPOIContainerExtractionTest extends TestCase {
     public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
     public static final MediaType TYPE_PPTX = MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
     public static final MediaType TYPE_XLSX = MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    public static final MediaType TYPE_MSG = MediaType.application("vnd.ms-outlook");
+    
+    public static final MediaType TYPE_TXT = MediaType.text("plain");
+    public static final MediaType TYPE_PDF = MediaType.application("pdf");
     
     public static final MediaType TYPE_JPG = MediaType.image("jpeg");
+    public static final MediaType TYPE_GIF = MediaType.image("gif");
     public static final MediaType TYPE_PNG = MediaType.image("png");
     public static final MediaType TYPE_EMF = MediaType.image("x-emf");
     
