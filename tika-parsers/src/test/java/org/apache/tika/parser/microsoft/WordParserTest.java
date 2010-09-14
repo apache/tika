@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -32,7 +33,7 @@ public class WordParserTest extends TestCase {
         try {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
-            new OfficeParser().parse(input, handler, metadata);
+            new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals(
                     "application/msword",
@@ -45,4 +46,23 @@ public class WordParserTest extends TestCase {
         }
     }
 
+    public void testWord6Parser() throws Exception {
+        InputStream input = WordParserTest.class.getResourceAsStream(
+                "/test-documents/testWORD6.doc");
+        try {
+            ContentHandler handler = new BodyContentHandler();
+            Metadata metadata = new Metadata();
+            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+
+            assertEquals(
+                    "application/msword",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(Metadata.TITLE));
+            assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(Metadata.SUBJECT));
+            assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
+            assertTrue(handler.toString().contains("The quick brown fox jumps over the lazy dog"));
+        } finally {
+            input.close();
+        }
+    }
 }
