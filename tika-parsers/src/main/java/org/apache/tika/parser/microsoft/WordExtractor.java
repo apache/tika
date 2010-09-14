@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.poi.hwpf.HWPFDocument;
+import org.apache.poi.hwpf.HWPFOldDocument;
+import org.apache.poi.hwpf.OldWordFileFormatException;
+import org.apache.poi.hwpf.extractor.Word6Extractor;
 import org.apache.poi.hwpf.model.PicturesTable;
 import org.apache.poi.hwpf.usermodel.Picture;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
@@ -41,7 +44,13 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     protected void parse(
             POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-        HWPFDocument document = new HWPFDocument(filesystem);
+        HWPFDocument document;
+        try {
+            document = new HWPFDocument(filesystem);
+        } catch(OldWordFileFormatException e) {
+            parseWord6(filesystem, xhtml);
+            return;
+        }
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
             new org.apache.poi.hwpf.extractor.WordExtractor(document);
 
@@ -134,5 +143,15 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             xhtml.endElement("div");
         }
     }
-
+    
+    protected void parseWord6(
+            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
+        HWPFOldDocument doc = new HWPFOldDocument(filesystem);
+        Word6Extractor extractor = new Word6Extractor(doc);
+        
+        for(String p : extractor.getParagraphText()) {
+            xhtml.element("p", p);
+        }
+    }
 }
