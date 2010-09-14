@@ -100,7 +100,7 @@ public class TikaConfig {
         if (mtr != null && mtr.hasAttribute("resource")) {
             mimeTypes = MimeTypesFactory.create(mtr.getAttribute("resource"));
         } else {
-            mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
+            mimeTypes = MimeTypes.getDefaultMimeTypes();
         }
 
         NodeList nodes = element.getElementsByTagName("parser");
@@ -173,7 +173,8 @@ public class TikaConfig {
                 }
             }
         }
-        mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
+        
+        mimeTypes = MimeTypes.getDefaultMimeTypes();
     }
 
     /**

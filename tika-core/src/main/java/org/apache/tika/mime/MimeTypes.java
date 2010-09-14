@@ -587,5 +587,22 @@ public final class MimeTypes implements Detector, Serializable {
 
         return type;
     }
+    
+    /**
+     * Get the default MimeTypes
+     * 
+     * @return MimeTypes
+     * @throws MimeTypeException
+     * @throws IOException
+     */
+    public static MimeTypes getDefaultMimeTypes() {
+        try {
+            return MimeTypesFactory.create("tika-mimetypes.xml");
+        } catch (MimeTypeException e) {
+            throw new RuntimeException("Unable to read default mimetypes", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to read default mimetypes", e);
+        }
+    }
 
 }

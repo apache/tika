@@ -19,6 +19,8 @@ package org.apache.tika.parser;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -27,6 +29,7 @@ import org.apache.tika.io.CountingInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.sax.SecureContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -57,6 +60,34 @@ public class AutoDetectParser extends CompositeParser {
         setDetector(detector);
     }
 
+    /**
+     * Creates an auto-detecting parser instance using the specified set of parser.
+     * This allows one to create a Tika configuration where only a subset of the
+     * available parsers have their 3rd party jars included, as otherwise the
+     * use of the default TikaConfig will throw various "ClassNotFound" exceptions.
+     * 
+     * @param detector Detector to use
+     * @param parsers
+     */
+    public AutoDetectParser(Parser...parsers) {
+        this(MimeTypes.getDefaultMimeTypes(), parsers);
+    }
+    
+    public AutoDetectParser(Detector detector, Parser...parsers) {
+        setDetector(detector);
+        setMediaTypeRegistry(MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry());
+        
+        Map<MediaType, Parser> map = new HashMap<MediaType, Parser>();
+        for (Parser parser : parsers) {
+            ParseContext context = new ParseContext();
+            for (MediaType type : parser.getSupportedTypes(context)) {
+                map.put(type, parser);
+            }
+        }
+        
+        setParsers(map);
+    }
+    
     public AutoDetectParser(TikaConfig config) {
         setConfig(config);
     }
