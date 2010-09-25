@@ -18,31 +18,44 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.model.XWPFCommentsDecorator;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
-import org.apache.poi.xwpf.model.XWPFHyperlinkDecorator;
-import org.apache.poi.xwpf.model.XWPFParagraphDecorator;
+import org.apache.poi.xwpf.usermodel.BodyType;
+import org.apache.poi.xwpf.usermodel.IBody;
+import org.apache.poi.xwpf.usermodel.IBodyElement;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
+import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFPicture;
+import org.apache.poi.xwpf.usermodel.XWPFPictureData;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFStyle;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.apache.tika.parser.microsoft.WordExtractor;
+import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTRow;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTbl;
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTc;
 import org.xml.sax.SAXException;
 
 public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
+    private XWPFDocument document;
+    private XWPFStyles styles;
 
     public XWPFWordExtractorDecorator(XWPFWordExtractor extractor) {
         super(extractor, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        
+        document = (XWPFDocument) extractor.getDocument();
+        styles = document.getStyles();
     }
 
     /**
@@ -51,49 +64,140 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
-        XWPFDocument document = (XWPFDocument) extractor.getDocument();
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
 
         // headers
         extractHeaders(xhtml, hfPolicy);
 
-        // first all paragraphs
-        Iterator<XWPFParagraph> i = document.getParagraphsIterator();
-        while (i.hasNext()) {
-            XWPFParagraph paragraph = i.next();
-
-            CTSectPr ctSectPr = null;
-            if (paragraph.getCTP().getPPr() != null) {
-                ctSectPr = paragraph.getCTP().getPPr().getSectPr();
-            }
-
-            XWPFHeaderFooterPolicy headerFooterPolicy = null;
-
-            if (ctSectPr != null) {
-                headerFooterPolicy =
-                    new XWPFHeaderFooterPolicy(document, ctSectPr);
-                extractHeaders(xhtml, headerFooterPolicy);
-            }
-
-            XWPFParagraphDecorator decorator = new XWPFCommentsDecorator(
-                    new XWPFHyperlinkDecorator(paragraph, null, true));
-
-            for (CTBookmark bookmark : paragraph.getCTP().getBookmarkStartArray()) {
-                xhtml.element("p", bookmark.getName());
-            }
-
-            xhtml.element("p", decorator.getText());
-
-            if (ctSectPr != null) {
-                extractFooters(xhtml, headerFooterPolicy);
-            }
-        }
+        // process text in the order that it occurs in
+        extractIBodyText(document, xhtml);
 
         // then all document tables
-        extractTableContent(document, xhtml);
         extractFooters(xhtml, hfPolicy);
     }
 
+    private void extractIBodyText(IBody bodyElement, XHTMLContentHandler xhtml)
+            throws SAXException, XmlException, IOException {
+       for(IBodyElement element : bodyElement.getBodyElements()) {
+          if(element instanceof XWPFParagraph) {
+             XWPFParagraph paragraph = (XWPFParagraph)element;
+             extractParagraph(paragraph, xhtml);
+          }
+          if(element instanceof XWPFTable) {
+             XWPFTable table = (XWPFTable)element;
+             extractTable(table, xhtml);
+          }
+      }
+    }
+    
+    private void extractParagraph(XWPFParagraph paragraph, XHTMLContentHandler xhtml)
+            throws SAXException, XmlException, IOException {
+       // If this paragraph is actually a whole new section, then
+       //  it could have its own headers and footers
+       // Check and handle if so
+       XWPFHeaderFooterPolicy headerFooterPolicy = null;
+       if (paragraph.getCTP().getPPr() != null) {
+           CTSectPr ctSectPr = paragraph.getCTP().getPPr().getSectPr();
+           if(ctSectPr != null) {
+              headerFooterPolicy =
+                  new XWPFHeaderFooterPolicy(document, ctSectPr);
+              extractHeaders(xhtml, headerFooterPolicy);
+           }
+       }
+       
+       // Is this a paragraph, or a heading?
+       String tag = "p";
+       String styleClass = null;
+       if(paragraph.getStyleID() != null) {
+          XWPFStyle style = styles.getStyle(
+                paragraph.getStyleID()
+          );
+          
+          TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
+                style.getName(), paragraph.getPartType() == BodyType.TABLECELL
+          );
+          tag = tas.getTag();
+          styleClass = tas.getStyleClass();
+       }
+       
+       for (CTBookmark bookmark : paragraph.getCTP().getBookmarkStartList()) {
+           xhtml.element("p", bookmark.getName());
+       }
+
+       if(styleClass == null) {
+          xhtml.startElement(tag);
+       } else {
+          xhtml.startElement(tag, "class", styleClass);
+       }
+       
+       // Do the text
+       for(XWPFRun run : paragraph.getRuns()) {
+          List<String> tags = new ArrayList<String>();
+          if(run instanceof XWPFHyperlinkRun) {
+             XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun)run;
+             XWPFHyperlink link = linkRun.getHyperlink(document);
+             if(link != null && link.getURL() != null) {
+                xhtml.startElement("a", "href", link.getURL());
+                tags.add("a");
+             }
+          }
+          if(run.isBold()) {
+             xhtml.startElement("b");
+             tags.add("b");
+          }
+          if(run.isItalic()) {
+             xhtml.startElement("i");
+             tags.add("i");
+          }
+          
+          xhtml.characters(run.toString());
+          
+          for(int i=tags.size()-1; i>=0; i--) {
+             xhtml.endElement(tags.get(i));
+          }
+          
+          // If we have any pictures, output them
+          for(XWPFPicture picture : run.getEmbeddedPictures()) {
+             XWPFPictureData data = picture.getPictureData();
+             if(data != null) {
+                xhtml.startElement("img", "src", "embedded:" + data.getFileName());
+                xhtml.endElement("img");
+             }
+          }
+       }
+       
+       // Now do any comments for the paragraph
+       XWPFCommentsDecorator comments = new XWPFCommentsDecorator(paragraph, null);
+       String commentText = comments.getCommentText();
+       if(commentText != null && commentText.length() > 0) {
+          xhtml.characters(commentText);
+       }
+
+       // Finish this paragraph
+       xhtml.endElement(tag);
+
+       if (headerFooterPolicy != null) {
+           extractFooters(xhtml, headerFooterPolicy);
+       }
+    }
+
+    private void extractTable(XWPFTable table, XHTMLContentHandler xhtml)
+            throws SAXException, XmlException, IOException {
+       xhtml.startElement("table");
+       xhtml.startElement("tbody");
+       for(XWPFTableRow row : table.getRows()) {
+          xhtml.startElement("tr");
+          for(XWPFTableCell cell : row.getTableCells()) {
+             xhtml.startElement("td");
+             extractIBodyText(cell, xhtml);
+             xhtml.endElement("td");
+          }
+          xhtml.endElement("tr");
+       }
+       xhtml.endElement("tbody");
+       xhtml.endElement("table");
+    }
+    
     private void extractFooters(
             XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
             throws SAXException {
@@ -124,59 +228,13 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     /**
-     * Low level structured parsing of document tables.
-     */
-    private void extractTableContent(XWPFDocument doc, XHTMLContentHandler xhtml)
-            throws SAXException {
-        for (CTTbl table : doc.getDocument().getBody().getTblArray()) {
-            xhtml.startElement("table");
-            xhtml.startElement("tbody");
-            CTRow[] rows = table.getTrArray();
-            for (CTRow row : rows) {
-                xhtml.startElement("tr");
-                CTTc[] cells = row.getTcArray();
-                for (CTTc tc : cells) {
-                    xhtml.startElement("td");
-                    CTP[] content = tc.getPArray();
-                    for (CTP ctp : content) {
-                        XWPFParagraph p = new MyXWPFParagraph(ctp, doc);
-
-                        XWPFParagraphDecorator decorator = new XWPFCommentsDecorator(
-                                new XWPFHyperlinkDecorator(p, null, true));
-
-                        xhtml.element("p", decorator.getText());
-                    }
-
-                    xhtml.endElement("td");
-                }
-                xhtml.endElement("tr");
-            }
-            xhtml.endElement("tbody");
-            xhtml.endElement("table");
-        }
-    }
-
-    /**
      * Word documents are simple, they only have the one
      *  main part
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() {
-       XWPFDocument document = (XWPFDocument) extractor.getDocument();
-       
        List<PackagePart> parts = new ArrayList<PackagePart>();
        parts.add( document.getPackagePart() );
        return parts;
-    }
-
-
-    /**
-     * Private wrapper class that makes the protected {@link XWPFParagraph}
-     * constructor available.
-     */
-    private static class MyXWPFParagraph extends XWPFParagraph {
-        private MyXWPFParagraph(CTP ctp, XWPFDocument xwpfDocument) {
-            super(ctp, xwpfDocument);
-        }
     }
 }

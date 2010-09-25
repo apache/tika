@@ -40,10 +40,10 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
-import org.apache.tika.exception.TikaException;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
 

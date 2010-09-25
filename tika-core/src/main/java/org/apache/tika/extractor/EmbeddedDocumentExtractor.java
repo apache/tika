@@ -71,15 +71,27 @@ public class EmbeddedDocumentExtractor {
         return true;
     }
 
+    /**
+     * Processes the supplied embedded resource, calling the delegating
+     *  parser with the appropriate details.
+     * @param stream The embedded resource
+     * @param handler The handler to use
+     * @param metadata The metadata for the embedded resource
+     * @param outputHtml Should we output HTML for this resource, or has the parser already done so?
+     * @throws SAXException
+     * @throws IOException
+     */
     public void parseEmbedded(
-            InputStream stream, ContentHandler handler, Metadata metadata)
+            InputStream stream, ContentHandler handler, Metadata metadata, boolean outputHtml)
             throws SAXException, IOException {
-        AttributesImpl attributes = new AttributesImpl();
-        attributes.addAttribute("", "class", "class", "CDATA", "package-entry");
-        handler.startElement(XHTML, "div", "div", attributes);
+        if(outputHtml) {
+           AttributesImpl attributes = new AttributesImpl();
+           attributes.addAttribute("", "class", "class", "CDATA", "package-entry");
+           handler.startElement(XHTML, "div", "div", attributes);
+        }
 
         String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
-        if (name != null && name.length() > 0) {
+        if (name != null && name.length() > 0 && outputHtml) {
             handler.startElement(XHTML, "h1", "h1", new AttributesImpl());
             char[] chars = name.toCharArray();
             handler.characters(chars, 0, chars.length);
@@ -96,7 +108,9 @@ public class EmbeddedDocumentExtractor {
             // Could not parse the entry, just skip the content
         }
 
-        handler.endElement(XHTML, "div", "div");
+        if(outputHtml) {
+           handler.endElement(XHTML, "div", "div");
+        }
     }
 
 }

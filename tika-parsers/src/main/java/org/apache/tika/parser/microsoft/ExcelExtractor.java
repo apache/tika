@@ -56,7 +56,6 @@ import org.apache.poi.hssf.record.SSTRecord;
 import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
-import org.apache.poi.hssf.usermodel.HSSFPictureData;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
@@ -564,7 +563,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     // Handle the embeded resource
                     extractor.handleEmbeddedResource(
                           stream, null, mimeType,
-                          handler
+                          handler, true
                     );
                  }
               }

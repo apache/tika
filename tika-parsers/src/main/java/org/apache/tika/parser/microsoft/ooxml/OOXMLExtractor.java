@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 
 import org.apache.poi.POIXMLDocument;
+import org.apache.poi.POIXMLTextExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
