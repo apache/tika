@@ -123,7 +123,7 @@ class PackageExtractor {
 
             // Use the delegate parser to parse the compressed document
             if (extractor.shouldParseEmbedded(entrydata)) {
-                extractor.parseEmbedded(stream, xhtml, entrydata);
+                extractor.parseEmbedded(stream, xhtml, entrydata, true);
             }
         } finally {
             stream.close();
@@ -155,7 +155,7 @@ class PackageExtractor {
                     }
 
                     if (extractor.shouldParseEmbedded(entrydata)) {
-                        extractor.parseEmbedded(archive, xhtml, entrydata);
+                        extractor.parseEmbedded(archive, xhtml, entrydata, true);
                     }
                 }
                 entry = archive.getNextEntry();

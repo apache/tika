@@ -136,7 +136,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
        
        // Call the recursing handler
        Metadata metadata = new Metadata();
-       metadata.set(Metadata.TIKA_MIME_FILE, name);
+       metadata.set(Metadata.RESOURCE_NAME_KEY, name);
        metadata.set(Metadata.CONTENT_TYPE, type);
        
        Parser parser = context.get(Parser.class, EmptyParser.INSTANCE);

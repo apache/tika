@@ -127,7 +127,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                   handleEmbeddedResource(
                         TikaInputStream.get(attachment.attachData.getValue()),
                         filename,
-                        null, xhtml
+                        null, xhtml, true
                   );
                }
                if(attachment.attachmentDirectory != null) {

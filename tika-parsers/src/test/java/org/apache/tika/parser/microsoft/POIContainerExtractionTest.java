@@ -77,7 +77,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(1, handler.filenames.size());
        assertEquals(1, handler.mediaTypes.size());
        
-       assertEquals(null, handler.filenames.get(0));
+       assertEquals("image1.png", handler.filenames.get(0));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
 
        
@@ -86,9 +86,9 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(3, handler.filenames.size());
        assertEquals(3, handler.mediaTypes.size());
        
-       assertEquals(null, handler.filenames.get(0));
-       assertEquals(null, handler.filenames.get(1));
-       assertEquals(null, handler.filenames.get(2));
+       assertEquals("image1.png", handler.filenames.get(0));
+       assertEquals("image2.jpg", handler.filenames.get(1));
+       assertEquals("image3.png", handler.filenames.get(2));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
        assertEquals(TYPE_JPG, handler.mediaTypes.get(1));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(2));
@@ -142,7 +142,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(null, handler.filenames.get(2));
        assertEquals(null, handler.filenames.get(3));
        assertEquals(null, handler.filenames.get(4));
-       assertEquals(null, handler.filenames.get(5));
+       assertEquals("image1.png", handler.filenames.get(5));
        
        assertEquals(TYPE_EMF, handler.mediaTypes.get(0)); // Icon of embedded office doc
        assertEquals(TYPE_EMF, handler.mediaTypes.get(1)); // Icon of embedded office doc
@@ -154,44 +154,57 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        
        // Word with .docx, powerpoint and excel
        handler = process("testWORD_embeded.doc", extractor, false);
-       assertEquals(8, handler.filenames.size());
-       assertEquals(8, handler.mediaTypes.size());
+       assertEquals(9, handler.filenames.size());
+       assertEquals(9, handler.mediaTypes.size());
        
-       // We don't know their filenames
-       for(String filename : handler.filenames)
-          assertEquals(null, filename);
+       // Filenames are a bit iffy...
+//       for(String filename : handler.filenames)
+//          assertEquals(null, filename);
        // But we do know their types
        assertEquals(MediaType.parse("image/unknown"), handler.mediaTypes.get(0)); // Icon of embedded office doc?
        assertEquals(MediaType.parse("image/unknown"), handler.mediaTypes.get(1)); // Icon of embedded office doc?
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(2)); // Embedded image
-       assertEquals(TYPE_JPG, handler.mediaTypes.get(3)); // Embedded image
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(4)); // Embedded image
-       assertEquals(TYPE_DOCX, handler.mediaTypes.get(5)); // Embedded office doc
-       assertEquals(TYPE_PPT, handler.mediaTypes.get(6)); // Embedded office doc
-       assertEquals(TYPE_XLS, handler.mediaTypes.get(7)); // Embedded office doc
+       assertEquals(MediaType.parse("image/unknown"), handler.mediaTypes.get(2)); // Icon of embedded office doc?
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(3)); // Embedded image
+       assertEquals(TYPE_JPG, handler.mediaTypes.get(4)); // Embedded image
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(5)); // Embedded image
+       assertEquals(TYPE_DOCX, handler.mediaTypes.get(6)); // Embedded office doc
+       assertEquals(TYPE_PPT, handler.mediaTypes.get(7)); // Embedded office doc
+       assertEquals(TYPE_XLS, handler.mediaTypes.get(8)); // Embedded office doc
        
        
        // With recursion, should get their images too
        handler = process("testWORD_embeded.doc", extractor, true);
-       assertEquals(12, handler.filenames.size());
-       assertEquals(12, handler.mediaTypes.size());
+       assertEquals(13, handler.filenames.size());
+       assertEquals(13, handler.mediaTypes.size());
        
-       // We don't know their filenames
-       for(String filename : handler.filenames)
-          assertEquals(null, filename);
+       // We don't know their filenames, except for doc images + docx
+       assertEquals("image1", handler.filenames.get(0));
+       assertEquals("image2", handler.filenames.get(1));
+       assertEquals("image3", handler.filenames.get(2));
+       assertEquals("image4.png", handler.filenames.get(3));
+       assertEquals("image5.jpg", handler.filenames.get(4));
+       assertEquals("image6.png", handler.filenames.get(5));
+       assertEquals(null, handler.filenames.get(6));
+       assertEquals("image2.png", handler.filenames.get(7));
+       assertEquals("image3.jpeg", handler.filenames.get(8));
+       assertEquals("image4.png", handler.filenames.get(9));
+       for(int i=10; i<handler.filenames.size(); i++) {
+          assertNull(handler.filenames.get(i));
+       }
        // But we do know their types
        assertEquals(MediaType.parse("image/unknown"), handler.mediaTypes.get(0)); // Icon of embedded office doc?
        assertEquals(MediaType.parse("image/unknown"), handler.mediaTypes.get(1)); // Icon of embedded office doc?
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(2));  // Embedded image
-       assertEquals(TYPE_JPG, handler.mediaTypes.get(3));  // Embedded image
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(4));  // Embedded image
-       assertEquals(TYPE_DOCX, handler.mediaTypes.get(5)); // Embedded office doc
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(6));  //    PNG inside .docx
-       assertEquals(TYPE_JPG, handler.mediaTypes.get(7));  //    JPG inside .docx
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(8));  //    PNG inside .docx
-       assertEquals(TYPE_PPT, handler.mediaTypes.get(9));  // Embedded office doc
-       assertEquals(TYPE_XLS, handler.mediaTypes.get(10)); // Embedded office doc
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(11)); //    PNG inside .xls
+       assertEquals(MediaType.parse("image/unknown"), handler.mediaTypes.get(2)); // Icon of embedded office doc?
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(3));  // Embedded image
+       assertEquals(TYPE_JPG, handler.mediaTypes.get(4));  // Embedded image
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(5));  // Embedded image
+       assertEquals(TYPE_DOCX, handler.mediaTypes.get(6)); // Embedded office doc
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(7));  //    PNG inside .docx
+       assertEquals(TYPE_JPG, handler.mediaTypes.get(8));  //    JPG inside .docx
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(9));  //    PNG inside .docx
+       assertEquals(TYPE_PPT, handler.mediaTypes.get(10)); // Embedded office doc
+       assertEquals(TYPE_XLS, handler.mediaTypes.get(11)); // Embedded office doc
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(12)); //    PNG inside .xls
        
        
        // PowerPoint with excel and word

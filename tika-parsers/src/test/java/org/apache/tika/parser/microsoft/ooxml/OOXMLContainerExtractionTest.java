@@ -74,7 +74,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(1, handler.filenames.size());
        assertEquals(1, handler.mediaTypes.size());
        
-       assertEquals(null, handler.filenames.get(0));
+       assertEquals("image1.png", handler.filenames.get(0));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
 
        
@@ -84,9 +84,9 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(3, handler.filenames.size());
        assertEquals(3, handler.mediaTypes.size());
        
-       assertEquals(null, handler.filenames.get(0));
-       assertEquals(null, handler.filenames.get(1));
-       assertEquals(null, handler.filenames.get(2));
+       assertEquals("image1.png", handler.filenames.get(0));
+       assertEquals("image2.gif", handler.filenames.get(1));
+       assertEquals("image3.png", handler.filenames.get(2));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
        assertEquals(TYPE_GIF, handler.mediaTypes.get(1)); // icon of sound
        assertEquals(TYPE_PNG, handler.mediaTypes.get(2));
@@ -97,7 +97,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(1, handler.filenames.size());
        assertEquals(1, handler.mediaTypes.size());
        
-       assertEquals(null, handler.filenames.get(0));
+       assertEquals("image1.png", handler.filenames.get(0));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
 
        
@@ -106,9 +106,9 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(3, handler.filenames.size());
        assertEquals(3, handler.mediaTypes.size());
        
-       assertEquals(null, handler.filenames.get(0));
-       assertEquals(null, handler.filenames.get(1));
-       assertEquals(null, handler.filenames.get(2));
+       assertEquals("image2.png", handler.filenames.get(0));
+       assertEquals("image3.jpeg", handler.filenames.get(1));
+       assertEquals("image4.png", handler.filenames.get(2));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(0));
        assertEquals(TYPE_JPG, handler.mediaTypes.get(1));
        assertEquals(TYPE_PNG, handler.mediaTypes.get(2));
@@ -137,9 +137,14 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(7, handler.filenames.size());
        assertEquals(7, handler.mediaTypes.size());
        
-       // We don't know their filenames
-       for(String filename : handler.filenames)
-          assertEquals(null, filename);
+       // We know the rough filenames
+       assertEquals("Microsoft_Office_PowerPoint_Presentation1.pptx", handler.filenames.get(0));
+       assertEquals("Microsoft_Office_Word_97_-_2003_Document1.doc", handler.filenames.get(1));
+       assertEquals("Microsoft_Office_Word_Document2.docx", handler.filenames.get(2));
+       assertEquals("image1.png", handler.filenames.get(3));
+       assertEquals("image2.emf", handler.filenames.get(4));
+       assertEquals("image3.emf", handler.filenames.get(5));
+       assertEquals("image4.emf", handler.filenames.get(6));
        // But we do know their types
        assertEquals(TYPE_PPTX, handler.mediaTypes.get(0)); // Embedded office doc
        assertEquals(TYPE_DOC, handler.mediaTypes.get(1));  // Embedded office doc
@@ -154,9 +159,6 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        handler = process("testEXCEL_embeded.xlsx", extractor, true);
        assertEquals(23, handler.filenames.size());
        assertEquals(23, handler.mediaTypes.size());
-       
-       for(String filename : handler.filenames)
-          assertEquals(null, filename);
        
        assertEquals(TYPE_PPTX, handler.mediaTypes.get(0)); // Embedded office doc
         assertEquals(TYPE_PNG, handler.mediaTypes.get(1));  //   PNG inside .pptx
@@ -188,9 +190,16 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(9, handler.filenames.size());
        assertEquals(9, handler.mediaTypes.size());
        
-       // We don't know their filenames
-       for(String filename : handler.filenames)
-          assertEquals(null, filename);
+       // We know their rough filenames
+       assertEquals("Microsoft_Office_PowerPoint_Presentation2.pptx", handler.filenames.get(0));
+       assertEquals("image6.emf", handler.filenames.get(1));
+       assertEquals("Microsoft_Office_Word_97_-_2003_Document1.doc", handler.filenames.get(2));
+       assertEquals("image1.png", handler.filenames.get(3));
+       assertEquals("image2.jpeg", handler.filenames.get(4));
+       assertEquals("image3.png", handler.filenames.get(5));
+       assertEquals("image4.emf", handler.filenames.get(6));
+       assertEquals("Microsoft_Office_Excel_Worksheet1.xlsx", handler.filenames.get(7));
+       assertEquals("image5.emf", handler.filenames.get(8));
        // But we do know their types
        assertEquals(TYPE_PPTX, handler.mediaTypes.get(0)); // Embedded office doc
        assertEquals(TYPE_EMF, handler.mediaTypes.get(1));  // Icon of embedded office doc
@@ -208,9 +217,6 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(14, handler.filenames.size());
        assertEquals(14, handler.mediaTypes.size());
        
-       // We don't know their filenames
-       for(String filename : handler.filenames)
-          assertEquals(null, filename);
        // But we do know their types
        assertEquals(TYPE_PPTX, handler.mediaTypes.get(0)); // Embedded office doc
         assertEquals(TYPE_PNG, handler.mediaTypes.get(1));  //   PNG inside .pptx
@@ -233,9 +239,16 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(9, handler.filenames.size());
        assertEquals(9, handler.mediaTypes.size());
        
-       // We don't know their filenames
-       for(String filename : handler.filenames)
-          assertEquals(null, filename);
+       // We don't know their exact filenames
+       assertEquals("image4.png", handler.filenames.get(0));
+       assertEquals("image5.gif", handler.filenames.get(1));
+       assertEquals("image6.png", handler.filenames.get(2));
+       assertEquals("Microsoft_Office_Excel_Worksheet1.xlsx", handler.filenames.get(3));
+       assertEquals("Microsoft_Office_Word_Document2.docx", handler.filenames.get(4));
+       assertEquals("Microsoft_Office_Word_97_-_2003_Document1.doc", handler.filenames.get(5));
+       assertEquals("image1.emf", handler.filenames.get(6));
+       assertEquals("image2.emf", handler.filenames.get(7));
+       assertEquals("image3.emf", handler.filenames.get(8));
        // But we do know their types
        assertEquals(TYPE_PNG, handler.mediaTypes.get(0));  // Embedded image
        assertEquals(TYPE_GIF, handler.mediaTypes.get(1));  // Embedded image

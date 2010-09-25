@@ -46,8 +46,8 @@ abstract class AbstractPOIFSExtractor {
         this.extractor = new EmbeddedDocumentExtractor(context);
     }
     
-    protected void handleEmbeddedResource(TikaInputStream resource,
-          String filename, String mediaType, XHTMLContentHandler xhtml)
+    protected void handleEmbeddedResource(TikaInputStream resource, String filename,
+          String mediaType, XHTMLContentHandler xhtml, boolean outputHtml)
           throws IOException, SAXException, TikaException {
        try {
            Metadata metadata = new Metadata();
@@ -60,7 +60,7 @@ abstract class AbstractPOIFSExtractor {
            }
 
            if (extractor.shouldParseEmbedded(metadata)) {
-               extractor.parseEmbedded(resource, xhtml, metadata);
+               extractor.parseEmbedded(resource, xhtml, metadata, outputHtml);
            }
        } finally {
            resource.close();
@@ -83,7 +83,7 @@ abstract class AbstractPOIFSExtractor {
           );
           ZipContainerDetector detector = new ZipContainerDetector();
           MediaType type = detector.detect(ooxmlStream, new Metadata());
-          handleEmbeddedResource(ooxmlStream, null, type.toString(), xhtml);
+          handleEmbeddedResource(ooxmlStream, null, type.toString(), xhtml, true);
           return;
        } catch(FileNotFoundException e) {
           // It's regular OLE2
@@ -109,7 +109,7 @@ abstract class AbstractPOIFSExtractor {
            TikaInputStream embedded = TikaInputStream.get(tmpFile);
            try {
                if (extractor.shouldParseEmbedded(metadata)) {
-                   extractor.parseEmbedded(embedded, xhtml, metadata);
+                   extractor.parseEmbedded(embedded, xhtml, metadata, true);
                }
            } finally {
                embedded.close();
