@@ -141,6 +141,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              }
              xhtml.endElement("tr");
           }
+          xhtml.endElement("tbody");
+          xhtml.endElement("table");
           return (t.numParagraphs()-1);
        }
 
