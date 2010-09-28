@@ -19,8 +19,11 @@ package org.apache.tika.parser.microsoft;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.HWPFOldDocument;
@@ -69,9 +72,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         //  the pictures should be in order, and may be directly
         //  placed or referenced from an anchor
         PicturesTable pictureTable = document.getPicturesTable();
-        CountingIterator<Picture> pictures = new CountingIterator<Picture>(
-              pictureTable.getAllPictures().iterator()
-        );
+        PicturesSource pictures = new PicturesSource(document);
         
         // Do the main paragraph text
         Range r = document.getRange();
@@ -96,11 +97,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         addTextIfAny(xhtml, "footer", wordExtractor.getFooterText());
 
         // Handle any pictures that we haven't output yet
-        while(pictures.hasNext()) {
-           Picture p = pictures.next();
+        for(Picture p = pictures.nextUnclaimed(); p != null; ) {
            handlePictureCharacterRun(
-                 null, p, pictures.getCount(), xhtml
+                 null, p, pictures, xhtml
            );
+           p = pictures.nextUnclaimed();
         }
         
         // Handle any embeded office documents
@@ -118,7 +119,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
     
     private int handleParagraph(Paragraph p, int parentTableLevel, Range r, HWPFDocument document, 
-          CountingIterator<Picture> pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml)
+          PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml)
           throws SAXException, IOException, TikaException {
        // Note - a poi bug means we can't currently properly recurse
        //  into nested tables, so currently we don't
@@ -162,15 +163,20 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           CharacterRun cr = p.getCharacterRun(j);
           
           if(cr.text().equals("\u0013")) {
-             j += handleSpecialCharacterRuns(p, j, tas.isHeading(), xhtml);
-          } else if(cr.text().equals("\u0008")) {
-             // Floating Picture
-             Picture picture = pictures.next();
-             handlePictureCharacterRun(cr, picture, pictures.getCount(), xhtml);
+             j += handleSpecialCharacterRuns(p, j, tas.isHeading(), pictures, xhtml);
+          } else if(cr.text().startsWith("\u0008")) {
+             // Floating Picture(s)
+             for(int pn=0; pn<cr.text().length(); pn++) {
+                // Assume they're in the order from the unclaimed list...
+                Picture picture = pictures.nextUnclaimed();
+                
+                // Output
+                handlePictureCharacterRun(cr, picture, pictures, xhtml);
+             }
           } else if(pictureTable.hasPicture(cr)) {
              // Inline Picture
-             Picture picture = pictures.next();
-             handlePictureCharacterRun(cr, picture, pictures.getCount(), xhtml);
+             Picture picture = pictures.getFor(cr);
+             handlePictureCharacterRun(cr, picture, pictures, xhtml);
           } else {
              handleCharacterRun(cr, tas.isHeading(), xhtml);
           }
@@ -215,19 +221,19 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      * Can be \13..text..\15 or \13..control..\14..text..\15 .
      * Nesting is allowed
      */
-    private int handleSpecialCharacterRuns(Paragraph p, int index, boolean skipStyling, XHTMLContentHandler xhtml) 
-          throws SAXException {
+    private int handleSpecialCharacterRuns(Paragraph p, int index, boolean skipStyling, 
+          PicturesSource pictures, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
        List<CharacterRun> controls = new ArrayList<CharacterRun>();
        List<CharacterRun> texts = new ArrayList<CharacterRun>();
        boolean has14 = false;
        
        // Split it into before and after the 14
        int i;
-       for(i=index; i<p.numCharacterRuns(); i++) {
+       for(i=index+1; i<p.numCharacterRuns(); i++) {
           CharacterRun cr = p.getCharacterRun(i);
           if(cr.text().equals("\u0013")) {
              // Nested, oh joy...
-             int increment = handleSpecialCharacterRuns(p, i+1, skipStyling, xhtml);
+             int increment = handleSpecialCharacterRuns(p, i+1, skipStyling, pictures, xhtml);
              i += increment;
           } else if(cr.text().equals("\u0014")) {
              has14 = true;
@@ -266,7 +272,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           } else {
              // Just output the text ones
              for(CharacterRun cr : texts) {
-                handleCharacterRun(cr, skipStyling, xhtml);
+                if(pictures.hasPicture(cr)) {
+                   Picture picture = pictures.getFor(cr);
+                   handlePictureCharacterRun(cr, picture, pictures, xhtml);
+                } else {
+                   handleCharacterRun(cr, skipStyling, xhtml);
+                }
              }
           }
        } else {
@@ -281,9 +292,18 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        return i-index;
     }
 
-    private void handlePictureCharacterRun(CharacterRun cr, Picture picture, int pictureNumber, XHTMLContentHandler xhtml) 
+    private void handlePictureCharacterRun(CharacterRun cr, Picture picture, PicturesSource pictures, XHTMLContentHandler xhtml) 
           throws SAXException, IOException, TikaException {
+       if(picture == null) {
+          // Oh dear, we've run out...
+          // Probably caused by multiple \u0008 images referencing
+          //  the same real image
+          return;
+       }
+       
+       // Which one is it?
        String extension = picture.suggestFileExtension();
+       int pictureNumber = pictures.pictureNumber(picture);
        
        // Make up a name for the picture
        // There isn't one in the file, but we need to be able to reference
@@ -296,9 +316,14 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        // Output the img tag
        xhtml.startElement("img", "src", "embedded:" + filename);
        xhtml.endElement("img");
-       
-       TikaInputStream stream = TikaInputStream.get(picture.getContent());
-       handleEmbeddedResource(stream, filename, mimeType, xhtml, false);
+
+       // Have we already output this one?
+       // (Only expose each individual image once) 
+       if(! pictures.hasOutput(picture)) {
+          TikaInputStream stream = TikaInputStream.get(picture.getContent());
+          handleEmbeddedResource(stream, filename, mimeType, xhtml, false);
+          pictures.recordOutput(picture);
+       }
     }
     
     /**
@@ -387,28 +412,82 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        }
     }
     
-    private static class CountingIterator<T> implements Iterator<T> {
-      private Iterator<T> parent;
-      private int count = 0;
-      private CountingIterator(Iterator<T> parent) {
-         this.parent = parent;
-      }
-
-      public boolean hasNext() {
-         return parent.hasNext();
-      }
-
-      public T next() {
-         count++;
-         return parent.next();
-      }
-      
-      public int getCount() {
-         return count;
-      }
-
-      public void remove() {
-         throw new UnsupportedOperationException();
-      }
+    /**
+     * Provides access to the pictures both by offset, iteration
+     *  over the un-claimed, and peeking forward
+     */
+    private static class PicturesSource {
+       private PicturesTable picturesTable; 
+       private Set<Picture> output = new HashSet<Picture>();
+       private Map<Integer,Picture> lookup;
+       private List<Picture> nonU1based;
+       private List<Picture> all;
+       private int pn = 0;
+       
+       private PicturesSource(HWPFDocument doc) {
+          picturesTable = doc.getPicturesTable();
+          all = picturesTable.getAllPictures();
+          
+          // Compute the Offset-Picture lookup
+          lookup = new HashMap<Integer, Picture>();
+          for(Picture p : all) {
+             // TODO Make this nicer when POI 3.7 is out
+             String name = p.suggestFullFileName();
+             if(name.indexOf('.') > -1)
+                name = name.substring(0, name.indexOf('.'));
+             int offset = Integer.parseInt(name, 16);
+             lookup.put(offset, p);
+          }
+          
+          // Work out which Pictures aren't referenced by
+          //  a \u0001 in the main text
+          // These are \u0008 escher floating ones, ones 
+          //  found outside the normal text, and who
+          //  knows what else...
+          nonU1based = new ArrayList<Picture>();
+          nonU1based.addAll(all);
+          Range r = doc.getRange();
+          for(int i=0; i<r.numCharacterRuns(); i++) {
+             CharacterRun cr = r.getCharacterRun(i);
+             if(picturesTable.hasPicture(cr)) {
+                Picture p = getFor(cr);
+                int at = nonU1based.indexOf(p);
+                nonU1based.set(at, null);
+             }
+          }
+       }
+       
+       private boolean hasPicture(CharacterRun cr) {
+          return picturesTable.hasPicture(cr);
+       }
+       
+       private void recordOutput(Picture picture) {
+          output.add(picture);
+       }
+       private boolean hasOutput(Picture picture) {
+          return output.contains(picture);
+       }
+       
+       private int pictureNumber(Picture picture) {
+          return all.indexOf(picture) + 1;
+       }
+       
+       private Picture getFor(CharacterRun cr) {
+          return lookup.get(cr.getPicOffset());
+       }
+       
+       /**
+        * Return the next unclaimed one, used towards
+        *  the end
+        */
+       private Picture nextUnclaimed() {
+          Picture p = null;
+          while(pn < nonU1based.size()) {
+             p = nonU1based.get(pn);
+             pn++;
+             if(p != null) return p;
+          }
+          return null;
+       }
     }
 }
