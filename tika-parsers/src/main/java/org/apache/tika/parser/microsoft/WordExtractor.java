@@ -358,6 +358,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        } else if(styleName.equals("Subtitle")) {
           tag = "h2";
           styleClass = "subtitle";
+       } else if(styleName.equals("HTML Preformatted")) {
+          tag = "pre";
        } else {
           styleClass = styleName.replace(' ', '_');
           styleClass = styleClass.substring(0,1).toLowerCase() +
