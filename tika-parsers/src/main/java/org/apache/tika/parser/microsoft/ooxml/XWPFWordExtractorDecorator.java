@@ -158,10 +158,12 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           
           // If we have any pictures, output them
           for(XWPFPicture picture : run.getEmbeddedPictures()) {
-             XWPFPictureData data = picture.getPictureData();
-             if(data != null) {
-                xhtml.startElement("img", "src", "embedded:" + data.getFileName());
-                xhtml.endElement("img");
+             if(paragraph.getDocument() != null) {
+                XWPFPictureData data = picture.getPictureData();
+                if(data != null) {
+                   xhtml.startElement("img", "src", "embedded:" + data.getFileName());
+                   xhtml.endElement("img");
+                }
              }
           }
        }
