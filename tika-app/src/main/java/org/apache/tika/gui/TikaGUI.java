@@ -17,12 +17,17 @@
 package org.apache.tika.gui;
 
 import java.awt.Dimension;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -38,7 +43,11 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -50,6 +59,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Simple Swing GUI for Apache Tika. You can drag and drop files on top
@@ -88,6 +98,11 @@ public class TikaGUI extends JFrame {
      * Configured parser instance.
      */
     private final Parser parser;
+    
+    /**
+     * Captures requested embedded images
+     */
+    private final ImageSavingParser imageParser;
 
     /**
      * Tabs in the Tika GUI window.
@@ -143,7 +158,10 @@ public class TikaGUI extends JFrame {
 
         this.context = new ParseContext();
         this.parser = parser;
-        this.context.set(Parser.class, parser);
+        
+        this.imageParser = new ImageSavingParser(parser);
+        this.context.set(DocumentSelector.class, new ImageDocumentSelector());
+        this.context.set(Parser.class, imageParser);
     }
 
    public void importStream(InputStream input, Metadata md)
@@ -160,6 +178,8 @@ public class TikaGUI extends JFrame {
                     getTextContentHandler(textBuffer),
                     getTextMainContentHandler(textMainBuffer),
                     getXmlContentHandler(xmlBuffer));
+            
+            context.set(DocumentSelector.class, new ImageDocumentSelector());
 
             input = new ProgressMonitorInputStream(
                     this, "Parsing stream", input);
@@ -229,6 +249,9 @@ public class TikaGUI extends JFrame {
      * generating a &lt;META&gt; content type tag that makes
      * {@link JEditorPane} fail thinking that the document character set
      * is inconsistent.
+     * <p>
+     * Additionally, it will use ImageSavingParser to re-write embedded:(image) 
+     * image links to be file:///(temporary file) so that they can be loaded.
      *
      * @param writer output writer
      * @return HTML content handler
@@ -250,7 +273,34 @@ public class TikaGUI extends JFrame {
                     uri = null;
                 }
                 if (!"head".equals(localName)) {
-                    super.startElement(uri, localName, name, atts);
+                    if("img".equals(localName)) {
+                       AttributesImpl newAttrs;
+                       if(atts instanceof AttributesImpl) {
+                          newAttrs = (AttributesImpl)atts;
+                       } else {
+                          newAttrs = new AttributesImpl(atts);
+                       }
+                       
+                       for(int i=0; i<newAttrs.getLength(); i++) {
+                          if("src".equals(newAttrs.getLocalName(i))) {
+                             String src = newAttrs.getValue(i);
+                             if(src.startsWith("embedded:")) {
+                                String filename = src.substring(src.indexOf(':')+1);
+                                try {
+                                   File img = imageParser.requestSave(filename);
+                                   String newSrc = img.toURI().toString();
+                                   newAttrs.setValue(i, newSrc);
+                                } catch(IOException e) {
+                                   System.err.println("Error creating temp image file " + filename);
+                                   // The html viewer will show a broken image too to alert them
+                                }
+                             }
+                          }
+                       }
+                       super.startElement(uri, localName, name, newAttrs);
+                    } else {
+                       super.startElement(uri, localName, name, atts);
+                    }
                 }
             }
             @Override
@@ -289,4 +339,65 @@ public class TikaGUI extends JFrame {
         return handler;
     }
 
+    /**
+     * A {@link DocumentSelector} that accepts only images.
+     */
+    private static class ImageDocumentSelector implements DocumentSelector {
+      public boolean select(Metadata metadata) {
+         String type = metadata.get(Metadata.CONTENT_TYPE);
+         return type != null && type.startsWith("image/");
+      }
+    }
+    
+    /**
+     * A recursive parser that saves certain images into the temporary
+     *  directory, and delegates everything else to another downstream
+     *  parser.
+     */
+    private static class ImageSavingParser implements Parser {
+      private Map<String,File> wanted = new HashMap<String,File>();
+      private Parser downstreamParser;
+      private File tmpDir;
+      
+      private ImageSavingParser(Parser downstreamParser) {
+         this.downstreamParser = downstreamParser;
+         
+         try {
+            File t = File.createTempFile("tika", ".test");
+            tmpDir = t.getParentFile();
+         } catch(IOException e) {}
+      }
+      
+      public File requestSave(String embeddedName) throws IOException {
+         String suffix = embeddedName.substring(embeddedName.lastIndexOf('.'));
+         File tmp = File.createTempFile("tika-embedded-", suffix);
+         wanted.put(embeddedName, tmp);
+         return tmp;
+      }
+      
+      public Set<MediaType> getSupportedTypes(ParseContext context) {
+         // Never used in an auto setup
+         return null;
+      }
+
+      public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context) throws IOException,
+            SAXException, TikaException {
+         String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+         if(name != null && wanted.containsKey(name)) {
+            FileOutputStream out = new FileOutputStream(wanted.get(name));
+            IOUtils.copy(stream, out);
+            out.close();
+         } else {
+            if(downstreamParser != null) {
+               downstreamParser.parse(stream, handler, metadata, context);
+            }
+         }
+      }
+
+      public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata) throws IOException, SAXException, TikaException {
+         parse(stream, handler, metadata, new ParseContext());
+      }
+    }
 }
