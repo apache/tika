@@ -46,6 +46,7 @@ import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -124,20 +125,9 @@ public class TikaCLI {
         public ContentHandler getContentHandler() throws Exception{
             final PrintWriter writer =
                 new PrintWriter(getSystemOutWriter(encoding));
-            return new DefaultHandler() {
+            return new ProfilingHandler() {
                 public void endDocument() {
-                    String language = metadata.get(Metadata.LANGUAGE);
-                    if (language == null) {
-                        language = "No language detected";
-                    }
-                    String contentLanguage =
-                        metadata.get(Metadata.CONTENT_LANGUAGE);
-                    if (contentLanguage == null) {
-                        contentLanguage = "No language detected";
-                    }
-                    writer.println(Metadata.LANGUAGE + ": " + language);
-                    writer.println(
-                            Metadata.CONTENT_LANGUAGE + ": " + contentLanguage);
+                    writer.println(getLanguage().getLanguage());
                     writer.flush();
                 }
             };
