@@ -73,8 +73,9 @@ public class DWGParser implements Parser {
 
         if (version.equals("AC1018")) {
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-            skipToPropertyInfoSection(stream, header);
-            get2004Props(stream,metadata,xhtml);
+            if(skipToPropertyInfoSection(stream, header)){
+                get2004Props(stream,metadata,xhtml);
+            }
         } else if (version.equals("AC1021") || version.equals("AC1024")) {
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
             skipToPropertyInfoSection(stream, header);
@@ -147,16 +148,20 @@ public class DWGParser implements Parser {
         xhtml.element("p", value);
     }
 
-    private void skipToPropertyInfoSection(InputStream stream, byte[] header)
+    private boolean skipToPropertyInfoSection(InputStream stream, byte[] header)
             throws IOException {
         // The offset is stored in the header from 0x20 onwards
         long offsetToSection = LittleEndian.getLong(header, 0x20);
         long toSkip = offsetToSection - header.length;
+        if(offsetToSection == 0){
+            return false;
+        }        
         while (toSkip > 0) {
             byte[] skip = new byte[Math.min((int) toSkip, 0x4000)];
             IOUtils.readFully(stream, skip);
             toSkip -= skip.length;
         }
+        return true;
     }
 
     public void parse(

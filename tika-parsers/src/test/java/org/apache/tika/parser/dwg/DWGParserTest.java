@@ -32,6 +32,12 @@ public class DWGParserTest extends TestCase {
         testParser(input);
     }
 
+    public void testDWG2004ParserNoHeaderAddress() throws Exception {
+        InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2004_no_header.dwg");
+        testParserNoHeader(input);
+    }
+
     public void testDWG2007Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2007.dwg");
@@ -74,4 +80,25 @@ public class DWGParserTest extends TestCase {
         }
     }
 
+    private void testParserNoHeader(InputStream input) throws Exception {
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new DWGParser().parse(input, handler, metadata);
+
+            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+            
+            assertNull(metadata.get(Metadata.TITLE));
+            assertNull(metadata.get(Metadata.SUBJECT));
+            assertNull(metadata.get(Metadata.AUTHOR));
+            assertNull(metadata.get(Metadata.KEYWORDS));
+            assertNull(metadata.get(Metadata.COMMENTS));
+            assertNull(metadata.get(Metadata.RELATION));
+
+            String content = handler.toString();
+            assertTrue(content.contains(""));
+        } finally {
+            input.close();
+        }
+    }
 }
