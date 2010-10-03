@@ -37,26 +37,13 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class XmlRootExtractor {
 
-    private final SAXParserFactory factory;
-
-    public XmlRootExtractor() throws SAXException, ParserConfigurationException {
-        factory = SAXParserFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setValidating(false);
-        try {
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        } catch (SAXNotRecognizedException e) {
-            // TIKA-271: Some XML parsers do not support the secure-processing
-            // feature, even though it's required by JAXP in Java 5. Ignoring
-            // the exception is fine here, deployments without this feature
-            // are inherently vulnerable to XML denial-of-service attacks.
-        }
-
-    }
-
     public QName extractRootElement(byte[] data) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            factory.setNamespaceAware(true);
+            factory.setValidating(false);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.newSAXParser().parse(
                     new ByteArrayInputStream(data),
                     new OfflineContentHandler(handler));

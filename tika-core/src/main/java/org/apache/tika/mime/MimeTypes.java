@@ -144,13 +144,11 @@ public final class MimeTypes implements Detector, Serializable {
     /** List of all registered rootXML */
     private SortedSet<MimeType> xmls = new TreeSet<MimeType>();
 
-    private transient XmlRootExtractor xmlRootExtractor = null;
-
     public MimeTypes() {
         rootMimeType = new MimeType(MediaType.OCTET_STREAM);
         textMimeType = new MimeType(MediaType.TEXT_PLAIN);
         xmlMimeType = new MimeType(MediaType.APPLICATION_XML);
-        
+
         add(rootMimeType);
         add(textMimeType);
         add(xmlMimeType);
@@ -229,33 +227,29 @@ public final class MimeTypes implements Detector, Serializable {
         }
  
         if (result != null) {
-            try {
-                XmlRootExtractor extractor = xmlRootExtractor;
-                if (extractor  == null) {
-                    extractor = new XmlRootExtractor();
-                    xmlRootExtractor = extractor;
-                }
+            // When detecting generic XML (or possibly XHTML),
+            // extract the root element and match it against known types
+            if ("application/xml".equals(result.getName())
+                    || "text/html".equals(result.getName())) {
+                XmlRootExtractor extractor = new XmlRootExtractor();
 
-                // When detecting generic XML (or possibly XHTML),
-                // extract the root element and match it against known types
-                if ("application/xml".equals(result.getName())
-                        || "text/html".equals(result.getName())) {
-                    QName rootElement = xmlRootExtractor.extractRootElement(data);
-                    if (rootElement != null) {
-                        for (MimeType type : xmls) {
-                            if (type.matchesXML(
-                                    rootElement.getNamespaceURI(),
-                                    rootElement.getLocalPart())) {
-                                result = type;
-                                break;
-                            }
+                QName rootElement = extractor.extractRootElement(data);
+                if (rootElement != null) {
+                    for (MimeType type : xmls) {
+                        if (type.matchesXML(
+                                rootElement.getNamespaceURI(),
+                                rootElement.getLocalPart())) {
+                            result = type;
+                            break;
                         }
                     }
+                } else if ("application/xml".equals(result.getName())) {
+                    // Downgrade from application/xml to text/plain since
+                    // the document seems not to be well-formed.
+                    result = textMimeType;
                 }
-                return result;
-            } catch (SAXException e) {
-            } catch (ParserConfigurationException e) {
             }
+            return result;
         }
 
 
