@@ -161,6 +161,18 @@ public class MimeDetectionTest extends TestCase {
     }
 
     /**
+     * Test for things like javascript files whose content is enclosed in XML
+     * comment delimiters, but that aren't actually XML.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-426">TIKA-426</a>
+     */
+    public void testNotXML() throws IOException {
+        assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
+                new ByteArrayInputStream("<!-- test -->".getBytes("UTF-8")),
+                new Metadata()));
+    }
+
+    /**
      * Tests that when we repeatedly test the detection of a document
      *  that can be detected with Mime Magic, that we consistently
      *  detect it correctly. See TIKA-391 for more details.
