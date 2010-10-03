@@ -30,8 +30,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
@@ -49,6 +49,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -170,12 +171,13 @@ public class TikaCLI {
         } else if (arg.equals("--list-parser-detail") || arg.equals("--list-parser-details")) {
             pipeMode = false;
             displayParsers(true);
-        } 
-          else if(arg.equals("--list-met-models")){
+        } else if(arg.equals("--list-met-models")){
             pipeMode = false;
             displayMetModels();
-        }
-          else if (arg.startsWith("-e")) {
+        } else if(arg.equals("--list-supported-types")){
+            pipeMode = false;
+            displaySupportedTypes();
+        } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
             encoding = arg.substring("--encoding=".length());
@@ -242,6 +244,9 @@ public class TikaCLI {
         out.println("         List the available document parsers, and their supported mime types");
         out.println("    --list-met-models");
         out.println("         List the available metadata models, and their supported keys");
+        out.println();
+        out.println("    --list-supported-types");
+        out.println("         List all known media types and related information");
         out.println();
         out.println("Description:");
         out.println("    Apache Tika will parse the file(s) specified on the");
@@ -315,6 +320,25 @@ public class TikaCLI {
                 for (MediaType mt : parsers.get(p)) {
                     System.out.println("  " + mt);
                 }
+            }
+        }
+    }
+
+    /**
+     * Prints all the known media types, aliases and matching parser classes.
+     */
+    private void displaySupportedTypes() {
+        MediaTypeRegistry registry = parser.getMediaTypeRegistry();
+        Map<MediaType, Parser> parsers = parser.getParsers();
+
+        for (MediaType type : registry.getTypes()) {
+            System.out.println(type);
+            for (MediaType alias : registry.getAliases(type)) {
+                System.out.println("  alias: " + alias);
+            }
+            Parser parser = parsers.get(type);
+            if (parser != null) {
+                System.out.println("  parser: " + parser.getClass().getName());
             }
         }
     }
