@@ -244,7 +244,6 @@ public class TikaCLI {
         out.println("         List the available document parsers, and their supported mime types");
         out.println("    --list-met-models");
         out.println("         List the available metadata models, and their supported keys");
-        out.println();
         out.println("    --list-supported-types");
         out.println("         List all known media types and related information");
         out.println();
@@ -334,11 +333,15 @@ public class TikaCLI {
         for (MediaType type : registry.getTypes()) {
             System.out.println(type);
             for (MediaType alias : registry.getAliases(type)) {
-                System.out.println("  alias: " + alias);
+                System.out.println("  alias:     " + alias);
+            }
+            MediaType supertype = registry.getSupertype(type);
+            if (supertype != null) {
+                System.out.println("  supertype: " + supertype);
             }
             Parser parser = parsers.get(type);
             if (parser != null) {
-                System.out.println("  parser: " + parser.getClass().getName());
+                System.out.println("  parser:    " + parser.getClass().getName());
             }
         }
     }
