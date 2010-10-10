@@ -16,9 +16,6 @@
  */
 package org.apache.tika.mime;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +24,6 @@ import java.util.SortedSet;
 import junit.framework.TestCase;
 
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
 
 /**
  * These tests try to ensure that the MimeTypesReader
@@ -53,19 +49,19 @@ public class MimeTypesReaderTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
-        
+
         Field magicsField = mimeTypes.getClass().getDeclaredField("magics");
         magicsField.setAccessible(true);
         magics = (SortedSet<Magic>)magicsField.get(mimeTypes);
-        
+
         Field xmlsField = mimeTypes.getClass().getDeclaredField("xmls");
         xmlsField.setAccessible(true);
         xmls = (SortedSet<MimeType>)xmlsField.get(mimeTypes);
     }
-    
+
     public void testHtmlMatches() throws Exception {
        int minMatches = 10;
-       
+
        // Check on the type
        MimeType html = mimeTypes.forName("text/html");
        assertTrue(html.hasMagic());
@@ -73,8 +69,7 @@ public class MimeTypesReaderTest extends TestCase {
              "There should be at least "+minMatches+" HTML matches, found " + html.getMagics().length,
              html.getMagics().length >= minMatches
        );
-       
-       
+
        // Check on the overall magics
        List<Magic> htmlMagics = new ArrayList<Magic>();
        for(Magic magic : magics) {
@@ -82,16 +77,16 @@ public class MimeTypesReaderTest extends TestCase {
              htmlMagics.add(magic);
           }
        }
-       
+
        assertTrue(
              "There should be at least "+minMatches+" HTML matches, found " + htmlMagics.size(),
              htmlMagics.size() >= minMatches
        );
     }
-    
+
     public void testExcelMatches() throws Exception {
        int minMatches = 4;
-       
+
        // Check on the type
        MimeType excel = mimeTypes.forName("application/vnd.ms-excel");
        assertTrue(excel.hasMagic());
@@ -99,20 +94,19 @@ public class MimeTypesReaderTest extends TestCase {
              "There should be at least "+minMatches+" Excel matches, found " + excel.getMagics().length,
              excel.getMagics().length >= minMatches
        );
-       
-       
+
        // Check on the overall magics
        List<Magic> excelMagics = new ArrayList<Magic>();
        for(Magic magic : magics) {
           if(magic.getType().toString().equals("application/vnd.ms-excel")) {
              excelMagics.add(magic);
-             System.out.println(magic);
           }
        }
-       
+
        assertTrue(
              "There should be at least "+minMatches+" Excel matches, found " + excelMagics.size(),
              excelMagics.size() >= minMatches
        );
     }
+
 }
