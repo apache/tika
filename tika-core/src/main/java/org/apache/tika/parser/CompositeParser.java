@@ -18,7 +18,11 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -39,25 +43,46 @@ import org.xml.sax.SAXException;
  */
 public class CompositeParser implements Parser {
 
-    /**
-     * Serial version UID
-     */
-    private static final long serialVersionUID = 5613173903360405824L;
+    /** Serial version UID */
+    private static final long serialVersionUID = 2192845797749627824L;
 
     /**
      * Media type registry.
      */
-    private MediaTypeRegistry registry = new MediaTypeRegistry();
+    private MediaTypeRegistry registry;
 
     /**
-     * Set of component parsers, keyed by the supported media types.
+     * List of component parsers.
      */
-    private Map<MediaType, Parser> parsers = new HashMap<MediaType, Parser>();
+    private List<Parser> parsers;
 
     /**
      * The fallback parser, used when no better parser is available.
      */
     private Parser fallback = new EmptyParser();
+
+    public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers) {
+        this.parsers = parsers;
+        this.registry = registry;
+    }
+
+    public CompositeParser(MediaTypeRegistry registry, Parser... parsers) {
+        this(registry, Arrays.asList(parsers));
+    }
+
+    public CompositeParser() {
+        this(new MediaTypeRegistry());
+    }
+
+    public Map<MediaType, Parser> getParsers(ParseContext context) {
+        Map<MediaType, Parser> map = new HashMap<MediaType, Parser>();
+        for (Parser parser : parsers) {
+            for (MediaType type : parser.getSupportedTypes(context)) {
+                map.put(type, parser);
+            }
+        }
+        return map;
+    }
 
     /**
      * Returns the media type registry used to infer type relationships.
@@ -85,7 +110,7 @@ public class CompositeParser implements Parser {
      * @return component parsers, keyed by media type
      */
     public Map<MediaType, Parser> getParsers() {
-        return parsers;
+        return getParsers(new ParseContext());
     }
 
     /**
@@ -94,7 +119,11 @@ public class CompositeParser implements Parser {
      * @param parsers component parsers, keyed by media type
      */
     public void setParsers(Map<MediaType, Parser> parsers) {
-        this.parsers = parsers;
+        this.parsers = new ArrayList<Parser>(parsers.size());
+        for (Map.Entry<MediaType, Parser> entry : parsers.entrySet()) {
+            this.parsers.add(ParserDecorator.withTypes(
+                    entry.getValue(), Collections.singleton(entry.getKey())));
+        }
     }
 
     /**
@@ -129,9 +158,14 @@ public class CompositeParser implements Parser {
      * @return matching parser
      */
     protected Parser getParser(Metadata metadata) {
+        return getParser(metadata, new ParseContext());
+    }
+
+    protected Parser getParser(Metadata metadata, ParseContext context) {
+        Map<MediaType, Parser> map = getParsers(context);
         MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
         while (type != null) {
-            Parser parser = parsers.get(type);
+            Parser parser = map.get(type);
             if (parser != null) {
                 return parser;
             }
@@ -141,7 +175,7 @@ public class CompositeParser implements Parser {
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return parsers.keySet();
+        return getParsers(context).keySet();
     }
 
     /**

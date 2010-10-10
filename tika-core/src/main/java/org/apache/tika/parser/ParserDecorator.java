@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -33,6 +33,28 @@ import org.xml.sax.SAXException;
  * parse method.
  */
 public class ParserDecorator implements Parser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = -3861669115439125268L;
+
+    /**
+     * Decorates the given parser so that it always claims to support
+     * parsing of the given media types.
+     *
+     * @param parser the parser to be decorated
+     * @param types supported media types
+     * @return the decorated parser
+     */
+    public static final Parser withTypes(
+            Parser parser, final Set<MediaType> types) {
+        return new ParserDecorator(parser) {
+            private static final long serialVersionUID = -7345051519565330731L;
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return types;
+            }
+        };
+    }
 
     /**
      * The decorated parser instance.
