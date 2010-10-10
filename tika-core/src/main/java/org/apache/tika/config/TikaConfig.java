@@ -20,9 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.imageio.spi.ServiceRegistry;
 import javax.xml.parsers.DocumentBuilder;
@@ -35,8 +37,10 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
-import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -48,10 +52,18 @@ import org.xml.sax.SAXException;
  */
 public class TikaConfig {
 
-    private final Map<MediaType, Parser> parsers =
-        new HashMap<MediaType, Parser>();
+    private final CompositeParser parser;
     
     private final MimeTypes mimeTypes;
+
+    private TikaConfig(CompositeParser parser, MimeTypes mimeTypes) {
+        this.parser = parser;
+        this.mimeTypes = mimeTypes;
+    }
+
+    private TikaConfig(CompositeParser parser) {
+        this(parser, MimeTypes.getDefaultMimeTypes());
+    }
 
     public TikaConfig(String file)
             throws TikaException, IOException, SAXException {
@@ -103,6 +115,7 @@ public class TikaConfig {
             mimeTypes = MimeTypes.getDefaultMimeTypes();
         }
 
+        List<Parser> parsers = new ArrayList<Parser>();
         NodeList nodes = element.getElementsByTagName("parser");
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node = (Element) nodes.item(i);
@@ -119,22 +132,21 @@ public class TikaConfig {
 
                 NodeList mimes = node.getElementsByTagName("mime");
                 if (mimes.getLength() > 0) {
+                    Set<MediaType> types = new HashSet<MediaType>();
                     for (int j = 0; j < mimes.getLength(); j++) {
                         String mime = getText(mimes.item(j));
                         MediaType type = MediaType.parse(mime);
                         if (type != null) {
-                            parsers.put(type, parser);
+                            types.add(type);
                         } else {
                             throw new TikaException(
                                     "Invalid media type name: " + mime);
                         }
                     }
-                } else {
-                    ParseContext context = new ParseContext();
-                    for (MediaType type : parser.getSupportedTypes(context)) {
-                        parsers.put(type, parser);
-                    }
+                    parser = ParserDecorator.withTypes(parser, types);
                 }
+
+                parsers.add(parser);
             } catch (ClassNotFoundException e) {
                 throw new TikaException(
                         "Configured parser class not found: " + name, e);
@@ -146,6 +158,8 @@ public class TikaConfig {
                         "Unable to instantiate a parser class: " + name, e);
             }
         }
+        this.parser =
+            new CompositeParser(mimeTypes.getMediaTypeRegistry(), parsers);
     }
 
     /**
@@ -162,19 +176,7 @@ public class TikaConfig {
      */
     public TikaConfig(ClassLoader loader)
             throws MimeTypeException, IOException {
-        if (loader != null) {
-            ParseContext context = new ParseContext();
-            Iterator<Parser> iterator =
-                ServiceRegistry.lookupProviders(Parser.class, loader);
-            while (iterator.hasNext()) {
-                Parser parser = iterator.next();
-                for (MediaType type : parser.getSupportedTypes(context)) {
-                    parsers.put(type, parser);
-                }
-            }
-        }
-        
-        mimeTypes = MimeTypes.getDefaultMimeTypes();
+        this(new DefaultParser(loader));
     }
 
     /**
@@ -187,27 +189,7 @@ public class TikaConfig {
      * @throws IOException  if the built-in media type rules can not be read
      */
     public TikaConfig() throws MimeTypeException, IOException {
-        this(getContextClassLoader());
-    }
-
-    /**
-     * Returns the context class loader of the current thread. If such
-     * a class loader is not available, then the loader of this class or
-     * finally the system class loader is returned.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-441">TIKA-441</a>
-     * @return context class loader, or <code>null</code> if no loader
-     *         is available
-     */
-    private static ClassLoader getContextClassLoader() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            loader = TikaConfig.class.getClassLoader();
-        }
-        if (loader == null) {
-            loader = ClassLoader.getSystemClassLoader();
-        }
-        return loader;
+        this(new DefaultParser());
     }
 
     /**
@@ -235,20 +217,28 @@ public class TikaConfig {
     }
 
     /**
-     * Returns the parser instance configured for the given MIME type.
-     * Returns <code>null</code> if the given MIME type is unknown.
-     *
-     * @param mimeType MIME type
-     * @return configured Parser instance, or <code>null</code>
+     * @deprecated Use the {@link #getParser()} method instead
      */
     public Parser getParser(MediaType mimeType) {
-        return parsers.get(mimeType);
+        return parser.getParsers().get(mimeType);
     }
 
-    public Map<MediaType, Parser> getParsers() {
-        return parsers;
+    /**
+     * Returns the configured parser instance.
+     *
+     * @return configured parser
+     */
+    public Parser getParser() {
+        return parser;
     }
-    
+
+    /**
+     * @deprecated Use the {@link #getParser()} method instead
+     */
+    public Map<MediaType, Parser> getParsers() {
+        return parser.getParsers();
+    }
+
     public MimeTypes getMimeRepository(){
         return mimeTypes;
     }

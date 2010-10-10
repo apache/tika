@@ -29,6 +29,7 @@ import org.apache.tika.io.CountingInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.sax.SecureContentHandler;
 import org.xml.sax.ContentHandler;
@@ -36,9 +37,7 @@ import org.xml.sax.SAXException;
 
 public class AutoDetectParser extends CompositeParser {
 
-    /**
-     * Serial version UID
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = 6110455808615143122L;
 
     /**
@@ -72,26 +71,20 @@ public class AutoDetectParser extends CompositeParser {
     public AutoDetectParser(Parser...parsers) {
         this(MimeTypes.getDefaultMimeTypes(), parsers);
     }
-    
+
     public AutoDetectParser(Detector detector, Parser...parsers) {
+        super(MediaTypeRegistry.getDefaultRegistry(), parsers);
         setDetector(detector);
-        setMediaTypeRegistry(MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry());
-        
-        Map<MediaType, Parser> map = new HashMap<MediaType, Parser>();
-        for (Parser parser : parsers) {
-            ParseContext context = new ParseContext();
-            for (MediaType type : parser.getSupportedTypes(context)) {
-                map.put(type, parser);
-            }
-        }
-        
-        setParsers(map);
-    }
-    
-    public AutoDetectParser(TikaConfig config) {
-        setConfig(config);
     }
 
+    public AutoDetectParser(TikaConfig config) {
+        super(config.getMediaTypeRegistry(), config.getParser());
+        setDetector(config.getMimeRepository());
+    }
+
+    /**
+     * @deprecated This method will be removed in Tika 1.0
+     */
     public void setConfig(TikaConfig config) {
         setParsers(config.getParsers());
         setDetector(config.getMimeRepository());
@@ -111,9 +104,7 @@ public class AutoDetectParser extends CompositeParser {
 
     /**
      * Sets the type detector used by this parser to auto-detect the type
-     * of a document. Note that calling the {@link #setConfig(TikaConfig)}
-     * method will override the type detector setting with the type settings
-     * included in the given configuration.
+     * of a document.
      *
      * @param detector type detector
      * @since Apache Tika 0.4
