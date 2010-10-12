@@ -38,6 +38,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.utils.CharsetUtils;
+import org.ccil.cowan.tagsoup.HTMLSchema;
+import org.ccil.cowan.tagsoup.Schema;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -64,6 +66,8 @@ public class HtmlParser implements Parser {
                     "(?is)<meta\\s+http-equiv\\s*=\\s*['\\\"]\\s*" +
                     "Content-Type['\\\"]\\s+content\\s*=\\s*['\\\"]" +
                     "([^'\\\"]+)['\\\"]");
+
+    private static final Schema HTML_SCHEMA = new HTMLSchema();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -185,6 +189,10 @@ public class HtmlParser implements Parser {
         // Parse the HTML document
         org.ccil.cowan.tagsoup.Parser parser =
             new org.ccil.cowan.tagsoup.Parser();
+
+        // Instantiating HTMLSchema is heavy, therefore reuse a cached instance
+        parser.setProperty(org.ccil.cowan.tagsoup.Parser.schemaProperty, HTML_SCHEMA);
+        
         parser.setContentHandler(new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata)));
         parser.parse(source);
