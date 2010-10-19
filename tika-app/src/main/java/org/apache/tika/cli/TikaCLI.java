@@ -17,6 +17,7 @@
 package org.apache.tika.cli;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -44,12 +45,16 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.ContainerAwareDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -136,12 +141,19 @@ public class TikaCLI {
     };
 
     private ParseContext context;
+    
+    private Detector detector;
 
     private AutoDetectParser parser;
 
     private Metadata metadata;
 
     private OutputType type = XML;
+    
+    private void initParser() {
+       parser = new AutoDetectParser(detector);
+       context.set(Parser.class, parser);
+    }
 
     /**
      * Output character encoding, or <code>null</code> for platform default
@@ -150,10 +162,10 @@ public class TikaCLI {
 
     private boolean pipeMode = true;
 
-    public TikaCLI() throws TransformerConfigurationException {
+    public TikaCLI() throws TransformerConfigurationException, IOException, MimeTypeException {
         context = new ParseContext();
-        parser = new AutoDetectParser();
-        context.set(Parser.class, parser);
+        detector = (new TikaConfig()).getMimeRepository();
+        initParser();
     }
 
     public void process(String arg) throws Exception {
@@ -177,6 +189,9 @@ public class TikaCLI {
         } else if(arg.equals("--list-supported-types")){
             pipeMode = false;
             displaySupportedTypes();
+        } else if(arg.equals("--container-aware") || arg.equals("--container-aware-detector")) {
+           detector = new ContainerAwareDetector(detector);
+           initParser();
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -237,6 +252,10 @@ public class TikaCLI {
         out.println("    -m  or --metadata    Output only metadata");
         out.println("    -l  or --language    Output only language");
         out.println("    -eX or --encoding=X  Use output encoding X");
+        out.println("");
+        out.println("    --container-aware-detector");
+        out.println("         Use the container aware detector, rather than the default mime");
+        out.println("         magic one. This is slower but more accurate on container formats.");
         out.println("");
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
