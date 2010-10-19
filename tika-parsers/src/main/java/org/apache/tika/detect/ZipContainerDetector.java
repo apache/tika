@@ -31,6 +31,7 @@ import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.iwork.IWorkPackageParser;
 
 
 /**
@@ -87,7 +88,12 @@ public class ZipContainerDetector implements ContainerDetector {
                 throw new IOException("Office Open XML File detected, but corrupted - " + e.getMessage());
              }
           } else if(entry.getName().equals("buildVersionHistory.plist")) {
-             // TODO - iWork
+             // This is an iWork document
+             
+             // Reset and ask
+             zip.close();
+             zip = new ZipFile(input.getFile());
+             return IWorkPackageParser.identifyType(zip);
           } else if(entry.getName().equals("META-INF/")) {
              // Java Jar
              return MediaType.application("java-archive");

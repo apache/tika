@@ -172,13 +172,37 @@ public class TestContainerAwareDetector extends TestCase {
     }
     
     public void testDetectIWork() throws Exception {
-	// TODO
+       TikaInputStream tis;
+
+       tis = TikaInputStream.get(getTestDoc("testKeynote.key"));
+       assertEquals(
+             MediaType.application("vnd.apple.keynote"),
+             d.detect(tis, new Metadata())
+       );
+
+       tis = TikaInputStream.get(getTestDoc("testNumbers.numbers"));
+       assertEquals(
+             MediaType.application("vnd.apple.numbers"),
+             d.detect(tis, new Metadata())
+       );
+
+       tis = TikaInputStream.get(getTestDoc("testPages.pages"));
+       assertEquals(
+             MediaType.application("vnd.apple.pages"),
+             d.detect(tis, new Metadata())
+       );
     }
     
     public void testDetectZip() throws Exception {
        TikaInputStream tis;
 
        tis = TikaInputStream.get(getTestDoc("test-documents.zip"));
+       assertEquals(
+             MediaType.application("zip"),
+             d.detect(tis, new Metadata())
+       );
+
+       tis = TikaInputStream.get(getTestDoc("test-zip-of-zip.zip"));
        assertEquals(
              MediaType.application("zip"),
              d.detect(tis, new Metadata())
