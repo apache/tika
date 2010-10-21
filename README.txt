@@ -1,13 +1,15 @@
-========================================================
-Welcome to Apache Tika  <http://lucene.apache.org/tika/>
-========================================================
+=================================================
+Welcome to Apache Tika  <http://tika.apache.org/>
+=================================================
 
-Apache Tika is a toolkit for detecting and extracting metadata and
+Apache Tika(TM) is a toolkit for detecting and extracting metadata and
 structured text content from various documents using existing parser
 libraries.
 
-Tika is a subproject of Apache Lucene <http://lucene.apache.org/>,
-a project of the Apache Software Foundation <http://www.apache.org/>.
+Tika is a project of the Apache Software Foundation <http://www.apache.org/>.
+
+Apache Tika, Tika, Apache, the Apache feather logo, and the Apache Tika
+project logo are trademarks of The Apache Software Foundation.
 
 Getting Started
 ===============
@@ -15,7 +17,7 @@ Getting Started
 Tika is based on Java 5 and uses the Maven 2 <http://maven.apache.org/>
 build system. To build Tika, use the following command in this directory:
 
-    mvn install
+    mvn clean install
 
 The build consists of a number of components, including a standalone runnable
 jar that you can use to try out Tika features. You can run it like this:
@@ -25,7 +27,7 @@ jar that you can use to try out Tika features. You can run it like this:
 License (see also LICENSE.txt)
 ==============================
 
-Collective work: Copyright 2009 The Apache Software Foundation.
+Collective work: Copyright 2010 The Apache Software Foundation.
 
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
@@ -72,38 +74,24 @@ The following provides more details on the included cryptographic software:
     extracting text content and metadata from encrypted PDF files.
     See http://www.bouncycastle.org/ for more details on Bouncy Castle.
 
-Documentation
-=============
-
-You can build a local copy of the Tika documentation including JavaDocs
-using the following Maven 2 command in the Tika source directory: 
-
-    mvn site 
-
-You can then open the Tika Documentation in a web browser: 
-
-    ./target/site/gettingstarted.html (for information on getting started with Tika)
-    ./target/site/documentation.html (for information on the key abstractions and usage of Tika)
-    ./target/site/formats.html (for information on supported formats)
-
 Mailing Lists
 =============
 
 Discussion about Tika takes place on the following mailing lists:
 
-    tika-user@lucene.apache.org    - About using Tika
-    tika-dev@lucene.apache.org     - About developing Tika
+    user@tika.apache.org    - About using Tika
+    dev@tika.apache.org     - About developing Tika
 
 Notification on all code changes are sent to the following mailing list:
 
-    tika-commits@lucene.apache.org
+    commits@tika.apache.org
 
 The mailing lists are open to anyone and publicly archived.
 
 You can subscribe the mailing lists by sending a message to
-tika-<LIST>-subscribe@lucene.apache.org (for example tika-user-subscribe@...).
-To unsubscribe, send a message to tika-<LIST>-unsubscribe@lucene.apache.org.
-For more instructions, send a message to tika-<LIST>-help@lucene.apache.org.
+<LIST>-subscribe@tika.apache.org (for example user-subscribe@...).
+To unsubscribe, send a message to <LIST>-unsubscribe@tika.apache.org.
+For more instructions, send a message to <LIST>-help@tika.apache.org.
 
 Issue Tracker
 =============
@@ -112,18 +100,3 @@ If you encounter errors in Tika or want to suggest an improvement or
 a new feature, please visit the Tika issue tracker at
 https://issues.apache.org/jira/browse/TIKA. There you can also find the
 latest information on known issues and recent bug fixes and enhancements.
-
-Updating the Tika web site
-==========================
-
-Here's how to update the live Tika website (http://lucene.apache.org/tika/)
-
-    1) Edit the content found in src/site
-
-    2) Run "mvn site" to generate the website pages
-
-    3) Check the new content at target/site/index.html
-
-    4) Commit your changes
-
-Your changes are automatically deployed to the live web site in a few hours.
