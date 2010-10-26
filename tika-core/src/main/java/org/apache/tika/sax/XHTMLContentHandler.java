@@ -73,7 +73,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
     public static final Set<String> ENDLINE = unmodifiableSet(
             "p", "h1", "h2", "h3", "h4", "h5", "h6", "div", "ul", "ol", "dl",
             "pre", "hr", "blockquote", "address", "fieldset", "table", "form",
-            "noscript", "li", "dt", "dd", "noframes", "br", "tr");
+            "noscript", "li", "dt", "dd", "noframes", "br", "tr", "select", "option");
 
     private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
 

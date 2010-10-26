@@ -16,6 +16,9 @@
  */
 package org.apache.tika.sax;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -72,6 +75,61 @@ public class XHTMLContentHandlerTest extends TestCase {
         assertEquals("y", words[3]);
         assertEquals("a", words[4]);
         assertEquals("b", words[5]);
+    }
+    
+    /**
+     * Test that content in option elements are properly separated in text
+     * output.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-394">TIKA-394</a>
+     */
+    public void testWhitespaceWithOptions() throws Exception {
+        xhtml.startDocument();
+        xhtml.startElement("form");
+        xhtml.startElement("select");
+        xhtml.element("option", "opt1");
+        xhtml.element("option", "opt2");
+        xhtml.endElement("select");
+        xhtml.endElement("form");
+        xhtml.endDocument();
+
+        String[] words = output.toString().split("\\s+");
+        assertEquals(2, words.length);
+        assertEquals("opt1", words[0]);
+        assertEquals("opt2", words[1]);
+    }
+    
+    public void testWhitespaceWithMenus() throws Exception {
+        xhtml.startDocument();
+        xhtml.startElement("menu");
+        xhtml.element("li", "one");
+        xhtml.element("li", "two");
+        xhtml.endElement("menu");
+        xhtml.endDocument();
+        
+        String[] words = getRealWords(output.toString());
+        assertEquals(2, words.length);
+        assertEquals("one", words[0]);
+        assertEquals("two", words[1]);
+    }
+
+    /**
+     * Return array of non-zerolength words. Splitting on whitespace will get us
+     * empty words for emptylines.
+     * 
+     * @param string some mix of newlines and real words
+     * @return array of real words.
+     */
+    private static String[] getRealWords(String string) {
+        String[] possibleWords = string.split("\\s+");
+        List<String> words = new ArrayList<String>(possibleWords.length);
+        for (String word : possibleWords) {
+            if (word.length() > 0) {
+                words.add(word);
+            }
+        }
+        
+        return words.toArray(new String[words.size()]);
     }
 
 }
