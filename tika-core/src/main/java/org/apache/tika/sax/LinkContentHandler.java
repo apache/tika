@@ -18,26 +18,38 @@ package org.apache.tika.sax;
 
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
+/**
+ * Content handler that collects links from an XHTML document.
+ */
 public class LinkContentHandler extends DefaultHandler {
 
-    private final Map<String, String> links = new HashMap<String, String>();
+    /**
+     * Stack of link builders, one for each level of nested links currently
+     * being processed. A usual case of a nested link would be a hyperlinked
+     * image (<code>&a href="..."&gt;&lt;img src="..."&gt;&lt;&gt;</code>),
+     * but it's possible (though unlikely) for also other kinds of nesting
+     * to occur.
+     */
+    private final LinkedList<LinkBuilder> builderStack =
+        new LinkedList<LinkBuilder>();
 
-    private String href = null;
+    /** Collected links */
+    private final List<Link> links = new ArrayList<Link>();
 
-    private final StringBuilder text = new StringBuilder();
-
-    public Map<String, String> getLinks() {
+    /**
+     * Returns the list of collected links.
+     *
+     * @return collected links
+     */
+    public List<Link> getLinks() {
         return links;
-    }
-
-    protected void addLink(String href, String text) {
-        links.put(href, text);
     }
 
     //-------------------------------------------------------< ContentHandler>
@@ -45,16 +57,31 @@ public class LinkContentHandler extends DefaultHandler {
     @Override
     public void startElement(
             String uri, String local, String name, Attributes attributes) {
-        if (XHTML.equals(uri) && "a".equals(local)) {
-            href = attributes.getValue("", "href");
-            text.setLength(0);
+        if (XHTML.equals(uri)) {
+            if ("a".equals(local)) {
+                LinkBuilder builder = new LinkBuilder("a");
+                builder.setURI(attributes.getValue("", "href"));
+                builder.setTitle(attributes.getValue("", "title"));
+                builderStack.push(builder);
+            } else if ("img".equals(local)) {
+                LinkBuilder builder = new LinkBuilder("img");
+                builder.setURI(attributes.getValue("", "src"));
+                builder.setTitle(attributes.getValue("", "title"));
+                builderStack.push(builder);
+
+                String alt = attributes.getValue("", "alt");
+                if (alt != null) {
+                    char[] ch = alt.toCharArray();
+                    characters(ch, 0, ch.length);
+                }
+            }
         }
     }
 
     @Override
     public void characters(char[] ch, int start, int length) {
-        if (href != null) {
-            text.append(ch, start, length);
+        for (LinkBuilder builder : builderStack) {
+            builder.characters(ch, start, length);
         }
     }
 
@@ -65,12 +92,11 @@ public class LinkContentHandler extends DefaultHandler {
 
     @Override
     public void endElement(String uri, String local, String name) {
-        if (XHTML.equals(uri) && "a".equals(local) && href != null) {
-            addLink(href, text.toString());
-            href = null;
-            text.setLength(0);
+        if (XHTML.equals(uri)) {
+            if ("a".equals(local) || "img".equals(local)) {
+                links.add(builderStack.pop().getLink());
+            }
         }
     }
 
 }
-
