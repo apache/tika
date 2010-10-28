@@ -62,12 +62,12 @@ public class LinkContentHandler extends DefaultHandler {
                 LinkBuilder builder = new LinkBuilder("a");
                 builder.setURI(attributes.getValue("", "href"));
                 builder.setTitle(attributes.getValue("", "title"));
-                builderStack.push(builder);
+                builderStack.addFirst(builder);
             } else if ("img".equals(local)) {
                 LinkBuilder builder = new LinkBuilder("img");
                 builder.setURI(attributes.getValue("", "src"));
                 builder.setTitle(attributes.getValue("", "title"));
-                builderStack.push(builder);
+                builderStack.addFirst(builder);
 
                 String alt = attributes.getValue("", "alt");
                 if (alt != null) {
@@ -94,7 +94,7 @@ public class LinkContentHandler extends DefaultHandler {
     public void endElement(String uri, String local, String name) {
         if (XHTML.equals(uri)) {
             if ("a".equals(local) || "img".equals(local)) {
-                links.add(builderStack.pop().getLink());
+                links.add(builderStack.removeFirst().getLink());
             }
         }
     }
