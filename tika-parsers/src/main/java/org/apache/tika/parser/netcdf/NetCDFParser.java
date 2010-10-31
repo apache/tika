@@ -100,7 +100,7 @@ public class NetCDFParser implements Parser {
         this.parse(stream, handler, metadata, new ParseContext());
     }
 
-    private void writeStreamToMemory(InputStream is, ByteArrayOutputStream os)
+    protected void writeStreamToMemory(InputStream is, ByteArrayOutputStream os)
             throws TikaException {
         byte[] buf = new byte[512];
 
