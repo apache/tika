@@ -32,7 +32,7 @@
    <repository>
      <id>netcdf-m2-repo</id>
      <name>netCDF Java Maven2 Repository</name>
-     <url>http://ulisse.pin.unifi.it:8081/nexus/content/groups/open.repos</url>
+     <url>https://oss.sonatype.org/content/groups/public</url>
      <releases>
        <enabled>true</enabled>
      </releases>

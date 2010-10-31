@@ -55,9 +55,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>essi-unidata</groupId>
-      <artifactId>netcdf-java</artifactId>
-      <version>4.0.41</version>
+      <groupId>edu.ucar</groupId>
+      <artifactId>netcdf</artifactId>
+      <version>4.2</version>
     </dependency>
     <dependency>
       <groupId>commons-httpclient</groupId>
