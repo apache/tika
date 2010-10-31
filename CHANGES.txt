@@ -15,7 +15,7 @@ The most notable changes in Tika 0.8 over previous releases are:
    selecting the best parser for a given input document. (TIKA-298)
 
  * Support for parsing common scientific data formats including netCDF
-   was added (TIKA-400).
+   and HDF4/5 was added (TIKA-400 and TIKA-399).
 
  * Unit tests for Windows have been fixed, allowing TestParsers
    to complete. (TIKA-398)
