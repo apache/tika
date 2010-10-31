@@ -48,8 +48,8 @@ import javax.xml.parsers.ParserConfigurationException;
  *    &lt;!ATTLIST mime-type type CDATA #REQUIRED&gt;
  * 
  *    &lt;!-- a comment describing a document with the respective MIME type. Example: &quot;WMV video&quot; --&gt;
- *    &lt;!ELEMENT comment (#PCDATA)&gt;
- *    &lt;!ATTLIST comment xml:lang CDATA #IMPLIED&gt;
+ *    &lt;!ELEMENT _comment (#PCDATA)&gt;
+ *    &lt;!ATTLIST _comment xml:lang CDATA #IMPLIED&gt;
  * 
  *    &lt;!-- a comment describing a the respective unexpanded MIME type acronym. Example: &quot;WMV&quot; --&gt;
  *    &lt;!ELEMENT acronym (#PCDATA)&gt;

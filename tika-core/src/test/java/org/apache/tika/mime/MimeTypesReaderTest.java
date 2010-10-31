@@ -108,5 +108,17 @@ public class MimeTypesReaderTest extends TestCase {
              excelMagics.size() >= minMatches
        );
     }
+    
+    /**
+     * @since TIKA-515
+     */
+    public void testReadComment() {
+        try {
+            assertNotNull(this.mimeTypes.forName("application/msword")
+                    .getDescription());
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
 
 }
