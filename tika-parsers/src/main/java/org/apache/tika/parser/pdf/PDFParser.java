@@ -50,6 +50,9 @@ import org.xml.sax.SAXException;
  */
 public class PDFParser implements Parser {
 
+    /** Serial version UID */
+    private static final long serialVersionUID = -752276948656079347L;
+
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -68,7 +71,7 @@ public class PDFParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        PDDocument pdfDocument = PDDocument.load(stream);
+        PDDocument pdfDocument = PDDocument.load(stream, true);
         try {
             if (pdfDocument.isEncrypted()
                     && !pdfDocument.getCurrentAccessPermission().canExtractContent()) {

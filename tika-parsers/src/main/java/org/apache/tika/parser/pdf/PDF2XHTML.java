@@ -65,6 +65,8 @@ class PDF2XHTML extends PDFTextStripper {
     private PDF2XHTML(ContentHandler handler, Metadata metadata)
             throws IOException {
         this.handler = new XHTMLContentHandler(handler, metadata);
+        setForceParsing(true);
+        setSortByPosition(true);
     }
 
     @Override
@@ -124,48 +126,5 @@ class PDF2XHTML extends PDFTextStripper {
                     "Unable to write a character: " + text.getCharacter(), e);
         }
     }
-
-    // Two methods added to work around lack of support for processWordSeparator
-    // and processLineSeparator in PDFBox-0.7.3. This is fixed in CVS Head (PDFBox-0.7.4)
-    @Override
-    public String getWordSeparator()
-    {
-        try
-        {
-            handler.characters(" ");
-        } catch(SAXException e) {
-
-        }
-        return super.getWordSeparator();    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public String getLineSeparator()
-    {
-        try
-        {
-            handler.characters("\n");
-        } catch(SAXException e) {
-
-        }
-        return super.getLineSeparator();
-    }
-
-//    protected void processLineSeparator(TextPosition p) throws IOException {
-//        try {
-//            handler.characters("\n");
-//        } catch (SAXException e) {
-//            throw new IOExceptionWithCause("Unable to write a newline", e);
-//        }
-//    }
-//
-//    protected void processWordSeparator(TextPosition a, TextPosition b)
-//            throws IOException {
-//        try {
-//            handler.characters(" ");
-//        } catch (SAXException e) {
-//            throw new IOExceptionWithCause("Unable to write a space", e);
-//        }
-//    }
 
 }
