@@ -63,7 +63,7 @@
             </_exportcontents>
             <Embed-Dependency>
               tika-core,tika-parsers,
-              netcdf-java,
+              netcdf,
               commons-compress,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
@@ -71,7 +71,7 @@
               tagsoup,
               asm,
               metadata-extractor,
-              boilerpipe, rome,
+              boilerpipe, rome
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
