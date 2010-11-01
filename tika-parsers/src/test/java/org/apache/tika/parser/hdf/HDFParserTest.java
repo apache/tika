@@ -38,6 +38,9 @@ import junit.framework.TestCase;
 public class HDFParserTest extends TestCase {
 
     public void testParseGlobalMetadata() throws Exception {
+        if(System.getProperty("java.version").startsWith("1.5")) {
+            return;
+        }
         Parser parser = new HDFParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
