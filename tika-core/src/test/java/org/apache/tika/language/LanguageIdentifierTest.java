@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Writer;
+import java.util.HashMap;
 
 import junit.framework.TestCase;
 
@@ -39,26 +40,69 @@ public class LanguageIdentifierTest extends TestCase {
         "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it", "nl", "pt", "sv"
     };
 
+    public void setUp() {
+        LanguageIdentifier.initProfiles();
+    }
+    
     public void testLanguageDetection() throws IOException {
         for (String language : languages) {
             ProfilingWriter writer = new ProfilingWriter();
             writeTo(language, writer);
-            LanguageIdentifier identifier =
-                new LanguageIdentifier(writer.getProfile());
+            LanguageIdentifier identifier = null;
+            identifier = new LanguageIdentifier(writer.getProfile());
             assertTrue(identifier.toString(), identifier.isReasonablyCertain());
             assertEquals(language, identifier.getLanguage());
         }
     }
 
-    public void testMixedLanguages() throws IOException {
+    public void testClearAddAndInitProfiles() throws IOException {
+        // Prepare english and german language profiles
+        ProfilingWriter enWriter = new ProfilingWriter();
+        writeTo("en", enWriter);
+        LanguageProfile enProfile = enWriter.getProfile();
+        ProfilingWriter deWriter = new ProfilingWriter();
+        writeTo("de", deWriter);
+        LanguageProfile deProfile = deWriter.getProfile();
+
+        // Out of the box profiles
+        LanguageIdentifier identifier = null;
+        identifier = new LanguageIdentifier(enProfile);
+        assertEquals("en", identifier.getLanguage());
+        assertTrue(identifier.isReasonablyCertain());
+
+        // No profiles
+        LanguageIdentifier.clearProfiles();
+        identifier = new LanguageIdentifier(enProfile);
+        assertFalse(identifier.isReasonablyCertain());
+
+        // Only English profile
+        LanguageIdentifier.addProfile("en", enProfile);
+        identifier = new LanguageIdentifier(enProfile);
+        assertEquals("en", identifier.getLanguage());
+        assertTrue(identifier.isReasonablyCertain());
+
+        // English and German profiles loaded explicitly from initProfiles method
+        HashMap<String, LanguageProfile> profilesMap = new HashMap<String, LanguageProfile>();
+        profilesMap.put("en", enProfile);
+        profilesMap.put("de", deProfile);
+        LanguageIdentifier.initProfiles(profilesMap);
+        identifier = new LanguageIdentifier(enProfile);
+        assertEquals("en", identifier.getLanguage());
+        assertTrue(identifier.isReasonablyCertain());
+        identifier = new LanguageIdentifier(deProfile);
+        assertEquals("de", identifier.getLanguage());
+        assertTrue(identifier.isReasonablyCertain());
+  }
+
+  public void testMixedLanguages() throws IOException {
         for (String language : languages) {
             for (String other : languages) {
                 if (!language.equals(other)) {
                     ProfilingWriter writer = new ProfilingWriter();
                     writeTo(language, writer);
                     writeTo(other, writer);
-                    LanguageIdentifier identifier =
-                        new LanguageIdentifier(writer.getProfile());
+                    LanguageIdentifier identifier = null;
+                    identifier = new LanguageIdentifier(writer.getProfile());
                     assertFalse(identifier.isReasonablyCertain());
                 }
             }

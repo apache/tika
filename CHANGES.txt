@@ -4,6 +4,9 @@ Release 0.8 - Current Development
 
 The most notable changes in Tika 0.8 over previous releases are:
 
+ * Language identification is now dynamically configurable, 
+   managed via a config file loaded from the classpath. (TIKA-490)
+
  * Tika now supports parsing Feeds by wrapping the underlying
    Rome library. (TIKA-466)
 
