@@ -2384,6 +2384,7 @@
       <match value="\211HDF\r\n\032" type="string" offset="0"/>
     </magic>
     <glob pattern="*.hdf"/>
+    <glob pattern="*.he5"/>
   </mime-type>
 
   <mime-type type="application/x-hwp">
