@@ -51,7 +51,7 @@ import ucar.nc2.NetcdfFile;
 public class HDFParser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
-            .singleton(MediaType.application("application/x-hdf"));
+            .singleton(MediaType.application("x-hdf"));
 
     /*
      * (non-Javadoc)
