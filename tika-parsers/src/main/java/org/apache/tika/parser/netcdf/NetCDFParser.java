@@ -47,7 +47,7 @@ import ucar.nc2.NetcdfFile;
 public class NetCDFParser implements Parser {
 
     private final Set<MediaType> SUPPORTED_TYPES = Collections
-            .singleton(MediaType.application("application/x-netcdf"));
+            .singleton(MediaType.application("x-netcdf"));
 
     /*
      * (non-Javadoc)
