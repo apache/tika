@@ -400,7 +400,7 @@ public class HtmlParserTest extends TestCase {
                 new BoilerpipeContentHandler(handler),  metadata, new ParseContext());
         
         String content = handler.toString();
-        assertTrue(content.startsWith("This is the real meat"));
+        assertTrue(content.startsWith("Title\nThis is the real meat"));
         assertTrue(content.endsWith("This is the end of the text.\n"));
         assertFalse(content.contains("boilerplate"));
         assertFalse(content.contains("footer"));

@@ -110,6 +110,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         if (td.getTitle() != null) {
             char[] titleChars = td.getTitle().toCharArray();
             delegate.characters(titleChars, 0, titleChars.length);
+            delegate.ignorableWhitespace(NL, 0, NL.length);
         }
         
         delegate.endElement(XHTMLContentHandler.XHTML, "title", "title");
