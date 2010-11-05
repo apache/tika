@@ -245,6 +245,29 @@ public class OOXMLParserTest extends TestCase {
     }
 
     /**
+     * Test the plain text output of the Word converter
+     * @throws Exception
+     */
+    public void testWordFootnote() throws Exception {
+        InputStream input = OOXMLParserTest.class
+                .getResourceAsStream("/test-documents/footnotes.docx");
+
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+
+        try {
+            parser.parse(TikaInputStream.get(input), handler, metadata, context);
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertTrue(handler.toString().contains("snoska"));
+        } finally {
+            input.close();
+        }
+    }
+
+    /**
      * Test that the word converter is able to generate the
      *  correct HTML for the document
      */
