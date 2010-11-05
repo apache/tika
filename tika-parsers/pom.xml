@@ -39,14 +39,6 @@
   </properties>
 
   <repositories>
-    <!-- for boilerpipe, to be removed as per TIKA-462 when Boilerpipe is sync'd to Maven central from Sonatype -->
-    <repository>
-      <id>maven2-repository.googlecode.com</id>
-      <name>GoogleCode Repository for Maven</name>
-      <url>http://boilerpipe.googlecode.com/svn/repo/</url>
-      <layout>default</layout>
-    </repository>
-    
     <!-- for rome 1.0, to be removed as per TIKA-543 -->
     <repository>
       <id>maven2-repository.dev.java.net</id>
