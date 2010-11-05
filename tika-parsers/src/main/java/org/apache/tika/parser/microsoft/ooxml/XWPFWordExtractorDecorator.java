@@ -175,6 +175,11 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           xhtml.characters(commentText);
        }
 
+       String footnameText = paragraph.getFootnoteText();
+       if(footnameText != null && footnameText.length() > 0) {
+          xhtml.characters(footnameText + "\n");
+       }
+
        // Finish this paragraph
        xhtml.endElement(tag);
 
