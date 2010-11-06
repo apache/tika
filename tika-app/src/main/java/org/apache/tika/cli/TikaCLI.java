@@ -48,19 +48,22 @@ import org.apache.log4j.WriterAppender;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.ContainerAwareDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -162,7 +165,7 @@ public class TikaCLI {
 
     private boolean pipeMode = true;
 
-    public TikaCLI() throws TransformerConfigurationException, IOException, MimeTypeException {
+    public TikaCLI() throws TransformerConfigurationException, IOException, TikaException, SAXException {
         context = new ParseContext();
         detector = (new TikaConfig()).getMimeRepository();
         initParser();
@@ -310,17 +313,40 @@ public class TikaCLI {
         }
     }
 
+    /*
+     * Displays loaded parsers and their mime types
+     * If a parser is a composite parser, it will list the
+     * sub parsers and their mime-types.
+     */
     private void displayParsers(boolean includeMimeTypes) {
-        // Invert the map
-        Map<MediaType,Parser> supported = parser.getParsers();
-        Map<Parser,Set<MediaType>> parsers = new HashMap<Parser, Set<MediaType>>();
-        for(Entry<MediaType, Parser> e : supported.entrySet()) {
-            if (!parsers.containsKey(e.getValue())) {
-                parsers.put(e.getValue(), new HashSet<MediaType>());
+        displayParser(parser, includeMimeTypes, 0);
+    }
+     
+    private void displayParser(Parser p, boolean includeMimeTypes, int i) {
+        boolean isComposite = (p instanceof CompositeParser);
+        String name = (p instanceof ParserDecorator) ?
+                      ((ParserDecorator) p).getWrappedParser().getClass().getName() :
+                      p.getClass().getName();
+        System.out.println(indent(i) + name + (isComposite ? " (Composite Parser):" : ""));
+        if (includeMimeTypes && !isComposite) {
+            for (MediaType mt : p.getSupportedTypes(context)) {
+                System.out.println(indent(i+2) + mt);
             }
-            parsers.get(e.getValue()).add(e.getKey());
         }
+        
+        if (isComposite) {
+            Parser[] subParsers = sortParsers(invertMediaTypeMap(((CompositeParser) p).getParsers()));
+            for(Parser sp : subParsers) {
+                displayParser(sp, includeMimeTypes, i+2);
+            }
+        }
+    }
 
+    private String indent(int indent) {
+        return "                     ".substring(0, indent);
+    }
+
+    private Parser[] sortParsers(Map<Parser, Set<MediaType>> parsers) {
         // Get a nicely sorted list of the parsers
         Parser[] sortedParsers = parsers.keySet().toArray(new Parser[parsers.size()]);
         Arrays.sort(sortedParsers, new Comparator<Parser>() {
@@ -330,16 +356,18 @@ public class TikaCLI {
                 return name1.compareTo(name2);
             }
         });
+        return sortedParsers;
+    }
 
-        // Display
-        for (Parser p : sortedParsers) {
-            System.out.println(p.getClass().getName());
-            if (includeMimeTypes) {
-                for (MediaType mt : parsers.get(p)) {
-                    System.out.println("  " + mt);
-                }
+    private Map<Parser, Set<MediaType>> invertMediaTypeMap(Map<MediaType, Parser> supported) {
+        Map<Parser,Set<MediaType>> parsers = new HashMap<Parser, Set<MediaType>>();
+        for(Entry<MediaType, Parser> e : supported.entrySet()) {
+            if (!parsers.containsKey(e.getValue())) {
+                parsers.put(e.getValue(), new HashSet<MediaType>());
             }
+            parsers.get(e.getValue()).add(e.getKey());
         }
+        return parsers;
     }
 
     /**

@@ -99,5 +99,13 @@ public class ParserDecorator implements Parser {
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }
+    
+    /**
+     * Gets the parser wrapped by this ParserDecorator
+     * @return
+     */
+    public Parser getWrappedParser() {
+        return this.parser;
+    }
 
 }
