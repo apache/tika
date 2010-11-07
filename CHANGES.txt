@@ -1,6 +1,6 @@
 Apache Tika Change Log
 ======================
-Release 0.8 - Current Development
+Release 0.8 - 11/07/2010
 
 The most notable changes in Tika 0.8 over previous releases are:
 
@@ -26,36 +26,158 @@ The most notable changes in Tika 0.8 over previous releases are:
 Tika relies on the current set of major dependencies (generated using 
 mvn dependency:tree from the top-level tika src dir):
 
-org.apache.tika:tika-parsers:bundle:0.7
-+- org.apache.tika:tika-core:jar:0.7:compile
-+- org.apache.commons:commons-compress:jar:1.0:compile
-+- org.apache.pdfbox:pdfbox:jar:1.1.0:compile
-|  +- org.apache.pdfbox:fontbox:jar:1.1.0:compile
-|  \- org.apache.pdfbox:jempbox:jar:1.1.0:compile
+org.apache.tika:tika-parent:pom:0.8-SNAPSHOT
+org.apache.tika:tika-core:bundle:0.8-SNAPSHOT
+\- junit:junit:jar:3.8.1:test
+org.apache.tika:tika-parsers:bundle:0.8-SNAPSHOT
++- org.apache.tika:tika-core:jar:0.8-SNAPSHOT:compile
++- edu.ucar:netcdf:jar:4.2:compile
+|  \- org.slf4j:slf4j-api:jar:1.5.6:compile
++- commons-httpclient:commons-httpclient:jar:3.1:compile
+|  +- commons-logging:commons-logging:jar:1.1.1:compile (version managed from 1.0.4)
+|  \- commons-codec:commons-codec:jar:1.2:compile
++- org.apache.commons:commons-compress:jar:1.1:compile
++- org.apache.pdfbox:pdfbox:jar:1.3.1:compile
+|  +- org.apache.pdfbox:fontbox:jar:1.3.1:compile
+|  \- org.apache.pdfbox:jempbox:jar:1.3.1:compile
 +- org.bouncycastle:bcmail-jdk15:jar:1.45:compile
 +- org.bouncycastle:bcprov-jdk15:jar:1.45:compile
-+- org.apache.poi:poi:jar:3.6:compile
-+- org.apache.poi:poi-scratchpad:jar:3.6:compile
-+- org.apache.poi:poi-ooxml:jar:3.6:compile
-|  +- org.apache.poi:poi-ooxml-schemas:jar:3.6:compile
++- org.apache.poi:poi:jar:3.7:compile
++- org.apache.poi:poi-scratchpad:jar:3.7:compile
++- org.apache.poi:poi-ooxml:jar:3.7:compile
+|  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:compile
 |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:compile
 |  \- dom4j:dom4j:jar:1.6.1:compile
-|     \- xml-apis:xml-apis:jar:1.0.b2:compile
 +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:compile
-+- commons-logging:commons-logging:jar:1.1.1:compile
 +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:compile
 +- asm:asm:jar:3.1:compile
-+- log4j:log4j:jar:1.2.14:compile
++- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:compile
++- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:compile
++- rome:rome:jar:0.9:compile
+|  \- jdom:jdom:jar:1.0:compile
 +- junit:junit:jar:3.8.1:test
 +- org.mockito:mockito-core:jar:1.7:test
 |  +- org.hamcrest:hamcrest-core:jar:1.1:test
 |  \- org.objenesis:objenesis:jar:1.0:test
-\- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:compile
+\- org.slf4j:slf4j-log4j12:jar:1.5.6:test
+   \- log4j:log4j:jar:1.2.14:test
+org.apache.tika:tika-app:bundle:0.8-SNAPSHOT
++- org.apache.tika:tika-parsers:jar:0.8-SNAPSHOT:provided
+|  +- org.apache.tika:tika-core:jar:0.8-SNAPSHOT:provided
+|  +- edu.ucar:netcdf:jar:4.2:provided
+|  +- commons-httpclient:commons-httpclient:jar:3.1:provided
+|  |  +- commons-logging:commons-logging:jar:1.0.4:provided
+|  |  \- commons-codec:commons-codec:jar:1.2:provided
+|  +- org.apache.commons:commons-compress:jar:1.1:provided
+|  +- org.apache.pdfbox:pdfbox:jar:1.3.1:provided
+|  |  +- org.apache.pdfbox:fontbox:jar:1.3.1:provided
+|  |  \- org.apache.pdfbox:jempbox:jar:1.3.1:provided
+|  +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+|  +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+|  +- org.apache.poi:poi:jar:3.7:provided
+|  +- org.apache.poi:poi-scratchpad:jar:3.7:provided
+|  +- org.apache.poi:poi-ooxml:jar:3.7:provided
+|  |  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:provided
+|  |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+|  |  \- dom4j:dom4j:jar:1.6.1:provided
+|  +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+|  +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:provided
+|  +- asm:asm:jar:3.1:provided
+|  +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+|  +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+|  \- rome:rome:jar:0.9:provided
+|     \- jdom:jdom:jar:1.0:provided
+\- org.slf4j:slf4j-log4j12:jar:1.5.6:provided
+   +- org.slf4j:slf4j-api:jar:1.5.6:provided
+   \- log4j:log4j:jar:1.2.14:provided
+org.apache.tika:tika-bundle:bundle:0.8-SNAPSHOT
++- org.apache.tika:tika-core:jar:0.8-SNAPSHOT:provided
+\- org.apache.tika:tika-parsers:jar:0.8-SNAPSHOT:provided
+   +- edu.ucar:netcdf:jar:4.2:provided
+   |  \- org.slf4j:slf4j-api:jar:1.5.6:provided
+   +- commons-httpclient:commons-httpclient:jar:3.1:provided
+   |  +- commons-logging:commons-logging:jar:1.0.4:provided
+   |  \- commons-codec:commons-codec:jar:1.2:provided
+   +- org.apache.commons:commons-compress:jar:1.1:provided
+   +- org.apache.pdfbox:pdfbox:jar:1.3.1:provided
+   |  +- org.apache.pdfbox:fontbox:jar:1.3.1:provided
+   |  \- org.apache.pdfbox:jempbox:jar:1.3.1:provided
+   +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+   +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+   +- org.apache.poi:poi:jar:3.7:provided
+   +- org.apache.poi:poi-scratchpad:jar:3.7:provided
+   +- org.apache.poi:poi-ooxml:jar:3.7:provided
+   |  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:provided
+   |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+   |  \- dom4j:dom4j:jar:1.6.1:provided
+   +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+   +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:provided
+   +- asm:asm:jar:3.1:provided
+   +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+   +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+   \- rome:rome:jar:0.9:provided
+      \- jdom:jdom:jar:1.0:provided
 
 The following people have contributed to Tika 0.8 by submitting or commenting
 on the issues resolved in this release:
 
-TODO
+Łukasz Wiktor
+Adam Wilmer
+Alex Baranau
+Alex Ott
+André Ricardo
+Andrey Barhatov
+Andrey Sidorenko
+Antoni Mylka
+Antoni Mylka
+Arturo Beltran
+Attila Király
+Brad Greenlee
+Bruno Dumon
+Chris A. Mattmann
+Chris Bamford
+Christophe Gourmelon
+Dave Meikle
+David Weekly
+Dmitry Kuzmenko
+Erik Hetzner
+Geoff Jarrad
+Gerd Bremer
+Grant Ingersoll
+Jan Høydahl
+Jean-Philippe Ricard
+Jeremias Maerki
+Joao Garcia
+Jukka Zitting
+Julien Nioche
+Ken Krugler
+Liam O'Boyle
+Mads Hansen
+Marcel May
+Markus Goldbach
+Martijn van Groningen
+Maxim Valyanskiy
+Mike Hays
+Miroslav Pokorny
+Nick Burch
+Otis Gospodnetic
+Peter van Raamsdonk
+Peter Wolanin
+Peter_Lenahan@ibi.com
+Piotr Bartosiewicz
+Radek
+Rajiv Kumar
+Reinhard Schwab
+rick cameron
+Robert Muir
+Sanjeev Rao
+Simon Tyler
+Sjoerd Smeets
+Slavomir Varchula
+Staffan Olsson
+Tom De Leu
+Uwe Schindler
+Victor Kazakov
 
 Release 0.7 - 3/31/2010
 ---------------------------------
