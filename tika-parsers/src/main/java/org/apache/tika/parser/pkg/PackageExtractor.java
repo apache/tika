@@ -136,9 +136,8 @@ class PackageExtractor {
      * It is not an error if the entry can not be parsed, in that case
      * just the entry name (if given) is emitted.
      *
-     * @param stream package stream
-     * @param handler content handler
-     * @param metadata package metadata
+     * @param archive package stream
+     * @param xhtml content handler
      * @throws IOException if an IO error occurs
      * @throws SAXException if a SAX error occurs
      */
