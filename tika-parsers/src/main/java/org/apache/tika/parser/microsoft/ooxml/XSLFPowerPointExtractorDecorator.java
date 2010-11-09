@@ -30,6 +30,8 @@ import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xslf.usermodel.XSLFCommonSlideData;
+import org.apache.poi.xslf.usermodel.DrawingParagraph;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
@@ -71,7 +73,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     .getSlideComments(slideId);
 
             xhtml.startElement("div");
-            extractShapeContent(rawSlide.getCSld().getSpTree(), xhtml);
+            extractShapeContent(slide.getCommonSlideData(), xhtml);
 
             if (comments != null) {
                 for (CTComment comment : comments.getCmArray()) {
@@ -80,26 +82,16 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
 
             if (notes != null) {
-                extractShapeContent(notes.getCSld().getSpTree(), xhtml);
+                extractShapeContent(new XSLFCommonSlideData(notes.getCSld()), xhtml);
             }
             xhtml.endElement("div");
         }
     }
 
-    private void extractShapeContent(CTGroupShape gs, XHTMLContentHandler xhtml)
+    private void extractShapeContent(XSLFCommonSlideData data, XHTMLContentHandler xhtml)
             throws SAXException {
-        CTShape[] shapes = gs.getSpArray();
-        for (CTShape shape : shapes) {
-            CTTextBody textBody = shape.getTxBody();
-            if (textBody != null) {
-                CTTextParagraph[] paras = textBody.getPArray();
-                for (CTTextParagraph textParagraph : paras) {
-                    CTRegularTextRun[] textRuns = textParagraph.getRArray();
-                    for (CTRegularTextRun textRun : textRuns) {
-                        xhtml.element("p", textRun.getT());
-                    }
-                }
-            }
+        for (DrawingParagraph p : data.getText()) {
+            xhtml.element("p", p.getText().toString());
         }
     }
     
