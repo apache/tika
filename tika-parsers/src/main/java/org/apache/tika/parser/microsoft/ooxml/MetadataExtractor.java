@@ -49,8 +49,11 @@ public class MetadataExtractor {
 
     public void extract(Metadata metadata) throws TikaException {
         addProperty(metadata, Metadata.CONTENT_TYPE, type);
-        extractMetadata(extractor.getCoreProperties(), metadata);
-        extractMetadata(extractor.getExtendedProperties(), metadata);
+        
+        if (extractor.getDocument()!=null) {
+            extractMetadata(extractor.getCoreProperties(), metadata);
+            extractMetadata(extractor.getExtendedProperties(), metadata);
+        }
     }
 
     private void extractMetadata(CoreProperties properties, Metadata metadata) {
