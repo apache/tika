@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.jpeg;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -27,6 +28,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.image.ImageMetadataExtractor;
+import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -53,7 +55,18 @@ public class JpegParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        new ImageMetadataExtractor(metadata).parseJpeg(stream);
+        
+        // read stream twice - exif and xmp extractors
+        stream.mark(Integer.MAX_VALUE);
+        FilterInputStream first = new FilterInputStream(stream) {
+            @Override
+            public void close() throws IOException {
+            }
+        };
+        new ImageMetadataExtractor(metadata).parseJpeg(first);
+        stream.reset();
+        
+        new JempboxExtractor(metadata).parse(stream);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
