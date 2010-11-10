@@ -16,14 +16,17 @@
  */
 package org.apache.tika.parser.jpeg;
 
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.List;
+
 import junit.framework.TestCase;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.metadata.Metadata;
 import org.xml.sax.helpers.DefaultHandler;
-
-import java.io.InputStream;
 
 public class JpegParserTest extends TestCase {
     private final Parser parser = new JpegParser();
@@ -35,9 +38,6 @@ public class JpegParserTest extends TestCase {
             getClass().getResourceAsStream("/test-documents/testJPEG_EXIF.jpg");
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
-        // All EXIF/TIFF tags
-        assertEquals("Canon EOS 40D", metadata.get("Model"));
-        
         // Core EXIF/TIFF tags
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("68", metadata.get(Metadata.IMAGE_LENGTH));
@@ -57,12 +57,20 @@ public class JpegParserTest extends TestCase {
         assertEquals("240.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
         assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
         
+        // Check that EXIF/TIFF tags come through with their raw values too
+        // (This may be removed for Tika 1.0, as we support more of them
+        //  with explicit Metadata entries)
+        assertEquals("Canon EOS 40D", metadata.get("Model"));
+        
         // Common tags
-        assertEquals("Date/Time for when the photo was taken, unspecified time zone",
-                "2009-10-02T23:02:49", metadata.get(Metadata.DATE));
+        //assertEquals("2009-10-02T23:02:49", metadata.get(Metadata.LAST_MODIFIED));
         assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
-                "2009-08-11T09:09:45", metadata.get(Metadata.ORIGINAL_DATE));
-        assertEquals("canon-55-250 moscow-birds serbor", metadata.get(Metadata.KEYWORDS));
+                "2009-08-11T09:09:45", metadata.get(Metadata.DATE));
+        List<String> keywords = Arrays.asList(metadata.getValues(Metadata.SUBJECT));
+        assertTrue("'canon-55-250' expected in " + keywords, keywords.contains("canon-55-250"));
+        assertTrue("'moscow-birds' expected in " + keywords, keywords.contains("moscow-birds")); 
+        assertTrue("'serbor' expected in " + keywords, keywords.contains("serbor"));
+        assertFalse(keywords.contains("canon-55-250 moscow-birds serbor"));
     }
 
     public void testJPEGGeo() throws Exception {
@@ -75,9 +83,6 @@ public class JpegParserTest extends TestCase {
         // Geo tags
         assertEquals("12.54321", metadata.get(Metadata.LATITUDE));
         assertEquals("-54.1234", metadata.get(Metadata.LONGITUDE));
-
-        // All EXIF/TIFF tags
-        assertEquals("Canon EOS 40D", metadata.get("Model"));
         
         // Core EXIF/TIFF tags
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
@@ -100,10 +105,12 @@ public class JpegParserTest extends TestCase {
         
         // Common tags
         assertEquals("Date/Time Original for when the photo was taken, unspecified time zone",
-                "2009-08-11T09:09:45", metadata.get(Metadata.ORIGINAL_DATE));
+                "2009-08-11T09:09:45", metadata.get(Metadata.DATE));
         assertEquals("This image has different Date/Time than Date/Time Original, so it is probably modification date",
-                "2009-10-02T23:02:49", metadata.get(Metadata.DATE));
-        assertEquals("canon-55-250 moscow-birds serbor", metadata.get(Metadata.KEYWORDS));
+                "2009-10-02T23:02:49", metadata.get(Metadata.LAST_MODIFIED));
+        assertEquals("Date/Time Original should be stored in EXIF field too",
+                "2009-08-11T09:09:45", metadata.get(TIFF.ORIGINAL_DATE));
+        assertEquals("canon-55-250", metadata.getValues(Metadata.KEYWORDS)[0]);
     }
     
     public void testJPEGTitleAndDescription() throws Exception {
@@ -114,13 +121,17 @@ public class JpegParserTest extends TestCase {
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
           
         // embedded comments with non-ascii characters
-        //assertEquals("Tosteberga \u00C4ngar", metadata.get(Metadata.TITLE));
-        assertEquals("Tosteberga " + new String(new byte[]{-61, -124}) + "ngar", metadata.get(Metadata.TITLE));
-        //assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(Metadata.DESCRIPTION));
-        assertEquals("Bird site in north eastern Sk" + new String(new byte[]{-61, -91}) + 
-        		"ne, Sweden.\n(new line)", metadata.get(Metadata.DESCRIPTION));
+        assertEquals("Tosteberga \u00C4ngar", metadata.get(Metadata.TITLE));
+        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(Metadata.DESCRIPTION));
         assertEquals("Some Tourist", metadata.get(Metadata.AUTHOR));
-        assertEquals("grazelands nature reserve bird watching coast", metadata.get(Metadata.KEYWORDS));
+        assertEquals("Some Tourist", metadata.get(Metadata.CREATOR)); // Dublin Core
+        // xmp handles spaces in keywords, returns "bird watching, nature reserve, coast, grazelands"
+        // but we have to replace them with underscore
+        
+        List<String> keywords = Arrays.asList(metadata.getValues(Metadata.KEYWORDS));
+        assertTrue(keywords.contains("coast"));
+        assertTrue(keywords.contains("bird watching"));
+        assertEquals(keywords, Arrays.asList(metadata.getValues(Metadata.SUBJECT)));
         
         // Core EXIF/TIFF tags
         assertEquals("103", metadata.get(Metadata.IMAGE_WIDTH));
@@ -138,6 +149,39 @@ public class JpegParserTest extends TestCase {
         assertEquals("1", metadata.get(Metadata.ORIENTATION)); // Not present
         assertEquals("300.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
         assertEquals("300.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
-        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
+        assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));          
+    }
+    
+    public void testJPEGTitleAndDescriptionPhotoshop() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        InputStream stream =
+            getClass().getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg");
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+          
+        // embedded comments with non-ascii characters
+        assertEquals("Tosteberga \u00C4ngar", metadata.get(Metadata.TITLE));
+        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(Metadata.DESCRIPTION));
+        assertEquals("Some Tourist", metadata.get(Metadata.CREATOR));
+        List<String> subject = Arrays.asList(metadata.getValues(Metadata.SUBJECT));
+        assertTrue("got " + subject, subject.contains("bird watching")); 
+    }
+    
+    public void testJPEGTitleAndDescriptionXnviewmp() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        InputStream stream =
+            getClass().getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg");
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+          
+        // XnViewMp's default comment dialog has only comment, not headline.
+        // Comment is embedded only if "Write comments in XMP" is enabled in settings
+        assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(Metadata.DESCRIPTION));
+        // xmp handles spaces in keywords, returns "bird watching, nature reserve, coast, grazelands"
+        // but we have to replace them with underscore
+        String[] subject = metadata.getValues(Metadata.SUBJECT);
+        List<String> keywords = Arrays.asList(subject);
+        assertTrue("'coast'" + " not in " + keywords, keywords.contains("coast"));
+        assertTrue("'nature reserve'" + " not in " + keywords, keywords.contains("nature reserve"));     
     }
 }
