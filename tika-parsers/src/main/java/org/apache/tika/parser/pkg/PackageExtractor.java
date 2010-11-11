@@ -31,6 +31,7 @@ import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -53,7 +54,15 @@ class PackageExtractor {
             ContentHandler handler, Metadata metadata, ParseContext context) {
         this.handler = handler;
         this.metadata = metadata;
-        this.extractor = new EmbeddedDocumentExtractor(context);
+
+        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
+
+        if (ex==null) {
+            this.extractor = new ParsingEmbeddedDocumentExtractor(context);
+        } else {
+            this.extractor = ex;
+        }
+
     }
 
     public void parse(InputStream stream)
