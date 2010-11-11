@@ -16,17 +16,10 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 
-import org.apache.poi.poifs.filesystem.DirectoryEntry;
-import org.apache.poi.poifs.filesystem.DocumentEntry;
-import org.apache.poi.poifs.filesystem.DocumentInputStream;
-import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.*;
+import org.apache.poi.util.IOUtils;
 import org.apache.tika.detect.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -110,10 +103,31 @@ abstract class AbstractPOIFSExtractor {
            // What kind of document is it?
            Metadata metadata = new Metadata();
            POIFSDocumentType type = POIFSDocumentType.detectType(dir);
-           metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
 
-           // Trigger for the document itself 
-           TikaInputStream embedded = TikaInputStream.get(tmpFile);
+           TikaInputStream embedded;
+
+           if (type==POIFSDocumentType.OLE10_NATIVE) {
+               Entry entry = dir.getEntry(Ole10Native.OLE10_NATIVE);
+               ByteArrayOutputStream bos = new ByteArrayOutputStream();
+               IOUtils.copy(new DocumentInputStream((DocumentEntry) entry), bos);
+               byte[] data = bos.toByteArray();
+
+               try {
+                    Ole10Native ole = new Ole10Native(data, 0);
+                    byte[] dataBuffer = ole.getDataBuffer();
+
+                    metadata.set("resourceName", dir.getName() + '/' + ole.getLabel());
+
+                    embedded = TikaInputStream.get(dataBuffer);
+               } catch (Ole10NativeException ex) {
+                 embedded = TikaInputStream.get(data);
+               }
+           } else {
+               metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+
+               embedded = TikaInputStream.get(tmpFile);
+           }
+
            try {
                if (extractor.shouldParseEmbedded(metadata)) {
                    extractor.parseEmbedded(embedded, xhtml, metadata, true);
