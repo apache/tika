@@ -30,6 +30,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.detect.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -43,7 +44,13 @@ abstract class AbstractPOIFSExtractor {
     private final EmbeddedDocumentExtractor extractor;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
-        this.extractor = new EmbeddedDocumentExtractor(context);
+        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
+
+        if (ex==null) {
+            this.extractor = new ParsingEmbeddedDocumentExtractor(context);
+        } else {
+            this.extractor = ex;
+        }
     }
     
     protected void handleEmbeddedResource(TikaInputStream resource, String filename,
