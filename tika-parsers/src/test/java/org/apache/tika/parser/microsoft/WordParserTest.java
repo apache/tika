@@ -53,7 +53,21 @@ public class WordParserTest extends TestCase {
             input.close();
         }
     }
-    
+
+    public void testWordWithWAV() throws Exception {
+        InputStream input = WordParserTest.class.getResourceAsStream(
+                "/test-documents/Doc1_ole.doc");
+        try {
+            ContentHandler handler = new BodyContentHandler();
+            Metadata metadata = new Metadata();
+            new OfficeParser().parse(input, handler, metadata, new ParseContext());
+
+            assertTrue(handler.toString().contains("MSj00974840000[1].wav"));
+        } finally {
+            input.close();
+        }
+    }
+
     /**
      * Test that the word converter is able to generate the
      *  correct HTML for the document
