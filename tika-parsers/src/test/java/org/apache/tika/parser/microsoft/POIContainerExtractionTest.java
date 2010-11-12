@@ -122,8 +122,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(null, handler.filenames.get(0));
        assertEquals(null, handler.filenames.get(1));
        assertEquals(null, handler.filenames.get(2));
-       assertEquals(null, handler.filenames.get(3));
-       assertEquals(null, handler.filenames.get(4));
+       assertEquals("MBD0003271D.ppt", handler.filenames.get(3));
+       assertEquals("MBD00032A24.doc", handler.filenames.get(4));
        // But we do know their types
        assertEquals(TYPE_EMF, handler.mediaTypes.get(0)); // Icon of embedded office doc
        assertEquals(TYPE_EMF, handler.mediaTypes.get(1)); // Icon of embedded office doc
@@ -140,7 +140,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(null, handler.filenames.get(0));
        assertEquals(null, handler.filenames.get(1));
        assertEquals(null, handler.filenames.get(2));
-       assertEquals(null, handler.filenames.get(3));
+       assertEquals("MBD0003271D.ppt", handler.filenames.get(3));
        assertEquals("1", handler.filenames.get(4));
        assertEquals(null, handler.filenames.get(5));
        assertEquals("2", handler.filenames.get(6));
@@ -176,8 +176,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals("image2", handler.filenames.get(4));
        assertEquals("image3", handler.filenames.get(5));
        assertEquals(null, handler.filenames.get(6));
-       assertEquals(null, handler.filenames.get(7));
-       assertEquals(null, handler.filenames.get(8));
+       assertEquals("_1345471035.ppt", handler.filenames.get(7));
+       assertEquals("_1345470949.xls", handler.filenames.get(8));
        
        // But we do know their types
        assertEquals(MediaType.parse("image/unknown"), handler.mediaTypes.get(0)); // Icon of embedded office doc?
@@ -207,7 +207,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals("image2.png", handler.filenames.get(7));
        assertEquals("image3.jpeg", handler.filenames.get(8));
        assertEquals("image4.png", handler.filenames.get(9));
-       for(int i=10; i<handler.filenames.size(); i++) {
+       for(int i=12; i<handler.filenames.size(); i++) {
           assertNull(handler.filenames.get(i));
        }
        // But we do know their types
@@ -247,7 +247,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(2, handler.filenames.size());
        assertEquals(2, handler.mediaTypes.size());
        
-       assertEquals(null, handler.filenames.get(0));
+       assertEquals("__substg1.0_3701000D.msg", handler.filenames.get(0));
        assertEquals(TYPE_MSG, handler.mediaTypes.get(0));
        
        assertEquals("smbprn.00009008.KdcPjl.pdf", handler.filenames.get(1));
