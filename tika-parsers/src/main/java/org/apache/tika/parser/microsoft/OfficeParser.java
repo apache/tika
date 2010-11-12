@@ -19,15 +19,10 @@ package org.apache.tika.parser.microsoft;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
-import org.apache.poi.hslf.extractor.PowerPointExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
@@ -187,9 +182,7 @@ public class OfficeParser implements Parser {
                     new WordExtractor(context).parse(filesystem, xhtml);
                     break;
                 case POWERPOINT:
-                    PowerPointExtractor powerPointExtractor =
-                        new PowerPointExtractor(filesystem);
-                    xhtml.element("p", powerPointExtractor.getText(true, true));
+                    new HSLFExtractor(context).parse(filesystem, xhtml);
                     break;
                 case WORKBOOK:
                     Locale locale = context.get(Locale.class, Locale.getDefault());
