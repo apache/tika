@@ -367,9 +367,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           // Already setup
        } else if(styleName.equals("Table Contents") && isTable) {
           // Already setup
-       } else if(styleName.equals("Heading")) {
+       } else if(styleName.equals("heading") || styleName.equals("Heading")) {
           tag = "h1";
-       } else if(styleName.startsWith("Heading ")) {
+       } else if(styleName.startsWith("heading") || styleName.startsWith("Heading")) {
+          // "Heading 3" or "Heading2" or "heading 4"
           int num = 1;
           try {
              num = Integer.parseInt( 
@@ -390,7 +391,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           styleClass = styleClass.substring(0,1).toLowerCase() +
                          styleClass.substring(1);
        }
-       
+
        return new TagAndStyle(tag,styleClass);
     }
     
