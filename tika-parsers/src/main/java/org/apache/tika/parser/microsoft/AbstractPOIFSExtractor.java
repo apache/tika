@@ -124,6 +124,7 @@ abstract class AbstractPOIFSExtractor {
                }
            } else {
                metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+               metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
 
                embedded = TikaInputStream.get(tmpFile);
            }
