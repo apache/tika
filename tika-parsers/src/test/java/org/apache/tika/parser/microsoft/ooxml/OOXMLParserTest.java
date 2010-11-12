@@ -300,7 +300,9 @@ public class OOXMLParserTest extends TestCase {
             assertTrue(xml.contains("<h1 class=\"title\">"));
             // Regular headings
             assertTrue(xml.contains("<h1>Heading Level 1</h1>"));
-            assertTrue(xml.contains("<h3>Heading Level 3</h3>"));
+            assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
+            // Headings with anchor tags in them
+            assertTrue(xml.replaceAll("\r?\n", "").contains("<h3><a name=\"OnLevel3\"/>Heading Level 3</h3>"));
             // Bold and italic
             assertTrue(xml.contains("<b>BOLD</b>"));
             assertTrue(xml.contains("<i>ITALIC</i>"));
@@ -309,6 +311,8 @@ public class OOXMLParserTest extends TestCase {
             assertTrue(xml.contains("<td>"));
             // Links
             assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
+            // Anchor links
+            assertTrue(xml.contains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>"));
             // Paragraphs with other styles
             assertTrue(xml.contains("<p class=\"signature\">This one"));
         } finally {

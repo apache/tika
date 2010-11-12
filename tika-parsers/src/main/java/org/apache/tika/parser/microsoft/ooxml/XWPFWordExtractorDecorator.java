@@ -120,14 +120,18 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           styleClass = tas.getStyleClass();
        }
        
-       for (CTBookmark bookmark : paragraph.getCTP().getBookmarkStartList()) {
-           xhtml.element("p", bookmark.getName());
-       }
-
        if(styleClass == null) {
           xhtml.startElement(tag);
        } else {
           xhtml.startElement(tag, "class", styleClass);
+       }
+       
+       // Attach bookmarks for the paragraph
+       // (In future, we might put them in the right place, for now
+       //  we just put them in the correct paragraph)
+       for (CTBookmark bookmark : paragraph.getCTP().getBookmarkStartList()) {
+          xhtml.startElement("a", "name", bookmark.getName());
+          xhtml.endElement("a");
        }
        
        // Do the text
@@ -138,6 +142,9 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
              XWPFHyperlink link = linkRun.getHyperlink(document);
              if(link != null && link.getURL() != null) {
                 xhtml.startElement("a", "href", link.getURL());
+                tags.add("a");
+             } else if(linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
+                xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
                 tags.add("a");
              }
           }
