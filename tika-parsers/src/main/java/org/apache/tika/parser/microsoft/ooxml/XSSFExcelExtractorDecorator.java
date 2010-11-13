@@ -43,6 +43,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
@@ -58,8 +59,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private static final String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     public XSSFExcelExtractorDecorator(
-            XSSFExcelExtractor extractor, Locale locale) {
-        super(extractor, TYPE);
+            ParseContext context, XSSFExcelExtractor extractor, Locale locale) {
+        super(context, extractor, TYPE);
 
         this.extractor = extractor;
         formatter = new DataFormatter(locale);

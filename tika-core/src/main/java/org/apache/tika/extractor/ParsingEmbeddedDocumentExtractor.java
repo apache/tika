@@ -25,6 +25,7 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
@@ -90,7 +91,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // Use the delegate parser to parse this entry
         try {
             DELEGATING_PARSER.parse(
-                    new CloseShieldInputStream(stream),
+                    TikaInputStream.get(new CloseShieldInputStream(stream)),
                     new EmbeddedContentHandler(new BodyContentHandler(handler)),
                     metadata, context);
         } catch (TikaException e) {

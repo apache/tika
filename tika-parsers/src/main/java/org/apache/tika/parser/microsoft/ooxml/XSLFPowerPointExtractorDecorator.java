@@ -33,6 +33,7 @@ import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFCommonSlideData;
 import org.apache.poi.xslf.usermodel.DrawingParagraph;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.drawingml.x2006.main.CTRegularTextRun;
@@ -49,8 +50,8 @@ import org.xml.sax.SAXException;
 
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
-    public XSLFPowerPointExtractorDecorator(XSLFPowerPointExtractor extractor) {
-        super(extractor, "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+    public XSLFPowerPointExtractorDecorator(ParseContext context, XSLFPowerPointExtractor extractor) {
+        super(context, extractor, "application/vnd.openxmlformats-officedocument.presentationml.presentation");
     }
 
     /**
