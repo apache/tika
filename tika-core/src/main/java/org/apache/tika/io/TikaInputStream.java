@@ -82,6 +82,8 @@ public class TikaInputStream extends ProxyInputStream {
     public static TikaInputStream get(InputStream stream) {
         if (stream instanceof TikaInputStream) {
             return (TikaInputStream) stream;
+        } else if (stream instanceof ByteArrayInputStream || stream instanceof BufferedInputStream) {
+            return new TikaInputStream(stream, null, -1);
         } else {
             return new TikaInputStream(
                     new BufferedInputStream(stream), null, -1);
