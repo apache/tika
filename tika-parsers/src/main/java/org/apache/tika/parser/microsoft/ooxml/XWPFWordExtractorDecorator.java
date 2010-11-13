@@ -39,6 +39,7 @@ import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -51,8 +52,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private XWPFDocument document;
     private XWPFStyles styles;
 
-    public XWPFWordExtractorDecorator(XWPFWordExtractor extractor) {
-        super(extractor, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    public XWPFWordExtractorDecorator(ParseContext context, XWPFWordExtractor extractor) {
+        super(context, extractor, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         
         document = (XWPFDocument) extractor.getDocument();
         styles = document.getStyles();

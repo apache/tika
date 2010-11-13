@@ -29,11 +29,11 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
@@ -56,11 +56,22 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
    
     protected POIXMLTextExtractor extractor;
 
+    private final EmbeddedDocumentExtractor embeddedExtractor;
+
     private final String type;
 
-    public AbstractOOXMLExtractor(POIXMLTextExtractor extractor, String type) {
+    public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor, String type) {
         this.extractor = extractor;
         this.type = type;
+
+        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
+
+        if (ex==null) {
+            embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
+        } else {
+            embeddedExtractor = ex;
+        }
+
     }
 
     /**
@@ -138,13 +149,13 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
        Metadata metadata = new Metadata();
        metadata.set(Metadata.RESOURCE_NAME_KEY, name);
        metadata.set(Metadata.CONTENT_TYPE, type);
-       
-       Parser parser = context.get(Parser.class, EmptyParser.INSTANCE);
-       parser.parse(
-               TikaInputStream.get(part.getInputStream()), 
-               new EmbeddedContentHandler(handler),
-               metadata, context
-       );
+
+       if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+         embeddedExtractor.parseEmbedded(
+                 TikaInputStream.get(part.getInputStream()),
+                 new EmbeddedContentHandler(handler),
+                 metadata, false);
+       }
     }
 
     /**

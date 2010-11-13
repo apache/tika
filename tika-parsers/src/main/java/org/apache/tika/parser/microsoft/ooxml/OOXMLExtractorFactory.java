@@ -68,15 +68,15 @@ public class OOXMLExtractorFactory {
             POIXMLDocument document = poiExtractor.getDocument();
             if (document instanceof XSLFSlideShow) {
                 extractor = new XSLFPowerPointExtractorDecorator(
-                        (XSLFPowerPointExtractor) poiExtractor);
+                        context, (XSLFPowerPointExtractor) poiExtractor);
             } else if (document instanceof XSSFWorkbook) {
                 extractor = new XSSFExcelExtractorDecorator(
-                        (XSSFExcelExtractor) poiExtractor, locale);
+                        context, (XSSFExcelExtractor) poiExtractor, locale);
             } else if (document instanceof XWPFDocument) {
                 extractor = new XWPFWordExtractorDecorator(
-                        (XWPFWordExtractor) poiExtractor);
+                        context, (XWPFWordExtractor) poiExtractor);
             } else {
-                extractor = new POIXMLTextExtractorDecorator(poiExtractor);
+                extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);
             }
 
             extractor.getMetadataExtractor().extract(metadata);
