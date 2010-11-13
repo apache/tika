@@ -179,6 +179,8 @@ Tom De Leu
 Uwe Schindler
 Victor Kazakov
 
+See http://s.apache.org/ab0 for more details on these contributions.
+
 Release 0.7 - 3/31/2010
 ---------------------------------
 
