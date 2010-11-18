@@ -47,7 +47,7 @@ public class PDFParserTest extends TestCase {
         }
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Bertrand Delacrétaz", metadata.get(Metadata.AUTHOR));
+        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(Metadata.AUTHOR));
         assertEquals("Apache Tika - Apache Tika", metadata.get(Metadata.TITLE));
         
         // Can't reliably test dates yet - see TIKA-451 
@@ -59,6 +59,11 @@ public class PDFParserTest extends TestCase {
         assertTrue(content.contains("Tika - Content Analysis Toolkit"));
         assertTrue(content.contains("incubator"));
         assertTrue(content.contains("Apache Software Foundation"));
+        // testing how the end of one paragraph is separated from start of the next one
+        assertTrue("should have word boundary after headline", 
+                !content.contains("ToolkitApache"));
+        assertTrue("should have word boundary between paragraphs", 
+                !content.contains("libraries.Apache"));
     }
 
     public void testCustomMetadata() throws Exception {

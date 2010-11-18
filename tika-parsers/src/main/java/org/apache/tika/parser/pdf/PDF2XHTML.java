@@ -17,6 +17,7 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
+import java.io.Writer;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -50,7 +51,19 @@ class PDF2XHTML extends PDFTextStripper {
             PDDocument document, ContentHandler handler, Metadata metadata)
             throws SAXException, TikaException {
         try {
-            new PDF2XHTML(handler, metadata).getText(document);
+            // Extract text using a dummy Writer as we override the
+            // key methods to output to the given content handler.
+            new PDF2XHTML(handler, metadata).writeText(document, new Writer() {
+                @Override
+                public void write(char[] cbuf, int off, int len) {
+                }
+                @Override
+                public void flush() {
+                }
+                @Override
+                public void close() {
+                }
+            });
         } catch (IOException e) {
             if (e.getCause() instanceof SAXException) {
                 throw (SAXException) e.getCause();
@@ -124,6 +137,16 @@ class PDF2XHTML extends PDFTextStripper {
         } catch (SAXException e) {
             throw new IOExceptionWithCause(
                     "Unable to write a character: " + text.getCharacter(), e);
+        }
+    }
+
+    @Override
+    protected void writeLineSeparator() throws IOException {
+        try {
+            handler.characters("\n");
+        } catch (SAXException e) {
+            throw new IOExceptionWithCause(
+                    "Unable to write a newline character", e);
         }
     }
 
