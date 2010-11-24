@@ -47,20 +47,6 @@
     <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/TIKA</url>
   </issueManagement>
-  
-  <repositories>
-    <repository>
-      <id>netcdf-sonatype-precentral</id>
-      <layout>default</layout>
-      <releases>
-       <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <url>https://oss.sonatype.org/content/repositories/releases</url>
-    </repository>
-  </repositories>
 
   <mailingLists>
     <mailingList>
