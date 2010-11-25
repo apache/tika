@@ -117,7 +117,13 @@ public class WriteOutContentHandler extends DefaultHandler {
             } else {
                 writer.write(ch, start, writeLimit - writeCount);
                 writeCount = writeLimit;
-                throw new WriteLimitReachedException();
+                throw new WriteLimitReachedException(
+                      "Your document contained more than " + writeLimit + " " +
+                      "characters, and so your requested limit has been " +
+                      "reached. To receive the full text of the document, " +
+                      "increase your limit. " +
+                      "(Text up to the limit is however available)."
+                );
             }
         } catch (IOException e) {
             throw new SAXException("Error writing out character content", e);
@@ -183,6 +189,9 @@ public class WriteOutContentHandler extends DefaultHandler {
      * The exception used as a signal when the write limit has been reached.
      */
     private class WriteLimitReachedException extends SAXException {
+        public WriteLimitReachedException(String message) {
+           super(message);
+        }
 
         public WriteOutContentHandler getSource() {
             return WriteOutContentHandler.this;
