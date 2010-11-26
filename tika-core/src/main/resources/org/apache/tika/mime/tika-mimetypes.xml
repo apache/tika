@@ -1277,7 +1277,7 @@
 
   <mime-type type="application/vnd.ms-powerpoint.template.macroenabled.12">
     <glob pattern="*.potm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-project">
@@ -2342,6 +2342,13 @@
     <glob pattern="*.afm"/>
   </mime-type>
   <mime-type type="application/x-font-vfont"/>
+
+  <mime-type type="application/x-foxmail">
+    <_comment>Foxmail Email File</_comment>
+    <magic>
+      <match value="0x1010101010101011111111111153" type="string" offset="0"/>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/x-futuresplash">
     <_comment>Macromedia FutureSplash File</_comment>
@@ -3541,6 +3548,8 @@
     </magic>
     <glob pattern="*.eml"/>
     <glob pattern="*.mime"/>
+    <glob pattern="*.mht"/>
+    <glob pattern="*.mhtml"/>
   </mime-type>
 
   <mime-type type="message/s-http"/>
@@ -3641,7 +3650,9 @@
     <root-XML localName="SCRIPT"/>
     <root-XML localName="frameset"/>
     <root-XML localName="FRAMESET"/>
-    <magic priority="50">
+    <!-- The magic priority needs to be lower than that of -->
+    <!--  files which contain HTML within them, eg mime emails -->
+    <magic priority="40">
       <match value="&lt;!DOCTYPE HTML" type="string" offset="0:64"/>
       <match value="&lt;!doctype html" type="string" offset="0:64"/>
       <match value="&lt;HEAD" type="string" offset="0:64"/>
