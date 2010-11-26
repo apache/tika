@@ -169,6 +169,25 @@ public class TestContainerAwareDetector extends TestCase {
               "TikaInputStream should still have a file",
               tis.hasFile()
         );
+        
+        // Check some of the less common OOXML types
+        input = getTestDoc("testPPT.pptm");
+        assertEquals(
+              MediaType.application("vnd.ms-powerpoint.presentation.macroenabled.12"),
+              d.detect(input, new Metadata())
+        );
+        
+        input = getTestDoc("testPPT.ppsx");
+        assertEquals(
+              MediaType.application("vnd.openxmlformats-officedocument.presentationml.slideshow"),
+              d.detect(input, new Metadata())
+        );
+
+        input = getTestDoc("testPPT.ppsm");
+        assertEquals(
+              MediaType.application("vnd.ms-powerpoint.slideshow.macroEnabled.12"),
+              d.detect(input, new Metadata())
+        );
     }
     
     public void testDetectIWork() throws Exception {
