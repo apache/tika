@@ -83,6 +83,13 @@ public class ZipContainerDetector implements ContainerDetector {
 
                 // Turn that into the type of the overall document
                 String docType = coreType.substring(0, coreType.lastIndexOf('.'));
+                
+                // The Macro Enabled formats are a little special
+                if(docType.toLowerCase().endsWith("macroenabled")) {
+                   docType = docType.toLowerCase() + ".12";
+                }
+                
+                // Build the MediaType object and return
                 return fromString(docType);
              } catch(InvalidFormatException e) {
                 throw new IOException("Office Open XML File detected, but corrupted - " + e.getMessage());
