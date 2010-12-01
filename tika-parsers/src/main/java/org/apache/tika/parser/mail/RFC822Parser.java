@@ -22,25 +22,19 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.james.mime4j.MimeException;
-import org.apache.james.mime4j.descriptor.BodyDescriptor;
-import org.apache.james.mime4j.parser.Field;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
  * Uses apache-mime4j to parse emails. Each part is treated with the
- * corresponding parser and displayed within
- * <p>
- * elements.
+ * corresponding parser and displayed within elements.
  * 
  * @author jnioche@digitalpebble.com
  **/
@@ -71,155 +65,6 @@ public class RFC822Parser implements Parser {
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata) throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
-    }
-
-}
-
-/**
- * Same as BodyContentHandler but does not even propagate the start |
- * endDocument events
- **/
-class StrictBodyContentHandler extends BodyContentHandler {
-
-    public StrictBodyContentHandler(XHTMLContentHandler handler) {
-        super(handler);
-    }
-
-    public void startDocument() throws SAXException {
-    }
-
-    public void endDocument() throws SAXException {
-    }
-
-}
-
-/**
- * Bridge between mime4j's content handler and the generic Sax content handler
- * used by Tika. See
- * http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j
- * /parser/ContentHandler.html
- */
-class MailContentHandler implements
-        org.apache.james.mime4j.parser.ContentHandler {
-
-    private XHTMLContentHandler handler;
-    private Metadata metadata;
-
-    private boolean inPart = false;
-
-    MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata) {
-        this.handler = xhtml;
-        this.metadata = metadata;
-    }
-
-    public void body(BodyDescriptor body, InputStream is) throws MimeException,
-            IOException {
-        // call the underlying parser for the part
-        // TODO how to retrieve a non-default config?
-        AutoDetectParser parser = new AutoDetectParser();
-        // use a different metadata object
-        // in order to specify the mime type of the
-        // sub part without damaging the main metadata
-
-        Metadata submd = new Metadata();
-        submd.set(Metadata.CONTENT_TYPE, body.getMimeType());
-        submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
-
-        // filter the events coming from the underlying parser
-        // to prevent getting multiple </body> </html> or </title>
-        // in the output
-
-        StrictBodyContentHandler bch = new StrictBodyContentHandler(handler);
-
-        try {
-            parser.parse(is, bch, submd);
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (TikaException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void endBodyPart() throws MimeException {
-        try {
-            handler.endElement("p");
-            handler.endElement("div");
-        } catch (SAXException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void endHeader() throws MimeException {
-    }
-
-    public void startMessage() throws MimeException {
-        try {
-            handler.startDocument();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void endMessage() throws MimeException {
-        try {
-            handler.endDocument();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void endMultipart() throws MimeException {
-        inPart = false;
-    }
-
-    public void epilogue(InputStream is) throws MimeException, IOException {
-    }
-
-    /**
-     * Header for the whole message or its parts
-     * 
-     * @see http 
-     *      ://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/
-     *      Field.html
-     **/
-    public void field(Field field) throws MimeException {
-        // inPart indicates whether these metadata correspond to the
-        // whole message or its parts
-        if (inPart)
-            return;
-        // TODO add metadata to the parts later
-        String fieldname = field.getName();
-        // TODO value could be parsed and/or encoded
-        String value = field.getBody();
-        if (fieldname.equalsIgnoreCase("From")) {
-            metadata.add(Metadata.AUTHOR, value);
-        } else if (fieldname.equalsIgnoreCase("Subject")) {
-            metadata.add(Metadata.SUBJECT, value);
-        }
-    }
-
-    public void preamble(InputStream is) throws MimeException, IOException {
-    }
-
-    public void raw(InputStream is) throws MimeException, IOException {
-    }
-
-    public void startBodyPart() throws MimeException {
-        try {
-            handler.startElement("div", "class", "email-entry");
-            handler.startElement("p");
-        } catch (SAXException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void startHeader() throws MimeException {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void startMultipart(BodyDescriptor descr) throws MimeException {
-        inPart = true;
     }
 
 }
