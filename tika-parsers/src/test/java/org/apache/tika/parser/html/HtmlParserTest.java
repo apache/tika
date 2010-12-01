@@ -39,7 +39,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -394,13 +393,13 @@ public class HtmlParserTest extends TestCase {
         String path = "/test-documents/boilerplate.html";
         
         Metadata metadata = new Metadata();
-        WriteOutContentHandler handler = new WriteOutContentHandler();
+        BodyContentHandler handler = new BodyContentHandler();
         new HtmlParser().parse(
                 HtmlParserTest.class.getResourceAsStream(path),
                 new BoilerpipeContentHandler(handler),  metadata, new ParseContext());
         
         String content = handler.toString();
-        assertTrue(content.startsWith("Title\nThis is the real meat"));
+        assertTrue(content.startsWith("This is the real meat"));
         assertTrue(content.endsWith("This is the end of the text.\n"));
         assertFalse(content.contains("boilerplate"));
         assertFalse(content.contains("footer"));
@@ -681,4 +680,33 @@ public class HtmlParserTest extends TestCase {
         handler.setResult(new StreamResult(writer));
         return handler;
     }
+    
+    /**
+     * Test case for TIKA-564. Support returning markup from BoilerpipeContentHandler.
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-564">TIKA-564</a>
+     */
+    public void testBoilerplateWithMarkup() throws Exception {
+        String path = "/test-documents/boilerplate.html";
+        
+        Metadata metadata = new Metadata();
+        StringWriter sw = new StringWriter();
+        ContentHandler ch = makeHtmlTransformer(sw);
+        BoilerpipeContentHandler bpch = new BoilerpipeContentHandler(ch);
+        bpch.setIncludeMarkup(true);
+        
+        new HtmlParser().parse(
+                HtmlParserTest.class.getResourceAsStream(path),
+                bpch,  metadata, new ParseContext());
+        
+        String content = sw.toString();
+        assertTrue("Has empty table elements", content.contains("<body><table><tr><td><table><tr><td>"));
+        assertTrue("Has empty a element", content.contains("<a shape=\"rect\" href=\"Main.php\"/>"));
+        assertTrue("Has real content", content.contains("<p>This is the real meat"));
+        assertTrue("Ends with appropriate HTML", content.endsWith("</p></body></html>"));
+        assertFalse(content.contains("boilerplate"));
+        assertFalse(content.contains("footer"));
+    }
+    
+    
+
 }
