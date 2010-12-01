@@ -3120,8 +3120,8 @@
     <glob pattern="*.xyz"/>
   </mime-type>
 
-  <mime-type type="image/bmp">
-    <alias type="image/x-ms-bmp"/>
+  <mime-type type="image/x-ms-bmp">
+    <alias type="image/bmp"/>
     <acronym>BMP</acronym>
     <_comment>Windows bitmap</_comment>
     <magic priority="50">
