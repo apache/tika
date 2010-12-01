@@ -668,7 +668,7 @@ public class TikaTest extends TestCase {
         assertEquals("chemical/x-cml", tika.detect("x.cml"));
         assertEquals("chemical/x-csml", tika.detect("x.csml"));
         assertEquals("chemical/x-xyz", tika.detect("x.xyz"));
-        assertEquals("image/bmp", tika.detect("x.bmp"));
+        assertEquals("image/x-ms-bmp", tika.detect("x.bmp"));
         assertEquals("image/cgm", tika.detect("x.cgm"));
         assertEquals("image/g3fax", tika.detect("x.g3"));
         assertEquals("image/gif", tika.detect("x.gif"));
