@@ -1199,7 +1199,7 @@
   <mime-type type="application/vnd.ms-excel.sheet.binary.macroenabled.12">
     <_comment>Microsoft Excel 2007 Binary Spreadsheet</_comment>
     <glob pattern="*.xlsb"/>
-    <sub-class-of type="application/vnd.ms-excel"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-excel.template.macroenabled.12">
@@ -1255,24 +1255,24 @@
   <mime-type type="application/vnd.ms-powerpoint.addin.macroenabled.12">
     <_comment>Office Open XML Presentation Add-in (macro-enabled)</_comment>
     <glob pattern="*.ppam"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-powerpoint.presentation.macroenabled.12">
     <_comment>Office Open XML Presentation (macro-enabled)</_comment>
     <glob pattern="*.pptm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-powerpoint.slide.macroenabled.12">
     <glob pattern="*.sldm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-powerpoint.slideshow.macroenabled.12">
     <_comment>Office Open XML Presentation Slideshow (macro-enabled)</_comment>
     <glob pattern="*.ppsm"/>
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-powerpoint.template.macroenabled.12">
