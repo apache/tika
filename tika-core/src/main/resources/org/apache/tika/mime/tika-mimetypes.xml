@@ -1846,7 +1846,8 @@
   <mime-type type="application/vnd.stardivision.writer">
     <glob pattern="*.sdw"/>
   </mime-type>
-  <mime-type type="application/vnd.stardivision.writer">
+  <mime-type type="application/x-staroffice-template">
+    <sub-class-of type="application/x-tika-msoffice"/>
     <glob pattern="*.vor"/>
   </mime-type>
   <mime-type type="application/vnd.stardivision.writer-global">

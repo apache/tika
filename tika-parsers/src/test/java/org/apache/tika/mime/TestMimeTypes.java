@@ -115,7 +115,16 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.pptm");
         assertTypeByName("application/vnd.ms-powerpoint.template.macroenabled.12", "x.potm");
         assertTypeByName("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "x.ppsm");
-        
+
+        assertTypeByName("application/x-staroffice-template", "x.vor");
+        assertTypeByData("application/x-tika-msoffice", "testVORCalcTemplate.vor");
+        assertTypeByData("application/x-tika-msoffice", "testVORDrawTemplate.vor");
+        assertTypeByData("application/x-tika-msoffice", "testVORImpressTemplate.vor");
+        assertTypeByData("application/x-tika-msoffice", "testVORWriterTemplate.vor");
+        assertTypeByNameAndData("application/x-staroffice-template", "testVORCalcTemplate.vor");
+        assertTypeByNameAndData("application/x-staroffice-template", "testVORDrawTemplate.vor");
+        assertTypeByNameAndData("application/x-staroffice-template", "testVORImpressTemplate.vor");
+        assertTypeByNameAndData("application/x-staroffice-template", "testVORWriterTemplate.vor");
     }
 
     /**

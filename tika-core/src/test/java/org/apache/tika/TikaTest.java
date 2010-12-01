@@ -446,7 +446,7 @@ public class TikaTest extends TestCase {
         assertEquals("application/vnd.stardivision.impress", tika.detect("x.sdd"));
         assertEquals("application/vnd.stardivision.math", tika.detect("x.smf"));
         assertEquals("application/vnd.stardivision.writer", tika.detect("x.sdw"));
-        assertEquals("application/vnd.stardivision.writer", tika.detect("x.vor"));
+        assertEquals("application/x-staroffice-template", tika.detect("x.vor"));
         assertEquals("application/vnd.stardivision.writer-global", tika.detect("x.sgl"));
         assertEquals("application/vnd.sun.xml.calc", tika.detect("x.sxc"));
         assertEquals("application/vnd.sun.xml.calc.template", tika.detect("x.stc"));
