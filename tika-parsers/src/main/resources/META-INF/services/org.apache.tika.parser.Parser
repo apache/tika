@@ -26,6 +26,7 @@ org.apache.tika.parser.image.TiffParser
 org.apache.tika.parser.iwork.IWorkParser
 org.apache.tika.parser.iwork.IWorkPackageParser
 org.apache.tika.parser.jpeg.JpegParser
+org.apache.tika.parser.mail.RFC822Parser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.microsoft.OfficeParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
