@@ -115,6 +115,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.pptm");
         assertTypeByName("application/vnd.ms-powerpoint.template.macroenabled.12", "x.potm");
         assertTypeByName("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "x.ppsm");
+        
     }
 
     /**
@@ -132,6 +133,11 @@ public class TestMimeTypes extends TestCase {
         //  file as one of the first couple of entries
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/zip", "testWORD.docx");
+        
+        assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12","testEXCEL.xlsb");
+        assertTypeByNameAndData("application/vnd.ms-powerpoint.presentation.macroenabled.12", "testPPT.pptm");
+        assertTypeByNameAndData("application/vnd.ms-powerpoint.template.macroenabled.12", "testPPT.potm");
+        assertTypeByNameAndData("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "testPPT.ppsm");
     }
 
     public void testJpegDetection() throws Exception {
@@ -379,5 +385,18 @@ public class TestMimeTypes extends TestCase {
             stream.close();
         }
     }
+    
+    private void assertTypeByNameAndData(String expected, String filename)
+	    throws IOException {
+	InputStream stream = TestMimeTypes.class.getResourceAsStream(
+	        "/test-documents/" + filename);
+	try {
+	    Metadata metadata = new Metadata();
+	    metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+	    assertEquals(expected, repo.detect(stream, metadata).toString());
+	} finally {
+	    stream.close();
+	}
+}
 
 }
