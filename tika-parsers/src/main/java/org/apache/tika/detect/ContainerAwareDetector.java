@@ -54,12 +54,16 @@ public class ContainerAwareDetector implements Detector {
         poifsDetector = new POIFSContainerDetector();
         zipDetector = new ZipContainerDetector();
     }
-    
+
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        return detect(TikaInputStream.get(input), metadata);
+        if (input != null) {
+            return detect(TikaInputStream.get(input), metadata);
+        } else {
+            return fallbackDetector.detect(input, metadata);
+        }
     }
-    
+
     public MediaType detect(TikaInputStream input, Metadata metadata)
             throws IOException {
 	
