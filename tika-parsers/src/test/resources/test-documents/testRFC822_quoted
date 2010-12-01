@@ -1,0 +1,13 @@
+Delivered-To: a.person@example.com
+Return-Path: <another.person@another-example.com>
+MIME-Version: 1.0
+Date: Fri, 26 Nov 2010 19:57:53 +0000
+Subject: Sample with Quoted Printable Text
+From: Another Person <another.person@another-example.com>
+To: A. Person <a.person@example.com>
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+D=C3=BCsseldorf has non-ascii. Lines can be spl=
+it like this. Spaces at the end of a line=20
+must be encoded.
