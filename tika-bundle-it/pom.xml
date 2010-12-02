@@ -29,59 +29,62 @@
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
-  <artifactId>tika-bundle</artifactId>
-  <packaging>bundle</packaging>
-  <name>Apache Tika OSGi bundle</name>
+  <artifactId>tika-bundle-it</artifactId>
+  <name>Apache Tika OSGi bundle integration tests</name>
   <url>http://tika.apache.org/</url>
+
+  <properties>
+    <pax.exam.version>1.2.2</pax.exam.version>
+  </properties>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
+      <artifactId>tika-bundle</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam</artifactId>
+      <version>${pax.exam.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-container-default</artifactId>
+      <version>${pax.exam.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-junit</artifactId>
+      <version>${pax.exam.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.4</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>2.1.0</version>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <_exportcontents>
-              org.apache.tika.*;version=${project.version}
-            </_exportcontents>
-            <Embed-Dependency>
-              tika-core;inline=true,
-              tika-parsers;inline=true,
-              netcdf,
-              commons-compress,
-              pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
-              poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
-              xmlbeans, dom4j,
-              tagsoup,
-              asm,
-              metadata-extractor,
-              boilerpipe, rome
-            </Embed-Dependency>
-            <Embed-Transitive>true</Embed-Transitive>
-            <Bundle-DocURL>${project.url}</Bundle-DocURL>
-            <Import-Package>
-                org.w3c.dom,
-                *;resolution:=optional
-            </Import-Package>
-          </instructions>
-        </configuration>
+        <groupId>org.ops4j.pax.exam</groupId>
+        <artifactId>maven-paxexam-plugin</artifactId>
+        <version>${pax.exam.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-depends-file</goal>
+              <goal>generate-config</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

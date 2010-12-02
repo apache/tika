@@ -104,6 +104,12 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>integrationTesting</id>
+      <modules>
+        <module>tika-bundle-it</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>
