@@ -36,6 +36,12 @@ public class DefaultParser extends CompositeParser {
     private static final long serialVersionUID = 3612324825403757520L;
 
     /**
+     * The default context class loader to use for all threads, or
+     * <code>null</code> to automatically select the context class loader.
+     */
+    private static volatile ClassLoader contextClassLoader = null;
+
+    /**
      * Returns the context class loader of the current thread. If such
      * a class loader is not available, then the loader of this class or
      * finally the system class loader is returned.
@@ -45,7 +51,10 @@ public class DefaultParser extends CompositeParser {
      *         is available
      */
     private static ClassLoader getContextClassLoader() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        ClassLoader loader = contextClassLoader;
+        if (loader == null) {
+            loader = Thread.currentThread().getContextClassLoader();
+        }
         if (loader == null) {
             loader = DefaultParser.class.getClassLoader();
         }
@@ -53,6 +62,19 @@ public class DefaultParser extends CompositeParser {
             loader = ClassLoader.getSystemClassLoader();
         }
         return loader;
+    }
+
+    /**
+     * Sets the context class loader to use for all threads that access
+     * this class. Used for example in an OSGi environment to avoid problems
+     * with the default context class loader.
+     *
+     * @since Apache Tika 0.9
+     * @param loader default context class loader,
+     *               or <code>null</code> to automatically pick the loader
+     */
+    public static void setContextClassLoader(ClassLoader loader) {
+        contextClassLoader = loader;
     }
 
     /**

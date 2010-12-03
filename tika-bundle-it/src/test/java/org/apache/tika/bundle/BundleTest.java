@@ -16,6 +16,8 @@
  */
 package org.apache.tika.bundle;
 
+import java.io.ByteArrayInputStream;
+
 import junit.framework.Assert;
 
 import org.apache.tika.Tika;
@@ -27,9 +29,18 @@ import org.ops4j.pax.exam.junit.MavenConfiguredJUnit4TestRunner;
 public class BundleTest {
 
     @Test
-    public void testSimpleTypeDetection() {
+    public void testTikaBundle() throws Exception {
         Tika tika = new Tika();
+
+        // Simple type detection
+        Assert.assertEquals("text/plain", tika.detect("test.txt"));
         Assert.assertEquals("application/pdf", tika.detect("test.pdf"));
+
+        // Simple text extrction
+        byte[] data = "Hello, World!".getBytes("UTF-8");
+        Assert.assertEquals(
+                "Hello, World!",
+                tika.parseToString(new ByteArrayInputStream(data)).trim());
     }
 
 }
