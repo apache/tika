@@ -20,6 +20,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.InputStream;
@@ -29,6 +30,7 @@ import junit.framework.TestCase;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
@@ -52,53 +54,86 @@ public class RFC822ParserTest extends TestCase {
             verify(handler, never()).startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"), any(Attributes.class));
             verify(handler, never()).endElement(XHTMLContentHandler.XHTML, "div", "div");
             verify(handler).endDocument();
-            //note no leading spaces
-            // TODO: Enable when the parser trims header values
-            // assertEquals("\"Julien Nioche (JIRA)\" <jira@apache.org>", metadata.get(Metadata.AUTHOR));
-            // assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed", metadata.get(Metadata.SUBJECT));
+            //note no leading spaces, and no quotes
+            assertEquals("Julien Nioche (JIRA) <jira@apache.org>", metadata.get(Metadata.AUTHOR));
+            assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed", metadata.get(Metadata.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
     }
 
-    // TODO: enable this test when the parser supports quoted printable
-    public void disabledTestQuotedPrintable() {
+    public void testMultipart() {
+        Parser parser = new RFC822Parser();
+        Metadata metadata = new Metadata();
+        InputStream stream = getStream("test-documents/testRFC822-multipart");
+        ContentHandler handler = mock(XHTMLContentHandler.class);
+
+        try {
+            parser.parse(stream, handler, metadata, new ParseContext());
+            verify(handler).startDocument();
+            //4 body-part divs -- two outer bodies and two inner bodies
+            verify(handler, times(4)).startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"), any(Attributes.class));
+            verify(handler, times(4)).endElement(XHTMLContentHandler.XHTML, "div", "div");
+            //5 paragraph elements, 4 for body-parts and 1 for encompassing message
+            verify(handler, times(5)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
+            verify(handler, times(5)).endElement(XHTMLContentHandler.XHTML, "p", "p");
+            verify(handler).endDocument();
+        } catch (Exception e) {
+            fail("Exception thrown: " + e.getMessage());
+        }
+        
+        //repeat, this time looking at content
+        parser = new RFC822Parser();
+        metadata = new Metadata();
+        stream = getStream("test-documents/testRFC822-multipart");
+        handler = new BodyContentHandler();
+        try {
+            parser.parse(stream, handler, metadata, new ParseContext());
+            //tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
+            String bodyText = handler.toString();
+            assertTrue(bodyText.contains("body 1"));
+            assertTrue(bodyText.contains("body 2"));
+            assertFalse(bodyText.contains("R0lGODlhNgE8AMQAA")); //part of encoded gif
+        } catch (Exception e) {
+            fail("Exception thrown: " + e.getMessage());
+        }
+    }
+
+    public void testQuotedPrintable() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822_quoted");
-        ContentHandler handler = mock(DefaultHandler.class);
+        ContentHandler handler = new BodyContentHandler();
 
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
             //tests correct decoding of quoted printable text, including UTF-8 bytes into Unicode
-            verify(handler).characters(new String("D\u00FCsseldorf has non-ascii. "
-            	+ "Lines can be split like this. Spaces at the end of a line \r\n"
-            	+ "must be encoded.\r\n").toCharArray(), 0, 104);
+            String bodyText = handler.toString();
+            assertTrue(bodyText.contains("D\u00FCsseldorf has non-ascii."));
+            assertTrue(bodyText.contains("Lines can be split like this."));
+            assertTrue(bodyText.contains("Spaces at the end of a line \r\nmust be encoded.\r\n"));
+            assertFalse(bodyText.contains("=")); //there should be no escape sequences
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
     }
 
-    // TODO: enable this test when the parser supports base64
-    public void disabledTestBase64() {
+    public void testBase64() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822_base64");
-        ContentHandler handler = mock(DefaultHandler.class);
+        ContentHandler handler = new BodyContentHandler();
 
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
             //tests correct decoding of base64 text, including ISO-8859-1 bytes into Unicode
-            verify(handler).characters(new String(
-            	"Here is some text, with international characters, voil\u00E0!\r\n"
-            	).toCharArray(), 0, 58);
+            assertTrue(handler.toString().contains("Here is some text, with international characters, voil\u00E0!"));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
     }
 
-    // TODO: enable this test when the parser supports i18n headers
-    public void disabledTestI18NHeaders() {
+    public void testI18NHeaders() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
         InputStream stream = getStream("test-documents/testRFC822_i18nheaders");

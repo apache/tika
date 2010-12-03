@@ -55,6 +55,7 @@ public class RFC822Parser implements Parser {
 
         MailContentHandler mch = new MailContentHandler(xhtml, metadata);
         parser.setContentHandler(mch);
+        parser.setContentDecoding(true);
         try {
             parser.parse(stream);
         } catch (MimeException e) {

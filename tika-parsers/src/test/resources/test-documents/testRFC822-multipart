@@ -1,4 +1,3 @@
-                                                                                                                                                                                                                                                               
 MIME-Version: 1.0
 Sender: digitalpebble@googlemail.com
 Received: by 10.231.31.200 with HTTP; Mon, 27 Sep 2010 06:29:16 -0700 (PDT)
@@ -19,6 +18,8 @@ Content-Type: text/plain; charset=UTF-8
 
 This is a test for parsing multi-part mails. With some funky HTML code an a
 picture attached.
+
+Text specific to body 1.
 
 -- 
 **
@@ -51,7 +52,7 @@ for Text Engineering</span><br>
 t-weight: normal;"><a href=3D"http://digitalpebble.blogspot.com" target=3D"=
 _blank">http://digitalpebble.blogspot.com</a></span></span><span style=3D"f=
 ont-weight: normal;"><br style=3D"color: rgb(102, 102, 102);">
-</span>
+</span>Text specific to body 2.
 <span style=3D"color: rgb(102, 102, 102);"><span style=3D"font-weight: norm=
 al;"><a href=3D"http://www.digitalpebble.com" target=3D"_blank">http://www.=
 digitalpebble.com</a></span></span></b></font></div><br>
