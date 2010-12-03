@@ -21,6 +21,10 @@ import java.io.InputStream;
 
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.descriptor.BodyDescriptor;
+import org.apache.james.mime4j.field.AbstractField;
+import org.apache.james.mime4j.field.MailboxListField;
+import org.apache.james.mime4j.field.UnstructuredField;
+import org.apache.james.mime4j.field.address.MailboxList;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.parser.Field;
 import org.apache.tika.exception.TikaException;
@@ -120,12 +124,15 @@ class MailContentHandler implements ContentHandler {
             return;
         // TODO add metadata to the parts later
         String fieldname = field.getName();
-        // TODO value could be parsed and/or encoded
-        String value = field.getBody();
         if (fieldname.equalsIgnoreCase("From")) {
-            metadata.add(Metadata.AUTHOR, value);
+        	MailboxListField fromField = (MailboxListField) AbstractField.parse(field.getRaw());
+        	MailboxList mailboxList = fromField.getMailboxList();
+        	for (int i = 0; i < mailboxList.size(); ++i) {
+                metadata.add(Metadata.AUTHOR, mailboxList.get(i).getDisplayString());        		
+        	}
         } else if (fieldname.equalsIgnoreCase("Subject")) {
-            metadata.add(Metadata.SUBJECT, value);
+        	UnstructuredField subjectField = (UnstructuredField) AbstractField.parse(field.getRaw());
+            metadata.add(Metadata.SUBJECT, subjectField.getValue());
         }
     }
 
