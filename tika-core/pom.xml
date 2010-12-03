@@ -35,6 +35,16 @@
   <url>http://tika.apache.org/</url>
 
   <dependencies>
+    <!-- Optional OSGi dependency, used only when running within OSGi -->
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <version>4.0.0</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+
+    <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -50,10 +60,11 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Import-Package>
-              *
-            </Import-Package>
+            <Import-Package>*</Import-Package>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
+            <Bundle-Activator>
+              org.apache.tika.config.TikaActivator
+            </Bundle-Activator>
           </instructions>
         </configuration>
       </plugin>

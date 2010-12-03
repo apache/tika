@@ -71,10 +71,12 @@
               tagsoup,
               asm,
               metadata-extractor,
-              boilerpipe, rome
+              boilerpipe, rome,
+              apache-mime4j
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
+            <Bundle-Activator>org.apache.tika.config.TikaActivator</Bundle-Activator>
             <Import-Package>
                 org.w3c.dom,
                 *;resolution:=optional
