@@ -17,16 +17,15 @@
 package org.apache.tika.detect;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.tika.sax.OfflineContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -38,6 +37,13 @@ import org.xml.sax.helpers.DefaultHandler;
 public class XmlRootExtractor {
 
     public QName extractRootElement(byte[] data) {
+        return extractRootElement(new ByteArrayInputStream(data));
+    }
+
+    /**
+     * @since Apache Tika 0.9
+     */
+    public QName extractRootElement(InputStream stream) {
         ExtractorHandler handler = new ExtractorHandler();
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -45,8 +51,7 @@ public class XmlRootExtractor {
             factory.setValidating(false);
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.newSAXParser().parse(
-                    new ByteArrayInputStream(data),
-                    new OfflineContentHandler(handler));
+                    stream, new OfflineContentHandler(handler));
         } catch (Exception ignore) {
         }
         return handler.rootElement;
