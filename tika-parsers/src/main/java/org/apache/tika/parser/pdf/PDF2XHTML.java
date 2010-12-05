@@ -141,6 +141,16 @@ class PDF2XHTML extends PDFTextStripper {
     }
 
     @Override
+    protected void writeWordSeparator() throws IOException {
+        try {
+            handler.characters(" ");
+        } catch (SAXException e) {
+            throw new IOExceptionWithCause(
+                    "Unable to write a space character", e);
+        }
+    }
+
+    @Override
     protected void writeLineSeparator() throws IOException {
         try {
             handler.characters("\n");
