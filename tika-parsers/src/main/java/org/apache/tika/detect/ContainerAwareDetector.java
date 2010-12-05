@@ -40,10 +40,13 @@ import org.apache.tika.mime.MimeTypes;
  *  the memory usage.
  */
 public class ContainerAwareDetector implements Detector {
+
     private Detector fallbackDetector;
-    private ZipContainerDetector zipDetector;
-    private POIFSContainerDetector poifsDetector;
-    
+
+    private Detector zipDetector;
+
+    private Detector poifsDetector;
+
     /**
      * Creates a new container detector, which will use the
      *  given detector for non container formats.
@@ -57,76 +60,14 @@ public class ContainerAwareDetector implements Detector {
 
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        if (input != null) {
-            return detect(TikaInputStream.get(input), metadata);
-        } else {
+        MediaType type = zipDetector.detect(input, metadata);
+        if (MediaType.OCTET_STREAM.equals(type)) {
+            type = poifsDetector.detect(input, metadata);
+        }
+        if (MediaType.OCTET_STREAM.equals(type)) {
             return fallbackDetector.detect(input, metadata);
         }
+        return type;
     }
 
-    public MediaType detect(TikaInputStream input, Metadata metadata)
-            throws IOException {
-	
-        // Grab the first 8 bytes, used to do container detection
-        input.mark(8);
-        byte[] first8 = new byte[8];
-        IOUtils.readFully(input, first8);
-        input.reset();
-	
-        // Is this a zip file?
-        if(first8[0] == POIFSConstants.OOXML_FILE_HEADER[0] &&
-           first8[1] == POIFSConstants.OOXML_FILE_HEADER[1] &&
-           first8[2] == POIFSConstants.OOXML_FILE_HEADER[2] &&
-           first8[3] == POIFSConstants.OOXML_FILE_HEADER[3]) {
-        	try {
-        	   return detect(input, metadata, zipDetector);
-        	} catch (ZipException e) {
-        		// Problem with the zip file, eg corrupt or truncated
-            // Try the fallback in case there is enough data for that
-            //  to be able to offer something useful
-        		input = TikaInputStream.get(input.getFile());
-        	}
-        }
-        
-        // Is this an ole2 file?
-        long ole2Signature = LittleEndian.getLong(first8, 0);
-        if(ole2Signature == HeaderBlockConstants._signature) {
-           try {
-              return detect(input, metadata, poifsDetector);
-           } catch(IOException e) {
-              // Problem with the ole file, eg corrupt or truncated
-              // Try the fallback in case there is enough data for that
-              //  to be able to offer something useful
-              input = TikaInputStream.get(input.getFile());
-           }
-        }
-        
-        // Add further container detection (eg tar.gz, ogg, avi) here
-        
-        // Not a supported container, ask our fall back
-        //  detector to figure it out
-        return fallbackDetector.detect(input, metadata);
-    }
-    
-    /**
-     * Does container-detector based detection, handling
-     *  fallback in case of the default.
-     */
-    private MediaType detect(TikaInputStream input, Metadata metadata, 
-               ContainerDetector detector) throws IOException {
-       MediaType detected = detector.detect(input, metadata);
-       MediaType defaultType = detector.getDefault(); 
-       if(! detected.equals(defaultType)) {
-          return detected;
-       }
-       
-       // See if the fallback can do better
-       detected = fallbackDetector.detect(input, metadata);
-       if(! detected.equals(MediaType.OCTET_STREAM)) {
-          return detected;
-       } else {
-          return defaultType;
-       }
-    }
 }
-

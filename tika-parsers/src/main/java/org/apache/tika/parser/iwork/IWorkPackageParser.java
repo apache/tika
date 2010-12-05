@@ -22,12 +22,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -80,39 +80,5 @@ public class IWorkPackageParser implements Parser {
             throws IOException, SAXException, TikaException {
         parse(stream, handler, metadata, new ParseContext());
     }
-    
-    /**
-     * Locates the appropriate index file entry, and reads from that
-     *  the root element of the document. That is used to the identify
-     *  the correct type of the keynote container.
-     */
-    public static MediaType identifyType(ZipFile zip)
-         throws IOException {
-       for (ZipEntry entry : Collections.list(zip.entries())) {
-          if (relevantFileNames.contains(entry.getName())) {
-             // Bingo, found the right entry
-             
-             // Grab the first few hundred bytes of the file
-             // This is quite sick, but it is much quicker and less
-             //  memory intensive than the "proper" way to do it!
-             byte[] data = new byte[400];
-             InputStream stream = zip.getInputStream(entry);
-             stream.read(data);
-             
-             String docStart = new String(data, "UTF-8");
-             if(docStart.contains("ls:document")) {
-                return MediaType.application("vnd.apple.numbers");
-             }
-             if(docStart.contains("sl:document")) {
-                return MediaType.application("vnd.apple.pages");
-             }
-             if(docStart.contains("key:presentation")) {
-                return MediaType.application("vnd.apple.keynote");
-             }
-          }
-       }
-       
-       // Not sure, fallback to the container type
-       return MediaType.application("vnd.apple.iwork");
-    }
+
 }

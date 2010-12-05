@@ -16,244 +16,136 @@
  */
 package org.apache.tika.detect;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
 
-import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.mime.MimeTypesFactory;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
  */
 public class TestContainerAwareDetector extends TestCase {
-    private TikaConfig tc;
-    private ContainerAwareDetector d;
 
-    public void setUp() throws Exception {
-        tc = TikaConfig.getDefaultConfig();
-        d = new ContainerAwareDetector(tc.getMimeRepository());
+    private final ContainerAwareDetector detector =
+        new ContainerAwareDetector(MimeTypes.getDefaultMimeTypes());
+
+    private void assertDetect(String file, String type) throws Exception {
+        TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource(
+                        "/test-documents/" + file));
+        try {
+            assertEquals(
+                    MediaType.parse(type),
+                    detector.detect(stream, new Metadata()));
+        } finally {
+            stream.close();
+        }
     }
-    
-    private InputStream getTestDoc(String filename) {
-        InputStream input = TestContainerAwareDetector.class.getResourceAsStream(
-            "/test-documents/" + filename);
-        assertNotNull("Test file not found - " + filename, input);
-        return input;
-    }
-    
+
     public void testDetectOLE2() throws Exception {
-        InputStream input;
-        
-        input = getTestDoc("testEXCEL.xls");
-        assertEquals(
-        	MediaType.application("vnd.ms-excel"),
-        	d.detect(input, new Metadata())
-        );
-        
-        input = getTestDoc("testWORD.doc");
-        assertEquals(
-        	MediaType.application("msword"),
-        	d.detect(input, new Metadata())
-        );
-        
-        input = getTestDoc("testPPT.ppt");
-        assertEquals(
-        	MediaType.application("vnd.ms-powerpoint"),
-        	d.detect(input, new Metadata())
-        );
-        
-        TikaInputStream tis = TikaInputStream.get(getTestDoc("testPPT.ppt"));
-        assertEquals(
-        	MediaType.application("vnd.ms-powerpoint"),
-        	d.detect(tis, new Metadata())
-        );
-        
-        assertNotNull(tis.getOpenContainer());
-        assertEquals(POIFSFileSystem.class, tis.getOpenContainer().getClass());
-        
+        // Microsoft office types known by POI
+        assertDetect("testEXCEL.xls", "application/vnd.ms-excel");
+        assertDetect("testWORD.doc", "application/msword");
+        assertDetect("testPPT.ppt", "application/vnd.ms-powerpoint");
+
         // Try some ones that POI doesn't handle, that are still OLE2 based
-        tis = TikaInputStream.get(getTestDoc("testWORKS.wps"));
-        assertEquals(
-           MediaType.application("vnd.ms-works"),
-           d.detect(tis, new Metadata())
-        );
-        
-        tis = TikaInputStream.get(getTestDoc("testCOREL.shw"));
-        assertEquals(
-           MediaType.application("x-corelpresentations"),
-           d.detect(tis, new Metadata())
-        );
-        
-        tis = TikaInputStream.get(getTestDoc("testQUATTRO.qpw"));
-        assertEquals(
-           MediaType.application("x-quattro-pro"),
-           d.detect(tis, new Metadata())
-        );
-        
-        tis = TikaInputStream.get(getTestDoc("testQUATTRO.wb3"));
-        assertEquals(
-           MediaType.application("x-quattro-pro"),
-           d.detect(tis, new Metadata())
-        );
+        assertDetect("testWORKS.wps", "application/vnd.ms-works");
+        assertDetect("testCOREL.shw", "application/x-corelpresentations");
+        assertDetect("testQUATTRO.qpw", "application/x-quattro-pro");
+        assertDetect("testQUATTRO.wb3", "application/x-quattro-pro");
     }
-    
+
+    public void testOpenContainer() throws Exception {
+        TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource(
+                        "/test-documents/testPPT.ppt"));
+        try {
+            assertNull(stream.getOpenContainer());
+            assertEquals(
+                    MediaType.parse("application/vnd.ms-powerpoint"),
+                    detector.detect(stream, new Metadata()));
+            assertTrue(stream.getOpenContainer() instanceof POIFSFileSystem);
+        } finally {
+            stream.close();
+        }
+    }
+
     public void testDetectODF() throws Exception {
-        InputStream input;
-        
-        input = getTestDoc("testODFwithOOo3.odt");
-        assertEquals(
-        	MediaType.application("vnd.oasis.opendocument.text"),
-        	d.detect(input, new Metadata())
-        );
-        
-        input = getTestDoc("testOpenOffice2.odf");
-        assertEquals(
-        	MediaType.application("vnd.oasis.opendocument.formula"),
-        	d.detect(input, new Metadata())
-        );
-        
-        TikaInputStream tis = TikaInputStream.get(getTestDoc("testOpenOffice2.odf"));
-        assertEquals(
-        	MediaType.application("vnd.oasis.opendocument.formula"),
-        	d.detect(tis, new Metadata())
-        );
-        // Doesn't store the zip parser yet
-        assertNull(tis.getOpenContainer());
+        assertDetect("testODFwithOOo3.odt", "application/vnd.oasis.opendocument.text");
+        assertDetect("testOpenOffice2.odf", "application/vnd.oasis.opendocument.formula");
     }
-    
+
     public void testDetectOOXML() throws Exception {
-        InputStream input;
-        
-        input = getTestDoc("testEXCEL.xlsx");
-        assertEquals(
-              MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-              d.detect(input, new Metadata())
-        );
-        
-        input = getTestDoc("testWORD.docx");
-        assertEquals(
-              MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
-              d.detect(input, new Metadata())
-        );
-        
-        input = getTestDoc("testPPT.pptx");
-        assertEquals(
-              MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
-              d.detect(input, new Metadata())
-        );
+        assertDetect("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertDetect("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertDetect("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
 
-        // Try with a tika input stream
-        TikaInputStream tis = TikaInputStream.get(getTestDoc("testPPT.pptx"));
-        assertEquals(
-              MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
-              d.detect(tis, new Metadata())
-        );
-        
-        // There should be an attached OPCPackage as an open container
-        assertNotNull(tis.getOpenContainer());
-        assertTrue(
-              "Open container should be OPCPackage, not " + tis.getOpenContainer().getClass(), 
-              tis.getOpenContainer() instanceof OPCPackage
-        );
-        
-        // The underlying TikaInputStream should still be open, and file based
-        assertTrue(
-              "TikaInputStream should still have a file",
-              tis.hasFile()
-        );
-        
         // Check some of the less common OOXML types
-        input = getTestDoc("testPPT.pptm");
-        assertEquals(
-              MediaType.application("vnd.ms-powerpoint.presentation.macroenabled.12"),
-              d.detect(input, new Metadata())
-        );
-        
-        input = getTestDoc("testPPT.ppsx");
-        assertEquals(
-              MediaType.application("vnd.openxmlformats-officedocument.presentationml.slideshow"),
-              d.detect(input, new Metadata())
-        );
-
-        input = getTestDoc("testPPT.ppsm");
-        assertEquals(
-              MediaType.application("vnd.ms-powerpoint.slideshow.macroEnabled.12"),
-              d.detect(input, new Metadata())
-        );
+        assertDetect("testPPT.pptm", "application/vnd.ms-powerpoint.presentation.macroenabled.12");
+        assertDetect("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
+        assertDetect("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
     }
-    
+
     public void testDetectIWork() throws Exception {
-       TikaInputStream tis;
-
-       tis = TikaInputStream.get(getTestDoc("testKeynote.key"));
-       assertEquals(
-             MediaType.application("vnd.apple.keynote"),
-             d.detect(tis, new Metadata())
-       );
-
-       tis = TikaInputStream.get(getTestDoc("testNumbers.numbers"));
-       assertEquals(
-             MediaType.application("vnd.apple.numbers"),
-             d.detect(tis, new Metadata())
-       );
-
-       tis = TikaInputStream.get(getTestDoc("testPages.pages"));
-       assertEquals(
-             MediaType.application("vnd.apple.pages"),
-             d.detect(tis, new Metadata())
-       );
+        assertDetect("testKeynote.key", "application/vnd.apple.keynote");
+        assertDetect("testNumbers.numbers", "application/vnd.apple.numbers");
+        assertDetect("testPages.pages", "application/vnd.apple.pages");
     }
-    
+
     public void testDetectZip() throws Exception {
-       TikaInputStream tis;
-
-       tis = TikaInputStream.get(getTestDoc("test-documents.zip"));
-       assertEquals(
-             MediaType.application("zip"),
-             d.detect(tis, new Metadata())
-       );
-
-       tis = TikaInputStream.get(getTestDoc("test-zip-of-zip.zip"));
-       assertEquals(
-             MediaType.application("zip"),
-             d.detect(tis, new Metadata())
-       );
-
-       tis = TikaInputStream.get(getTestDoc("testJAR.jar"));
-       assertEquals(
-             MediaType.application("java-archive"),
-             d.detect(tis, new Metadata())
-       );
+        assertDetect("test-documents.zip", "application/zip");
+        assertDetect("test-zip-of-zip.zip", "application/zip");
+        assertDetect("testJAR.jar", "application/java-archive");
     }
-    
+
+    private TikaInputStream getTruncatedFile(String name, int n)
+            throws IOException {
+        InputStream input =
+            TestContainerAwareDetector.class.getResourceAsStream(
+                    "/test-documents/" + name);
+        try {
+            byte[] bytes = new byte[n];
+            int m = 0;
+            while (m < bytes.length) {
+                int i = input.read(bytes, m, bytes.length - m);
+                if (i != -1) {
+                    m += i;
+                } else {
+                    throw new IOException("Unexpected end of stream");
+                }
+            }
+            return TikaInputStream.get(bytes);
+        } finally {
+            input.close();
+        }
+    }
+
     public void testTruncatedFiles() throws Exception {
-        MimeTypes mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
-        ContainerAwareDetector detector = new ContainerAwareDetector(mimeTypes);
-        
         // First up a truncated OOXML (zip) file
-        InputStream input = getTestDoc("testEXCEL.xlsx");
-        byte [] buffer = new byte[300];
-        assertEquals(300,input.read(buffer));
-        Metadata metadata = new Metadata();
-        MediaType mt = detector.detect(new ByteArrayInputStream(buffer), metadata);
-        // no exception should be thrown
-        assertEquals(MediaType.application("x-tika-ooxml"),mt);
-        
+        TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
+        try {
+            assertEquals(
+                    MediaType.APPLICATION_ZIP,
+                    detector.detect(xlsx, new Metadata()));
+        } finally {
+            xlsx.close();
+        }
+
         // Now a truncated OLE2 file 
-        input = getTestDoc("testEXCEL.xls");
-        buffer = new byte[400];
-        assertEquals(400,input.read(buffer));
-        metadata = new Metadata();
-        mt = detector.detect(new ByteArrayInputStream(buffer), metadata);
-        // no exception should be thrown
-        assertEquals(MediaType.application("x-tika-msoffice"),mt);
+        TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400);
+        try {
+            assertEquals(
+                    MediaType.application("x-tika-msoffice"),
+                    detector.detect(xls, new Metadata()));
+        } finally {
+            xls.close();
+        }
    }
+
 }
