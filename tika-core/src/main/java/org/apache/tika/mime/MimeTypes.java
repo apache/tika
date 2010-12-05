@@ -33,12 +33,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.xml.namespace.QName;
-import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.metadata.Metadata;
-import org.xml.sax.SAXException;
 
 /**
  * This class is a MimeType repository. It gathers a set of MimeTypes and
@@ -157,6 +156,7 @@ public final class MimeTypes implements Detector, Serializable {
     /**
      * Find the Mime Content Type of a file.
      *
+     * @deprecated Use the {@link Tika#detect(File)} method
      * @param file
      *            to analyze.
      * @return the Mime Content Type of the specified file, or <code>null</code>
@@ -169,6 +169,7 @@ public final class MimeTypes implements Detector, Serializable {
     /**
      * Find the Mime Content Type of a document from its URL.
      *
+     * @deprecated Use the {@link Tika#detect(URL)} method
      * @param url
      *            of the document to analyze.
      * @return the Mime Content Type of the specified document URL, or
@@ -182,6 +183,7 @@ public final class MimeTypes implements Detector, Serializable {
      * Find the Mime Content Type of a document from its name.
      * Returns application/octet-stream if no better match is found.
      *
+     * @deprecated Use the {@link Tika#detect(String)} method
      * @param name of the document to analyze.
      * @return the Mime Content Type of the specified document name
      */
@@ -206,6 +208,7 @@ public final class MimeTypes implements Detector, Serializable {
      * The given byte array is expected to be at least {@link #getMinLength()}
      * long, or shorter only if the document stream itself is shorter.
      *
+     * @deprecated Use the {@link Tika#detect(byte[])} method
      * @param data first few bytes of a document stream
      * @return matching MIME type
      */
@@ -267,7 +270,7 @@ public final class MimeTypes implements Detector, Serializable {
      * Returns the MIME type that best matches the first few bytes of the
      * given document stream.
      *
-     * @see #getMimeType(byte[])
+     * @deprecated Use the {@link Tika#detect(InputStream)} method
      * @param stream document stream
      * @return matching MIME type, or <code>null</code> if no match is found
      * @throws IOException if the stream can be read
@@ -311,6 +314,9 @@ public final class MimeTypes implements Detector, Serializable {
         return shorter;
     }
 
+    /**
+     * @deprecated Use the {@link Tika#detect(InputStream, Metadata))} method
+     */
     public String getType(String typeName, String url, byte[] data) {
         try {
             Metadata metadata = new Metadata();
@@ -333,6 +339,7 @@ public final class MimeTypes implements Detector, Serializable {
      * from the header, guesses the MIME type from the URL extension
      * (e.g. "pdf).
      *
+     * @deprecated Use the {@link Tika#detect(URL)} method
      * @param url URL of the document
      * @return type of the document
      * @throws IOException if the document can not be accessed
@@ -357,6 +364,8 @@ public final class MimeTypes implements Detector, Serializable {
      * based on the file name</li>
      * </ol>
      *
+     *
+     * @deprecated Use the {@link Tika#detect(byte[], String)} method
      * @param name
      *            of the document to analyze.
      * @param data
@@ -367,21 +376,25 @@ public final class MimeTypes implements Detector, Serializable {
      */
     public MimeType getMimeType(String name, byte[] data) {
         // First, try to get the mime-type from the content
-        MimeType mimeType = getMimeType(data);
+        MimeType dataType = getMimeType(data);
 
-        // If no mime-type found, then try to get the mime-type from
-        // the document name
-        if (mimeType == null) {
-            mimeType = getMimeType(name);
+        // Then, try to get the mime-type from the document name
+        MimeType nameType = getMimeType(name);
+
+        // Use the more specific of the two types
+        if (registry.isSpecializationOf(
+                nameType.getType(), dataType.getType())) {
+            return nameType;
+        } else {
+            return dataType;
         }
-
-        return mimeType;
     }
 
     /**
      * Returns the MIME type that best matches the given document name and
      * the first few bytes of the given document stream.
      *
+     * @deprecated Use the {@link Tika#detect(InputStream,String)} method
      * @see #getMimeType(String, byte[])
      * @param name document name
      * @param stream document stream

@@ -138,6 +138,30 @@ public class Tika {
 
     /**
      * Detects the media type of the given document. The type detection is
+     * based on the content of the given document stream and the name of the
+     * document.
+     * <p>
+     * If the document stream supports the
+     * {@link InputStream#markSupported() mark feature}, then the stream is
+     * marked and reset to the original position before this method returns.
+     * Only a limited number of bytes are read from the stream.
+     * <p>
+     * The given document stream is <em>not</em> closed by this method.
+     *
+     * @since Apache Tika 0.9
+     * @param stream the document stream
+     * @param name document name
+     * @return detected media type
+     * @throws IOException if the stream can not be read
+     */
+    public String detect(InputStream stream, String name) throws IOException {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, name);
+        return detect(stream, metadata);
+    }
+
+    /**
+     * Detects the media type of the given document. The type detection is
      * based on the content of the given document stream.
      * <p>
      * If the document stream supports the
@@ -153,6 +177,49 @@ public class Tika {
      */
     public String detect(InputStream stream) throws IOException {
         return detect(stream, new Metadata());
+    }
+
+    /**
+     * Detects the media type of the given document. The type detection is
+     * based on the first few bytes of a document and the document name.
+     * <p>
+     * For best results at least a few kilobytes of the document data
+     * are needed. See also the other detect() methods for better
+     * alternatives when you have more than just the document prefix
+     * available for type detection.
+     *
+     * @since Apache Tika 0.9
+     * @param prefix first few bytes of the document
+     * @param name document name
+     * @return detected media type
+     */
+    public String detect(byte[] prefix, String name) {
+        try {
+            return detect(TikaInputStream.get(prefix), name);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unexpected IOException", e);
+        }
+    }
+
+    /**
+     * Detects the media type of the given document. The type detection is
+     * based on the first few bytes of a document.
+     * <p>
+     * For best results at least a few kilobytes of the document data
+     * are needed. See also the other detect() methods for better
+     * alternatives when you have more than just the document prefix
+     * available for type detection.
+     *
+     * @since Apache Tika 0.9
+     * @param prefix first few bytes of the document
+     * @return detected media type
+     */
+    public String detect(byte[] prefix) {
+        try {
+            return detect(TikaInputStream.get(prefix));
+        } catch (IOException e) {
+            throw new IllegalStateException("Unexpected IOException", e);
+        }
     }
 
     /**
@@ -203,10 +270,8 @@ public class Tika {
      * @return detected media type
      */
     public String detect(String name) {
-        Metadata metadata = new Metadata();
-        metadata.set(Metadata.RESOURCE_NAME_KEY, name);
         try {
-            return detect(null, metadata);
+            return detect((InputStream) null, name);
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected IOException", e);
         }
