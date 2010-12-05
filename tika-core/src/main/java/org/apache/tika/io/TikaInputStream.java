@@ -75,27 +75,66 @@ public class TikaInputStream extends ProxyInputStream {
      * Casts or wraps the given stream to a TikaInputStream instance.
      * This method can be used to access the functionality of this class
      * even when given just a normal input stream instance.
+     * <p>
+     * The given temporary file provider is used for any temporary files,
+     * and should be disposed when the returned stream is no longer used.
+     * <p>
+     * Use this method instead of the {@link #get(InputStream)} alternative
+     * when you <em>don't</em> explicitly close the returned stream. The
+     * recommended access pattern is:
+     * <pre>
+     * TemporaryFiles tmp = new TemporaryFiles();
+     * try {
+     *     TikaInputStream stream = TikaInputStream.get(..., tmp);
+     *     // process stream but don't close it
+     * } finally {
+     *     tmp.dispose();
+     * }
+     * </pre>
+     *
+     * @param stream normal input stream
+     * @return a TikaInputStream instance
+     */
+    public static TikaInputStream get(InputStream stream, TemporaryFiles tmp) {
+        if (stream instanceof TikaInputStream) {
+            return (TikaInputStream) stream;
+        } else {
+            return new TikaInputStream(stream, tmp, -1);
+        }
+    }
+
+    /**
+     * Casts or wraps the given stream to a TikaInputStream instance.
+     * This method can be used to access the functionality of this class
+     * even when given just a normal input stream instance.
+     * <p>
+     * Use this method instead of the {@link #get(InputStream, TemporaryFiles)}
+     * alternative when you <em>do</em> explicitly close the returned stream.
+     * The recommended access pattern is:
+     * <pre>
+     * TikaInputStream stream = TikaInputStream.get(...);
+     * try {
+     *     // process stream
+     * } finally {
+     *     stream.close();
+     * }
+     * </pre>
      *
      * @param stream normal input stream
      * @return a TikaInputStream instance
      */
     public static TikaInputStream get(InputStream stream) {
-        if (stream instanceof TikaInputStream) {
-            return (TikaInputStream) stream;
-        } else if (stream instanceof ByteArrayInputStream || stream instanceof BufferedInputStream) {
-            return new TikaInputStream(stream, null, -1);
-        } else {
-            return new TikaInputStream(
-                    new BufferedInputStream(stream), null, -1);
-        }
+        return get(stream, new TemporaryFiles());
     }
 
     /**
      * Creates a TikaInputStream from the given array of bytes.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the given data to a temporary file.
      *
      * @param data input data
      * @return a TikaInputStream instance
-     * @throws IOException
      */
     public static TikaInputStream get(byte[] data) {
         return get(data, new Metadata());
@@ -104,6 +143,9 @@ public class TikaInputStream extends ProxyInputStream {
     /**
      * Creates a TikaInputStream from the given array of bytes. The length of
      * the array is stored as input metadata in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the given data to a temporary file.
      *
      * @param data input data
      * @param metadata metadata instance
@@ -112,13 +154,15 @@ public class TikaInputStream extends ProxyInputStream {
      */
     public static TikaInputStream get(byte[] data, Metadata metadata) {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
-
         return new TikaInputStream(
-                new ByteArrayInputStream(data), null, data.length);
+                new ByteArrayInputStream(data), new TemporaryFiles(), data.length);
     }
 
     /**
      * Creates a TikaInputStream from the given file.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
      *
      * @param file input file
      * @return a TikaInputStream instance
@@ -131,6 +175,9 @@ public class TikaInputStream extends ProxyInputStream {
     /**
      * Creates a TikaInputStream from the given file. The file name and
      * length are stored as input metadata in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
      *
      * @param file input file
      * @param metadata metadata instance
@@ -141,10 +188,7 @@ public class TikaInputStream extends ProxyInputStream {
             throws FileNotFoundException {
         metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
         metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.length()));
-
-        return new TikaInputStream(
-                new BufferedInputStream(new FileInputStream(file)),
-                file, file.length());
+        return new TikaInputStream(file);
     }
 
     /**
@@ -152,6 +196,8 @@ public class TikaInputStream extends ProxyInputStream {
      * <p>
      * Note that the result set containing the BLOB may need to be kept open
      * until the returned TikaInputStream has been processed and closed.
+     * You must also always explicitly close the returned stream as in
+     * some cases it may end up writing the blob data to a temporary file.
      *
      * @param blob database BLOB
      * @return a TikaInputStream instance
@@ -175,6 +221,8 @@ public class TikaInputStream extends ProxyInputStream {
      * <p>
      * Note that the result set containing the BLOB may need to be kept open
      * until the returned TikaInputStream has been processed and closed.
+     * You must also always explicitly close the returned stream as in
+     * some cases it may end up writing the blob data to a temporary file.
      *
      * @param blob database BLOB
      * @param metadata metadata instance
@@ -204,6 +252,9 @@ public class TikaInputStream extends ProxyInputStream {
 
     /**
      * Creates a TikaInputStream from the resource at the given URI.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
      *
      * @param uri resource URI
      * @return a TikaInputStream instance
@@ -216,6 +267,9 @@ public class TikaInputStream extends ProxyInputStream {
     /**
      * Creates a TikaInputStream from the resource at the given URI. The
      * available input metadata is stored in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
      *
      * @param uri resource URI
      * @param metadata metadata instance
@@ -237,6 +291,9 @@ public class TikaInputStream extends ProxyInputStream {
 
     /**
      * Creates a TikaInputStream from the resource at the given URL.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
      *
      * @param url resource URL
      * @return a TikaInputStream instance
@@ -249,6 +306,9 @@ public class TikaInputStream extends ProxyInputStream {
     /**
      * Creates a TikaInputStream from the resource at the given URL. The
      * available input metadata is stored in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream as in
+     * some cases it may end up writing the resource to a temporary file.
      *
      * @param url resource URL
      * @param metadata metadata instance
@@ -294,7 +354,25 @@ public class TikaInputStream extends ProxyInputStream {
 
         return new TikaInputStream(
                 new BufferedInputStream(connection.getInputStream()),
-                null, length);
+                new TemporaryFiles(), length);
+    }
+
+    /**
+     * Makes sure that a stream is buffered and correctly supports the
+     * mark feature by wrapping the given stream to a
+     * {@link BufferedInputStream} if needed.
+     *
+     * @param stream original stream
+     * @return buffered stream that supports the mark feature
+     */
+    private static InputStream withBufferingAndMarkSupport(InputStream stream) {
+        if (stream instanceof ByteArrayInputStream) {
+            return stream;
+        } else if (stream instanceof BufferedInputStream) {
+            return stream;
+        } else {
+            return new BufferedInputStream(stream);
+        }
     }
 
     /**
@@ -307,10 +385,9 @@ public class TikaInputStream extends ProxyInputStream {
     private File file;
 
     /**
-     * Flag to indicate that {@link #file} is a temporary file that should
-     * be removed when this stream is {@link #close() closed}.
+     * Temporary file provider.
      */
-    private boolean temporary;
+    private final TemporaryFiles tmp;
 
     /**
      * Total length of the stream, or -1 if unknown.
@@ -338,14 +415,28 @@ public class TikaInputStream extends ProxyInputStream {
      * Creates a TikaInputStream instance. This private constructor is used
      * by the static factory methods based on the available information.
      *
+     * @param file the file that contains the stream
+     * @throws FileNotFoundException if the file does not exist
+     */
+    private TikaInputStream(File file) throws FileNotFoundException {
+        super(new BufferedInputStream(new FileInputStream(file)));
+        this.file = file;
+        this.tmp = new TemporaryFiles();
+        this.length = file.length();
+    }
+
+    /**
+     * Creates a TikaInputStream instance. This private constructor is used
+     * by the static factory methods based on the available information.
+     *
      * @param stream <em>buffered</em> stream (must support the mark feature)
-     * @param file the file that contains the stream, or <code>null</code>
      * @param length total length of the stream, or -1 if unknown
      */
-    private TikaInputStream(InputStream stream, File file, long length) {
-        super(stream);
-        this.file = file;
-        this.temporary = (file == null);
+    private TikaInputStream(
+            InputStream stream, TemporaryFiles tmp, long length) {
+        super(withBufferingAndMarkSupport(stream));
+        this.file = null;
+        this.tmp = tmp;
         this.length = length;
     }
 
@@ -410,7 +501,7 @@ public class TikaInputStream extends ProxyInputStream {
             } else if (position > 0) {
                 throw new IOException("Stream is already being read");
             } else {
-                file = File.createTempFile("apache-tika-", ".tmp");
+                file = tmp.createTemporaryFile();
                 OutputStream out = new FileOutputStream(file);
                 try {
                     IOUtils.copy(in, out);
@@ -448,7 +539,7 @@ public class TikaInputStream extends ProxyInputStream {
 
     @Override
     public int available() throws IOException {
-        if (in == null && file == null) {
+        if (in == null) {
             return 0;
         } else {
             return super.available();
@@ -457,7 +548,7 @@ public class TikaInputStream extends ProxyInputStream {
 
     @Override
     public long skip(long ln) throws IOException {
-        if (in == null && file == null) {
+        if (in == null) {
             return 0;
         } else {
             long n = super.skip(ln);
@@ -468,7 +559,7 @@ public class TikaInputStream extends ProxyInputStream {
 
     @Override
     public int read() throws IOException {
-        if (in == null && file == null) {
+        if (in == null) {
             return -1;
         } else {
             return super.read();
@@ -477,7 +568,7 @@ public class TikaInputStream extends ProxyInputStream {
 
     @Override
     public int read(byte[] bts, int off, int len) throws IOException {
-        if (in == null && file == null) {
+        if (in == null) {
             return -1;
         } else {
             return super.read(bts, off, len);
@@ -494,10 +585,10 @@ public class TikaInputStream extends ProxyInputStream {
         super.mark(readlimit);
         mark = position;
     }
-    
+
     @Override
     public boolean markSupported() {
-	return true;
+        return true;
     }
 
     @Override
@@ -507,32 +598,21 @@ public class TikaInputStream extends ProxyInputStream {
         mark = -1;
     }
 
-
     @Override
     public void close() throws IOException {
-        if (openContainer != null) {
-            openContainer = null;
-        }
         if (in != null) {
             in.close();
             in = null;
         }
-        if (file != null) {
-            if (temporary) {
-                file.delete();
-            }
-            file = null;
-        }
+        openContainer = null;
+        file = null;
+        tmp.dispose();
     }
 
     @Override
     protected void beforeRead(int n) throws IOException {
         if (in == null) {
-            if (file != null) {
-                in = new FileInputStream(file);
-            } else {
-                throw new IOException("End of the stream reached");
-            }
+            throw new IOException("End of the stream reached");
         }
     }
 
