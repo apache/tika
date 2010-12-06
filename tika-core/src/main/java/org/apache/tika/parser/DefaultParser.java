@@ -16,12 +16,9 @@
  */
 package org.apache.tika.parser;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import javax.imageio.spi.ServiceRegistry;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.mime.MediaTypeRegistry;
 
 /**
@@ -35,72 +32,17 @@ public class DefaultParser extends CompositeParser {
     /** Serial version UID */
     private static final long serialVersionUID = 3612324825403757520L;
 
-    /**
-     * The default context class loader to use for all threads, or
-     * <code>null</code> to automatically select the context class loader.
-     */
-    private static volatile ClassLoader contextClassLoader = null;
-
-    /**
-     * Returns the context class loader of the current thread. If such
-     * a class loader is not available, then the loader of this class or
-     * finally the system class loader is returned.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-441">TIKA-441</a>
-     * @return context class loader, or <code>null</code> if no loader
-     *         is available
-     */
-    private static ClassLoader getContextClassLoader() {
-        ClassLoader loader = contextClassLoader;
-        if (loader == null) {
-            loader = Thread.currentThread().getContextClassLoader();
-        }
-        if (loader == null) {
-            loader = DefaultParser.class.getClassLoader();
-        }
-        if (loader == null) {
-            loader = ClassLoader.getSystemClassLoader();
-        }
-        return loader;
-    }
-
-    /**
-     * Sets the context class loader to use for all threads that access
-     * this class. Used for example in an OSGi environment to avoid problems
-     * with the default context class loader.
-     *
-     * @since Apache Tika 0.9
-     * @param loader default context class loader,
-     *               or <code>null</code> to automatically pick the loader
-     */
-    public static void setContextClassLoader(ClassLoader loader) {
-        contextClassLoader = loader;
-    }
-
-    /**
-     * Returns all the parsers available through the given class loader.
-     *
-     * @param loader class loader 
-     * @return available parsers
-     */
-    private static List<Parser> loadParsers(ClassLoader loader) {
-        List<Parser> parsers = new ArrayList<Parser>();
-        if (loader != null) {
-            Iterator<Parser> iterator =
-                ServiceRegistry.lookupProviders(Parser.class, loader);
-            while (iterator.hasNext()) {
-                parsers.add(iterator.next());
-            }
-        }
-        return parsers;
+    private DefaultParser(ServiceLoader loader) {
+        super(new MediaTypeRegistry(),
+                loader.loadServiceProviders(Parser.class));
     }
 
     public DefaultParser(ClassLoader loader) {
-        super(new MediaTypeRegistry(), loadParsers(loader));
+        this(new ServiceLoader(loader));
     }
 
     public DefaultParser() {
-        this(getContextClassLoader());
+        this(new ServiceLoader());
     }
 
 }

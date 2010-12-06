@@ -24,6 +24,7 @@ import java.io.Reader;
 import java.net.URL;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -82,7 +83,8 @@ public class Tika {
      * @param config Tika configuration
      */
     public Tika(TikaConfig config) {
-        this(config.getMimeRepository(), new AutoDetectParser(config));
+        this(new DefaultDetector(config.getMimeRepository()),
+                new AutoDetectParser(config));
     }
 
     /**
