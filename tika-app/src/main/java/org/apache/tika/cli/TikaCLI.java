@@ -45,11 +45,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.ContainerAwareDetector;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.gui.TikaGUI;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
@@ -85,36 +85,49 @@ public class TikaCLI {
         }
     }
 
-    private interface OutputType {
-        ContentHandler getContentHandler() throws Exception;
+    private class OutputType {
+
+        public void process(InputStream stream) throws Exception {
+            parser.parse(stream, getContentHandler(), metadata, context);
+        }
+
+        protected ContentHandler getContentHandler() throws Exception {
+            throw new UnsupportedOperationException();
+        }
+
     }
 
     private final OutputType XML = new OutputType() {
-        public ContentHandler getContentHandler() throws Exception {
+        @Override
+        protected ContentHandler getContentHandler() throws Exception {
             return getTransformerHandler("xml", encoding);
         }
     };
 
     private final OutputType HTML = new OutputType() {
-        public ContentHandler getContentHandler() throws Exception {
+        @Override
+        protected ContentHandler getContentHandler() throws Exception {
             return getTransformerHandler("html", encoding);
         }
     };
 
     private final OutputType TEXT = new OutputType() {
-        public ContentHandler getContentHandler() throws Exception {
+        @Override
+        protected ContentHandler getContentHandler() throws Exception {
             return new BodyContentHandler(getSystemOutWriter(encoding));
         }
     };
 
     private final OutputType TEXT_MAIN = new OutputType() {
-        public ContentHandler getContentHandler() throws Exception {
+        @Override
+        protected ContentHandler getContentHandler() throws Exception {
             return new BoilerpipeContentHandler(getSystemOutWriter(encoding));
         }
     };
     
     private final OutputType METADATA = new OutputType() {
-        public ContentHandler getContentHandler() throws Exception {
+        @Override
+        protected ContentHandler getContentHandler() throws Exception {
             final PrintWriter writer =
                 new PrintWriter(getSystemOutWriter(encoding));
             return new DefaultHandler() {
@@ -131,7 +144,8 @@ public class TikaCLI {
     };
 
     private final OutputType LANGUAGE = new OutputType() {
-        public ContentHandler getContentHandler() throws Exception{
+        @Override
+        protected ContentHandler getContentHandler() throws Exception {
             final PrintWriter writer =
                 new PrintWriter(getSystemOutWriter(encoding));
             return new ProfilingHandler() {
@@ -140,6 +154,15 @@ public class TikaCLI {
                     writer.flush();
                 }
             };
+        }
+    };
+
+    private final OutputType DETECT = new OutputType() {
+        @Override
+        public void process(InputStream stream) throws Exception {
+            PrintWriter writer = new PrintWriter(getSystemOutWriter(encoding));
+            writer.println(detector.detect(stream, metadata).toString());
+            writer.flush();
         }
     };
 
@@ -152,11 +175,6 @@ public class TikaCLI {
     private Metadata metadata;
 
     private OutputType type = XML;
-    
-    private void initParser() {
-       parser = new AutoDetectParser(detector);
-       context.set(Parser.class, parser);
-    }
 
     /**
      * Output character encoding, or <code>null</code> for platform default
@@ -167,8 +185,9 @@ public class TikaCLI {
 
     public TikaCLI() throws TransformerConfigurationException, IOException, TikaException, SAXException {
         context = new ParseContext();
-        detector = (new TikaConfig()).getMimeRepository();
-        initParser();
+        detector = new DefaultDetector();
+        parser = new AutoDetectParser(detector);
+        context.set(Parser.class, parser);
     }
 
     public void process(String arg) throws Exception {
@@ -192,9 +211,9 @@ public class TikaCLI {
         } else if(arg.equals("--list-supported-types")){
             pipeMode = false;
             displaySupportedTypes();
-        } else if(arg.equals("--container-aware") || arg.equals("--container-aware-detector")) {
-           detector = new ContainerAwareDetector(detector);
-           initParser();
+        } else if (arg.equals("--container-aware")
+                || arg.equals("--container-aware-detector")) {
+            // ignore, as container-aware detectors are now always used
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -211,13 +230,19 @@ public class TikaCLI {
             type = METADATA;
         } else if (arg.equals("-l") || arg.equals("--language")) {
             type = LANGUAGE;
+        } else if (arg.equals("-d") || arg.equals("--detect")) {
+            type = DETECT;
         } else {
             pipeMode = false;
             metadata = new Metadata();
             if (arg.equals("-")) {
-                parser.parse(
-                        System.in, type.getContentHandler(),
-                        metadata, context);
+                InputStream stream =
+                    TikaInputStream.get(new CloseShieldInputStream(System.in));
+                try {
+                    type.process(stream);
+                } finally {
+                    stream.close();
+                }
             } else {
                 URL url;
                 File file = new File(arg);
@@ -228,9 +253,7 @@ public class TikaCLI {
                 }
                 InputStream input = TikaInputStream.get(url, metadata);
                 try {
-                    parser.parse(
-                            input, type.getContentHandler(),
-                            metadata, context);
+                    type.process(input);
                 } finally {
                     input.close();
                     System.out.flush();
@@ -254,11 +277,8 @@ public class TikaCLI {
         out.println("    -T  or --text-main   Output plain text content (main content only)");
         out.println("    -m  or --metadata    Output only metadata");
         out.println("    -l  or --language    Output only language");
+        out.println("    -d  or --detect      Detect document type");
         out.println("    -eX or --encoding=X  Use output encoding X");
-        out.println("");
-        out.println("    --container-aware-detector");
-        out.println("         Use the container aware detector, rather than the default mime");
-        out.println("         magic one. This is slower but more accurate on container formats.");
         out.println("");
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
