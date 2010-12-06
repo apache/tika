@@ -16,13 +16,12 @@
  */
 package org.apache.tika.config;
 
-import org.apache.tika.parser.DefaultParser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
 /**
  * Bundle activator that adjust the class loading mechanism of the
- * {@link DefaultParser} class to work correctly in an OSGi environment.
+ * {@link ServiceLoader} class to work correctly in an OSGi environment.
  * <p>
  * Note that you should <strong>not</strong> access this class directly.
  * Instead the OSGi environment (if present) will automatically invoke the
@@ -34,12 +33,12 @@ import org.osgi.framework.BundleContext;
 public class TikaActivator implements BundleActivator {
 
     public void start(BundleContext context) throws Exception {
-        DefaultParser.setContextClassLoader(
+        ServiceLoader.setContextClassLoader(
                 TikaActivator.class.getClassLoader());
     }
 
     public void stop(BundleContext context) throws Exception {
-        DefaultParser.setContextClassLoader(null);
+        ServiceLoader.setContextClassLoader(null);
     }
 
 }

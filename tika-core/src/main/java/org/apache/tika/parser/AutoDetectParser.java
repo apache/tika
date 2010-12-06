@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CountingInputStream;
@@ -69,7 +70,7 @@ public class AutoDetectParser extends CompositeParser {
      * @param parsers
      */
     public AutoDetectParser(Parser...parsers) {
-        this(MimeTypes.getDefaultMimeTypes(), parsers);
+        this(new DefaultDetector(), parsers);
     }
 
     public AutoDetectParser(Detector detector, Parser...parsers) {
@@ -79,7 +80,7 @@ public class AutoDetectParser extends CompositeParser {
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), config.getParser());
-        setDetector(config.getMimeRepository());
+        setDetector(new DefaultDetector(config.getMimeRepository()));
     }
 
     /**
@@ -87,7 +88,7 @@ public class AutoDetectParser extends CompositeParser {
      */
     public void setConfig(TikaConfig config) {
         setParsers(config.getParsers());
-        setDetector(config.getMimeRepository());
+        setDetector(new DefaultDetector(config.getMimeRepository()));
         setMediaTypeRegistry(config.getMediaTypeRegistry());
     }
 

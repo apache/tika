@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.Set;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -57,7 +58,8 @@ public class ParserContainerExtractor implements ContainerExtractor {
     }
 
     public ParserContainerExtractor(TikaConfig config) {
-        this(new AutoDetectParser(config), config.getMimeRepository());
+        this(new AutoDetectParser(config),
+                new DefaultDetector(config.getMimeRepository()));
     }
 
     public ParserContainerExtractor(Parser parser, Detector detector) {

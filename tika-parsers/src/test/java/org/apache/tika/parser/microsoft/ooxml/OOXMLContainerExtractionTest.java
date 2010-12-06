@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.ContainerAwareDetector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 
@@ -33,8 +33,7 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
     @Override
     protected void setUp() throws Exception {
        ContainerAwareDetector detector = new ContainerAwareDetector(
-             (new TikaConfig()).getMimeRepository()
-       );
+               MimeTypes.getDefaultMimeTypes());
        extractor = new ParserContainerExtractor(
              new AutoDetectParser(detector), detector
        );
