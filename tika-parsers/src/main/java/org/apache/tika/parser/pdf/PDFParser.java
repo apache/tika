@@ -73,8 +73,7 @@ public class PDFParser implements Parser {
             throws IOException, SAXException, TikaException {
         PDDocument pdfDocument = PDDocument.load(stream, true);
         try {
-            if (pdfDocument.isEncrypted()
-                    && !pdfDocument.getCurrentAccessPermission().canExtractContent()) {
+            if (pdfDocument.isEncrypted()) {
                 try {
                     String password = metadata.get(PASSWORD);
                     if (password == null) {

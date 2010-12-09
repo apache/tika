@@ -93,4 +93,34 @@ public class PDFParserTest extends TestCase {
         String content = handler.toString();
         assertTrue(content.contains("Hello World!"));
     }
+    
+    /**
+     * PDFs can be "protected" with the default password. This means
+     *  they're encrypted (potentially both text and metadata),
+     *  but we can decrypt them easily.
+     */
+    public void testProtectedPDF() throws Exception {
+       Parser parser = new AutoDetectParser(); // Should auto-detect!
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+       ParseContext context = new ParseContext();
+
+       InputStream stream = PDFParserTest.class.getResourceAsStream(
+               "/test-documents/testPDF_protected.pdf");
+       try {
+           parser.parse(stream, handler, metadata, context);
+       } finally {
+           stream.close();
+       }
+
+       assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
+       assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(Metadata.TITLE));
+
+       String content = handler.toString();
+       assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
+       assertTrue(content.contains("On 16 November 2002"));
+       assertTrue(content.contains("In many important respects"));
+    }
 }
