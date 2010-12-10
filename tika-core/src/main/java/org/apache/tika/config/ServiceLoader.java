@@ -16,11 +16,18 @@
  */
 package org.apache.tika.config;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
-
-import javax.imageio.spi.ServiceRegistry;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Internal utility class that Tika uses to look up service providers.
@@ -86,18 +93,68 @@ public class ServiceLoader {
      * @param service service provider interface
      * @return available service providers
      */
+    @SuppressWarnings("unchecked")
     public <T> List<T> loadServiceProviders(Class<T> service) {
         List<T> providers = new ArrayList<T>();
 
         if (loader != null) {
-            Iterator<T> iterator =
-                ServiceRegistry.lookupProviders(service, loader);
-            while (iterator.hasNext()) {
-                providers.add(iterator.next());
+            Set<String> names = new HashSet<String>();
+
+            try {
+                String path = "META-INF/services/" + service.getName();
+                Enumeration<URL> resources = loader.getResources(path);
+                for (URL resource : Collections.list(resources)) {
+                    names.addAll(getServiceClassNames(resource));
+                }
+            } catch (IOException ignore) {
+                // We couldn't get the list of service resource files
+            }
+
+            for (String name : names) {
+                try {
+                    System.out.println("Loading " + name);
+                    Class<?> klass = loader.loadClass(name);
+                    if (service.isAssignableFrom(klass)) {
+                        providers.add((T) klass.newInstance());
+                    }
+                } catch (Throwable ignore) {
+                    // Catching and ignoring Throwables here since we
+                    // could be seeing all sorts of weird linking problems
+                    // from loading a service class
+                }
             }
         }
 
         return providers;
+    }
+
+    private static final Pattern COMMENT = Pattern.compile("#.*");
+
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+
+    private Set<String> getServiceClassNames(URL resource) {
+        try {
+            Set<String> names = new HashSet<String>();
+            InputStream stream = resource.openStream();
+            try {
+                BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                String line = reader.readLine();
+                while (line != null) {
+                    line = COMMENT.matcher(line).replaceFirst("");
+                    line = WHITESPACE.matcher(line).replaceAll("");
+                    if (line.length() > 0) {
+                        names.add(line);
+                    }
+                    line = reader.readLine();
+                }
+            } finally {
+                stream.close();
+            }
+            return names;
+        } catch (IOException e) {
+            return Collections.emptySet();
+        }
     }
 
 }
