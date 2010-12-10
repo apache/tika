@@ -79,8 +79,15 @@ public class ServiceLoader {
 
     private final ClassLoader loader;
 
-    public ServiceLoader(ClassLoader loader) {
+    private final LoadErrorHandler handler;
+
+    public ServiceLoader(ClassLoader loader, LoadErrorHandler handler) {
         this.loader = loader;
+        this.handler = handler;
+    }
+
+    public ServiceLoader(ClassLoader loader) {
+        this(loader, LoadErrorHandler.IGNORE);
     }
 
     public ServiceLoader() {
@@ -104,7 +111,11 @@ public class ServiceLoader {
                 String path = "META-INF/services/" + service.getName();
                 Enumeration<URL> resources = loader.getResources(path);
                 for (URL resource : Collections.list(resources)) {
-                    names.addAll(getServiceClassNames(resource));
+                    try {
+                        names.addAll(getServiceClassNames(resource));
+                    } catch (IOException e) {
+                        handler.handleLoadError(service.getName(), e);
+                    }
                 }
             } catch (IOException ignore) {
                 // We couldn't get the list of service resource files
@@ -112,15 +123,12 @@ public class ServiceLoader {
 
             for (String name : names) {
                 try {
-                    System.out.println("Loading " + name);
                     Class<?> klass = loader.loadClass(name);
                     if (service.isAssignableFrom(klass)) {
                         providers.add((T) klass.newInstance());
                     }
-                } catch (Throwable ignore) {
-                    // Catching and ignoring Throwables here since we
-                    // could be seeing all sorts of weird linking problems
-                    // from loading a service class
+                } catch (Throwable t) {
+                    handler.handleLoadError(name, t);
                 }
             }
         }
@@ -132,29 +140,26 @@ public class ServiceLoader {
 
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 
-    private Set<String> getServiceClassNames(URL resource) {
+    private Set<String> getServiceClassNames(URL resource)
+            throws IOException {
+        Set<String> names = new HashSet<String>();
+        InputStream stream = resource.openStream();
         try {
-            Set<String> names = new HashSet<String>();
-            InputStream stream = resource.openStream();
-            try {
-                BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-                String line = reader.readLine();
-                while (line != null) {
-                    line = COMMENT.matcher(line).replaceFirst("");
-                    line = WHITESPACE.matcher(line).replaceAll("");
-                    if (line.length() > 0) {
-                        names.add(line);
-                    }
-                    line = reader.readLine();
+            BufferedReader reader =
+                new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+            String line = reader.readLine();
+            while (line != null) {
+                line = COMMENT.matcher(line).replaceFirst("");
+                line = WHITESPACE.matcher(line).replaceAll("");
+                if (line.length() > 0) {
+                    names.add(line);
                 }
-            } finally {
-                stream.close();
+                line = reader.readLine();
             }
-            return names;
-        } catch (IOException e) {
-            return Collections.emptySet();
+        } finally {
+            stream.close();
         }
+        return names;
     }
 
 }
