@@ -191,6 +191,8 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-ms-bmp", "x.BMP");
         assertTypeByName("image/x-ms-bmp", "x.dib");
         assertTypeByName("image/x-ms-bmp", "x.DIB");
+        //false positive check -- contains part of BMP signature
+        assertType("text/plain", "testBMPfp.txt");
     }
 
     public void testPnmDetection() throws Exception {
