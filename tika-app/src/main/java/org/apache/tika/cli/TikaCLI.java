@@ -16,14 +16,7 @@
  */
 package org.apache.tika.cli;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.Arrays;
@@ -48,8 +41,10 @@ import org.apache.log4j.WriterAppender;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
@@ -65,6 +60,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
 
 /**
  * Simple command line interface for Apache Tika.
@@ -115,6 +111,13 @@ public class TikaCLI {
         @Override
         protected ContentHandler getContentHandler() throws Exception {
             return new BodyContentHandler(getSystemOutWriter(encoding));
+        }
+    };
+
+    private final OutputType NO_OUTPUT = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler() throws Exception {
+            return new DefaultHandler();
         }
     };
 
@@ -232,6 +235,9 @@ public class TikaCLI {
             type = LANGUAGE;
         } else if (arg.equals("-d") || arg.equals("--detect")) {
             type = DETECT;
+        } else if (arg.equals("-z") || arg.equals("--extract")) {
+            type = NO_OUTPUT;
+            context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
         } else {
             pipeMode = false;
             metadata = new Metadata();
@@ -279,6 +285,7 @@ public class TikaCLI {
         out.println("    -l  or --language    Output only language");
         out.println("    -d  or --detect      Detect document type");
         out.println("    -eX or --encoding=X  Use output encoding X");
+        out.println("    -z  or --extract     Extract all attachements into current directory");        
         out.println("");
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
@@ -465,4 +472,37 @@ public class TikaCLI {
         return handler;
     }
 
+    private static class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+        private int count = 0;
+
+        public boolean shouldParseEmbedded(Metadata metadata) {
+            return true;
+        }
+
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
+            String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+
+            if (name == null) {
+                name = Integer.toString(count);
+            }
+
+            File outputFile = new File(name);
+            if (outputFile.exists()) {
+                System.err.println("File '"+name+"' already exists; skipping");
+                return;
+            }
+
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+
+            System.out.println("Extracting '"+name+"' ("+contentType+")");
+
+            FileOutputStream os = new FileOutputStream(outputFile);
+
+            IOUtils.copy(inputStream, os);
+
+            os.close();
+
+            count++;
+        }
+    }
 }
