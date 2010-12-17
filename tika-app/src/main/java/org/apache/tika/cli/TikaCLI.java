@@ -38,6 +38,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
@@ -50,6 +51,7 @@ import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
@@ -474,16 +476,27 @@ public class TikaCLI {
 
     private static class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
         private int count = 0;
+        private final TikaConfig config = TikaConfig.getDefaultConfig();
 
         public boolean shouldParseEmbedded(Metadata metadata) {
             return true;
         }
 
-        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) throws SAXException, IOException {
             String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
 
             if (name == null) {
                 name = Integer.toString(count);
+            }
+
+            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+
+            if (name.indexOf('.')==-1 && contentType!=null) {
+                try {
+                    name += config.getMimeRepository().forName(contentType).getExtension();
+                } catch (MimeTypeException e) {
+                    e.printStackTrace();
+                }
             }
 
             File outputFile = new File(name);
@@ -491,8 +504,6 @@ public class TikaCLI {
                 System.err.println("File '"+name+"' already exists; skipping");
                 return;
             }
-
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
 
             System.out.println("Extracting '"+name+"' ("+contentType+")");
 
