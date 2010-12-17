@@ -100,7 +100,11 @@ class Patterns implements Serializable {
                 addName(pattern, type);
             } else if (pattern.startsWith("*") && pattern.indexOf('*', 1) == -1
                     && pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
-                addExtension(pattern.substring(1), type);
+                String extension = pattern.substring(1);
+                addExtension(extension, type);
+                if (type.getExtension().isEmpty()) {
+                    type.setExtension(extension);
+                }
             } else {
                 addGlob(compile(pattern), type);
             }

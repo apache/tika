@@ -86,6 +86,9 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     /** The minimum length of data to provides for magic analyzis */
     private int minLength = 0;
 
+    /** Preferred extension with starting dot or empty string */
+    private String extension = "";
+
     /**
      * Creates a media type with the give name and containing media type
      * registry. The name is expected to be valid and normalized to lower
@@ -300,4 +303,16 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         return type.toString();
     }
 
+    /**
+     * Get preferred extension
+     *
+     * @return extension (with starting dot) or empty string
+     */
+    public String getExtension() {
+        return extension;
+    }
+
+    void setExtension(String extension) {
+        this.extension = extension;
+    }
 }

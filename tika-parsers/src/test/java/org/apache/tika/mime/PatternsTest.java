@@ -66,4 +66,11 @@ public class PatternsTest extends TestCase {
             // expected result
         }
     }
+
+    public void testExtension() throws MimeTypeException {
+        MimeType doc = types.forName("application/vnd.ms-word");
+        patterns.add("*.doc", doc);
+
+        assertEquals(".doc", doc.getExtension());
+    }
 }
