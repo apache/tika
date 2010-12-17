@@ -527,7 +527,9 @@ public class CharsetDetector {
         recognizers.add(new CharsetRecog_sbcs.CharsetRecog_IBM424_he_ltr());
         recognizers.add(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_rtl());
         recognizers.add(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_ltr());
-        
+
+        recognizers.add(new CharsetRecog_sbcs.CharsetRecog_IBM866_ru());
+
         // Create an array of all charset names, as a side effect.
         // Needed for the getAllDetectableCharsets() API.
         String[] charsetNames = new String [recognizers.size()];

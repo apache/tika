@@ -178,4 +178,17 @@ public class TXTParserTest extends TestCase {
         assertEquals("en", metadata.get(Metadata.LANGUAGE));
     }
 
+    public void testCP866() throws Exception {
+        Metadata metadata = new Metadata();
+        StringWriter writer = new StringWriter();
+        parser.parse(
+                TXTParserTest.class.getResourceAsStream("/test-documents/russian.cp866.txt"),
+                new WriteOutContentHandler(writer),
+                metadata,
+                new ParseContext());
+
+        assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("IBM866", metadata.get(Metadata.CONTENT_ENCODING));
+    }
+
 }
