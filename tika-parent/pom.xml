@@ -168,6 +168,15 @@
         <role>committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Maxim Valyanskiy</name>
+      <id>maxcom</id>
+      <organization>Jet Infosystems</organization>
+      <roles>
+        <role>committer</role>
+      </roles>
+      <timezone>+3</timezone>
+    </developer>
   </developers>
   <contributors>
     <contributor>
