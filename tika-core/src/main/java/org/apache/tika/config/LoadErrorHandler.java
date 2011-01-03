@@ -19,15 +19,39 @@ package org.apache.tika.config;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/**
+ * Interface for error handling strategies in service class loading.
+ * You can implement this interface for a custom error handling mechanism,
+ * or use one of the predefined strategies.
+ *
+ * @since Apache Tika 0.9
+ */
 public interface LoadErrorHandler {
 
+    /**
+     * Handles a problem encountered when trying to load the specified
+     * service class. The implementation can log or otherwise process
+     * the given error information. If the method returns normally, then
+     * the service loader simply skips this class and continues with the
+     * next one.
+     *
+     * @param classname name of the service class
+     * @param throwable the encountered problem
+     */
     void handleLoadError(String classname, Throwable throwable);
 
+    /**
+     * Strategy that simply ignores all problems.
+     */
     LoadErrorHandler IGNORE = new LoadErrorHandler() {
         public void handleLoadError(String classname, Throwable throwable) {
         }
     };
 
+    /**
+     * Strategy that logs warnings of all problems using a {@link Logger}
+     * created using the given class name.
+     */
     LoadErrorHandler WARN = new LoadErrorHandler() {
         public void handleLoadError(String classname, Throwable throwable) {
             Logger.getLogger(classname).log(
@@ -35,6 +59,11 @@ public interface LoadErrorHandler {
         }
     };
 
+    /**
+     * Strategy that throws a {@link RuntimeException} with the given
+     * throwable as the root cause, thus interrupting the entire service
+     * loading operation.
+     */
     LoadErrorHandler THROW = new LoadErrorHandler() {
         public void handleLoadError(String classname, Throwable throwable) {
             throw new RuntimeException("Unable to load " + classname, throwable);
