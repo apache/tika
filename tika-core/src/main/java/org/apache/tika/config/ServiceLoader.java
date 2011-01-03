@@ -108,13 +108,13 @@ public class ServiceLoader {
             Set<String> names = new HashSet<String>();
 
             try {
-                String path = "META-INF/services/" + service.getName();
-                Enumeration<URL> resources = loader.getResources(path);
+                String name = service.getName();
+                Enumeration<URL> resources = loader.getResources("META-INF/services/" + name);
                 for (URL resource : Collections.list(resources)) {
                     try {
                         names.addAll(getServiceClassNames(resource));
                     } catch (IOException e) {
-                        handler.handleLoadError(service.getName(), e);
+                        handler.handleLoadError(name, e);
                     }
                 }
             } catch (IOException ignore) {
