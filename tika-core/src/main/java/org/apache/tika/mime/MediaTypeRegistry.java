@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedSet;
@@ -26,7 +27,10 @@ import org.apache.tika.config.TikaConfig;
 /**
  * Registry of known Internet media types.
  */
-public class MediaTypeRegistry {
+public class MediaTypeRegistry implements Serializable {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = 4710974869988895410L;
 
     /**
      * Returns the built-in media type registry included in Tika.
