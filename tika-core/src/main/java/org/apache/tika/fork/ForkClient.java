@@ -19,7 +19,6 @@ package org.apache.tika.fork;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -72,8 +71,16 @@ class ForkClient {
         }
     }
 
-    private void copyClassToDirectory(Class<?> klass)
-            throws FileNotFoundException, IOException {
+    /**
+     * Copies the <code>.class</code> file of the given class to the
+     * directory from where the forked server process can load it
+     * during startup before setting up the stdin/out communication
+     * channel with the parent process.
+     *
+     * @param klass the class to be copied
+     * @throws IOException if the class could not be copied
+     */
+    private void copyClassToDirectory(Class<?> klass) throws IOException {
         String path = klass.getName().replace('.', '/') + ".class";
         InputStream input = loader.getResourceAsStream(path);
         try {
@@ -123,16 +130,25 @@ class ForkClient {
             if (type == -1) {
                 throw new IOException("Unexpected end of stream encountered");
             } else if (type == ForkServer.FIND_RESOURCE) {
-                findResource(input.readUTF());
+                sendResource(input.readUTF());
             } else if (type == ForkServer.FIND_RESOURCES) {
-                findResources(input.readUTF());
+                sendResources(input.readUTF());
             } else {
                 return (byte) type;
             }
         }
     }
 
-    private void findResource(String name) throws IOException {
+    /**
+     * Sends the named resource to the forked server process over the
+     * stdin/out communication channel. The resource stream is preceded
+     * with a boolean <code>true</code> value if the resource was found,
+     * otherwise just a boolean <code>false</code> value is written.
+     *
+     * @param name resource name
+     * @throws IOException if the resource could not be sent
+     */
+    private void sendResource(String name) throws IOException {
         InputStream stream = loader.getResourceAsStream(name);
         if (stream != null) {
             output.writeBoolean(true);
@@ -143,7 +159,17 @@ class ForkClient {
         output.flush();
     }
 
-    private void findResources(String name) throws IOException {
+    /**
+     * Sends all the named resources to the forked server process over the
+     * stdin/out communication channel. Each resource stream is preceded
+     * with a boolean <code>true</code> value, and a single boolean
+     * <code>false</code> value is written when no longer resources
+     * are available.
+     *
+     * @param name resource name
+     * @throws IOException if the resources could not be sent
+     */
+    private void sendResources(String name) throws IOException {
         Enumeration<URL> resources = loader.getResources(name);
         while (resources.hasMoreElements()) {
             output.writeBoolean(true);
@@ -153,6 +179,19 @@ class ForkClient {
         output.flush();
     }
 
+    /**
+     * Sends the given byte stream to the forked server process over the
+     * stdin/out communication channel. The stream is sent in chunks of
+     * less than 64kB, each preceded by a short value that indicates the
+     * length of the following chunk. A zero short value is sent at the
+     * end to signify the end of the stream.
+     * <p>
+     * The stream is guaranteed to be closed by this method, regardless of
+     * the way it returns.
+     *
+     * @param stream the stream to be sent
+     * @throws IOException if the stream could not be sent
+     */
     private void writeAndCloseStream(InputStream stream) throws IOException {
         try {
             byte[] buffer = new byte[0xffff];
