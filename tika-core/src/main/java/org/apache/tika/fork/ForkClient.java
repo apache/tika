@@ -217,6 +217,11 @@ class ForkClient {
         }
     }
 
+    /**
+     * Recursively deletes the given file or directory.
+     *
+     * @param file file or directory
+     */
     private void delete(File file) {
         File[] children = file.listFiles();
         if (children != null) {
