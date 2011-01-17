@@ -43,9 +43,18 @@ class ForkServer extends ClassLoader {
 
     public static final byte FIND_RESOURCES = 3;
 
+    /**
+     * Starts a forked server process.
+     * 
+     * @param args command line arguments, ignored
+     * @throws Exception if the server could not be started
+     */
     public static void main(String[] args) throws Exception {
         ForkServer server =
             new ForkServer(System.in, System.out);
+
+        // Set the server instance as the context class loader
+        // to make classes from the parent process available
         Thread.currentThread().setContextClassLoader(server);
 
         // Redirect standard input and output streams to prevent
@@ -53,6 +62,7 @@ class ForkServer extends ClassLoader {
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
 
+        // Start processing request
         server.run();
     }
 
@@ -62,6 +72,14 @@ class ForkServer extends ClassLoader {
 
     private int count = 0;
 
+    /**
+     * Sets up a forked server instance using the given stdin/out
+     * communication channel.
+     *
+     * @param input input stream for reading from the parent process
+     * @param output output stream for writing to the parent process
+     * @throws IOException if the server instance could not be created
+     */
     public ForkServer(InputStream input, OutputStream output)
             throws IOException {
         this.input = new DataInputStream(input);
