@@ -104,7 +104,8 @@ class ForkSerializer extends ObjectInputStream {
      * @throws IOException if the object could not be deserialized
      * @throws ClassNotFoundException if a referenced class is not found
      */
-    static Object deserialize(DataInputStream input, ClassLoader loader)
+    static Object deserialize(
+            DataInputStream input, DataOutputStream output, ClassLoader loader)
             throws IOException, ClassNotFoundException {
         int n = input.readInt();
         byte[] data = new byte[n];
@@ -112,7 +113,15 @@ class ForkSerializer extends ObjectInputStream {
 
         ObjectInputStream deserializer =
             new ForkSerializer(new ByteArrayInputStream(data), loader);
-        return deserializer.readObject();
+        Object object = deserializer.readObject();
+        if (object instanceof ForkProxy) {
+            ((ForkProxy) object).init(input, output);
+        }
+
+        output.writeByte(ForkServer.REPLY);
+        output.flush();
+
+        return object;
     }
 
 }

@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,7 +38,7 @@ class ForkServer extends ClassLoader {
 
     public static final byte REPLY = 0;
 
-    public static final byte ECHO = 1;
+    public static final byte CALL = 1;
 
     public static final byte RESOURCE = 2;
 
@@ -68,8 +69,6 @@ class ForkServer extends ClassLoader {
 
     private final DataOutputStream output;
 
-    private int count = 0;
-
     /**
      * Sets up a forked server instance using the given stdin/out
      * communication channel.
@@ -87,13 +86,10 @@ class ForkServer extends ClassLoader {
     public void run() throws IOException {
         int b;
         while ((b = input.read()) != -1) {
-            if (b == ECHO) {
+            if (b == CALL) {
                 try {
-                    Object message =
-                        ForkSerializer.deserialize(input, this);
-                    output.write(ECHO);
-                    ForkSerializer.serialize(output, "echo: " + message);
-                } catch (ClassNotFoundException e) {
+                    call();
+                } catch (Exception e) {
                     output.write(ERROR);
                     ForkSerializer.serialize(output, e);
                 }
@@ -102,96 +98,32 @@ class ForkServer extends ClassLoader {
         }
     }
 
-    @Override
-    protected synchronized URL findResource(String name) {
-        try {
-            // Send a request to load the resource data
-            output.write(RESOURCE);
-            output.write(0);
-            output.write(1);
-            output.writeUTF(name);
-            output.flush();
-
-            // Receive the response
-            if (input.readBoolean()) {
-                return readStreamToFile().toURI().toURL();
-            } else {
-                return null;
-            }
-        } catch (IOException e) {
-            return null;
+    private void call() throws Exception {
+        ClassLoader loader = (ClassLoader) ForkSerializer.deserialize(
+                input, output, ForkServer.class.getClassLoader());
+        System.err.println("Loader loaded");
+        Object object = ForkSerializer.deserialize(input, output, loader);
+        System.err.println("Object loaded");
+        Method method = getMethod(object, input.readUTF());
+        System.err.println("Method loaded");
+        int n = method.getParameterTypes().length;
+        Object[] args = new Object[n];
+        for (int i = 0; i < n; i++) {
+            args[i] = ForkSerializer.deserialize(input, output, loader);
         }
-    }
-
-    @Override
-    protected synchronized Enumeration<URL> findResources(String name)
-            throws IOException {
-        // Send a request to load the resources
-        output.write(RESOURCE);
-        output.write(0);
-        output.write(2);
-        output.writeUTF(name);
+        method.invoke(object, args);
+        output.write(REPLY);
         output.flush();
-
-        // Receive the response
-        List<URL> resources = new ArrayList<URL>();
-        while (input.readBoolean()) {
-            resources.add(readStreamToFile().toURI().toURL());
-        }
-        return Collections.enumeration(resources);
     }
 
-    @Override
-    protected synchronized Class<?> findClass(String name)
-            throws ClassNotFoundException {
-        try {
-            // Send a request to load the class data
-            output.write(RESOURCE);
-            output.write(0);
-            output.write(1);
-            output.writeUTF(name.replace('.', '/') + ".class");
-            output.flush();
-
-            // Receive the response
-            if (input.readBoolean()) {
-                byte[] data = readStreamToMemory();
-                return defineClass(name, data, 0, data.length);
-            } else {
-                return null;
+    private Method getMethod(Object object, String name) {
+        Class<?> klass = object.getClass();
+        for (Method method : klass.getMethods()) {
+            if (name.equals(method.getName())) {
+                return method;
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            throw new ClassNotFoundException("Unable load class " + name, e);
         }
-    }
-
-    private byte[] readStreamToMemory() throws IOException {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[0xffff];
-        int n;
-        while ((n = input.readUnsignedShort()) > 0) {
-            input.readFully(buffer, 0, n);
-            stream.write(buffer, 0, n);
-        }
-        return stream.toByteArray();
-    }
-
-    private File readStreamToFile() throws IOException {
-        File file = new File("resource-" + count++ + ".bin");
-
-        OutputStream stream = new FileOutputStream(file);
-        try {
-            byte[] buffer = new byte[0xffff];
-            int n;
-            while ((n = input.readUnsignedShort()) > 0) {
-                input.readFully(buffer, 0, n);
-                stream.write(buffer, 0, n);
-            }
-        } finally {
-            stream.close();
-        }
-
-        return file;
+        return null;
     }
 
 }

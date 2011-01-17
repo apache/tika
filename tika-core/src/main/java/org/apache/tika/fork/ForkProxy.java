@@ -18,12 +18,10 @@ package org.apache.tika.fork;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.Serializable;
 
-import java.io.IOException;
+interface ForkProxy extends Serializable {
 
-interface ForkResource {
-
-    Throwable process(DataInputStream input, DataOutputStream output)
-        throws IOException;
+    void init(DataInputStream input, DataOutputStream output);
 
 }
