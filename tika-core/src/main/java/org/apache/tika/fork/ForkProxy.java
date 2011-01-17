@@ -20,7 +20,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.Serializable;
 
-interface ForkProxy extends Serializable {
+public interface ForkProxy extends Serializable {
 
     void init(DataInputStream input, DataOutputStream output);
 

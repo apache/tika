@@ -21,7 +21,7 @@ import java.io.DataOutputStream;
 
 import java.io.IOException;
 
-interface ForkResource {
+public interface ForkResource {
 
     Throwable process(DataInputStream input, DataOutputStream output)
         throws IOException;

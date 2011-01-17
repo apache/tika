@@ -54,7 +54,7 @@ class ForkSerializer extends ObjectInputStream {
      * @param loader class loader used when deserializing objects
      * @throws IOException if this stream could not be initiated
      */
-    private ForkSerializer(InputStream input, ClassLoader loader)
+    public ForkSerializer(InputStream input, ClassLoader loader)
             throws IOException {
         super(input);
         this.loader = loader;
@@ -71,57 +71,6 @@ class ForkSerializer extends ObjectInputStream {
     protected Class<?> resolveClass(ObjectStreamClass desc)
             throws ClassNotFoundException {
         return Class.forName(desc.getName(), false, loader);
-    }
-
-    /**
-     * Serializes the object first into an in-memory buffer and then
-     * writes it to the output stream with a preceding size integer.
-     *
-     * @param output output stream to which the serialized object is written
-     * @param object object to be serialized
-     * @throws IOException if the object could not be serialized
-     */
-    static void serialize(DataOutputStream output, Object object)
-            throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-
-        ObjectOutputStream serializer = new ObjectOutputStream(buffer);
-        serializer.writeObject(object);
-        serializer.close();
-
-        byte[] data = buffer.toByteArray();
-        output.writeInt(data.length);
-        output.write(data);
-    }
-
-    /**
-     * Deserializes an object from the given stream. The serialized object
-     * is expected to be preceded by a size integer, that is used for reading
-     * the entire serialization into a memory before deserializing it.
-     *
-     * @param input input stream from which the serialized object is read
-     * @param loader class loader to be used for loading referenced classes
-     * @throws IOException if the object could not be deserialized
-     * @throws ClassNotFoundException if a referenced class is not found
-     */
-    static Object deserialize(
-            DataInputStream input, DataOutputStream output, ClassLoader loader)
-            throws IOException, ClassNotFoundException {
-        int n = input.readInt();
-        byte[] data = new byte[n];
-        input.readFully(data);
-
-        ObjectInputStream deserializer =
-            new ForkSerializer(new ByteArrayInputStream(data), loader);
-        Object object = deserializer.readObject();
-        if (object instanceof ForkProxy) {
-            ((ForkProxy) object).init(input, output);
-        }
-
-        output.writeByte(ForkServer.REPLY);
-        output.flush();
-
-        return object;
     }
 
 }
