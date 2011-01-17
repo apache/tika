@@ -17,22 +17,15 @@
 package org.apache.tika.fork;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
 
-class ForkServer extends ClassLoader {
+class ForkServer implements Runnable {
 
     public static final byte ERROR = -1;
 
@@ -43,30 +36,25 @@ class ForkServer extends ClassLoader {
     public static final byte RESOURCE = 2;
 
     /**
-     * Starts a forked server process.
+     * Starts a forked server process using the standard input and output
+     * streams for communication with the parent process. Any attempts by
+     * stray code to read from standard input or write to standard output
+     * is redirected to avoid interfering with the communication channel.
      * 
      * @param args command line arguments, ignored
      * @throws Exception if the server could not be started
      */
     public static void main(String[] args) throws Exception {
-        ForkServer server =
-            new ForkServer(System.in, System.out);
-
-        // Set the server instance as the context class loader
-        // to make classes from the parent process available
-        Thread.currentThread().setContextClassLoader(server);
-
-        // Redirect standard input and output streams to prevent
-        // stray code from interfering with the message stream
+        ForkServer server = new ForkServer(System.in, System.out);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
-
-        // Start processing request
         server.run();
     }
 
+    /** Input stream for reading from the parent process */
     private final DataInputStream input;
 
+    /** Output stream for writing to the parent process */
     private final DataOutputStream output;
 
     /**
@@ -83,37 +71,27 @@ class ForkServer extends ClassLoader {
         this.output = new DataOutputStream(output);
     }
 
-    public void run() throws IOException {
-        int b;
-        while ((b = input.read()) != -1) {
-            if (b == CALL) {
-                try {
-                    call();
-                } catch (Exception e) {
-                    output.write(ERROR);
-                    ForkSerializer.serialize(output, e);
+    public void run() {
+        try {
+            while (true) {
+                ClassLoader loader = (ClassLoader) readObject(
+                        ForkServer.class.getClassLoader());
+                Thread.currentThread().setContextClassLoader(loader);
+
+                Object object = readObject(loader);
+                Method method = getMethod(object, input.readUTF());
+                Object[] args = new Object[method.getParameterTypes().length];
+                for (int i = 0; i < args.length; i++) {
+                    args[i] = readObject(loader);
                 }
+                method.invoke(object, args);
+
+                output.write(REPLY);
                 output.flush();
             }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
-    }
-
-    private void call() throws Exception {
-        ClassLoader loader = (ClassLoader) ForkSerializer.deserialize(
-                input, output, ForkServer.class.getClassLoader());
-        System.err.println("Loader loaded");
-        Object object = ForkSerializer.deserialize(input, output, loader);
-        System.err.println("Object loaded");
-        Method method = getMethod(object, input.readUTF());
-        System.err.println("Method loaded");
-        int n = method.getParameterTypes().length;
-        Object[] args = new Object[n];
-        for (int i = 0; i < n; i++) {
-            args[i] = ForkSerializer.deserialize(input, output, loader);
-        }
-        method.invoke(object, args);
-        output.write(REPLY);
-        output.flush();
     }
 
     private Method getMethod(Object object, String name) {
@@ -124,6 +102,36 @@ class ForkServer extends ClassLoader {
             }
         }
         return null;
+    }
+
+    /**
+     * Deserializes an object from the given stream. The serialized object
+     * is expected to be preceded by a size integer, that is used for reading
+     * the entire serialization into a memory before deserializing it.
+     *
+     * @param input input stream from which the serialized object is read
+     * @param loader class loader to be used for loading referenced classes
+     * @throws IOException if the object could not be deserialized
+     * @throws ClassNotFoundException if a referenced class is not found
+     */
+    private Object readObject(ClassLoader loader)
+            throws IOException, ClassNotFoundException {
+        int n = input.readInt();
+        byte[] data = new byte[n];
+        input.readFully(data);
+
+        ObjectInputStream deserializer =
+            new ForkSerializer(new ByteArrayInputStream(data), loader);
+        Object object = deserializer.readObject();
+        if (object instanceof ForkProxy) {
+            ((ForkProxy) object).init(input, output);
+        }
+
+        // Tell the parent process that we successfully received this object
+        output.writeByte(ForkServer.REPLY);
+        output.flush();
+
+        return object;
     }
 
 }

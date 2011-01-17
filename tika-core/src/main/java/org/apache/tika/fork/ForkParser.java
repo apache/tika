@@ -21,20 +21,23 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class ForkParser extends DelegatingParser {
+public class ForkParser implements Parser {
 
     private final ClassLoader loader;
+
+    private final Parser parser;
 
     private final Queue<ForkClient> pool =
         new LinkedList<ForkClient>();
@@ -43,12 +46,12 @@ public class ForkParser extends DelegatingParser {
 
     public static void main(String[] args) throws Exception {
         ForkParser parser = new ForkParser(
-                Thread.currentThread().getContextClassLoader());
+                Thread.currentThread().getContextClassLoader(),
+                new AutoDetectParser());
         try {
             InputStream stream =
                 new ByteArrayInputStream("Hello, World!".getBytes());
             ParseContext context = new ParseContext();
-            context.set(Parser.class, new AutoDetectParser());
             parser.parse(
                     stream, new WriteOutContentHandler(System.out),
                     new Metadata(), context);
@@ -57,24 +60,31 @@ public class ForkParser extends DelegatingParser {
         }
     }
 
-    public ForkParser(ClassLoader loader) {
+    public ForkParser(ClassLoader loader, Parser parser) {
         this.loader = loader;
+        this.parser = parser;
     }
 
-    /**
-     * 
-     */
-    @Override
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return parser.getSupportedTypes(context);
+    }
+
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         ForkClient client = acquireClient();
         try {
-            client.parse(getDelegateParser(context), stream, handler);
+            client.call(parser, "parse", stream, handler, metadata, context);
         } finally {
             releaseClient(client);
         }
+    }
+
+    public void parse(
+            InputStream stream, ContentHandler handler, Metadata metadata)
+            throws IOException, SAXException, TikaException {
+        parse(stream, handler, metadata, new ParseContext());
     }
 
     public synchronized void close() {

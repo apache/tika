@@ -45,7 +45,6 @@ class ClassLoaderResource implements ForkResource {
             throws IOException {
         byte type = input.readByte();
         String name = input.readUTF();
-        System.out.println(name);
         if (type == 1) {
             InputStream stream = loader.getResourceAsStream(name);
             if (stream != null) {
@@ -86,7 +85,6 @@ class ClassLoaderResource implements ForkResource {
             byte[] buffer = new byte[0x10000 - 1];
             int n;
             while ((n = stream.read(buffer)) != -1) {
-                System.out.println(n);
                 output.writeShort(n);
                 output.write(buffer, 0, n);
             }
