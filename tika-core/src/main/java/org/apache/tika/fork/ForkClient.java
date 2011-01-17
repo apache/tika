@@ -24,7 +24,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
@@ -82,6 +84,7 @@ class ForkClient {
      */
     private void copyClassToDirectory(Class<?> klass) throws IOException {
         String path = klass.getName().replace('.', '/') + ".class";
+        ClassLoader loader = klass.getClassLoader();
         InputStream input = loader.getResourceAsStream(path);
         try {
             File file = new File(directory, path);
@@ -98,12 +101,12 @@ class ForkClient {
     }
 
     public synchronized Object echo(Object message) throws IOException {
-        consumeErrors();
+        consumeErrorStream();
         output.write(ForkServer.ECHO);
         ForkSerializer.serialize(output, message);
         output.flush();
 
-        readResponseType();
+        waitForResponse();
         try {
             return ForkSerializer.deserialize(input, loader).toString();
         } catch (ClassNotFoundException e) {
@@ -123,16 +126,24 @@ class ForkClient {
         delete(directory);
     }
 
-    private byte readResponseType() throws IOException {
+    /**
+     * 
+     * @return
+     * @throws IOException
+     */
+    private byte waitForResponse() throws IOException {
+        List<ForkResource> resources = new ArrayList<ForkResource>();
+        resources.add(new ClassLoaderResource(loader));
         while (true) {
-            consumeErrors();
+            consumeErrorStream();
             int type = input.read();
             if (type == -1) {
-                throw new IOException("Unexpected end of stream encountered");
-            } else if (type == ForkServer.FIND_RESOURCE) {
-                sendResource(input.readUTF());
-            } else if (type == ForkServer.FIND_RESOURCES) {
-                sendResources(input.readUTF());
+                throw new IOException(
+                        "Lost connection to a forked server process");
+            } else if (type == ForkServer.RESOURCE) {
+                ForkResource resource =
+                    resources.get(input.readUnsignedByte());
+                resource.process(input, output);
             } else {
                 return (byte) type;
             }
@@ -140,73 +151,15 @@ class ForkClient {
     }
 
     /**
-     * Sends the named resource to the forked server process over the
-     * stdin/out communication channel. The resource stream is preceded
-     * with a boolean <code>true</code> value if the resource was found,
-     * otherwise just a boolean <code>false</code> value is written.
+     * Consumes all pending bytes from the standard error stream of the
+     * forked server process, and prints them out to the standard error
+     * stream of this process. This method should be called always before
+     * expecting some output from the server, to prevent the server from
+     * blocking due to a filled up pipe buffer of the error stream.
      *
-     * @param name resource name
-     * @throws IOException if the resource could not be sent
+     * @throws IOException if the error stream could not be read
      */
-    private void sendResource(String name) throws IOException {
-        InputStream stream = loader.getResourceAsStream(name);
-        if (stream != null) {
-            output.writeBoolean(true);
-            writeAndCloseStream(stream);
-        } else {
-            output.writeBoolean(false);
-        }
-        output.flush();
-    }
-
-    /**
-     * Sends all the named resources to the forked server process over the
-     * stdin/out communication channel. Each resource stream is preceded
-     * with a boolean <code>true</code> value, and a single boolean
-     * <code>false</code> value is written when no longer resources
-     * are available.
-     *
-     * @param name resource name
-     * @throws IOException if the resources could not be sent
-     */
-    private void sendResources(String name) throws IOException {
-        Enumeration<URL> resources = loader.getResources(name);
-        while (resources.hasMoreElements()) {
-            output.writeBoolean(true);
-            writeAndCloseStream(resources.nextElement().openStream());
-        }
-        output.writeBoolean(false);
-        output.flush();
-    }
-
-    /**
-     * Sends the given byte stream to the forked server process over the
-     * stdin/out communication channel. The stream is sent in chunks of
-     * less than 64kB, each preceded by a short value that indicates the
-     * length of the following chunk. A zero short value is sent at the
-     * end to signify the end of the stream.
-     * <p>
-     * The stream is guaranteed to be closed by this method, regardless of
-     * the way it returns.
-     *
-     * @param stream the stream to be sent
-     * @throws IOException if the stream could not be sent
-     */
-    private void writeAndCloseStream(InputStream stream) throws IOException {
-        try {
-            byte[] buffer = new byte[0xffff];
-            int n;
-            while ((n = stream.read(buffer)) != -1) {
-                output.writeShort(n);
-                output.write(buffer, 0, n);
-            }
-            output.writeShort(0);
-        } finally {
-            stream.close();
-        }
-    }
-
-    private void consumeErrors() throws IOException {
+    private void consumeErrorStream() throws IOException {
         int n;
         while ((n = error.available()) > 0) {
             byte[] b = new byte[n];

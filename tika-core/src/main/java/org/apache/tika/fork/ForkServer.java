@@ -39,9 +39,7 @@ class ForkServer extends ClassLoader {
 
     public static final byte ECHO = 1;
 
-    public static final byte FIND_RESOURCE = 2;
-
-    public static final byte FIND_RESOURCES = 3;
+    public static final byte RESOURCE = 2;
 
     /**
      * Starts a forked server process.
@@ -108,7 +106,9 @@ class ForkServer extends ClassLoader {
     protected synchronized URL findResource(String name) {
         try {
             // Send a request to load the resource data
-            output.write(FIND_RESOURCE);
+            output.write(RESOURCE);
+            output.write(0);
+            output.write(1);
             output.writeUTF(name);
             output.flush();
 
@@ -127,7 +127,9 @@ class ForkServer extends ClassLoader {
     protected synchronized Enumeration<URL> findResources(String name)
             throws IOException {
         // Send a request to load the resources
-        output.write(FIND_RESOURCE);
+        output.write(RESOURCE);
+        output.write(0);
+        output.write(2);
         output.writeUTF(name);
         output.flush();
 
@@ -144,7 +146,9 @@ class ForkServer extends ClassLoader {
             throws ClassNotFoundException {
         try {
             // Send a request to load the class data
-            output.write(FIND_RESOURCE);
+            output.write(RESOURCE);
+            output.write(0);
+            output.write(1);
             output.writeUTF(name.replace('.', '/') + ".class");
             output.flush();
 
