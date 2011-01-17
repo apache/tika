@@ -41,7 +41,7 @@ class ClassLoaderResource implements ForkResource {
      * @param name resource name
      * @throws IOException if the resource could not be sent
      */
-    public void process(DataInputStream input, DataOutputStream output)
+    public Throwable process(DataInputStream input, DataOutputStream output)
             throws IOException {
         byte type = input.readByte();
         String name = input.readUTF();
@@ -64,6 +64,7 @@ class ClassLoaderResource implements ForkResource {
             output.writeBoolean(false);
         }
         output.flush();
+        return null;
     }
 
     /**

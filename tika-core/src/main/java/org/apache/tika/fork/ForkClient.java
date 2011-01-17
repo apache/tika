@@ -23,6 +23,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -30,6 +32,10 @@ import java.util.List;
 
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.xml.sax.ContentHandler;
 
 class ForkClient {
 
@@ -56,19 +62,34 @@ class ForkClient {
         try {
             copyClassToDirectory(ForkServer.class);
             copyClassToDirectory(ForkSerializer.class);
+            copyClassToDirectory(ForkProxy.class);
+            copyClassToDirectory(ClassLoaderProxy.class);
 
-            ProcessBuilder builder = new ProcessBuilder();
-            builder.directory(directory);
-            builder.command("java", ForkServer.class.getName());
-            this.process = builder.start();
-            this.output = new DataOutputStream(process.getOutputStream());
-            this.input = new DataInputStream(process.getInputStream());
-            this.error = process.getErrorStream();
+            System.out.println(directory);
+            //ProcessBuilder builder = new ProcessBuilder();
+            //builder.directory(directory);
+            //builder.command("java", ForkServer.class.getName());
+            //this.process = builder.start();
+            //this.output = new DataOutputStream(process.getOutputStream());
+            //this.input = new DataInputStream(process.getInputStream());
+            //this.error = process.getErrorStream();
+            this.process = null;
+            this.error = System.in;
+            PipedInputStream in = new PipedInputStream();
+            PipedOutputStream out = new PipedOutputStream();
+            this.input = new DataInputStream(new PipedInputStream(out));
+            this.output = new DataOutputStream(new PipedOutputStream(in));
+            final ForkServer server = new ForkServer(in, out);
+            new Thread() {
+                public void run() {
+                    try {server.run();} catch (Exception e) {}
+                }
+            }.start();
 
             ok = true;
         } finally {
             if (!ok) {
-                delete(directory);
+                // delete(directory);
             }
         }
     }
@@ -100,18 +121,29 @@ class ForkClient {
         }
     }
 
-    public synchronized Object echo(Object message) throws IOException {
+    public synchronized void parse(
+            Parser parser, InputStream input, ContentHandler handler)
+            throws IOException {
+        List<ForkResource> resources = new ArrayList<ForkResource>();
+        resources.add(new ClassLoaderResource(loader));
+        resources.add(new InputStreamResource(input));
+        resources.add(new ContentHandlerResource(handler));
         consumeErrorStream();
-        output.write(ForkServer.ECHO);
-        ForkSerializer.serialize(output, message);
-        output.flush();
-
-        waitForResponse();
-        try {
-            return ForkSerializer.deserialize(input, loader).toString();
-        } catch (ClassNotFoundException e) {
-            throw new IOExceptionWithCause("Unable to read echo response", e);
-        }
+        output.write(ForkServer.CALL);
+        ForkSerializer.serialize(output, new ClassLoaderProxy(0));
+        waitForResponse(resources);
+        ForkSerializer.serialize(output, parser);
+        waitForResponse(resources);
+        output.writeUTF("parse");
+        ForkSerializer.serialize(output, new InputStreamProxy(1));
+        waitForResponse(resources);
+        ForkSerializer.serialize(output, new ContentHandlerProxy(2));
+        waitForResponse(resources);
+        ForkSerializer.serialize(output, new Metadata());
+        waitForResponse(resources);
+        ForkSerializer.serialize(output, new ParseContext());
+        waitForResponse(resources);
+        waitForResponse(resources);
     }
 
 
@@ -122,18 +154,13 @@ class ForkClient {
             error.close();
         } catch (IOException ignore) {
         }
-        process.destroy();
-        delete(directory);
+        // process.destroy();
+        // delete(directory);
     }
 
-    /**
-     * 
-     * @return
-     * @throws IOException
-     */
-    private byte waitForResponse() throws IOException {
-        List<ForkResource> resources = new ArrayList<ForkResource>();
-        resources.add(new ClassLoaderResource(loader));
+    private byte waitForResponse(List<ForkResource> resources)
+            throws IOException {
+        output.flush();
         while (true) {
             consumeErrorStream();
             int type = input.read();

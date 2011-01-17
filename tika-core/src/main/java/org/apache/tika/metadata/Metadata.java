@@ -16,6 +16,7 @@
  */
 package org.apache.tika.metadata;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParseException;
@@ -32,7 +33,11 @@ import java.util.TimeZone;
  * A multi-valued metadata container.
  */
 public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHeaders,
-        Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys {
+        Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys,
+        Serializable {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = 5623926545693153182L;
 
     /**
      * A map of all metadata attributes.

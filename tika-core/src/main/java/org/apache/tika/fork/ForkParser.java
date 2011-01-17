@@ -16,6 +16,7 @@
  */
 package org.apache.tika.fork;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -43,9 +45,13 @@ public class ForkParser extends DelegatingParser {
         ForkParser parser = new ForkParser(
                 Thread.currentThread().getContextClassLoader());
         try {
+            InputStream stream =
+                new ByteArrayInputStream("Hello, World!".getBytes());
             ParseContext context = new ParseContext();
             context.set(Parser.class, new AutoDetectParser());
-            parser.parse(null, null, null, context);
+            parser.parse(
+                    stream, new WriteOutContentHandler(System.out),
+                    new Metadata(), context);
         } finally {
             parser.close();
         }
@@ -65,7 +71,7 @@ public class ForkParser extends DelegatingParser {
             throws IOException, SAXException, TikaException {
         ForkClient client = acquireClient();
         try {
-            System.out.println(client.echo(getDelegateParser(context)));
+            client.parse(getDelegateParser(context), stream, handler);
         } finally {
             releaseClient(client);
         }
