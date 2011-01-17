@@ -43,6 +43,7 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.fork.ForkParser;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.IOUtils;
@@ -86,7 +87,11 @@ public class TikaCLI {
     private class OutputType {
 
         public void process(InputStream stream) throws Exception {
-            parser.parse(stream, getContentHandler(), metadata, context);
+            Parser p = parser;
+            if (fork) {
+                p = new ForkParser(TikaCLI.class.getClassLoader(), p);
+            }
+            p.parse(stream, getContentHandler(), metadata, context);
         }
 
         protected ContentHandler getContentHandler() throws Exception {
@@ -188,6 +193,8 @@ public class TikaCLI {
 
     private boolean pipeMode = true;
 
+    private boolean fork = false;
+
     public TikaCLI() throws TransformerConfigurationException, IOException, TikaException, SAXException {
         context = new ParseContext();
         detector = new DefaultDetector();
@@ -219,6 +226,8 @@ public class TikaCLI {
         } else if (arg.equals("--container-aware")
                 || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
+        } else if (arg.equals("-f") || arg.equals("--fork")) {
+            fork = true;
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
