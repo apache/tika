@@ -73,12 +73,12 @@ class ForkServer implements Runnable {
 
     public void run() {
         try {
-            while (true) {
-                ClassLoader loader = (ClassLoader) readObject(
-                        ForkServer.class.getClassLoader());
-                Thread.currentThread().setContextClassLoader(loader);
+            ClassLoader loader = (ClassLoader) readObject(
+                    ForkServer.class.getClassLoader());
+            Thread.currentThread().setContextClassLoader(loader);
 
-                Object object = readObject(loader);
+            Object object = readObject(loader);
+            while (true) {
                 Method method = getMethod(object, input.readUTF());
                 Object[] args = new Object[method.getParameterTypes().length];
                 for (int i = 0; i < args.length; i++) {

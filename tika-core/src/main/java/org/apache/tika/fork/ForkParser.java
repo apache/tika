@@ -75,7 +75,7 @@ public class ForkParser implements Parser {
             throws IOException, SAXException, TikaException {
         ForkClient client = acquireClient();
         try {
-            client.call(parser, "parse", stream, handler, metadata, context);
+            client.call("parse", stream, handler, metadata, context);
         } finally {
             releaseClient(client);
         }
@@ -99,7 +99,7 @@ public class ForkParser implements Parser {
             throws IOException {
         ForkClient client = pool.poll();
         if (client == null) {
-            client = new ForkClient(loader);
+            client = new ForkClient(loader, parser);
         }
         return client;
     }

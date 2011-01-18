@@ -35,7 +35,7 @@ class ForkClient {
 
     private final String java = "java"; // TODO: Make configurable
 
-    private final ClassLoader loader;
+    private final List<ForkResource> resources = new ArrayList<ForkResource>();
 
     private final File directory;
 
@@ -47,9 +47,7 @@ class ForkClient {
 
     private final InputStream error;
 
-    public ForkClient(ClassLoader loader) throws IOException {
-        this.loader = loader;
-
+    public ForkClient(ClassLoader loader, Object object) throws IOException {
         this.directory = File.createTempFile("apache-tika-", "-fork");
         directory.delete();
         directory.mkdir();
@@ -68,6 +66,9 @@ class ForkClient {
             this.output = new DataOutputStream(process.getOutputStream());
             this.input = new DataInputStream(process.getInputStream());
             this.error = process.getErrorStream();
+
+            sendObject(loader, resources);
+            sendObject(object, resources);
 
             ok = true;
         } finally {
@@ -104,17 +105,14 @@ class ForkClient {
         }
     }
 
-    public synchronized void call(
-            Object object, String method, Object... args)
+    public synchronized void call(String method, Object... args)
             throws IOException {
-        List<ForkResource> resources = new ArrayList<ForkResource>();
-        sendObject(loader, resources);
-        sendObject(object, resources);
+        List<ForkResource> r = new ArrayList<ForkResource>(resources);
         output.writeUTF("parse");
         for (int i = 0; i < args.length; i++) {
-            sendObject(args[i], resources);
+            sendObject(args[i], r);
         }
-        waitForResponse(resources);
+        waitForResponse(r);
     }
 
     /**
