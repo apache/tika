@@ -2474,6 +2474,9 @@
   </mime-type>
   <mime-type type="application/x-msaccess">
     <glob pattern="*.mdb"/>
+    <magic priority="60">
+      <match value="0x000100005374616e" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/x-msbinder">
     <glob pattern="*.obd"/>
