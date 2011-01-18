@@ -106,18 +106,21 @@ class ForkServer implements Runnable, Checksum {
             Object object = readObject(loader);
             while (true) {
                 int request = input.read();
-                if (request == CALL) {
+                if (request == -1) {
+                    break;
+                } else if (request == CALL) {
                     Method method = getMethod(object, input.readUTF());
-                    Object[] args = new Object[method.getParameterTypes().length];
+                    Object[] args =
+                        new Object[method.getParameterTypes().length];
                     for (int i = 0; i < args.length; i++) {
                         args[i] = readObject(loader);
                     }
                     method.invoke(object, args);
-                } else if (request != PING) {
-                    
+                    output.write(DONE);
+                    output.flush();
+                } else {
+                    throw new IllegalStateException("Unexpected request");
                 }
-                output.write(DONE);
-                output.flush();
             }
         } catch (Throwable t) {
             t.printStackTrace();
