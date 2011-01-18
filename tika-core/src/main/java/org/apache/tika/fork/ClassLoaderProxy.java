@@ -19,24 +19,28 @@ package org.apache.tika.fork;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 class ClassLoaderProxy extends ClassLoader implements ForkProxy {
 
     /** Serial version UID */
-    private static final long serialVersionUID = 4350939227765568438L;
+    private static final long serialVersionUID = -7303109260448540420L;
+
+    /**
+     * Names of resources that could not be found. Used to avoid repeated
+     * lookup of commonly accessed, but often not present, resources like
+     * <code>META-INF/services/javax.xml.parsers.SAXParserFactory</code>.
+     */
+    private final Set<String> notFound = new HashSet<String>();
 
     private final int resource;
-
-    private int count = 0;
 
     private transient DataInputStream input;
 
@@ -53,6 +57,9 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
 
     @Override
     protected synchronized URL findResource(String name) {
+        if (notFound.contains(name)) {
+            return null;
+        }
         try {
             // Send a request to load the resource data
             output.write(ForkServer.RESOURCE);
@@ -63,8 +70,9 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
 
             // Receive the response
             if (input.readBoolean()) {
-                return readStreamToFile().toURI().toURL();
+                return MemoryURLStreamHandler.createURL(readStream());
             } else {
+                notFound.add(name);
                 return null;
             }
         } catch (IOException e) {
@@ -85,7 +93,7 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
         // Receive the response
         List<URL> resources = new ArrayList<URL>();
         while (input.readBoolean()) {
-            resources.add(readStreamToFile().toURI().toURL());
+            resources.add(MemoryURLStreamHandler.createURL(readStream()));
         }
         return Collections.enumeration(resources);
     }
@@ -103,18 +111,17 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
 
             // Receive the response
             if (input.readBoolean()) {
-                byte[] data = readStreamToMemory();
+                byte[] data = readStream();
                 return defineClass(name, data, 0, data.length);
             } else {
-                return null;
+                throw new ClassNotFoundException("Unable to find class " + name);
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new ClassNotFoundException("Unable load class " + name, e);
+            throw new ClassNotFoundException("Unable to load class " + name, e);
         }
     }
 
-    private byte[] readStreamToMemory() throws IOException {
+    private byte[] readStream() throws IOException {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         byte[] buffer = new byte[0xffff];
         int n;
@@ -123,24 +130,6 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
             stream.write(buffer, 0, n);
         }
         return stream.toByteArray();
-    }
-
-    private File readStreamToFile() throws IOException {
-        File file = new File("resource-" + count++ + ".bin");
-
-        OutputStream stream = new FileOutputStream(file);
-        try {
-            byte[] buffer = new byte[0xffff];
-            int n;
-            while ((n = input.readUnsignedShort()) > 0) {
-                input.readFully(buffer, 0, n);
-                stream.write(buffer, 0, n);
-            }
-        } finally {
-            stream.close();
-        }
-
-        return file;
     }
 
 }

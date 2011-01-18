@@ -24,16 +24,20 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.CheckedOutputStream;
+import java.util.zip.Checksum;
 
-class ForkServer implements Runnable {
+class ForkServer implements Runnable, Checksum {
 
-    public static final byte ERROR = -1;
-
-    public static final byte REPLY = 0;
+    public static final byte DONE = 0;
 
     public static final byte CALL = 1;
 
-    public static final byte RESOURCE = 2;
+    public static final byte PING = 2;
+
+    public static final byte RESOURCE = 3;
 
     /**
      * Starts a forked server process using the standard input and output
@@ -45,10 +49,17 @@ class ForkServer implements Runnable {
      * @throws Exception if the server could not be started
      */
     public static void main(String[] args) throws Exception {
+        URL.setURLStreamHandlerFactory(new MemoryURLStreamHandlerFactory());
+
         ForkServer server = new ForkServer(System.in, System.out);
         System.setIn(new ByteArrayInputStream(new byte[0]));
         System.setOut(System.err);
-        server.run();
+
+        Thread watchdog = new Thread(server, "Tika Watchdog");
+        watchdog.setDaemon(true);
+        watchdog.start();
+
+        server.processRequests();
     }
 
     /** Input stream for reading from the parent process */
@@ -56,6 +67,8 @@ class ForkServer implements Runnable {
 
     /** Output stream for writing to the parent process */
     private final DataOutputStream output;
+
+    private volatile boolean active = true;
 
     /**
      * Sets up a forked server instance using the given stdin/out
@@ -67,11 +80,24 @@ class ForkServer implements Runnable {
      */
     public ForkServer(InputStream input, OutputStream output)
             throws IOException {
-        this.input = new DataInputStream(input);
-        this.output = new DataOutputStream(output);
+        this.input =
+            new DataInputStream(new CheckedInputStream(input, this));
+        this.output =
+            new DataOutputStream(new CheckedOutputStream(output, this));
     }
 
     public void run() {
+        try {
+            while (active) {
+                active = false;
+                Thread.sleep(5000);
+            }
+            System.exit(0);
+        } catch (InterruptedException e) {
+        }
+    }
+
+    public void processRequests() {
         try {
             ClassLoader loader = (ClassLoader) readObject(
                     ForkServer.class.getClassLoader());
@@ -79,14 +105,18 @@ class ForkServer implements Runnable {
 
             Object object = readObject(loader);
             while (true) {
-                Method method = getMethod(object, input.readUTF());
-                Object[] args = new Object[method.getParameterTypes().length];
-                for (int i = 0; i < args.length; i++) {
-                    args[i] = readObject(loader);
+                int request = input.read();
+                if (request == CALL) {
+                    Method method = getMethod(object, input.readUTF());
+                    Object[] args = new Object[method.getParameterTypes().length];
+                    for (int i = 0; i < args.length; i++) {
+                        args[i] = readObject(loader);
+                    }
+                    method.invoke(object, args);
+                } else if (request != PING) {
+                    
                 }
-                method.invoke(object, args);
-
-                output.write(REPLY);
+                output.write(DONE);
                 output.flush();
             }
         } catch (Throwable t) {
@@ -128,10 +158,27 @@ class ForkServer implements Runnable {
         }
 
         // Tell the parent process that we successfully received this object
-        output.writeByte(ForkServer.REPLY);
+        output.writeByte(ForkServer.DONE);
         output.flush();
 
         return object;
+    }
+
+    //-------------------------------------------------------------< Checsum >
+
+    public void update(int b) {
+        active = true;
+    }
+
+    public void update(byte[] b, int off, int len) {
+        active = true;
+    }
+
+    public long getValue() {
+        return 0;
+    }
+
+    public void reset() {
     }
 
 }
