@@ -76,7 +76,8 @@ class ForkClient {
     public synchronized void call(String method, Object... args)
             throws IOException {
         List<ForkResource> r = new ArrayList<ForkResource>(resources);
-        output.writeUTF("parse");
+        output.writeByte(ForkServer.CALL);
+        output.writeUTF(method);
         for (int i = 0; i < args.length; i++) {
             sendObject(args[i], r);
         }
