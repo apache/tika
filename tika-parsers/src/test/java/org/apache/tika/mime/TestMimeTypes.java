@@ -364,6 +364,8 @@ public class TestMimeTypes extends TestCase {
         assertType("audio/x-aiff", "testAIFF.aif");
         assertType("audio/x-wav", "testWAV.wav");
         assertType("audio/midi", "testMID.mid");
+        assertType("application/x-msaccess", "testACCESS.mdb");
+        assertType("application/x-font-ttf", "testTrueType.ttf");
     }
 
     private void assertType(String expected, String filename) throws Exception {
