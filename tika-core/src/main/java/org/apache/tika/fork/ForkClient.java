@@ -24,9 +24,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 
 import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
@@ -37,7 +39,7 @@ class ForkClient {
 
     private final List<ForkResource> resources = new ArrayList<ForkResource>();
 
-    private final File directory;
+    private final File jar;
 
     private final Process process;
 
@@ -48,21 +50,14 @@ class ForkClient {
     private final InputStream error;
 
     public ForkClient(ClassLoader loader, Object object) throws IOException {
-        this.directory = File.createTempFile("apache-tika-", "-fork");
-        directory.delete();
-        directory.mkdir();
-
         boolean ok = false;
         try {
-            copyClassToDirectory(ForkServer.class);
-            copyClassToDirectory(ForkSerializer.class);
-            copyClassToDirectory(ForkProxy.class);
-            copyClassToDirectory(ClassLoaderProxy.class);
+            this.jar = createBootstrapJar();
 
             ProcessBuilder builder = new ProcessBuilder();
-            builder.directory(directory);
-            builder.command(java, ForkServer.class.getName());
+            builder.command(java, "-jar", jar.getPath());
             this.process = builder.start();
+
             this.output = new DataOutputStream(process.getOutputStream());
             this.input = new DataInputStream(process.getInputStream());
             this.error = process.getErrorStream();
@@ -73,35 +68,8 @@ class ForkClient {
             ok = true;
         } finally {
             if (!ok) {
-                delete(directory);
+                close();
             }
-        }
-    }
-
-    /**
-     * Copies the <code>.class</code> file of the given class to the
-     * directory from where the forked server process can load it
-     * during startup before setting up the stdin/out communication
-     * channel with the parent process.
-     *
-     * @param klass the class to be copied
-     * @throws IOException if the class could not be copied
-     */
-    private void copyClassToDirectory(Class<?> klass) throws IOException {
-        String path = klass.getName().replace('.', '/') + ".class";
-        ClassLoader loader = klass.getClassLoader();
-        InputStream input = loader.getResourceAsStream(path);
-        try {
-            File file = new File(directory, path);
-            file.getParentFile().mkdirs();
-            OutputStream output = new FileOutputStream(file);
-            try {
-                IOUtils.copy(input, output);
-            } finally {
-                output.close();
-            }
-        } finally {
-            input.close();
         }
     }
 
@@ -151,13 +119,23 @@ class ForkClient {
 
     public synchronized void close() {
         try {
-            output.close();
-            input.close();
-            error.close();
+            if (output != null) {
+                output.close();
+            }
+            if (input != null) {
+                input.close();
+            }
+            if (error != null) {
+                error.close();
+            }
         } catch (IOException ignore) {
         }
-        process.destroy();
-        delete(directory);
+        if (process != null) {
+            process.destroy();
+        }
+        if (jar != null) {
+            // jar.delete();
+        }
     }
 
     private byte waitForResponse(List<ForkResource> resources)
@@ -200,18 +178,62 @@ class ForkClient {
     }
 
     /**
-     * Recursively deletes the given file or directory.
+     * Creates a temporary jar file that can be used to bootstrap the forked
+     * server process. Remember to remove the file when no longer used.
      *
-     * @param file file or directory
+     * @return the created jar file
+     * @throws IOException if the bootstrap archive could not be created
      */
-    private void delete(File file) {
-        File[] children = file.listFiles();
-        if (children != null) {
-            for (File child : children) {
-                delete(child);
+    private static File createBootstrapJar() throws IOException {
+        File file = File.createTempFile("apache-tika-fork-", ".jar");
+        boolean ok = false;
+        try {
+            fillBootstrapJar(file);
+            ok = true;
+        } finally {
+            if (!ok) {
+                file.delete();
             }
         }
-        file.delete();
+        return file;
+    }
+
+    /**
+     * Fills in the jar file used to bootstrap the forked server process.
+     * All the required <code>.class</code> files and a manifest with a
+     * <code>Main-Class</code> entry are written into the archive.
+     *
+     * @param file file to hold the bootstrap archive
+     * @throws IOException if the bootstrap archive could not be created
+     */
+    private static void fillBootstrapJar(File file) throws IOException {
+        JarOutputStream jar = new JarOutputStream(new FileOutputStream(file));
+        try {
+            String manifest =
+                "Main-Class: " + ForkServer.class.getName() + "\n";
+            jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
+            jar.write(manifest.getBytes("UTF-8"));
+
+            Class<?>[] bootstrap = {
+                    ForkServer.class, ForkSerializer.class,
+                    ForkProxy.class, ClassLoaderProxy.class,
+                    MemoryURLConnection.class, MemoryURLStreamHandler.class,
+                    MemoryURLStreamHandlerFactory.class
+            };
+            ClassLoader loader = ForkServer.class.getClassLoader();
+            for (Class<?> klass : bootstrap) {
+                String path = klass.getName().replace('.', '/') + ".class";
+                InputStream input = loader.getResourceAsStream(path);
+                try {
+                    jar.putNextEntry(new JarEntry(path));
+                    IOUtils.copy(input, jar);
+                } finally {
+                    input.close();
+                }
+            }
+        } finally {
+            jar.close();
+        }
     }
 
 }
