@@ -16,9 +16,20 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
-import org.apache.poi.poifs.filesystem.*;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.filesystem.DocumentInputStream;
+import org.apache.poi.poifs.filesystem.Entry;
+import org.apache.poi.poifs.filesystem.Ole10Native;
+import org.apache.poi.poifs.filesystem.Ole10NativeException;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.detect.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
@@ -73,21 +84,24 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbededOfficeDoc(
             DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-       // Is it an embedded OLE2 document, or an embedded OOXML document?
-       try {
-          Entry ooxml = dir.getEntry("Package");
+        // Is it an embedded OLE2 document, or an embedded OOXML document?
+        try {
+            Entry ooxml = dir.getEntry("Package");
 
-          // It's OOXML
-          TikaInputStream ooxmlStream = TikaInputStream.get(
-                new DocumentInputStream((DocumentEntry)ooxml)
-          );
-          ZipContainerDetector detector = new ZipContainerDetector();
-          MediaType type = detector.detect(ooxmlStream, new Metadata());
-          handleEmbeddedResource(ooxmlStream, null, type.toString(), xhtml, true);
-          return;
-       } catch(FileNotFoundException e) {
-          // It's regular OLE2
-       }
+            // It's OOXML
+            TikaInputStream stream = TikaInputStream.get(
+                    new DocumentInputStream((DocumentEntry) ooxml));
+            try {
+                ZipContainerDetector detector = new ZipContainerDetector();
+                MediaType type = detector.detect(stream, new Metadata());
+                handleEmbeddedResource(stream, null, type.toString(), xhtml, true);
+                return;
+            } finally {
+                stream.close();
+            }
+        } catch(FileNotFoundException e) {
+            // It's regular OLE2
+        }
 
        // Need to dump the directory out to a new temp file, so
        //  it's stand along
