@@ -147,7 +147,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
 
     private void header(XHTMLContentHandler xhtml, String key, String value)
             throws SAXException {
-        if (value.length() > 0) {
+        if (value != null && value.length() > 0) {
             xhtml.element("dt", key);
             xhtml.element("dd", value);
         }
