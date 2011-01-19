@@ -52,6 +52,7 @@ public class LanguageIdentifier {
     private static final String PROPERTIES_OVERRIDE_FILE = "tika.language.override.properties";
     private static final String PROPERTIES_FILE = "tika.language.properties";
     private static final String LANGUAGES_KEY = "languages";
+    private static final double CERTAINTY_LIMIT = 0.022;
 
     private final String language;
 
@@ -99,7 +100,7 @@ public class LanguageIdentifier {
     /**
      * Adds a single language profile
      * @param language an ISO 639 code representing language
-     * @param profile
+     * @param profile the language profile
      */
     public static void addProfile(String language, LanguageProfile profile) {
         PROFILES.put(language, profile);
@@ -107,7 +108,7 @@ public class LanguageIdentifier {
     
     /**
      * Constructs a language identifier based on a LanguageProfile
-     * @param profile
+     * @param profile the language profile
      */
     public LanguageIdentifier(LanguageProfile profile) {
         String minLanguage = "unknown";
@@ -126,7 +127,7 @@ public class LanguageIdentifier {
 
     /**
      * Constructs a language identifier based on a String of text content
-     * @param content
+     * @param content the text
      */
     public LanguageIdentifier(String content) {
         this(new LanguageProfile(content));
@@ -144,10 +145,10 @@ public class LanguageIdentifier {
      * Tries to judge whether the identification is certain enough
      * to be trusted.
      * WARNING: Will never return true for small amount of input texts. 
-     * @return
+     * @return <code>true</code> if the distance is smaller then {@value #CERTAINTY_LIMIT}, <code>false</code> otherwise
      */
     public boolean isReasonablyCertain() {
-        return distance < 0.022;
+        return distance < CERTAINTY_LIMIT;
     }
 
     /**
@@ -162,8 +163,9 @@ public class LanguageIdentifier {
         errors = "";
         InputStream stream;
         stream = LanguageIdentifier.class.getResourceAsStream(PROPERTIES_OVERRIDE_FILE);
-        if(stream == null) 
+        if(stream == null) {
             stream = LanguageIdentifier.class.getResourceAsStream(PROPERTIES_FILE);
+        }
 
         if(stream != null){
             try {
@@ -187,9 +189,11 @@ public class LanguageIdentifier {
     }
 
     /**
-     * Initializes the language profiles from a user supplied initilized Map
+     * Initializes the language profiles from a user supplied initialized Map.
      * This overrides the default set of profiles initialized at startup,
      * and provides an alternative to configuring profiles through property file
+     *
+     * @param profilesMap map of language profiles
      */
     public static void initProfiles(Map<String, LanguageProfile> profilesMap) {
         clearProfiles();
@@ -215,7 +219,7 @@ public class LanguageIdentifier {
     
     /**
      * Returns a string of error messages related to initializing langauge profiles
-     * @return
+     * @return the String containing the error messages
      */
     public static String getErrors() {
         return errors;
