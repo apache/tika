@@ -16,6 +16,7 @@
  */
 package org.apache.tika.extractor;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
@@ -24,6 +25,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryFiles;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -35,18 +37,15 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * An implementation of {@link ContainerExtractor} powered by the
- *  regular {@link Parser} classes.
- * This allows you to easily extract out all the embedded resources
- *  from within contain files, whilst using the normal parsers
- *  to do the work.
- * By default the {@link AutoDetectParser} will be used, to allow
- *  extraction from the widest range of containers.
+ * An implementation of {@link ContainerExtractor} powered by the regular
+ * {@link Parser} API. This allows you to easily extract out all the
+ * embedded resources from within container files supported by normal Tika
+ * parsers. By default the {@link AutoDetectParser} will be used, to allow
+ * extraction from the widest range of containers.
  */
 public class ParserContainerExtractor implements ContainerExtractor {
-    /**
-     * Serial version UID
-     */
+
+    /** Serial version UID */
     private static final long serialVersionUID = 2261131045580861514L;
 
     private final Parser parser;
@@ -73,54 +72,71 @@ public class ParserContainerExtractor implements ContainerExtractor {
     }
 
     public void extract(
-            TikaInputStream stream, final ContainerExtractor recurseExtractor,
-            final EmbeddedResourceHandler handler)
+            TikaInputStream stream, ContainerExtractor recurseExtractor,
+            EmbeddedResourceHandler handler)
             throws IOException, TikaException {
         ParseContext context = new ParseContext();
-        context.set(Parser.class, new Parser() {
-            public Set<MediaType> getSupportedTypes(ParseContext context) {
-                return parser.getSupportedTypes(context);
-            }
-            public void parse(InputStream stream, ContentHandler ignored,
-                    Metadata metadata, ParseContext context)
-                    throws IOException, SAXException, TikaException {
-                // Figure out what we have to process
-                String filename = metadata.get(Metadata.RESOURCE_NAME_KEY);
-                MediaType type;
-                if(metadata.get(Metadata.CONTENT_TYPE) != null) {
-                   type = MediaType.parse( metadata.get(Metadata.CONTENT_TYPE) );
-                } else {
-                   if(! stream.markSupported()) {
-                      stream = TikaInputStream.get(stream);
-                   }
-                   type = detector.detect(stream, metadata);
-                }
-                
-                // Let the handler process the embedded resource 
-                handler.handle(filename, type, stream);
-                
-                // Recurse if requested
-                if(recurseExtractor != null) {
-                   if(recurseExtractor == ParserContainerExtractor.this) {
-                      parser.parse(stream, new DefaultHandler(), metadata, context);
-                   } else {
-                      recurseExtractor.extract(
-                            TikaInputStream.get(stream), recurseExtractor, handler
-                      );
-                   }
-                }
-            }
-            public void parse(InputStream stream, ContentHandler handler,
-                    Metadata metadata) throws IOException, SAXException,
-                    TikaException {
-                parse(stream, handler, metadata, new ParseContext());
-            }
-        });
+        context.set(Parser.class, new RecursiveParser(recurseExtractor, handler));
         try {
             parser.parse(stream, new DefaultHandler(), new Metadata(), context);
         } catch (SAXException e) {
             throw new TikaException("Unexpected SAX exception", e);
         }
+    }
+
+    private class RecursiveParser implements Parser {
+
+        private final ContainerExtractor extractor;
+
+        private final EmbeddedResourceHandler handler;
+
+        private RecursiveParser(
+                ContainerExtractor extractor,
+                EmbeddedResourceHandler handler) {
+            this.extractor = extractor;
+            this.handler = handler;
+        }
+
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return parser.getSupportedTypes(context);
+        }
+
+        public void parse(
+                InputStream stream, ContentHandler ignored,
+                Metadata metadata, ParseContext context)
+                throws IOException, SAXException, TikaException {
+            TemporaryFiles tmp = new TemporaryFiles();
+            try {
+                TikaInputStream tis = TikaInputStream.get(stream, tmp);
+
+                // Figure out what we have to process
+                String filename = metadata.get(Metadata.RESOURCE_NAME_KEY);
+                MediaType type = detector.detect(tis, metadata);
+
+                if (extractor == null) {
+                    // Let the handler process the embedded resource 
+                    handler.handle(filename, type, tis);
+                } else {
+                    // Use a temporary file to process the stream twice
+                    File file = tis.getFile();
+
+                    // Let the handler process the embedded resource 
+                    handler.handle(filename, type, TikaInputStream.get(file));
+
+                    // Recurse
+                    extractor.extract(tis, extractor, handler);
+                }
+            } finally {
+                tmp.dispose();
+            }
+        }
+
+        public void parse(
+                InputStream stream, ContentHandler handler, Metadata metadata)
+                throws IOException, SAXException, TikaException {
+            parse(stream, handler, metadata, new ParseContext());
+        }
+
     }
 
 }
