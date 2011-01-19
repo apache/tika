@@ -42,15 +42,19 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
         List<OLEShape> shapeList = powerPointExtractor.getOLEShapes();
         for (OLEShape shape : shapeList) {
-            TikaInputStream stream = TikaInputStream.get(shape.getObjectData().getData());
-
-            String mediaType = null;
-
-            if ("Excel.Chart.8".equals(shape.getProgID())) {
-                mediaType = "application/vnd.ms-excel";
+            TikaInputStream stream =
+                TikaInputStream.get(shape.getObjectData().getData());
+            try {
+                String mediaType = null;
+                if ("Excel.Chart.8".equals(shape.getProgID())) {
+                    mediaType = "application/vnd.ms-excel";
+                }
+                handleEmbeddedResource(
+                        stream, Integer.toString(shape.getObjectID()),
+                        mediaType, xhtml, false);
+            } finally {
+                stream.close();
             }
-
-            handleEmbeddedResource(stream, Integer.toString(shape.getObjectID()), mediaType, xhtml, false);
         }
     }
 }
