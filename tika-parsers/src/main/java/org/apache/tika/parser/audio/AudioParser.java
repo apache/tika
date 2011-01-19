@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
 
@@ -108,12 +109,8 @@ public class AudioParser implements Parser {
             // "date" Date date of the recording or release
             // "comment" String an arbitrary text
 
-            for (Entry<String, Object> entry : fileFormat.properties().entrySet()) {
-                metadata.set(entry.getKey(), entry.getValue().toString());
-            }
-            for (Entry<String, Object> entry : audioFormat.properties().entrySet()) {
-                metadata.set(entry.getKey(), entry.getValue().toString());
-            }
+            addMetadata(metadata, fileFormat.properties());
+            addMetadata(metadata, audioFormat.properties());
         } catch (UnsupportedAudioFileException e) {
             // There is no way to know whether this exception was
             // caused by the document being corrupted or by the format
@@ -123,6 +120,17 @@ public class AudioParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();
+    }
+
+    private void addMetadata(Metadata metadata, Map<String, Object> properties) {
+        if (properties != null) {
+            for (Entry<String, Object> entry : properties.entrySet()) {
+                Object value = entry.getValue();
+                if (value != null) {
+                    metadata.set(entry.getKey(), value.toString());
+                }
+            }
+        }
     }
 
     /**
