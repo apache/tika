@@ -72,7 +72,11 @@ public class MatchingContentHandler extends ContentHandlerDecorator {
         if (matcher.matchesElement()) {
             super.endElement(uri, localName, name);
         }
-        matcher = matchers.removeFirst();
+        // Sometimes tagsoup returns double end tags, so the stack might
+        // be empty! TODO: Remove this when the tagsoup problem is fixed.
+        if (!matchers.isEmpty()) {
+            matcher = matchers.removeFirst();
+        }
     }
 
     public void characters(char[] ch, int start, int length)
