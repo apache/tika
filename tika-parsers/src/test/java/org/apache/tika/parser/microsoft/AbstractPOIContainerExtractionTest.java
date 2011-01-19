@@ -46,8 +46,8 @@ public abstract class AbstractPOIContainerExtractionTest extends TestCase {
     public static final MediaType TYPE_JPG = MediaType.image("jpeg");
     public static final MediaType TYPE_GIF = MediaType.image("gif");
     public static final MediaType TYPE_PNG = MediaType.image("png");
-    public static final MediaType TYPE_EMF = MediaType.image("x-emf");
-    
+    public static final MediaType TYPE_EMF = MediaType.application("x-msmetafile");
+
     protected TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
         InputStream input = AbstractPOIContainerExtractionTest.class.getResourceAsStream(
              "/test-documents/" + filename);
