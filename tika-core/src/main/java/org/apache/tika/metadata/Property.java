@@ -63,7 +63,7 @@ public final class Property {
         this.valueType = valueType;
         if (choices != null) {
             this.choices = Collections.unmodifiableSet(
-                    new HashSet<String>(Arrays.asList(choices)));
+                    new HashSet<String>(Arrays.asList(choices.clone())));
         } else {
             this.choices = null;
         }

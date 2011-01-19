@@ -75,7 +75,6 @@ public class FeedParser implements Parser {
             throw new TikaException(e.getMessage());
         }
 
-        String feedLink = feed.getLink();
         String feedDesc = stripTags(feed.getDescriptionEx());
         String feedTitle = stripTags(feed.getTitleEx());
 

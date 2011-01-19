@@ -182,17 +182,19 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * @return property value as a Integer, or <code>null</code> if the property is not set, or not a valid Integer
      */
     public Integer getInt(Property property) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
             return null;
-        if(property.getValueType() != Property.ValueType.INTEGER)
+        }
+        if(property.getValueType() != Property.ValueType.INTEGER) {
             return null;
+        }
         
         String v = get(property);
         if(v == null) {
             return null;
         }
         try {
-            return new Integer(v);
+            return Integer.valueOf(v);
         } catch(NumberFormatException e) {
             return null;
         }
@@ -206,10 +208,12 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * @return property value as a Date, or <code>null</code> if the property is not set, or not a valid Date
      */
     public Date getDate(Property property) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
             return null;
-        if(property.getValueType() != Property.ValueType.DATE)
+        }
+        if(property.getValueType() != Property.ValueType.DATE) {
             return null;
+        }
         
         String v = get(property);
         if (v != null) {
@@ -308,10 +312,12 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * @param value    property value
      */
     public void set(Property property, int value) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
-        if(property.getValueType() != Property.ValueType.INTEGER)
+        }
+        if(property.getValueType() != Property.ValueType.INTEGER) {
             throw new PropertyTypeException(Property.ValueType.INTEGER, property.getValueType());
+        }
         set(property.getName(), Integer.toString(value));
     }
 
@@ -323,11 +329,13 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * @param value    property value
      */
     public void set(Property property, double value) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
+        }
         if(property.getValueType() != Property.ValueType.REAL &&
-              property.getValueType() != Property.ValueType.RATIONAL)
+              property.getValueType() != Property.ValueType.RATIONAL) {
             throw new PropertyTypeException(Property.ValueType.REAL, property.getValueType());
+        }
         set(property.getName(), Double.toString(value));
     }
 
@@ -336,13 +344,15 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      *
      * @since Apache Tika 0.8
      * @param property simple integer property definition
-     * @param value    property value
+     * @param date     property value
      */
     public void set(Property property, Date date) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE)
+        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
-        if(property.getValueType() != Property.ValueType.DATE)
+        }
+        if(property.getValueType() != Property.ValueType.DATE) {
             throw new PropertyTypeException(Property.ValueType.DATE, property.getValueType());
+        }
         set(property.getName(), formatDate(date));
     }
 
