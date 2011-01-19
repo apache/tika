@@ -37,6 +37,8 @@ class ForkClient {
 
     private final String java = "java"; // TODO: Make configurable
 
+    private final String mx = "-Xmx32m"; // TODO: Make configurable
+
     private final List<ForkResource> resources = new ArrayList<ForkResource>();
 
     private final File jar;
@@ -55,7 +57,7 @@ class ForkClient {
             this.jar = createBootstrapJar();
 
             ProcessBuilder builder = new ProcessBuilder();
-            builder.command(java, "-jar", jar.getPath());
+            builder.command(java, mx, "-jar", jar.getPath());
             this.process = builder.start();
 
             this.output = new DataOutputStream(process.getOutputStream());
@@ -135,7 +137,7 @@ class ForkClient {
             process.destroy();
         }
         if (jar != null) {
-            // jar.delete();
+            jar.delete();
         }
     }
 
