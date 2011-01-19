@@ -22,6 +22,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -64,8 +65,8 @@ public class XMLParser implements Parser {
 
         context.getSAXParser().parse(
                 new CloseShieldInputStream(stream),
-                new OfflineContentHandler(
-                        getContentHandler(handler, metadata)));
+                new OfflineContentHandler(new EmbeddedContentHandler(
+                        getContentHandler(handler, metadata))));
 
         xhtml.endElement("p");
         xhtml.endDocument();
