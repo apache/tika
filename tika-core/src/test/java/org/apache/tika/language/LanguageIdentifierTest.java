@@ -35,9 +35,10 @@ import org.apache.tika.io.IOUtils;
 public class LanguageIdentifierTest extends TestCase {
 
     private static final String[] languages = new String[] {
-        // TODO - currently Estonian and Greek fail these tests. Reeable
-        // when language detection works better.
-        "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it", "nl", "pt", "sv"
+        // TODO - currently Estonian, Greek and Lithuanian fail these tests.
+        // Enable when language detection works better.
+        "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it",
+        /* "lt", */ "nl", "pt", "sv"
     };
 
     public void setUp() {
@@ -50,8 +51,8 @@ public class LanguageIdentifierTest extends TestCase {
             writeTo(language, writer);
             LanguageIdentifier identifier = null;
             identifier = new LanguageIdentifier(writer.getProfile());
-            assertTrue(identifier.toString(), identifier.isReasonablyCertain());
             assertEquals(language, identifier.getLanguage());
+            assertTrue(identifier.toString(), identifier.isReasonablyCertain());
         }
     }
 
