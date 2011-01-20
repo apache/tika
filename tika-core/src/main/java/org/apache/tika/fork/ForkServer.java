@@ -154,7 +154,7 @@ class ForkServer implements Runnable, Checksum {
         input.readFully(data);
 
         ObjectInputStream deserializer =
-            new ForkSerializer(new ByteArrayInputStream(data), loader);
+            new ForkObjectInputStream(new ByteArrayInputStream(data), loader);
         Object object = deserializer.readObject();
         if (object instanceof ForkProxy) {
             ((ForkProxy) object).init(input, output);
