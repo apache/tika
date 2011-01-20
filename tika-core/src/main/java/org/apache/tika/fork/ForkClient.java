@@ -218,7 +218,7 @@ class ForkClient {
             jar.write(manifest.getBytes("UTF-8"));
 
             Class<?>[] bootstrap = {
-                    ForkServer.class, ForkSerializer.class,
+                    ForkServer.class, ForkObjectInputStream.class,
                     ForkProxy.class, ClassLoaderProxy.class,
                     MemoryURLConnection.class, MemoryURLStreamHandler.class,
                     MemoryURLStreamHandlerFactory.class
