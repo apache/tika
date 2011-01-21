@@ -16,9 +16,14 @@
  */
 package org.apache.tika.fork;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 
 /**
@@ -62,6 +67,47 @@ class ForkObjectInputStream extends ObjectInputStream {
     protected Class<?> resolveClass(ObjectStreamClass desc)
             throws ClassNotFoundException {
         return Class.forName(desc.getName(), false, loader);
+    }
+
+    /**
+     * Serializes the object first into an in-memory buffer and then
+     * writes it to the output stream with a preceding size integer.
+     *
+     * @param object object to be serialized
+     * @param output output stream
+     * @throws IOException if the object could not be serialized
+     */
+    public static void sendObject(Object object, DataOutputStream output)
+            throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        ObjectOutputStream serializer = new ObjectOutputStream(buffer);
+        serializer.writeObject(object);
+        serializer.close();
+
+        byte[] data = buffer.toByteArray();
+        output.writeInt(data.length);
+        output.write(data);
+    }
+
+    /**
+     * Deserializes an object from the given stream. The serialized object
+     * is expected to be preceded by a size integer, that is used for reading
+     * the entire serialization into a memory before deserializing it.
+     *
+     * @param input input stream from which the serialized object is read
+     * @param loader class loader to be used for loading referenced classes
+     * @throws IOException if the object could not be deserialized
+     * @throws ClassNotFoundException if a referenced class is not found
+     */
+    public static Object readObject(DataInputStream input, ClassLoader loader)
+            throws IOException, ClassNotFoundException {
+        int n = input.readInt();
+        byte[] data = new byte[n];
+        input.readFully(data);
+
+        ObjectInputStream deserializer =
+            new ForkObjectInputStream(new ByteArrayInputStream(data), loader);
+        return deserializer.readObject();
     }
 
 }

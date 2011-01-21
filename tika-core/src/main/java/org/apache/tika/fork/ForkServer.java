@@ -21,8 +21,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.zip.CheckedInputStream;
@@ -30,6 +30,8 @@ import java.util.zip.CheckedOutputStream;
 import java.util.zip.Checksum;
 
 class ForkServer implements Runnable, Checksum {
+
+    public static final byte ERROR = -1;
 
     public static final byte DONE = 0;
 
@@ -109,23 +111,32 @@ class ForkServer implements Runnable, Checksum {
                 if (request == -1) {
                     break;
                 } else if (request == CALL) {
-                    Method method = getMethod(object, input.readUTF());
-                    Object[] args =
-                        new Object[method.getParameterTypes().length];
-                    for (int i = 0; i < args.length; i++) {
-                        args[i] = readObject(loader);
-                    }
-                    method.invoke(object, args);
-                    output.write(DONE);
-                    output.flush();
+                    call(loader, object);
                 } else {
                     throw new IllegalStateException("Unexpected request");
                 }
+                output.flush();
             }
         } catch (Throwable t) {
             t.printStackTrace();
         }
         System.err.flush();
+    }
+
+    private void call(ClassLoader loader, Object object) throws Exception {
+        Method method = getMethod(object, input.readUTF());
+        Object[] args =
+            new Object[method.getParameterTypes().length];
+        for (int i = 0; i < args.length; i++) {
+            args[i] = readObject(loader);
+        }
+        try {
+            method.invoke(object, args);
+            output.write(DONE);
+        } catch (InvocationTargetException e) {
+            output.write(ERROR);
+            ForkObjectInputStream.sendObject(e.getCause(), output);
+        }
     }
 
     private Method getMethod(Object object, String name) {
@@ -152,13 +163,7 @@ class ForkServer implements Runnable, Checksum {
      */
     private Object readObject(ClassLoader loader)
             throws IOException, ClassNotFoundException {
-        int n = input.readInt();
-        byte[] data = new byte[n];
-        input.readFully(data);
-
-        ObjectInputStream deserializer =
-            new ForkObjectInputStream(new ByteArrayInputStream(data), loader);
-        Object object = deserializer.readObject();
+        Object object = ForkObjectInputStream.readObject(input, loader);
         if (object instanceof ForkProxy) {
             ((ForkProxy) object).init(input, output);
         }
