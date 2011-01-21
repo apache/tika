@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -34,10 +35,6 @@ import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
 
 class ForkClient {
-
-    private final String java = "java"; // TODO: Make configurable
-
-    private final String mx = "-Xmx32m"; // TODO: Make configurable
 
     private final List<ForkResource> resources = new ArrayList<ForkResource>();
 
@@ -51,13 +48,18 @@ class ForkClient {
 
     private final InputStream error;
 
-    public ForkClient(ClassLoader loader, Object object) throws IOException {
+    public ForkClient(ClassLoader loader, Object object, String java)
+            throws IOException {
         boolean ok = false;
         try {
             this.jar = createBootstrapJar();
 
             ProcessBuilder builder = new ProcessBuilder();
-            builder.command(java, mx, "-jar", jar.getPath());
+            List<String> command = new ArrayList<String>();
+            command.addAll(Arrays.asList(java.split("\\s+")));
+            command.add("-jar");
+            command.add(jar.getPath());
+            builder.command(command);
             this.process = builder.start();
 
             this.output = new DataOutputStream(process.getOutputStream());
@@ -148,6 +150,7 @@ class ForkClient {
             consumeErrorStream();
             int type = input.read();
             if (type == -1) {
+                consumeErrorStream();
                 throw new IOException(
                         "Lost connection to a forked server process");
             } else if (type == ForkServer.RESOURCE) {
