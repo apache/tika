@@ -125,13 +125,16 @@ class ForkServer implements Runnable, Checksum {
         } catch (Throwable t) {
             t.printStackTrace();
         }
+        System.err.flush();
     }
 
     private Method getMethod(Object object, String name) {
         Class<?> klass = object.getClass();
-        for (Method method : klass.getMethods()) {
-            if (name.equals(method.getName())) {
-                return method;
+        for (Class<?> iface : klass.getInterfaces()) {
+            for (Method method : iface.getMethods()) {
+                if (name.equals(method.getName())) {
+                    return method;
+                }
             }
         }
         return null;

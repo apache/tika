@@ -16,7 +16,6 @@
  */
 package org.apache.tika.fork;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
@@ -29,40 +28,77 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class ForkParser implements Parser {
 
+    /** Serial version UID */
+    private static final long serialVersionUID = -4962742892274663950L;
+
     private final ClassLoader loader;
 
     private final Parser parser;
 
-    private final Queue<ForkClient> pool =
-        new LinkedList<ForkClient>();
+    /** Java command line */
+    private String java = "java -Xmx32m";
 
+    /** Process pool size */
     private int poolSize = 5;
 
-    public static void main(String[] args) throws Exception {
-        ForkParser parser = new ForkParser(
-                Thread.currentThread().getContextClassLoader(),
-                new AutoDetectParser());
-        try {
-            InputStream stream =
-                new ByteArrayInputStream("Hello, World!".getBytes());
-            ParseContext context = new ParseContext();
-            parser.parse(
-                    stream, new WriteOutContentHandler(System.out),
-                    new Metadata(), context);
-        } finally {
-            parser.close();
-        }
-    }
+    private final Queue<ForkClient> pool =
+        new LinkedList<ForkClient>();
 
     public ForkParser(ClassLoader loader, Parser parser) {
         this.loader = loader;
         this.parser = parser;
+    }
+
+    public ForkParser(ClassLoader loader) {
+        this(loader, new AutoDetectParser());
+    }
+
+    public ForkParser() {
+        this(ForkParser.class.getClassLoader());
+    }
+
+    /**
+     * Returns the size of the process pool.
+     *
+     * @return process pool size
+     */
+    public int getPoolSize() {
+        return poolSize;
+    }
+
+    /**
+     * Sets the size of the process pool.
+     *
+     * @param poolSize process pool size
+     */
+    public void setPoolSize(int poolSize) {
+        this.poolSize = poolSize;
+    }
+
+    /**
+     * Returns the command used to start the forked server process.
+     *
+     * @return java command line
+     */
+    public String getJavaCommand() {
+        return java;
+    }
+
+    /**
+     * Sets the command used to start the forked server process.
+     * The given command line is split on whitespace and the arguments
+     * "-jar" and "/path/to/bootstrap.jar" are appended to it when starting
+     * the process. The default setting is "java -Xmx32m".
+     *
+     * @param java java command line
+     */
+    public void setJavaCommand(String java) {
+        this.java = java;
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -99,7 +135,7 @@ public class ForkParser implements Parser {
             throws IOException {
         ForkClient client = pool.poll();
         if (client == null) {
-            client = new ForkClient(loader, parser);
+            client = new ForkClient(loader, parser, java);
         }
         return client;
     }
