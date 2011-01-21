@@ -43,5 +43,56 @@ public class ForkParserTest extends TestCase {
         }
     }
 
+    public void testSerialParsing() throws Exception {
+        ForkParser parser = new ForkParser(
+                ForkParserTest.class.getClassLoader(),
+                new ForkTestParser());
+        try {
+            ParseContext context = new ParseContext();
+            for (int i = 0; i < 10; i++) {
+                ContentHandler output = new BodyContentHandler();
+                InputStream stream = new ByteArrayInputStream(new byte[0]);
+                parser.parse(stream, output, new Metadata(), context);
+                assertEquals("Hello, World!", output.toString().trim());
+            }
+        } finally {
+            parser.close();
+        }
+    }
+
+    public void testParallelParsing() throws Exception {
+        final ForkParser parser = new ForkParser(
+                ForkParserTest.class.getClassLoader(),
+                new ForkTestParser());
+        try {
+            final ParseContext context = new ParseContext();
+
+            Thread[] threads = new Thread[10];
+            ContentHandler[] output = new ContentHandler[threads.length];
+            for (int i = 0; i < threads.length; i++) {
+                final ContentHandler o = new BodyContentHandler();
+                output[i] = o;
+                threads[i] = new Thread() {
+                    public void run() {
+                        try {
+                            InputStream stream =
+                                new ByteArrayInputStream(new byte[0]);
+                            parser.parse(stream, o, new Metadata(), context);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+                threads[i].start();
+            }
+
+            for (int i = 0; i < threads.length; i++) {
+                threads[i].join();
+                assertEquals("Hello, World!", output[i].toString().trim());
+            }
+        } finally {
+            parser.close();
+        }
+    }
 
 }
