@@ -16,14 +16,12 @@
  */
 package org.apache.tika.fork;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,12 +29,15 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
+import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
 
 class ForkClient {
 
     private final List<ForkResource> resources = new ArrayList<ForkResource>();
+
+    private final ClassLoader loader;
 
     private final File jar;
 
@@ -52,6 +53,7 @@ class ForkClient {
             throws IOException {
         boolean ok = false;
         try {
+            this.loader = loader;
             this.jar = createBootstrapJar();
 
             ProcessBuilder builder = new ProcessBuilder();
@@ -77,7 +79,7 @@ class ForkClient {
         }
     }
 
-    public synchronized void call(String method, Object... args)
+    public synchronized Throwable call(String method, Object... args)
             throws IOException {
         List<ForkResource> r = new ArrayList<ForkResource>(resources);
         output.writeByte(ForkServer.CALL);
@@ -85,7 +87,7 @@ class ForkClient {
         for (int i = 0; i < args.length; i++) {
             sendObject(args[i], r);
         }
-        waitForResponse(r);
+        return waitForResponse(r);
     }
 
     /**
@@ -110,14 +112,7 @@ class ForkClient {
             object = new ClassLoaderProxy(n);
         }
 
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        ObjectOutputStream serializer = new ObjectOutputStream(buffer);
-        serializer.writeObject(object);
-        serializer.close();
-
-        byte[] data = buffer.toByteArray();
-        output.writeInt(data.length);
-        output.write(data);
+        ForkObjectInputStream.sendObject(object, output);
 
         waitForResponse(resources);
     }
@@ -143,7 +138,7 @@ class ForkClient {
         }
     }
 
-    private byte waitForResponse(List<ForkResource> resources)
+    private Throwable waitForResponse(List<ForkResource> resources)
             throws IOException {
         output.flush();
         while (true) {
@@ -157,8 +152,16 @@ class ForkClient {
                 ForkResource resource =
                     resources.get(input.readUnsignedByte());
                 resource.process(input, output);
+            } else if (type == ForkServer.ERROR) {
+                try {
+                    return (Throwable) ForkObjectInputStream.readObject(
+                            input, loader);
+                } catch (ClassNotFoundException e) {
+                    throw new IOExceptionWithCause(
+                            "Unable to deserialize an exception", e);
+                }
             } else {
-                return (byte) type;
+                return null;
             }
         }
     }

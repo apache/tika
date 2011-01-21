@@ -111,7 +111,18 @@ public class ForkParser implements Parser {
             throws IOException, SAXException, TikaException {
         ForkClient client = acquireClient();
         try {
-            client.call("parse", stream, handler, metadata, context);
+            Throwable t = client.call(
+                    "parse", stream, handler, metadata, context);
+            if (t instanceof IOException) {
+                throw (IOException) t;
+            } else if (t instanceof SAXException) {
+                throw (SAXException) t;
+            } else if (t instanceof TikaException) {
+                throw (TikaException) t;
+            } else if (t != null) {
+                throw new TikaException(
+                        "Unexpected error in forked server process", t);
+            }
         } finally {
             releaseClient(client);
         }
