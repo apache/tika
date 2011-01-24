@@ -99,7 +99,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            // Output the from and to details in text, as you
            //  often want them in text form for searching
            xhtml.startElement("dl");
-           header(xhtml, "From", from);
+           if (from!=null) {
+               header(xhtml, "From", from);
+           }
            header(xhtml, "To", msg.getDisplayTo());
            header(xhtml, "Cc", msg.getDisplayCC());
            header(xhtml, "Bcc", msg.getDisplayBCC());
