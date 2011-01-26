@@ -109,22 +109,32 @@ public class ForkParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        Throwable t;
+
+        boolean alive = false;
         ForkClient client = acquireClient();
         try {
-            Throwable t = client.call(
-                    "parse", stream, handler, metadata, context);
-            if (t instanceof IOException) {
-                throw (IOException) t;
-            } else if (t instanceof SAXException) {
-                throw (SAXException) t;
-            } else if (t instanceof TikaException) {
-                throw (TikaException) t;
-            } else if (t != null) {
-                throw new TikaException(
-                        "Unexpected error in forked server process", t);
-            }
+            t = client.call("parse", stream, handler, metadata, context);
+            alive = true;
+        } catch (IOException e) {
+            throw new TikaException(
+                    "Failed to communicate with a forked parser process."
+                    + " The process has most likely crashed due to some error"
+                    + " like running out of memory. A new process will be"
+                    + " started for the next parsing request.", e);
         } finally {
-            releaseClient(client);
+            releaseClient(client, alive);
+        }
+
+        if (t instanceof IOException) {
+            throw (IOException) t;
+        } else if (t instanceof SAXException) {
+            throw (SAXException) t;
+        } else if (t instanceof TikaException) {
+            throw (TikaException) t;
+        } else if (t != null) {
+            throw new TikaException(
+                    "Unexpected error in forked server process", t);
         }
     }
 
@@ -151,8 +161,8 @@ public class ForkParser implements Parser {
         return client;
     }
 
-    private synchronized void releaseClient(ForkClient client) {
-        if (pool.size() < poolSize) {
+    private synchronized void releaseClient(ForkClient client, boolean alive) {
+        if (pool.size() < poolSize && alive) {
             pool.offer(client);
         } else {
             client.close();
