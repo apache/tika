@@ -562,20 +562,23 @@
 
   <mime-type type="application/vnd.apple.iwork">
     <sub-class-of type="application/zip"/>
-    <glob pattern="*.key"/>
-    <glob pattern="*.pages"/>
-    <glob pattern="*.numbers"/>
   </mime-type>
-
   <mime-type type="application/vnd.apple.keynote">
     <root-XML localName="presentation" namespaceURI="http://developer.apple.com/namespaces/keynote2" />
+    <sub-class-of type="application/vnd.apple.iwork" />
+    <glob pattern="*.key"/>
   </mime-type>
   <mime-type type="application/vnd.apple.pages">
     <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/sl" />
+    <sub-class-of type="application/vnd.apple.iwork" />
+    <glob pattern="*.pages"/>
   </mime-type>
   <mime-type type="application/vnd.apple.numbers">
     <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/ls" />
+    <sub-class-of type="application/vnd.apple.iwork" />
+    <glob pattern="*.numbers"/>
   </mime-type>
+
   <mime-type type="application/vnd.arastra.swi">
     <glob pattern="*.swi"/>
   </mime-type>

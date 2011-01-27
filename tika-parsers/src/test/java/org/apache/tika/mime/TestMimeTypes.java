@@ -149,6 +149,26 @@ public class TestMimeTypes extends TestCase {
         assertTypeByNameAndData("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "testPPT.ppsm");
     }
 
+    /**
+     * Note - detecting container formats by mime magic is very very
+     *  iffy, as we can't be sure where things will end up.
+     * People really ought to use the container aware detection...
+     */
+    public void testIWorkDetection() throws Exception {
+        // By name is easy
+       assertTypeByName("application/vnd.apple.keynote", "testKeynote.key");
+       assertTypeByName("application/vnd.apple.numbers", "testNumbers.numbers");
+       assertTypeByName("application/vnd.apple.pages", "testPages.pages");
+       
+       // We can't do it by data, as we'd need to unpack
+       //  the zip file to check the XML 
+       assertTypeByData("application/zip", "testKeynote.key");
+       
+       assertTypeByNameAndData("application/vnd.apple.keynote", "testKeynote.key");
+       assertTypeByNameAndData("application/vnd.apple.numbers", "testNumbers.numbers");
+       assertTypeByNameAndData("application/vnd.apple.pages", "testPages.pages");
+    }
+
     public void testJpegDetection() throws Exception {
         assertType("image/jpeg", "testJPEG.jpg");
         assertTypeByData("image/jpeg", "testJPEG.jpg");
