@@ -110,6 +110,8 @@ class ForkServer implements Runnable, Checksum {
                 int request = input.read();
                 if (request == -1) {
                     break;
+                } else if (request == PING) {
+                    output.writeByte(PING);
                 } else if (request == CALL) {
                     call(loader, object);
                 } else {
