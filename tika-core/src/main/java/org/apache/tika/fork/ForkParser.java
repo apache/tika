@@ -155,7 +155,7 @@ public class ForkParser implements Parser {
     private synchronized ForkClient acquireClient()
             throws IOException {
         ForkClient client = pool.poll();
-        if (client == null) {
+        if (client == null || !client.ping()) {
             client = new ForkClient(loader, parser, java);
         }
         return client;

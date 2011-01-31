@@ -79,6 +79,26 @@ class ForkClient {
         }
     }
 
+    public synchronized boolean ping() {
+        try {
+            output.writeByte(ForkServer.PING);
+            output.flush();
+            while (true) {
+                consumeErrorStream();
+                int type = input.read();
+                if (type == ForkServer.PING) {
+                    consumeErrorStream();
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+
     public synchronized Throwable call(String method, Object... args)
             throws IOException {
         List<ForkResource> r = new ArrayList<ForkResource>(resources);
