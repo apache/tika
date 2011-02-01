@@ -16,20 +16,19 @@
  */
 package org.apache.tika;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
-
 import junit.framework.TestCase;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ParseUtils;
 import org.xml.sax.helpers.DefaultHandler;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 /**
  * Junit test class for Tika {@link Parser}s.
@@ -64,6 +63,50 @@ public class TestParsers extends TestCase {
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
         assertEquals(s1, s2);
+    }
+
+    public void testRTFms932Extraction() throws Exception {
+        File file = getResourceAsFile("/test-documents/testRTF-ms932.rtf");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
+        assertEquals(s1, s2);
+        // Hello in Japanese
+        assertTrue(s1.contains("\u3053\u3093\u306b\u3061\u306f"));
+    }
+
+    public void testRTFUmlautSpacesExtraction() throws Exception {
+        File file = getResourceAsFile("/test-documents/testRTFUmlautSpaces.rtf");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
+        assertEquals(s1, s2);
+        assertTrue(s1.contains("\u00DCbersicht"));
+    }
+
+    public void testRTFWordPadCzechCharactersExtraction() throws Exception {
+        File file = getResourceAsFile("/test-documents/testRTFWordPadCzechCharacters.rtf");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
+        assertEquals(s1, s2);
+        assertTrue(s1.contains("\u010Cl\u00E1nek t\u00FDdne"));
+        assertTrue(s1.contains("starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
+    }
+
+    public void testRTFWord2010CzechCharactersExtraction() throws Exception {
+        File file = getResourceAsFile("/test-documents/testRTFWord2010CzechCharacters.rtf");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
+        assertEquals(s1, s2);
+        assertTrue(s1.contains("\u010Cl\u00E1nek t\u00FDdne"));
+        assertTrue(s1.contains("starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
+    }
+
+    public void testRTFTableCellSeparation() throws Exception {
+        File file = getResourceAsFile("/test-documents/testRTFTableCellSeparation.rtf");
+        String s1 = ParseUtils.getStringContent(file, tc);
+        String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
+        assertEquals(s1, s2);
+        String content = s1.replaceAll("\\s+"," ");
+        assertTrue(content.contains("a b c d \u00E4 \u00EB \u00F6 \u00FC"));
     }
 
     public void testXMLExtraction() throws Exception {
