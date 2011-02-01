@@ -16,8 +16,19 @@
  */
 package org.apache.tika.cli;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.lang.reflect.Field;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -86,15 +97,17 @@ public class TikaCLI {
 
     private class OutputType {
 
-        public void process(InputStream stream) throws Exception {
+        public void process(InputStream input, OutputStream output)
+                throws Exception {
             Parser p = parser;
             if (fork) {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
-            p.parse(stream, getContentHandler(), metadata, context);
+            p.parse(input, getContentHandler(output), metadata, context);
         }
 
-        protected ContentHandler getContentHandler() throws Exception {
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
             throw new UnsupportedOperationException();
         }
 
@@ -102,44 +115,49 @@ public class TikaCLI {
 
     private final OutputType XML = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler() throws Exception {
-            return getTransformerHandler("xml", encoding);
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
+            return getTransformerHandler(output, "xml", encoding);
         }
     };
 
     private final OutputType HTML = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler() throws Exception {
-            return getTransformerHandler("html", encoding);
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
+            return getTransformerHandler(output, "html", encoding);
         }
     };
 
     private final OutputType TEXT = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler() throws Exception {
-            return new BodyContentHandler(getSystemOutWriter(encoding));
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
+            return new BodyContentHandler(getOutputWriter(output, encoding));
         }
     };
 
     private final OutputType NO_OUTPUT = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler() throws Exception {
+        protected ContentHandler getContentHandler(OutputStream output) {
             return new DefaultHandler();
         }
     };
 
     private final OutputType TEXT_MAIN = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler() throws Exception {
-            return new BoilerpipeContentHandler(getSystemOutWriter(encoding));
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
+            return new BoilerpipeContentHandler(getOutputWriter(output, encoding));
         }
     };
     
     private final OutputType METADATA = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler() throws Exception {
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
             final PrintWriter writer =
-                new PrintWriter(getSystemOutWriter(encoding));
+                new PrintWriter(getOutputWriter(output, encoding));
             return new DefaultHandler() {
                 public void endDocument() {
                     String[] names = metadata.names();
@@ -155,9 +173,10 @@ public class TikaCLI {
 
     private final OutputType LANGUAGE = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler() throws Exception {
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
             final PrintWriter writer =
-                new PrintWriter(getSystemOutWriter(encoding));
+                new PrintWriter(getOutputWriter(output, encoding));
             return new ProfilingHandler() {
                 public void endDocument() {
                     writer.println(getLanguage().getLanguage());
@@ -169,8 +188,10 @@ public class TikaCLI {
 
     private final OutputType DETECT = new OutputType() {
         @Override
-        public void process(InputStream stream) throws Exception {
-            PrintWriter writer = new PrintWriter(getSystemOutWriter(encoding));
+        public void process(InputStream stream, OutputStream output)
+                throws Exception {
+            PrintWriter writer =
+                new PrintWriter(getOutputWriter(output, encoding));
             writer.println(detector.detect(stream, metadata).toString());
             writer.flush();
         }
@@ -192,6 +213,8 @@ public class TikaCLI {
     private String encoding = null;
 
     private boolean pipeMode = true;
+
+    private boolean portMode = false;
 
     private boolean fork = false;
 
@@ -249,14 +272,19 @@ public class TikaCLI {
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
+        } else if (arg.equals("-p") || arg.equals("--port")) {
+            portMode = true;
+            pipeMode = false;
         } else {
             pipeMode = false;
             metadata = new Metadata();
-            if (arg.equals("-")) {
+            if (portMode) {
+                new TikaServer(Integer.parseInt(arg)).start();
+            } else if (arg.equals("-")) {
                 InputStream stream =
                     TikaInputStream.get(new CloseShieldInputStream(System.in));
                 try {
-                    type.process(stream);
+                    type.process(stream, System.out);
                 } finally {
                     stream.close();
                 }
@@ -270,7 +298,7 @@ public class TikaCLI {
                 }
                 InputStream input = TikaInputStream.get(url, metadata);
                 try {
-                    type.process(input);
+                    type.process(input, System.out);
                 } finally {
                     input.close();
                     System.out.flush();
@@ -281,13 +309,15 @@ public class TikaCLI {
 
     private void usage() {
         PrintStream out = System.out;
-        out.println("usage: tika [option] [file]");
+        out.println("usage: java -jar tika-app.jar [option...] [file|port...]");
         out.println();
         out.println("Options:");
         out.println("    -?  or --help        Print this usage message");
         out.println("    -v  or --verbose     Print debug level messages");
+        out.println();
         out.println("    -g  or --gui         Start the Apache Tika GUI");
-        out.println("");
+        out.println("    -s  or --server      Start the Apache Tika server");
+        out.println();
         out.println("    -x  or --xml         Output XHTML content (default)");
         out.println("    -h  or --html        Output HTML content");
         out.println("    -t  or --text        Output plain text content");
@@ -297,7 +327,7 @@ public class TikaCLI {
         out.println("    -d  or --detect      Detect document type");
         out.println("    -eX or --encoding=X  Use output encoding X");
         out.println("    -z  or --extract     Extract all attachements into current directory");        
-        out.println("");
+        out.println();
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
         out.println("    --list-parser-details");
@@ -319,10 +349,19 @@ public class TikaCLI {
         out.println("    name \"-\" is used), then the standard input stream");
         out.println("    is parsed.");
         out.println();
-        out.println("    Use the \"--gui\" (or \"-g\") option to start");
-        out.println("    the Apache Tika GUI. You can drag and drop files");
-        out.println("    from a normal file explorer to the GUI window to");
-        out.println("    extract text content and metadata from the files.");
+        out.println("- GUI mode");
+        out.println();
+        out.println("    Use the \"--gui\" (or \"-g\") option to start the");
+        out.println("    Apache Tika GUI. You can drag and drop files from");
+        out.println("    a normal file explorer to the GUI window to extract");
+        out.println("    text content and metadata from the files.");
+        out.println();
+        out.println("- Server mode");
+        out.println();
+        out.println("    Use the \"-server\" (or \"-s\") option to start the");
+        out.println("    Apache Tika server. The server will listen to the");
+        out.println("    ports you specify as one or more arguments.");
+        out.println();
     }
 
     private void displayMetModels(){
@@ -432,25 +471,26 @@ public class TikaCLI {
     }
 
     /**
-     * Returns a {@link System#out} writer with the given output encoding.
+     * Returns a output writer with the given encoding.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
+     * @param output output stream
      * @param encoding output encoding,
      *                 or <code>null</code> for the platform default
-     * @return {@link System#out} writer
+     * @return output writer
      * @throws UnsupportedEncodingException
-     *         if the configured encoding is not supported
+     *         if the given encoding is not supported
      */
-    private static Writer getSystemOutWriter(String encoding)
+    private static Writer getOutputWriter(OutputStream output, String encoding)
             throws UnsupportedEncodingException {
         if (encoding != null) {
-            return new OutputStreamWriter(System.out, encoding);
+            return new OutputStreamWriter(output, encoding);
         } else if (System.getProperty("os.name")
                 .toLowerCase().startsWith("mac os x")) {
             // TIKA-324: Override the default encoding on Mac OS X
-            return new OutputStreamWriter(System.out, "UTF-8");
+            return new OutputStreamWriter(output, "UTF-8");
         } else {
-            return new OutputStreamWriter(System.out);
+            return new OutputStreamWriter(output);
         }
     }
 
@@ -460,6 +500,7 @@ public class TikaCLI {
      * encoding.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-277">TIKA-277</a>
+     * @param output output stream
      * @param method "xml" or "html"
      * @param encoding output encoding,
      *                 or <code>null</code> for the platform default
@@ -468,7 +509,7 @@ public class TikaCLI {
      *         if the transformer can not be created
      */
     private static TransformerHandler getTransformerHandler(
-            String method, String encoding)
+            OutputStream output, String method, String encoding)
             throws TransformerConfigurationException {
         SAXTransformerFactory factory = (SAXTransformerFactory)
                 SAXTransformerFactory.newInstance();
@@ -479,7 +520,7 @@ public class TikaCLI {
             handler.getTransformer().setOutputProperty(
                     OutputKeys.ENCODING, encoding);
         }
-        handler.setResult(new StreamResult(System.out));
+        handler.setResult(new StreamResult(output));
         return handler;
     }
 
@@ -525,4 +566,52 @@ public class TikaCLI {
             count++;
         }
     }
+
+    private class TikaServer extends Thread {
+
+        private final ServerSocket server;
+
+        public TikaServer(int port) throws IOException {
+            super("Tika server at port " + port);
+            server = new ServerSocket(port);
+        }
+
+        @Override
+        public void run() {
+            try {
+                try {
+                    while (true) {
+                        processSocketInBackground(server.accept());
+                    }
+                } finally {
+                    server.close();
+                }
+            } catch (IOException e) { 
+                e.printStackTrace();
+            }
+        }
+
+        private void processSocketInBackground(final Socket socket) {
+            Thread thread = new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        try {
+                            OutputStream output = socket.getOutputStream();
+                            type.process(socket.getInputStream(), output);
+                            output.flush();
+                        } finally {
+                            socket.close();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            thread.setDaemon(true);
+            thread.start();
+        }
+
+    }
+
 }
