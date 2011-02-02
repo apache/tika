@@ -22,6 +22,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -83,10 +84,12 @@ public class Mp3ParserTest extends TestCase {
             stream.close();
         }
 
+        // Check core properties
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(Metadata.TITLE));
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
+        // Check the textual contents
         String content = handler.toString();
         assertTrue(content.contains("Test Title"));
         assertTrue(content.contains("Test Artist"));
@@ -95,9 +98,23 @@ public class Mp3ParserTest extends TestCase {
         assertTrue(content.contains("Test Comment"));
         assertTrue(content.contains("Rock"));
         
+        // Check un-typed audio properties
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
+        
+        // Check XMPDM-typed audio properties
+        assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
+        assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
+        assertEquals(null, metadata.get(XMPDM.COMPOSER));
+        assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
+        assertEquals("Rock", metadata.get(XMPDM.GENRE));
+        assertEquals("XXXID3v1 Comment\nTest Comment", metadata.get(XMPDM.LOG_COMMENT.getName()));
+        assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
+        
+        assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
+        assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
+        assertEquals("MP3", metadata.get(XMPDM.AUDIO_COMPRESSOR));
     }
 
     /**
