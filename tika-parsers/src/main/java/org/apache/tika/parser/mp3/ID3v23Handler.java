@@ -74,7 +74,9 @@ public class ID3v23Handler implements ID3Tags {
     }
 
     private String getTagString(byte[] data, int offset, int length) {
-        return ID3v2Frame.getTagString(data, offset, length);
+        String str = ID3v2Frame.getTagString(data, offset, length);
+        // Handle embedded nulls
+        return str.replace((char)0, '\n');
     }
 
     public boolean getTagsPresent() {

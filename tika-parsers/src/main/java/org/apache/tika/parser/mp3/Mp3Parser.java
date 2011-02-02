@@ -56,6 +56,7 @@ public class Mp3Parser implements Parser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
+        metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
@@ -93,9 +94,19 @@ public class Mp3Parser implements Parser {
             metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
             metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
             metadata.set("version", audioAndTags.audio.getVersion());
+            
             metadata.set(
                     XMPDM.AUDIO_SAMPLE_RATE,
                     Integer.toString(audioAndTags.audio.getSampleRate()));
+            if(audioAndTags.audio.getChannels() == 1) {
+               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Mono");
+            } else if(audioAndTags.audio.getChannels() == 2) {
+               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "Stereo");
+            } else if(audioAndTags.audio.getChannels() == 5) {
+               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "5.1");
+            } else if(audioAndTags.audio.getChannels() == 7) {
+               metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, "7.1");
+            }
         }
         if (audioAndTags.lyrics != null && audioAndTags.lyrics.hasLyrics()) {
         	xhtml.element("p", audioAndTags.lyrics.lyricsText);
