@@ -40,7 +40,6 @@ class HtmlHandler extends TextContentHandler {
         add("src");
         add("href");
         add("longdesc");
-        add("usemap");
         add("data");
         add("cite");
         add("codebase");
