@@ -25,6 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
@@ -103,29 +104,18 @@ class HtmlHandler extends TextContentHandler {
 
         if (bodyLevel == 0 && discardLevel == 0) {
             if ("META".equals(name) && atts.getValue("content") != null) {
-                
-                // TIKA-478: For cases where we have either a name or "http-equiv", assume
-                // that XHTMLContentHandler will emit these in the <head>, thus passing them
-                // through safely.
+                // TIKA-478: For cases where we have either a name or
+                // "http-equiv", assume that XHTMLContentHandler will emit
+                // these in the <head>, thus passing them through safely.
                 if (atts.getValue("http-equiv") != null) {
-                    metadata.set(
+                    addHtmlMetadata(
                             atts.getValue("http-equiv"),
                             atts.getValue("content"));
                 } else if (atts.getValue("name") != null) {
                     // Record the meta tag in the metadata
-                    metadata.set(
+                    addHtmlMetadata(
                             atts.getValue("name"),
                             atts.getValue("content"));
-                    // Normalize if possible
-                    if(atts.getValue("name").equalsIgnoreCase("ICBM")) {
-                        Matcher m = Pattern.compile(
-                              "\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*"
-                        ).matcher(atts.getValue("content"));
-                        if(m.matches()) {
-                            metadata.set(Metadata.LATITUDE, m.group(1));
-                            metadata.set(Metadata.LONGITUDE, m.group(2));
-                        }
-                    }
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
                 startElementWithSafeAttributes("base", atts);
@@ -147,6 +137,37 @@ class HtmlHandler extends TextContentHandler {
         }
 
         title.setLength(0);
+    }
+
+    private static final Pattern ICBM =
+        Pattern.compile("\\s*(-?\\d+\\.\\d+)[,\\s]+(-?\\d+\\.\\d+)\\s*");
+
+    /**
+     * Adds a metadata setting from the HTML <head/> to the Tika metadata
+     * object. The name and value are normalized where possible.
+     */
+    private void addHtmlMetadata(String name, String value) {
+        if (name == null || value == null) {
+            // ignore
+        } else if (name.equalsIgnoreCase("ICBM")) {
+            Matcher m = ICBM.matcher(value);
+            if (m.matches()) {
+                metadata.set("ICBM", m.group(1) + ", " + m.group(2));
+                metadata.set(Metadata.LATITUDE, m.group(1));
+                metadata.set(Metadata.LONGITUDE, m.group(2));
+            } else {
+                metadata.set("ICBM", value);
+            }
+        } else if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE)){
+            MediaType type = MediaType.parse(value);
+            if (type != null) {
+                metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            } else {
+                metadata.set(Metadata.CONTENT_TYPE, value);
+            }
+        } else {
+            metadata.set(name, value);
+        }
     }
 
     private void startElementWithSafeAttributes(String name, Attributes atts) throws SAXException {
