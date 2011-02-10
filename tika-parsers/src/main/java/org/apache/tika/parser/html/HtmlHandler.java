@@ -129,12 +129,14 @@ class HtmlHandler extends TextContentHandler {
                     }
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
+                startElementWithSafeAttributes("base", atts);
+                xhtml.endElement("base");
                 metadata.set(
                         Metadata.CONTENT_LOCATION,
                         resolve(atts.getValue("href")));
-                xhtml.startElement(uri, local, "base", atts);
             } else if ("LINK".equals(name)) {
                 startElementWithSafeAttributes("link", atts);
+                xhtml.endElement("link");
             }
         }
 
@@ -153,7 +155,7 @@ class HtmlHandler extends TextContentHandler {
             xhtml.startElement(name);
             return;
         }
-        
+
         AttributesImpl newAttributes = new AttributesImpl(atts);
         for (int att = 0; att < newAttributes.getLength(); att++) {
             String normAttrName = mapper.mapSafeAttribute(name, newAttributes.getLocalName(att));
@@ -171,20 +173,13 @@ class HtmlHandler extends TextContentHandler {
                 }
             }
         }
-        
+
         xhtml.startElement(name, newAttributes);
     }
 
     @Override
     public void endElement(
             String uri, String local, String name) throws SAXException {
-        if (bodyLevel == 0 && discardLevel == 0) {
-            if ("LINK".equals(name)) {
-                xhtml.endElement("link");
-            } else if ("BASE".equals(name)) {
-                xhtml.endElement("base");
-            }
-        }
         if (bodyLevel > 0 && discardLevel == 0) {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
