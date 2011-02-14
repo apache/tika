@@ -1,0 +1,245 @@
+                       --------------------
+                       The Parser interface
+                       --------------------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one or more
+~~ contributor license agreements.  See the NOTICE file distributed with
+~~ this work for additional information regarding copyright ownership.
+~~ The ASF licenses this file to You under the Apache License, Version 2.0
+~~ (the "License"); you may not use this file except in compliance with
+~~ the License.  You may obtain a copy of the License at
+~~
+~~     http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+
+The Parser interface
+
+   The
+   {{{api/org/apache/tika/parser/Parser.html}org.apache.tika.parser.Parser}}
+   interface is the key concept of Apache Tika. It hides the complexity of
+   different file formats and parsing libraries while providing a simple and
+   powerful mechanism for client applications to extract structured text
+   content and metadata from all sorts of documents. All this is achieved
+   with a single method:
+
+---
+void parse(
+    InputStream stream, ContentHandler handler, Metadata metadata,
+    ParseContext context) throws IOException, SAXException, TikaException;
+---
+
+   The <<<parse>>> method takes the document to be parsed and related metadata
+   as input and outputs the results as XHTML SAX events and extra metadata.
+   The parse context argument is used to specify context information (like
+   the current local) that is not related to any individual document.
+   The main criteria that lead to this design were:
+
+   [Streamed parsing] The interface should require neither the client
+     application nor the parser implementation to keep the full document
+     content in memory or spooled to disk. This allows even huge documents
+     to be parsed without excessive resource requirements.
+
+   [Structured content] A parser implementation should be able to
+     include structural information (headings, links, etc.) in the extracted
+     content. A client application can use this information for example to
+     better judge the relevance of different parts of the parsed document.
+
+   [Input metadata] A client application should be able to include metadata
+     like the file name or declared content type with the document to be
+     parsed. The parser implementation can use this information to better
+     guide the parsing process.
+
+   [Output metadata] A parser implementation should be able to return
+     document metadata in addition to document content. Many document
+     formats contain metadata like the name of the author that may be useful
+     to client applications.
+
+   [Context sensitivity] While the default settings and behaviour of Tika
+     parsers should work well for most use cases, there are still situations
+     where more fine-grained control over the parsing process is desirable.
+     It should be easy to inject such context-specific information to the
+     parsing process without breaking the layers of abstraction.
+
+   []
+
+   These criteria are reflected in the arguments of the <<<parse>>> method.
+
+* Document input stream
+
+   The first argument is an
+   {{{http://java.sun.com/j2se/1.5.0/docs/api/java/io/InputStream.html}InputStream}}
+   for reading the document to be parsed.
+
+   If this document stream can not be read, then parsing stops and the thrown
+   {{{http://java.sun.com/j2se/1.5.0/docs/api/java/io/IOException.html}IOException}}
+   is passed up to the client application. If the stream can be read but
+   not parsed (for example if the document is corrupted), then the parser
+   throws a {{{api/org/apache/tika/exception/TikaException.html}TikaException}}.
+
+   The parser implementation will consume this stream but <will not close it>.
+   Closing the stream is the responsibility of the client application that
+   opened it in the first place. The recommended pattern for using streams
+   with the <<<parse>>> method is:
+
+---
+InputStream stream = ...;      // open the stream
+try {
+    parser.parse(stream, ...); // parse the stream
+} finally {
+    stream.close();            // close the stream
+}
+---
+
+   Some document formats like the OLE2 Compound Document Format used by
+   Microsoft Office are best parsed as random access files. In such cases the
+   content of the input stream is automatically spooled to a temporary file
+   that gets removed once parsed. A future version of Tika may make it possible
+   to avoid this extra file if the input document is already a file in the
+   local file system. See
+   {{{https://issues.apache.org/jira/browse/TIKA-153}TIKA-153}} for the status
+   of this feature request.
+
+* XHTML SAX events
+
+   The parsed content of the document stream is returned to the client
+   application as a sequence of XHTML SAX events. XHTML is used to express
+   structured content of the document and SAX events enable streamed
+   processing. Note that the XHTML format is used here only to convey
+   structural information, not to render the documents for browsing!
+
+   The XHTML SAX events produced by the parser implementation are sent to a
+   {{{http://java.sun.com/j2se/1.5.0/docs/api/org/xml/sax/ContentHandler.html}ContentHandler}}
+   instance given to the <<<parse>>> method. If this the content handler
+   fails to process an event, then parsing stops and the thrown
+   {{{http://java.sun.com/j2se/1.5.0/docs/api/org/xml/sax/SAXException.html}SAXException}}
+   is passed up to the client application.
+
+   The overall structure of the generated event stream is (with indenting
+   added for clarity):
+
+---
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>...</title>
+  </head>
+  <body>
+    ...
+  </body>
+</html>
+---
+
+   Parser implementations typically use the
+   {{{apidocs/org/apache/tika/sax/XHTMLContentHandler.html}XHTMLContentHandler}}
+   utility class to generate the XHTML output.
+
+   Dealing with the raw SAX events can be a bit complex, so Apache Tika
+   comes with a number of utility classes that can be used to process and
+   convert the event stream to other representations.
+
+   For example, the
+   {{{api/org/apache/tika/sax/BodyContentHandler.html}BodyContentHandler}}
+   class can be used to extract just the body part of the XHTML output and
+   feed it either as SAX events to another content handler or as characters
+   to an output stream, a writer, or simply a string. The following code
+   snippet parses a document from the standard input stream and outputs the
+   extracted text content to standard output:
+
+---
+ContentHandler handler = new BodyContentHandler(System.out);
+parser.parse(System.in, handler, ...);
+---
+
+   Another useful class is
+   {{{api/org/apache/tika/parser/ParsingReader.html}ParsingReader}} that
+   uses a background thread to parse the document and returns the extracted
+   text content as a character stream:
+
+---
+InputStream stream = ...; // the document to be parsed
+Reader reader = new ParsingReader(parser, stream, ...);
+try {
+    ...;                  // read the document text using the reader
+} finally {
+    reader.close();       // the document stream is closed automatically
+}
+---
+
+* Document metadata
+
+   The third argument to the <<<parse>>> method is used to pass document
+   metadata both in and out of the parser. Document metadata is expressed
+   as an {{{api/org/apache/tika/metadata/Metadata.html}Metadata}} object.
+
+   The following are some of the more interesting metadata properties:
+
+   [Metadata.RESOURCE_NAME_KEY] The name of the file or resource that contains
+    the document.
+
+    A client application can set this property to allow the parser to use
+    file name heuristics to determine the format of the document.
+
+    The parser implementation may set this property if the file format
+    contains the canonical name of the file (for example the Gzip format
+    has a slot for the file name).
+
+   [Metadata.CONTENT_TYPE] The declared content type of the document.
+
+    A client application can set this property based on for example a HTTP
+    Content-Type header. The declared content type may help the parser to
+    correctly interpret the document.
+
+    The parser implementation sets this property to the content type according
+    to which the document was parsed.
+
+   [Metadata.TITLE] The title of the document.
+
+    The parser implementation sets this property if the document format
+    contains an explicit title field.
+
+   [Metadata.AUTHOR] The name of the author of the document.
+
+    The parser implementation sets this property if the document format
+    contains an explicit author field.
+
+   []
+
+   Note that metadata handling is still being discussed by the Tika development
+   team, and it is likely that there will be some (backwards incompatible)
+   changes in metadata handling before Tika 1.0.
+
+* Parse context
+
+   The final argument to the <<<parse>>> method is used to inject
+   context-specific information to the parsing process. This is useful
+   for example when dealing with locale-specific date and number formats
+   in Microsoft Excel spreadsheets. Another important use of the parse
+   context is passing in the delegate parser instance to be used by
+   two-phase parsers like the
+   {{{api/org/apache/parser/pkg/PackageParser.html}PackageParser}} subclasses.
+   Some parser classes allow customization of the parsing process through
+   strategy objects in the parse context.
+
+* Parser implementations
+
+   Apache Tika comes with a number of parser classes for parsing
+   {{{formats.html}various document formats}}. You can also extend Tika
+   with your own parsers, and of course any contributions to Tika are
+   warmly welcome.
+
+   The goal of Tika is to reuse existing parser libraries like
+   {{{http://www.pdfbox.org/}PDFBox}} or
+   {{{http://poi.apache.org/}Apache POI}} as much as possible, and so most
+   of the parser classes in Tika are adapters to such external libraries.
+
+   Tika also contains some general purpose parser implementations that are
+   not targeted at any specific document formats. The most notable of these
+   is the {{{apidocs/org/apache/tika/parser/AutoDetectParser.html}AutoDetectParser}}
+   class that encapsulates all Tika functionality into a single parser that
+   can handle any types of documents. This parser will automatically determine
+   the type of the incoming document based on various heuristics and will then
+   parse the document accordingly.

@@ -1,0 +1,283 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+ 
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+#macro ( link $href $name )
+  #if ( ( $href.toLowerCase().startsWith("http") || $href.toLowerCase().startsWith("https") ) )
+    <a href="$href" class="externalLink">$name</a>
+  #else
+    <a href="$href">$name</a>
+  #end
+#end
+
+#macro ( banner $banner $id )
+  #if ( $banner )
+    #if( $banner.href )
+      <a href="$banner.href" id="$id" #if( $banner.alt ) title="$banner.alt" #end >
+    #else
+        <div id="$id">
+    #end
+
+    #if( $banner.src )
+        #set ( $src = $banner.src )
+        #if ( ! ( $src.toLowerCase().startsWith("http") || $src.toLowerCase().startsWith("https") ) )
+            #set ( $src = $PathTool.calculateLink( $src, $relativePath ) )
+            #set ( $src = $src.replaceAll( "\\", "/" ) )
+        #end
+        #if ( $banner.alt )
+            #set ( $alt = $banner.alt )
+        #else
+            #set ( $alt = $banner.name )
+        #end
+        <img src="$src" alt="$alt" />
+    #else
+        $banner.name
+    #end
+
+    #if( $banner.href )
+        </a>
+    #else
+        </div>
+    #end
+  #end
+#end
+
+#macro ( links $links )
+  #set ( $counter = 0 )
+  #foreach( $item in $links )
+    #set ( $counter = $counter + 1 )
+    #set ( $currentItemHref = $PathTool.calculateLink( $item.href, $relativePath ) )
+    #set ( $currentItemHref = $currentItemHref.replaceAll( "\\", "/" ) )
+    #link( $currentItemHref $item.name )
+    #if ( $links.size() > $counter )
+      |
+    #end
+  #end
+#end
+
+#macro ( breadcrumbs $breadcrumbs )
+  #set ( $counter = 0 )
+  #foreach( $item in $breadcrumbs )
+    #set ( $counter = $counter + 1 )
+    #set ( $currentItemHref = $PathTool.calculateLink( $item.href, $relativePath ) )
+    #set ( $currentItemHref = $currentItemHref.replaceAll( "\\", "/" ) )
+
+    #if ( $currentItemHref == $alignedFileName || $currentItemHref == "" )
+      $item.name
+    #else
+      #link( $currentItemHref $item.name )
+    #end
+    #if ( $breadcrumbs.size() > $counter )
+      &gt;
+    #end
+  #end
+#end
+
+#macro ( displayTree $display $item )
+  #if ( $item && $item.items && $item.items.size() > 0 )
+    #foreach( $subitem in $item.items )
+      #set ( $subitemHref = $PathTool.calculateLink( $subitem.href, $relativePath ) )
+      #set ( $subitemHref = $subitemHref.replaceAll( "\\", "/" ) )
+      #if ( $alignedFileName == $subitemHref )
+        #set ( $display = true )
+      #end
+
+      #displayTree( $display $subitem )
+    #end
+  #end
+#end
+
+#macro ( menuItem $item )
+  #set ( $collapse = "none" )
+  #set ( $currentItemHref = $PathTool.calculateLink( $item.href, $relativePath ) )
+  #set ( $currentItemHref = $currentItemHref.replaceAll( "\\", "/" ) )
+
+  #if ( $item && $item.items && $item.items.size() > 0 )
+    #if ( $item.collapse == false )
+      #set ( $collapse = "expanded" )
+    #else
+      ## By default collapsed
+      #set ( $collapse = "collapsed" )
+    #end
+
+    #set ( $display = false )
+    #displayTree( $display $item )
+
+    #if ( $alignedFileName == $currentItemHref || $display )
+      #set ( $collapse = "expanded" )
+    #end
+  #end
+  <li class="$collapse">
+    #if ( $item.img )
+      #if ( ! ( $item.img.toLowerCase().startsWith("http") || $item.img.toLowerCase().startsWith("https") ) )
+        #set ( $src = $PathTool.calculateLink( $item.img, $relativePath ) )
+        #set ( $src = $src.replaceAll( "\\", "/" ) )
+        <img src="$src"/>
+      #else
+        <img src="$item.img" align="absbottom" style="border-width: 0"/>
+      #end
+    #end
+    #if ( $alignedFileName == $currentItemHref )
+      <strong>$item.name</strong>
+    #else
+      #link( $currentItemHref $item.name )
+    #end
+  #if ( $item && $item.items && $item.items.size() > 0 )
+    #if ( $collapse == "expanded" )
+      <ul>
+        #foreach( $subitem in $item.items )
+          #menuItem( $subitem )
+        #end
+      </ul>
+    #end
+  #end
+  </li>
+#end
+
+#macro ( mainMenu $menus )
+  #foreach( $menu in $menus )
+    #if ( $menu.name )
+    <h5>$menu.name</h5>
+    #end
+    #if ( $menu.items && $menu.items.size() > 0 )
+    <ul>
+      #foreach( $item in $menu.items )
+        #menuItem( $item )
+      #end
+    </ul>
+    #end
+  #end
+#end
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=${outputEncoding}" />
+    <title>$title</title>
+    <style type="text/css" media="all">
+      @import url("$relativePath/css/site.css");
+    </style>
+    <link rel="icon" type="image/png" href="$relativePath/tikaNoText16.png" />
+    <script type="text/javascript">
+      function getBlank(form, stdValue) {
+        if (form.value == stdValue) {
+          form.value = '';
+        }
+        return true;
+      }
+      function getPrompt(form, stdValue) {
+        if (form.value == '') {
+          form.value = stdValue;
+        }
+        return true;
+      }
+    </script>
+  </head>
+  <body class="composite">
+    <div id="banner">
+      #banner( $decoration.bannerLeft "bannerLeft" )
+      #banner( $decoration.bannerRight "bannerRight" )
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="search">
+      <script type="text/javascript">
+        function selectProvider(form) {
+          provider = form.elements['searchProvider'].value;
+          if (provider == "any") {
+            if (Math.random() > 0.5) {
+              provider = "lucid";
+            } else {
+              provider = "sl";
+            }
+          }
+
+          if (provider == "lucid") {
+            form.action = "http://search.lucidimagination.com/p:tika";
+          } else if (provider == "sl") {
+            form.action = "http://search-lucene.com/tika";
+          }
+
+          days = 90;
+          date = new Date();
+          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+          expires = "; expires=" + date.toGMTString();
+          document.cookie = "searchProvider=" + provider + expires + "; path=/";
+        }
+      </script>
+      <form action="http://search.lucidimagination.com/p:tika" method="get" id="searchform">
+        <input type="text" id="query" name="q" size="30" onFocus="getBlank (this, 'Search with Apache Solr');" value="Search with Apache Solr"></input>
+        <input type="submit" value="Search" name="Search" onclick="selectProvider(this.form)"/>
+        @
+        <select name="searchProvider" id="searchProvider">
+          <option value="any">select provider</option>
+          <option value="lucid">Lucid Find</option>
+          <option value="sl">Search-Lucene</option>
+        </select>
+        <script type="text/javascript">
+          if (document.cookie.length>0) {
+            cStart=document.cookie.indexOf("searchProvider=");
+            if (cStart!=-1) {
+              cStart=cStart + "searchProvider=".length;
+              cEnd=document.cookie.indexOf(";", cStart);
+              if (cEnd==-1) {
+                cEnd=document.cookie.length;
+              }
+              provider = unescape(document.cookie.substring(cStart,cEnd));
+              document.forms['searchform'].elements['searchProvider'].value = provider;
+            }
+          }
+        </script>
+      </form>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+    <div id="leftColumn">
+      <div id="navcolumn">
+       #mainMenu( $decoration.body.menus )
+      </div>
+      <div id="bookpromo">  
+        <a href="http://manning.com/mattmann"><img src="http://www.manning.com/mattmann/mattmann_cover150.jpg" border="0"/></a>
+      </div>
+    </div>
+    <div id="bodyColumn">
+      <div id="contentBox">
+        $bodyContent
+      </div>
+    </div>
+    <div class="clear">
+      <hr/>
+    </div>
+    <div id="footer">
+      <p>
+#set ( $currentYear = ${currentDate.year} + 1900 )
+        Copyright $currentYear
+        <a href="http://www.apache.org/">The Apache Software Foundation</a>.
+        Site powered by <a href="http://maven.apache.org/">Apache Maven</a>. 
+        Search powered by <a href="http://www.lucidimagination.com">Lucid Imagination</a> & <a href="http://sematext.com">Sematext</a>.
+      </p>
+      <div class="clear">
+        <hr/>
+      </div>
+    </div>
+  </body>
+</html>

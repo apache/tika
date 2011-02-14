@@ -1,0 +1,891 @@
+Apache Tika Change Log
+======================
+ 
+Release 0.9 - 02/13/2011
+
+The most notable changes in Tika 0.9 over previous releases are:
+
+ * A critical bugfix preventing metadata from printing to the 
+   command line when the underlying Parser didn't generate 
+   XHTML output was fixed. (TIKA-596)
+   
+ * The 0.8 version of Tika included a NetCDF jar file that pulled 
+   in tremendous amounts of redundant dependencies. This has 
+   been addressed in Tika 0.9 by republishing a minimal NetCDF 
+   jar and changing Tika to depend on that. (TIKA-556)
+   
+ * MIME detection for iWork, and OpenXML documents has been 
+   improved. (TIKA-533, TIKA-562, TIKA-588)
+   
+ * A critical backwards incompatible bug in PDF parsing that 
+   was introduced in Tika 0.8 has been fixed. (TIKA-548)
+   
+ * Support for forked parsing in separate processes was added. 
+   (TIKA-416)
+ 
+ * Tika's language identifier now supports the Lithuanian 
+   language. (TIKA-582)
+
+Tika relies on the current set of major dependencies (generated using 
+mvn dependency:tree from the top-level tika src dir):
+
+org.apache.tika:tika-parent:pom:0.9-SNAPSHOT
+org.apache.tika:tika-core:bundle:0.9-SNAPSHOT
++- org.osgi:org.osgi.core:jar:4.0.0:provided
+\- junit:junit:jar:3.8.1:test
+org.apache.tika:tika-parsers:bundle:0.9-SNAPSHOT
++- org.apache.tika:tika-core:jar:0.9-SNAPSHOT:compile
++- edu.ucar:netcdf:jar:4.2-min:compile
+|  \- org.slf4j:slf4j-api:jar:1.5.6:compile
++- commons-httpclient:commons-httpclient:jar:3.1:compile
+|  +- commons-logging:commons-logging:jar:1.1.1:compile (version managed from 1.0.4)
+|  \- commons-codec:commons-codec:jar:1.2:compile
++- org.apache.james:apache-mime4j:jar:0.6:compile
++- org.apache.commons:commons-compress:jar:1.1:compile
++- org.apache.pdfbox:pdfbox:jar:1.4.0:compile
+|  +- org.apache.pdfbox:fontbox:jar:1.4.0:compile
+|  \- org.apache.pdfbox:jempbox:jar:1.4.0:compile
++- org.bouncycastle:bcmail-jdk15:jar:1.45:compile
++- org.bouncycastle:bcprov-jdk15:jar:1.45:compile
++- org.apache.poi:poi:jar:3.7:compile
++- org.apache.poi:poi-scratchpad:jar:3.7:compile
++- org.apache.poi:poi-ooxml:jar:3.7:compile
+|  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:compile
+|  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:compile
+|  \- dom4j:dom4j:jar:1.6.1:compile
++- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:compile
++- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:compile
++- asm:asm:jar:3.1:compile
++- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:compile
++- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:compile
++- rome:rome:jar:0.9:compile
+|  \- jdom:jdom:jar:1.0:compile
++- junit:junit:jar:3.8.1:test
++- org.mockito:mockito-core:jar:1.7:test
+|  +- org.hamcrest:hamcrest-core:jar:1.1:test
+|  \- org.objenesis:objenesis:jar:1.0:test
+\- org.slf4j:slf4j-log4j12:jar:1.5.6:test
+   \- log4j:log4j:jar:1.2.14:test
+org.apache.tika:tika-app:bundle:0.9-SNAPSHOT
++- org.apache.tika:tika-parsers:jar:0.9-SNAPSHOT:provided
+|  +- org.apache.tika:tika-core:jar:0.9-SNAPSHOT:provided
+|  +- edu.ucar:netcdf:jar:4.2-min:provided
+|  +- commons-httpclient:commons-httpclient:jar:3.1:provided
+|  |  +- commons-logging:commons-logging:jar:1.0.4:provided
+|  |  \- commons-codec:commons-codec:jar:1.2:provided
+|  +- org.apache.james:apache-mime4j:jar:0.6:provided
+|  +- org.apache.commons:commons-compress:jar:1.1:provided
+|  +- org.apache.pdfbox:pdfbox:jar:1.4.0:provided
+|  |  +- org.apache.pdfbox:fontbox:jar:1.4.0:provided
+|  |  \- org.apache.pdfbox:jempbox:jar:1.4.0:provided
+|  +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+|  +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+|  +- org.apache.poi:poi:jar:3.7:provided
+|  +- org.apache.poi:poi-scratchpad:jar:3.7:provided
+|  +- org.apache.poi:poi-ooxml:jar:3.7:provided
+|  |  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:provided
+|  |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+|  |  \- dom4j:dom4j:jar:1.6.1:provided
+|  +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+|  +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:provided
+|  +- asm:asm:jar:3.1:provided
+|  +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+|  +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+|  \- rome:rome:jar:0.9:provided
+|     \- jdom:jdom:jar:1.0:provided
+\- org.slf4j:slf4j-log4j12:jar:1.5.6:provided
+   +- org.slf4j:slf4j-api:jar:1.5.6:provided
+   \- log4j:log4j:jar:1.2.14:provided
+org.apache.tika:tika-bundle:bundle:0.9-SNAPSHOT
++- org.apache.tika:tika-core:jar:0.9-SNAPSHOT:provided
+\- org.apache.tika:tika-parsers:jar:0.9-SNAPSHOT:provided
+   +- edu.ucar:netcdf:jar:4.2-min:provided
+   |  \- org.slf4j:slf4j-api:jar:1.5.6:provided
+   +- commons-httpclient:commons-httpclient:jar:3.1:provided
+   |  +- commons-logging:commons-logging:jar:1.0.4:provided
+   |  \- commons-codec:commons-codec:jar:1.2:provided
+   +- org.apache.james:apache-mime4j:jar:0.6:provided
+   +- org.apache.commons:commons-compress:jar:1.1:provided
+   +- org.apache.pdfbox:pdfbox:jar:1.4.0:provided
+   |  +- org.apache.pdfbox:fontbox:jar:1.4.0:provided
+   |  \- org.apache.pdfbox:jempbox:jar:1.4.0:provided
+   +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+   +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+   +- org.apache.poi:poi:jar:3.7:provided
+   +- org.apache.poi:poi-scratchpad:jar:3.7:provided
+   +- org.apache.poi:poi-ooxml:jar:3.7:provided
+   |  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:provided
+   |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+   |  \- dom4j:dom4j:jar:1.6.1:provided
+   +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+   +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:provided
+   +- asm:asm:jar:3.1:provided
+   +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+   +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+   \- rome:rome:jar:0.9:provided
+      \- jdom:jdom:jar:1.0:provided
+org.apache.tika:tika:pom:0.9-SNAPSHOT
+
+The following people have contributed to Tika 0.9 by submitting or commenting
+on the issues resolved in this release:
+
+Alex Skochin
+Alexander Chow
+Antoine L.
+Antoni Mylka
+Benjamin Douglas
+Benson Margulies
+Chris A. Mattmann
+Cristian Vat
+Cyriel Vringer
+David Benson
+Erik Hetzner
+Gabriel Miklos
+Geoff Jarrad
+Jukka Zitting
+Ken Krugler
+Kostya Gribov
+Leszek Piotrowicz
+Martijn van Groningen
+Maxim Valyanskiy
+Michel Tremblay
+Nick Burch
+paul
+Paul Pearcy
+Peter van Raamsdonk
+Piotr Bartosiewicz
+Reinhard Schwab
+Scott Severtson
+Shinsuke Sugaya
+Staffan Olsson
+Steve Kearns
+Tom Klonikowski
+Žygimantas Medelis
+
+See http://s.apache.org/qi for more details on these contributions.
+
+
+Release 0.8 - 11/07/2010
+
+The most notable changes in Tika 0.8 over previous releases are:
+
+ * Language identification is now dynamically configurable, 
+   managed via a config file loaded from the classpath. (TIKA-490)
+
+ * Tika now supports parsing Feeds by wrapping the underlying
+   Rome library. (TIKA-466)
+
+ * A quick-start guide for Tika parsing was contributed. (TIKA-464)
+
+ * An approach for plumbing through XHTML attributes was added. (TIKA-379)
+
+ * Media type hierarchy information is now taken into account when
+   selecting the best parser for a given input document. (TIKA-298)
+
+ * Support for parsing common scientific data formats including netCDF
+   and HDF4/5 was added (TIKA-400 and TIKA-399).
+
+ * Unit tests for Windows have been fixed, allowing TestParsers
+   to complete. (TIKA-398)
+
+Tika relies on the current set of major dependencies (generated using 
+mvn dependency:tree from the top-level tika src dir):
+
+org.apache.tika:tika-parent:pom:0.8-SNAPSHOT
+org.apache.tika:tika-core:bundle:0.8-SNAPSHOT
+\- junit:junit:jar:3.8.1:test
+org.apache.tika:tika-parsers:bundle:0.8-SNAPSHOT
++- org.apache.tika:tika-core:jar:0.8-SNAPSHOT:compile
++- edu.ucar:netcdf:jar:4.2:compile
+|  \- org.slf4j:slf4j-api:jar:1.5.6:compile
++- commons-httpclient:commons-httpclient:jar:3.1:compile
+|  +- commons-logging:commons-logging:jar:1.1.1:compile (version managed from 1.0.4)
+|  \- commons-codec:commons-codec:jar:1.2:compile
++- org.apache.commons:commons-compress:jar:1.1:compile
++- org.apache.pdfbox:pdfbox:jar:1.3.1:compile
+|  +- org.apache.pdfbox:fontbox:jar:1.3.1:compile
+|  \- org.apache.pdfbox:jempbox:jar:1.3.1:compile
++- org.bouncycastle:bcmail-jdk15:jar:1.45:compile
++- org.bouncycastle:bcprov-jdk15:jar:1.45:compile
++- org.apache.poi:poi:jar:3.7:compile
++- org.apache.poi:poi-scratchpad:jar:3.7:compile
++- org.apache.poi:poi-ooxml:jar:3.7:compile
+|  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:compile
+|  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:compile
+|  \- dom4j:dom4j:jar:1.6.1:compile
++- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:compile
++- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:compile
++- asm:asm:jar:3.1:compile
++- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:compile
++- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:compile
++- rome:rome:jar:0.9:compile
+|  \- jdom:jdom:jar:1.0:compile
++- junit:junit:jar:3.8.1:test
++- org.mockito:mockito-core:jar:1.7:test
+|  +- org.hamcrest:hamcrest-core:jar:1.1:test
+|  \- org.objenesis:objenesis:jar:1.0:test
+\- org.slf4j:slf4j-log4j12:jar:1.5.6:test
+   \- log4j:log4j:jar:1.2.14:test
+org.apache.tika:tika-app:bundle:0.8-SNAPSHOT
++- org.apache.tika:tika-parsers:jar:0.8-SNAPSHOT:provided
+|  +- org.apache.tika:tika-core:jar:0.8-SNAPSHOT:provided
+|  +- edu.ucar:netcdf:jar:4.2:provided
+|  +- commons-httpclient:commons-httpclient:jar:3.1:provided
+|  |  +- commons-logging:commons-logging:jar:1.0.4:provided
+|  |  \- commons-codec:commons-codec:jar:1.2:provided
+|  +- org.apache.commons:commons-compress:jar:1.1:provided
+|  +- org.apache.pdfbox:pdfbox:jar:1.3.1:provided
+|  |  +- org.apache.pdfbox:fontbox:jar:1.3.1:provided
+|  |  \- org.apache.pdfbox:jempbox:jar:1.3.1:provided
+|  +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+|  +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+|  +- org.apache.poi:poi:jar:3.7:provided
+|  +- org.apache.poi:poi-scratchpad:jar:3.7:provided
+|  +- org.apache.poi:poi-ooxml:jar:3.7:provided
+|  |  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:provided
+|  |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+|  |  \- dom4j:dom4j:jar:1.6.1:provided
+|  +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+|  +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:provided
+|  +- asm:asm:jar:3.1:provided
+|  +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+|  +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+|  \- rome:rome:jar:0.9:provided
+|     \- jdom:jdom:jar:1.0:provided
+\- org.slf4j:slf4j-log4j12:jar:1.5.6:provided
+   +- org.slf4j:slf4j-api:jar:1.5.6:provided
+   \- log4j:log4j:jar:1.2.14:provided
+org.apache.tika:tika-bundle:bundle:0.8-SNAPSHOT
++- org.apache.tika:tika-core:jar:0.8-SNAPSHOT:provided
+\- org.apache.tika:tika-parsers:jar:0.8-SNAPSHOT:provided
+   +- edu.ucar:netcdf:jar:4.2:provided
+   |  \- org.slf4j:slf4j-api:jar:1.5.6:provided
+   +- commons-httpclient:commons-httpclient:jar:3.1:provided
+   |  +- commons-logging:commons-logging:jar:1.0.4:provided
+   |  \- commons-codec:commons-codec:jar:1.2:provided
+   +- org.apache.commons:commons-compress:jar:1.1:provided
+   +- org.apache.pdfbox:pdfbox:jar:1.3.1:provided
+   |  +- org.apache.pdfbox:fontbox:jar:1.3.1:provided
+   |  \- org.apache.pdfbox:jempbox:jar:1.3.1:provided
+   +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+   +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+   +- org.apache.poi:poi:jar:3.7:provided
+   +- org.apache.poi:poi-scratchpad:jar:3.7:provided
+   +- org.apache.poi:poi-ooxml:jar:3.7:provided
+   |  +- org.apache.poi:poi-ooxml-schemas:jar:3.7:provided
+   |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+   |  \- dom4j:dom4j:jar:1.6.1:provided
+   +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+   +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2:provided
+   +- asm:asm:jar:3.1:provided
+   +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+   +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+   \- rome:rome:jar:0.9:provided
+      \- jdom:jdom:jar:1.0:provided
+
+The following people have contributed to Tika 0.8 by submitting or commenting
+on the issues resolved in this release:
+
+Łukasz Wiktor
+Adam Wilmer
+Alex Baranau
+Alex Ott
+André Ricardo
+Andrey Barhatov
+Andrey Sidorenko
+Antoni Mylka
+Antoni Mylka
+Arturo Beltran
+Attila Király
+Brad Greenlee
+Bruno Dumon
+Chris A. Mattmann
+Chris Bamford
+Christophe Gourmelon
+Dave Meikle
+David Weekly
+Dmitry Kuzmenko
+Erik Hetzner
+Geoff Jarrad
+Gerd Bremer
+Grant Ingersoll
+Jan Høydahl
+Jean-Philippe Ricard
+Jeremias Maerki
+Joao Garcia
+Jukka Zitting
+Julien Nioche
+Ken Krugler
+Liam O'Boyle
+Mads Hansen
+Marcel May
+Markus Goldbach
+Martijn van Groningen
+Maxim Valyanskiy
+Mike Hays
+Miroslav Pokorny
+Nick Burch
+Otis Gospodnetic
+Peter van Raamsdonk
+Peter Wolanin
+Peter_Lenahan@ibi.com
+Piotr Bartosiewicz
+Radek
+Rajiv Kumar
+Reinhard Schwab
+rick cameron
+Robert Muir
+Sanjeev Rao
+Simon Tyler
+Sjoerd Smeets
+Slavomir Varchula
+Staffan Olsson
+Tom De Leu
+Uwe Schindler
+Victor Kazakov
+
+See http://s.apache.org/ab0 for more details on these contributions.
+
+Release 0.7 - 3/31/2010
+---------------------------------
+
+The most notable changes in Tika 0.7 over previous releases are:
+
+ * MP3 file parsing was improved, including Channel and SampleRate 
+   extraction and ID3v2 support (TIKA-368, TIKA-372). Further, audio
+   parsing mime detection was also improved for the MIDI format. (TIKA-199)
+
+ * Tika no longer relies on X11 for its RTF parsing functionality. (TIKA-386)
+
+ * A Thread-safe bug in the AutoDetectParser was discovered and 
+   addressed. (TIKA-374)
+
+ * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
+   performance and fixes a number of text extraction issues. (TIKA-380)
+   
+The following people have contributed to Tika 0.7 by submitting or commenting
+on the issues resolved in this release:
+
+Adam Rauch 
+Benson Margulies 
+Brett S. 
+Chris A. Mattmann 
+Daan de Wit 
+Dave Meikle 
+Durville 
+Ingo Renner 
+Jukka Zitting 
+Ken Krugler 
+Kenny Neal 
+Markus Goldbach
+Maxim Valyanskiy 
+Nick Burch  
+Sami Siren 
+Uwe Schindler 
+
+See http://tinyurl.com/yklopby for more details on these contributions.
+
+Release 0.6 - 01/20/2010
+---------------------------------
+
+The most notable changes in Tika 0.6 over the previous release are:
+
+ * Mime-type detection for HTML (and all types) has been improved, allowing malformed
+   HTML files and those HTML files that require a bit more observed content
+   before the type is properly detected, are now correctly identified by 
+   the AutoDetectParser. (TIKA-327, TIKA-357, TIKA-366, TIKA-367)
+
+ * Tika now has an additional OSGi bundle packaging that includes all the
+   required parser libraries. This bundle package makes it easy to use all
+   Tika features in an OSGi environment. (TIKA-340, TIKA-342)
+
+ * The Apache POI dependency used for parsing Microsoft Office file formats
+   has been upgraded to version 3.6. The most visible improvement in this
+   version is the notably reduced ooxml jar file size. The tika-app jar size
+   is now down to 15MB from the 25MB in Tika 0.5. (TIKA-353)
+
+ * Handling of character encoding information in input metadata and HTML
+   <meta> tags has been improved. When no applicable encoding information is
+   available, the encoding is detected by looking at the input data.
+   (TIKA-332, TIKA-334, TIKA-335, TIKA-341) 
+
+ * Some document types like Excel spreadsheets contain content like
+   numbers or formulas whose exact text format depends on the current locale.
+   So far Tika has used the platform default locale in such cases, but
+   clients can now explicitly specify the locale by passing a Locale instance
+   in the parse context. (TIKA-125)
+
+ * The default text output encoding of the tika-app jar is now UTF-8
+   when running on Mac OS X. This is because the default encoding used
+   by Java is not compatible with the console application in Mac OS X.
+   On all other platforms the text output from tika-app still uses
+   the platform default encoding. (TIKA-324)
+
+ * A flash video (video/x-flv) parser has been added. (TIKA-328)
+ 
+ * The handling of Number and Date cell formatting within the Microsoft Excel
+   documents has been added. This include currencies, percentages and
+   scientific formats. (TIKA-103)
+   
+The following people have contributed to Tika 0.6 by submitting or commenting
+on the issues resolved in this release:
+
+Andrzej Bialecki
+Bertrand Delacretaz
+Chris A. Mattmann
+Dave Meikle
+Erik Hetzner
+Felix Meschberger
+Jukka Zitting
+Julien Nioche
+Ken Krugler  
+Luke Nezda
+Maxim Valyanskiy
+Niall Pemberton
+Peter Wolanin 
+Piotr B.
+Sami Siren
+Yuan-Fang Li
+
+See http://tinyurl.com/yc3dk67 for more details on these contributions.
+
+Release 0.5 - 11/14/2009
+------------------------
+
+The most notable changes in Tika 0.5 over the previous release are:
+
+ * Improved RDF/OWL mime detection using both MIME magic as well as
+   pattern matching (TIKA-309)
+
+ * An org.apache.tika.Tika facade class has been added to simplify common
+   text extraction and type detection use cases. (TIKA-269)
+
+ * A new parse context argument was added to the Parser.parse() method.
+   This context map can be used to pass things like a delegate parser or
+   other settings to the parsing process. The previous parse() method
+   signature has been deprecated and will be removed in Tika 1.0. (TIKA-275)
+
+ * A simple ngram-based language detection mechanism has been added along
+   with predefined language profiles for 18 languages. (TIKA-209)
+
+ * The media type registry in Tika was synchronized with the MIME type
+   configuration in the Apache HTTP Server. Tika now knows about 1274
+   different media types and can detect 672 of those using 927 file
+   extension and 280 magic byte patterns. (TIKA-285)
+
+ * Tika now uses the Apache PDFBox version 0.8.0-incubating for parsing PDF
+   documents. This version is notably better than the 0.7.3 release used
+   earlier. (TIKA-158)
+
+The following people have contributed to Tika 0.5 by submitting or commenting
+on the issues resolved in this release:
+
+Alex Baranov
+Bart Hanssens
+Benson Margulies
+Chris A. Mattmann
+Daan de Wit
+Erik Hetzner
+Frank Hellwig
+Jeff Cadow
+Joachim Zittmayr
+Jukka Zitting 
+Julien Nioche
+Ken Krugler
+Maxim Valyanskiy
+MRIT64
+Paul Borgermans
+Piotr B.
+Robert Newson
+Sascha Szott
+Ted Dunning
+Thilo Goetz
+Uwe Schindler
+Yuan-Fang Li
+
+See http://tinyurl.com/yl9prwp for more details on these contributions.
+
+Release 0.4 - 07/14/2009
+------------------------
+
+The most notable changes in Tika 0.4 over the previous release are:
+
+  * Tika has been split to three different components for increased
+    modularity. The tika-core component contains the key interfaces and
+    core functionality of Tika, tika-parsers contains all the adapters
+    to external parser libraries, and tika-app bundles everything together
+    in a single executable jar file. (TIKA-219)
+
+  * All the three Tika components are packaged as OSGi bundles. (TIKA-228)
+
+  * Tika now uses the new Commons Compress library for improved support
+    of compression and packaging formats like gzip, bzip2, tar, cpio,
+    ar, zip and jar. (TIKA-204)
+
+  * The memory use of parsing Excel sheets with lots of numbers
+    has been considerably reduced. (TIKA-211)
+
+  * The AutoDetectParser now has basic protection against "zip bomb"
+    attacks, where a specially crafted input document can expand to
+    practically infinite amount of output text. (TIKA-216)
+
+  * The ParsingReader class can now use a thread pool or a more complex
+    execution model (java.util.concurrent.Executor) for the background
+    parsing task. (TIKA-215)
+
+  * Automatic type detection of text- and XML-based documents has been
+    improved. (TIKA-225)
+
+  * Charset detection functionality from the ICU4J library was inlined
+    in Tika to avoid the dependency to the large ICU4J jar. (TIKA-229)
+
+  * Composite parsers like the AutoDetectParser now make sure that any
+    RuntimeExceptions, IOExceptions or SAXExceptions unrelated to the given
+    document stream or content handler are converted to TikaExceptions
+    before being passed to the client. (TIKA-198, TIKA-237)
+    
+The following people have contributed to Tika 0.4 by submitting or commenting
+on the issues resolved in this release:
+
+Chris A. Mattmann 
+Daan de Wit
+Dave Meikle 
+David Weekly
+Jeremias Maerki  	
+Jonathan Koren
+Jukka Zitting
+Karl Heinz Marbaise
+Keith R. Bennett
+Maxim Valyanskiy
+Niall Pemberton 
+Robert Burrell Donkin
+Sami Siren
+Siddharth Gargate 
+Uwe Schindler 
+
+See http://tinyurl.com/mgv9o3 for more details on these contributions.
+
+Release 0.3 - 03/09/2009
+------------------------
+
+The most notable changes in Tika 0.3 over the previous release are:
+
+  * Tika now supports mime type glob patterns specified using
+    standard JDK 1.4 (and beyond) syntax via the isregex attribute
+    on the glob tag. See:
+    
+    http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html
+    
+    for more information. (TIKA-194)
+
+  * Tika now supports the Office Open XML format used by
+    Microsoft Office 2007. (TIKA-152)
+
+  * All the metadata keys for Microsoft Office document properties are now
+    included as constants in the MSOffice interface. Clients should use
+    these constants instead of the raw string values to refer to specific
+    metadata items. (TIKA-186)
+
+  * Automatic detection of document types in Tika has been improved.
+    For example Tika can now detect plain text just by looking at the first
+    few bytes of the document. (TIKA-154)
+
+  * Tika now disables the loading of all external entities in XML files
+    that it parses as input documents. This improves security and avoids
+    problems with potentially broken references. (TIKA-185)
+
+  * Tika now replaces all invalid XML characters in the extracted text
+    content with spaces. This prevents problems when output from Tika
+    is processed with XML tools. (TIKA-180)
+
+  * The Tika CLI now correctly flushes its buffers when invoked with the
+    --text argument. This prevents the end of the text output from being
+    lost. (TIKA-179)
+
+  * Embedded text in MIDI files is now extracted. For example many karaoke
+    files contain song lyrics embedded as MIDI text.
+
+  * The text content of Microsoft Outlook message files no longer appears as
+    multiple copies in the extracted text. (TIKA-197)
+
+  * The ParsingReader class now makes most document metadata available
+    already before any of the extracted text is consumed. This makes it
+    easier for example to construct Lucene Document instances that contain
+    both extracted text and metadata. (TIKA-203)
+
+See http://tinyurl.com/tika-0-3-changes for a list of all changes in Tika 0.3.
+
+The following people have contributed to Tika 0.3 by submitting or commenting
+on the issues resolved in this release:
+
+    Andrzej Rusin
+    Chris A. Mattmann
+    Dave Meikle
+    Georger Ara�jo
+    Guillermo Arribas
+    Jonathan Koren
+    Jukka Zitting
+    Karl Heinz Marbaise
+    Kumar Raja Jana
+    Paul Borgermans
+    Peter Becker
+    S�bastien Michel
+    Uwe Schindler
+
+See http://tinyurl.com/tika-0-3-contributions for more details on
+these contributions.
+
+Release 0.2 - 12/04/2008
+------------------------
+
+1.  TIKA-109 - WordParser fails on some Word files (Dave Meikle)
+
+2.  TIKA-105 - Excel parser implementation based on POI's Event API
+               (Niall Pemberton)
+
+3.  TIKA-116 - Streaming parser for OpenDocument files (Jukka Zitting)
+
+4.  TIKA-117 - Drop JDOM and Jaxen dependencies (Jukka Zitting)
+
+5.  TIKA-115 - Tika package with all the dependencies (Jukka Zitting)
+
+6.  TIKA-97  - Tika GUI (Jukka Zitting)
+
+7.  TIKA-96  - Tika CLI (Jukka Zitting)
+
+8.  TIKA-112 - Use Commons IO 1.4 (Jukka Zitting)
+
+9.  TIKA-127 - Add support for Visio files (Jukka Zitting)
+
+10. TIKA-129 - node() support for the streaming XPath utility (Jukka Zitting)
+
+11. TIKA-130 - self-or-descendant axis does not match self in streaming XPath
+               (Jukka Zitting)
+
+12. TIKA-131 - Lazy XHTML prefix generation (Jukka Zitting)
+
+13. TIKA-128 - HTML parser should produce XHTML SAX events (Jukka Zitting)
+
+14. TIKA-133 - TeeContentHandler constructor should use varargs (Jukka Zitting)
+
+15. TIKA-132 - Refactor Excel extractor to parse per sheet and add
+               hyperlink support (Niall Pemberton)
+
+16. TIKA-134 - mvn package does not produce packages for bin/src
+               (Karl Heinz Marbaise)
+
+17. TIKA-138 - Ignore HTML style and script content (Jukka Zitting)
+
+18. TIKA-113 - Metadata (such as title) should not be part of content
+               (Jukka Zitting)
+
+19. TIKA-139 - Add a composite parser (Jukka Zitting)
+
+20. TIKA-142 - Include application/xhtml+xml as valid mime type for XMLParser
+               (mattmann)
+
+21. TIKA-143 - Add ParsingReader (Jukka Zitting)
+
+22. TIKA-144 - Upgrade nekohtml dependency (Jukka Zitting)
+
+23. TIKA-145 - Separate NOTICEs and LICENSEs for binary and source packages
+               (Jukka Zitting)
+
+24. TIKA-146 - Upgrade to POI 3.1 (Jukka Zitting)
+
+25. TIKA-99  - Support external parser programs (Jukka Zitting)
+
+26. TIKA-149 - Parser for Zip files (Dave Meikle & Jukka Zitting)
+
+27. TIKA-150 - Parser for tar files (Jukka Zitting)
+
+28. TIKA-151 - Stream compression support (Jukka Zitting)
+
+29. TIKA-156 - Some MIME magic patterns are ignored by MimeTypes
+               (Jukka Zitting)
+
+30. TIKA-155 - Java class file parser (Dave Brosius & Jukka Zitting)
+
+31. TIKA-108 - New Tika logos (Yongqian Li & Jukka Zitting)
+
+32. TIKA-120 - Add support for retrieving ID3 tags from MP3 files
+               (Dave Meikle & Jukka Zitting)
+
+33. TIKA-54  - Outlook msg parser
+               (Rida Benjelloun, Dave Meikle & Jukka Zitting)
+
+34. TIKA-114 - PDFParser : Getting content of the document using
+               "writer.ToString ()" , some words are stuck together
+               (Dave Meikle)
+
+35. TIKA-161 - Enable PMD reports (Jukka Zitting)
+
+36. TIKA-159 - Add support for parsing basic audio types: wav, aiff, au, midi
+               (Sami Siren)
+
+37. TIKA-140 - HTML parser unable to extract text
+               (Julien Nioche & Jukka Zitting)
+
+38. TIKA-163 - GUI does not support drag and drop in Gnome or KDE (Dave Meikle)
+
+39. TIKA-166 - Update HTMLParser to parse contents of meta tags (Dave Meikle)
+
+40. TIKA-164 - Upgrade of the nekohtml dependency to 1.9.9 (Jukka Zitting)
+
+41. TIKA-165 - Upgrade of the ICU4J dependency to version 3.8 (Jukka Zitting)
+
+42. TIKA-172 - New Open Document Parser that emits structured XHTML content
+               (Uwe Schindler & Jukka Zitting)
+
+43. TIKA-175 - Retrotranslate Tika for use in Java 1.4 environments (Jukka Zitting)
+
+44. TIKA-177 - Improvements to build instruction in README (Chris Hostetter & Jukka Zitting)
+
+45. TIKA-171 - New ContentHandler for plain text output that has no problem with
+               missing white space after XHTML block tags (Uwe Schindler & Jukka Zitting)
+
+Release 0.1-incubating - 12/27/2007
+-----------------------------------
+
+1. TIKA-5 - Port Metadata Framework from Nutch (mattmann)
+
+2. TIKA-11 - Consolidate test classes into a src/test/java directory tree (mattmann)
+
+3. TIKA-15 - Utils.print does not print a Content having no value (jukka)
+
+4. TIKA-19 - org.apache.tika.TestParsers fails (bdelacretaz)
+
+5. TIKA-16 - Issues with data files used for testing by TestParsers (bdelacretaz)
+
+6. TIKA-14 - MimeTypeUtils.getMimeType() returns the default mime type for
+             .odt (Open Office) file (bdelacretaz)
+
+7. TIKA-12 - Add URL capability to MimeTypesUtils (jukka)
+
+8. TIKA-13 - Fix obsolete package names in config.xml (siren)
+
+9. TIKA-10 - Remove MimeInfoException catch clauses and import from TestParsers (siren)
+
+10. TIKA-8 - Replaced the jmimeinfo dependency with a trivial mime type detector (jukka)
+
+11. TIKA-7 - Added the Lius Lite code. Added missing dependencies to POM (jukka)
+
+12. TIKA-18 - "Office" interface should be renamed "MSOffice" (mattmann)
+
+13. TIKA-23 - Decouple Parser from ParserConfig (jukka)
+
+14. TIKA-6 - Port Nutch (or better) MimeType detection system into Tika (J. Charron & mattmann)
+
+15. TIKA-25 - Removed hardcoded reference to C:\oo.xml in OpenOfficeParser (K. Bennett & jukka)
+
+16. TIKA-17 - Need to support URL's for input resources. (K. Bennett & mattmann)
+
+17. TIKA-22 - Remove @author tags from the java source (mattmann)
+
+18. TIKA-21 - Simplified configuration code (jukka)
+
+19. TIKA-17 - Rename all "Lius" classes to be "Tika" classes (jukka)
+
+20. TIKA-30 - Added utility constructors to TikaConfig (K. Bennett & jukka)
+
+21. TIKA-28 - Rename config.xml to tika-config.xml or similar (mattmann)
+
+22. TIKA-26 - Use Map<String, Content> instead of List<Content> (jukka)
+
+23. TIKA-31 - protected Parser.parse(InputStream stream,
+              Iterable<Content> contents) (jukka & K. Bennett)
+
+24. TIKA-36 - A convenience method for getting a document's content's text
+              would be helpful (K. Bennett & mattmann)
+
+25. TIKA-33 - Stateless parsers (jukka)
+
+26. TIKA-38 - TXTParser adds a space to the content it reads from a file (K. Bennett & ridabenjelloun)
+
+27. TIKA-35 - Extract MsOffice properties, use RereadableInputStream devloped by K. Bennett (ridabenjelloun & K. Bennett)
+
+28. TIKA-39 - Excel parsing improvements (siren & ridabenjelloun)
+
+29. TIKA-34 - Provide a method that will return a default configuration
+              (TikaConfig) (K. Bennett & mattmann)
+
+30. TIKA-42 - Content class needs (String, String, String) constructor (K. Bennett)
+
+31. TIKA-43 - Parser interface (jukka)
+
+32. TIKA-47 - Remove TikaLogger (jukka)
+
+33. TIKA-46 - Use Metadata in Parser (jukka & mattmann)
+
+34. TIKA-48 - Merge MS Extractors and Parsers (jukka)
+
+35. TIKA-45 - RereadableInputStream needs to be able to read to
+              the end of the original stream on first rewind. (K. Bennett)
+
+36. TIKA-41 - Resource files occur twice in jar file. (jukka)
+
+37. TIKA-49 - Some files have old-style license headers, fixed (Robert Burrell Donkin & bdelacretaz)
+
+38. TIKA-51 - Leftover temp files after running Tika tests, fixed (bdelacretaz)
+
+39. TIKA-40 - Tika needs to support diverse character encodings (jukka)
+
+40. TIKA-55 - ParseUtils.getParser() method variants should have consistent parameter orders
+              (K. Bennett)
+
+41. TIKA-52 - RereadableInputStream needs to support not closing the input stream it wraps.
+              (K. Bennett via bdelacretaz)
+
+42. TIKA-53 - XHTML SAX events from parsers (jukka)
+
+43. TIKA-57 - Rename org.apache.tika.ms to org.apache.tika.parser.ms (jukka)
+
+44. TIKA-62 - Use TikaConfig.getDefaultConfig() instead of a hardcoded
+              config path in TestParsers (jukka)
+
+45. TIKA-58 - Replace jtidy html parser with nekohtml based parser (siren)
+
+46. TIKA-60 - Rename Microsoft parser classes (jukka)
+
+47. TIKA-63 - Avoid multiple passes over the input stream in Microsoft parsers
+              (jukka)
+
+48. TIKA-66 - Use Java 5 features in org.apache.tika.mime (jukka)
+
+49. TIKA-56 - Mime type detection fails with upper case file extensions such as "PDF"
+             (mattmann)
+
+50. TIKA-65 - Add encode detection support for HTML parser (siren)
+
+51. TIKA-68 - Add dummy parser classes to be used as sentinels (jukka)
+
+52. TIKA-67 - Add an auto-detecting Parser implementation (jukka)
+
+53. TIKA-70 - Better MIME information for the Open Document formats (jukka)
+
+54. TIKA-71 - Remove ParserConfig and ParserFactory (jukka)
+
+55. TIKA-83 - Create a org.apache.tika.sax package for SAX utilities (jukka)
+
+56. TIKA-84 - Add MimeTypes.getMimeType(InputStream) (jukka)
+
+57. TIKA-85 - Add glob patterns from the ASF svn:eol-style documentation (jukka)
+
+58. TIKA-100 - Structured PDF parsing (jukka)
+
+59. TIKA-101 - Improve site and build (mattmann)
+
+60. TIKA-102 - Parser implementations loading a large amount of content
+               into a single String could be problematic (Niall Pemberton)
+
+61. TIKA-107 - Remove use of assertions for argument checking (Niall Pemberton)
+
+62. TIKA-104 - Add utility methods to throw IOException with the caused
+               intialized (jukka & Niall Pemberton)
+
+63. TIKA-106 - Remove dependency on Jakarta ORO - use JDK 1.4 Regex
+               (Niall Pemberton)
+
+64. TIKA-111 - Missing license headers (jukka)
+
+65. TIKA-112 - XMLParser improvement (ridabenjelloun)

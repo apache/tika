@@ -1,0 +1,145 @@
+                       --------------------------
+                       Supported Document Formats
+                       --------------------------
+
+~~ Licensed to the Apache Software Foundation (ASF) under one or more
+~~ contributor license agreements.  See the NOTICE file distributed with
+~~ this work for additional information regarding copyright ownership.
+~~ The ASF licenses this file to You under the Apache License, Version 2.0
+~~ (the "License"); you may not use this file except in compliance with
+~~ the License.  You may obtain a copy of the License at
+~~
+~~     http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+
+Supported Document Formats
+
+   This page lists all the document formats supported by Apache Tika 0.6.
+   Follow the links to the various parser class javadocs for more detailed
+   information about each document format and how it is parsed by Tika.
+
+%{toc|section=1|fromDepth=1}
+
+* {HyperText Markup Language}
+
+   The HyperText Markup Language (HTML) is the lingua franca of the web.
+   Tika uses the {{{http://home.ccil.org/~cowan/XML/tagsoup/}TagSoup}}
+   library to support virtually any kind of HTML found on the web.
+   The output from the
+   {{{api/org/apache/tika/parser/html/HtmlParser.html}HtmlParser}} class
+   is guaranteed to be well-formed and valid XHTML, and various heuristics
+   are used to prevent things like inline scripts from cluttering the
+   extracted text content.
+
+* {XML and derived formats}
+
+   The Extensible Markup Language (XML) format is a generic format that can
+   be used for all kinds of content. Tika has custom parsers for some widely
+   used XML vocabularies like XHTML, OOXML and ODF, but the default
+   {{{api/org/apache/tika/parser/xml/DcXMLParser.html}DcXMLParser}}
+   class simply extracts the text content of the document and ignores any XML
+   structure. The only exception to this rule are Dublin Core metadata
+   elements that are used for the document metadata.
+
+* {Microsoft Office document formats}
+
+   Microsoft Office and some related applications produce documents in the
+   generic OLE 2 Compound Document and Office Open XML (OOXML) formats. The
+   older OLE 2 format was introduced in Microsoft Office version 97 and was
+   the default format until Office version 2007 and the new XML-based
+   OOXML format. The
+   {{{api/org/apache/tika/parser/microsoft/OfficeParser.html}OfficeParser}}
+   and
+   {{{api/org/apache/tika/parser/microsoft/ooxml/OOXMLParser.html}OOXMLParser}}
+   classes use {{{http://poi.apache.org/}Apache POI}} libraries to support
+   text and metadata extraction from both OLE2 and OOXML documents.
+
+* {OpenDocument Format}
+
+   The OpenDocument format (ODF) is used most notably as the default format
+   of the OpenOffice.org office suite. The
+   {{{api/org/apache/tika/parser/odf/OpenDocumentParser.html}OpenDocumentParser}}
+   class supports this format and the earlier OpenOffice 1.0 format on which
+   ODF is based.
+
+* {Portable Document Format}
+
+   The {{{api/org/apache/tika/parser/pdf/PDFParser.html}PDFParser}} class
+   parsers Portable Document Format (PDF) documents using the
+   {{{http://pdfbox.apache.org/}Apache PDFBox}} library.
+
+* {Electronic Publication Format}
+
+   The {{{api/org/apache/tika/parser/epub/EpubParser.html}EpubParser}} class
+   supports the Electronic Publication Format (EPUB) used for many digital
+   books.
+
+* {Rich Text Format}
+
+   The {{{api/org/apache/tika/parser/rtf/RTFParser.html}RTFParser}} class
+   uses the standard javax.swing.text.rtf feature to extract text content
+   from Rich Text Format (RTF) documents.
+
+* {Compression and packaging formats}
+
+   Tika uses the {{{http://commons.apache.org/compress/}Commons Compress}}
+   library to support various compression and packaging formats. The
+   {{{api/org/apache/tika/parser/pkg/PackageParser.html}PackageParser}}
+   class and its subclasses first parse the top level compression or
+   packaging format and then pass the unpacked document streams to a
+   second parsing stage using the parser instance specified in the
+   parse context.
+
+* {Text formats}
+
+   Extracting text content from plain text files seems like a simple task
+   until you start thinking of all the possible character encodings. The
+   {{{api/org/apache/tika/parser/txt/TXTParser.html}TXTParser}} class uses
+   encoding detection code from the {{{http://site.icu-project.org/}ICU}}
+   project to automatically detect the character encoding of a text document.
+
+* {Audio formats}
+
+   Tika can detect several common audio formats and extract metadata
+   from them. Even text extraction is supported for some audio files that
+   contain lyrics or other textual content. The
+   {{{api/org/apache/tika/parser/audio/AudioParser.html}AudioParser}}
+   and {{{api/org/apache/tika/parser/audio/MidiParser.html}MidiParser}}
+   classes use standard javax.sound features to process simple audio
+   formats, and the
+   {{{api/org/apache/tika/parser/mp3/Mp3Parser.html}Mp3Parser}} class
+   adds support for the widely used MP3 format.
+
+* {Image formats}
+
+   The {{{api/org/apache/tika/parser/image/ImageParser.html}ImageParser}}
+   class uses the standard javax.imageio feature to extract simple metadata
+   from image formats supported by the Java platform. More complex image
+   metadata is available through the
+   {{{api/org/apache/tika/parser/jpeg/JpegParser.html}JpegParser}} class
+   that uses the metadata-extractor library to supports Exif metadata
+   extraction from Jpeg images.
+
+* {Video formats}
+
+   Currently Tika only supports the Flash video format using a simple
+   parsing algorithm implemented in the
+   {{{api/org/apache/tika/parser/flv/FLVParser}FLVParser}} class.
+
+* {Java class files and archives}
+
+   The {{{api/org/apache/tika/parser/asm/ClassParser}ClassParser}} class
+   extracts class names and method signatures from Java class files, and
+   the {{{api/org/apache/tika/parser/pkg/ZipParser.html}ZipParser}} class
+   supports also jar archives.
+
+* {The mbox format}
+
+   The {{{api/org/apache/tika/parser/mbox/MboxParser.html}MboxParser}} can
+   extract email messages from the mbox format used by many email archives
+   and Unix-style mailboxes.

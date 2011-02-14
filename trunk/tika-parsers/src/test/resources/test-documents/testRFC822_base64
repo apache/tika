@@ -1,0 +1,8 @@
+To: Nobody <nobody@somewhere.com>
+From: Nowhere <nowhere@nowhere.com>
+Subject: This tests a base64 encoded body
+MIME-Version: 1.0
+Content-Type: text/plain; charset=ISO-8859-1
+Content-Transfer-Encoding: base64
+
+SGVyZSBpcyBzb21lIHRleHQsIHdpdGggaW50ZXJuYXRpb25hbCBjaGFyYWN0ZXJzLCB2b2ls4CE=
