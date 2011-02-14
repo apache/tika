@@ -1,2 +1,0 @@
-Test d'indexation de Txt
-http://www.apache.org
