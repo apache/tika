@@ -26,12 +26,12 @@
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
     <version>6</version>
-    <relativePath/>
+    <relativePath />
   </parent>
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>0.9-SNAPSHOT</version>
+  <version>0.9</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -282,4 +282,10 @@
     </profile>
   </profiles>
 
+
+  <scm>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/0.9</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/0.9</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/0.9</url>
+  </scm>
 </project>
