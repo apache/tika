@@ -4,6 +4,10 @@ Release 0.8 - 11/07/2010
 
 The most notable changes in Tika 0.8 over previous releases are:
 
+ * A critical bugfix preventing metadata from printing to the 
+   command line when the underlying Parser didn't generate 
+   XHTML output was fixed. (TIKA-596)
+
  * Language identification is now dynamically configurable, 
    managed via a config file loaded from the classpath. (TIKA-490)
 
