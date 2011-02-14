@@ -1,6 +1,6 @@
 Apache Tika Change Log
 ======================
-
+ 
 Release 0.9 - 02/13/2011
 
 The most notable changes in Tika 0.9 over previous releases are:
