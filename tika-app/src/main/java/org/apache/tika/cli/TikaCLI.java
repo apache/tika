@@ -103,14 +103,24 @@ public class TikaCLI {
             if (fork) {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
-            p.parse(input, getContentHandler(output), metadata, context);
+            ContentHandler handler = getContentHandler(output);
+            p.parse(input, handler, metadata, context);   
+            // fix for TIKA-596: if a parser doesn't generate
+            // XHTML output, the lack of an output document prevents
+            // metadata from being output: this fixes that
+            if (handler instanceof NoDocumentMetHandler){
+                NoDocumentMetHandler metHandler = (NoDocumentMetHandler)handler;
+                if(!metHandler.metOutput()){
+                    metHandler.endDocument();
+                }
+            }
         }
 
         protected ContentHandler getContentHandler(OutputStream output)
                 throws Exception {
             throw new UnsupportedOperationException();
         }
-
+        
     }
 
     private final OutputType XML = new OutputType() {
@@ -158,16 +168,7 @@ public class TikaCLI {
                 throws Exception {
             final PrintWriter writer =
                 new PrintWriter(getOutputWriter(output, encoding));
-            return new DefaultHandler() {
-                public void endDocument() {
-                    String[] names = metadata.names();
-                    Arrays.sort(names);
-                    for (String name : names) {
-                        writer.println(name + ": " + metadata.get(name));
-                    }
-                    writer.flush();
-                }
-            };
+            return new NoDocumentMetHandler(writer);
         }
     };
 
@@ -612,6 +613,34 @@ public class TikaCLI {
             thread.start();
         }
 
+    }
+    
+    private class NoDocumentMetHandler extends DefaultHandler{
+        
+        private PrintWriter writer;
+        
+        private boolean metOutput;
+        
+        public NoDocumentMetHandler(PrintWriter writer){
+            this.writer = writer;
+            this.metOutput = false;
+        }
+        
+        @Override
+        public void endDocument() {
+            String[] names = metadata.names();
+            Arrays.sort(names);
+            for (String name : names) {
+                writer.println(name + ": " + metadata.get(name));
+            }
+            writer.flush();
+            this.metOutput = true;
+        }        
+        
+        public boolean metOutput(){
+            return this.metOutput;
+        }
+        
     }
 
 }
