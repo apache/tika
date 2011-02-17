@@ -2,6 +2,7 @@ Apache Tika Change Log
 ======================
 Release 1.0 - Current Development
 
+The most notable changes in Tika 1.0 over previous releases are:
 
 
  
