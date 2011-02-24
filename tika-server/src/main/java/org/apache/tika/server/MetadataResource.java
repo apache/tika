@@ -60,7 +60,6 @@ public class MetadataResource {
     fillMetadata ( httpHeaders, metadata );
 
     return new StreamingOutput() {
-      @Override
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {
         CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream));
         for (String name : metadata.names()) {
@@ -90,7 +89,6 @@ public class MetadataResource {
       if (mediaType == null || mediaType.equals(javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE ))
         return (new TikaConfig()).getMimeRepository();
       else return new Detector() {
-        @Override
         public MediaType detect(InputStream inputStream, Metadata metadata) throws IOException {
           return MediaType.parse( mediaType.toString() );
         }

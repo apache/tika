@@ -62,12 +62,10 @@ public class TikaResource {
         return parser.getSupportedTypes(parseContext);
       }
 
-      @Override
       public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
         throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
       }
 
-      @Override
       public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata) {
         throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
       }
@@ -85,7 +83,6 @@ public class TikaResource {
       final Detector detector = parser.getDetector();
 
       parser.setDetector(new Detector() {
-        @Override
         public MediaType detect(InputStream inputStream, Metadata metadata) throws IOException {
           String ct = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
 
@@ -109,7 +106,6 @@ public class TikaResource {
     fillMetadata(parser, metadata, httpHeaders);
 
     return new StreamingOutput() {
-      @Override
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {
         BodyContentHandler body = new BodyContentHandler(outputStream);
 

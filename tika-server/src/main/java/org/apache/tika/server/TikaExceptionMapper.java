@@ -25,7 +25,6 @@ import javax.ws.rs.ext.Provider;
 
 @Provider
 public class TikaExceptionMapper implements ExceptionMapper<TikaException> {
-  @Override
   public Response toResponse(TikaException e) {
     if (e.getCause() !=null && e.getCause() instanceof WebApplicationException) {
       return ((WebApplicationException) e.getCause()).getResponse();

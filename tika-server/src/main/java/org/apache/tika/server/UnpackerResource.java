@@ -109,12 +109,10 @@ public class UnpackerResource {
       this.zout = zout;
     }
 
-    @Override
     public boolean shouldParseEmbedded(Metadata metadata) {
       return true;
     }
 
-    @Override
     public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
       ByteArrayOutputStream bos = new ByteArrayOutputStream();
       IOUtils.copy(inputStream, bos);
@@ -168,7 +166,6 @@ public class UnpackerResource {
       final String finalName = name;
 
       zout.put(new PartExtractor<byte[]>() {
-        @Override
         public void extract(byte[] part, ZipOutputStream output) throws IOException {
           ZipUtils.zipStoreBuffer(output, finalName, part);
         }
