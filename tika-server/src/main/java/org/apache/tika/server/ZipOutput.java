@@ -36,7 +36,6 @@ public class ZipOutput implements StreamingOutput {
     this.parts.put(extractor, parts);
   }
 
-  @Override
   public void write(OutputStream outputStream) throws IOException, WebApplicationException {
     ZipOutputStream zip = new ZipOutputStream(outputStream);
 
