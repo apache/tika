@@ -1,0 +1,35 @@
+This is JAX-RS Tika server for Tika
+(https://issues.apache.org/jira/browse/TIKA-593)
+
+Running
+-------
+java -jar target/tikaserver-1.0-SNAPSHOT.jar
+
+Usage
+-----
+Usage examples from command line with curl utility:
+
+1) Extract plain text:
+
+curl -T price.xls http://localhost:9998/tika
+
+2) Extract text with mime-type hint:
+
+curl -v -H "Content-type: application/vnd.openxmlformats-officedocument.wordprocessingml.document" -T document.docx http://localhost:9998/tika
+
+3) Get all document attachments as ZIP-file:
+
+curl -v -T Doc1_ole.doc http://localhost:9998/unpacker > /var/tmp/x.zip
+
+4) Extract metadata to CSV format:
+
+curl -T price.xls http://localhost:9998/meta
+
+HTTP Codes
+----------
+200 - Ok
+204 - No content (for example when we are unpacking file without attachments)
+415 - Unknown file type
+422 - Unparsable document of known type (password protected documents and unsupported versions like Biff5 Excel)
+500 - Internal error
+

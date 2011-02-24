@@ -7,3 +7,8 @@ The Apache Software Foundation (http://www.apache.org/).
 Copyright 1993-2010 University Corporation for Atmospheric Research/Unidata
 This software contains code derived from UCAR/Unidata's NetCDF library.
 
+Tika-server compoment uses CDDL-licensed dependencies: jersey (http://jersey.java.net/) and 
+Grizzly (http://grizzly.java.net/)
+
+OpenCSV: Copyright 2005 Bytecode Pty Ltd. Licensed under the Apache License, Version 2.0
+
