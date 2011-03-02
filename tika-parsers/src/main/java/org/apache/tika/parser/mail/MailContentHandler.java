@@ -69,9 +69,9 @@ class MailContentHandler implements ContentHandler {
             BodyContentHandler bch = new BodyContentHandler(handler);
             parser.parse(is, new EmbeddedContentHandler(bch), submd);
         } catch (SAXException e) {
-            e.printStackTrace();
+            throw new RuntimeException(new TikaException("Failed to parse email body content", e));
         } catch (TikaException e) {
-            e.printStackTrace();
+            throw new RuntimeException(new TikaException("Failed to parse email body content", e));
         }
     }
 
