@@ -65,7 +65,8 @@ public class LyricsHandler {
             return;
         }
 
-        // Are there lyrics?
+        // Are there lyrics? Look for the closing Lyrics tag
+        //  at the end to decide if there is any
         int lookat = tagData.length - 9;
         if(id3v1.found) {
             lookat -= 128;
@@ -77,6 +78,9 @@ public class LyricsHandler {
                 tagData[lookat+8] == '0') {
             foundLyrics = true;
 
+            // The length (6 bytes) comes just before LYRICS200, and is the
+            //  size including the LYRICSBEGIN but excluding the 
+            //  length+LYRICS200 at the end.
             int length = Integer.parseInt(
                     new String(tagData, lookat-6, 6)
             );
@@ -86,18 +90,21 @@ public class LyricsHandler {
                     "ASCII"
             );
 
+            // Tags are a 3 letter code, 5 digit length, then data
             int pos = 0;
-            while(pos < lyrics.length()-9) {
+            while(pos < lyrics.length()-8) {
                 String tagName = lyrics.substring(pos, pos+3);
                 int tagLen = Integer.parseInt(
-                        lyrics.substring(pos+3, pos+9)
+                        lyrics.substring(pos+3, pos+8)
                 );
+                int startPos = pos + 8;
+                int endPos = startPos + tagLen;
 
                 if(tagName.equals("LYR")) {
-                    lyricsText = lyrics.substring(pos+9, pos+9+tagLen);
+                    lyricsText = lyrics.substring(startPos, endPos);
                 }
 
-                pos += tagLen;
+                pos = endPos;
             }
         }
     }
