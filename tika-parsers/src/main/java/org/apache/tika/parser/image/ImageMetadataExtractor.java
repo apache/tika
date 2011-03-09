@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.image;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
@@ -81,11 +82,11 @@ public class ImageMetadataExtractor {
         this.handlers = handlers;
     }
 
-    public void parseJpeg(InputStream stream)
+    public void parseJpeg(File file)
             throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata jpegMetadata =
-                JpegMetadataReader.readMetadata(stream);
+                JpegMetadataReader.readMetadata(file);
 
             handle(jpegMetadata);
         } catch (JpegProcessingException e) {
