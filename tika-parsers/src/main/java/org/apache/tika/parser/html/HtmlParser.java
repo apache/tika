@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.nio.charset.IllegalCharsetNameException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -67,6 +66,9 @@ public class HtmlParser implements Parser {
                     "Content-Type['\\\"]\\s+content\\s*=\\s*['\\\"]" +
                     "([^'\\\"]+)['\\\"]");
 
+    /**
+     * HTML schema singleton used to amortize the heavy instantiation time.
+     */
     private static final Schema HTML_SCHEMA = new HTMLSchema();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -190,9 +192,13 @@ public class HtmlParser implements Parser {
         org.ccil.cowan.tagsoup.Parser parser =
             new org.ccil.cowan.tagsoup.Parser();
 
-        // Instantiating HTMLSchema is heavy, therefore reuse a cached instance
-        parser.setProperty(org.ccil.cowan.tagsoup.Parser.schemaProperty, HTML_SCHEMA);
-        
+        // TIKA-528: Reuse share schema to avoid heavy instantiation
+        parser.setProperty(
+                org.ccil.cowan.tagsoup.Parser.schemaProperty, HTML_SCHEMA);
+        // TIKA-599: Shared schema is thread-safe only if bogons are ignored
+        parser.setFeature(
+                org.ccil.cowan.tagsoup.Parser.ignoreBogonsFeature, true);
+
         parser.setContentHandler(new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata)));
         parser.parse(source);
