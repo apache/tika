@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -55,18 +57,14 @@ public class JpegParser implements Parser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        
-        // read stream twice - exif and xmp extractors
-        stream.mark(Integer.MAX_VALUE);
-        FilterInputStream first = new FilterInputStream(stream) {
-            @Override
-            public void close() throws IOException {
-            }
-        };
-        new ImageMetadataExtractor(metadata).parseJpeg(first);
-        stream.reset();
-        
-        new JempboxExtractor(metadata).parse(stream);
+        TemporaryFiles tmp = new TemporaryFiles();
+        try {
+            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            new ImageMetadataExtractor(metadata).parseJpeg(tis.getFile());
+            new JempboxExtractor(metadata).parse(tis);
+        } finally {
+            tmp.dispose();
+        }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
