@@ -17,26 +17,25 @@
 package org.apache.tika.utils;
 
 //JDK imports
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMimeKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Contains utility methods for parsing documents. Intended to provide simple
  * entry points into the Tika framework.
+ *
+ * @deprecated Use the {@link Tika} facade class instead.
  */
 public class ParseUtils implements TikaMimeKeys {
 
@@ -50,6 +49,7 @@ public class ParseUtils implements TikaMimeKeys {
      *            the document's MIME type
      * @return a parser appropriate to this MIME type
      * @throws TikaException
+     * @deprecated
      */
     public static Parser getParser(String mimeType, TikaConfig config)
             throws TikaException {
@@ -68,6 +68,7 @@ public class ParseUtils implements TikaMimeKeys {
      * @return a parser appropriate to this MIME type and ready to read input
      *         from the specified document
      * @throws TikaException
+     * @deprecated
      */
     public static Parser getParser(URL documentUrl, TikaConfig config)
             throws TikaException {
@@ -87,6 +88,7 @@ public class ParseUtils implements TikaMimeKeys {
      * @return a parser appropriate to this MIME type and ready to read input
      *         from the specified document
      * @throws TikaException
+     * @deprecated
      */
     public static Parser getParser(File documentFile, TikaConfig config)
             throws TikaException {
@@ -102,18 +104,14 @@ public class ParseUtils implements TikaMimeKeys {
      * @param config
      * @param mimeType MIME type of the data
      * @return the string content parsed from the document
+     * @deprecated Use the {@link Tika#parseToString(InputStream, Metadata)} method
      */
     public static String getStringContent(
             InputStream stream, TikaConfig config, String mimeType)
             throws TikaException, IOException {
-        try {
-            Parser parser = config.getParser(MediaType.parse(mimeType));
-            ContentHandler handler = new BodyContentHandler();
-            parser.parse(stream, handler, new Metadata());
-            return handler.toString();
-        } catch (SAXException e) {
-            throw new TikaException("Unexpected SAX error", e);
-        }
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, mimeType);
+        return new Tika(config).parseToString(stream, metadata);
     }
 
     /**
@@ -123,12 +121,11 @@ public class ParseUtils implements TikaMimeKeys {
      *            URL pointing to the document to parse
      * @param config
      * @return the string content parsed from the document
+     * @deprecated Use the {@link Tika#parseToString(URL)} method
      */
     public static String getStringContent(URL documentUrl, TikaConfig config)
             throws TikaException, IOException {
-        String mime = config.getMimeRepository().getMimeType(documentUrl)
-        .getName();
-        return getStringContent(documentUrl, config, mime);
+        return new Tika(config).parseToString(documentUrl);
     }
 
     /**
@@ -140,16 +137,14 @@ public class ParseUtils implements TikaMimeKeys {
      * @param mimeType
      *            MIME type of the data
      * @return the string content parsed from the document
+     * @deprecated Use the {@link Tika#parseToString(URL)} method
      */
     public static String getStringContent(
             URL documentUrl, TikaConfig config, String mimeType)
             throws TikaException, IOException {
-        InputStream stream = documentUrl.openStream();
-        try {
-            return getStringContent(stream, config, mimeType);
-        } finally {
-            stream.close();
-        }
+        Metadata metadata = new Metadata();
+        InputStream stream = TikaInputStream.get(documentUrl, metadata);
+        return new Tika(config).parseToString(stream, metadata);
     }
 
     /**
@@ -161,17 +156,14 @@ public class ParseUtils implements TikaMimeKeys {
      * @param mimeType
      *            MIME type of the data
      * @return the string content parsed from the document
+     * @deprecated Use the {@link Tika#parseToString(File)} method
      */
     public static String getStringContent(
             File documentFile, TikaConfig config, String mimeType)
             throws TikaException, IOException {
-        InputStream stream = new BufferedInputStream(new FileInputStream(
-                documentFile));
-        try {
-            return getStringContent(stream, config, mimeType);
-        } finally {
-            stream.close();
-        }
+        Metadata metadata = new Metadata();
+        InputStream stream = TikaInputStream.get(documentFile, metadata);
+        return new Tika(config).parseToString(stream, metadata);
     }
 
     /**
@@ -181,12 +173,11 @@ public class ParseUtils implements TikaMimeKeys {
      *            File object pointing to the document to parse
      * @param config
      * @return the string content parsed from the document
+     * @deprecated Use the {@link Tika#parseToString(File)} method
      */
     public static String getStringContent(File documentFile, TikaConfig config)
             throws TikaException, IOException {
-        String mime =
-            config.getMimeRepository().getMimeType(documentFile).getName();
-        return getStringContent(documentFile, config, mime);
+        return new Tika(config).parseToString(documentFile);
     }
 
 }
