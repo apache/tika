@@ -29,30 +29,30 @@
 
   <artifactId>tika-server</artifactId>
   <packaging>bundle</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <name>Apache Tika server</name>
 
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>tika-parsers</artifactId>
             <version>${project.version}</version>
-        </dependency>        
+        </dependency>
 
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-server</artifactId>
             <version>1.0.3.1</version>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-core</artifactId>
             <version>1.0.3.1</version>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-client</artifactId>
             <version>1.0.3.1</version>
-        </dependency>        
+        </dependency>
        <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>jsr311-api</artifactId>
@@ -68,7 +68,7 @@
             <groupId>com.sun.grizzly</groupId>
             <artifactId>grizzly-servlet-webserver</artifactId>
             <version>1.9.8</version>
-        </dependency>      
+        </dependency>
         <dependency>
             <groupId>commons-logging</groupId>
             <artifactId>commons-logging</artifactId>
@@ -94,10 +94,10 @@
             <artifactId>commons-lang</artifactId>
             <version>2.5</version>
         </dependency>
-	<dependency>
-	    <groupId>net.sf.opencsv</groupId>
-	    <artifactId>opencsv</artifactId>
-	    <version>2.0</version>
+        <dependency>
+            <groupId>net.sf.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <version>2.0</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -142,8 +142,8 @@
           <instructions>
             <Export-Package>org.apache.tika.*</Export-Package>
             <Embed-Dependency>
-            	!jersey-server;scope=compile;inline=META-INF/services/**|au/**|javax/**|org/**|com/**|Resources/**|font_metrics.properties|repackage/**|schema*/**,
-            	jersey-server;scope=compile;inline=com/** |META-INF/services/com.sun*|META-INF/services/javax.ws.rs.ext.RuntimeDelegate
+                !jersey-server;scope=compile;inline=META-INF/services/**|au/**|javax/**|org/**|com/**|Resources/**|font_metrics.properties|repackage/**|schema*/**,
+                jersey-server;scope=compile;inline=com/** |META-INF/services/com.sun*|META-INF/services/javax.ws.rs.ext.RuntimeDelegate
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
