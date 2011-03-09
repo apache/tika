@@ -59,7 +59,15 @@ public class RFC822Parser implements Parser {
         try {
             parser.parse(stream);
         } catch (MimeException e) {
-            throw new TikaException(e.getMessage());
+            // Unwrap the exception in case it was not thrown by mime4j
+            Throwable cause = e.getCause();
+            if (cause instanceof TikaException) {
+                throw (TikaException) cause;
+            } else if (cause instanceof SAXException) {
+                throw (SAXException) cause;
+            } else {
+                throw new TikaException("Failed to parse an email message", e);
+            }
         }
     }
 

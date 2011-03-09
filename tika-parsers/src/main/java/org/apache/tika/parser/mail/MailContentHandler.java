@@ -69,9 +69,9 @@ class MailContentHandler implements ContentHandler {
             BodyContentHandler bch = new BodyContentHandler(handler);
             parser.parse(is, new EmbeddedContentHandler(bch), submd);
         } catch (SAXException e) {
-            throw new RuntimeException(new TikaException("Failed to parse email body content", e));
+            throw new MimeException(e);
         } catch (TikaException e) {
-            throw new RuntimeException(new TikaException("Failed to parse email body content", e));
+            throw new MimeException(e);
         }
     }
 
@@ -80,7 +80,7 @@ class MailContentHandler implements ContentHandler {
             handler.endElement("p");
             handler.endElement("div");
         } catch (SAXException e) {
-            e.printStackTrace();
+            throw new MimeException(e);
         }
     }
 
@@ -91,7 +91,7 @@ class MailContentHandler implements ContentHandler {
         try {
             handler.startDocument();
         } catch (SAXException e) {
-            e.printStackTrace();
+            throw new MimeException(e);
         }
     }
 
@@ -99,7 +99,7 @@ class MailContentHandler implements ContentHandler {
         try {
             handler.endDocument();
         } catch (SAXException e) {
-            e.printStackTrace();
+            throw new MimeException(e);
         }
     }
 
@@ -147,7 +147,7 @@ class MailContentHandler implements ContentHandler {
             handler.startElement("div", "class", "email-entry");
             handler.startElement("p");
         } catch (SAXException e) {
-            e.printStackTrace();
+            throw new MimeException(e);
         }
     }
 
