@@ -21,10 +21,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.io.File;
-import java.io.InputStream;
+import java.io.IOException;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.ArrayList;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 
@@ -32,8 +33,8 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.MetadataHelper;
 
 /**
  * Utility class that turns drag-and-drop events into Tika parse requests.
@@ -77,30 +78,31 @@ class ParsingTransferHandler extends TransferHandler {
     public boolean importData(
             JComponent component, Transferable transferable) {
         try {
-            List<File> files = null;
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-                files = (List<File>) transferable.getTransferData(
-                        DataFlavor.javaFileListFlavor);
+                importFiles((List<File>) transferable.getTransferData(
+                        DataFlavor.javaFileListFlavor));
             } else if (transferable.isDataFlavorSupported(urlListFlavor)) {
                 Object data = transferable.getTransferData(urlListFlavor);
+                URL url = new URL(data.toString());
                 Metadata metadata = new Metadata();
-                InputStream stream = MetadataHelper.getInputStream(
-                        new URL(data.toString()), metadata);
+                TikaInputStream stream = TikaInputStream.get(url, metadata);
                 tika.importStream(stream, metadata);
             } else if (transferable.isDataFlavorSupported(uriListFlavor)) {
-                files = uriToFileList(
-                        transferable.getTransferData(uriListFlavor).toString());
-            }
-
-            for (File file : files) {
-                Metadata metadata = new Metadata();
-                InputStream stream = MetadataHelper.getInputStream(
-                        file.toURI().toURL(), metadata);
-                tika.importStream(stream, metadata);
+                importFiles(uriToFileList(
+                        transferable.getTransferData(uriListFlavor)));
             }
             return true;
         } catch (Exception e) {
             return false;
+        }
+    }
+
+    private void importFiles(List<File> files)
+            throws MalformedURLException, IOException {
+        for (File file : files) {
+            Metadata metadata = new Metadata();
+            TikaInputStream stream = TikaInputStream.get(file, metadata);
+            tika.importStream(stream, metadata);
         }
     }
 
@@ -121,9 +123,9 @@ class ParsingTransferHandler extends TransferHandler {
         return delegate.getVisualRepresentation(arg0);
     }
 
-    private static List<File> uriToFileList(String data) {
+    private static List<File> uriToFileList(Object data) {
         List<File> list = new ArrayList<File>();
-        StringTokenizer st = new StringTokenizer(data, "\r\n");
+        StringTokenizer st = new StringTokenizer(data.toString(), "\r\n");
         while (st.hasMoreTokens())
         {
             String s = st.nextToken();
