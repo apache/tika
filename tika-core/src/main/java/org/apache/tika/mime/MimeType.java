@@ -294,6 +294,19 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
 
     //--------------------------------------------------------------< Object >
 
+    public boolean equals(Object o) {
+        if (o instanceof MimeType) {
+            MimeType that = (MimeType) o;
+            return this.type.equals(that.type);
+        }
+
+        return false;
+    }
+
+    public int hashCode() {
+        return type.hashCode();
+    }
+
     /**
      * Returns the name of this media type.
      *

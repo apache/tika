@@ -227,6 +227,28 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
         }
         return compareResult;
     }
+
+    /**
+     * compare this CharsetMatch to another based on confidence value
+     * @param o the CharsetMatch object to compare against
+     * @return true if equal
+     */
+    public boolean equals(Object o) {
+        if (o instanceof CharsetMatch) {
+            CharsetMatch that = (CharsetMatch) o;
+            return (this.fConfidence == that.fConfidence);
+        }
+
+        return false;
+    }
+
+    /**
+     * generates a hashCode based on the confidence value
+     * @return the hashCode
+     */
+    public int hashCode() {
+        return fConfidence;
+    }
     
     /*
      *  Constructor.  Implementation internal

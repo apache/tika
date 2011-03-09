@@ -78,4 +78,26 @@ class Magic implements Clause, Comparable<Magic> {
         return diff;
     }
 
+    public boolean equals(Object o) {
+        if (o instanceof Magic) {
+            Magic that = (Magic) o;
+
+            if (this.size() != that.size()) {
+                return false;
+            }
+
+            if (!this.type.equals(that.type)) {
+                return false;
+            }
+
+            return this.toString().equals(that.toString());
+        }
+
+        return false;
+    }
+
+    public int hashCode() {
+        return size() ^ type.hashCode() ^ toString().hashCode();
+    }
+
 }
