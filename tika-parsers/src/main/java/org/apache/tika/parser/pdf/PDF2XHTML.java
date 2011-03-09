@@ -79,7 +79,7 @@ class PDF2XHTML extends PDFTextStripper {
             throws IOException {
         this.handler = new XHTMLContentHandler(handler, metadata);
         setForceParsing(true);
-        setSortByPosition(true);
+        setSortByPosition(false);
     }
 
     @Override
