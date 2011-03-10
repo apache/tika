@@ -2397,6 +2397,7 @@
     </magic>
     <glob pattern="*.hdf"/>
     <glob pattern="*.he5"/>
+    <glob pattern="*.h5"/>
   </mime-type>
 
   <mime-type type="application/x-hwp">
