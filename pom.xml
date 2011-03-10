@@ -75,6 +75,10 @@
           <excludes>
             <exclude>.*/**</exclude>
             <exclude>CHANGES.txt</exclude>
+            <exclude>tika-bundle-it/.*/**</exclude>
+            <exclude>tika-bundle-it/target/**</exclude>
+            <exclude>tika-server/.*/**</exclude>
+            <exclude>tika-server/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
