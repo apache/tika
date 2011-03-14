@@ -49,13 +49,7 @@ public abstract class AbstractPOIContainerExtractionTest extends TestCase {
     public static final MediaType TYPE_EMF = MediaType.application("x-msmetafile");
 
     protected TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
-        InputStream input = AbstractPOIContainerExtractionTest.class.getResourceAsStream(
-             "/test-documents/" + filename);
-        assertNotNull(filename + " not found", input);
-        
-        TikaInputStream stream = TikaInputStream.get(input);
-        assertNotNull(stream);
-        
+        TikaInputStream stream = getTestFile(filename);
         assertEquals(true, extractor.isSupported(stream));
         
         // Process it
@@ -68,6 +62,17 @@ public abstract class AbstractPOIContainerExtractionTest extends TestCase {
         
         // So they can check what happened
         return handler;
+    }
+    
+    protected TikaInputStream getTestFile(String filename) throws Exception {
+       InputStream input = AbstractPOIContainerExtractionTest.class.getResourceAsStream(
+             "/test-documents/" + filename);
+        assertNotNull(filename + " not found", input);
+        
+        TikaInputStream stream = TikaInputStream.get(input);
+        assertNotNull(stream);
+        
+        return stream;
     }
     
     protected static class TrackingHandler implements EmbeddedResourceHandler {
