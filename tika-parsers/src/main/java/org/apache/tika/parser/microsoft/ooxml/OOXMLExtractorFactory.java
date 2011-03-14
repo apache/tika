@@ -28,8 +28,7 @@ import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
-import org.apache.poi.xssf.extractor.XSSFExcelExtractor;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.tika.exception.TikaException;
@@ -51,7 +50,8 @@ public class OOXMLExtractorFactory {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         Locale locale = context.get(Locale.class, Locale.getDefault());
-       
+        ExtractorFactory.setThreadPrefersEventExtractors(true);
+        
         try {
             OOXMLExtractor extractor;
 
@@ -66,12 +66,17 @@ public class OOXMLExtractorFactory {
             }
             
             POIXMLDocument document = poiExtractor.getDocument();
-            if (document instanceof XSLFSlideShow) {
+            if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
+               extractor = new XSSFExcelExtractorDecorator(
+                   context, (XSSFEventBasedExcelExtractor)poiExtractor, locale);
+            } else if (document == null) {
+               throw new TikaException(
+                     "Expecting UserModel based POI OOXML extractor with a document, but none found. " +
+                     "The extractor returned was a " + poiExtractor
+               );
+            } else if (document instanceof XSLFSlideShow) {
                 extractor = new XSLFPowerPointExtractorDecorator(
                         context, (XSLFPowerPointExtractor) poiExtractor);
-            } else if (document instanceof XSSFWorkbook) {
-                extractor = new XSSFExcelExtractorDecorator(
-                        context, (XSSFExcelExtractor) poiExtractor, locale);
             } else if (document instanceof XWPFDocument) {
                 extractor = new XWPFWordExtractorDecorator(
                         context, (XWPFWordExtractor) poiExtractor);
@@ -79,8 +84,8 @@ public class OOXMLExtractorFactory {
                 extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);
             }
 
-            extractor.getMetadataExtractor().extract(metadata);
             extractor.getXHTML(handler, metadata, context);
+            extractor.getMetadataExtractor().extract(metadata);
         } catch (IllegalArgumentException e) {
             if (e.getMessage().startsWith("No supported documents found")) {
                 throw new TikaException(
