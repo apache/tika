@@ -23,6 +23,7 @@ import org.apache.poi.POIXMLProperties.CoreProperties;
 import org.apache.poi.POIXMLProperties.ExtendedProperties;
 import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
+import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
@@ -50,7 +51,9 @@ public class MetadataExtractor {
     public void extract(Metadata metadata) throws TikaException {
         addProperty(metadata, Metadata.CONTENT_TYPE, type);
         
-        if (extractor.getDocument()!=null) {
+        if (extractor.getDocument() != null ||
+              (extractor instanceof XSSFEventBasedExcelExtractor && 
+               extractor.getPackage() != null)) {
             extractMetadata(extractor.getCoreProperties(), metadata);
             extractMetadata(extractor.getExtendedProperties(), metadata);
         }
