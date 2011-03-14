@@ -1291,7 +1291,7 @@
   <mime-type type="application/vnd.ms-tnef">
     <alias type="application/ms-tnef" />
     <magic priority="50">
-      <match value="0x223e9f78" type="little16" offset="0" />
+      <match value="0x223e9f78" type="little32" offset="0" />
     </magic>
   </mime-type>
 
