@@ -120,16 +120,29 @@ class MailContentHandler implements ContentHandler {
     public void field(Field field) throws MimeException {
         // inPart indicates whether these metadata correspond to the
         // whole message or its parts
-        if (inPart)
+        if (inPart) {
             return;
+        }
+        
         // TODO add metadata to the parts later
         String fieldname = field.getName();
         if (fieldname.equalsIgnoreCase("From")) {
-        	MailboxListField fromField = (MailboxListField) AbstractField.parse(field.getRaw());
-        	MailboxList mailboxList = fromField.getMailboxList();
-        	for (int i = 0; i < mailboxList.size(); ++i) {
-                metadata.add(Metadata.AUTHOR, mailboxList.get(i).getDisplayString());        		
-        	}
+           MailboxListField fromField = (MailboxListField) AbstractField.parse(field.getRaw());
+           MailboxList mailboxList = fromField.getMailboxList();
+           if(mailboxList != null) {
+              // Add each person in turn
+              for (int i = 0; i < mailboxList.size(); ++i) {
+                 metadata.add(Metadata.AUTHOR, mailboxList.get(i).getDisplayString());        		
+              }
+           } else {
+              // Not a typical from field, do our best
+              String from = fromField.getBody();
+              if(from != null) {
+                 if(from.startsWith("<")) from = from.substring(1);
+                 if(from.endsWith(">")) from = from.substring(0, from.length()-1);
+                 metadata.add(Metadata.AUTHOR, from);
+              }
+           }
         } else if (fieldname.equalsIgnoreCase("Subject")) {
         	UnstructuredField subjectField = (UnstructuredField) AbstractField.parse(field.getRaw());
             metadata.add(Metadata.SUBJECT, subjectField.getValue());

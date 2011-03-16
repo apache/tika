@@ -149,6 +149,21 @@ public class RFC822ParserTest extends TestCase {
             fail("Exception thrown: " + e.getMessage());
         }
     }
+    
+    /**
+     * The from isn't in the usual form.
+     * See TIKA-618
+     */
+    public void testUnusualFromAddress() throws Exception {
+       Parser parser = new RFC822Parser();
+       Metadata metadata = new Metadata();
+       InputStream stream = getStream("test-documents/testRFC822_oddfrom");
+       ContentHandler handler = mock(DefaultHandler.class);
+
+       parser.parse(stream, handler, metadata, new ParseContext());
+       assertEquals("Saved by Windows Internet Explorer 7", metadata.get(Metadata.AUTHOR));
+       assertEquals("Air Permit Programs | Air & Radiation | US EPA", metadata.get(Metadata.SUBJECT));
+    }
 
     private static InputStream getStream(String name) {
         return Thread.currentThread().getContextClassLoader()
