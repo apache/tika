@@ -184,4 +184,17 @@ public class JpegParserTest extends TestCase {
         assertTrue("'coast'" + " not in " + keywords, keywords.contains("coast"));
         assertTrue("'nature reserve'" + " not in " + keywords, keywords.contains("nature reserve"));     
     }
+    
+    public void testJPEGoddTagComponent() throws Exception {
+       Metadata metadata = new Metadata();
+       metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+       InputStream stream =
+           getClass().getResourceAsStream("/test-documents/testJPEG_oddTagComponent.jpg");
+       parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+       
+       assertEquals(null, metadata.get(Metadata.TITLE));
+       assertEquals(null, metadata.get(Metadata.DESCRIPTION));
+       assertEquals("251", metadata.get(Metadata.IMAGE_WIDTH));
+       assertEquals("384", metadata.get(Metadata.IMAGE_LENGTH));
+    }
 }

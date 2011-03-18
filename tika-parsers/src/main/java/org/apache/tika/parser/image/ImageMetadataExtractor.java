@@ -189,7 +189,13 @@ public class ImageMetadataExtractor {
                 Tag tag = (Tag) tags.next();
                 String name = tag.getTagName();
                 if (!MetadataFields.isMetadataField(name)) {
-                    metadata.set(name, tag.getDescription());
+                   try {
+                      String value = tag.getDescription();
+                      metadata.set(name, value);
+                   } catch(MetadataException e) {
+                      // Either something's corrupt, or it's a JPEG tag
+                      //  that the library doesn't know about. Skip it
+                   }
                 }
             }
         }
