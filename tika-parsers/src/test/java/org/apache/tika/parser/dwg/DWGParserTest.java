@@ -25,6 +25,11 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class DWGParserTest extends TestCase {
+    public void testDWG2000Parser() throws Exception {
+        InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2000.dwg");
+        testParserAlt(input);
+    }
 
     public void testDWG2004Parser() throws Exception {
         InputStream input = DWGParserTest.class.getResourceAsStream(
@@ -48,6 +53,18 @@ public class DWGParserTest extends TestCase {
         InputStream input = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2010.dwg");
         testParser(input);
+    }
+
+    public void testDWGMechParser() throws Exception {
+        String[] types = new String[] {
+              "6", "2004", "2004DX", "2005", "2006",
+              "2007", "2008", "2009", "2010", "2011"
+        };
+        for (String type : types) {
+           InputStream input = DWGParserTest.class.getResourceAsStream(
+                   "/test-documents/testDWGmech"+type+".dwg");
+           testParserAlt(input);
+        }
     }
 
     private void testParser(InputStream input) throws Exception {
@@ -97,6 +114,39 @@ public class DWGParserTest extends TestCase {
 
             String content = handler.toString();
             assertTrue(content.contains(""));
+        } finally {
+            input.close();
+        }
+    }
+
+    private void testParserAlt(InputStream input) throws Exception {
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new DWGParser().parse(input, handler, metadata);
+
+            assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
+
+            assertEquals("Test Title", 
+                    metadata.get(Metadata.TITLE));
+            assertEquals("Test Subject",
+                    metadata.get(Metadata.SUBJECT));
+            assertEquals("My Author",
+                    metadata.get(Metadata.AUTHOR));
+            assertEquals("My keyword1, MyKeyword2",
+                    metadata.get(Metadata.KEYWORDS));
+            assertEquals("This is a comment",
+                    metadata.get(Metadata.COMMENTS));
+            assertEquals("bejanpol",
+                    metadata.get(Metadata.LAST_AUTHOR));
+            assertEquals("http://mycompany/drawings",
+                    metadata.get(Metadata.RELATION));
+            assertEquals("MyCustomPropertyValue",
+                  metadata.get("MyCustomProperty"));
+
+            String content = handler.toString();
+            assertTrue(content.contains("This is a comment"));
+            assertTrue(content.contains("mycompany"));
         } finally {
             input.close();
         }
