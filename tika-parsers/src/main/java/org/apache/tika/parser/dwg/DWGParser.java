@@ -18,7 +18,6 @@ package org.apache.tika.parser.dwg;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
@@ -49,7 +48,7 @@ public class DWGParser implements Parser {
     }
 
     /** The order of the fields in the header */
-    private static String[] HEADER_PROPERTIES_ENTRIES = {
+    private static final String[] HEADER_PROPERTIES_ENTRIES = {
         Metadata.TITLE, 
         Metadata.SUBJECT,
         Metadata.AUTHOR,
@@ -60,7 +59,7 @@ public class DWGParser implements Parser {
         Metadata.RELATION, // Hyperlink
     };
     /** For the 2000 file, they're indexed */
-    private static String[] HEADER_2000_PROPERTIES_ENTRIES = {
+    private static final String[] HEADER_2000_PROPERTIES_ENTRIES = {
        null, 
        Metadata.RELATION, // 0x01
        Metadata.TITLE,    // 0x02
@@ -71,8 +70,16 @@ public class DWGParser implements Parser {
        Metadata.KEYWORDS, // 0x07
        Metadata.LAST_AUTHOR, // 0x08
    };
-    private static byte[] HEADER_2000_PROPERTIES_MARKER = 
-       "DWGPROPS COOKIE".getBytes(Charset.forName("ASCII"));
+   private static final String HEADER_2000_PROPERTIES_MARKER_STR =
+      "DWGPROPS COOKIE";
+   private static final byte[] HEADER_2000_PROPERTIES_MARKER =
+      new byte[HEADER_2000_PROPERTIES_MARKER_STR.length()];
+   static {
+      StringUtil.putCompressedUnicode(
+            HEADER_2000_PROPERTIES_MARKER_STR,
+            HEADER_2000_PROPERTIES_MARKER, 0
+      );
+   }
     
     /** 
      * How far to skip after the last standard property, before
