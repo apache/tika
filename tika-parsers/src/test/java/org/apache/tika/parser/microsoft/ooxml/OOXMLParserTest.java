@@ -341,6 +341,37 @@ public class OOXMLParserTest extends TestCase {
     }
 
     /**
+     * Test that we can extract image from docx header
+     */
+    public void testWordPicturesInHeader() throws Exception {
+        InputStream input = null;
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+
+        StringWriter sw = new StringWriter();
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                 SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        handler.setResult(new StreamResult(sw));
+
+        // Try with a document containing various tables and formattings
+        input = OOXMLParserTest.class.getResourceAsStream("/test-documents/headerPic.docx");
+        try {
+            parser.parse(TikaInputStream.get(input), handler, metadata, context);
+            String xml = sw.toString();
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            // Check that custom headings came through
+            assertTrue(xml.contains("<img"));
+        } finally {
+            input.close();
+        }
+    }
+
+    /**
      * Documents with some sheets are protected, but not all. 
      * See TIKA-364.
      */
