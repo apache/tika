@@ -24,21 +24,7 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.model.XWPFCommentsDecorator;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
-import org.apache.poi.xwpf.usermodel.BodyType;
-import org.apache.poi.xwpf.usermodel.IBody;
-import org.apache.poi.xwpf.usermodel.IBodyElement;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
-import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFPicture;
-import org.apache.poi.xwpf.usermodel.XWPFPictureData;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
-import org.apache.poi.xwpf.usermodel.XWPFStyle;
-import org.apache.poi.xwpf.usermodel.XWPFStyles;
-import org.apache.poi.xwpf.usermodel.XWPFTable;
-import org.apache.poi.xwpf.usermodel.XWPFTableCell;
-import org.apache.poi.xwpf.usermodel.XWPFTableRow;
+import org.apache.poi.xwpf.usermodel.*;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
@@ -215,30 +201,42 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     
     private void extractFooters(
             XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
-            throws SAXException {
+            throws SAXException, XmlException, IOException {
         // footers
         if (hfPolicy.getFirstPageFooter() != null) {
-            xhtml.element("p", hfPolicy.getFirstPageFooter().getText());
+            extractHeaderText(xhtml, hfPolicy.getFirstPageFooter());
         }
         if (hfPolicy.getEvenPageFooter() != null) {
-            xhtml.element("p", hfPolicy.getEvenPageFooter().getText());
+            extractHeaderText(xhtml, hfPolicy.getEvenPageFooter());
         }
         if (hfPolicy.getDefaultFooter() != null) {
-            xhtml.element("p", hfPolicy.getDefaultFooter().getText());
+            extractHeaderText(xhtml, hfPolicy.getDefaultFooter());
         }
     }
 
     private void extractHeaders(
             XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
-            throws SAXException {
+            throws SAXException, XmlException, IOException {
         if (hfPolicy.getFirstPageHeader() != null) {
-            xhtml.element("p", hfPolicy.getFirstPageHeader().getText());
+            extractHeaderText(xhtml, hfPolicy.getFirstPageHeader());
         }
+
         if (hfPolicy.getEvenPageHeader() != null) {
-            xhtml.element("p", hfPolicy.getEvenPageHeader().getText());
+            extractHeaderText(xhtml, hfPolicy.getEvenPageHeader());
         }
+
         if (hfPolicy.getDefaultHeader() != null) {
-            xhtml.element("p", hfPolicy.getDefaultHeader().getText());
+            extractHeaderText(xhtml, hfPolicy.getDefaultHeader());
+        }
+    }
+
+    private void extractHeaderText(XHTMLContentHandler xhtml, XWPFHeaderFooter header) throws SAXException, XmlException, IOException {
+        for(XWPFParagraph p : header.getParagraphs()) {
+            extractParagraph(p, xhtml);
+        }
+
+        for(XWPFTable table : header.getTables()) {
+            extractTable(table, xhtml);
         }
     }
 
