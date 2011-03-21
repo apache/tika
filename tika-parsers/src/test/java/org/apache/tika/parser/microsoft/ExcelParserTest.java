@@ -80,8 +80,9 @@ public class ExcelParserTest extends TestCase {
             assertTrue(content.contains("($1,599.99)"));
 
             // Scientific 0.00E+00
-            assertTrue(content.contains("1.98E08"));
-            assertTrue(content.contains("-1.98E08"));
+            // poi <=3.8beta1 returns 1.98E08, newer versions return 1.98+E08
+            assertTrue(content.contains("1.98E08") || content.contains("1.98E+08"));
+            assertTrue(content.contains("-1.98E08") || content.contains("-1.98E+08"));
 
             // Percentage.
             assertTrue(content.contains("2.50%"));
