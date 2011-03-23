@@ -63,6 +63,10 @@ public class TikaConfig {
 
     private TikaConfig(CompositeParser parser) {
         this(parser, MimeTypes.getDefaultMimeTypes());
+        
+        // Have the composite parser wired up with the media type
+        //  information that has now been loaded
+        parser.setMediaTypeRegistry(getMediaTypeRegistry());
     }
 
     public TikaConfig(String file)
