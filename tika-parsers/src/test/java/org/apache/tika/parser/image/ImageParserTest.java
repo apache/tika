@@ -19,6 +19,7 @@ package org.apache.tika.parser.image;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -33,7 +34,7 @@ public class ImageParserTest extends TestCase {
         metadata.set(Metadata.CONTENT_TYPE, "image/bmp");
         InputStream stream =
             getClass().getResourceAsStream("/test-documents/testBMP.bmp");
-        parser.parse(stream, new DefaultHandler(), metadata);
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("75", metadata.get("height"));
         assertEquals("100", metadata.get("width"));
@@ -54,7 +55,7 @@ public class ImageParserTest extends TestCase {
         metadata.set(Metadata.CONTENT_TYPE, "image/gif");
         InputStream stream =
             getClass().getResourceAsStream("/test-documents/testGIF.gif");
-        parser.parse(stream, new DefaultHandler(), metadata);
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("75", metadata.get("height"));
         assertEquals("100", metadata.get("width"));
@@ -84,7 +85,7 @@ public class ImageParserTest extends TestCase {
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
         InputStream stream =
             getClass().getResourceAsStream("/test-documents/testJPEG.jpg");
-        parser.parse(stream, new DefaultHandler(), metadata);
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("75", metadata.get("height"));
         assertEquals("100", metadata.get("width"));
@@ -119,7 +120,7 @@ public class ImageParserTest extends TestCase {
         metadata.set(Metadata.CONTENT_TYPE, "image/png");
         InputStream stream =
             getClass().getResourceAsStream("/test-documents/testPNG.png");
-        parser.parse(stream, new DefaultHandler(), metadata);
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("75", metadata.get("height"));
         assertEquals("100", metadata.get("width"));
