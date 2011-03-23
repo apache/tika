@@ -43,10 +43,13 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class ImageParser implements Parser {
-
+    private static final MediaType CANONICAL_BMP_TYPE = MediaType.image("x-ms-bmp");
+    private static final MediaType JAVA_BMP_TYPE = MediaType.image("bmp");
+    
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                MediaType.image("bmp"),
+                CANONICAL_BMP_TYPE,
+                JAVA_BMP_TYPE,
                 MediaType.image("gif"),
                 MediaType.image("png"),
                 MediaType.image("vnd.wap.wbmp"),
@@ -64,6 +67,12 @@ public class ImageParser implements Parser {
             throws IOException, SAXException, TikaException {
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type != null) {
+            // Java has a different idea of the BMP mime type to
+            //  what the canonical one is, fix this up.
+            if (CANONICAL_BMP_TYPE.toString().equals(type)) {
+               type = JAVA_BMP_TYPE.toString();
+            }
+           
             try {
                 Iterator<ImageReader> iterator =
                     ImageIO.getImageReadersByMIMEType(type);
