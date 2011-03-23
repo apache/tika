@@ -40,13 +40,17 @@ public class AutoDetectParserTest extends TestCase {
     private static final String HTML       = "text/html";
     private static final String PDF        = "application/pdf";
     private static final String POWERPOINT = "application/vnd.ms-powerpoint";
-    private static final String KEYNOTE = "application/vnd.apple.keynote";
-    private static final String PAGES = "application/vnd.apple.pages";
-    private static final String NUMBERS = "application/vnd.apple.numbers";
+    private static final String KEYNOTE    = "application/vnd.apple.keynote";
+    private static final String PAGES      = "application/vnd.apple.pages";
+    private static final String NUMBERS    = "application/vnd.apple.numbers";
     private static final String RTF        = "application/rtf";
     private static final String PLAINTEXT  = "text/plain";
     private static final String WORD       = "application/msword";
     private static final String XML        = "application/xml";
+    private static final String BMP        = "image/x-ms-bmp";
+    private static final String GIF        = "image/gif";
+    private static final String JPEG       = "image/jpeg";
+    private static final String PNG        = "image/png";
     private static final String OPENOFFICE
             = "application/vnd.oasis.opendocument.text";
 
@@ -76,8 +80,10 @@ public class AutoDetectParserTest extends TestCase {
             assertEquals("Bad content type: " + tp,
                     tp.realType, metadata.get(Metadata.CONTENT_TYPE));
 
-            assertTrue("Expected content not found: " + tp,
-                    handler.toString().contains(tp.expectedContentFragment));
+            if (tp.expectedContentFragment != null) {
+               assertTrue("Expected content not found: " + tp,
+                       handler.toString().contains(tp.expectedContentFragment));
+            }
         } finally {
             input.close();
         }
@@ -191,6 +197,13 @@ public class AutoDetectParserTest extends TestCase {
     public void testXML() throws Exception {
         assertAutoDetect("testXML.xml", XML, "Lius");
     }
+
+    public void testImages() throws Exception {
+       assertAutoDetect("testBMP.bmp", BMP, null);
+       assertAutoDetect("testGIF.gif", GIF, null);
+       assertAutoDetect("testJPEG.jpg", JPEG, null);
+       assertAutoDetect("testPNG.png", PNG, null);
+   }
 
     /**
      * Make sure that zip bomb attacks are prevented.
