@@ -132,6 +132,34 @@ public class TestMimeTypes extends TestCase {
      *  iffy, as we can't be sure where things will end up.
      * People really ought to use the container aware detection...
      */
+    public void testOLE2Detection() throws Exception {
+        // These have the properties block near the start, so our mime
+        //  magic will spot them
+        assertTypeByData("application/vnd.ms-excel", "testEXCEL.xls");
+        
+        // This one quite legitimately doesn't have its properties block
+        //  as one of the first couple of entries
+        // As such, our mime magic can't figure it out...
+        assertTypeByData("application/x-tika-msoffice", "testWORD.doc");
+        assertTypeByData("application/x-tika-msoffice", "testPPT.ppt");
+        
+        
+        // By name + data:
+        
+        // Those we got right to start with are fine
+        assertTypeByNameAndData("application/vnd.ms-excel","testEXCEL.xls");
+        
+        // And the name lets us specialise the generic OOXML
+        //  ones to their actual type
+        assertTypeByNameAndData("application/vnd.ms-powerpoint", "testPPT.ppt");
+        assertTypeByNameAndData("application/msword", "testWORD.doc");
+    }
+    
+    /**
+     * Note - detecting container formats by mime magic is very very
+     *  iffy, as we can't be sure where things will end up.
+     * People really ought to use the container aware detection...
+     */
     public void testOoxmlDetection() throws Exception {
         // These two do luckily have [Content_Types].xml near the start,
         //  so our mime magic will spot them
@@ -143,6 +171,13 @@ public class TestMimeTypes extends TestCase {
         // As such, our mime magic can't figure it out...
         assertTypeByData("application/zip", "testWORD.docx");
         
+        // If we give the filename as well as the data, we can
+        //  specialise the ooxml generic one to the correct type
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "testEXCEL.xlsx");
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.presentationml.presentation", "testPPT.pptx");
+        assertTypeByNameAndData("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "testWORD.docx");
+        
+        // Test a few of the less usual ones
         assertTypeByNameAndData("application/vnd.ms-excel.sheet.binary.macroenabled.12","testEXCEL.xlsb");
         assertTypeByNameAndData("application/vnd.ms-powerpoint.presentation.macroenabled.12", "testPPT.pptm");
         assertTypeByNameAndData("application/vnd.ms-powerpoint.template.macroenabled.12", "testPPT.potm");
@@ -364,14 +399,7 @@ public class TestMimeTypes extends TestCase {
     public void testMimeDeterminationForTestDocuments() throws Exception {
         assertType("text/html", "testHTML.html");
         assertType("application/zip", "test-documents.zip");
-        // TODO: Currently returns generic MS Office type based on
-        // the magic header. The getMimeType method should understand
-        // MS Office types better.
-        // assertEquals("application/vnd.ms-excel",
-        // getMimeType("testEXCEL.xls"));
-        // assertEquals("application/vnd.ms-powerpoint",
-        // getMimeType("testPPT.ppt"));
-        // assertEquals("application/msword", getMimeType("testWORD.doc"));
+
         assertType("text/html", "testHTML_utf8.html");
         assertType(
                 "application/vnd.oasis.opendocument.text",
