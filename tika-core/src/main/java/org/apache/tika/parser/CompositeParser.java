@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TaggedInputStream;
@@ -165,10 +166,22 @@ public class CompositeParser implements Parser {
         Map<MediaType, Parser> map = getParsers(context);
         MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
         while (type != null) {
+            // Try finding a parser for the type
             Parser parser = map.get(type);
             if (parser != null) {
                 return parser;
             }
+            
+            // Next up, look for one for its aliases
+            SortedSet<MediaType> aliases = registry.getAliases(type);
+            for (MediaType alias : aliases) {
+               parser = map.get(alias);
+               if (parser != null) {
+                   return parser;
+               }
+            }
+         
+            // Failing that, try for the parent of the type
             type = registry.getSupertype(type);
         }
         return fallback;
