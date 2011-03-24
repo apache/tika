@@ -25,7 +25,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TaggedInputStream;
@@ -79,7 +80,16 @@ public class CompositeParser implements Parser {
         Map<MediaType, Parser> map = new HashMap<MediaType, Parser>();
         for (Parser parser : parsers) {
             for (MediaType type : parser.getSupportedTypes(context)) {
-                map.put(type, parser);
+                MediaType canonicalType = registry.normalize(type);
+                if (map.containsKey(canonicalType)) {
+                   if (map.get(canonicalType) != parser) {
+                      Logger.getLogger(getClass().getName()).log(
+                            Level.INFO, "Duplicate parser definition for " + type + 
+                            " (" + canonicalType + "), using " + parser
+                      );
+                   }
+                }
+                map.put(canonicalType, parser);
             }
         }
         return map;
@@ -165,6 +175,11 @@ public class CompositeParser implements Parser {
     protected Parser getParser(Metadata metadata, ParseContext context) {
         Map<MediaType, Parser> map = getParsers(context);
         MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+        if (type != null) {
+           // We always work on the normalised, canonical form
+           type = registry.normalize(type);
+        }
+        
         while (type != null) {
             // Try finding a parser for the type
             Parser parser = map.get(type);
@@ -172,15 +187,6 @@ public class CompositeParser implements Parser {
                 return parser;
             }
             
-            // Next up, look for one for its aliases
-            SortedSet<MediaType> aliases = registry.getAliases(type);
-            for (MediaType alias : aliases) {
-               parser = map.get(alias);
-               if (parser != null) {
-                   return parser;
-               }
-            }
-         
             // Failing that, try for the parent of the type
             type = registry.getSupertype(type);
         }
