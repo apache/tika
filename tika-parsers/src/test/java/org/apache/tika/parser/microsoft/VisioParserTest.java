@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -32,7 +33,7 @@ public class VisioParserTest extends TestCase {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new OfficeParser().parse(input, handler, metadata);
+            new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals(
                     "application/vnd.visio",

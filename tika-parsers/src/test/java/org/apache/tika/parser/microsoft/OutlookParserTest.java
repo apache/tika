@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -41,7 +42,7 @@ public class OutlookParserTest extends TestCase {
         InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/test-outlook.msg");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }
@@ -80,7 +81,7 @@ public class OutlookParserTest extends TestCase {
         InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/testMSG.msg");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }
@@ -109,7 +110,7 @@ public class OutlookParserTest extends TestCase {
         InputStream stream = OutlookParserTest.class.getResourceAsStream(
                 "/test-documents/test-outlook2003.msg");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }
