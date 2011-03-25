@@ -56,10 +56,22 @@ public class LookaheadInputStream extends InputStream {
 
     private int mark = 0;
 
+    /**
+     * Creates a lookahead wrapper for the given input stream.
+     * The given input stream should support the mark feature,
+     * as otherwise the state of that stream will be undefined
+     * after the lookahead wrapper has been closed. As a special
+     * case a <code>null</code> stream is treated as an empty stream.
+     *
+     * @param stream input stream, can be <code>null</code>
+     * @param n maximum number of bytes to look ahead
+     */
     public LookaheadInputStream(InputStream stream, int n) {
         this.stream = stream;
-        this.buffer = new byte[0];
-        stream.mark(n);
+        this.buffer = new byte[n];
+        if (stream != null) {
+            stream.mark(n);
+        }
     }
 
     @Override
@@ -105,7 +117,8 @@ public class LookaheadInputStream extends InputStream {
     }
 
     @Override
-    public long skip(long n) {
+    public long skip(long n) throws IOException {
+        fill();
         n = Math.min(n, available());
         position += n;
         return n;
