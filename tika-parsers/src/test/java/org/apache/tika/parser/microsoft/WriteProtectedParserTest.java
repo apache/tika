@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import junit.framework.TestCase;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -30,7 +31,7 @@ public class WriteProtectedParserTest extends TestCase {
 
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        new OfficeParser().parse(input, handler, metadata);
+        new OfficeParser().parse(input, handler, metadata, new ParseContext());
         String content = handler.toString();
         assertTrue(content.contains("Office"));
     }
