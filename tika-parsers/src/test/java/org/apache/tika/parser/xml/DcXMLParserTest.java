@@ -44,7 +44,7 @@ public class DcXMLParserTest extends TestCase {
                     "Java, XML, XSLT, JDOM, Indexation",
                     metadata.get(Metadata.SUBJECT));
             assertEquals(
-                    "Framework d\'indexation des documents XML, HTML, PDF etc.. ",
+                    "Framework d\'indexation des documents XML, HTML, PDF etc..",
                     metadata.get(Metadata.DESCRIPTION));
             assertEquals(
                     "http://www.apache.org",

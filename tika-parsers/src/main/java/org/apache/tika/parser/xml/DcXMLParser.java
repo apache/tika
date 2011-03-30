@@ -19,10 +19,6 @@ package org.apache.tika.parser.xml;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.TeeContentHandler;
-import org.apache.tika.sax.xpath.CompositeMatcher;
-import org.apache.tika.sax.xpath.Matcher;
-import org.apache.tika.sax.xpath.MatchingContentHandler;
-import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -30,39 +26,29 @@ import org.xml.sax.ContentHandler;
  */
 public class DcXMLParser extends XMLParser {
 
-    private static final XPathParser DC_XPATH = new XPathParser(
-            "dc", "http://purl.org/dc/elements/1.1/");
-
-    private static ContentHandler getDublinCore(
-            ContentHandler ch, Metadata md, String name, String element) {
-        Matcher matcher = new CompositeMatcher(
-                DC_XPATH.parse("//dc:" + element),
-                DC_XPATH.parse("//dc:" + element + "//text()"));
-        ContentHandler branch =
-            new MatchingContentHandler(new MetadataHandler(md, name), matcher);
-        return new TeeContentHandler(ch, branch);
+    private static ContentHandler getDublinCoreHandler(
+            Metadata metadata, String name, String element) {
+        return new ElementMetadataHandler(
+                "http://purl.org/dc/elements/1.1/", element,
+                metadata, name);
     }
 
-    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md) {
-        ch = super.getContentHandler(ch, md);
-        ch = getDublinCore(ch, md, DublinCore.TITLE, "title");
-        ch = getDublinCore(ch, md, DublinCore.SUBJECT, "subject");
-        ch = getDublinCore(ch, md, DublinCore.CREATOR, "creator");
-        ch = getDublinCore(ch, md, DublinCore.DESCRIPTION, "description");
-        ch = getDublinCore(ch, md, DublinCore.PUBLISHER, "publisher");
-        ch = getDublinCore(ch, md, DublinCore.CONTRIBUTOR, "contributor");
-        try {
-            ch = getDublinCore(ch, md, DublinCore.DATE.getName(), "date");
-        } catch (Exception e) {
-            // Date format and parsing behavior was undefined and untested when DublinCare
-            // date was converted to Property.internalDate so we silently skip date on parse error
-        }
-        ch = getDublinCore(ch, md, DublinCore.TYPE, "type");
-        ch = getDublinCore(ch, md, DublinCore.FORMAT, "format");
-        ch = getDublinCore(ch, md, DublinCore.IDENTIFIER, "identifier");
-        ch = getDublinCore(ch, md, DublinCore.LANGUAGE, "language");
-        ch = getDublinCore(ch, md, DublinCore.RIGHTS, "rights");
-        return ch;
+    protected ContentHandler getContentHandler(
+            ContentHandler handler, Metadata metadata) {
+        return new TeeContentHandler(
+                super.getContentHandler(handler, metadata),
+                getDublinCoreHandler(metadata, DublinCore.TITLE, "title"),
+                getDublinCoreHandler(metadata, DublinCore.SUBJECT, "subject"),
+                getDublinCoreHandler(metadata, DublinCore.CREATOR, "creator"),
+                getDublinCoreHandler(metadata, DublinCore.DESCRIPTION, "description"),
+                getDublinCoreHandler(metadata, DublinCore.PUBLISHER, "publisher"),
+                getDublinCoreHandler(metadata, DublinCore.CONTRIBUTOR, "contributor"),
+                getDublinCoreHandler(metadata, DublinCore.DATE.getName(), "date"),
+                getDublinCoreHandler(metadata, DublinCore.TYPE, "type"),
+                getDublinCoreHandler(metadata, DublinCore.FORMAT, "format"),
+                getDublinCoreHandler(metadata, DublinCore.IDENTIFIER, "identifier"),
+                getDublinCoreHandler(metadata, DublinCore.LANGUAGE, "language"),
+                getDublinCoreHandler(metadata, DublinCore.RIGHTS, "rights"));
     }
 
 }

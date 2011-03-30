@@ -17,56 +17,39 @@
 package org.apache.tika.parser.xml;
 
 import org.apache.tika.metadata.Metadata;
-import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * This adds Metadata entries with a specified name for
- *  the textual content of a node (if present), and 
- *  all attribute values passed through the matcher
- *  (but not their names). 
+ * Base class for SAX handlers that map SAX events into document metadata.
  *
- * @deprecated Use the {@link AttributeMetadataHandler} and
- *             {@link ElementMetadataHandler} classes instead
+ * @since Apache Tika 1.0
  */
-public class MetadataHandler extends DefaultHandler {
+class AbstractMetadataHandler extends DefaultHandler {
 
     private final Metadata metadata;
 
     private final String name;
 
-    private final StringBuilder buffer = new StringBuilder();
-
-    public MetadataHandler(Metadata metadata, String name) {
+    protected AbstractMetadataHandler(Metadata metadata, String name) {
         this.metadata = metadata;
         this.name = name;
     }
 
-    public void addMetadata(String value) {
-        if (value.length() > 0) {
+    /**
+     * Adds the given metadata value. The value is ignored if it is
+     * <code>null</code> or empty. If the metadata entry already exists,
+     * then the given value is appended to it with a comma as the separator.
+     *
+     * @param value metadata value
+     */
+    protected void addMetadata(String value) {
+        if (value != null && value.length() > 0) {
             String previous = metadata.get(name);
             if (previous != null && previous.length() > 0) {
                 value = previous + ", " + value;
             }
             metadata.set(name, value);
         }
-    }
-
-    public void endElement(String uri, String localName, String name) {
-        addMetadata(buffer.toString());
-        buffer.setLength(0);
-    }
-
-    public void startElement(
-            String uri, String localName, String name, Attributes attributes) {
-        for (int i = 0; i < attributes.getLength(); i++) {
-            addMetadata(attributes.getValue(i));
-        }
-    }
-
-    
-    public void characters(char[] ch, int start, int length) {
-        buffer.append(ch, start, length);
     }
 
 }
