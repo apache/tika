@@ -334,6 +334,16 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/postscript", "x.epsf");
         assertTypeByName("application/postscript", "x.epsi");
     }
+    
+    public void testMicrosoftMultiMedia() throws Exception {
+       assertTypeByName("video/x-ms-asf", "x.asf");
+       assertTypeByName("video/x-ms-wmv", "x.wmv");
+       assertTypeByName("audio/x-ms-wma", "x.wma");
+       
+       assertTypeByData("video/x-ms-asf", "testASF.asf");
+       assertTypeByData("video/x-ms-wmv", "testWMV.wmv");
+       assertTypeByData("audio/x-ms-wma", "testWMA.wma");
+    }
 
     /**
      * @since TIKA-194
@@ -439,6 +449,7 @@ public class TestMimeTypes extends TestCase {
             throws IOException {
         InputStream stream = TestMimeTypes.class.getResourceAsStream(
                 "/test-documents/" + filename);
+        assertNotNull("Test file not found: " + filename, stream);
         try {
             Metadata metadata = new Metadata();
             assertEquals(expected, repo.detect(stream, metadata).toString());
