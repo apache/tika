@@ -16,17 +16,7 @@
  */
 package org.apache.tika.mime;
 
-import org.apache.tika.detect.MagicDetector;
-import org.w3c.dom.Attr;
-import org.w3c.dom.Node;
-import org.w3c.dom.Element;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.NamedNodeMap;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import java.io.ByteArrayOutputStream;
+import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -35,6 +25,16 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import org.apache.tika.detect.MagicDetector;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * A reader for XML files compliant with the freedesktop MIME-info DTD.
@@ -285,9 +285,9 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
             radix = 8;
         }
 
-        if (type.equals("string")) {
-            decoded = decodeString(value);
-
+        if (type.equals("string") || type.equals("unicodeLE") || type.equals("unicodeBE")) {
+            decoded = decodeString(value, type);
+            
         } else if (type.equals("byte")) {
             decoded = tmpVal.getBytes();
 
@@ -315,18 +315,18 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
         return decoded;
     }
 
-    private byte[] decodeString(String value) throws MimeTypeException {
+    private byte[] decodeString(String value, String type) throws MimeTypeException {
         if (value.startsWith("0x")) {
-            byte[] bytes = new byte[(value.length() - 2) / 2];
-            for (int i = 0; i < bytes.length; i++) {
-                bytes[i] = (byte)
+            byte[] vals = new byte[(value.length() - 2) / 2];
+            for (int i = 0; i < vals.length; i++) {
+                vals[i] = (byte)
                 Integer.parseInt(value.substring(2 + i * 2, 4 + i * 2), 16);
             }
-            return bytes;
+            return vals;
         }
 
         try {
-            ByteArrayOutputStream decoded = new ByteArrayOutputStream();
+            CharArrayWriter decoded = new CharArrayWriter();
 
             for (int i = 0; i < value.length(); i++) {
                 if (value.charAt(i) == '\\') {
@@ -351,7 +351,33 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
                     decoded.write(value.charAt(i));
                 }
             }
-            return decoded.toByteArray();
+            
+            // Now turn the chars into bytes
+            char[] chars = decoded.toCharArray();
+            byte[] bytes;
+            if("unicodeLE".equals(type)) {
+               bytes = new byte[chars.length*2];
+               for(int i=0; i<chars.length; i++) {
+                  bytes[i*2] = (byte)(chars[i] & 0xff);
+                  bytes[i*2+1] = (byte)(chars[i] >> 8);
+               }
+            }
+            else if("unicodeBE".equals(type)) {
+               bytes = new byte[chars.length*2];
+               for(int i=0; i<chars.length; i++) {
+                  bytes[i*2] = (byte)(chars[i] >> 8);
+                  bytes[i*2+1] = (byte)(chars[i] & 0xff);
+               }
+            }
+            else {
+               // Copy with truncation
+               bytes = new byte[chars.length];
+               for(int i=0; i<bytes.length; i++) {
+                  bytes[i] = (byte)chars[i];
+               }
+            }
+            
+            return bytes;
         } catch (NumberFormatException e) {
             throw new MimeTypeException("Invalid string value: " + value, e);
         }

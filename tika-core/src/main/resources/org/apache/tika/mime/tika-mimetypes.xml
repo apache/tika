@@ -3081,7 +3081,11 @@
     <glob pattern="*.wax"/>
   </mime-type>
   <mime-type type="audio/x-ms-wma">
+    <sub-class-of type="video/x-ms-asf" />
     <glob pattern="*.wma"/>
+    <magic priority="50">
+       <match value="Windows Media Audio" type="unicodeLE" offset="0:8192" />
+    </magic>
   </mime-type>
 
   <mime-type type="audio/x-pn-realaudio">
@@ -4109,12 +4113,19 @@
   <mime-type type="video/x-ms-asf">
     <glob pattern="*.asf"/>
     <glob pattern="*.asx"/>
+    <magic>
+       <match value="0x3026b275" type="big32" offset="0" />
+    </magic>
   </mime-type>
   <mime-type type="video/x-ms-wm">
     <glob pattern="*.wm"/>
   </mime-type>
   <mime-type type="video/x-ms-wmv">
+    <sub-class-of type="video/x-ms-asf" />
     <glob pattern="*.wmv"/>
+    <magic priority="60">
+       <match value="Windows Media Video" type="unicodeLE" offset="0:8192" />
+    </magic>
   </mime-type>
   <mime-type type="video/x-ms-wmx">
     <glob pattern="*.wmx"/>
