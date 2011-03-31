@@ -26,8 +26,8 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
  * elements that contain the (optional) entry name as a &lt;h1&gt; element
  * and the full structured body content of the parsed entry.
  */
-public class PackageParser implements Parser {
+public class PackageParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
@@ -59,15 +59,6 @@ public class PackageParser implements Parser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         new PackageExtractor(handler, metadata, context).parse(stream);
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

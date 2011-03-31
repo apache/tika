@@ -29,6 +29,7 @@ import org.apache.tika.io.TemporaryFiles;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -84,7 +85,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
         }
     }
 
-    private class RecursiveParser implements Parser {
+    private class RecursiveParser extends AbstractParser {
 
         private final ContainerExtractor extractor;
 
@@ -129,12 +130,6 @@ public class ParserContainerExtractor implements ContainerExtractor {
             } finally {
                 tmp.dispose();
             }
-        }
-
-        public void parse(
-                InputStream stream, ContentHandler handler, Metadata metadata)
-                throws IOException, SAXException, TikaException {
-            parse(stream, handler, metadata, new ParseContext());
         }
 
     }

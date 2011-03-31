@@ -48,6 +48,7 @@ import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -354,7 +355,7 @@ public class TikaGUI extends JFrame {
      *  directory, and delegates everything else to another downstream
      *  parser.
      */
-    private static class ImageSavingParser implements Parser {
+    private static class ImageSavingParser extends AbstractParser {
       private Map<String,File> wanted = new HashMap<String,File>();
       private Parser downstreamParser;
       private File tmpDir;
@@ -395,9 +396,5 @@ public class TikaGUI extends JFrame {
          }
       }
 
-      public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-         parse(stream, handler, metadata, new ParseContext());
-      }
     }
 }

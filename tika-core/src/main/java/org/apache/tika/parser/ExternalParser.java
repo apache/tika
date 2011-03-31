@@ -38,7 +38,7 @@ import org.xml.sax.SAXException;
  * Parser that uses an external program (like catdoc or pdf2txt) to extract
  * text content from a given document.
  */
-public class ExternalParser implements Parser {
+public class ExternalParser extends AbstractParser {
 
     /**
      * Media types supported by the external program.
@@ -95,15 +95,6 @@ public class ExternalParser implements Parser {
             } catch (InterruptedException ignore) {
             }
         }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
     /**

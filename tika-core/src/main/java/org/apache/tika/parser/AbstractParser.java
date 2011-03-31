@@ -14,38 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.asm;
+package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
-import org.apache.tika.parser.ParseContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Parser for Java .class files.
+ * Abstract base class for new parsers. This method implements the old
+ * deprecated parse method so subclasses won't have to.
+ *
+ * @since Apache Tika 1.0
  */
-public class ClassParser extends AbstractParser {
+public abstract class AbstractParser implements Parser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.application("java-vm"));
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = 7186985395903074255L;
 
-    public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return SUPPORTED_TYPES;
-    }
-
+    /**
+     * Calls the
+     * {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)}
+     * method with an empty {@link ParseContext}.
+     */
     public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
+            InputStream stream, ContentHandler handler, Metadata metadata)
             throws IOException, SAXException, TikaException {
-        new XHTMLClassVisitor(handler, metadata).parse(stream);
+        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
 /**
  * A Dummy Parser for use with unit tests.
  */
-public class DummyParser implements Parser {
+public class DummyParser extends AbstractParser {
    private Set<MediaType> types;
    private Map<String,String> metadata;
    private String xmlText;
@@ -61,8 +61,4 @@ public class DummyParser implements Parser {
       handler.endDocument();
    }
 
-   public void parse(InputStream stream, ContentHandler handler,
-         Metadata metadata) throws IOException, SAXException, TikaException {
-      parse(stream, handler, metadata, new ParseContext());
-   }
 }

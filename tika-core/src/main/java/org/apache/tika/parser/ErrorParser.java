@@ -32,7 +32,7 @@ import org.xml.sax.SAXException;
  * attempting to parse the given document stream. Useful as a sentinel parser
  * for unknown document types.
  */
-public class ErrorParser implements Parser {
+public class ErrorParser extends AbstractParser {
 
     /**
      * Singleton instance of this class.
@@ -48,15 +48,6 @@ public class ErrorParser implements Parser {
             Metadata metadata, ParseContext context)
             throws TikaException {
         throw new TikaException("Parse error");
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

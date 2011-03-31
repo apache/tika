@@ -33,8 +33,8 @@ import java.util.regex.Pattern;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -43,7 +43,7 @@ import org.xml.sax.SAXException;
  * Mbox (mailbox) parser. This version returns the headers for the first email
  * via metadata, which means headers from subsequent emails will be lost.
  */
-public class MboxParser implements Parser {
+public class MboxParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("mbox"));
@@ -240,12 +240,6 @@ public class MboxParser implements Parser {
     private Date parseDate(String headerContent) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         return dateFormat.parse(headerContent);
-    }
-
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

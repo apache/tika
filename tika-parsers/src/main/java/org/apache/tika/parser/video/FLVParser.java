@@ -31,8 +31,8 @@ import java.util.Map.Entry;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -60,7 +60,7 @@ import org.xml.sax.SAXException;
  * hasCuePoints width, cuePoints, lasttimestamp, canSeekToEnd, datasize,
  * duration, videosize, filesize, audiodatarate, hasAudio, stereo audiodelay
  */
-public class FLVParser implements Parser {
+public class FLVParser extends AbstractParser {
 
     private static int TYPE_METADATA = 0x12;
     private static byte MASK_AUDIO = 1;
@@ -256,11 +256,6 @@ public class FLVParser implements Parser {
         }
 
         xhtml.endDocument();
-    }
-
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

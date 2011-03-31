@@ -34,7 +34,7 @@ import org.xml.sax.SAXException;
  *
  * @since Apache Tika 0.4, major changes in Tika 0.5
  */
-public class DelegatingParser implements Parser {
+public class DelegatingParser extends AbstractParser {
 
     /**
      * Returns the parser instance to which parsing tasks should be delegated.
@@ -70,15 +70,6 @@ public class DelegatingParser implements Parser {
             Metadata metadata, ParseContext context)
             throws SAXException, IOException, TikaException {
         getDelegateParser(context).parse(stream, handler, metadata, context);
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

@@ -27,6 +27,7 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
@@ -43,7 +44,7 @@ import ucar.nc2.NetcdfFile;
  * href="http://www.unidata.ucar.edu/software/netcdf-java/">NetCDF for Java</a>
  * API.
  */
-public class NetCDFParser implements Parser {
+public class NetCDFParser extends AbstractParser {
 
     private final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.application("x-netcdf"));
@@ -86,17 +87,6 @@ public class NetCDFParser implements Parser {
             }
         }
 
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
-     * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
-     */
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-        this.parse(stream, handler, metadata, new ParseContext());
     }
 
     protected void writeStreamToMemory(InputStream is, ByteArrayOutputStream os)

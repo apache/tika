@@ -24,13 +24,14 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-class ForkTestParser implements Parser {
+class ForkTestParser extends AbstractParser {
 
     /** Serial version UID */
     private static final long serialVersionUID = -5492269783593452319L;
@@ -48,12 +49,6 @@ class ForkTestParser implements Parser {
         char[] ch = "Hello, World!".toCharArray();
         xhtml.characters(ch, 0, ch.length);
         xhtml.endDocument();
-    }
-
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

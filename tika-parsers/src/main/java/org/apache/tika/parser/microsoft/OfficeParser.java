@@ -32,6 +32,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
@@ -44,8 +45,9 @@ import org.xml.sax.SAXException;
 /**
  * Defines a Microsoft document content extractor.
  */
-public class OfficeParser implements Parser {
-   private static final long serialVersionUID = 7393462244028653479L;
+public class OfficeParser extends AbstractParser {
+
+    private static final long serialVersionUID = 7393462244028653479L;
    
    private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
@@ -226,15 +228,6 @@ public class OfficeParser implements Parser {
         }
 
         xhtml.endDocument();
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
     private void setType(Metadata metadata, MediaType type) {

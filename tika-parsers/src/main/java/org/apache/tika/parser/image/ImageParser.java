@@ -34,15 +34,16 @@ import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class ImageParser implements Parser {
+public class ImageParser extends AbstractParser {
+
     private static final MediaType CANONICAL_BMP_TYPE = MediaType.image("x-ms-bmp");
     private static final MediaType JAVA_BMP_TYPE = MediaType.image("bmp");
     
@@ -106,15 +107,7 @@ public class ImageParser implements Parser {
         xhtml.endDocument();
     }
 
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
-    }
-    
+
     private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
 	if(metadata.get(imageIOkey) != null) {
 	    metadata.set(tikaKey, metadata.get(imageIOkey));

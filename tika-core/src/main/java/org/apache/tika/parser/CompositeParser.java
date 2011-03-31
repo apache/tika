@@ -43,7 +43,7 @@ import org.xml.sax.SAXException;
  * parser is defined for cases where a parser for the given content type is
  * not available.
  */
-public class CompositeParser implements Parser {
+public class CompositeParser extends AbstractParser {
 
     /** Serial version UID */
     private static final long serialVersionUID = 2192845797749627824L;
@@ -226,15 +226,6 @@ public class CompositeParser implements Parser {
             throw new TikaException(
                     "TIKA-237: Illegal SAXException from " + parser, e);
         }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }
