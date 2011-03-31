@@ -16,12 +16,10 @@
  */
 package org.apache.tika.parser;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -33,7 +31,7 @@ import org.xml.sax.SAXException;
  * attempting to parse the given document stream. Useful as a sentinel parser
  * for unknown document types.
  */
-public class EmptyParser implements Parser {
+public class EmptyParser extends AbstractParser {
 
     /**
      * Serial version UID.
@@ -56,15 +54,6 @@ public class EmptyParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

@@ -35,8 +35,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -48,7 +48,7 @@ import org.xml.sax.SAXException;
  * document. If no password is given, then this parser will try decrypting
  * the document using the empty password that's often used with PDFs.
  */
-public class PDFParser implements Parser {
+public class PDFParser extends AbstractParser {
 
     /** Serial version UID */
     private static final long serialVersionUID = -752276948656079347L;
@@ -90,15 +90,6 @@ public class PDFParser implements Parser {
         } finally {
             pdfDocument.close();
         }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
     private void extractMetadata(PDDocument document, Metadata metadata)

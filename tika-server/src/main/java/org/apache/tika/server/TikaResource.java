@@ -19,15 +19,14 @@ package org.apache.tika.server;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.EncryptedDocumentException;
-import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -57,16 +56,12 @@ public class TikaResource {
   public static AutoDetectParser createParser() {
     final AutoDetectParser parser = new AutoDetectParser();
 
-    parser.setFallback(new Parser() {
+    parser.setFallback(new AbstractParser() {
       public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
         return parser.getSupportedTypes(parseContext);
       }
 
       public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
-        throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
-      }
-
-      public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata) {
         throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
       }
     });

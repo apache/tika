@@ -28,8 +28,8 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.netcdf.NetCDFParser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -48,7 +48,7 @@ import ucar.nc2.NetcdfFile;
  * >this link</a> for more information.
  * 
  */
-public class HDFParser implements Parser {
+public class HDFParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.application("x-hdf"));
@@ -80,18 +80,6 @@ public class HDFParser implements Parser {
 
         NetcdfFile ncFile = NetcdfFile.openInMemory("", os.toByteArray());
         this.unravelStringMet(ncFile, null, metadata);
-    }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * org.apache.tika.parser.netcdf.NetCDFParser#parse(java.io.InputStream,
-     * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
-     */
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-        this.parse(stream, handler, metadata, new ParseContext());
     }
 
     protected void unravelStringMet(NetcdfFile ncFile, Group group, Metadata met) {

@@ -29,6 +29,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
@@ -38,7 +39,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * OpenOffice parser
  */
-public class OpenDocumentParser implements Parser {
+public class OpenDocumentParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
@@ -117,15 +118,6 @@ public class OpenDocumentParser implements Parser {
             }
             entry = zip.getNextEntry();
         }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

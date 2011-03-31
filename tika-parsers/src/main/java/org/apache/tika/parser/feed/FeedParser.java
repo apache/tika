@@ -28,8 +28,8 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -46,7 +46,7 @@ import com.sun.syndication.io.SyndFeedInput;
  * Uses Rome for parsing the feeds. A feed description is put in a paragraph
  * with its link and title in an anchor.
  */
-public class FeedParser implements Parser {
+public class FeedParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
@@ -55,11 +55,6 @@ public class FeedParser implements Parser {
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
-    }
-
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
     public void parse(InputStream stream, ContentHandler handler,

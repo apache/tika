@@ -20,6 +20,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.OfflineContentHandler;
@@ -44,7 +45,7 @@ import java.util.Set;
  * <li>Numbers format version 1.x. Currently only tested with Numbers version 2.0.x
  * </ol>
  */
-public class IWorkParser implements Parser {
+public class IWorkParser extends AbstractParser {
 
     private final static Set<MediaType> supportedTypes =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
@@ -82,13 +83,4 @@ public class IWorkParser implements Parser {
         xhtml.endDocument();
     }
 
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
-    }
 }

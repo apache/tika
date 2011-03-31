@@ -32,7 +32,7 @@ import org.xml.sax.SAXException;
  * instance. Subclasses can provide extra decoration by overriding the
  * parse method.
  */
-public class ParserDecorator implements Parser {
+public class ParserDecorator extends AbstractParser {
 
     /** Serial version UID */
     private static final long serialVersionUID = -3861669115439125268L;
@@ -91,15 +91,7 @@ public class ParserDecorator implements Parser {
         parser.parse(stream, handler, metadata, context);
     }
 
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
-    }
-    
+
     /**
      * Gets the parser wrapped by this ParserDecorator
      * @return

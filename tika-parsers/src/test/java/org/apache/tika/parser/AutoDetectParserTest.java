@@ -255,7 +255,7 @@ public class AutoDetectParserTest extends TestCase {
     }
     
     @SuppressWarnings("serial")
-    private static class MyParser implements Parser {
+    private static class MyParser extends AbstractParser {
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             Set<MediaType> supportedTypes = new HashSet<MediaType>();
             supportedTypes.add(MY_MEDIA_TYPE);
@@ -266,9 +266,6 @@ public class AutoDetectParserTest extends TestCase {
             metadata.add("MyParser", "value");
         }
 
-        public void parse(InputStream stream, ContentHandler handler, Metadata metadata) {
-            parse(stream, handler, metadata, new ParseContext());
-        }
     }
     
     /**

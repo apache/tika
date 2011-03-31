@@ -27,8 +27,8 @@ import org.apache.poi.util.StringUtil;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -39,7 +39,7 @@ import org.xml.sax.SAXException;
  * Note that we use Apache POI for various parts of the processing, as
  *  lots of the low level string/int/short concepts are the same.
  */
-public class DWGParser implements Parser {
+public class DWGParser extends AbstractParser {
 
     private static MediaType TYPE = MediaType.image("vnd.dwg");
 
@@ -318,12 +318,6 @@ public class DWGParser implements Parser {
           // No padding. That probably means no custom props
           return 0;
        }
-    }
-
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

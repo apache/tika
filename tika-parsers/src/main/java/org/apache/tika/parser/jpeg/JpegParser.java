@@ -27,30 +27,21 @@ import org.apache.tika.io.TemporaryFiles;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.image.ImageMetadataExtractor;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-public class JpegParser implements Parser {
+public class JpegParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.image("jpeg"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
     public void parse(

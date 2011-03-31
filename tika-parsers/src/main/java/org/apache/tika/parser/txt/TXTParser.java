@@ -30,8 +30,8 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -56,7 +56,7 @@ import org.xml.sax.SAXException;
  * </dl>
  */
 @SuppressWarnings("serial")
-public class TXTParser implements Parser {
+public class TXTParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.TEXT_PLAIN);
@@ -139,15 +139,6 @@ public class TXTParser implements Parser {
             throw new TikaException(
                     "Unsupported text encoding: " + encoding, e);
         }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-    throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

@@ -20,6 +20,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -39,7 +40,7 @@ import java.util.Set;
 /**
  * XML parser.
  */
-public class XMLParser implements Parser {
+public class XMLParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
@@ -70,15 +71,6 @@ public class XMLParser implements Parser {
 
         xhtml.endElement("p");
         xhtml.endDocument();
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
     protected ContentHandler getContentHandler(

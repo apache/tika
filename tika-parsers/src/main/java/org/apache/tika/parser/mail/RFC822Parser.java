@@ -26,8 +26,8 @@ import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -38,7 +38,7 @@ import org.xml.sax.SAXException;
  * 
  * @author jnioche@digitalpebble.com
  **/
-public class RFC822Parser implements Parser {
+public class RFC822Parser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
             .singleton(MediaType.parse("message/rfc822"));
@@ -69,11 +69,6 @@ public class RFC822Parser implements Parser {
                 throw new TikaException("Failed to parse an email message", e);
             }
         }
-    }
-
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata) throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }

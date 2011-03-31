@@ -30,8 +30,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -43,7 +43,7 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * For the time being, assume XHTML (TODO: DTBook)
  */
-public class EpubContentParser implements Parser {
+public class EpubContentParser extends AbstractParser {
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return Collections.emptySet(); // not a top-level parser
@@ -75,15 +75,6 @@ public class EpubContentParser implements Parser {
         } catch (ParserConfigurationException e) {
             throw new TikaException("XML parser configuration error", e);
         }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 
 }
