@@ -16,16 +16,24 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.AttachmentChunks;
+import org.apache.poi.hsmf.datatypes.ByteChunk;
+import org.apache.poi.hsmf.datatypes.Chunk;
+import org.apache.poi.hsmf.datatypes.MAPIProperty;
+import org.apache.poi.hsmf.datatypes.StringChunk;
+import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -49,7 +57,34 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             throws TikaException, SAXException, IOException {
         try {
            msg.setReturnNullOnMissingChunk(true);
-          
+           
+           // If the message contains strings that aren't stored
+           //  as Unicode, try to sort out an encoding for them
+           // TODO Use new method
+           boolean hasNonUnicodeStrings = false;
+           for(Chunk chunk : msg.getMainChunks().getAll()) {
+              if(chunk instanceof StringChunk) {
+                 StringChunk sc = (StringChunk)chunk;
+                 if(sc.getType() == Types.ASCII_STRING) {
+                    hasNonUnicodeStrings = true;
+                    break;
+                 }
+              }
+           }
+           
+           if(hasNonUnicodeStrings) {
+              if(msg.getHeaders() != null) {
+                 // There's normally something in the headers
+                 msg.guess7BitEncoding();
+              } else {
+                 // Nothing in the header, try encoding detection
+                 //  on the message body
+                 CharsetDetector detector = new CharsetDetector();
+                 // TODO detect and use this
+              }
+           }
+           
+           // Start with the metadata
            String subject = msg.getSubject();
            String from = msg.getDisplayFrom();
    
@@ -81,7 +116,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                  if(headers != null && headers.length > 0) {
                      for(String header: headers) {
                         if(header.toLowerCase().startsWith("date:")) {
-                    	String date = header.substring(header.indexOf(':')+1);
+                            String date = header.substring(header.indexOf(':')+1);
                             metadata.set(Metadata.EDIT_TIME, date);
                             metadata.set(Metadata.LAST_SAVED, date);
                             break;
@@ -110,8 +145,47 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            } catch(ChunkNotFoundException e) {}
            xhtml.endElement("dl");
    
-           xhtml.element("p", msg.getTextBody());
+           // Get the message body. Preference order is: html, rtf, text
+           Chunk htmlChunk = null;
+           Chunk rtfChunk = null;
+           Chunk textChunk = null;
+           for(Chunk chunk : msg.getMainChunks().getAll()) {
+              if(chunk.getChunkId() == MAPIProperty.BODY_HTML.id) {
+                 htmlChunk = chunk;
+              }
+              if(chunk.getChunkId() == MAPIProperty.RTF_COMPRESSED.id) {
+                 rtfChunk = chunk;
+              }
+              if(chunk.getChunkId() == MAPIProperty.BODY.id) {
+                 textChunk = chunk;
+              }
+           }
            
+           boolean doneBody = false;
+           if(htmlChunk != null) {
+              byte[] data = null;
+              if(htmlChunk instanceof ByteChunk) {
+                 data = ((ByteChunk)htmlChunk).getValue();
+              } else if(htmlChunk instanceof StringChunk) {
+                 // TODO Needs POI 3.8 beta 3
+              }
+              if(data != null) {
+                 HtmlParser htmlParser = new HtmlParser();
+                 htmlParser.parse(
+                       new ByteArrayInputStream(data),
+                       xhtml, new Metadata(), new ParseContext()
+                 );
+                 doneBody = true;
+              }
+           }
+           if(rtfChunk != null && !doneBody) {
+              // TODO Needs POI 3.8 beta 2 for TNEF support
+           }
+           if(textChunk != null && !doneBody) {
+              xhtml.element("p", ((StringChunk)textChunk).getValue());
+           }
+           
+           // Process the attachments
            for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
                xhtml.startElement("div", "class", "attachment-entry");
                
