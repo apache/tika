@@ -430,4 +430,22 @@ public class OOXMLParserTest extends TestCase {
         }
     }
 
+    /**
+     * Test docx without headers
+     * TIKA-633
+     */
+    public void testNullHeaders() throws Exception {
+        Parser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+
+        InputStream input = OOXMLParserTest.class.getResourceAsStream("/test-documents/NullHeader.docx");
+        try {
+            parser.parse(TikaInputStream.get(input), handler, metadata, context);
+            assertFalse(handler.toString().isEmpty());
+        } finally {
+            input.close();
+        }
+    }
 }

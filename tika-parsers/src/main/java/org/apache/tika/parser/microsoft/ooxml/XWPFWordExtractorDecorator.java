@@ -54,13 +54,17 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
 
         // headers
-        extractHeaders(xhtml, hfPolicy);
+        if (hfPolicy!=null) {
+            extractHeaders(xhtml, hfPolicy);
+        }
 
         // process text in the order that it occurs in
         extractIBodyText(document, xhtml);
 
         // then all document tables
-        extractFooters(xhtml, hfPolicy);
+        if (hfPolicy!=null) {
+            extractFooters(xhtml, hfPolicy);
+        }
     }
 
     private void extractIBodyText(IBody bodyElement, XHTMLContentHandler xhtml)
