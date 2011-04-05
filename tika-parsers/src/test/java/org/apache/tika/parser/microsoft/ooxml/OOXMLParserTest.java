@@ -443,7 +443,7 @@ public class OOXMLParserTest extends TestCase {
         InputStream input = OOXMLParserTest.class.getResourceAsStream("/test-documents/NullHeader.docx");
         try {
             parser.parse(TikaInputStream.get(input), handler, metadata, context);
-            assertFalse(handler.toString().isEmpty());
+            assertFalse(handler.toString().length()==0);
         } finally {
             input.close();
         }
