@@ -93,6 +93,23 @@ public class ServiceLoader {
     public ServiceLoader() {
         this(getContextClassLoader());
     }
+    
+    /**
+     * Returns all the available service resources matching the
+     *  given pattern, such as all instances of tika-mimetypes.xml 
+     *  on the classpath, or all org.apache.tika.parser.Parser 
+     *  service files.
+     */
+    public Enumeration<URL> findServiceResources(String filePattern) {
+       try {
+          Enumeration<URL> resources = loader.getResources(filePattern);
+          return resources;
+       } catch (IOException ignore) {
+          // We couldn't get the list of service resource files
+          List<URL> empty = Collections.emptyList();
+          return Collections.enumeration( empty );
+      }
+    }
 
     /**
      * Returns all the available service providers of the given type.
@@ -107,18 +124,14 @@ public class ServiceLoader {
         if (loader != null) {
             Set<String> names = new HashSet<String>();
 
-            try {
-                String name = service.getName();
-                Enumeration<URL> resources = loader.getResources("META-INF/services/" + name);
-                for (URL resource : Collections.list(resources)) {
-                    try {
-                        names.addAll(getServiceClassNames(resource));
-                    } catch (IOException e) {
-                        handler.handleLoadError(name, e);
-                    }
+            String serviceName = service.getName();
+            Enumeration<URL> resources = findServiceResources("META-INF/services/" + serviceName);
+            for (URL resource : Collections.list(resources)) {
+                try {
+                    names.addAll(getServiceClassNames(resource));
+                } catch (IOException e) {
+                    handler.handleLoadError(serviceName, e);
                 }
-            } catch (IOException ignore) {
-                // We couldn't get the list of service resource files
             }
 
             for (String name : names) {

@@ -35,9 +35,12 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Parser that uses an external program (like catdoc or pdf2txt) to extract
- * text content from a given document.
+ * Very basic parser that uses an external program (like catdoc or pdf2txt) 
+ *  to extract text content from a given document.
+ * 
+ * @deprecated Use the more advanced {@link org.apache.tika.parser.external.ExternalParser} instead
  */
+@Deprecated
 public class ExternalParser extends AbstractParser {
 
     /**
