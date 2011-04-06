@@ -29,6 +29,7 @@ org.apache.tika.parser.jpeg.JpegParser
 org.apache.tika.parser.mail.RFC822Parser
 org.apache.tika.parser.mbox.MboxParser
 org.apache.tika.parser.microsoft.OfficeParser
+org.apache.tika.parser.microsoft.TNEFParser
 org.apache.tika.parser.microsoft.ooxml.OOXMLParser
 org.apache.tika.parser.mp3.Mp3Parser
 org.apache.tika.parser.hdf.HDFParser
