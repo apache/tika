@@ -17,6 +17,8 @@
 package org.apache.tika.parser.external;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -32,6 +34,7 @@ import java.util.regex.Pattern;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.NullOutputStream;
+import org.apache.tika.io.TemporaryFiles;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -78,6 +81,7 @@ public class ExternalParser extends AbstractParser {
      */
     private String[] command = new String[] { "cat" };
     
+    private TemporaryFiles tmp = new TemporaryFiles();
     
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -142,17 +146,19 @@ public class ExternalParser extends AbstractParser {
         boolean hasPatterns = (metadataPatterns != null && !metadataPatterns.isEmpty());
         
         TikaInputStream tikaStream = TikaInputStream.get(stream);
+        File output = null;
         
         // Build our command
         String[] cmd = new String[command.length];
         System.arraycopy(command, 0, cmd, 0, command.length);
         for(int i=0; i<cmd.length; i++) {
            if(cmd[i].indexOf(INPUT_FILE_TOKEN) != -1) {
-              cmd[i].replace(INPUT_FILE_TOKEN, tikaStream.getFile().toString());
+              cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, tikaStream.getFile().toString());
               inputToStdIn = false;
            }
            if(cmd[i].indexOf(OUTPUT_FILE_TOKEN) != -1) {
-              // TODO
+              output = tmp.createTemporaryFile();
+              outputFromStdOut = false;
            }
         }
 
@@ -199,7 +205,11 @@ public class ExternalParser extends AbstractParser {
         }
         
         // Grab the output if we haven't already
-        // TODO
+        if(!outputFromStdOut) {
+           FileInputStream out = new FileInputStream(output);
+           extractOutput(out, xhtml);
+           tmp.dispose();
+        }
     }
 
     /**
@@ -294,5 +304,43 @@ public class ExternalParser extends AbstractParser {
             }
           }
        }.start();
+    }
+    
+    /**
+     * Checks to see if the command can be run. Typically used with
+     *  something like "myapp --version" to check to see if "myapp"
+     *  is installed and on the path.
+     *  
+     * @param checkCmd The check command to run
+     * @param errorValue What is considered an error value? 
+     */
+    public static boolean check(String checkCmd, int... errorValue) {
+       return check(new String[] {checkCmd}, errorValue);
+    }
+    public static boolean check(String[] checkCmd, int... errorValue) {
+       if(errorValue.length == 0) {
+          errorValue = new int[] { 127 };
+       }
+       
+       try {
+          Process process;
+          if(checkCmd.length == 1) {
+             process = Runtime.getRuntime().exec(checkCmd[0]);
+          } else {
+             process = Runtime.getRuntime().exec(checkCmd);
+          }
+          int result = process.waitFor();
+          
+          for(int err : errorValue) {
+             if(result == err) return false;
+          }
+          return true;
+       } catch(IOException e) {
+          // Some problem, command is there or is broken
+          return false;
+       } catch (InterruptedException ie) {
+          // Some problem, command is there or is broken
+          return false;
+      }
     }
 }

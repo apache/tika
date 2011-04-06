@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -109,12 +110,13 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
          if (node.getNodeType() == Node.ELEMENT_NODE) {
             Element child = (Element) node;
             if (child.getTagName().equals(CHECK_TAG)) {
-               // TODO
+               boolean present = readCheckTagAndCheck(child);
+               if(! present) {
+                  return null;
+               }
             }
             else if (child.getTagName().equals(COMMAND_TAG)) {
-               parser.setCommand(
-                     child.getFirstChild().getNodeValue()
-               );
+               parser.setCommand( getString(child) );
             }
             else if (child.getTagName().equals(MIMETYPES_TAG)) {
                parser.setSupportedTypes(
@@ -134,6 +136,18 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
    
    private static Set<MediaType> readMimeTypes(Element mimeTypes) {
       Set<MediaType> types = new HashSet<MediaType>();
+      
+      NodeList children = mimeTypes.getChildNodes();
+      for(int i=0; i<children.getLength(); i++) {
+         Node node = children.item(i);
+         if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element child = (Element) node;
+            if (child.getTagName().equals(MIMETYPE_TAG)) {
+               types.add( MediaType.parse( getString(child) ) );
+            }
+         }
+      }
+      
       return types;
    }
    
@@ -147,12 +161,64 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
             Element child = (Element) node;
             if (child.getTagName().equals(METADATA_MATCH_TAG)) {
                String metadataKey = child.getAttribute(METADATA_KEY_ATTR);
-               Pattern pattern = Pattern.compile( child.getFirstChild().getNodeValue() );
+               Pattern pattern = Pattern.compile( getString(child) );
                metadata.put(pattern, metadataKey);
             }
          }
       }
       
       return metadata;
+   }
+   
+   private static boolean readCheckTagAndCheck(Element checkDef) {
+      String command = null;
+      List<Integer> errorVals = new ArrayList<Integer>(); 
+      
+      NodeList children = checkDef.getChildNodes();
+      for(int i=0; i<children.getLength(); i++) {
+         Node node = children.item(i);
+         if (node.getNodeType() == Node.ELEMENT_NODE) {
+            Element child = (Element) node;
+            if (child.getTagName().equals(COMMAND_TAG)) {
+               command = getString(child);
+            }
+            if (child.getTagName().equals(ERROR_CODES_TAG)) {
+               String errs = getString(child);
+               StringTokenizer st = new StringTokenizer(errs);
+               while(st.hasMoreElements()) {
+                  try {
+                     String s = st.nextToken();
+                     errorVals.add(Integer.parseInt(s));
+                  } catch(NumberFormatException e) {}
+               }
+            }
+         }
+      }
+      
+      if(command != null) {
+         int[] errVals = new int[errorVals.size()];
+         for(int i=0; i<errVals.length; i++) {
+            errVals[i] = errorVals.get(i);
+         }
+         
+         return ExternalParser.check(command, errVals);
+      }
+      
+      // No check command, so assume it's there
+      return true;
+   }
+   
+   private static String getString(Element element) {
+      StringBuffer s = new StringBuffer();
+      
+      NodeList children = element.getChildNodes();
+      for(int i=0; i<children.getLength(); i++) {
+         Node node = children.item(i);
+         if (node.getNodeType() == Node.TEXT_NODE) {
+            s.append( node.getNodeValue() );
+         }
+      }
+      
+      return s.toString();
    }
 }

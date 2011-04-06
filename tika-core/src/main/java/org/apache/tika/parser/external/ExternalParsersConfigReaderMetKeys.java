@@ -29,6 +29,8 @@ public interface ExternalParsersConfigReaderMetKeys {
     
     String CHECK_TAG = "check";
     
+    String ERROR_CODES_TAG = "error-codes";
+    
     String MIMETYPES_TAG = "mime-types";
     
     String MIMETYPE_TAG = "mime-type";
