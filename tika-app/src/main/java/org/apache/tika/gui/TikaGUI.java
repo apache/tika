@@ -16,7 +16,14 @@
  */
 package org.apache.tika.gui;
 
+import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -24,16 +31,25 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.Box;
+import javax.swing.ButtonGroup;
 import javax.swing.JEditorPane;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.ProgressMonitorInputStream;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -46,6 +62,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -66,7 +83,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * Simple Swing GUI for Apache Tika. You can drag and drop files on top
  * of the window to have them parsed.
  */
-public class TikaGUI extends JFrame {
+public class TikaGUI extends JFrame implements ActionListener {
 
     /**
      * Serial version UID.
@@ -106,9 +123,14 @@ public class TikaGUI extends JFrame {
     private final ImageSavingParser imageParser;
 
     /**
-     * Tabs in the Tika GUI window.
+     * The card layout for switching between different views.
      */
-    private final JTabbedPane tabs;
+    private final CardLayout layout = new CardLayout();
+
+    /**
+     * Container for the editor cards.
+     */
+    private final JPanel cards;
 
     /**
      * Formatted XHTML output.
@@ -140,95 +162,220 @@ public class TikaGUI extends JFrame {
      */
     private final JEditorPane errors;
 
+    /**
+     * File chooser.
+     */
+    private final JFileChooser chooser = new JFileChooser();
+
     public TikaGUI(Parser parser) {
         super("Apache Tika");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        tabs = new JTabbedPane();
-        add(tabs);
+        addMenuBar();
 
-        html = createEditor("Formatted text", "text/html");
-        text = createEditor("Plain text", "text/plain");
-        textMain = createEditor("Main content", "text/plain");
-        xml = createEditor("Structured text", "text/plain");
-        metadata = createEditor("Metadata", "text/plain");
-        errors = createEditor("Errors", "text/plain");
+        cards = new JPanel(layout);
+        html = addCard(cards, "text/html", "html");
+        text = addCard(cards, "text/plain", "text");
+        textMain = addCard(cards, "text/plain", "main");
+        xml = addCard(cards, "text/plain", "xhtml");
+        metadata = addCard(cards, "text/plain", "metadata");
+        errors = addCard(cards, "text/plain", "error");
+        add(cards);
+        layout.show(cards, "html");
 
-        setPreferredSize(new Dimension(500, 400));
+        setPreferredSize(new Dimension(640, 480));
         pack();
 
         this.context = new ParseContext();
         this.parser = parser;
-        
+
         this.imageParser = new ImageSavingParser(parser);
         this.context.set(DocumentSelector.class, new ImageDocumentSelector());
         this.context.set(Parser.class, imageParser);
     }
 
-   public void importStream(InputStream input, Metadata md)
-           throws IOException {
-        try {
-            StringWriter htmlBuffer = new StringWriter();
-            StringWriter textBuffer = new StringWriter();
-            StringWriter textMainBuffer = new StringWriter();
-            StringWriter xmlBuffer = new StringWriter();
-            StringBuilder metadataBuffer = new StringBuilder();
+    private void addMenuBar() {
+        JMenuBar bar = new JMenuBar();
 
-            ContentHandler handler = new TeeContentHandler(
-                    getHtmlHandler(htmlBuffer),
-                    getTextContentHandler(textBuffer),
-                    getTextMainContentHandler(textMainBuffer),
-                    getXmlContentHandler(xmlBuffer));
-            
-            context.set(DocumentSelector.class, new ImageDocumentSelector());
+        JMenu file = new JMenu("File");
+        file.setMnemonic(KeyEvent.VK_F);
+        addMenuItem(file, "Open...", "openfile", KeyEvent.VK_O);
+        addMenuItem(file, "Open URL...", "openurl", KeyEvent.VK_U);
+        file.addSeparator();
+        addMenuItem(file, "Exit", "exit", KeyEvent.VK_X);
+        bar.add(file);
 
-            input = new ProgressMonitorInputStream(
-                    this, "Parsing stream", input);
-            parser.parse(input, handler, md, context);
+        JMenu view = new JMenu("View");
+        view.setMnemonic(KeyEvent.VK_V);
+        ButtonGroup group = new ButtonGroup();
+        addRadioItem(view, group, true, "Formatted text", "html", KeyEvent.VK_F);
+        addRadioItem(view, group, false, "Plain text", "text", KeyEvent.VK_P);
+        addRadioItem(view, group, false, "Main content", "main", KeyEvent.VK_C);
+        addRadioItem(view, group, false, "Structured text", "xhtml", KeyEvent.VK_S);
+        addRadioItem(view, group, false, "Metadata", "metadata", KeyEvent.VK_M);
+        addRadioItem(view, group, false, "Errors", "error", KeyEvent.VK_E);
+        bar.add(view);
 
-            String[] names = md.names();
-            Arrays.sort(names);
-            for (String name : names) {
-                metadataBuffer.append(name);
-                metadataBuffer.append(": ");
-                metadataBuffer.append(md.get(name));
-                metadataBuffer.append("\n");
+        bar.add(Box.createHorizontalGlue());
+        JMenu help = new JMenu("Help");
+        help.setMnemonic(KeyEvent.VK_H);
+        bar.add(help);
+
+        setJMenuBar(bar);
+    }
+
+    private void addMenuItem(
+            JMenu menu, String title, String command, int key) {
+        JMenuItem item = new JMenuItem(title, key);
+        item.setActionCommand(command);
+        item.addActionListener(this);
+        menu.add(item);
+    }
+
+    private void addRadioItem(
+            JMenu menu, ButtonGroup group, boolean selected,
+            String title, String command, int key) {
+        JRadioButtonMenuItem item = new JRadioButtonMenuItem(title, selected);
+        item.setMnemonic(key);
+        item.setActionCommand(command);
+        item.addActionListener(this);
+        group.add(item);
+        menu.add(item);
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        String command = e.getActionCommand();
+        if ("openfile".equals(command)) {
+            int rv = chooser.showOpenDialog(this);
+            if (rv == JFileChooser.APPROVE_OPTION) {
+                openFile(chooser.getSelectedFile());
             }
-
-            setText(errors, "");
-            setText(metadata, metadataBuffer.toString());
-            setText(xml, xmlBuffer.toString());
-            setText(text, textBuffer.toString());
-            setText(textMain, textMainBuffer.toString());
-            setText(html, htmlBuffer.toString());
-            tabs.setSelectedIndex(0);
-        } catch (Exception e) {
-            StringWriter writer = new StringWriter();
-            e.printStackTrace(new PrintWriter(writer));
-            setText(errors, writer.toString());
-            setText(metadata, "");
-            setText(xml, "");
-            setText(text, "");
-            setText(html, "");
-            tabs.setSelectedIndex(tabs.getTabCount() - 1);
-            JOptionPane.showMessageDialog(
-                    this,
-                    "Apache Tika was unable to parse the file or url.\n "
-                    + " See the errors tab for"
-                    + " the detailed stack trace of this error.",
-                    "Parse error",
-                    JOptionPane.ERROR_MESSAGE);
-        } finally {
-            input.close();
+        } else if ("openurl".equals(command)) {
+            Object rv = JOptionPane.showInputDialog(
+                    this, "Enter the URL of the resource to be parsed:",
+                    "Open URL", JOptionPane.PLAIN_MESSAGE,
+                    null, null, "");
+            if (rv != null && rv.toString().length() > 0) {
+                try {
+                    openURL(new URL(rv.toString().trim()));
+                } catch (MalformedURLException exception) {
+                    JOptionPane.showMessageDialog(
+                            this, "The given string is not a valid URL",
+                            "Invalid URL", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } else if ("html".equals(command)) {
+            layout.show(cards, command);
+            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
+        } else if ("text".equals(command)) {
+            layout.show(cards, command);
+            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
+        } else if ("main".equals(command)) {
+            layout.show(cards, command);
+            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
+        } else if ("xhtml".equals(command)) {
+            layout.show(cards, command);
+            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
+        } else if ("metadata".equals(command)) {
+            layout.show(cards, command);
+            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
+        } else if ("error".equals(command)) {
+            layout.show(cards, command);
+            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
+        } else if ("exit".equals(command)) {
+            Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
+                    new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         }
     }
 
-    private JEditorPane createEditor(String title, String type) {
+    public void openFile(File file) {
+        try {
+            Metadata metadata = new Metadata();
+            TikaInputStream stream = TikaInputStream.get(file, metadata);
+            try {
+                handleStream(stream, metadata);
+            } finally {
+                stream.close();
+            }
+        } catch (Throwable t) {
+            handleError(t);
+        }
+    }
+
+    public void openURL(URL url) {
+        try {
+            Metadata metadata = new Metadata();
+            TikaInputStream stream = TikaInputStream.get(url, metadata);
+            try {
+                handleStream(stream, metadata);
+            } finally {
+                stream.close();
+            }
+        } catch (Throwable t) {
+            handleError(t);
+        }
+    }
+
+    private void handleStream(InputStream input, Metadata md)
+            throws Exception {
+        StringWriter htmlBuffer = new StringWriter();
+        StringWriter textBuffer = new StringWriter();
+        StringWriter textMainBuffer = new StringWriter();
+        StringWriter xmlBuffer = new StringWriter();
+        StringBuilder metadataBuffer = new StringBuilder();
+
+        ContentHandler handler = new TeeContentHandler(
+                getHtmlHandler(htmlBuffer),
+                getTextContentHandler(textBuffer),
+                getTextMainContentHandler(textMainBuffer),
+                getXmlContentHandler(xmlBuffer));
+
+        context.set(DocumentSelector.class, new ImageDocumentSelector());
+
+        input = new ProgressMonitorInputStream(
+                this, "Parsing stream", input);
+        parser.parse(input, handler, md, context);
+
+        String[] names = md.names();
+        Arrays.sort(names);
+        for (String name : names) {
+            metadataBuffer.append(name);
+            metadataBuffer.append(": ");
+            metadataBuffer.append(md.get(name));
+            metadataBuffer.append("\n");
+        }
+
+        setText(errors, "");
+        setText(metadata, metadataBuffer.toString());
+        setText(xml, xmlBuffer.toString());
+        setText(text, textBuffer.toString());
+        setText(textMain, textMainBuffer.toString());
+        setText(html, htmlBuffer.toString());
+    }
+
+    private void handleError(Throwable t) {
+        StringWriter writer = new StringWriter();
+        t.printStackTrace(new PrintWriter(writer));
+        setText(errors, writer.toString());
+        setText(metadata, "");
+        setText(xml, "");
+        setText(text, "");
+        setText(html, "");
+        JOptionPane.showMessageDialog(
+                this,
+                "Apache Tika was unable to parse this document.\n "
+                + " See the errors tab for the details of this error.",
+                "Parse error",
+                JOptionPane.ERROR_MESSAGE);
+    }
+
+    private JEditorPane addCard(JPanel panel, String type, String name) {
         JEditorPane editor = new JEditorPane();
+        editor.setBackground(Color.WHITE);
         editor.setContentType(type);
         editor.setTransferHandler(new ParsingTransferHandler(
                 editor.getTransferHandler(), this));
-        tabs.add(title, new JScrollPane(editor));
+        panel.add(new JScrollPane(editor), name);
         return editor;
     }
 
@@ -397,4 +544,5 @@ public class TikaGUI extends JFrame {
       }
 
     }
+
 }
