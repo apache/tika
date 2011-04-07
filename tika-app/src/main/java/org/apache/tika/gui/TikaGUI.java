@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.Box;
-import javax.swing.ButtonGroup;
+import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -48,11 +48,14 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
+import javax.swing.JTextPane;
 import javax.swing.ProgressMonitorInputStream;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkEvent.EventType;
+import javax.swing.event.HyperlinkListener;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -83,7 +86,8 @@ import org.xml.sax.helpers.AttributesImpl;
  * Simple Swing GUI for Apache Tika. You can drag and drop files on top
  * of the window to have them parsed.
  */
-public class TikaGUI extends JFrame implements ActionListener {
+public class TikaGUI extends JFrame
+        implements ActionListener, HyperlinkListener {
 
     /**
      * Serial version UID.
@@ -158,11 +162,6 @@ public class TikaGUI extends JFrame implements ActionListener {
     private final JEditorPane metadata;
 
     /**
-     * Parsing errors.
-     */
-    private final JEditorPane errors;
-
-    /**
      * File chooser.
      */
     private final JFileChooser chooser = new JFileChooser();
@@ -174,14 +173,14 @@ public class TikaGUI extends JFrame implements ActionListener {
         addMenuBar();
 
         cards = new JPanel(layout);
+        addWelcomeCard(cards, "welcome");
+        metadata = addCard(cards, "text/plain", "metadata");
         html = addCard(cards, "text/html", "html");
         text = addCard(cards, "text/plain", "text");
         textMain = addCard(cards, "text/plain", "main");
         xml = addCard(cards, "text/plain", "xhtml");
-        metadata = addCard(cards, "text/plain", "metadata");
-        errors = addCard(cards, "text/plain", "error");
         add(cards);
-        layout.show(cards, "html");
+        layout.show(cards, "welcome");
 
         setPreferredSize(new Dimension(640, 480));
         pack();
@@ -207,18 +206,17 @@ public class TikaGUI extends JFrame implements ActionListener {
 
         JMenu view = new JMenu("View");
         view.setMnemonic(KeyEvent.VK_V);
-        ButtonGroup group = new ButtonGroup();
-        addRadioItem(view, group, true, "Formatted text", "html", KeyEvent.VK_F);
-        addRadioItem(view, group, false, "Plain text", "text", KeyEvent.VK_P);
-        addRadioItem(view, group, false, "Main content", "main", KeyEvent.VK_C);
-        addRadioItem(view, group, false, "Structured text", "xhtml", KeyEvent.VK_S);
-        addRadioItem(view, group, false, "Metadata", "metadata", KeyEvent.VK_M);
-        addRadioItem(view, group, false, "Errors", "error", KeyEvent.VK_E);
+        addMenuItem(view, "Metadata", "metadata", KeyEvent.VK_M);
+        addMenuItem(view, "Formatted text", "html", KeyEvent.VK_F);
+        addMenuItem(view, "Plain text", "text", KeyEvent.VK_P);
+        addMenuItem(view, "Main content", "main", KeyEvent.VK_C);
+        addMenuItem(view, "Structured text", "xhtml", KeyEvent.VK_S);
         bar.add(view);
 
         bar.add(Box.createHorizontalGlue());
         JMenu help = new JMenu("Help");
         help.setMnemonic(KeyEvent.VK_H);
+        addMenuItem(help, "About Tika", "about", KeyEvent.VK_A);
         bar.add(help);
 
         setJMenuBar(bar);
@@ -229,17 +227,6 @@ public class TikaGUI extends JFrame implements ActionListener {
         JMenuItem item = new JMenuItem(title, key);
         item.setActionCommand(command);
         item.addActionListener(this);
-        menu.add(item);
-    }
-
-    private void addRadioItem(
-            JMenu menu, ButtonGroup group, boolean selected,
-            String title, String command, int key) {
-        JRadioButtonMenuItem item = new JRadioButtonMenuItem(title, selected);
-        item.setMnemonic(key);
-        item.setActionCommand(command);
-        item.addActionListener(this);
-        group.add(item);
         menu.add(item);
     }
 
@@ -266,22 +253,18 @@ public class TikaGUI extends JFrame implements ActionListener {
             }
         } else if ("html".equals(command)) {
             layout.show(cards, command);
-            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
         } else if ("text".equals(command)) {
             layout.show(cards, command);
-            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
         } else if ("main".equals(command)) {
             layout.show(cards, command);
-            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
         } else if ("xhtml".equals(command)) {
             layout.show(cards, command);
-            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
         } else if ("metadata".equals(command)) {
             layout.show(cards, command);
-            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
-        } else if ("error".equals(command)) {
-            layout.show(cards, command);
-            ((JRadioButtonMenuItem) e.getSource()).setSelected(true);
+        } else if ("about".equals(command)) {
+            textDialog(
+                    "About Apache Tika",
+                    TikaGUI.class.getResource("about.html"));
         } else if ("exit".equals(command)) {
             Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(
                     new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
@@ -298,7 +281,7 @@ public class TikaGUI extends JFrame implements ActionListener {
                 stream.close();
             }
         } catch (Throwable t) {
-            handleError(t);
+            handleError(file.getPath(), t);
         }
     }
 
@@ -312,7 +295,7 @@ public class TikaGUI extends JFrame implements ActionListener {
                 stream.close();
             }
         } catch (Throwable t) {
-            handleError(t);
+            handleError(url.toString(), t);
         }
     }
 
@@ -345,38 +328,113 @@ public class TikaGUI extends JFrame implements ActionListener {
             metadataBuffer.append("\n");
         }
 
-        setText(errors, "");
+        String name = md.get(Metadata.RESOURCE_NAME_KEY);
+        if (name != null && name.length() > 0) {
+            setTitle("Apache Tika: " + name);
+        } else {
+            setTitle("Apache Tika: unnamed document");
+        }
+
         setText(metadata, metadataBuffer.toString());
         setText(xml, xmlBuffer.toString());
         setText(text, textBuffer.toString());
         setText(textMain, textMainBuffer.toString());
         setText(html, htmlBuffer.toString());
+        layout.show(cards, "metadata");
     }
 
-    private void handleError(Throwable t) {
+    private void handleError(String name, Throwable t) {
         StringWriter writer = new StringWriter();
+        writer.append("Apache Tika was unable to parse the document\n");
+        writer.append("at " + name + ".\n\n");
+        writer.append("The full exception stack trace is included below:\n\n");
         t.printStackTrace(new PrintWriter(writer));
-        setText(errors, writer.toString());
-        setText(metadata, "");
-        setText(xml, "");
-        setText(text, "");
-        setText(html, "");
-        JOptionPane.showMessageDialog(
-                this,
-                "Apache Tika was unable to parse this document.\n "
-                + " See the errors tab for the details of this error.",
-                "Parse error",
-                JOptionPane.ERROR_MESSAGE);
+
+        JEditorPane editor =
+            new JEditorPane("text/plain", writer.toString());
+        editor.setEditable(false);
+        editor.setBackground(Color.WHITE);
+        editor.setCaretPosition(0);
+        editor.setPreferredSize(new Dimension(600, 400));
+
+        JDialog dialog = new JDialog(this, "Apache Tika error");
+        dialog.add(new JScrollPane(editor));
+        dialog.pack();
+        dialog.setVisible(true);
+    }
+
+    private void addWelcomeCard(JPanel panel, String name) {
+        try {
+            JEditorPane editor =
+                new JEditorPane(TikaGUI.class.getResource("welcome.html"));
+            editor.setContentType("text/html");
+            editor.setEditable(false);
+            editor.setBackground(Color.WHITE);
+            editor.setTransferHandler(new ParsingTransferHandler(
+                    editor.getTransferHandler(), this));
+            panel.add(new JScrollPane(editor), name);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private JEditorPane addCard(JPanel panel, String type, String name) {
-        JEditorPane editor = new JEditorPane();
+        JEditorPane editor = new JTextPane();
         editor.setBackground(Color.WHITE);
         editor.setContentType(type);
         editor.setTransferHandler(new ParsingTransferHandler(
                 editor.getTransferHandler(), this));
         panel.add(new JScrollPane(editor), name);
         return editor;
+    }
+
+    private void textDialog(String title, URL resource) {
+        try {
+            JDialog dialog = new JDialog(this, title);
+            JEditorPane editor = new JEditorPane(resource);
+            editor.setContentType("text/html");
+            editor.setEditable(false);
+            editor.setBackground(Color.WHITE);
+            editor.setPreferredSize(new Dimension(400, 250));
+            editor.addHyperlinkListener(this);
+            dialog.add(editor);
+            dialog.pack();
+            dialog.setVisible(true);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void hyperlinkUpdate(HyperlinkEvent e) {
+        if (e.getEventType() == EventType.ACTIVATED) {
+            try {
+                URL url = e.getURL();
+                InputStream stream = url.openStream();
+                try {
+                    StringWriter writer = new StringWriter();
+                    IOUtils.copy(stream, writer, "UTF-8");
+
+                    JEditorPane editor =
+                        new JEditorPane("text/plain", writer.toString());
+                    editor.setEditable(false);
+                    editor.setBackground(Color.WHITE);
+                    editor.setCaretPosition(0);
+                    editor.setPreferredSize(new Dimension(600, 400));
+
+                    String name = url.toString();
+                    name = name.substring(name.lastIndexOf('/') + 1);
+
+                    JDialog dialog = new JDialog(this, "Apache Tika: " + name);
+                    dialog.add(new JScrollPane(editor));
+                    dialog.pack();
+                    dialog.setVisible(true);
+                } finally {
+                    stream.close();
+                }
+            } catch (IOException exception) {
+                exception.printStackTrace();
+            }
+        }
     }
 
     private void setText(JEditorPane editor, String text) {
