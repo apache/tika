@@ -21,20 +21,15 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
 import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.ArrayList;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
-
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
 
 /**
  * Utility class that turns drag-and-drop events into Tika parse requests.
@@ -83,10 +78,7 @@ class ParsingTransferHandler extends TransferHandler {
                         DataFlavor.javaFileListFlavor));
             } else if (transferable.isDataFlavorSupported(urlListFlavor)) {
                 Object data = transferable.getTransferData(urlListFlavor);
-                URL url = new URL(data.toString());
-                Metadata metadata = new Metadata();
-                TikaInputStream stream = TikaInputStream.get(url, metadata);
-                tika.importStream(stream, metadata);
+                tika.openURL(new URL(data.toString()));
             } else if (transferable.isDataFlavorSupported(uriListFlavor)) {
                 importFiles(uriToFileList(
                         transferable.getTransferData(uriListFlavor)));
@@ -97,12 +89,9 @@ class ParsingTransferHandler extends TransferHandler {
         }
     }
 
-    private void importFiles(List<File> files)
-            throws MalformedURLException, IOException {
+    private void importFiles(List<File> files) {
         for (File file : files) {
-            Metadata metadata = new Metadata();
-            TikaInputStream stream = TikaInputStream.get(file, metadata);
-            tika.importStream(stream, metadata);
+            tika.openFile(file);
         }
     }
 
