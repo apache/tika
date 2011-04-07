@@ -87,11 +87,25 @@ public class TikaCLI {
         Logger.getRootLogger().setLevel(Level.INFO);
 
         TikaCLI cli = new TikaCLI();
-        for (int i = 0; i < args.length; i++) {
-            cli.process(args[i]);
-        }
-        if (cli.pipeMode) {
-            cli.process("-");
+        if (args.length > 0) {
+            for (int i = 0; i < args.length; i++) {
+                cli.process(args[i]);
+            }
+            if (cli.pipeMode) {
+                cli.process("-");
+            }
+        } else {
+            // Started with no arguments. Wait for up to 0.1s to see if
+            // we have something waiting in standard input and use the
+            // pipe mode if we have. If no input is seen, start the GUI.
+            if (System.in.available() == 0) {
+                Thread.sleep(100);
+            }
+            if (System.in.available() > 0) {
+                cli.process("-");
+            } else {
+                cli.process("--gui");
+            }
         }
     }
 
@@ -348,7 +362,8 @@ public class TikaCLI {
         out.println();
         out.println("    If no file name or URL is specified (or the special");
         out.println("    name \"-\" is used), then the standard input stream");
-        out.println("    is parsed.");
+        out.println("    is parsed. If no arguments were given and no input");
+        out.println("    data is available, the GUI is started instead.");
         out.println();
         out.println("- GUI mode");
         out.println();
