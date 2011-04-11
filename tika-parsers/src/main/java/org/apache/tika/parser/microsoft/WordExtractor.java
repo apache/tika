@@ -40,7 +40,7 @@ import org.apache.poi.hwpf.usermodel.TableCell;
 import org.apache.poi.hwpf.usermodel.TableRow;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
@@ -54,11 +54,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     protected void parse(
-            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         HWPFDocument document;
         try {
-            document = new HWPFDocument(filesystem);
+            document = new HWPFDocument(filesystem.getRoot());
         } catch(OldWordFileFormatException e) {
             parseWord6(filesystem, xhtml);
             return;
@@ -345,9 +345,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
     
     protected void parseWord6(
-            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-        HWPFOldDocument doc = new HWPFOldDocument(filesystem);
+        HWPFOldDocument doc = new HWPFOldDocument(filesystem.getRoot());
         Word6Extractor extractor = new Word6Extractor(doc);
         
         for(String p : extractor.getParagraphText()) {

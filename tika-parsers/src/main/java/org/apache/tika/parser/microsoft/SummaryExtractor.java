@@ -29,7 +29,7 @@ import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.hpsf.UnexpectedPropertySetTypeException;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
@@ -52,14 +52,14 @@ class SummaryExtractor {
         this.metadata = metadata;
     }
 
-    public void parseSummaries(POIFSFileSystem filesystem)
+    public void parseSummaries(NPOIFSFileSystem filesystem)
             throws IOException, TikaException {
         parseSummaryEntryIfExists(filesystem, SUMMARY_INFORMATION);
         parseSummaryEntryIfExists(filesystem, DOCUMENT_SUMMARY_INFORMATION);
     }
 
     private void parseSummaryEntryIfExists(
-            POIFSFileSystem filesystem, String entryName)
+            NPOIFSFileSystem filesystem, String entryName)
             throws IOException, TikaException {
         try {
             DocumentEntry entry =

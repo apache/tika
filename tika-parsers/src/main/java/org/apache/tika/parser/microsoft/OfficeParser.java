@@ -19,7 +19,11 @@ package org.apache.tika.parser.microsoft;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
@@ -27,6 +31,7 @@ import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.Entry;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -95,6 +100,10 @@ public class OfficeParser extends AbstractParser {
             return detectType(fs.getRoot());
         }
 
+        public static POIFSDocumentType detectType(NPOIFSFileSystem fs) {
+           return detectType(fs.getRoot());
+       }
+
         public static POIFSDocumentType detectType(DirectoryEntry node) {
             for (Entry entry : node) {
                 POIFSDocumentType type = detectType(entry);
@@ -154,12 +163,18 @@ public class OfficeParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        POIFSFileSystem filesystem;
-        if(stream instanceof TikaInputStream && 
-        	((TikaInputStream)stream).getOpenContainer() != null) {
-            filesystem = (POIFSFileSystem)((TikaInputStream)stream).getOpenContainer();
+        NPOIFSFileSystem filesystem;
+        if(stream instanceof TikaInputStream) {
+            TikaInputStream tstream = (TikaInputStream)stream;
+        	   if(tstream.getOpenContainer() != null) {
+        	      filesystem = (NPOIFSFileSystem)tstream.getOpenContainer();
+        	   } else if(tstream.hasFile()) {
+        	      filesystem = new NPOIFSFileSystem(tstream.getFile());
+        	   } else {
+        	    filesystem = new NPOIFSFileSystem(tstream);
+        	   }
         } else {
-            filesystem = new POIFSFileSystem(stream);
+            filesystem = new NPOIFSFileSystem(stream);
         }
 
         // Parse summary entries first, to make metadata available early
