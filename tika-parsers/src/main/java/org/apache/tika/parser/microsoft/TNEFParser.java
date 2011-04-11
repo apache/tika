@@ -34,8 +34,8 @@ import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -44,7 +44,7 @@ import org.xml.sax.SAXException;
  * A POI-powered Tika Parser for TNEF (Transport Neutral
  *  Encoding Format) messages, aka winmail.dat
  */
-public class TNEFParser implements Parser {
+public class TNEFParser extends AbstractParser {
    private static final long serialVersionUID = 4611820730372823452L;
    
    private static final Set<MediaType> SUPPORTED_TYPES =
@@ -129,14 +129,5 @@ public class TNEFParser implements Parser {
                  new EmbeddedContentHandler(handler),
                  metadata, false);
        }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    public void parse(
-            InputStream stream, ContentHandler handler, Metadata metadata)
-            throws IOException, SAXException, TikaException {
-        parse(stream, handler, metadata, new ParseContext());
     }
 }
