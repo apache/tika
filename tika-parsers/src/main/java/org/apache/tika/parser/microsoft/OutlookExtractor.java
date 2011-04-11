@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
 import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.AttachmentChunks;
 import org.apache.poi.hsmf.datatypes.ByteChunk;
@@ -27,12 +28,13 @@ import org.apache.poi.hsmf.datatypes.MAPIProperty;
 import org.apache.poi.hsmf.datatypes.StringChunk;
 import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -43,7 +45,7 @@ import org.xml.sax.SAXException;
 public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final MAPIMessage msg;
 
-    public OutlookExtractor(POIFSFileSystem filesystem, ParseContext context) throws TikaException {
+    public OutlookExtractor(NPOIFSFileSystem filesystem, ParseContext context) throws TikaException {
         super(context);
         
         try {
@@ -179,7 +181,17 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
               }
            }
            if(rtfChunk != null && !doneBody) {
-              // TODO Needs POI 3.8 beta 2 for TNEF support
+              ByteChunk chunk = (ByteChunk)rtfChunk;
+              MAPIRtfAttribute rtf = new MAPIRtfAttribute(
+                    MAPIProperty.RTF_COMPRESSED, Types.BINARY, chunk.getValue()
+              );
+              RTFParser rtfParser = new RTFParser();
+              // Disabled pending a fix to TIKA-632
+//              rtfParser.parse(
+//                    new ByteArrayInputStream(rtf.getData()),
+//                    xhtml, new Metadata(), new ParseContext()
+//              );
+//              doneBody = true;
            }
            if(textChunk != null && !doneBody) {
               xhtml.element("p", ((StringChunk)textChunk).getValue());
