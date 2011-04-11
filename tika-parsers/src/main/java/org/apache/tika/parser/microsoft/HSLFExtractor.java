@@ -16,17 +16,17 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.IOException;
+import java.util.List;
+
 import org.apache.poi.hslf.extractor.PowerPointExtractor;
 import org.apache.poi.hslf.model.OLEShape;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.util.List;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
     public HSLFExtractor(ParseContext context) {
@@ -34,7 +34,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
     }
 
     protected void parse(
-            POIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         PowerPointExtractor powerPointExtractor =
             new PowerPointExtractor(filesystem);

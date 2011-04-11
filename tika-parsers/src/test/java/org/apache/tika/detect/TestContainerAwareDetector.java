@@ -21,7 +21,7 @@ import java.io.InputStream;
 
 import junit.framework.TestCase;
 
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -70,7 +70,7 @@ public class TestContainerAwareDetector extends TestCase {
             assertEquals(
                     MediaType.parse("application/vnd.ms-powerpoint"),
                     detector.detect(stream, new Metadata()));
-            assertTrue(stream.getOpenContainer() instanceof POIFSFileSystem);
+            assertTrue(stream.getOpenContainer() instanceof NPOIFSFileSystem);
         } finally {
             stream.close();
         }

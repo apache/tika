@@ -59,7 +59,7 @@ import org.apache.poi.hssf.record.common.UnicodeString;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
@@ -130,7 +130,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
      * or writing the extracted content
      */
     protected void parse(
-            POIFSFileSystem filesystem, XHTMLContentHandler xhtml,
+            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException, TikaException {
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
         listener.processFile(filesystem, isListenForAllRecords());
@@ -243,7 +243,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * @throws IOException on any IO errors.
          * @throws SAXException on any SAX parsing errors.
          */
-    	public void processFile(POIFSFileSystem filesystem, boolean listenForAllRecords)
+    	public void processFile(NPOIFSFileSystem filesystem, boolean listenForAllRecords)
     		throws IOException, SAXException, TikaException {
 
     		// Set up listener and register the records we want to process

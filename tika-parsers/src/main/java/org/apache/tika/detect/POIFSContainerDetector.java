@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.poi.poifs.filesystem.Entry;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.io.TikaInputStream;
@@ -141,9 +141,13 @@ public class POIFSContainerDetector implements Detector {
         TaggedInputStream tagged = new TaggedInputStream(
                 new BufferedInputStream(new FileInputStream(file)));
         try {
-            // POIFSFileSystem might try close the stream
-            POIFSFileSystem fs =
-                new POIFSFileSystem(new CloseShieldInputStream(tagged));
+            NPOIFSFileSystem fs;
+            if (stream.hasFile()) {
+               fs = new NPOIFSFileSystem(stream.getFile());
+            } else {
+               // Load from a stream, but prevent the stream being closed
+               fs = new NPOIFSFileSystem(new CloseShieldInputStream(tagged));
+            }
 
             // Optimize a possible later parsing process by keeping
             // a reference to the already opened POI file system
