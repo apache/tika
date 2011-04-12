@@ -47,6 +47,8 @@ public class ForkParser extends AbstractParser {
     /** Process pool size */
     private int poolSize = 5;
 
+    private int currentlyInUse = 0;
+
     private final Queue<ForkClient> pool =
         new LinkedList<ForkClient>();
 
@@ -148,17 +150,40 @@ public class ForkParser extends AbstractParser {
     }
 
     private synchronized ForkClient acquireClient()
-            throws IOException {
-        ForkClient client = pool.poll();
-        if (client == null || !client.ping()) {
-            client = new ForkClient(loader, parser, java);
+            throws IOException, TikaException {
+        while (true) {
+            ForkClient client = pool.poll();
+
+            // Create a new process if there's room in the pool
+            if (client == null && currentlyInUse < poolSize) {
+                client = new ForkClient(loader, parser, java);
+            }
+
+            // Ping the process, and get rid of it if it's inactive
+            if (client != null && !client.ping()) {
+                client.close();
+                client = null;
+            }
+
+            if (client != null) {
+                currentlyInUse++;
+                return client;
+            } else if (currentlyInUse >= poolSize) {
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    throw new TikaException(
+                            "Interrupted while waiting for a fork parser", e);
+                }
+            }
         }
-        return client;
     }
 
     private synchronized void releaseClient(ForkClient client, boolean alive) {
-        if (pool.size() < poolSize && alive) {
+        currentlyInUse--;
+        if (currentlyInUse + pool.size() < poolSize && alive) {
             pool.offer(client);
+            notifyAll();
         } else {
             client.close();
         }
