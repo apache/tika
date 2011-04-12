@@ -180,7 +180,7 @@ class ForkServer implements Runnable, Checksum {
         return object;
     }
 
-    //-------------------------------------------------------------< Checsum >
+    //------------------------------------------------------------< Checksum >
 
     public void update(int b) {
         active = true;
