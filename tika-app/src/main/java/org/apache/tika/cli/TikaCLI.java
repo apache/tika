@@ -29,6 +29,7 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -66,6 +67,7 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.NetworkParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -74,7 +76,6 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
 
 /**
  * Simple command line interface for Apache Tika.
@@ -216,7 +217,7 @@ public class TikaCLI {
     
     private Detector detector;
 
-    private AutoDetectParser parser;
+    private Parser parser;
 
     private Metadata metadata;
 
@@ -229,7 +230,7 @@ public class TikaCLI {
 
     private boolean pipeMode = true;
 
-    private boolean portMode = false;
+    private boolean serverMode = false;
 
     private boolean fork = false;
 
@@ -287,13 +288,20 @@ public class TikaCLI {
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
-        } else if (arg.equals("-p") || arg.equals("--port")) {
-            portMode = true;
+        } else if (arg.equals("-p") || arg.equals("--port")
+                || arg.equals("-s") || arg.equals("--server")) {
+            serverMode = true;
             pipeMode = false;
+        } else if (arg.startsWith("-c")) {
+            URI uri = new URI(arg.substring("-c".length()));
+            parser = new NetworkParser(uri);
+        } else if (arg.startsWith("--client=")) {
+            URI uri = new URI(arg.substring("--client=".length()));
+            parser = new NetworkParser(uri);
         } else {
             pipeMode = false;
             metadata = new Metadata();
-            if (portMode) {
+            if (serverMode) {
                 new TikaServer(Integer.parseInt(arg)).start();
             } else if (arg.equals("-")) {
                 InputStream stream =
@@ -467,6 +475,7 @@ public class TikaCLI {
      * Prints all the known media types, aliases and matching parser classes.
      */
     private void displaySupportedTypes() {
+        AutoDetectParser parser = new AutoDetectParser();
         MediaTypeRegistry registry = parser.getMediaTypeRegistry();
         Map<MediaType, Parser> parsers = parser.getParsers();
 
@@ -479,9 +488,9 @@ public class TikaCLI {
             if (supertype != null) {
                 System.out.println("  supertype: " + supertype);
             }
-            Parser parser = parsers.get(type);
-            if (parser != null) {
-                System.out.println("  parser:    " + parser.getClass().getName());
+            Parser p = parsers.get(type);
+            if (p != null) {
+                System.out.println("  parser:    " + p.getClass().getName());
             }
         }
     }
