@@ -22,8 +22,11 @@ import java.io.InputStream;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.descriptor.BodyDescriptor;
 import org.apache.james.mime4j.field.AbstractField;
+import org.apache.james.mime4j.field.AddressListField;
+import org.apache.james.mime4j.field.DateTimeField;
 import org.apache.james.mime4j.field.MailboxListField;
 import org.apache.james.mime4j.field.UnstructuredField;
+import org.apache.james.mime4j.field.address.AddressList;
 import org.apache.james.mime4j.field.address.MailboxList;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.parser.Field;
@@ -123,29 +126,80 @@ class MailContentHandler implements ContentHandler {
         if (inPart) {
             return;
         }
-        
-        // TODO add metadata to the parts later
+
         String fieldname = field.getName();
         if (fieldname.equalsIgnoreCase("From")) {
-           MailboxListField fromField = (MailboxListField) AbstractField.parse(field.getRaw());
-           MailboxList mailboxList = fromField.getMailboxList();
-           if(mailboxList != null) {
-              // Add each person in turn
-              for (int i = 0; i < mailboxList.size(); ++i) {
-                 metadata.add(Metadata.AUTHOR, mailboxList.get(i).getDisplayString());        		
-              }
-           } else {
-              // Not a typical from field, do our best
-              String from = fromField.getBody();
-              if(from != null) {
-                 if(from.startsWith("<")) from = from.substring(1);
-                 if(from.endsWith(">")) from = from.substring(0, from.length()-1);
-                 metadata.add(Metadata.AUTHOR, from);
-              }
-           }
+            MailboxListField fromField =
+                (MailboxListField) AbstractField.parse(field.getRaw());
+            MailboxList mailboxList = fromField.getMailboxList();
+            if (fromField.isValidField() && mailboxList != null) {
+                for (int i = 0; i < mailboxList.size(); i++) {
+                    String from = mailboxList.get(i).getDisplayString();
+                    metadata.add(Metadata.MESSAGE_FROM, from);
+                    metadata.add(Metadata.AUTHOR, from);
+                }
+            } else {
+                String from =
+                    stripOutFieldPrefix(field.getRaw().toString(), "From:");
+                if (from.startsWith("<")) {
+                    from = from.substring(1);
+                }
+                if (from.endsWith(">")) {
+                    from = from.substring(0, from.length() - 1);
+                }
+                metadata.add(Metadata.MESSAGE_FROM, from);
+                metadata.add(Metadata.AUTHOR, from);
+            }
         } else if (fieldname.equalsIgnoreCase("Subject")) {
-        	UnstructuredField subjectField = (UnstructuredField) AbstractField.parse(field.getRaw());
+            UnstructuredField subjectField =
+                (UnstructuredField) AbstractField.parse(field.getRaw());
             metadata.add(Metadata.SUBJECT, subjectField.getValue());
+        } else if (fieldname.equalsIgnoreCase("To")) {
+            AddressListField toField =
+                (AddressListField) AbstractField.parse(field.getRaw());
+            if (toField.isValidField()) {
+                AddressList addressList = toField.getAddressList();
+                for (int i = 0; i < addressList.size(); ++i) {
+                    metadata.add(Metadata.MESSAGE_TO, addressList.get(i).getDisplayString());
+                }
+            } else {
+                String to = stripOutFieldPrefix(field.getRaw().toString(), "To:");
+                for (String eachTo : to.split(",")) {
+                    metadata.add(Metadata.MESSAGE_TO, eachTo.trim());
+                }
+            }
+        } else if (fieldname.equalsIgnoreCase("CC")) {
+            AddressListField ccField =
+                (AddressListField) AbstractField.parse(field.getRaw());
+            if (ccField.isValidField()) {
+                AddressList addressList = ccField.getAddressList();
+                for (int i = 0; i < addressList.size(); ++i) {
+                    metadata.add(Metadata.MESSAGE_CC, addressList.get(i).getDisplayString());
+                }
+            } else {
+                String Cc = stripOutFieldPrefix(field.getRaw().toString(), "Cc:");
+                for (String eachCc : Cc.split(",")) {
+                    metadata.add(Metadata.MESSAGE_CC, eachCc.trim());
+                }
+            }
+        } else if (fieldname.equalsIgnoreCase("BCC")) {
+            AddressListField bccField =
+                (AddressListField) AbstractField.parse(field.getRaw());
+            if(bccField.isValidField()){
+                AddressList addressList = bccField.getAddressList();
+                for (int i = 0; i < addressList.size(); ++i) {
+                    metadata.add(Metadata.MESSAGE_BCC, addressList.get(i).getDisplayString());
+                }
+            } else {
+                String Bcc = stripOutFieldPrefix(field.getRaw().toString(), "Bcc:");
+                for(String eachBcc : Bcc.split(",")){
+                    metadata.add(Metadata.MESSAGE_CC, eachBcc.trim());
+                }
+            }
+        }  else if (fieldname.equalsIgnoreCase("Date")) {
+            DateTimeField dateField =
+                (DateTimeField) AbstractField.parse(field.getRaw());
+            metadata.set(Metadata.CREATION_DATE, dateField.getDate());
         }
     }
 
@@ -171,6 +225,14 @@ class MailContentHandler implements ContentHandler {
 
     public void startMultipart(BodyDescriptor descr) throws MimeException {
         inPart = true;
+    }
+
+    public String stripOutFieldPrefix(String rawField, String fieldname){
+        String temp = rawField.substring(fieldname.length(), rawField.length());
+        while (temp.startsWith(" ")) {
+            temp = temp.substring(1);
+        }
+        return temp;
     }
 
 }
