@@ -17,16 +17,20 @@
 package org.apache.tika.fork;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
+import java.util.concurrent.Semaphore;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class ForkParserTest extends TestCase {
@@ -98,17 +102,24 @@ public class ForkParserTest extends TestCase {
         }
     }
 
-    public void disabledTestPoolSizeReached() throws Exception {
+    public void testPoolSizeReached() throws Exception {
         final ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
                 new ForkTestParser());
         try {
-            final ParseContext context = new ParseContext();
+            final Semaphore barrier = new Semaphore(0);
 
             Thread[] threads = new Thread[parser.getPoolSize()];
             PipedOutputStream[] pipes = new PipedOutputStream[threads.length];
+            final ParseContext context = new ParseContext();
             for (int i = 0; i < threads.length; i++) {
-                final PipedInputStream input = new PipedInputStream();
+                final PipedInputStream input = new PipedInputStream() {
+                    @Override
+                    public synchronized int read() throws IOException {
+                        barrier.release();
+                        return super.read();
+                    }
+                };
                 pipes[i] = new PipedOutputStream(input);
                 threads[i] = new Thread() {
                     public void run() {
@@ -123,11 +134,14 @@ public class ForkParserTest extends TestCase {
                 threads[i].start();
             }
 
-            Thread.sleep(1000);
+            // Wait until all the background parsers have been started
+            barrier.acquire(parser.getPoolSize());
+
             final ContentHandler o = new BodyContentHandler();
             Thread blocked = new Thread() {
                 public void run() {
                     try {
+                        barrier.release();
                         InputStream stream =
                             new ByteArrayInputStream(new byte[0]);
                         parser.parse(stream, o, new Metadata(), context);
@@ -138,7 +152,12 @@ public class ForkParserTest extends TestCase {
             };
             blocked.start();
 
+            // Wait until the last thread is started, and then some to
+            // make sure that it would have had a chance to start processing
+            // data had it not been blocked.
+            barrier.acquire();
             Thread.sleep(1000);
+
             assertEquals("", o.toString());
 
             for (int i = 0; i < threads.length; i++) {
