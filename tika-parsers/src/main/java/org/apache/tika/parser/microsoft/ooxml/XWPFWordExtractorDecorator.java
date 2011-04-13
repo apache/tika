@@ -33,6 +33,7 @@ import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private XWPFDocument document;
@@ -159,7 +160,12 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
              if(paragraph.getDocument() != null) {
                 XWPFPictureData data = picture.getPictureData();
                 if(data != null) {
-                   xhtml.startElement("img", "src", "embedded:" + data.getFileName());
+                   AttributesImpl attr = new AttributesImpl();
+
+                   attr.addAttribute("", "src", "src", "CDATA", "embedded:" + data.getFileName());
+                   attr.addAttribute("", "alt", "alt", "CDATA", picture.getDescription());
+
+                   xhtml.startElement("img", attr);
                    xhtml.endElement("img");
                 }
              }
