@@ -118,6 +118,10 @@ public class RTFParser extends AbstractParser {
             xhtml.endDocument();
         } catch (BadLocationException e) {
             throw new TikaException("Error parsing an RTF document", e);
+        } catch (NullPointerException e) {
+            // TIKA-621: RTF parsing fails with Java 7 early access
+            // on 64bit platforms
+            throw new TikaException("Error parsing an RTF document", e);
         } finally {
             IOUtils.closeQuietly(in);
             if (tempFile != null) {
