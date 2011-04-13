@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.james.mime4j.MimeException;
+import org.apache.james.mime4j.parser.MimeEntityConfig;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -50,7 +51,9 @@ public class RFC822Parser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
-        MimeStreamParser parser = new MimeStreamParser();
+        MimeEntityConfig config = new MimeEntityConfig();
+        config.setMaxLineLen(10000); //this is max length of any individual header
+        MimeStreamParser parser = new MimeStreamParser(config);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(xhtml, metadata);
