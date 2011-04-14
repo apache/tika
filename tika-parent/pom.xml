@@ -177,6 +177,14 @@
       </roles>
       <timezone>+3</timezone>
     </developer>
+	<developer>
+      <name>Oleg Tikhonov</name>
+      <id>oleg</id>
+      <roles>
+        <role>committer</role>
+      </roles>
+      <timezone>+2</timezone>
+    </developer>
   </developers>
   <contributors>
     <contributor>
