@@ -377,7 +377,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                    styleName.substring(styleName.length()-1)
              );
           } catch(NumberFormatException e) {}
-          tag = "h"+num;
+          // Turn it into a H1 - H6 (H7+ isn't valid!)
+          tag = "h" + Math.min(num, 6);
        } else if(styleName.equals("Title")) {
           tag = "h1";
           styleClass = "title";
