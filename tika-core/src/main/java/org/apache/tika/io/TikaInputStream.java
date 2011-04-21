@@ -625,4 +625,13 @@ public class TikaInputStream extends ProxyInputStream {
         }
     }
 
+    public String toString() {
+       String str = "TikaInputStream of ";
+       if(hasFile()) {
+          str += file.toString();
+       } else {
+          str += in.toString();
+       }
+       return str;
+    }
 }

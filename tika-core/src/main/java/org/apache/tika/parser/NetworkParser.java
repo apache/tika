@@ -102,7 +102,7 @@ public class NetworkParser extends AbstractParser {
         private volatile Exception exception = null;
 
         public ParsingTask(InputStream input, OutputStream output) {
-            this.input = new TaggedInputStream(input);
+            this.input = TaggedInputStream.get(input);
             this.output = output;
         }
 

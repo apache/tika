@@ -63,8 +63,21 @@ public class TaggedInputStream extends ProxyInputStream {
      *
      * @param proxy input stream to be decorated
      */
-    public TaggedInputStream(InputStream proxy) {
+    private TaggedInputStream(InputStream proxy) {
         super(proxy);
+    }
+    
+    /**
+     * Casts or wraps the given stream to a TaggedInputStream instance.
+     *
+     * @param stream normal input stream
+     * @return a TaggedInputStream instance
+     */
+    public static TaggedInputStream get(InputStream proxy) {
+       if(proxy instanceof TaggedInputStream) {
+          return (TaggedInputStream)proxy;
+       }
+       return new TaggedInputStream(proxy);
     }
 
     /**
@@ -113,4 +126,7 @@ public class TaggedInputStream extends ProxyInputStream {
         throw new TaggedIOException(e, this);
     }
 
+    public String toString() {
+        return "Tika Tagged InputStream wrapping " + in.toString(); 
+    }
 }
