@@ -176,4 +176,7 @@ public class CountingInputStream extends ProxyInputStream {
         return tmp;
     }
 
+    public String toString() {
+       return "Tika Counting InputStream wrapping " + in.toString(); 
+   }
 }
