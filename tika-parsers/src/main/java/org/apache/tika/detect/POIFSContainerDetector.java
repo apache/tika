@@ -18,9 +18,7 @@ package org.apache.tika.detect;
 
 import static org.apache.tika.mime.MediaType.application;
 
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -29,8 +27,6 @@ import java.util.Set;
 
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
-import org.apache.tika.io.CloseShieldInputStream;
-import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -42,6 +38,11 @@ import org.apache.tika.mime.MediaType;
  *  they are ones supported by POI or not.
  */
 public class POIFSContainerDetector implements Detector {
+
+    /**
+     * Serial version UID.
+     */
+    private static final long serialVersionUID = -3028021741663605293L;
 
     /** The OLE base file format */
     public static final MediaType OLE = application("x-tika-msoffice");
@@ -136,18 +137,8 @@ public class POIFSContainerDetector implements Detector {
         // so we don't modify the current position of the stream
         File file = stream.getFile();
 
-        // Use a tagged stream to distinguish between real I/O problems
-        // and parse errors thrown as IOExceptions by POI.
-        TaggedInputStream tagged = new TaggedInputStream(
-                new BufferedInputStream(new FileInputStream(file)));
         try {
-            NPOIFSFileSystem fs;
-            if (stream.hasFile()) {
-               fs = new NPOIFSFileSystem(stream.getFile());
-            } else {
-               // Load from a stream, but prevent the stream being closed
-               fs = new NPOIFSFileSystem(new CloseShieldInputStream(tagged));
-            }
+            NPOIFSFileSystem fs = new NPOIFSFileSystem(file);
 
             // Optimize a possible later parsing process by keeping
             // a reference to the already opened POI file system
@@ -159,15 +150,11 @@ public class POIFSContainerDetector implements Detector {
             }
             return names;
         } catch (IOException e) {
-            // Was this a real I/O problem?
-            tagged.throwIfCauseOf(e);
             // Parse error in POI, so we don't know the file type
             return Collections.emptySet();
         } catch (RuntimeException e) {
             // Another problem in POI
             return Collections.emptySet();
-        } finally {
-            tagged.close();
         }
     }
 
