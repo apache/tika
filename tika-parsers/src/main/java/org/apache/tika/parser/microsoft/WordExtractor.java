@@ -147,18 +147,22 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           return (t.numParagraphs()-1);
        }
 
-       StyleDescription style = 
-          document.getStyleSheet().getStyleDescription(p.getStyleIndex());
-       TagAndStyle tas = buildParagraphTagAndStyle(
-             style.getName(), (parentTableLevel>0)
-       );
+       TagAndStyle tas;
+
+       if (document.getStyleSheet().numStyles()>p.getStyleIndex()) {
+           StyleDescription style =
+              document.getStyleSheet().getStyleDescription(p.getStyleIndex());
+           tas = buildParagraphTagAndStyle(style.getName(), (parentTableLevel>0));
+       } else {
+           tas = new TagAndStyle("p", null);
+       }
 
        if(tas.getStyleClass() != null) {
-          xhtml.startElement(tas.getTag(), "class", tas.getStyleClass());
+           xhtml.startElement(tas.getTag(), "class", tas.getStyleClass());
        } else {
-          xhtml.startElement(tas.getTag());
+           xhtml.startElement(tas.getTag());
        }
-       
+
        for(int j=0; j<p.numCharacterRuns(); j++) {
           CharacterRun cr = p.getCharacterRun(j);
           
