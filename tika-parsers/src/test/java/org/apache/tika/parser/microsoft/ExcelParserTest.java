@@ -165,4 +165,25 @@ public class ExcelParserTest extends TestCase {
             input.close();
         }
     }
+
+    public void testJXL() throws Exception {
+        InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/jxl.xls");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler(-1);
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            new OfficeParser().parse(input, handler, metadata, context);
+
+            assertEquals(
+                    "application/vnd.ms-excel",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            String content = handler.toString();
+            assertTrue(content.contains("Number Formats"));
+        } finally {
+            input.close();
+        }
+    }
+
 }
