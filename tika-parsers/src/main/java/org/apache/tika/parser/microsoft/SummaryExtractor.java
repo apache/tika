@@ -75,7 +75,7 @@ class SummaryExtractor {
         } catch (FileNotFoundException e) {
             // entry does not exist, just skip it
         } catch (NoPropertySetStreamException e) {
-            throw new TikaException("Not a HPSF document", e);
+            // no property stream, just skip it
         } catch (UnexpectedPropertySetTypeException e) {
             throw new TikaException("Unexpected HPSF document", e);
         } catch (MarkUnsupportedException e) {
