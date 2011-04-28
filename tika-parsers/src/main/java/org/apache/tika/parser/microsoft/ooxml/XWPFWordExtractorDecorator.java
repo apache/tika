@@ -227,6 +227,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private void extractHeaders(
             XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
             throws SAXException, XmlException, IOException {
+        if (hfPolicy == null) return;
+       
         if (hfPolicy.getFirstPageHeader() != null) {
             extractHeaderText(xhtml, hfPolicy.getFirstPageHeader());
         }
