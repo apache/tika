@@ -31,6 +31,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -76,6 +78,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import com.google.gson.Gson;
 
 /**
  * Simple command line interface for Apache Tika.
@@ -187,6 +191,16 @@ public class TikaCLI {
         }
     };
 
+    private final OutputType JSON = new OutputType() {
+       @Override
+       protected ContentHandler getContentHandler(OutputStream output)
+               throws Exception {
+           final PrintWriter writer =
+               new PrintWriter(getOutputWriter(output, encoding));
+           return new NoDocumentJSONMetHandler(writer);
+       }
+   };
+
     private final OutputType LANGUAGE = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(OutputStream output)
@@ -271,6 +285,8 @@ public class TikaCLI {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
             encoding = arg.substring("--encoding=".length());
+        } else  if (arg.equals("-j") || arg.equals("--json")) {
+            type = JSON;            
         } else if (arg.equals("-x") || arg.equals("--xml")) {
             type = XML;
         } else if (arg.equals("-h") || arg.equals("--html")) {
@@ -343,6 +359,7 @@ public class TikaCLI {
         out.println();
         out.println("    -x  or --xml         Output XHTML content (default)");
         out.println("    -h  or --html        Output HTML content");
+        out.println("    -j  or --json        Output JSON content");
         out.println("    -t  or --text        Output plain text content");
         out.println("    -T  or --text-main   Output plain text content (main content only)");
         out.println("    -m  or --metadata    Output only metadata");
@@ -641,7 +658,7 @@ public class TikaCLI {
     
     private class NoDocumentMetHandler extends DefaultHandler{
         
-        private PrintWriter writer;
+        protected PrintWriter writer;
         
         private boolean metOutput;
         
@@ -654,12 +671,16 @@ public class TikaCLI {
         public void endDocument() {
             String[] names = metadata.names();
             Arrays.sort(names);
-            for (String name : names) {
-                writer.println(name + ": " + metadata.get(name));
-            }
+            outputMetadata(names);
             writer.flush();
             this.metOutput = true;
-        }        
+        }
+        
+        public void outputMetadata(String[] names) {
+           for (String name : names) {
+              writer.println(name + ": " + metadata.get(name));
+          }
+        }
         
         public boolean metOutput(){
             return this.metOutput;
@@ -667,4 +688,65 @@ public class TikaCLI {
         
     }
 
+    /**
+     * Uses GSON to do the JSON escaping, but does
+     *  the general JSON glueing ourselves.
+     */
+    private class NoDocumentJSONMetHandler extends NoDocumentMetHandler {
+        private NumberFormat formatter;
+        private Gson gson;
+       
+        public NoDocumentJSONMetHandler(PrintWriter writer){
+            super(writer);
+            
+            formatter = NumberFormat.getInstance();
+            gson = new Gson();
+        }
+        
+        @Override
+        public void outputMetadata(String[] names) {
+           writer.print("{ ");
+           boolean first = true;
+           for (String name : names) {
+              if(! first) {
+                 writer.println(", ");
+              } else {
+                 first = false;
+              }
+              gson.toJson(name, writer);
+              writer.print(":");
+              outputValues(metadata.getValues(name));
+           }
+           writer.print(" }");
+        }
+        
+        public void outputValues(String[] values) {
+           if(values.length > 1) {
+              writer.print("[");
+           }
+           for(int i=0; i<values.length; i++) {
+              String value = values[i];
+              if(i > 0) {
+                 writer.print(", ");
+              }
+              
+              if(value == null || value.length() == 0) {
+                 writer.print("null");
+              } else {
+                 // Is it a number?
+                 ParsePosition pos = new ParsePosition(0);
+                 formatter.parse(value, pos);
+                 if(value.length() == pos.getIndex()) {
+                    writer.print(value);
+                 } else {
+                    // Not a number, escape it
+                    gson.toJson(value, writer);
+                 }
+              }
+           }
+           if(values.length > 1) {
+              writer.print("]");
+           }
+        }
+    }
 }
