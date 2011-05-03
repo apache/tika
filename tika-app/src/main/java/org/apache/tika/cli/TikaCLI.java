@@ -399,7 +399,7 @@ public class TikaCLI {
         for (Class<?> modelClass: modelClasses) {
             // we don't care about internal Tika met classes
             // if we do, then we can take this conditional out
-            if (modelClass.getSimpleName().contains("Tika")) {
+            if (!modelClass.getSimpleName().contains("Tika")) {
                 System.out.println(modelClass.getSimpleName());
                 Field[] keyFields = modelClass.getFields();
                 Arrays.sort(keyFields, new Comparator<Field>() {
