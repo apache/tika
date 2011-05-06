@@ -245,6 +245,11 @@
           <artifactId>maven-bundle-plugin</artifactId>
           <version>2.1.0</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.8.1</version>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
@@ -284,6 +289,22 @@
                 </goals>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>sonar</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>**/ForkParserTest.java</exclude>
+              </excludes>
+            </configuration>
           </plugin>
         </plugins>
       </build>
