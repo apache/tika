@@ -18,6 +18,7 @@ package org.apache.tika.io;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -604,7 +605,12 @@ public class TikaInputStream extends ProxyInputStream {
             in.close();
             in = null;
         }
-        openContainer = null;
+        if (openContainer != null) {
+           if (openContainer instanceof Closeable) {
+              ((Closeable)openContainer).close();
+           }
+           openContainer = null;
+        }
         file = null;
         tmp.dispose();
     }
