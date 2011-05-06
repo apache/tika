@@ -59,6 +59,11 @@ public class OutlookParserTest extends TestCase {
         assertEquals(
                 "L'\u00C9quipe Microsoft Outlook Express",
                 metadata.get(Metadata.AUTHOR));
+        
+        // Stored as Thu, 5 Apr 2007 09:26:06 -0700
+        assertEquals(
+                "2007-04-05T16:26:06Z",
+                metadata.get(Metadata.DATE));
 
         String content = handler.toString();
         assertTrue(content.contains(""));
