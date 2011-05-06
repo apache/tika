@@ -27,6 +27,7 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.tika.io.IOUtils;
@@ -39,6 +40,10 @@ import org.apache.tika.mime.MediaType;
  *  to figure out exactly what the file is
  */
 public class ZipContainerDetector implements Detector {
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = 2891763938430295453L;
 
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
@@ -109,7 +114,7 @@ public class ZipContainerDetector implements Detector {
             if (zip.getEntry("_rels/.rels") != null
                     || zip.getEntry("[Content_Types].xml") != null) {
                 // Use POI to open and investigate it for us
-                OPCPackage pkg = OPCPackage.open(stream.getFile().getPath());
+                OPCPackage pkg = OPCPackage.open(stream.getFile().getPath(), PackageAccess.READ);
                 stream.setOpenContainer(pkg);
 
                 PackageRelationshipCollection core = 
