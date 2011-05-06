@@ -166,9 +166,17 @@ public final class Property {
         return new Property(name, false, ValueType.DATE);
     }
 
+    public static Property externalReal(String name) {
+       return new Property(name, false, ValueType.REAL);
+   }
+
     public static Property externalInteger(String name) {
         return new Property(name, false, ValueType.INTEGER);
     }
+
+    public static Property externalBoolean(String name) {
+       return new Property(name, false, ValueType.BOOLEAN);
+   }
 
     public static Property externalText(String name) {
         return new Property(name, false, ValueType.TEXT);
