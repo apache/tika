@@ -18,6 +18,8 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.text.ParseException;
+import java.util.Date;
 
 import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
 import org.apache.poi.hsmf.MAPIMessage;
@@ -34,6 +36,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -109,8 +112,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            // Date - try two ways to find it
            // First try via the proper chunk
            if(msg.getMessageDate() != null) {
-              metadata.set(Metadata.EDIT_TIME, msg.getMessageDate().getTime().toString());
-              metadata.set(Metadata.LAST_SAVED, msg.getMessageDate().getTime().toString());
+              metadata.set(Metadata.DATE, msg.getMessageDate().getTime());
+              metadata.set(Metadata.CREATION_DATE, msg.getMessageDate().getTime());
+              metadata.set(Metadata.LAST_SAVED, msg.getMessageDate().getTime());
            } else {
               try {
                  // Failing that try via the raw headers 
@@ -118,9 +122,20 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                  if(headers != null && headers.length > 0) {
                      for(String header: headers) {
                         if(header.toLowerCase().startsWith("date:")) {
-                            String date = header.substring(header.indexOf(':')+1);
-                            metadata.set(Metadata.EDIT_TIME, date);
-                            metadata.set(Metadata.LAST_SAVED, date);
+                            String date = header.substring(header.indexOf(':')+1).trim();
+                            
+                            // See if we can parse it as a normal mail date
+                            try {
+                               Date d = MboxParser.parseDate(date);
+                               metadata.set(Metadata.DATE, d);
+                               metadata.set(Metadata.CREATION_DATE, d);
+                               metadata.set(Metadata.LAST_SAVED, d);
+                            } catch(ParseException e) {
+                               // Store it as-is, and hope for the best...
+                               metadata.set(Metadata.DATE, date);
+                               metadata.set(Metadata.CREATION_DATE, date);
+                               metadata.set(Metadata.LAST_SAVED, date);
+                            }
                             break;
                         }
                      }

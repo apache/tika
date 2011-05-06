@@ -243,7 +243,7 @@ public class MboxParser extends AbstractParser {
         }
     }
     
-    private Date parseDate(String headerContent) throws ParseException {
+    public static Date parseDate(String headerContent) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.US);
         return dateFormat.parse(headerContent);
     }
