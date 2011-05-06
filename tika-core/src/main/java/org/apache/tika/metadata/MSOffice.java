@@ -83,4 +83,11 @@ public interface MSOffice {
     /** When was the document last printed? */
     Property LAST_PRINTED = 
        Property.internalDate("Last-Printed");
+    
+    /** 
+     * For user defined metadata entries in the document,
+     *  what prefix should be attached to the key names.
+     * eg <meta:user-defined meta:name="Info1">Text1</meta:user-defined> becomes custom:Info1=Text1
+     */
+    String USER_DEFINED_METADATA_NAME_PREFIX = "custom:";
 }
