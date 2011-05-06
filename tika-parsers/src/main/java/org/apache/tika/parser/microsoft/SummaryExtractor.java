@@ -136,13 +136,7 @@ class SummaryExtractor {
 
     private void set(Property property, Date value) {
         if (value != null) {
-            metadata.set(property, value.toString());
-        }
-    }
-
-    private void set(String name, Date value) {
-        if (value != null) {
-            metadata.set(name, value.toString());
+            metadata.set(property, value);
         }
     }
 

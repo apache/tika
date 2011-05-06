@@ -42,6 +42,13 @@ public class ExcelParserTest extends TestCase {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
+            
+            // Mon Oct 01 17:13:56 BST 2007
+            assertEquals("2007-10-01T16:13:56Z", metadata.get(Metadata.CREATION_DATE));
+            
+            // Mon Oct 01 17:31:43 BST 2007
+            assertEquals("2007-10-01T16:31:43Z", metadata.get(Metadata.LAST_SAVED));
+            
             String content = handler.toString();
             assertTrue(content.contains("Sample Excel Worksheet"));
             assertTrue(content.contains("Numbers and their Squares"));
