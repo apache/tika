@@ -85,7 +85,7 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.LAST_AUTHOR, propsHolder
                 .getLastModifiedByProperty());
         addProperty(metadata, Metadata.LAST_PRINTED, propsHolder
-                .getLastPrintedPropertyString());
+                .getLastPrintedProperty());
         addProperty(metadata, Metadata.LAST_MODIFIED, propsHolder
                 .getModifiedProperty());
         addProperty(metadata, Metadata.REVISION_NUMBER, propsHolder
