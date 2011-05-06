@@ -44,6 +44,10 @@ import org.xml.sax.SAXException;
  * via metadata, which means headers from subsequent emails will be lost.
  */
 public class MboxParser extends AbstractParser {
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -1762689436731160661L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("mbox"));
@@ -218,7 +222,9 @@ public class MboxParser extends AbstractParser {
             metadata.add(Metadata.TITLE, headerContent);
         } else if (headerTag.equalsIgnoreCase("Date")) {
             try {
-                metadata.set(Metadata.DATE, parseDate(headerContent));
+                Date date = parseDate(headerContent);
+                metadata.set(Metadata.DATE, date);
+                metadata.set(Metadata.CREATION_DATE, date);
             } catch (ParseException e) {
                 // ignoring date because format was not understood
             }

@@ -199,6 +199,7 @@ class MailContentHandler implements ContentHandler {
         }  else if (fieldname.equalsIgnoreCase("Date")) {
             DateTimeField dateField =
                 (DateTimeField) AbstractField.parse(field.getRaw());
+            metadata.set(Metadata.DATE, dateField.getDate());
             metadata.set(Metadata.CREATION_DATE, dateField.getDate());
         }
     }
