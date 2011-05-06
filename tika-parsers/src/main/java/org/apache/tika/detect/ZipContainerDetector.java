@@ -20,8 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
-import javax.xml.namespace.QName;
-
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.poi.extractor.ExtractorFactory;
@@ -34,6 +32,8 @@ import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.iwork.IWorkPackageParser;
+import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 
 /**
  * A detector that works on a Zip document
@@ -151,58 +151,21 @@ public class ZipContainerDetector implements Detector {
     }
 
     private MediaType detectIWork(ZipFile zip) {
-        if (zip.getEntry("buildVersionHistory.plist") != null) {
+        if (zip.getEntry(IWorkPackageParser.IWORK_COMMON_ENTRY) != null) {
             // Locate the appropriate index file entry, and reads from that
             // the root element of the document. That is used to the identify
             // the correct type of the keynote container.
-            MediaType type = detectIWork(zip, "index.apxl");
-            if (type == null) {
-                type = detectIWork(zip, "index.xml");
+            for (String entryName : IWorkPackageParser.IWORK_CONTENT_ENTRIES) {
+               IWORKDocumentType type = IWORKDocumentType.detectType(zip.getEntry(entryName), zip); 
+               if (type != null) {
+                  return type.getType();
+               }
             }
-            if (type == null) {
-                type = detectIWork(zip, "presentation.apxl");
-            }
-            if (type == null) {
-                // Not sure, fallback to the container type
-                return MediaType.application("vnd.apple.iwork");
-            }
-            return type;
+            
+            // Not sure, fallback to the container type
+            return MediaType.application("vnd.apple.iwork");
         } else {
             return null;
         }
     }
-
-    private MediaType detectIWork(ZipFile zip, String name) {
-        try {
-            ZipArchiveEntry entry = zip.getEntry(name);
-            if (entry == null) {
-                return null;
-            }
-
-            InputStream stream = zip.getInputStream(entry);
-            try {
-                QName qname =
-                    new XmlRootExtractor().extractRootElement(stream);
-                String uri = qname.getNamespaceURI();
-                String local = qname.getLocalPart();
-                if ("http://developer.apple.com/namespaces/ls".equals(uri)
-                        && "document".equals(local)) {
-                    return MediaType.application("vnd.apple.numbers");
-                } else if ("http://developer.apple.com/namespaces/sl".equals(uri)
-                        && "document".equals(local)) {
-                    return MediaType.application("vnd.apple.pages");
-                } else if ("http://developer.apple.com/namespaces/keynote2".equals(uri)
-                        && "presentation".equals(local)) {
-                    return MediaType.application("vnd.apple.keynote");
-                } else {
-                    return null;
-                }
-            } finally {
-                stream.close();
-            }
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
 }
