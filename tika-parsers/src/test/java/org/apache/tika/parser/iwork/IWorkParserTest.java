@@ -16,15 +16,16 @@
  */
 package org.apache.tika.parser.iwork;
 
+import java.io.InputStream;
+
 import junit.framework.TestCase;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
-
-import java.io.InputStream;
 
 /**
  * Tests if the IWork parser parses the content and metadata properly of the supported formats.
