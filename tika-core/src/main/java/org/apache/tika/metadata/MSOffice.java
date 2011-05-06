@@ -31,10 +31,6 @@ public interface MSOffice {
 
     String CHARACTER_COUNT = "Character Count";
 
-    String LAST_PRINTED = "Last-Printed";
-
-    String LAST_SAVED = "Last-Save-Date";
-
     String PAGE_COUNT = "Page-Count";
 
     String REVISION_NUMBER = "Revision-Number";
@@ -80,4 +76,11 @@ public interface MSOffice {
     Property CREATION_DATE = 
         Property.internalDate("Creation-Date");
 
+    /** When was the document last saved? */
+    Property LAST_SAVED = 
+       Property.internalDate("Last-Save-Date");
+    
+    /** When was the document last printed? */
+    Property LAST_PRINTED = 
+       Property.internalDate("Last-Printed");
 }
