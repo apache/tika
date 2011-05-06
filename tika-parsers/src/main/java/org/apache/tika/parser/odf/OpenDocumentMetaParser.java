@@ -31,11 +31,13 @@ import org.xml.sax.ContentHandler;
  * Parser for OpenDocument <code>meta.xml</code> files.
  */
 public class OpenDocumentMetaParser extends DcXMLParser {
-
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -8739250869531737584L;
+   
     private static final XPathParser META_XPATH = new XPathParser(
             "meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
-    // eg <meta:user-defined meta:name="Info1">Text1</meta:user-defined> becomes custom:Info1=Text1
-    public static final String USER_DEFINED_METADATA_NAME_PREFIX = "custom:"; 
 
     private static ContentHandler getMeta(
             ContentHandler ch, Metadata md, String name, String element) {
@@ -52,8 +54,9 @@ public class OpenDocumentMetaParser extends DcXMLParser {
         Matcher matcher = new CompositeMatcher(
                 META_XPATH.parse("//meta:user-defined/@meta:name"),
                 META_XPATH.parse("//meta:user-defined//text()"));
+        // eg <meta:user-defined meta:name="Info1">Text1</meta:user-defined> becomes custom:Info1=Text1
         ContentHandler branch = new MatchingContentHandler(
-              new AttributeDependantMetadataHandler(md, "meta:name", USER_DEFINED_METADATA_NAME_PREFIX),
+              new AttributeDependantMetadataHandler(md, "meta:name", Metadata.USER_DEFINED_METADATA_NAME_PREFIX),
               matcher);
         return new TeeContentHandler(ch, branch);
     }
