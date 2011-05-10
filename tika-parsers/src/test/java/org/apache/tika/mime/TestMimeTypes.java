@@ -392,9 +392,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-raw-leaf", "x.mos");
         assertTypeByName("image/x-raw-panasonic", "x.raw");
         assertTypeByName("image/x-raw-panasonic", "x.rw2");
-        assertTypeByName("image/x-raw-phaseone", "x.cap");
         assertTypeByName("image/x-raw-phaseone", "x.iiq");
-        assertTypeByName("image/x-raw-phaseone", "x.cap");
         assertTypeByName("image/x-raw-red", "x.r3d");
         assertTypeByName("image/x-raw-imacon", "x.fff");
         assertTypeByName("image/x-raw-logitech", "x.pxn");

@@ -1929,6 +1929,18 @@
   <mime-type type="application/vnd.tao.intent-module-archive">
     <glob pattern="*.tao"/>
   </mime-type>
+
+  <mime-type type="application/vnd.tcpdump.pcap">
+    <_comment>TCPDump pcap packet capture</_comment>
+    <magic priority="50">
+      <match value="0xa1b2c3d4" type="big32" offset="0" />
+      <match value="0xd4c3b2a1" type="big32" offset="0" />
+    </magic>
+    <glob pattern="*.pcap"/>
+    <glob pattern="*.cap"/>
+    <glob pattern="*.dmp"/>
+  </mime-type>
+
   <mime-type type="application/vnd.tmobile-livetv">
     <glob pattern="*.tmo"/>
   </mime-type>
@@ -3478,7 +3490,6 @@
 
   <mime-type type="image/x-raw-phaseone">
     <_comment>Phase One raw image</_comment>
-    <glob pattern="*.cap"/>
     <glob pattern="*.iiq"/>
   </mime-type>
 
