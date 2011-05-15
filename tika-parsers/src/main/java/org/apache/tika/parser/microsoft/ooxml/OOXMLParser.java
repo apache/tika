@@ -33,10 +33,13 @@ import org.xml.sax.SAXException;
 
 /**
  * Office Open XML (OOXML) parser.
- * 
  */
 public class OOXMLParser extends AbstractParser {
-
+    /**
+     * Serial version UID 
+     */
+    private static final long serialVersionUID = 6535995710857776481L;
+   
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
                 MediaType.application("x-tika-ooxml"),
