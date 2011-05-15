@@ -32,6 +32,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -102,9 +103,16 @@ public class OpenDocumentParser extends AbstractParser {
     }
 
     public void parse(
-            InputStream stream, ContentHandler handler,
+            InputStream stream, ContentHandler baseHandler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+       
+        // As we don't know which of the metadata or the content
+        //  we'll hit first, catch the endDocument call initially
+        EndDocumentShieldingContentHandler handler = 
+          new EndDocumentShieldingContentHandler(baseHandler);
+       
+        // Process the file in turn
         ZipInputStream zip = new ZipInputStream(stream);
         ZipEntry entry = zip.getNextEntry();
         while (entry != null) {
@@ -117,6 +125,11 @@ public class OpenDocumentParser extends AbstractParser {
                 content.parse(zip, handler, metadata, context);
             }
             entry = zip.getNextEntry();
+        }
+        
+        // Only now call the end document
+        if(handler.getEndDocumentWasCalled()) {
+           handler.reallyEndDocument();
         }
     }
 

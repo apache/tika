@@ -35,6 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -46,7 +47,7 @@ import org.xml.sax.SAXException;
 public class OOXMLExtractorFactory {
 
     public static void parse(
-            InputStream stream, ContentHandler handler,
+            InputStream stream, ContentHandler baseHandler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         Locale locale = context.get(Locale.class, Locale.getDefault());
@@ -83,9 +84,18 @@ public class OOXMLExtractorFactory {
             } else {
                 extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);
             }
-
+            
+            // We need to get the content first, but not end 
+            //  the document just yet
+            EndDocumentShieldingContentHandler handler = 
+               new EndDocumentShieldingContentHandler(baseHandler);
             extractor.getXHTML(handler, metadata, context);
+
+            // Now we can get the metadata
             extractor.getMetadataExtractor().extract(metadata);
+            
+            // Then finish up
+            handler.reallyEndDocument();
         } catch (IllegalArgumentException e) {
             if (e.getMessage().startsWith("No supported documents found")) {
                 throw new TikaException(
