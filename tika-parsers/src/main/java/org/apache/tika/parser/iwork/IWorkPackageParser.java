@@ -122,8 +122,7 @@ public class IWorkPackageParser extends AbstractParser {
        }
        
        private static IWORKDocumentType detectType(InputStream stream) {
-          QName qname =
-             new XmlRootExtractor().extractRootElement(stream);
+          QName qname = new XmlRootExtractor().extractRootElement(stream);
           String uri = qname.getNamespaceURI();
           String local = qname.getLocalPart();
          
@@ -163,8 +162,7 @@ public class IWorkPackageParser extends AbstractParser {
                 continue;
             }
 
-            InputStream entryStream = new CloseShieldInputStream(
-                  new BufferedInputStream(zip, 4096));
+            InputStream entryStream = new BufferedInputStream(zip, 4096);
             entryStream.mark(4096);
             IWORKDocumentType type = IWORKDocumentType.detectType(entryStream);
             entryStream.reset();
@@ -190,7 +188,7 @@ public class IWorkPackageParser extends AbstractParser {
                metadata.add(Metadata.CONTENT_TYPE, type.getType().toString());
                xhtml.startDocument();
                context.getSAXParser().parse(
-                       entryStream, 
+                       new CloseShieldInputStream(entryStream),
                        new OfflineContentHandler(contentHandler)
                );
                xhtml.endDocument();

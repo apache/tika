@@ -23,6 +23,7 @@ import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -51,7 +52,8 @@ public class XmlRootExtractor {
             factory.setValidating(false);
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.newSAXParser().parse(
-                    stream, new OfflineContentHandler(handler));
+                    new CloseShieldInputStream(stream),
+                    new OfflineContentHandler(handler));
         } catch (Exception ignore) {
         }
         return handler.rootElement;
