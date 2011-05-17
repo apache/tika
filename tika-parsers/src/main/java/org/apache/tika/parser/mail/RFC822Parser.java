@@ -25,6 +25,7 @@ import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.parser.MimeEntityConfig;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -36,7 +37,10 @@ import org.xml.sax.SAXException;
 /**
  * Uses apache-mime4j to parse emails. Each part is treated with the
  * corresponding parser and displayed within elements.
- * 
+ * <p>
+ * A {@link MimeEntityConfig} object can be passed in the parsing context
+ * to better control the parsing process.
+ *
  * @author jnioche@digitalpebble.com
  **/
 public class RFC822Parser extends AbstractParser {
@@ -51,16 +55,23 @@ public class RFC822Parser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
+        // Get the mime4j configuration, or use a default one
         MimeEntityConfig config = new MimeEntityConfig();
-        config.setMaxLineLen(10000); //this is max length of any individual header
+        config.setMaxLineLen(10000); // max length of any individual header
+        config = context.get(MimeEntityConfig.class, config);
+
         MimeStreamParser parser = new MimeStreamParser(config);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(xhtml, metadata);
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
+        TaggedInputStream tagged = TaggedInputStream.get(stream);
         try {
-            parser.parse(stream);
+            parser.parse(tagged);
+        } catch (IOException e) {
+            tagged.throwIfCauseOf(e);
+            throw new TikaException("Failed to parse an email message", e);
         } catch (MimeException e) {
             // Unwrap the exception in case it was not thrown by mime4j
             Throwable cause = e.getCause();

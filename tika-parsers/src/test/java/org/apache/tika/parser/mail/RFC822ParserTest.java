@@ -23,10 +23,13 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
 
+import org.apache.james.mime4j.parser.MimeEntityConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -163,6 +166,38 @@ public class RFC822ParserTest extends TestCase {
        parser.parse(stream, handler, metadata, new ParseContext());
        assertEquals("Saved by Windows Internet Explorer 7", metadata.get(Metadata.AUTHOR));
        assertEquals("Air Permit Programs | Air & Radiation | US EPA", metadata.get(Metadata.SUBJECT));
+    }
+
+    /**
+     * Test for TIKA-640, increase header max beyond 10k bytes
+     */
+    public void testLongHeader() throws Exception {
+        StringBuilder inputBuilder = new StringBuilder();
+        for (int i = 0; i < 200; ++i) {
+            inputBuilder.append( //len > 50
+                    "really really really really really really long name ");
+        }
+        String name = inputBuilder.toString();
+        byte[] data = ("From: " + name + "\r\n\r\n").getBytes("US-ASCII");
+
+        Parser parser = new RFC822Parser();
+        ContentHandler handler = new DefaultHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+
+        try {
+            parser.parse(
+                    new ByteArrayInputStream(data), handler, metadata, context);
+            fail();
+        } catch (TikaException expected) {
+        }
+
+        MimeEntityConfig config = new MimeEntityConfig();
+        config.setMaxLineLen(-1);
+        context.set(MimeEntityConfig.class, config);
+        parser.parse(
+                new ByteArrayInputStream(data), handler, metadata, context);
+        assertEquals(name, metadata.get(Metadata.AUTHOR));
     }
 
     private static InputStream getStream(String name) {
