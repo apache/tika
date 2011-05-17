@@ -460,7 +460,7 @@ public class HtmlParserTest extends TestCase {
         String result = sw.toString();
         
         // <img> tag should exist, with fully resolved URL
-        assertTrue(Pattern.matches("(?s).*<img src=\"http://domain.com/image.jpg\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*src=\"http://domain.com/image.jpg\".*$", result));
     }
 
     /**
