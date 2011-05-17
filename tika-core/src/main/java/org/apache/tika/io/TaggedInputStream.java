@@ -63,7 +63,7 @@ public class TaggedInputStream extends ProxyInputStream {
      *
      * @param proxy input stream to be decorated
      */
-    private TaggedInputStream(InputStream proxy) {
+    public TaggedInputStream(InputStream proxy) {
         super(proxy);
     }
     

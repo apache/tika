@@ -29,7 +29,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TaggedInputStream;
+import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -210,21 +211,26 @@ public class CompositeParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata);
-        TaggedInputStream taggedStream = TaggedInputStream.get(stream);
-        TaggedContentHandler taggedHandler = new TaggedContentHandler(handler);
+        TemporaryFiles tmp = new TemporaryFiles();
         try {
-            parser.parse(taggedStream, taggedHandler, metadata, context);
-        } catch (RuntimeException e) {
-            throw new TikaException(
-                    "Unexpected RuntimeException from " + parser, e);
-        } catch (IOException e) {
-            taggedStream.throwIfCauseOf(e);
-            throw new TikaException(
-                    "TIKA-198: Illegal IOException from " + parser, e);
-        } catch (SAXException e) {
-            taggedHandler.throwIfCauseOf(e);
-            throw new TikaException(
-                    "TIKA-237: Illegal SAXException from " + parser, e);
+            TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
+            TaggedContentHandler taggedHandler = new TaggedContentHandler(handler);
+            try {
+                parser.parse(taggedStream, taggedHandler, metadata, context);
+            } catch (RuntimeException e) {
+                throw new TikaException(
+                        "Unexpected RuntimeException from " + parser, e);
+            } catch (IOException e) {
+                taggedStream.throwIfCauseOf(e);
+                throw new TikaException(
+                        "TIKA-198: Illegal IOException from " + parser, e);
+            } catch (SAXException e) {
+                taggedHandler.throwIfCauseOf(e);
+                throw new TikaException(
+                        "TIKA-237: Illegal SAXException from " + parser, e);
+            }
+        } finally {
+            tmp.dispose();
         }
     }
 
