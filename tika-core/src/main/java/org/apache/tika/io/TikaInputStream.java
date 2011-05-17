@@ -57,7 +57,7 @@ import org.apache.tika.metadata.Metadata;
  *
  * @since Apache Tika 0.8
  */
-public class TikaInputStream extends ProxyInputStream {
+public class TikaInputStream extends TaggedInputStream {
 
     /**
      * Checks whether the given stream is a TikaInputStream instance.

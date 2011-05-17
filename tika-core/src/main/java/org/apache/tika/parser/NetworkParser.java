@@ -30,7 +30,8 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.TaggedInputStream;
+import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.TaggedContentHandler;
@@ -61,6 +62,19 @@ public class NetworkParser extends AbstractParser {
 
     public void parse(
             InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        TemporaryFiles tmp = new TemporaryFiles();
+        try {
+            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+            parse(tis, handler, metadata, context);
+        } finally {
+            tmp.dispose();
+        }
+    }
+
+    private void parse(
+            TikaInputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         if ("telnet".equals(uri.getScheme())) {
@@ -95,14 +109,14 @@ public class NetworkParser extends AbstractParser {
 
     private static class ParsingTask implements Runnable {
 
-        private final TaggedInputStream input;
+        private final TikaInputStream input;
 
         private final OutputStream output;
 
         private volatile Exception exception = null;
 
-        public ParsingTask(InputStream input, OutputStream output) {
-            this.input = TaggedInputStream.get(input);
+        public ParsingTask(TikaInputStream input, OutputStream output) {
+            this.input = input;
             this.output = output;
         }
 
