@@ -185,13 +185,17 @@ class HtmlHandler extends TextContentHandler {
             } else {
                 // We have a remapped attribute name, so set it as it might have changed.
                 newAttributes.setLocalName(att, normAttrName);
-                
+
                 // And resolve relative links. Eventually this should be pushed
                 // into the HtmlMapper code.
                 if (URI_ATTRIBUTES.contains(normAttrName)) {
                     newAttributes.setValue(att, resolve(newAttributes.getValue(att)));
                 }
             }
+        }
+
+        if ("img".equals(name) && newAttributes.getValue("", "alt") == null) {
+            newAttributes.addAttribute("", "alt", "alt", "CDATA", "");
         }
 
         xhtml.startElement(name, newAttributes);

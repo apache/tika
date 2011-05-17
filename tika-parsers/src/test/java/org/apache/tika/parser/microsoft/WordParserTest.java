@@ -125,9 +125,9 @@ public class WordParserTest extends TestCase {
             String xml = sw.toString();
             
             // Images 1-3
-            assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image1.png\"/>"));
-            assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image2.jpg\"/>"));
-            assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image3.png\"/>"));
+            assertTrue("Image not found in:\n"+xml, xml.contains("src=\"embedded:image1.png\""));
+            assertTrue("Image not found in:\n"+xml, xml.contains("src=\"embedded:image2.jpg\""));
+            assertTrue("Image not found in:\n"+xml, xml.contains("src=\"embedded:image3.png\""));
             
             // Text too
             assertTrue(xml.contains("<p>The end!"));

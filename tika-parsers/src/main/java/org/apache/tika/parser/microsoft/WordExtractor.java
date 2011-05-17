@@ -46,6 +46,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 public class WordExtractor extends AbstractPOIFSExtractor {
 
@@ -316,9 +317,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        
        // Grab the mime type for the picture
        String mimeType = picture.getMimeType();
-       
+
        // Output the img tag
-       xhtml.startElement("img", "src", "embedded:" + filename);
+       AttributesImpl attr = new AttributesImpl();
+       attr.addAttribute("", "src", "src", "CDATA", "embedded:" + filename);
+       attr.addAttribute("", "alt", "alt", "CDATA", filename);
+       xhtml.startElement("img", attr);
        xhtml.endElement("img");
 
        // Have we already output this one?
