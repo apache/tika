@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -24,7 +23,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CountingInputStream;
+import org.apache.tika.io.TemporaryFiles;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -115,28 +114,26 @@ public class AutoDetectParser extends CompositeParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        if(stream instanceof TikaInputStream || stream instanceof BufferedInputStream) {
-           // Input stream can be trusted for type detection
-        } else {
-           // We need (reliable!) mark support for type detection before parsing
-           stream = new BufferedInputStream(stream);
-        }
-
-        // Automatically detect the MIME type of the document
-        MediaType type = detector.detect(stream, metadata);
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
-
-        // TIKA-216: Zip bomb prevention
-        CountingInputStream count = new CountingInputStream(stream);
-        SecureContentHandler secure = new SecureContentHandler(handler, count);
-
-        // Parse the document
+        TemporaryFiles tmp = new TemporaryFiles();
         try {
-            super.parse(count, secure, metadata, context);
-        } catch (SAXException e) {
-            // Convert zip bomb exceptions to TikaExceptions
-            secure.throwIfCauseOf(e);
-            throw e;
+            TikaInputStream tis = TikaInputStream.get(stream, tmp);
+
+            // Automatically detect the MIME type of the document
+            MediaType type = detector.detect(tis, metadata);
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+
+            // TIKA-216: Zip bomb prevention
+            SecureContentHandler sch = new SecureContentHandler(handler, tis);
+            try {
+                // Parse the document
+                super.parse(tis, sch, metadata, context);
+            } catch (SAXException e) {
+                // Convert zip bomb exceptions to TikaExceptions
+                sch.throwIfCauseOf(e);
+                throw e;
+            }
+        } finally {
+            tmp.dispose();
         }
     }
 

@@ -404,7 +404,7 @@ public class TikaInputStream extends TaggedInputStream {
      * Marked position, or -1 if there is no current mark.
      */
     private long mark = -1;
-    
+
     /**
      * A opened container, such as a POIFS FileSystem
      *  for an OLE2 document, or a Zip file for a
@@ -536,6 +536,15 @@ public class TikaInputStream extends TaggedInputStream {
             length = getFile().length();
         }
         return length;
+    }
+
+    /**
+     * Returns the current position within the stream.
+     *
+     * @return stream position
+     */
+    public long getPosition() {
+        return position;
     }
 
     @Override

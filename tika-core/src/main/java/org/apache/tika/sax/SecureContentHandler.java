@@ -17,7 +17,7 @@
 package org.apache.tika.sax;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CountingInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -38,7 +38,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * The input stream that Tika is parsing.
      */
-    private final CountingInputStream stream;
+    private final TikaInputStream stream;
 
     /**
      * Number of output characters that Tika has produced so far.
@@ -62,11 +62,10 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * the given counting input stream.
      *
      * @param handler the content handler to be decorated
-     * @param stream the input stream to be parsed, wrapped into
-     *        a {@link CountingInputStream} decorator
+     * @param stream the input stream to be parsed
      */
     public SecureContentHandler(
-            ContentHandler handler, CountingInputStream stream) {
+            ContentHandler handler, TikaInputStream stream) {
         super(handler);
         this.stream = stream;
     }
@@ -141,7 +140,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     private void advance(int length) throws SAXException {
         characterCount += length;
         if (characterCount > threshold
-                && characterCount > stream.getByteCount() * ratio) {
+                && characterCount > stream.getPosition() * ratio) {
             throw new SecureSAXException();
         }
     }
@@ -169,7 +168,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
 
         public SecureSAXException() {
             super("Suspected zip bomb: "
-                    + stream.getByteCount() + " input bytes produced "
+                    + stream.getPosition() + " input bytes produced "
                     + characterCount + " output characters");
         }
 

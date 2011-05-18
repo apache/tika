@@ -18,12 +18,12 @@ package org.apache.tika.sax;
 
 import java.io.IOException;
 
-import org.apache.tika.io.CountingInputStream;
+import junit.framework.TestCase;
+
 import org.apache.tika.io.NullInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import junit.framework.TestCase;
 
 /**
  * Tests for the {@link SecureContentHandler} class.
@@ -32,12 +32,12 @@ public class SecureContentHandlerTest extends TestCase {
 
     private static final int MANY_BYTES = 2000000;
 
-    private CountingInputStream stream;
+    private TikaInputStream stream;
 
     private SecureContentHandler handler;
 
     protected void setUp() {
-        stream = new CountingInputStream(new NullInputStream(MANY_BYTES));
+        stream = TikaInputStream.get(new NullInputStream(MANY_BYTES));
         handler = new SecureContentHandler(new DefaultHandler(), stream);
     }
 
