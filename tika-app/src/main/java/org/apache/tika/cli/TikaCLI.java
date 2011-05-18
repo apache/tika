@@ -737,6 +737,8 @@ public class TikaCLI {
                  ParsePosition pos = new ParsePosition(0);
                  formatter.parse(value, pos);
                  if(value.length() == pos.getIndex()) {
+                    // It's a number. Remove leading zeros and output
+                    value = value.replaceFirst("^0+(\\d)", "$1");
                     writer.print(value);
                  } else {
                     // Not a number, escape it
