@@ -18,6 +18,8 @@ package org.apache.tika.mime;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Internet media type.
@@ -86,8 +88,11 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     /** The minimum length of data to provides for magic analyzis */
     private int minLength = 0;
 
-    /** Preferred extension with starting dot or empty string */
-    private String extension = "";
+    /**
+     * All known file extensions of this type, in order of preference
+     * (best first).
+     */
+    private final List<String> extensions = new ArrayList<String>();
 
     /**
      * Creates a media type with the give name and containing media type
@@ -317,15 +322,40 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     }
 
     /**
-     * Get preferred extension
+     * Returns the preferred file extension of this type, or an empty string
+     * if no extensions are known. Use the {@link #getExtensions()} method to
+     * get the full list of known extensions of this type.
      *
-     * @return extension (with starting dot) or empty string
+     * @since Apache Tika 0.9
+     * @return preferred file extension or empty string
      */
     public String getExtension() {
-        return extension;
+        if (extensions.isEmpty()) {
+            return "";
+        } else {
+            return extensions.get(0);
+        }
     }
 
-    void setExtension(String extension) {
-        this.extension = extension;
+    /**
+     * Returns the list of all known file extensions of this media type.
+     *
+     * @since Apache Tika 1.0
+     * @return known extensions in order of preference (best first)
+     */
+    public List<String> getExtensions() {
+        return Collections.unmodifiableList(extensions);
     }
+
+    /**
+     * Adds a known file extension to this type.
+     *
+     * @param extension file extension
+     */
+    void addExtension(String extension) {
+        if (!extensions.contains(extension)) {
+            extensions.add(extension);
+        }
+    }
+
 }

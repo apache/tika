@@ -102,9 +102,7 @@ class Patterns implements Serializable {
                     && pattern.indexOf('?') == -1 && pattern.indexOf('[') == -1) {
                 String extension = pattern.substring(1);
                 addExtension(extension, type);
-                if (type.getExtension().length()==0) {
-                    type.setExtension(extension);
-                }
+                type.addExtension(extension);
             } else {
                 addGlob(compile(pattern), type);
             }
