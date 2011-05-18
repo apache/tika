@@ -25,8 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryFiles;
@@ -81,19 +79,44 @@ public class CompositeParser extends AbstractParser {
         Map<MediaType, Parser> map = new HashMap<MediaType, Parser>();
         for (Parser parser : parsers) {
             for (MediaType type : parser.getSupportedTypes(context)) {
-                MediaType canonicalType = registry.normalize(type);
-                if (map.containsKey(canonicalType)) {
-                   if (map.get(canonicalType) != parser) {
-                      Logger.getLogger(getClass().getName()).log(
-                            Level.INFO, "Duplicate parser definition for " + type + 
-                            " (" + canonicalType + "), using " + parser
-                      );
-                   }
-                }
-                map.put(canonicalType, parser);
+                map.put(registry.normalize(type), parser);
             }
         }
         return map;
+    }
+
+    /**
+     * Utility method that goes through all the component parsers and finds
+     * all media types for which more than one parser declares support. This
+     * is useful in tracking down conflicting parser definitions.
+     *
+     * @since Apache Tika 1.0
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-660">TIKA-660</a>
+     * @param context parsing context
+     * @return media types that are supported by at least two component parsers
+     */
+    public Map<MediaType, List<Parser>> findDuplicateParsers(
+            ParseContext context) {
+        Map<MediaType, Parser> types = new HashMap<MediaType, Parser>();
+        Map<MediaType, List<Parser>> duplicates =
+            new HashMap<MediaType, List<Parser>>();
+        for (Parser parser : parsers) {
+            for (MediaType type : parser.getSupportedTypes(context)) {
+                MediaType canonicalType = registry.normalize(type);
+                if (types.containsKey(canonicalType)) {
+                    List<Parser> list = duplicates.get(canonicalType);
+                    if (list == null) {
+                        list = new ArrayList<Parser>();
+                        list.add(types.get(canonicalType));
+                        duplicates.put(canonicalType, list);
+                    }
+                    list.add(parser);
+                } else {
+                    types.put(canonicalType, parser);
+                }
+            }
+        }
+        return duplicates;
     }
 
     /**
