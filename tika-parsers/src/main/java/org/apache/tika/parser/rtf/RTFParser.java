@@ -17,7 +17,9 @@
 package org.apache.tika.parser.rtf;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TaggedInputStream;
+import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -99,23 +101,32 @@ public class RTFParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
-        File tempFile = null;
-        InputStream in = null;
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        TaggedInputStream tagged = new TaggedInputStream(stream);
+        TemporaryFiles tmp = new TemporaryFiles();
         try {
-            tempFile = createUnicodeRtfTempFile(stream);
-            in = new FileInputStream(tempFile);
+            File tempFile = tmp.createTemporaryFile();
+            createUnicodeRtfTempFile(tempFile, stream);
 
-            Document sd = new CustomStyledDocument();
-            new RTFEditorKit().read(in, sd, 0);
+            InputStream in = TikaInputStream.get(tempFile);
+            try {
+                Document sd = new CustomStyledDocument();
+                new RTFEditorKit().read(in, sd, 0);
 
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler,
-                    metadata);
-            xhtml.startDocument();
-            xhtml.element("p", sd.getText(0, sd.getLength()));
-            xhtml.endDocument();
+                XHTMLContentHandler xhtml =
+                    new XHTMLContentHandler(handler, metadata);
+                xhtml.startDocument();
+                xhtml.element("p", sd.getText(0, sd.getLength()));
+                xhtml.endDocument();
+            } finally {
+                in.close();
+            }
+        } catch (IOException e) {
+            tagged.throwIfCauseOf(e);
+            throw new TikaException("Error parsing an RTF document", e);
         } catch (BadLocationException e) {
             throw new TikaException("Error parsing an RTF document", e);
         } catch (NullPointerException e) {
@@ -123,10 +134,7 @@ public class RTFParser extends AbstractParser {
             // on 64bit platforms
             throw new TikaException("Error parsing an RTF document", e);
         } finally {
-            IOUtils.closeQuietly(in);
-            if (tempFile != null) {
-                tempFile.delete();
-            }
+            tmp.dispose();
         }
     }
 
@@ -202,14 +210,11 @@ public class RTFParser extends AbstractParser {
         }
     }
 
-    private File createUnicodeRtfTempFile(InputStream in) throws IOException {
-        boolean isDelete = false;
-        File tempFile = null;
-        BufferedOutputStream out = null;
+    private void createUnicodeRtfTempFile(File tempFile, InputStream in)
+            throws IOException {
+        OutputStream out =
+            new BufferedOutputStream(new FileOutputStream(tempFile));
         try {
-            tempFile = File.createTempFile("temp", ".rtf");
-            out = new BufferedOutputStream(new FileOutputStream(tempFile));
-
             String defaultCharset = "windows-1251"; // ansi
             String defaultFont = "0";
             Map<String, String> fontTableMap = new HashMap<String, String>();
@@ -294,18 +299,9 @@ public class RTFParser extends AbstractParser {
                     dataBuf.append((char) ch);
                 }
             }
-            out.flush();
-        } catch (IOException e) {
-            isDelete = true;
-            throw e;
         } finally {
-            IOUtils.closeQuietly(out);
-            if (isDelete && tempFile != null) {
-                tempFile.delete();
-            }
+            out.close();
         }
-
-        return tempFile;
     }
 
     private String loadFontTable(String line) {
