@@ -16,6 +16,8 @@
  */
 package org.apache.tika.sax;
 
+import java.io.IOException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.xml.sax.ContentHandler;
@@ -129,6 +131,18 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         }
     }
 
+    private long getByteCount() throws SAXException {
+        try {
+            if (stream.hasLength()) {
+                return stream.getLength();
+            } else {
+                return stream.getPosition();
+            }
+        } catch (IOException e) {
+            throw new SAXException("Unable to get stream length", e);
+        }
+    }
+
     /**
      * Records the given number of output characters (or more accurately
      * UTF-16 code units). Throws an exception if the recorded number of
@@ -139,9 +153,10 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      */
     private void advance(int length) throws SAXException {
         characterCount += length;
+        long byteCount = getByteCount();
         if (characterCount > threshold
-                && characterCount > stream.getPosition() * ratio) {
-            throw new SecureSAXException();
+                && characterCount > byteCount * ratio) {
+            throw new SecureSAXException(byteCount);
         }
     }
 
@@ -166,9 +181,9 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      */
     private class SecureSAXException extends SAXException {
 
-        public SecureSAXException() {
+        public SecureSAXException(long byteCount) throws SAXException {
             super("Suspected zip bomb: "
-                    + stream.getPosition() + " input bytes produced "
+                    + byteCount + " input bytes produced "
                     + characterCount + " output characters");
         }
 
