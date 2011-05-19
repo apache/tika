@@ -70,7 +70,7 @@ public class ForkParser extends AbstractParser {
      *
      * @return process pool size
      */
-    public int getPoolSize() {
+    public synchronized int getPoolSize() {
         return poolSize;
     }
 
@@ -79,7 +79,7 @@ public class ForkParser extends AbstractParser {
      *
      * @param poolSize process pool size
      */
-    public void setPoolSize(int poolSize) {
+    public synchronized void setPoolSize(int poolSize) {
         this.poolSize = poolSize;
     }
 
