@@ -62,6 +62,9 @@ public class OOXMLExtractorFactory {
                poiExtractor = ExtractorFactory.createExtractor(
                     (OPCPackage)((TikaInputStream)stream).getOpenContainer()
                );
+            } else if (stream instanceof TikaInputStream &&
+                    ((TikaInputStream) stream).hasFile()) {
+                poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(((TikaInputStream) stream).getFile());
             } else {
                poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(stream);
             }
