@@ -21,11 +21,59 @@ import java.util.List;
 import junit.framework.TestCase;
 
 public class PatternsTest extends TestCase {
+    private MimeTypes fullTypes = MimeTypes.getDefaultMimeTypes();
 
-    private MimeTypes types = MimeTypes.getDefaultMimeTypes();
+    private Patterns patterns;
+    private MimeTypes types;
+    private MimeType text;
+
+    protected void setUp() throws MimeTypeException {
+        patterns = new Patterns(new MediaTypeRegistry());
+        types = new MimeTypes();
+        text = types.forName("text/plain");
+    }
+
+    /** Test add() */
+    public void testAdd() throws MimeTypeException {
+        try {
+            patterns.add(null, text);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+        try {
+            patterns.add("", null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+        try {
+            patterns.add(null, null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+    }
+
+    /** Test matches() */
+    public void testMatches() {
+        try {
+            patterns.matches(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+    }
+
+    public void testExtension() throws MimeTypeException {
+        MimeType doc = types.forName("application/vnd.ms-word");
+        patterns.add("*.doc", doc);
+
+        assertEquals(".doc", doc.getExtension());
+    }
 
     public void testExtensions() throws Exception{
-        MimeType jpeg = types.forName("image/jpeg");
+        MimeType jpeg = fullTypes.forName("image/jpeg");
 
         assertEquals(".jpg", jpeg.getExtension());
 
