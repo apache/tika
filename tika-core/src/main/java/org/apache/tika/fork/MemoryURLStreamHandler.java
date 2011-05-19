@@ -17,25 +17,37 @@
 package org.apache.tika.fork;
 
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class MemoryURLStreamHandler extends URLStreamHandler {
 
     private static final AtomicInteger counter = new AtomicInteger();
 
-    private static final Map<URL, byte[]> URLs = new WeakHashMap<URL, byte[]>();
+    private static class Record {
+        public WeakReference<URL> url;
+        public byte[] data;
+    }
+
+    private static final List<Record> records = new LinkedList<Record>();
 
     public static URL createURL(byte[] data) {
         try {
             int i = counter.incrementAndGet();
-            URL url = new URL("tika-in-memory", "localhost", "/" + i);
-            URLs.put(url, data);
+            URL url =  new URL("tika-in-memory", "localhost", "/" + i);
+
+            Record record = new Record();
+            record.url = new WeakReference<URL>(url);
+            record.data = data;
+            records.add(record);
+
             return url;
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
@@ -44,12 +56,17 @@ class MemoryURLStreamHandler extends URLStreamHandler {
 
     @Override
     protected URLConnection openConnection(URL u) throws IOException {
-        byte[] data = URLs.get(u);
-        if (data != null) {
-            return new MemoryURLConnection(u, URLs.get(u));
-        } else {
-            throw new IOException("Unknown URL: " + u);
+        Iterator<Record> iterator = records.iterator();
+        while (iterator.hasNext()) {
+            Record record = iterator.next();
+            URL url = record.url.get();
+            if (url == null) {
+                iterator.remove();
+            } else if (url == u) {
+                return new MemoryURLConnection(u, record.data);
+            }
         }
+        throw new IOException("Unknown URL: " + u);
     }
 
 }
