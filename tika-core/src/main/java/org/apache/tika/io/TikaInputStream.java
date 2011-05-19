@@ -512,6 +512,7 @@ public class TikaInputStream extends TaggedInputStream {
                 in.close();
                 // Re-point the stream at the file now we have it
                 in = new BufferedInputStream(new FileInputStream(file));
+                length = file.length();
             }
         }
         return file;
