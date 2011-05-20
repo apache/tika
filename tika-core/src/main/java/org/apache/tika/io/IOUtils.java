@@ -19,6 +19,7 @@ package org.apache.tika.io;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -176,31 +177,6 @@ public class IOUtils {
         } catch (IOException ioe) {
             // ignore
         }
-    }
-
-    /**
-     * Fetches entire contents of an <code>InputStream</code> and represent
-     * same data as result InputStream.
-     * <p>
-     * This method is useful where,
-     * <ul>
-     * <li>Source InputStream is slow.</li>
-     * <li>It has network resources associated, so we cannot keep it open for
-     * long time.</li>
-     * <li>It has network timeout associated.</li>
-     * </ul>
-     * It can be used in favor of {@link #toByteArray(InputStream)}, since it
-     * avoids unnecessary allocation and copy of byte[].<br>
-     * This method buffers the input internally, so there is no need to use a
-     * <code>BufferedInputStream</code>.
-     * 
-     * @param input Stream to be fully buffered.
-     * @return A fully buffered stream.
-     * @throws IOException if an I/O error occurs
-     * @since Commons IO 2.0
-     */
-    public static InputStream toBufferedInputStream(InputStream input) throws IOException {
-        return ByteArrayOutputStream.toBufferedInputStream(input);
     }
 
     // read toByteArray
