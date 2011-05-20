@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -28,9 +29,9 @@ import org.xml.sax.SAXException;
  * attacks against Tika parsers.
  * <p>
  * Currently this class simply compares the number of output characters
- * to to the number of input bytes, and throws an exception if the output
- * is truly excessive when compared to the input. This is a strong indication
- * of a zip bomb.
+ * to to the number of input bytes and keeps track of the XML nesting levels.
+ * An exception gets thrown if the output seems excessive compared to the
+ * input document. This is a strong indication of a zip bomb.
  *
  * @since Apache Tika 0.4
  * @see <a href="https://issues.apache.org/jira/browse/TIKA-216">TIKA-216</a>
@@ -48,6 +49,11 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     private long characterCount = 0;
 
     /**
+     * The current XML element depth.
+     */
+    private int currentDepth = 0;
+
+    /**
      * Output threshold.
      */
     private long threshold = 1000000;
@@ -56,6 +62,11 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * Maximum compression ratio.
      */
     private long ratio = 100;
+
+    /**
+     * Maximum XML element nesting level.
+     */
+    private int maxDepth = 30;
 
     /**
      * Decorates the given content handler with zip bomb prevention based
@@ -117,6 +128,26 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     }
 
     /**
+     * Returns the maximum XML element nesting level.
+     *
+     * @return maximum XML element nesting level
+     */
+    public int getMaximumDepth() {
+        return maxDepth;
+    }
+
+
+    /**
+     * Sets the maximum XML element nesting level. If this depth level is
+     * exceeded then an exception gets thrown.
+     *
+     * @param depth maximum XML element nesting level
+     */
+    public void setMaximumDepth(int depth) {
+        this.maxDepth = depth;
+    }
+
+    /**
      * Converts the given {@link SAXException} to a corresponding
      * {@link TikaException} if it's caused by this instance detecting
      * a zip bomb.
@@ -156,8 +187,32 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         long byteCount = getByteCount();
         if (characterCount > threshold
                 && characterCount > byteCount * ratio) {
-            throw new SecureSAXException(byteCount);
+            throw new SecureSAXException(
+                    "Suspected zip bomb: "
+                    + byteCount + " input bytes produced "
+                    + characterCount + " output characters");
         }
+    }
+
+    @Override
+    public void startElement(
+            String uri, String localName, String name, Attributes atts)
+            throws SAXException {
+        currentDepth++;
+        if (currentDepth < maxDepth) {
+            super.startElement(uri, localName, name, atts);
+        } else {
+            throw new SecureSAXException(
+                    "Suspected zip bomb: "
+                    + currentDepth + " levels of XML element nesting");
+        }
+    }
+
+    @Override
+    public void endElement(
+            String uri, String localName, String name) throws SAXException {
+        currentDepth--;
+        super.endElement(uri, localName, name);
     }
 
     @Override
@@ -181,10 +236,11 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      */
     private class SecureSAXException extends SAXException {
 
-        public SecureSAXException(long byteCount) throws SAXException {
-            super("Suspected zip bomb: "
-                    + byteCount + " input bytes produced "
-                    + characterCount + " output characters");
+        /** Serial version UID.*/
+        private static final long serialVersionUID = 2285245380321771445L;
+
+        public SecureSAXException(String message) throws SAXException {
+            super(message);
         }
 
         public boolean isCausedBy(SecureContentHandler handler) {
