@@ -2956,6 +2956,9 @@
   <mime-type type="audio/vnd.3gpp.iufp"/>
   <mime-type type="audio/vnd.4sb"/>
   <mime-type type="audio/vnd.audiokoz"/>
+  <mime-type type="audio/vnd.adobe.soundbooth">
+    <glob pattern="*.asnd"/>
+  </mime-type>
   <mime-type type="audio/vnd.celp"/>
   <mime-type type="audio/vnd.cisco.nse"/>
   <mime-type type="audio/vnd.cmles.radio-events"/>
@@ -3257,7 +3260,12 @@
 
   <mime-type type="image/vnd.adobe.photoshop">
     <alias type="image/x-psd"/>
+    <alias type="application/photoshop"/>
     <glob pattern="*.psd"/>
+  </mime-type>
+
+  <mime-type type="image/vnd.adobe.premiere">
+    <glob pattern="*.ppj"/>
   </mime-type>
 
   <mime-type type="image/vnd.cns.inf2"/>
