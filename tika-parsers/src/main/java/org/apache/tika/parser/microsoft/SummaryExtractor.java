@@ -135,39 +135,35 @@ class SummaryExtractor {
      * @param customProperties
      */
     private void parse(CustomProperties customProperties){
-       if (customProperties != null) {
-          for (String key : customProperties.nameSet()) {
-             Object value = customProperties.get(key);
-             if (value == null) {
-                // Continue, don't support empty properties
-             }
-             
-             // Apply the custom prefix
-             key = Metadata.USER_DEFINED_METADATA_NAME_PREFIX + key;
-             
-             // Convert and save
-             if (value instanceof String){
-                set(key, (String)value);
-             } else if (value instanceof Date) {
-                Property prop = Property.externalDate(key);
-                metadata.set(prop, (Date)value);
-             } else if (value instanceof Boolean) {
-                Property prop = Property.externalBoolean(key);
-                metadata.set(prop, ((Boolean)value).toString());
-             } else if (value instanceof Long) {
-                Property prop = Property.externalInteger(key);
-                metadata.set(prop, ((Long)value).intValue());
-             } else if (value instanceof Double) {
-                Property prop = Property.externalReal(key);
-                metadata.set(prop, ((Double)value).doubleValue());
-             } else if (value instanceof Integer) {
-                Property prop = Property.externalInteger(key);
-                metadata.set(prop, ((Integer)value).intValue());
-             }
-          }
-       }
+        if (customProperties != null) {
+            for (String name : customProperties.nameSet()) {
+                // Apply the custom prefix
+                String key = Metadata.USER_DEFINED_METADATA_NAME_PREFIX + name;
+
+                // Get, convert and save property value
+                Object value = customProperties.get(name);
+                if (value instanceof String){
+                    set(key, (String)value);
+                } else if (value instanceof Date) {
+                    Property prop = Property.externalDate(key);
+                    metadata.set(prop, (Date)value);
+                } else if (value instanceof Boolean) {
+                    Property prop = Property.externalBoolean(key);
+                    metadata.set(prop, ((Boolean)value).toString());
+                } else if (value instanceof Long) {
+                    Property prop = Property.externalInteger(key);
+                    metadata.set(prop, ((Long)value).intValue());
+                } else if (value instanceof Double) {
+                    Property prop = Property.externalReal(key);
+                    metadata.set(prop, ((Double)value).doubleValue());
+                } else if (value instanceof Integer) {
+                    Property prop = Property.externalInteger(key);
+                    metadata.set(prop, ((Integer)value).intValue());
+                }
+            }
+        }
     }
-        
+
     private void set(String name, String value) {
         if (value != null) {
             metadata.set(name, value);
