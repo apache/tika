@@ -55,7 +55,6 @@ import org.apache.log4j.WriterAppender;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.gui.TikaGUI;
@@ -248,7 +247,7 @@ public class TikaCLI {
 
     private boolean fork = false;
 
-    public TikaCLI() throws TransformerConfigurationException, IOException, TikaException, SAXException {
+    public TikaCLI() throws Exception {
         context = new ParseContext();
         detector = new DefaultDetector();
         parser = new AutoDetectParser(detector);

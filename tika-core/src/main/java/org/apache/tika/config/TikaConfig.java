@@ -17,6 +17,7 @@
 package org.apache.tika.config;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -53,21 +54,8 @@ import org.xml.sax.SAXException;
 public class TikaConfig {
 
     private final CompositeParser parser;
-    
+
     private final MimeTypes mimeTypes;
-
-    private TikaConfig(CompositeParser parser, MimeTypes mimeTypes) {
-        this.parser = parser;
-        this.mimeTypes = mimeTypes;
-    }
-
-    private TikaConfig(CompositeParser parser) {
-        this(parser, MimeTypes.getDefaultMimeTypes());
-        
-        // Have the composite parser wired up with the media type
-        //  information that has now been loaded
-        parser.setMediaTypeRegistry(getMediaTypeRegistry());
-    }
 
     public TikaConfig(String file)
             throws TikaException, IOException, SAXException {
@@ -112,58 +100,8 @@ public class TikaConfig {
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
-        Element mtr = getChild(element, "mimeTypeRepository");
-        if (mtr != null && mtr.hasAttribute("resource")) {
-            mimeTypes = MimeTypesFactory.create(mtr.getAttribute("resource"));
-        } else {
-            mimeTypes = MimeTypes.getDefaultMimeTypes();
-        }
-
-        List<Parser> parsers = new ArrayList<Parser>();
-        NodeList nodes = element.getElementsByTagName("parser");
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Element node = (Element) nodes.item(i);
-            String name = node.getAttribute("class");
-
-            try {
-                Class<?> parserClass = Class.forName(name);
-                Object instance = parserClass.newInstance();
-                if (!(instance instanceof Parser)) {
-                    throw new TikaException(
-                            "Configured class is not a Tika Parser: " + name);
-                }
-                Parser parser = (Parser) instance;
-
-                NodeList mimes = node.getElementsByTagName("mime");
-                if (mimes.getLength() > 0) {
-                    Set<MediaType> types = new HashSet<MediaType>();
-                    for (int j = 0; j < mimes.getLength(); j++) {
-                        String mime = getText(mimes.item(j));
-                        MediaType type = MediaType.parse(mime);
-                        if (type != null) {
-                            types.add(type);
-                        } else {
-                            throw new TikaException(
-                                    "Invalid media type name: " + mime);
-                        }
-                    }
-                    parser = ParserDecorator.withTypes(parser, types);
-                }
-
-                parsers.add(parser);
-            } catch (ClassNotFoundException e) {
-                throw new TikaException(
-                        "Configured parser class not found: " + name, e);
-            } catch (IllegalAccessException e) {
-                throw new TikaException(
-                        "Unable to access a parser class: " + name, e);
-            } catch (InstantiationException e) {
-                throw new TikaException(
-                        "Unable to instantiate a parser class: " + name, e);
-            }
-        }
-        this.parser =
-            new CompositeParser(mimeTypes.getMediaTypeRegistry(), parsers);
+        this.mimeTypes = typesFromDomElement(element);
+        this.parser = parserFromDomElement(element, mimeTypes);
     }
 
     /**
@@ -180,20 +118,61 @@ public class TikaConfig {
      */
     public TikaConfig(ClassLoader loader)
             throws MimeTypeException, IOException {
-        this(new DefaultParser(loader));
+        this.parser = new DefaultParser(loader);
+        this.mimeTypes = MimeTypes.getDefaultMimeTypes();
     }
 
     /**
-     * Creates a Tika configuration from the built-in media type rules
-     * and all the {@link Parser} implementations available through the
-     * {@link ServiceRegistry service provider mechanism} in the context
-     * class loader of the current thread.
+     * Creates a default Tika configuration.
+     * First checks whether an XML config file is specified, either in
+     * <ol>
+     * <li>System property "tika.config", or</li>
+     * <li>Environment variable TIKA_CONFIG</li>
+     * </ol>
+     * <p>If one of these have a value, try to resolve it relative to file
+     * system or classpath.</p>
+     * <p>If XML config is not specified, initialize from the built-in media
+     * type rules and all the {@link Parser} implementations available through
+     * the {@link ServiceRegistry service provider mechanism} in the context
+     * class loader of the current thread.</p>
      *
-     * @throws MimeTypeException if the built-in media type rules are broken
-     * @throws IOException  if the built-in media type rules can not be read
+     * @throws IOException if the configuration can not be read
+     * @throws TikaException if problem with MimeTypes or parsing XML config
      */
-    public TikaConfig() throws MimeTypeException, IOException {
-        this(new DefaultParser());
+    public TikaConfig() throws TikaException, IOException {
+        String config = System.getProperty("tika.config");
+        if (config == null) {
+            config = System.getenv("TIKA_CONFIG");
+        }
+        if (config == null) {
+            this.parser = new DefaultParser();
+            this.mimeTypes = MimeTypes.getDefaultMimeTypes();
+        } else {
+            InputStream stream;
+            File file = new File(config);
+            if (file.isFile()) {
+                stream = new FileInputStream(file);
+            } else {
+                stream = getContextClassLoader().getResourceAsStream(config);
+            }
+            if (stream != null) {
+                try {
+                    Element element =
+                        getBuilder().parse(stream).getDocumentElement();
+                    this.mimeTypes = typesFromDomElement(element);
+                    this.parser = parserFromDomElement(element, mimeTypes);
+                } catch (SAXException e) {
+                    throw new TikaException(
+                            "Specified Tika configuration has syntax errors: "
+                            + config, e);
+                } finally {
+                    stream.close();
+                }
+            } else {
+                throw new TikaException(
+                        "Specified Tika configuration not found: " + config);
+            }
+        }
     }
 
     /**
@@ -205,7 +184,7 @@ public class TikaConfig {
         this(element);
     }
 
-    private String getText(Node node) {
+    private static String getText(Node node) {
         if (node.getNodeType() == Node.TEXT_NODE) {
             return node.getNodeValue();
         } else if (node.getNodeType() == Node.ELEMENT_NODE) {
@@ -297,6 +276,77 @@ public class TikaConfig {
             child = child.getNextSibling();
         }
         return null;
+    }
+
+    private static ClassLoader getContextClassLoader() {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if (loader == null) {
+            loader = TikaConfig.class.getClassLoader();
+        }
+        if (loader == null) {
+            loader = ClassLoader.getSystemClassLoader();
+        }
+        return loader;
+    }
+
+    private static MimeTypes typesFromDomElement(Element element)
+            throws TikaException, IOException {
+        Element mtr = getChild(element, "mimeTypeRepository");
+        if (mtr != null && mtr.hasAttribute("resource")) {
+            return MimeTypesFactory.create(mtr.getAttribute("resource"));
+        } else {
+            return MimeTypes.getDefaultMimeTypes();
+        }
+    }
+
+    private static CompositeParser parserFromDomElement(
+            Element element, MimeTypes mimeTypes)
+            throws TikaException, IOException {
+        List<Parser> parsers = new ArrayList<Parser>();
+        ClassLoader loader = getContextClassLoader();
+        NodeList nodes = element.getElementsByTagName("parser");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element node = (Element) nodes.item(i);
+            String name = node.getAttribute("class");
+
+            try {
+                Class<?> parserClass = Class.forName(name, true, loader);
+                Object instance = parserClass.newInstance();
+                if (!(instance instanceof Parser)) {
+                    throw new TikaException(
+                            "Configured class is not a Tika Parser: " + name);
+                }
+                Parser parser = (Parser) instance;
+
+                NodeList mimes = node.getElementsByTagName("mime");
+                if (mimes.getLength() > 0) {
+                    Set<MediaType> types = new HashSet<MediaType>();
+                    for (int j = 0; j < mimes.getLength(); j++) {
+                        String mime = getText(mimes.item(j));
+                        MediaType type = MediaType.parse(mime);
+                        if (type != null) {
+                            types.add(type);
+                        } else {
+                            throw new TikaException(
+                                    "Invalid media type name: " + mime);
+                        }
+                    }
+                    parser = ParserDecorator.withTypes(parser, types);
+                }
+
+                parsers.add(parser);
+            } catch (ClassNotFoundException e) {
+                throw new TikaException(
+                        "Configured parser class not found: " + name, e);
+            } catch (IllegalAccessException e) {
+                throw new TikaException(
+                        "Unable to access a parser class: " + name, e);
+            } catch (InstantiationException e) {
+                throw new TikaException(
+                        "Unable to instantiate a parser class: " + name, e);
+            }
+        }
+        return new CompositeParser(mimeTypes.getMediaTypeRegistry(), parsers);
     }
 
 }
