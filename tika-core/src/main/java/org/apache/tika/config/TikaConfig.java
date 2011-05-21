@@ -145,8 +145,9 @@ public class TikaConfig {
             config = System.getenv("TIKA_CONFIG");
         }
         if (config == null) {
-            this.parser = new DefaultParser();
             this.mimeTypes = MimeTypes.getDefaultMimeTypes();
+            this.parser = new DefaultParser(
+                    mimeTypes.getMediaTypeRegistry(), getContextClassLoader());
         } else {
             InputStream stream;
             File file = new File(config);

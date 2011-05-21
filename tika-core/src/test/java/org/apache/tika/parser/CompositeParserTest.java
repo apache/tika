@@ -67,13 +67,13 @@ public class CompositeParserTest extends TestCase {
 
     public void testDefaultParser() throws Exception {
        TikaConfig config = TikaConfig.getDefaultConfig();
-       
-       CompositeParser parser = (CompositeParser)config.getParser();
-       
+
+       CompositeParser parser = (CompositeParser) config.getParser();
+
        // Check it has the full registry
        assertEquals(config.getMediaTypeRegistry(), parser.getMediaTypeRegistry());
     }
-    
+
     public void testMimeTypeAliases() throws Exception {
        MediaType bmpCanonical = MediaType.image("x-ms-bmp");
        Map<String,String> bmpCanonicalMetadata = new HashMap<String, String>();
