@@ -32,17 +32,20 @@ public class DefaultParser extends CompositeParser {
     /** Serial version UID */
     private static final long serialVersionUID = 3612324825403757520L;
 
-    private DefaultParser(ServiceLoader loader) {
-        super(new MediaTypeRegistry(),
-                loader.loadServiceProviders(Parser.class));
+    private DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
+        super(registry, loader.loadServiceProviders(Parser.class));
+    }
+
+    public DefaultParser(MediaTypeRegistry registry, ClassLoader loader) {
+        this(registry, new ServiceLoader(loader));
     }
 
     public DefaultParser(ClassLoader loader) {
-        this(new ServiceLoader(loader));
+        this(MediaTypeRegistry.getDefaultRegistry(), new ServiceLoader(loader));
     }
 
     public DefaultParser() {
-        this(new ServiceLoader());
+        this(MediaTypeRegistry.getDefaultRegistry(), new ServiceLoader());
     }
 
 }
