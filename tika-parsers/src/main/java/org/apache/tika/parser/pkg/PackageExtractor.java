@@ -156,14 +156,18 @@ class PackageExtractor {
             ArchiveEntry entry = archive.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
-                    Metadata entrydata = new Metadata();
                     String name = entry.getName();
-                    if (name != null && name.length() > 0) {
-                        entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
-                    }
 
-                    if (extractor.shouldParseEmbedded(entrydata)) {
-                        extractor.parseEmbedded(archive, xhtml, entrydata, true);
+                    if (archive.canReadEntryData(entry)) {
+                        Metadata entrydata = new Metadata();
+                        if (name != null && name.length() > 0) {
+                            entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
+                        }
+                        if (extractor.shouldParseEmbedded(entrydata)) {
+                            extractor.parseEmbedded(archive, xhtml, entrydata, true);
+                        }
+                    } else if (name != null && name.length() > 0) {
+                        xhtml.element("p", name);
                     }
                 }
                 entry = archive.getNextEntry();
