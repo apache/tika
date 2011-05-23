@@ -28,6 +28,7 @@ public class LinkedCell extends CellDecorator {
 
     public LinkedCell(Cell cell, String link) {
         super(cell);
+        assert link != null;
         this.link = link;
     }
 
