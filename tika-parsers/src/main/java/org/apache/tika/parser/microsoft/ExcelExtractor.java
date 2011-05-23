@@ -390,32 +390,37 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                         new Point(link.getFirstColumn(), link.getFirstRow());
                     Cell cell = currentSheet.get(point);
                     if (cell != null) {
-                        addCell(record, new LinkedCell(cell, link.getAddress()));
+                        String address = link.getAddress();
+                        if (address != null) {
+                            addCell(record, new LinkedCell(cell, address));
+                        } else {
+                            addCell(record, cell);
+                        }
                     }
                 }
                 break;
-                
+
             case TextObjectRecord.sid:
                 TextObjectRecord tor = (TextObjectRecord) record;
                 addTextCell(record, tor.getStr().getString());
                 break;
-                
+
             case SeriesTextRecord.sid: // Chart label or title
                 SeriesTextRecord str = (SeriesTextRecord) record;
                 addTextCell(record, str.getText());
                 break;
-                
+
             case DrawingGroupRecord.sid:
                // Collect this now, we'll process later when all
                //  the continue records are in
                drawingGroups.add( (DrawingGroupRecord)record );
                break;
-           
+
             }
-            
+
             previousSid = record.getSid();
         }
-        
+
         private void processExtraText() throws SAXException {
             if(extraTextCells.size() > 0) {
                 for(Cell cell : extraTextCells) {
@@ -423,12 +428,12 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     cell.render(handler);
                     handler.endElement("div");
                 }
-                
+
                 // Reset
                 extraTextCells.clear();
             }
         }
-        
+
         /**
          * Adds the given cell (unless <code>null</code>) to the current
          * worksheet (if any) at the position (if any) of the given record.
