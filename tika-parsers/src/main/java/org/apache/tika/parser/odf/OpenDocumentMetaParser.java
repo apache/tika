@@ -17,6 +17,7 @@
 package org.apache.tika.parser.odf;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xml.AttributeDependantMetadataHandler;
 import org.apache.tika.parser.xml.DcXMLParser;
 import org.apache.tika.parser.xml.MetadataHandler;
@@ -70,9 +71,9 @@ public class OpenDocumentMetaParser extends DcXMLParser {
         return new TeeContentHandler(ch, branch);
     }
 
-    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md) {
+    protected ContentHandler getContentHandler(ContentHandler ch, Metadata md, ParseContext context) {
         // Process the Dublin Core Attributes 
-        ch = super.getContentHandler(ch, md);
+        ch = super.getContentHandler(ch, md, context);
         // Process the OO Meta Attributes
         ch = getMeta(ch, md, Metadata.CREATION_DATE.getName(), "creation-date");
         ch = getMeta(ch, md, Metadata.KEYWORDS, "keyword");

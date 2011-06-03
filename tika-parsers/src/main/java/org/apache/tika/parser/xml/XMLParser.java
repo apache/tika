@@ -22,11 +22,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.EmbeddedContentHandler;
-import org.apache.tika.sax.OfflineContentHandler;
-import org.apache.tika.sax.TaggedContentHandler;
-import org.apache.tika.sax.TextContentHandler;
-import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.sax.*;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -69,7 +65,7 @@ public class XMLParser extends AbstractParser {
             context.getSAXParser().parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(new EmbeddedContentHandler(
-                            getContentHandler(tagged, metadata))));
+                            getContentHandler(tagged, metadata, context))));
         } catch (SAXException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
@@ -80,8 +76,7 @@ public class XMLParser extends AbstractParser {
     }
 
     protected ContentHandler getContentHandler(
-            ContentHandler handler, Metadata metadata) {
+            ContentHandler handler, Metadata metadata, ParseContext context) {
         return new TextContentHandler(handler);
     }
-
 }

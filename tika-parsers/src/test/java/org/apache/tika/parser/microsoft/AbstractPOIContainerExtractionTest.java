@@ -75,7 +75,7 @@ public abstract class AbstractPOIContainerExtractionTest extends TestCase {
         return stream;
     }
     
-    protected static class TrackingHandler implements EmbeddedResourceHandler {
+    public static class TrackingHandler implements EmbeddedResourceHandler {
        public List<String> filenames = new ArrayList<String>();
        public List<MediaType> mediaTypes = new ArrayList<MediaType>();
        
