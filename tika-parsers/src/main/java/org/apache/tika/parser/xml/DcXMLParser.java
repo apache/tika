@@ -18,6 +18,7 @@ package org.apache.tika.parser.xml;
 
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -34,9 +35,9 @@ public class DcXMLParser extends XMLParser {
     }
 
     protected ContentHandler getContentHandler(
-            ContentHandler handler, Metadata metadata) {
+            ContentHandler handler, Metadata metadata, ParseContext context) {
         return new TeeContentHandler(
-                super.getContentHandler(handler, metadata),
+                super.getContentHandler(handler, metadata, context),
                 getDublinCoreHandler(metadata, DublinCore.TITLE, "title"),
                 getDublinCoreHandler(metadata, DublinCore.SUBJECT, "subject"),
                 getDublinCoreHandler(metadata, DublinCore.CREATOR, "creator"),
