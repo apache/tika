@@ -4,6 +4,7 @@ Release 1.0 - Current Development
 
 The most notable changes in Tika 1.0 over previous releases are:
 
+ * A parser for CHM help files was added. (TIKA-245)
 
  
 Release 0.9 - 02/13/2011
