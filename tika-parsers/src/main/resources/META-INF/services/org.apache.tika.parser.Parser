@@ -41,3 +41,4 @@ org.apache.tika.parser.txt.TXTParser
 org.apache.tika.parser.video.FLVParser
 org.apache.tika.parser.xml.DcXMLParser
 org.apache.tika.parser.xml.FictionBookParser
+org.apache.tika.parser.chm.ChmParser
