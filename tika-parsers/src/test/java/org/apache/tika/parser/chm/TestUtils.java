@@ -23,34 +23,34 @@ import java.io.InputStream;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
 
 public class TestUtils {
-	/**
-	 * Converts InputStream to byte array
-	 * 
-	 * @param is
-	 *            InputStream
-	 * @return byte[]
-	 * 
-	 * @throws IOException
-	 */
-	public static byte[] toByteArray(InputStream is) throws IOException {
-		synchronized (is) {
-			if (is != null) {
-				ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-				int nRead;
-				byte[] data = new byte[TestParameters.BUFFER_SIZE];
-				while ((nRead = is.read(data, 0, data.length)) != -1) {
-					buffer.write(data, 0, nRead);
-				}
-				buffer.flush();
-				try {
-					is.close();
-					buffer.close();
-				} catch (Exception e) {
-					System.err.println(e.getMessage());
-				}
-				return buffer.toByteArray();
-			} else
-				throw new ChmParsingException("InputStream is null");
-		}
-	}
+    /**
+     * Converts InputStream to byte array
+     * 
+     * @param is
+     *            InputStream
+     * @return byte[]
+     * 
+     * @throws IOException
+     */
+    public static byte[] toByteArray(InputStream is) throws IOException {
+        synchronized (is) {
+            if (is != null) {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                int nRead;
+                byte[] data = new byte[TestParameters.BUFFER_SIZE];
+                while ((nRead = is.read(data, 0, data.length)) != -1) {
+                    buffer.write(data, 0, nRead);
+                }
+                buffer.flush();
+                try {
+                    is.close();
+                    buffer.close();
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
+                }
+                return buffer.toByteArray();
+            } else
+                throw new ChmParsingException("InputStream is null");
+        }
+    }
 }
