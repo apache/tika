@@ -16,15 +16,13 @@
  */
 package org.apache.tika.parser.chm;
 
-import java.util.Arrays;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.tika.detect.TestContainerAwareDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
+import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 
 /**
@@ -32,108 +30,112 @@ import org.apache.tika.parser.chm.core.ChmConstants;
  * 
  */
 public class TestChmItspHeader extends TestCase {
-	private ChmItspHeader chmItspHeader = null;
+    private ChmItspHeader chmItspHeader = null;
 
-	public void setUp() throws Exception {
-		TikaInputStream stream = TikaInputStream
-				.get(TestContainerAwareDetector.class
-						.getResource(TestParameters.chmFile));
-		byte[] data = TestUtils.toByteArray(stream);
+    public void setUp() throws Exception {
+        byte[] data = TestUtils
+                .toByteArray(TikaInputStream.get(TestChmBlockInfo.class
+                        .getResource(TestParameters.chmFile)));
 
-		ChmItsfHeader chmItsfHeader = new ChmItsfHeader();
-		chmItsfHeader.parse(
-				Arrays.copyOfRange(data, 0, ChmConstants.CHM_ITSF_V3_LEN - 1),
-				chmItsfHeader);
+        ChmItsfHeader chmItsfHeader = new ChmItsfHeader();
+        // chmItsfHeader.parse(Arrays.copyOfRange(data, 0,
+        // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
+        chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0,
+                ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
 
-		chmItspHeader = new ChmItspHeader();
-		chmItspHeader.parse(Arrays.copyOfRange(data,
-				(int) chmItsfHeader.getDirOffset(),
-				(int) chmItsfHeader.getDirOffset()
-						+ ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
-	}
+        chmItspHeader = new ChmItspHeader();
+        // chmItspHeader.parse(Arrays.copyOfRange( data, (int)
+        // chmItsfHeader.getDirOffset(),
+        // (int) chmItsfHeader.getDirOffset()
+        // + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
+        chmItspHeader.parse(ChmCommons.copyOfRange(data,
+                (int) chmItsfHeader.getDirOffset(),
+                (int) chmItsfHeader.getDirOffset()
+                        + ChmConstants.CHM_ITSP_V1_LEN), chmItspHeader);
+    }
 
-	public void testGetBlock_len() {
-		Assert.assertEquals(TestParameters.VP_BLOCK_LENGTH,
-				chmItspHeader.getBlock_len());
-	}
+    public void testGetBlock_len() {
+        Assert.assertEquals(TestParameters.VP_BLOCK_LENGTH,
+                chmItspHeader.getBlock_len());
+    }
 
-	public void testGetBlockidx_intvl() {
-		Assert.assertEquals(TestParameters.VP_BLOCK_INDEX_INTERVAL,
-				chmItspHeader.getBlockidx_intvl());
-	}
+    public void testGetBlockidx_intvl() {
+        Assert.assertEquals(TestParameters.VP_BLOCK_INDEX_INTERVAL,
+                chmItspHeader.getBlockidx_intvl());
+    }
 
-	public void testGetHeader_len() {
-		Assert.assertEquals(TestParameters.VP_ITSP_HEADER_LENGTH,
-				chmItspHeader.getHeader_len());
-	}
+    public void testGetHeader_len() {
+        Assert.assertEquals(TestParameters.VP_ITSP_HEADER_LENGTH,
+                chmItspHeader.getHeader_len());
+    }
 
-	public void testGetIndex_depth() {
-		Assert.assertEquals(TestParameters.VP_INDEX_DEPTH,
-				chmItspHeader.getIndex_depth());
-	}
+    public void testGetIndex_depth() {
+        Assert.assertEquals(TestParameters.VP_INDEX_DEPTH,
+                chmItspHeader.getIndex_depth());
+    }
 
-	public void testGetIndex_head() {
-		Assert.assertEquals(TestParameters.VP_INDEX_HEAD,
-				chmItspHeader.getIndex_head());
-	}
+    public void testGetIndex_head() {
+        Assert.assertEquals(TestParameters.VP_INDEX_HEAD,
+                chmItspHeader.getIndex_head());
+    }
 
-	public void testGetIndex_root() {
-		Assert.assertEquals(TestParameters.VP_INDEX_ROOT,
-				chmItspHeader.getIndex_root());
-	}
+    public void testGetIndex_root() {
+        Assert.assertEquals(TestParameters.VP_INDEX_ROOT,
+                chmItspHeader.getIndex_root());
+    }
 
-	public void testGetLang_id() {
-		Assert.assertEquals(TestParameters.VP_LANGUAGE_ID,
-				chmItspHeader.getLang_id());
-	}
+    public void testGetLang_id() {
+        Assert.assertEquals(TestParameters.VP_LANGUAGE_ID,
+                chmItspHeader.getLang_id());
+    }
 
-	public void testGetNum_blocks() {
-		Assert.assertEquals(TestParameters.VP_UNKNOWN_NUM_BLOCKS,
-				chmItspHeader.getNum_blocks());
-	}
+    public void testGetNum_blocks() {
+        Assert.assertEquals(TestParameters.VP_UNKNOWN_NUM_BLOCKS,
+                chmItspHeader.getNum_blocks());
+    }
 
-	public void testGetUnknown_000c() {
-		Assert.assertEquals(TestParameters.VP_ITSP_UNKNOWN_000C,
-				chmItspHeader.getUnknown_000c());
-	}
+    public void testGetUnknown_000c() {
+        Assert.assertEquals(TestParameters.VP_ITSP_UNKNOWN_000C,
+                chmItspHeader.getUnknown_000c());
+    }
 
-	public void testGetUnknown_0024() {
-		Assert.assertEquals(TestParameters.VP_ITSP_UNKNOWN_0024,
-				chmItspHeader.getUnknown_0024());
-	}
+    public void testGetUnknown_0024() {
+        Assert.assertEquals(TestParameters.VP_ITSP_UNKNOWN_0024,
+                chmItspHeader.getUnknown_0024());
+    }
 
-	public void testGetUnknown_002() {
-		Assert.assertEquals(TestParameters.VP_ITSP_UNKNOWN_002C,
-				chmItspHeader.getUnknown_002c());
-	}
+    public void testGetUnknown_002() {
+        Assert.assertEquals(TestParameters.VP_ITSP_UNKNOWN_002C,
+                chmItspHeader.getUnknown_002c());
+    }
 
-	public void testGetUnknown_0044() {
-		Assert.assertEquals(TestParameters.VP_ITSP_BYTEARR_LEN,
-				chmItspHeader.getUnknown_0044().length);
-	}
+    public void testGetUnknown_0044() {
+        Assert.assertEquals(TestParameters.VP_ITSP_BYTEARR_LEN,
+                chmItspHeader.getUnknown_0044().length);
+    }
 
-	public void testGetVersion() {
-		Assert.assertEquals(TestParameters.VP_ITSP_VERSION,
-				chmItspHeader.getVersion());
-	}
+    public void testGetVersion() {
+        Assert.assertEquals(TestParameters.VP_ITSP_VERSION,
+                chmItspHeader.getVersion());
+    }
 
-	public void testGetSignature() {
-		Assert.assertEquals(TestParameters.VP_ISTP_SIGNATURE, new String(
-				chmItspHeader.getSignature()));
-	}
+    public void testGetSignature() {
+        Assert.assertEquals(TestParameters.VP_ISTP_SIGNATURE, new String(
+                chmItspHeader.getSignature()));
+    }
 
-	public void testGetSystem_uuid() {
-		Assert.assertEquals(TestParameters.VP_ITSP_BYTEARR_LEN,
-				chmItspHeader.getSystem_uuid().length);
-	}
+    public void testGetSystem_uuid() {
+        Assert.assertEquals(TestParameters.VP_ITSP_BYTEARR_LEN,
+                chmItspHeader.getSystem_uuid().length);
+    }
 
-	public void testToString() {
-		Assert.assertTrue(chmItspHeader.toString().contains(
-				TestParameters.VP_ISTP_SIGNATURE));
-	}
+    public void testToString() {
+        Assert.assertTrue(chmItspHeader.toString().contains(
+                TestParameters.VP_ISTP_SIGNATURE));
+    }
 
-	public void tearDown() throws Exception {
-		chmItspHeader = null;
-	}
+    public void tearDown() throws Exception {
+        chmItspHeader = null;
+    }
 
 }
