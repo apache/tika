@@ -37,163 +37,162 @@ import org.xml.sax.SAXException;
  * 
  */
 public class CHMDocumentInformation {
-	/* Class members */
-	private ChmExtractor chmExtractor = null;
+    /* Class members */
+    private ChmExtractor chmExtractor = null;
 
-	/**
-	 * Loads chm file as input stream and returns a new instance of chm doc info
-	 * 
-	 * @param is
-	 *            InputStream
-	 * 
-	 * @return chm document information
-	 */
-	public static CHMDocumentInformation load(InputStream is) {
-		return new CHMDocumentInformation().getInstance(is);
-	}
+    /**
+     * Loads chm file as input stream and returns a new instance of chm doc info
+     * 
+     * @param is
+     *            InputStream
+     * 
+     * @return chm document information
+     */
+    public static CHMDocumentInformation load(InputStream is) {
+        return new CHMDocumentInformation().getInstance(is);
+    }
 
-	/**
-	 * Returns instance of chm document information
-	 * 
-	 * @param is
-	 *            InputStream
-	 * 
-	 * @return
-	 */
-	private CHMDocumentInformation getInstance(InputStream is) {
-		setChmExtractor(new ChmExtractor(is));
-		return this;
-	}
+    /**
+     * Returns instance of chm document information
+     * 
+     * @param is
+     *            InputStream
+     * 
+     * @return
+     */
+    private CHMDocumentInformation getInstance(InputStream is) {
+        setChmExtractor(new ChmExtractor(is));
+        return this;
+    }
 
-	/**
-	 * Appends extracted data from chm listing entries
-	 * 
-	 * @return extracted content of chm
-	 */
-	private String getContent() {
-		StringBuilder sb = new StringBuilder();
-		DirectoryListingEntry entry;
-		for (Iterator<DirectoryListingEntry> it = getChmExtractor()
-				.getChmDirList().getDirectoryListingEntryList().iterator(); it
-				.hasNext();) {
-			try {
-				entry = it.next();
-				if (isRightEntry(entry)) {
-					byte[][] tmp = getChmExtractor().extractChmEntry(entry);
-					if (tmp != null) {
-						sb.append(extract(tmp));
-					}
-				}
-			} catch (ChmParsingException e) {// catch (IOException e) {
-				System.out.println(e.getMessage());
-			} // catch (IOException e) {//Pushback exception from tagsoup
-			// System.err.println(e.getMessage());
-		}
-		return sb.toString();
-	}
+    /**
+     * Appends extracted data from chm listing entries
+     * 
+     * @return extracted content of chm
+     */
+    private String getContent() {
+        StringBuilder sb = new StringBuilder();
+        DirectoryListingEntry entry;
+        for (Iterator<DirectoryListingEntry> it = getChmExtractor()
+                .getChmDirList().getDirectoryListingEntryList().iterator(); it
+                .hasNext();) {
+            try {
+                entry = it.next();
+                if (isRightEntry(entry)) {
+                    byte[][] tmp = getChmExtractor().extractChmEntry(entry);
+                    if (tmp != null) {
+                        sb.append(extract(tmp));
+                    }
+                }
+            } catch (ChmParsingException e) {// catch (IOException e) {
+                System.out.println(e.getMessage());
+            } // catch (IOException e) {//Pushback exception from tagsoup
+            // System.err.println(e.getMessage());
+        }
+        return sb.toString();
+    }
 
-	/**
-	 * Checks if an entry is a html or not.
-	 * 
-	 * @param entry
-	 *            chm directory listing entry
-	 * 
-	 * @return boolean
-	 */
-	private boolean isRightEntry(DirectoryListingEntry entry) {
-		return (entry.getName().endsWith(".html") || entry.getName().endsWith(
-				".htm"));
-	}
+    /**
+     * Checks if an entry is a html or not.
+     * 
+     * @param entry
+     *            chm directory listing entry
+     * 
+     * @return boolean
+     */
+    private boolean isRightEntry(DirectoryListingEntry entry) {
+        return (entry.getName().endsWith(".html") || entry.getName().endsWith(".htm"));
+    }
 
-	/**
-	 * Returns chm extractor
-	 * 
-	 * @return chmExtractor
-	 */
-	private ChmExtractor getChmExtractor() {
-		return chmExtractor;
-	}
+    /**
+     * Returns chm extractor
+     * 
+     * @return chmExtractor
+     */
+    private ChmExtractor getChmExtractor() {
+        return chmExtractor;
+    }
 
-	/**
-	 * Sets a chm extractor
-	 * 
-	 * @param chmExtractor
-	 */
-	private void setChmExtractor(ChmExtractor chmExtractor) {
-		this.chmExtractor = chmExtractor;
-	}
+    /**
+     * Sets a chm extractor
+     * 
+     * @param chmExtractor
+     */
+    private void setChmExtractor(ChmExtractor chmExtractor) {
+        this.chmExtractor = chmExtractor;
+    }
 
-	/**
-	 * Returns chm metadata
-	 * 
-	 * @param metadata
-	 * 
-	 * @throws TikaException
-	 * @throws IOException
-	 */
-	public void getCHMDocInformation(Metadata metadata) throws TikaException,
-			IOException {
-		if (getChmExtractor() != null) {
-			/* Checking if file is a chm, done during creating chmItsf header */
-			metadata.add(Metadata.CONTENT_TYPE, "application/x-chm");
-		} else {
-			metadata.add(Metadata.CONTENT_TYPE, "unknown");
-		}
-	}
+    /**
+     * Returns chm metadata
+     * 
+     * @param metadata
+     * 
+     * @throws TikaException
+     * @throws IOException
+     */
+    public void getCHMDocInformation(Metadata metadata) throws TikaException,
+            IOException {
+        if (getChmExtractor() != null) {
+            /* Checking if file is a chm, done during creating chmItsf header */
+            metadata.add(Metadata.CONTENT_TYPE, "application/x-chm");
+        } else {
+            metadata.add(Metadata.CONTENT_TYPE, "unknown");
+        }
+    }
 
-	/**
-	 * Returns extracted text from chm file
-	 * 
-	 * @return text
-	 * 
-	 * @throws TikaException
-	 */
-	public String getText() throws TikaException {
-		return getContent();
-	}
+    /**
+     * Returns extracted text from chm file
+     * 
+     * @return text
+     * 
+     * @throws TikaException
+     */
+    public String getText() throws TikaException {
+        return getContent();
+    }
 
-	/**
-	 * Extracts data from byte[][]
-	 * 
-	 * @param byteObject
-	 * @return
-	 * @throws IOException
-	 * @throws SAXException
-	 */
-	private String extract(byte[][] byteObject) {// throws IOException
-		StringBuilder wBuf = new StringBuilder();
-		InputStream stream = null;
-		Metadata metadata = new Metadata();
-		HtmlParser htmlParser = new HtmlParser();
-		BodyContentHandler handler = new BodyContentHandler(-1);// -1
-		ParseContext parser = new ParseContext();
-		try {
-			for (int i = 0; i < byteObject.length; i++) {
-				stream = new ByteArrayInputStream(byteObject[i]);
-				try {
-					htmlParser.parse(stream, handler, metadata, parser);
-				} catch (TikaException e) {
-					wBuf.append(new String(byteObject[i]));
-					System.err.println("\n"
-							+ CHMDocumentInformation.class.getName()
-							+ " extract " + e.getMessage());
-				} finally {
-					wBuf.append(handler.toString()
-							+ System.getProperty("line.separator"));
-					stream.close();
-				}
-			}
-		} catch (ChmParsingException e) {
-			System.err.println(e.getMessage());
-		} catch (SAXException e) {
-			System.err.println(e.getMessage());
-		} catch (IOException e) {// Pushback overflow from tagsoup
-		// System.err.println(e.getMessage());
-		}
-		return wBuf.toString();
-	}
+    /**
+     * Extracts data from byte[][]
+     * 
+     * @param byteObject
+     * @return
+     * @throws IOException
+     * @throws SAXException
+     */
+    private String extract(byte[][] byteObject) {// throws IOException
+        StringBuilder wBuf = new StringBuilder();
+        InputStream stream = null;
+        Metadata metadata = new Metadata();
+        HtmlParser htmlParser = new HtmlParser();
+        BodyContentHandler handler = new BodyContentHandler(-1);// -1
+        ParseContext parser = new ParseContext();
+        try {
+            for (int i = 0; i < byteObject.length; i++) {
+                stream = new ByteArrayInputStream(byteObject[i]);
+                try {
+                    htmlParser.parse(stream, handler, metadata, parser);
+                } catch (TikaException e) {
+                    wBuf.append(new String(byteObject[i]));
+                    System.err.println("\n"
+                            + CHMDocumentInformation.class.getName()
+                            + " extract " + e.getMessage());
+                } finally {
+                    wBuf.append(handler.toString()
+                            + System.getProperty("line.separator"));
+                    stream.close();
+                }
+            }
+        } catch (ChmParsingException e) {
+            System.err.println(e.getMessage());
+        } catch (SAXException e) {
+            System.err.println(e.getMessage());
+        } catch (IOException e) {// Pushback overflow from tagsoup
+        // System.err.println(e.getMessage());
+        }
+        return wBuf.toString();
+    }
 
-	public static void main(String[] args) {
+    public static void main(String[] args) {
 
-	}
+    }
 }

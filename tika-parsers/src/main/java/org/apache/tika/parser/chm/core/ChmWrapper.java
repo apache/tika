@@ -10,121 +10,121 @@ import org.apache.tika.parser.chm.accessor.ChmLzxcResetTable;
 import org.apache.tika.parser.chm.lzx.ChmLzxBlock;
 
 public class ChmWrapper {
-	private List<ChmLzxBlock> lzxBlocksCache = null;
-	private ChmDirectoryListingSet chmDirList = null;
-	private ChmItsfHeader chmItsfHeader = null;
-	private ChmItspHeader chmItspHeader = null;
-	private ChmLzxcResetTable chmLzxcResetTable = null;
-	private ChmLzxcControlData chmLzxcControlData = null;
-	private byte[] data = null;
-	private int indexOfContent;
-	private long lzxBlockOffset;
-	private long lzxBlockLength;
-	private int indexOfResetData;
-	private int indexOfResetTable;
-	private int startIndex;
+    private List<ChmLzxBlock> lzxBlocksCache = null;
+    private ChmDirectoryListingSet chmDirList = null;
+    private ChmItsfHeader chmItsfHeader = null;
+    private ChmItspHeader chmItspHeader = null;
+    private ChmLzxcResetTable chmLzxcResetTable = null;
+    private ChmLzxcControlData chmLzxcControlData = null;
+    private byte[] data = null;
+    private int indexOfContent;
+    private long lzxBlockOffset;
+    private long lzxBlockLength;
+    private int indexOfResetData;
+    private int indexOfResetTable;
+    private int startIndex;
 
-	protected int getStartIndex() {
-		return startIndex;
-	}
+    protected int getStartIndex() {
+        return startIndex;
+    }
 
-	protected void setStartIndex(int startIndex) {
-		this.startIndex = startIndex;
-	}
+    protected void setStartIndex(int startIndex) {
+        this.startIndex = startIndex;
+    }
 
-	protected int getIndexOfResetTable() {
-		return indexOfResetTable;
-	}
+    protected int getIndexOfResetTable() {
+        return indexOfResetTable;
+    }
 
-	protected void setIndexOfResetTable(int indexOfResetTable) {
-		this.indexOfResetTable = indexOfResetTable;
-	}
+    protected void setIndexOfResetTable(int indexOfResetTable) {
+        this.indexOfResetTable = indexOfResetTable;
+    }
 
-	protected List<ChmLzxBlock> getLzxBlocksCache() {
-		return lzxBlocksCache;
-	}
+    protected List<ChmLzxBlock> getLzxBlocksCache() {
+        return lzxBlocksCache;
+    }
 
-	protected void setLzxBlocksCache(List<ChmLzxBlock> lzxBlocksCache) {
-		this.lzxBlocksCache = lzxBlocksCache;
-	}
+    protected void setLzxBlocksCache(List<ChmLzxBlock> lzxBlocksCache) {
+        this.lzxBlocksCache = lzxBlocksCache;
+    }
 
-	protected ChmDirectoryListingSet getChmDirList() {
-		return chmDirList;
-	}
+    protected ChmDirectoryListingSet getChmDirList() {
+        return chmDirList;
+    }
 
-	protected void setChmDirList(ChmDirectoryListingSet chmDirList) {
-		this.chmDirList = chmDirList;
-	}
+    protected void setChmDirList(ChmDirectoryListingSet chmDirList) {
+        this.chmDirList = chmDirList;
+    }
 
-	protected ChmItsfHeader getChmItsfHeader() {
-		return chmItsfHeader;
-	}
+    protected ChmItsfHeader getChmItsfHeader() {
+        return chmItsfHeader;
+    }
 
-	protected void setChmItsfHeader(ChmItsfHeader chmItsfHeader) {
-		this.chmItsfHeader = chmItsfHeader;
-	}
+    protected void setChmItsfHeader(ChmItsfHeader chmItsfHeader) {
+        this.chmItsfHeader = chmItsfHeader;
+    }
 
-	protected ChmLzxcResetTable getChmLzxcResetTable() {
-		return chmLzxcResetTable;
-	}
+    protected ChmLzxcResetTable getChmLzxcResetTable() {
+        return chmLzxcResetTable;
+    }
 
-	protected void setChmLzxcResetTable(ChmLzxcResetTable chmLzxcResetTable) {
-		this.chmLzxcResetTable = chmLzxcResetTable;
-	}
+    protected void setChmLzxcResetTable(ChmLzxcResetTable chmLzxcResetTable) {
+        this.chmLzxcResetTable = chmLzxcResetTable;
+    }
 
-	protected ChmLzxcControlData getChmLzxcControlData() {
-		return chmLzxcControlData;
-	}
+    protected ChmLzxcControlData getChmLzxcControlData() {
+        return chmLzxcControlData;
+    }
 
-	protected void setChmLzxcControlData(ChmLzxcControlData chmLzxcControlData) {
-		this.chmLzxcControlData = chmLzxcControlData;
-	}
+    protected void setChmLzxcControlData(ChmLzxcControlData chmLzxcControlData) {
+        this.chmLzxcControlData = chmLzxcControlData;
+    }
 
-	protected byte[] getData() {
-		return data;
-	}
+    protected byte[] getData() {
+        return data;
+    }
 
-	protected void setData(byte[] data) {
-		this.data = data;
-	}
+    protected void setData(byte[] data) {
+        this.data = data;
+    }
 
-	protected int getIndexOfContent() {
-		return indexOfContent;
-	}
+    protected int getIndexOfContent() {
+        return indexOfContent;
+    }
 
-	protected void setIndexOfContent(int indexOfContent) {
-		this.indexOfContent = indexOfContent;
-	}
+    protected void setIndexOfContent(int indexOfContent) {
+        this.indexOfContent = indexOfContent;
+    }
 
-	protected long getLzxBlockOffset() {
-		return lzxBlockOffset;
-	}
+    protected long getLzxBlockOffset() {
+        return lzxBlockOffset;
+    }
 
-	protected void setLzxBlockOffset(long lzxBlockOffset) {
-		this.lzxBlockOffset = lzxBlockOffset;
-	}
+    protected void setLzxBlockOffset(long lzxBlockOffset) {
+        this.lzxBlockOffset = lzxBlockOffset;
+    }
 
-	protected long getLzxBlockLength() {
-		return lzxBlockLength;
-	}
+    protected long getLzxBlockLength() {
+        return lzxBlockLength;
+    }
 
-	protected void setLzxBlockLength(long lzxBlockLength) {
-		this.lzxBlockLength = lzxBlockLength;
-	}
+    protected void setLzxBlockLength(long lzxBlockLength) {
+        this.lzxBlockLength = lzxBlockLength;
+    }
 
-	protected void setChmItspHeader(ChmItspHeader chmItspHeader) {
-		this.chmItspHeader = chmItspHeader;
-	}
+    protected void setChmItspHeader(ChmItspHeader chmItspHeader) {
+        this.chmItspHeader = chmItspHeader;
+    }
 
-	protected ChmItspHeader getChmItspHeader() {
-		return chmItspHeader;
-	}
+    protected ChmItspHeader getChmItspHeader() {
+        return chmItspHeader;
+    }
 
-	protected void setIndexOfResetData(int indexOfResetData) {
-		this.indexOfResetData = indexOfResetData;
-	}
+    protected void setIndexOfResetData(int indexOfResetData) {
+        this.indexOfResetData = indexOfResetData;
+    }
 
-	protected int getIndexOfResetData() {
-		return indexOfResetData;
-	}
+    protected int getIndexOfResetData() {
+        return indexOfResetData;
+    }
 }

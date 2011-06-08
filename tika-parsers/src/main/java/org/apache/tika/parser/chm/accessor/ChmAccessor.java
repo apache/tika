@@ -25,12 +25,12 @@ import java.io.Serializable;
  * @param <T>
  */
 public interface ChmAccessor<T> extends Serializable {
-	/**
-	 * Parses chm accessor
-	 * 
-	 * @param data
-	 *            chm file
-	 * @param chmAccessor
-	 */
-	void parse(byte[] data, T chmAccessor);
+    /**
+     * Parses chm accessor
+     * 
+     * @param data
+     *            chm file
+     * @param chmAccessor
+     */
+    void parse(byte[] data, T chmAccessor);
 }

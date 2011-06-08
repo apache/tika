@@ -29,201 +29,201 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
  * 
  */
 public class ChmBlockInfo {
-	/* class members */
-	private int iniBlock;
-	private int startBlock;
-	private int endBlock;
-	private int startOffset;
-	private int endOffset;
+    /* class members */
+    private int iniBlock;
+    private int startBlock;
+    private int endBlock;
+    private int startOffset;
+    private int endOffset;
 
-	private static ChmBlockInfo chmBlockInfo = null;
+    private static ChmBlockInfo chmBlockInfo = null;
 
-	private ChmBlockInfo() {
+    private ChmBlockInfo() {
 
-	}
+    }
 
-	/**
-	 * Returns an information related to the chmBlockInfo
-	 * 
-	 * @param dle
-	 *            - DirectoryListingEntry
-	 * @param bytesPerBlock
-	 *            - int, = chmLzxcResetTable.block_length
-	 * @param clcd
-	 *            - ChmLzxcControlData
-	 * @param chmBlockInfo
-	 *            - ChmBlockInfo
-	 * 
-	 * @return ChmBlockInfo
-	 */
-	protected ChmBlockInfo getChmBlockInfo(DirectoryListingEntry dle,
-			int bytesPerBlock, ChmLzxcControlData clcd,
-			ChmBlockInfo chmBlockInfo) {
-		if (!validateParameters(dle, bytesPerBlock, clcd, chmBlockInfo))
-			throw new ChmParsingException("Please check you parameters");
+    /**
+     * Returns an information related to the chmBlockInfo
+     * 
+     * @param dle
+     *            - DirectoryListingEntry
+     * @param bytesPerBlock
+     *            - int, = chmLzxcResetTable.block_length
+     * @param clcd
+     *            - ChmLzxcControlData
+     * @param chmBlockInfo
+     *            - ChmBlockInfo
+     * 
+     * @return ChmBlockInfo
+     */
+    protected ChmBlockInfo getChmBlockInfo(DirectoryListingEntry dle,
+            int bytesPerBlock, ChmLzxcControlData clcd,
+            ChmBlockInfo chmBlockInfo) {
+        if (!validateParameters(dle, bytesPerBlock, clcd, chmBlockInfo))
+            throw new ChmParsingException("Please check you parameters");
 
-		chmBlockInfo.setStartBlock(dle.getOffset() / bytesPerBlock);
-		chmBlockInfo.setEndBlock((dle.getOffset() + dle.getLength())
-				/ bytesPerBlock);
-		chmBlockInfo.setStartOffset(dle.getOffset() % bytesPerBlock);
-		chmBlockInfo.setEndOffset((dle.getOffset() + dle.getLength())
-				% bytesPerBlock);
-		// potential problem with casting long to int
-		chmBlockInfo
-				.setIniBlock((chmBlockInfo.startBlock - chmBlockInfo.startBlock)
-						% (int) clcd.getResetInterval());
-		return chmBlockInfo;
-	}
+        chmBlockInfo.setStartBlock(dle.getOffset() / bytesPerBlock);
+        chmBlockInfo.setEndBlock((dle.getOffset() + dle.getLength())
+                / bytesPerBlock);
+        chmBlockInfo.setStartOffset(dle.getOffset() % bytesPerBlock);
+        chmBlockInfo.setEndOffset((dle.getOffset() + dle.getLength())
+                % bytesPerBlock);
+        // potential problem with casting long to int
+        chmBlockInfo
+                .setIniBlock((chmBlockInfo.startBlock - chmBlockInfo.startBlock)
+                        % (int) clcd.getResetInterval());
+        return chmBlockInfo;
+    }
 
-	public static ChmBlockInfo getChmBlockInfoInstance(
-			DirectoryListingEntry dle, int bytesPerBlock,
-			ChmLzxcControlData clcd) {
-		setChmBlockInfo(new ChmBlockInfo());
-		getChmBlockInfo().setStartBlock(dle.getOffset() / bytesPerBlock);
-		getChmBlockInfo().setEndBlock(
-				(dle.getOffset() + dle.getLength()) / bytesPerBlock);
-		getChmBlockInfo().setStartOffset(dle.getOffset() % bytesPerBlock);
-		getChmBlockInfo().setEndOffset(
-				(dle.getOffset() + dle.getLength()) % bytesPerBlock);
-		// potential problem with casting long to int
-		getChmBlockInfo().setIniBlock(
-				(getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
-						% (int) clcd.getResetInterval());
-		return getChmBlockInfo();
-	}
+    public static ChmBlockInfo getChmBlockInfoInstance(
+            DirectoryListingEntry dle, int bytesPerBlock,
+            ChmLzxcControlData clcd) {
+        setChmBlockInfo(new ChmBlockInfo());
+        getChmBlockInfo().setStartBlock(dle.getOffset() / bytesPerBlock);
+        getChmBlockInfo().setEndBlock(
+                (dle.getOffset() + dle.getLength()) / bytesPerBlock);
+        getChmBlockInfo().setStartOffset(dle.getOffset() % bytesPerBlock);
+        getChmBlockInfo().setEndOffset(
+                (dle.getOffset() + dle.getLength()) % bytesPerBlock);
+        // potential problem with casting long to int
+        getChmBlockInfo().setIniBlock(
+                (getChmBlockInfo().startBlock - getChmBlockInfo().startBlock)
+                        % (int) clcd.getResetInterval());
+        return getChmBlockInfo();
+    }
 
-	/**
-	 * Returns textual representation of ChmBlockInfo
-	 */
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("iniBlock:=" + getIniBlock() + ", ");
-		sb.append("startBlock:=" + getStartBlock() + ", ");
-		sb.append("endBlock:=" + getEndBlock() + ", ");
-		sb.append("startOffset:=" + getStartOffset() + ", ");
-		sb.append("endOffset:=" + getEndOffset()
-				+ System.getProperty("line.separator"));
-		return sb.toString();
-	}
+    /**
+     * Returns textual representation of ChmBlockInfo
+     */
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("iniBlock:=" + getIniBlock() + ", ");
+        sb.append("startBlock:=" + getStartBlock() + ", ");
+        sb.append("endBlock:=" + getEndBlock() + ", ");
+        sb.append("startOffset:=" + getStartOffset() + ", ");
+        sb.append("endOffset:=" + getEndOffset()
+                + System.getProperty("line.separator"));
+        return sb.toString();
+    }
 
-	private boolean validateParameters(DirectoryListingEntry dle,
-			int bytesPerBlock, ChmLzxcControlData clcd,
-			ChmBlockInfo chmBlockInfo) {
-		int goodParameter = 0;
-		if (dle != null)
-			++goodParameter;
-		if (bytesPerBlock > 0)
-			++goodParameter;
-		if (clcd != null)
-			++goodParameter;
-		if (chmBlockInfo != null)
-			++goodParameter;
-		return (goodParameter == 4);
-	}
+    private boolean validateParameters(DirectoryListingEntry dle,
+            int bytesPerBlock, ChmLzxcControlData clcd,
+            ChmBlockInfo chmBlockInfo) {
+        int goodParameter = 0;
+        if (dle != null)
+            ++goodParameter;
+        if (bytesPerBlock > 0)
+            ++goodParameter;
+        if (clcd != null)
+            ++goodParameter;
+        if (chmBlockInfo != null)
+            ++goodParameter;
+        return (goodParameter == 4);
+    }
 
-	public static void main(String[] args) {
-	}
+    public static void main(String[] args) {
+    }
 
-	/**
-	 * Returns an initial block index
-	 * 
-	 * @return int
-	 */
-	public int getIniBlock() {
-		return iniBlock;
-	}
+    /**
+     * Returns an initial block index
+     * 
+     * @return int
+     */
+    public int getIniBlock() {
+        return iniBlock;
+    }
 
-	/**
-	 * Sets the initial block index
-	 * 
-	 * @param iniBlock
-	 *            - int
-	 */
-	private void setIniBlock(int iniBlock) {
-		this.iniBlock = iniBlock;
-	}
+    /**
+     * Sets the initial block index
+     * 
+     * @param iniBlock
+     *            - int
+     */
+    private void setIniBlock(int iniBlock) {
+        this.iniBlock = iniBlock;
+    }
 
-	/**
-	 * Returns the start block index
-	 * 
-	 * @return int
-	 */
-	public int getStartBlock() {
-		return startBlock;
-	}
+    /**
+     * Returns the start block index
+     * 
+     * @return int
+     */
+    public int getStartBlock() {
+        return startBlock;
+    }
 
-	/**
-	 * Sets the start block index
-	 * 
-	 * @param startBlock
-	 *            - int
-	 */
-	private void setStartBlock(int startBlock) {
-		this.startBlock = startBlock;
-	}
+    /**
+     * Sets the start block index
+     * 
+     * @param startBlock
+     *            - int
+     */
+    private void setStartBlock(int startBlock) {
+        this.startBlock = startBlock;
+    }
 
-	/**
-	 * Returns the end block index
-	 * 
-	 * @return - int
-	 */
-	public int getEndBlock() {
-		return endBlock;
-	}
+    /**
+     * Returns the end block index
+     * 
+     * @return - int
+     */
+    public int getEndBlock() {
+        return endBlock;
+    }
 
-	/**
-	 * Sets the end block index
-	 * 
-	 * @param endBlock
-	 *            - int
-	 */
-	private void setEndBlock(int endBlock) {
-		this.endBlock = endBlock;
-	}
+    /**
+     * Sets the end block index
+     * 
+     * @param endBlock
+     *            - int
+     */
+    private void setEndBlock(int endBlock) {
+        this.endBlock = endBlock;
+    }
 
-	/**
-	 * Returns the start offset index
-	 * 
-	 * @return - int
-	 */
-	public int getStartOffset() {
-		return startOffset;
-	}
+    /**
+     * Returns the start offset index
+     * 
+     * @return - int
+     */
+    public int getStartOffset() {
+        return startOffset;
+    }
 
-	/**
-	 * Sets the start offset index
-	 * 
-	 * @param startOffset
-	 *            - int
-	 */
-	private void setStartOffset(int startOffset) {
-		this.startOffset = startOffset;
-	}
+    /**
+     * Sets the start offset index
+     * 
+     * @param startOffset
+     *            - int
+     */
+    private void setStartOffset(int startOffset) {
+        this.startOffset = startOffset;
+    }
 
-	/**
-	 * Returns the end offset index
-	 * 
-	 * @return - int
-	 */
-	public int getEndOffset() {
-		return endOffset;
-	}
+    /**
+     * Returns the end offset index
+     * 
+     * @return - int
+     */
+    public int getEndOffset() {
+        return endOffset;
+    }
 
-	/**
-	 * Sets the end offset index
-	 * 
-	 * @param endOffset
-	 *            - int
-	 */
-	private void setEndOffset(int endOffset) {
-		this.endOffset = endOffset;
-	}
+    /**
+     * Sets the end offset index
+     * 
+     * @param endOffset
+     *            - int
+     */
+    private void setEndOffset(int endOffset) {
+        this.endOffset = endOffset;
+    }
 
-	public static void setChmBlockInfo(ChmBlockInfo chmBlockInfo) {
-		ChmBlockInfo.chmBlockInfo = chmBlockInfo;
-	}
+    public static void setChmBlockInfo(ChmBlockInfo chmBlockInfo) {
+        ChmBlockInfo.chmBlockInfo = chmBlockInfo;
+    }
 
-	public static ChmBlockInfo getChmBlockInfo() {
-		return chmBlockInfo;
-	}
+    public static ChmBlockInfo getChmBlockInfo() {
+        return chmBlockInfo;
+    }
 }

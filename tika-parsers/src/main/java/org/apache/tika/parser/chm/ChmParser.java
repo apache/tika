@@ -31,25 +31,26 @@ import org.xml.sax.SAXException;
 
 public class ChmParser extends AbstractParser {
 
-	private static final long serialVersionUID = 5938777307516469802L;
-	private static final Set<MediaType> SUPPORTED_TYPES = Collections
-			.singleton(MediaType.application("chm"));
+    private static final long serialVersionUID = 5938777307516469802L;
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .singleton(MediaType.application("chm"));
 
-	public Set<MediaType> getSupportedTypes(ParseContext context) {
-		return SUPPORTED_TYPES;
-	}
-	
-	public void parse(InputStream stream, ContentHandler handler,
-			Metadata metadata, ParseContext context) throws IOException,
-			SAXException, TikaException {
-		CHMDocumentInformation chmInfo = CHMDocumentInformation.load(stream);
-		metadata.set(Metadata.CONTENT_TYPE, "chm");
-		extractMetadata(chmInfo, metadata);
-		CHM2XHTML.process(chmInfo, handler);
-	}
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
-	private void extractMetadata(CHMDocumentInformation chmInfo,
-			Metadata metadata) throws TikaException, IOException {
-		chmInfo.getCHMDocInformation(metadata);
-	}
+
+    public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context) throws IOException,
+            SAXException, TikaException {
+        CHMDocumentInformation chmInfo = CHMDocumentInformation.load(stream);
+        metadata.set(Metadata.CONTENT_TYPE, "chm");
+        extractMetadata(chmInfo, metadata);
+        CHM2XHTML.process(chmInfo, handler);
+    }
+
+    private void extractMetadata(CHMDocumentInformation chmInfo,
+            Metadata metadata) throws TikaException, IOException {
+        chmInfo.getCHMDocInformation(metadata);
+    }
 }

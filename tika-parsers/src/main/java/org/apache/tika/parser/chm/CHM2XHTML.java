@@ -29,30 +29,30 @@ import org.xml.sax.SAXException;
  */
 public class CHM2XHTML {
 
-	public static void process(CHMDocumentInformation chmDoc,
-			ContentHandler handler) throws TikaException {
-		String text = chmDoc.getText();
-		try {
-			if (text.length() > 0) {
-				handler.characters(text.toCharArray(), 0, text.length());
-				new CHM2XHTML(chmDoc, handler);
-			} else
-				/* The error handling should be added */
-				System.err.println("Could not extract content");
+    public static void process(CHMDocumentInformation chmDoc,
+            ContentHandler handler) throws TikaException {
+        String text = chmDoc.getText();
+        try {
+            if (text.length() > 0) {
+                handler.characters(text.toCharArray(), 0, text.length());
+                new CHM2XHTML(chmDoc, handler);
+            } else
+                /* The error handling should be added */
+                System.err.println("Could not extract content");
 
-		} catch (SAXException e) {
-			// System.err.println(ChmParserUtils.getStackTrace(e.getStackTrace()));
-		}
-	}
+        } catch (SAXException e) {
+            // System.err.println(ChmParserUtils.getStackTrace(e.getStackTrace()));
+        }
+    }
 
-	protected String getText(CHMDocumentInformation chmDoc)
-			throws TikaException {
-		return chmDoc.getText();
-	}
+    protected String getText(CHMDocumentInformation chmDoc)
+            throws TikaException {
+        return chmDoc.getText();
+    }
 
-	protected TextContentHandler handler;
+    protected TextContentHandler handler;
 
-	public CHM2XHTML(CHMDocumentInformation chmDoc, ContentHandler handler) {
-		this.handler = new TextContentHandler(handler);
-	}
+    public CHM2XHTML(CHMDocumentInformation chmDoc, ContentHandler handler) {
+        this.handler = new TextContentHandler(handler);
+    }
 }
