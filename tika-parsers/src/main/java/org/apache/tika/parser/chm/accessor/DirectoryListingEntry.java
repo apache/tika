@@ -31,126 +31,126 @@ import org.apache.tika.parser.chm.core.ChmCommons;
  * 
  */
 public class DirectoryListingEntry {
-	/* Length of the entry name */
-	private int name_length;
-	/* Entry name or directory name */
-	private String name;
-	/* Entry type */
-	private ChmCommons.EntryType entryType;
-	/* Entry offset */
-	private int offset;
-	/* Entry size */
-	private int length;
+    /* Length of the entry name */
+    private int name_length;
+    /* Entry name or directory name */
+    private String name;
+    /* Entry type */
+    private ChmCommons.EntryType entryType;
+    /* Entry offset */
+    private int offset;
+    /* Entry size */
+    private int length;
 
-	public DirectoryListingEntry() {
+    public DirectoryListingEntry() {
 
-	}
+    }
 
-	/**
-	 * Constructs directoryListingEntry
-	 * 
-	 * @param name_length
-	 *            int
-	 * @param name
-	 *            String
-	 * @param isCompressed
-	 *            ChmCommons.EntryType
-	 * @param offset
-	 *            int
-	 * @param length
-	 *            int
-	 */
-	public DirectoryListingEntry(int name_length, String name,
-			ChmCommons.EntryType isCompressed, int offset, int length) {
-		ChmAssert.assertDirectoryListingEntry(name_length, name, isCompressed,
-				offset, length);
-		setNameLength(name_length);
-		setName(name);
-		setEntryType(isCompressed);
-		setOffset(offset);
-		setLength(length);
-	}
+    /**
+     * Constructs directoryListingEntry
+     * 
+     * @param name_length
+     *            int
+     * @param name
+     *            String
+     * @param isCompressed
+     *            ChmCommons.EntryType
+     * @param offset
+     *            int
+     * @param length
+     *            int
+     */
+    public DirectoryListingEntry(int name_length, String name,
+            ChmCommons.EntryType isCompressed, int offset, int length) {
+        ChmAssert.assertDirectoryListingEntry(name_length, name, isCompressed,
+                offset, length);
+        setNameLength(name_length);
+        setName(name);
+        setEntryType(isCompressed);
+        setOffset(offset);
+        setLength(length);
+    }
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("name_length:=" + getNameLength()
-				+ System.getProperty("line.separator"));
-		sb.append("name:=" + getName() + System.getProperty("line.separator"));
-		sb.append("entryType:=" + getEntryType()
-				+ System.getProperty("line.separator"));
-		sb.append("offset:=" + getOffset()
-				+ System.getProperty("line.separator"));
-		sb.append("length:=" + getLength());
-		return sb.toString();
-	}
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("name_length:=" + getNameLength()
+                + System.getProperty("line.separator"));
+        sb.append("name:=" + getName() + System.getProperty("line.separator"));
+        sb.append("entryType:=" + getEntryType()
+                + System.getProperty("line.separator"));
+        sb.append("offset:=" + getOffset()
+                + System.getProperty("line.separator"));
+        sb.append("length:=" + getLength());
+        return sb.toString();
+    }
 
-	/**
-	 * Returns an entry name length
-	 * 
-	 * @return int
-	 */
-	public int getNameLength() {
-		return name_length;
-	}
+    /**
+     * Returns an entry name length
+     * 
+     * @return int
+     */
+    public int getNameLength() {
+        return name_length;
+    }
 
-	/**
-	 * Sets an entry name length
-	 * 
-	 * @param name_length
-	 *            int
-	 */
-	protected void setNameLength(int name_length) {
-		this.name_length = name_length;
-	}
+    /**
+     * Sets an entry name length
+     * 
+     * @param name_length
+     *            int
+     */
+    protected void setNameLength(int name_length) {
+        this.name_length = name_length;
+    }
 
-	/**
-	 * Returns an entry name
-	 * 
-	 * @return String
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * Returns an entry name
+     * 
+     * @return String
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * Sets entry name
-	 * 
-	 * @param name
-	 *            String
-	 */
-	protected void setName(String name) {
-		this.name = name;
-	}
+    /**
+     * Sets entry name
+     * 
+     * @param name
+     *            String
+     */
+    protected void setName(String name) {
+        this.name = name;
+    }
 
-	/**
-	 * Returns ChmCommons.EntryType (COMPRESSED or UNCOMPRESSED)
-	 * 
-	 * @return ChmCommons.EntryType
-	 */
-	public ChmCommons.EntryType getEntryType() {
-		return entryType;
-	}
+    /**
+     * Returns ChmCommons.EntryType (COMPRESSED or UNCOMPRESSED)
+     * 
+     * @return ChmCommons.EntryType
+     */
+    public ChmCommons.EntryType getEntryType() {
+        return entryType;
+    }
 
-	protected void setEntryType(ChmCommons.EntryType entryType) {
-		this.entryType = entryType;
-	}
+    protected void setEntryType(ChmCommons.EntryType entryType) {
+        this.entryType = entryType;
+    }
 
-	public int getOffset() {
-		return offset;
-	}
+    public int getOffset() {
+        return offset;
+    }
 
-	protected void setOffset(int offset) {
-		this.offset = offset;
-	}
+    protected void setOffset(int offset) {
+        this.offset = offset;
+    }
 
-	public int getLength() {
-		return length;
-	}
+    public int getLength() {
+        return length;
+    }
 
-	protected void setLength(int length) {
-		this.length = length;
-	}
+    protected void setLength(int length) {
+        this.length = length;
+    }
 
-	public static void main(String[] args) {
-	}
+    public static void main(String[] args) {
+    }
 }

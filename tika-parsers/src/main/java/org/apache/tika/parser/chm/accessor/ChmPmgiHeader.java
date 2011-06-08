@@ -45,137 +45,135 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
  * 
  */
 public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
-	private static final long serialVersionUID = -2092282339894303701L;
-	private byte[] signature = new String(ChmConstants.CHM_PMGI_MARKER)
-			.getBytes(); /* 0 (PMGI) */
-	private long free_space; /* 4 */
+    private static final long serialVersionUID = -2092282339894303701L;
+    private byte[] signature = new String(ChmConstants.CHM_PMGI_MARKER).getBytes(); /* 0 (PMGI) */
+    private long free_space; /* 4 */
 
-	/* local usage */
-	private int dataRemained;
-	private int currentPlace = 0;
+    /* local usage */
+    private int dataRemained;
+    private int currentPlace = 0;
 
-	private int getDataRemained() {
-		return dataRemained;
-	}
+    private int getDataRemained() {
+        return dataRemained;
+    }
 
-	private void setDataRemained(int dataRemained) {
-		this.dataRemained = dataRemained;
-	}
+    private void setDataRemained(int dataRemained) {
+        this.dataRemained = dataRemained;
+    }
 
-	private int getCurrentPlace() {
-		return currentPlace;
-	}
+    private int getCurrentPlace() {
+        return currentPlace;
+    }
 
-	private void setCurrentPlace(int currentPlace) {
-		this.currentPlace = currentPlace;
-	}
+    private void setCurrentPlace(int currentPlace) {
+        this.currentPlace = currentPlace;
+    }
 
-	private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader,
-			int count) {
-		int index = -1;
-		ChmAssert.assertByteArrayNotNull(data);
-		ChmAssert.assertChmAccessorNotNull(chmPmgiHeader);
-		ChmAssert.assertPositiveInt(count);
-		this.setDataRemained(data.length);
-		index = ChmCommons.indexOf(data,
-				ChmConstants.CHM_PMGI_MARKER.getBytes());
-		if (index >= 0)
-			System.arraycopy(data, index, chmPmgiHeader.getSignature(), 0,
-					count);
-		else
-			System.err.println(ChmPmgiHeader.class.getName()
-					+ " does not exist a PMGI, use PMGL instead");
-		this.setCurrentPlace(this.getCurrentPlace() + count);
-		this.setDataRemained(this.getDataRemained() - count);
-	}
+    private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader,
+            int count) {
+        int index = -1;
+        ChmAssert.assertByteArrayNotNull(data);
+        ChmAssert.assertChmAccessorNotNull(chmPmgiHeader);
+        ChmAssert.assertPositiveInt(count);
+        this.setDataRemained(data.length);
+        index = ChmCommons.indexOf(data,
+                ChmConstants.CHM_PMGI_MARKER.getBytes());
+        if (index >= 0)
+            System.arraycopy(data, index, chmPmgiHeader.getSignature(), 0, count);
+        else
+            System.err.println(ChmPmgiHeader.class.getName()
+                    + " does not exist a PMGI, use PMGL instead");
+        this.setCurrentPlace(this.getCurrentPlace() + count);
+        this.setDataRemained(this.getDataRemained() - count);
+    }
 
-	private long unmarshalUInt32(byte[] data, long dest) {
-		ChmAssert.assertByteArrayNotNull(data);
+    private long unmarshalUInt32(byte[] data, long dest) {
+        ChmAssert.assertByteArrayNotNull(data);
 
-		if (4 > getDataRemained())
-			throw new ChmParsingException("4 > dataLenght");
-		dest = data[this.getCurrentPlace()]
-				| data[this.getCurrentPlace() + 1] << 8
-				| data[this.getCurrentPlace() + 2] << 16
-				| data[this.getCurrentPlace() + 3] << 24;
+        if (4 > getDataRemained())
+            throw new ChmParsingException("4 > dataLenght");
+        dest = data[this.getCurrentPlace()]
+                | data[this.getCurrentPlace() + 1] << 8
+                | data[this.getCurrentPlace() + 2] << 16
+                | data[this.getCurrentPlace() + 3] << 24;
 
-		setDataRemained(this.getDataRemained() - 4);
-		this.setCurrentPlace(this.getCurrentPlace() + 4);
-		return dest;
-	}
+        setDataRemained(this.getDataRemained() - 4);
+        this.setCurrentPlace(this.getCurrentPlace() + 4);
+        return dest;
+    }
 
-	/**
-	 * Returns pmgi signature if exists
-	 * 
-	 * @return signature
-	 */
-	public byte[] getSignature() {
-		return signature;
-	}
+    /**
+     * Returns pmgi signature if exists
+     * 
+     * @return signature
+     */
+    public byte[] getSignature() {
+        return signature;
+    }
 
-	/**
-	 * Sets pmgi signature
-	 * 
-	 * @param signature
-	 */
-	protected void setSignature(byte[] signature) {
-		this.signature = signature;
-	}
+    /**
+     * Sets pmgi signature
+     * 
+     * @param signature
+     */
+    protected void setSignature(byte[] signature) {
+        this.signature = signature;
+    }
 
-	/**
-	 * Returns pmgi free space
-	 * 
-	 * @return free_space
-	 */
-	public long getFreeSpace() {
-		return free_space;
-	}
+    /**
+     * Returns pmgi free space
+     * 
+     * @return free_space
+     */
+    public long getFreeSpace() {
+        return free_space;
+    }
 
-	/**
-	 * Sets pmgi free space
-	 * 
-	 * @param free_space
-	 */
-	protected void setFreeSpace(long free_space) {
-		this.free_space = free_space;
-	}
+    /**
+     * Sets pmgi free space
+     * 
+     * @param free_space
+     */
+    protected void setFreeSpace(long free_space) {
+        this.free_space = free_space;
+    }
 
-	/**
-	 * Returns textual representation of the pmgi header
-	 */
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("signature:=" + new String(getSignature()) + ", ");
-		sb.append("free space:=" + getFreeSpace()
-				+ System.getProperty("line.separator"));
-		return sb.toString();
-	}
+    /**
+     * Returns textual representation of the pmgi header
+     */
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("signature:=" + new String(getSignature()) + ", ");
+        sb.append("free space:=" + getFreeSpace()
+                + System.getProperty("line.separator"));
+        return sb.toString();
+    }
 
-	// @Override
-	public void parse(byte[] data, ChmPmgiHeader chmPmgiHeader) {
-		/* we only know how to deal with a 0x8 byte structures */
-		if (data.length < ChmConstants.CHM_PMGI_LEN)
-			throw new ChmParsingException(
-					"we only know how to deal with a 0x8 byte structures");
+    // @Override
+    public void parse(byte[] data, ChmPmgiHeader chmPmgiHeader) {
+        /* we only know how to deal with a 0x8 byte structures */
+        if (data.length < ChmConstants.CHM_PMGI_LEN)
+            throw new ChmParsingException(
+                    "we only know how to deal with a 0x8 byte structures");
 
-		/* unmarshal fields */
-		chmPmgiHeader.unmarshalCharArray(data, chmPmgiHeader,
-				ChmConstants.CHM_SIGNATURE_LEN);
-		chmPmgiHeader.setFreeSpace(chmPmgiHeader.unmarshalUInt32(data,
-				chmPmgiHeader.getFreeSpace()));
+        /* unmarshal fields */
+        chmPmgiHeader.unmarshalCharArray(data, chmPmgiHeader,
+                ChmConstants.CHM_SIGNATURE_LEN);
+        chmPmgiHeader.setFreeSpace(chmPmgiHeader.unmarshalUInt32(data,
+                chmPmgiHeader.getFreeSpace()));
 
-		/* check structure */
-		if (!Arrays.equals(chmPmgiHeader.getSignature(),
-				ChmConstants.CHM_PMGI_MARKER.getBytes()))
-			throw new ChmParsingException(
-					"it does not seem to be valid a PMGI signature, check ChmItsp index_root if it was -1, means no PMGI, use PMGL insted");
+        /* check structure */
+        if (!Arrays.equals(chmPmgiHeader.getSignature(),
+                ChmConstants.CHM_PMGI_MARKER.getBytes()))
+            throw new ChmParsingException(
+                    "it does not seem to be valid a PMGI signature, check ChmItsp index_root if it was -1, means no PMGI, use PMGL insted");
 
-	}
+    }
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
 
-	}
+    }
 }

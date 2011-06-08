@@ -53,154 +53,154 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
  * 
  */
 public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
-	private static final long serialVersionUID = -6139486487475923593L;
-	private byte[] signature = new String(ChmConstants.PMGL).getBytes(); /*
-																		 * 0
-																		 * (PMGL
-																		 * )
-																		 */
-	private long free_space; /* 4 */
-	private long unknown_0008; /* 8 */
-	private int block_prev; /* c */
-	private int block_next; /* 10 */
+    private static final long serialVersionUID = -6139486487475923593L;
+    private byte[] signature = new String(ChmConstants.PMGL).getBytes(); /*
+                                                                          * 0
+                                                                          * (PMGL
+                                                                          * )
+                                                                          */
+    private long free_space; /* 4 */
+    private long unknown_0008; /* 8 */
+    private int block_prev; /* c */
+    private int block_next; /* 10 */
 
-	/* local usage */
-	private int dataRemained;
-	private int currentPlace = 0;
+    /* local usage */
+    private int dataRemained;
+    private int currentPlace = 0;
 
-	private int getDataRemained() {
-		return dataRemained;
-	}
+    private int getDataRemained() {
+        return dataRemained;
+    }
 
-	private void setDataRemained(int dataRemained) {
-		this.dataRemained = dataRemained;
-	}
+    private void setDataRemained(int dataRemained) {
+        this.dataRemained = dataRemained;
+    }
 
-	private int getCurrentPlace() {
-		return currentPlace;
-	}
+    private int getCurrentPlace() {
+        return currentPlace;
+    }
 
-	private void setCurrentPlace(int currentPlace) {
-		this.currentPlace = currentPlace;
-	}
+    private void setCurrentPlace(int currentPlace) {
+        this.currentPlace = currentPlace;
+    }
 
-	public long getFreeSpace() {
-		return free_space;
-	}
+    public long getFreeSpace() {
+        return free_space;
+    }
 
-	public void setFreeSpace(long free_space) {
-		this.free_space = free_space;
-	}
+    public void setFreeSpace(long free_space) {
+        this.free_space = free_space;
+    }
 
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("signatute:=" + new String(getSignature()) + ", ");
-		sb.append("free space:=" + getFreeSpace() + ", ");
-		sb.append("unknown0008:=" + getUnknown0008() + ", ");
-		sb.append("prev block:=" + getBlockPrev() + ", ");
-		sb.append("next block:=" + getBlockNext()
-				+ System.getProperty("line.separator"));
-		return sb.toString();
-	}
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("signatute:=" + new String(getSignature()) + ", ");
+        sb.append("free space:=" + getFreeSpace() + ", ");
+        sb.append("unknown0008:=" + getUnknown0008() + ", ");
+        sb.append("prev block:=" + getBlockPrev() + ", ");
+        sb.append("next block:=" + getBlockNext()
+                + System.getProperty("line.separator"));
+        return sb.toString();
+    }
 
-	protected void unmarshalCharArray(byte[] data, ChmPmglHeader chmPmglHeader,
-			int count) {
-		ChmAssert.assertByteArrayNotNull(data);
-		this.setDataRemained(data.length);
-		System.arraycopy(data, 0, chmPmglHeader.signature, 0, count);
-		this.setCurrentPlace(this.getCurrentPlace() + count);
-		this.setDataRemained(this.getDataRemained() - count);
-	}
+    protected void unmarshalCharArray(byte[] data, ChmPmglHeader chmPmglHeader,
+            int count) {
+        ChmAssert.assertByteArrayNotNull(data);
+        this.setDataRemained(data.length);
+        System.arraycopy(data, 0, chmPmglHeader.signature, 0, count);
+        this.setCurrentPlace(this.getCurrentPlace() + count);
+        this.setDataRemained(this.getDataRemained() - count);
+    }
 
-	private int unmarshalInt32(byte[] data, int dest) {
-		ChmAssert.assertByteArrayNotNull(data);
-		if (4 > this.getDataRemained())
-			throw new ChmParsingException("4 > dataLenght");
-		dest = data[this.getCurrentPlace()]
-				| data[this.getCurrentPlace() + 1] << 8
-				| data[this.getCurrentPlace() + 2] << 16
-				| data[this.getCurrentPlace() + 3] << 24;
+    private int unmarshalInt32(byte[] data, int dest) {
+        ChmAssert.assertByteArrayNotNull(data);
+        if (4 > this.getDataRemained())
+            throw new ChmParsingException("4 > dataLenght");
+        dest = data[this.getCurrentPlace()]
+                | data[this.getCurrentPlace() + 1] << 8
+                | data[this.getCurrentPlace() + 2] << 16
+                | data[this.getCurrentPlace() + 3] << 24;
 
-		this.setCurrentPlace(this.getCurrentPlace() + 4);
-		this.setDataRemained(this.getDataRemained() - 4);
-		return dest;
-	}
+        this.setCurrentPlace(this.getCurrentPlace() + 4);
+        this.setDataRemained(this.getDataRemained() - 4);
+        return dest;
+    }
 
-	private long unmarshalUInt32(byte[] data, long dest) {
-		ChmAssert.assertByteArrayNotNull(data);
-		if (4 > getDataRemained())
-			throw new ChmParsingException("4 > dataLenght");
-		dest = data[this.getCurrentPlace()]
-				| data[this.getCurrentPlace() + 1] << 8
-				| data[this.getCurrentPlace() + 2] << 16
-				| data[this.getCurrentPlace() + 3] << 24;
+    private long unmarshalUInt32(byte[] data, long dest) {
+        ChmAssert.assertByteArrayNotNull(data);
+        if (4 > getDataRemained())
+            throw new ChmParsingException("4 > dataLenght");
+        dest = data[this.getCurrentPlace()]
+                | data[this.getCurrentPlace() + 1] << 8
+                | data[this.getCurrentPlace() + 2] << 16
+                | data[this.getCurrentPlace() + 3] << 24;
 
-		setDataRemained(this.getDataRemained() - 4);
-		this.setCurrentPlace(this.getCurrentPlace() + 4);
-		return dest;
-	}
+        setDataRemained(this.getDataRemained() - 4);
+        this.setCurrentPlace(this.getCurrentPlace() + 4);
+        return dest;
+    }
 
-	// @Override
-	public void parse(byte[] data, ChmPmglHeader chmPmglHeader) {
-		if (data.length < ChmConstants.CHM_PMGL_LEN)
-			throw new ChmParsingException(ChmPmglHeader.class.getName()
-					+ " we only know how to deal with a 0x14 byte structures");
+    // @Override
+    public void parse(byte[] data, ChmPmglHeader chmPmglHeader) {
+        if (data.length < ChmConstants.CHM_PMGL_LEN)
+            throw new ChmParsingException(ChmPmglHeader.class.getName()
+                    + " we only know how to deal with a 0x14 byte structures");
 
-		/* unmarshal fields */
-		chmPmglHeader.unmarshalCharArray(data, chmPmglHeader,
-				ChmConstants.CHM_SIGNATURE_LEN);
-		chmPmglHeader.setFreeSpace(chmPmglHeader.unmarshalUInt32(data,
-				chmPmglHeader.getFreeSpace()));
-		chmPmglHeader.setUnknown0008(chmPmglHeader.unmarshalUInt32(data,
-				chmPmglHeader.getUnknown0008()));
-		chmPmglHeader.setBlockPrev(chmPmglHeader.unmarshalInt32(data,
-				chmPmglHeader.getBlockPrev()));
-		chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data,
-				chmPmglHeader.getBlockNext()));
+        /* unmarshal fields */
+        chmPmglHeader.unmarshalCharArray(data, chmPmglHeader,
+                ChmConstants.CHM_SIGNATURE_LEN);
+        chmPmglHeader.setFreeSpace(chmPmglHeader.unmarshalUInt32(data,
+                chmPmglHeader.getFreeSpace()));
+        chmPmglHeader.setUnknown0008(chmPmglHeader.unmarshalUInt32(data,
+                chmPmglHeader.getUnknown0008()));
+        chmPmglHeader.setBlockPrev(chmPmglHeader.unmarshalInt32(data,
+                chmPmglHeader.getBlockPrev()));
+        chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data,
+                chmPmglHeader.getBlockNext()));
 
-		/* check structure */
-		if (!new String(chmPmglHeader.getSignature()).equals(ChmConstants.PMGL))
-			throw new ChmParsingException(ChmPmglHeader.class.getName()
-					+ " pmgl != pmgl.signature");
+        /* check structure */
+        if (!new String(chmPmglHeader.getSignature()).equals(ChmConstants.PMGL))
+            throw new ChmParsingException(ChmPmglHeader.class.getName()
+                    + " pmgl != pmgl.signature");
 
-	}
+    }
 
-	public byte[] getSignature() {
-		return signature;
-	}
+    public byte[] getSignature() {
+        return signature;
+    }
 
-	protected void setSignature(byte[] signature) {
-		this.signature = signature;
-	}
+    protected void setSignature(byte[] signature) {
+        this.signature = signature;
+    }
 
-	public long getUnknown0008() {
-		return unknown_0008;
-	}
+    public long getUnknown0008() {
+        return unknown_0008;
+    }
 
-	protected void setUnknown0008(long unknown_0008) {
-		this.unknown_0008 = unknown_0008;
-	}
+    protected void setUnknown0008(long unknown_0008) {
+        this.unknown_0008 = unknown_0008;
+    }
 
-	public int getBlockPrev() {
-		return block_prev;
-	}
+    public int getBlockPrev() {
+        return block_prev;
+    }
 
-	protected void setBlockPrev(int block_prev) {
-		this.block_prev = block_prev;
-	}
+    protected void setBlockPrev(int block_prev) {
+        this.block_prev = block_prev;
+    }
 
-	public int getBlockNext() {
-		return block_next;
-	}
+    public int getBlockNext() {
+        return block_next;
+    }
 
-	protected void setBlockNext(int block_next) {
-		this.block_next = block_next;
-	}
+    protected void setBlockNext(int block_next) {
+        this.block_next = block_next;
+    }
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
+    /**
+     * @param args
+     */
+    public static void main(String[] args) {
 
-	}
+    }
 }

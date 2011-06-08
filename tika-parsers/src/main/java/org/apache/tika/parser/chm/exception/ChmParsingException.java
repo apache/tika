@@ -17,13 +17,13 @@
 package org.apache.tika.parser.chm.exception;
 
 public class ChmParsingException extends RuntimeException {
-	private static final long serialVersionUID = 6497936044733665210L;
+    private static final long serialVersionUID = 6497936044733665210L;
 
-	public ChmParsingException() {
-		super();
-	}
+    public ChmParsingException() {
+        super();
+    }
 
-	public ChmParsingException(String description) {
-		super(description);
-	}
+    public ChmParsingException(String description) {
+        super(description);
+    }
 }
