@@ -39,6 +39,8 @@ import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.parser.rtf.RTFParser;
 import org.apache.tika.parser.txt.CharsetDetector;
+import org.apache.tika.parser.txt.CharsetMatch;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -52,7 +54,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         super(context);
         
         try {
-            this.msg = new MAPIMessage(filesystem);
+            this.msg = new MAPIMessage(filesystem.getRoot());
         } catch (IOException e) {
             throw new TikaException("Failed to parse Outlook message", e);
         }
@@ -65,27 +67,22 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            
            // If the message contains strings that aren't stored
            //  as Unicode, try to sort out an encoding for them
-           // TODO Use new method
-           boolean hasNonUnicodeStrings = false;
-           for(Chunk chunk : msg.getMainChunks().getAll()) {
-              if(chunk instanceof StringChunk) {
-                 StringChunk sc = (StringChunk)chunk;
-                 if(sc.getType() == Types.ASCII_STRING) {
-                    hasNonUnicodeStrings = true;
-                    break;
-                 }
-              }
-           }
-           
-           if(hasNonUnicodeStrings) {
+           if(msg.has7BitEncodingStrings()) {
               if(msg.getHeaders() != null) {
                  // There's normally something in the headers
                  msg.guess7BitEncoding();
               } else {
                  // Nothing in the header, try encoding detection
                  //  on the message body
-                 CharsetDetector detector = new CharsetDetector();
-                 // TODO detect and use this
+                 StringChunk text = msg.getMainChunks().textBodyChunk; 
+                 if(text != null) {
+                    CharsetDetector detector = new CharsetDetector();
+                    detector.setText( text.getRawValue() );
+                    CharsetMatch match = detector.detect();
+                    if(match.getConfidence() > 35) {
+                       msg.set7BitEncoding( match.getName() );
+                    }
+                 }
               }
            }
            
@@ -184,13 +181,14 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
               if(htmlChunk instanceof ByteChunk) {
                  data = ((ByteChunk)htmlChunk).getValue();
               } else if(htmlChunk instanceof StringChunk) {
-                 // TODO Needs POI 3.8 beta 3
+                 data = ((StringChunk)htmlChunk).getRawValue();
               }
               if(data != null) {
                  HtmlParser htmlParser = new HtmlParser();
                  htmlParser.parse(
                        new ByteArrayInputStream(data),
-                       xhtml, new Metadata(), new ParseContext()
+                       new BodyContentHandler(xhtml), 
+                       new Metadata(), new ParseContext()
                  );
                  doneBody = true;
               }

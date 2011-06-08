@@ -17,8 +17,14 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 
 import junit.framework.TestCase;
 
@@ -132,5 +138,38 @@ public class OutlookParserTest extends TestCase {
         assertTrue(content.contains("Streamlined Mail Experience"));
         assertTrue(content.contains("Navigation Pane"));
     }
+     
+    public void testOutlookHTMLVersion() throws Exception {
+        Parser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+       
+        // Check the HTML version
+        StringWriter sw = new StringWriter();
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                 SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        handler.setResult(new StreamResult(sw));
 
+        InputStream stream = OutlookParserTest.class.getResourceAsStream(
+               "/test-documents/testMSG_chinese.msg");
+        try {
+           parser.parse(stream, handler, metadata, new ParseContext());
+        } finally {
+           stream.close();
+        }
+         
+        // As the HTML version should have been processed, ensure
+        //  we got some of the links
+        String content = sw.toString();
+        assertTrue(content.contains("<dd>tests.chang@fengttt.com</dd>"));
+        assertTrue(content.contains("<p>Alfresco MSG format testing"));
+        assertTrue(content.contains("<li>1"));
+        assertTrue(content.contains("<li>2"));
+        
+        // Make sure we don't have nested html docs
+        assertEquals(2, content.split("<body>").length);
+        //assertEquals(2, content.split("<\\/body>").length); // TODO Fix
+    }
 }
