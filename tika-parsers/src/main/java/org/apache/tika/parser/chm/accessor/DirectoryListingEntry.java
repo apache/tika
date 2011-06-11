@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons;
 
@@ -59,11 +60,11 @@ public class DirectoryListingEntry {
      *            int
      * @param length
      *            int
+     * @throws TikaException 
      */
     public DirectoryListingEntry(int name_length, String name,
-            ChmCommons.EntryType isCompressed, int offset, int length) {
-        ChmAssert.assertDirectoryListingEntry(name_length, name, isCompressed,
-                offset, length);
+            ChmCommons.EntryType isCompressed, int offset, int length) throws TikaException {
+        ChmAssert.assertDirectoryListingEntry(name_length, name, isCompressed, offset, length);
         setNameLength(name_length);
         setName(name);
         setEntryType(isCompressed);
@@ -73,13 +74,10 @@ public class DirectoryListingEntry {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("name_length:=" + getNameLength()
-                + System.getProperty("line.separator"));
+        sb.append("name_length:=" + getNameLength() + System.getProperty("line.separator"));
         sb.append("name:=" + getName() + System.getProperty("line.separator"));
-        sb.append("entryType:=" + getEntryType()
-                + System.getProperty("line.separator"));
-        sb.append("offset:=" + getOffset()
-                + System.getProperty("line.separator"));
+        sb.append("entryType:=" + getEntryType() + System.getProperty("line.separator"));
+        sb.append("offset:=" + getOffset() + System.getProperty("line.separator"));
         sb.append("length:=" + getLength());
         return sb.toString();
     }

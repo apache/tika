@@ -18,6 +18,7 @@ package org.apache.tika.parser.chm.accessor;
 
 import java.util.Arrays;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
@@ -70,7 +71,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     }
 
     private void unmarshalCharArray(byte[] data, ChmPmgiHeader chmPmgiHeader,
-            int count) {
+            int count) throws ChmParsingException {
         int index = -1;
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmPmgiHeader);
@@ -80,14 +81,15 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
                 ChmConstants.CHM_PMGI_MARKER.getBytes());
         if (index >= 0)
             System.arraycopy(data, index, chmPmgiHeader.getSignature(), 0, count);
-        else
-            System.err.println(ChmPmgiHeader.class.getName()
-                    + " does not exist a PMGI, use PMGL instead");
+        else{
+            //Some chm documents (actually most of them) do not contain
+            //PMGI header, in this case, we just notice about it.
+        }
         this.setCurrentPlace(this.getCurrentPlace() + count);
         this.setDataRemained(this.getDataRemained() - count);
     }
 
-    private long unmarshalUInt32(byte[] data, long dest) {
+    private long unmarshalUInt32(byte[] data, long dest) throws ChmParsingException {
         ChmAssert.assertByteArrayNotNull(data);
 
         if (4 > getDataRemained())
@@ -150,22 +152,19 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     }
 
     // @Override
-    public void parse(byte[] data, ChmPmgiHeader chmPmgiHeader) {
+    public void parse(byte[] data, ChmPmgiHeader chmPmgiHeader) throws TikaException {
         /* we only know how to deal with a 0x8 byte structures */
         if (data.length < ChmConstants.CHM_PMGI_LEN)
-            throw new ChmParsingException(
-                    "we only know how to deal with a 0x8 byte structures");
+            throw new TikaException("we only know how to deal with a 0x8 byte structures");
 
         /* unmarshal fields */
-        chmPmgiHeader.unmarshalCharArray(data, chmPmgiHeader,
-                ChmConstants.CHM_SIGNATURE_LEN);
-        chmPmgiHeader.setFreeSpace(chmPmgiHeader.unmarshalUInt32(data,
-                chmPmgiHeader.getFreeSpace()));
+        chmPmgiHeader.unmarshalCharArray(data, chmPmgiHeader, ChmConstants.CHM_SIGNATURE_LEN);
+        chmPmgiHeader.setFreeSpace(chmPmgiHeader.unmarshalUInt32(data, chmPmgiHeader.getFreeSpace()));
 
         /* check structure */
         if (!Arrays.equals(chmPmgiHeader.getSignature(),
                 ChmConstants.CHM_PMGI_MARKER.getBytes()))
-            throw new ChmParsingException(
+            throw new TikaException(
                     "it does not seem to be valid a PMGI signature, check ChmItsp index_root if it was -1, means no PMGI, use PMGL insted");
 
     }

@@ -37,11 +37,10 @@ public class CHM2XHTML {
                 handler.characters(text.toCharArray(), 0, text.length());
                 new CHM2XHTML(chmDoc, handler);
             } else
-                /* The error handling should be added */
-                System.err.println("Could not extract content");
+                throw new TikaException("Could not extract content");
 
         } catch (SAXException e) {
-            // System.err.println(ChmParserUtils.getStackTrace(e.getStackTrace()));
+            throw new RuntimeException(e);
         }
     }
 

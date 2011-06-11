@@ -19,6 +19,7 @@ package org.apache.tika.parser.chm.lzx;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 
 public class ChmSection {
@@ -27,13 +28,13 @@ public class ChmSection {
     private int total;// remains
     private int buffer;// val
 
-    public ChmSection(byte[] data) {
+    public ChmSection(byte[] data) throws TikaException {
         ChmCommons.assertByteArrayNotNull(data);
         setData(data);
     }
 
     /* Utilities */
-    public byte[] reverseByteOrder(byte[] toBeReversed) {
+    public byte[] reverseByteOrder(byte[] toBeReversed) throws TikaException {
         ChmCommons.assertByteArrayNotNull(toBeReversed);
         ChmCommons.reverse(toBeReversed);
         return toBeReversed;
@@ -195,10 +196,9 @@ public class ChmSection {
 
     /**
      * @param args
+     * @throws TikaException 
      */
-    public static void main(String[] args) {
-        int result = 8 & 255;
-        System.out.println("result " + result);
+    public static void main(String[] args) throws TikaException {
         byte[] array = { 4, 78, -67, 90, 1, -33 };
         ChmSection chmSection = new ChmSection(array);
         System.out.println("before " + Arrays.toString(array));

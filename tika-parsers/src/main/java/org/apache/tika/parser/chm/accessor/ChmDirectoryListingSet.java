@@ -20,6 +20,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 
@@ -44,9 +45,10 @@ public class ChmDirectoryListingSet {
      *            byte[]
      * @param chmItsHeader
      * @param chmItspHeader
+     * @throws TikaException 
      */
     public ChmDirectoryListingSet(byte[] data, ChmItsfHeader chmItsHeader,
-            ChmItspHeader chmItspHeader) {
+            ChmItspHeader chmItspHeader) throws TikaException {
         setDirectoryListingEntryList(new ArrayList<DirectoryListingEntry>());
         ChmCommons.assertByteArrayNotNull(data);
         setData(data);

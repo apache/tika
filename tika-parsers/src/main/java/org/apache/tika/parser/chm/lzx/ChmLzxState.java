@@ -18,6 +18,7 @@ package org.apache.tika.parser.chm.lzx;
 
 import java.util.concurrent.CancellationException;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.core.ChmCommons.IntelState;
@@ -64,7 +65,7 @@ public class ChmLzxState {
         this.alignedTreeTable = alignedTreeTable;
     }
 
-    protected short[] getLengthTreeTable() {
+    protected short[] getLengthTreeTable() throws TikaException {
         if (lengthTreeTable != null)
             return this.lengthTreeTable;
         else
@@ -130,15 +131,15 @@ public class ChmLzxState {
         return sb.toString();
     }
 
-    public ChmLzxState(int window) {
+    public ChmLzxState(int window) throws TikaException {
         if (window >= 0) {
             int position_slots;
             int win = ChmCommons.getWindowSize(window);
             setWindowSize(1 << win);
             /* LZX supports window sizes of 2^15 (32Kb) through 2^21 (2Mb) */
             if (win < 15 || win > 21)
-                System.err
-                        .println("window less than 15 or window greater than 21");
+                throw new ChmParsingException("window less than 15 or window greater than 21");
+
             /* Calculates required position slots */
             if (win == 20)
                 position_slots = 42;

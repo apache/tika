@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
@@ -104,7 +105,7 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     }
 
     protected void unmarshalCharArray(byte[] data, ChmPmglHeader chmPmglHeader,
-            int count) {
+            int count) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         this.setDataRemained(data.length);
         System.arraycopy(data, 0, chmPmglHeader.signature, 0, count);
@@ -112,10 +113,10 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         this.setDataRemained(this.getDataRemained() - count);
     }
 
-    private int unmarshalInt32(byte[] data, int dest) {
+    private int unmarshalInt32(byte[] data, int dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > this.getDataRemained())
-            throw new ChmParsingException("4 > dataLenght");
+            throw new TikaException("4 > dataLenght");
         dest = data[this.getCurrentPlace()]
                 | data[this.getCurrentPlace() + 1] << 8
                 | data[this.getCurrentPlace() + 2] << 16
@@ -126,7 +127,7 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         return dest;
     }
 
-    private long unmarshalUInt32(byte[] data, long dest) {
+    private long unmarshalUInt32(byte[] data, long dest) throws ChmParsingException {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > getDataRemained())
             throw new ChmParsingException("4 > dataLenght");
@@ -141,9 +142,9 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     }
 
     // @Override
-    public void parse(byte[] data, ChmPmglHeader chmPmglHeader) {
+    public void parse(byte[] data, ChmPmglHeader chmPmglHeader) throws TikaException {
         if (data.length < ChmConstants.CHM_PMGL_LEN)
-            throw new ChmParsingException(ChmPmglHeader.class.getName()
+            throw new TikaException(ChmPmglHeader.class.getName()
                     + " we only know how to deal with a 0x14 byte structures");
 
         /* unmarshal fields */

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.chm.lzx;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.accessor.ChmLzxcControlData;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
@@ -55,10 +56,11 @@ public class ChmBlockInfo {
      *            - ChmBlockInfo
      * 
      * @return ChmBlockInfo
+     * @throws TikaException 
      */
     protected ChmBlockInfo getChmBlockInfo(DirectoryListingEntry dle,
             int bytesPerBlock, ChmLzxcControlData clcd,
-            ChmBlockInfo chmBlockInfo) {
+            ChmBlockInfo chmBlockInfo) throws TikaException {
         if (!validateParameters(dle, bytesPerBlock, clcd, chmBlockInfo))
             throw new ChmParsingException("Please check you parameters");
 

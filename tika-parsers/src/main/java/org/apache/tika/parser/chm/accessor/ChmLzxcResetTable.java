@@ -19,6 +19,7 @@ package org.apache.tika.parser.chm.accessor;
 import java.math.BigInteger;
 import java.util.Arrays;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
@@ -111,8 +112,9 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
      * @param data
      * 
      * @return byte[] of addresses
+     * @throws TikaException 
      */
-    private long[] enumerateBlockAddresses(byte[] data) {
+    private long[] enumerateBlockAddresses(byte[] data) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         /* we have limit of number of blocks to be extracted */
         if (getBlockCount() > 5000)
@@ -129,7 +131,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
             try {
                 addresses[i] = unmarshalUint64(data, num);
             } catch (Exception e) {
-                // System.err.println(e.getMessage());
+                throw new TikaException(e.getMessage());
             }
         }
         return addresses;
@@ -142,9 +144,10 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
      * @param chmLzxcResetTable
      * 
      * @return boolean
+     * @throws TikaException 
      */
     private boolean validateParamaters(byte[] data,
-            ChmLzxcResetTable chmLzxcResetTable) {
+            ChmLzxcResetTable chmLzxcResetTable) throws TikaException {
         int goodParameter = 0;
         ChmAssert.assertByteArrayNotNull(data);
         ++goodParameter;
@@ -153,7 +156,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
         return (goodParameter == 2);
     }
 
-    private long unmarshalUInt32(byte[] data, long dest) {
+    private long unmarshalUInt32(byte[] data, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         dest = data[this.getCurrentPlace()]
                 | data[this.getCurrentPlace() + 1] << 8
@@ -165,7 +168,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
         return dest;
     }
 
-    private long unmarshalUint64(byte[] data, long dest) {
+    private long unmarshalUint64(byte[] data, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         byte[] temp = new byte[8];
         int i, j;// counters
@@ -175,8 +178,7 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
                 temp[j--] = data[this.getCurrentPlace()];
                 this.setCurrentPlace(this.getCurrentPlace() + 1);
             } else
-                throw new ChmParsingException(
-                        "data is too small to calculate address block");
+                throw new TikaException("data is too small to calculate address block");
         }
         dest = new BigInteger(temp).longValue();
         this.setDataRemained(this.getDataRemained() - 8);
@@ -324,24 +326,17 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
     }
 
     // @Override
-    public void parse(byte[] data, ChmLzxcResetTable chmLzxcResetTable) {
+    public void parse(byte[] data, ChmLzxcResetTable chmLzxcResetTable) throws TikaException {
         setDataRemained(data.length);
         if (validateParamaters(data, chmLzxcResetTable)) {
             /* unmarshal fields */
-            chmLzxcResetTable.setVersion(unmarshalUInt32(data,
-                    chmLzxcResetTable.getVersion()));
-            chmLzxcResetTable.setBlockCount(unmarshalUInt32(data,
-                    chmLzxcResetTable.getBlockCount()));
-            chmLzxcResetTable.setUnknown(unmarshalUInt32(data,
-                    chmLzxcResetTable.getUnknown()));
-            chmLzxcResetTable.setTableOffset(unmarshalUInt32(data,
-                    chmLzxcResetTable.getTableOffset()));
-            chmLzxcResetTable.setUncompressedLen(unmarshalUint64(data,
-                    chmLzxcResetTable.getUncompressedLen()));
-            chmLzxcResetTable.setCompressedLen(unmarshalUint64(data,
-                    chmLzxcResetTable.getCompressedLen()));
-            chmLzxcResetTable.setBlockLlen(unmarshalUint64(data,
-                    chmLzxcResetTable.getBlockLen()));
+            chmLzxcResetTable.setVersion(unmarshalUInt32(data, chmLzxcResetTable.getVersion()));
+            chmLzxcResetTable.setBlockCount(unmarshalUInt32(data, chmLzxcResetTable.getBlockCount()));
+            chmLzxcResetTable.setUnknown(unmarshalUInt32(data, chmLzxcResetTable.getUnknown()));
+            chmLzxcResetTable.setTableOffset(unmarshalUInt32(data, chmLzxcResetTable.getTableOffset()));
+            chmLzxcResetTable.setUncompressedLen(unmarshalUint64(data, chmLzxcResetTable.getUncompressedLen()));
+            chmLzxcResetTable.setCompressedLen(unmarshalUint64(data, chmLzxcResetTable.getCompressedLen()));
+            chmLzxcResetTable.setBlockLlen(unmarshalUint64(data, chmLzxcResetTable.getBlockLen()));
             chmLzxcResetTable.setBlockAddress(enumerateBlockAddresses(data));
         }
 

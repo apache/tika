@@ -18,6 +18,7 @@ package org.apache.tika.parser.chm.lzx;
 
 import java.math.BigInteger;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmCommons.IntelState;
 import org.apache.tika.parser.chm.core.ChmCommons.LzxState;
@@ -73,14 +74,10 @@ public class ChmLzxBlock {
                 if (prevBlock != null && prevBlock.getState() != null)
                     previousBlockType = prevBlock.getState().getBlockType();
 
-                try {
-                    extractContent();
-                } catch (ChmParsingException e) {
-                    // System.err.println(e.getMessage());
-                }
+                extractContent();
             } else
-                System.err.println("Check your chm lzx block parameters");
-        } catch (ChmParsingException e) {
+                throw new TikaException("Check your chm lzx block parameters");
+        } catch (Exception e) {
             // TODO: handle exception
         }
     }
@@ -101,12 +98,12 @@ public class ChmLzxBlock {
         this.chmSection = chmSection;
     }
 
-    private void assertStateNotNull() {
+    private void assertStateNotNull() throws TikaException {
         if (getState() == null)
             throw new ChmParsingException("state is null");
     }
 
-    private void extractContent() {
+    private void extractContent() throws TikaException {
         assertStateNotNull();
         if (getChmSection().getData() != null) {
             while (getContentLength() < getBlockLength()) {// && tempStopLoop
@@ -252,7 +249,7 @@ public class ChmLzxBlock {
         return tmp;
     }
 
-    private void createLengthTreeTable() {
+    private void createLengthTreeTable() throws TikaException {
         short[] prelentable = createPreLenTable();
 
         if (prelentable == null) {
@@ -299,7 +296,7 @@ public class ChmLzxBlock {
         }
     }
 
-    public void decompressAlignedBlock(int len, byte[] prevcontent) {
+    public void decompressAlignedBlock(int len, byte[] prevcontent) throws TikaException {
 
         if ((getChmSection() == null) || (getState() == null)
                 || (getState().getMainTreeTable() == null))
@@ -445,12 +442,12 @@ public class ChmLzxBlock {
         setContentLength(len);
     }
 
-    private void assertShortArrayNotNull(short[] array) {
+    private void assertShortArrayNotNull(short[] array) throws TikaException {
         if (array == null)
             throw new ChmParsingException("short[] is null");
     }
 
-    private void decompressVerbatimBlock(int len, byte[] prevcontent) {
+    private void decompressVerbatimBlock(int len, byte[] prevcontent) throws TikaException {
         short s;
         int x, i;
         int matchlen = 0, matchfooter = 0, extra, rundest, runsrc;
@@ -560,7 +557,7 @@ public class ChmLzxBlock {
     }
 
     private void createLengthTreeLenTable(int offset, int tablelen,
-            short[] pretreetable, short[] prelentable) {
+            short[] pretreetable, short[] prelentable) throws TikaException {
         if (prelentable == null || getChmSection() == null
                 || pretreetable == null || prelentable == null)
             throw new ChmParsingException("is null");
@@ -621,7 +618,7 @@ public class ChmLzxBlock {
         }
     }
 
-    private void createMainTreeTable() {
+    private void createMainTreeTable() throws TikaException {
         short[] prelentable = createPreLenTable();
         short[] pretreetable = createTreeTable2(prelentable,
                 (1 << ChmConstants.LZX_PRETREE_TABLEBITS)
@@ -650,7 +647,7 @@ public class ChmLzxBlock {
     }
 
     private void createMainTreeLenTable(int offset, int tablelen,
-            short[] pretreetable, short[] prelentable) {
+            short[] pretreetable, short[] prelentable) throws TikaException {
         if (pretreetable == null)
             throw new ChmParsingException("pretreetable is null");
         int i = offset;
@@ -712,7 +709,7 @@ public class ChmLzxBlock {
         }
     }
 
-    private void assertInRange(short[] array, int index) {
+    private void assertInRange(short[] array, int index) throws ChmParsingException {
         if (index >= array.length)
             throw new ChmParsingException(index + " is bigger than "
                     + array.length);
@@ -849,7 +846,7 @@ public class ChmLzxBlock {
         this.content = new byte[contentLength];
     }
 
-    private void checkLzxBlock(ChmLzxBlock chmPrevLzxBlock) {
+    private void checkLzxBlock(ChmLzxBlock chmPrevLzxBlock) throws TikaException {
         if (chmPrevLzxBlock == null && getBlockLength() < Integer.MAX_VALUE)
             setState(new ChmLzxState((int) getBlockLength()));
         else
@@ -857,7 +854,7 @@ public class ChmLzxBlock {
     }
 
     private boolean validateConstructorParams(int blockNumber,
-            byte[] dataSegment, long blockLength) {
+            byte[] dataSegment, long blockLength) throws TikaException {
         int goodParameter = 0;
         if (blockNumber >= 0)
             ++goodParameter;

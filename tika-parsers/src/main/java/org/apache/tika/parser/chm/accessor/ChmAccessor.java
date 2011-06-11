@@ -18,6 +18,8 @@ package org.apache.tika.parser.chm.accessor;
 
 import java.io.Serializable;
 
+import org.apache.tika.exception.TikaException;
+
 /**
  * 
  * Defines an accessor interface
@@ -31,6 +33,7 @@ public interface ChmAccessor<T> extends Serializable {
      * @param data
      *            chm file
      * @param chmAccessor
+     * @throws TikaException 
      */
-    void parse(byte[] data, T chmAccessor);
+    void parse(byte[] data, T chmAccessor) throws TikaException;
 }
