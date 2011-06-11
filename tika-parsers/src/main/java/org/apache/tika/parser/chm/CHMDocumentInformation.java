@@ -21,13 +21,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
-import org.apache.tika.parser.chm.exception.ChmParsingException;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
@@ -47,8 +45,10 @@ public class CHMDocumentInformation {
      *            InputStream
      * 
      * @return chm document information
+     * @throws TikaException 
+     * @throws IOException 
      */
-    public static CHMDocumentInformation load(InputStream is) {
+    public static CHMDocumentInformation load(InputStream is) throws TikaException, IOException {
         return new CHMDocumentInformation().getInstance(is);
     }
 
@@ -59,8 +59,10 @@ public class CHMDocumentInformation {
      *            InputStream
      * 
      * @return
+     * @throws TikaException 
+     * @throws IOException 
      */
-    private CHMDocumentInformation getInstance(InputStream is) {
+    private CHMDocumentInformation getInstance(InputStream is) throws TikaException, IOException {
         setChmExtractor(new ChmExtractor(is));
         return this;
     }
@@ -73,9 +75,10 @@ public class CHMDocumentInformation {
     private String getContent() {
         StringBuilder sb = new StringBuilder();
         DirectoryListingEntry entry;
+        
         for (Iterator<DirectoryListingEntry> it = getChmExtractor()
-                .getChmDirList().getDirectoryListingEntryList().iterator(); it
-                .hasNext();) {
+                .getChmDirList().getDirectoryListingEntryList().iterator(); it.hasNext();) 
+        {
             try {
                 entry = it.next();
                 if (isRightEntry(entry)) {
@@ -84,8 +87,8 @@ public class CHMDocumentInformation {
                         sb.append(extract(tmp));
                     }
                 }
-            } catch (ChmParsingException e) {// catch (IOException e) {
-                System.out.println(e.getMessage());
+            } catch (TikaException e) {
+                //ignore
             } // catch (IOException e) {//Pushback exception from tagsoup
             // System.err.println(e.getMessage());
         }
@@ -173,21 +176,19 @@ public class CHMDocumentInformation {
                     htmlParser.parse(stream, handler, metadata, parser);
                 } catch (TikaException e) {
                     wBuf.append(new String(byteObject[i]));
-                    System.err.println("\n"
-                            + CHMDocumentInformation.class.getName()
-                            + " extract " + e.getMessage());
+//                    System.err.println("\n"
+//                            + CHMDocumentInformation.class.getName()
+//                            + " extract " + e.getMessage());
                 } finally {
                     wBuf.append(handler.toString()
                             + System.getProperty("line.separator"));
                     stream.close();
                 }
             }
-        } catch (ChmParsingException e) {
-            System.err.println(e.getMessage());
         } catch (SAXException e) {
-            System.err.println(e.getMessage());
-        } catch (IOException e) {// Pushback overflow from tagsoup
-        // System.err.println(e.getMessage());
+            throw new RuntimeException(e);
+        } catch (IOException e) {// 
+        // Pushback overflow from tagsoup
         }
         return wBuf.toString();
     }

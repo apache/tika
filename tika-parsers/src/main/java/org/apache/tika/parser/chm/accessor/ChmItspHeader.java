@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
@@ -116,9 +117,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
      * @param data
      * @param chmItspHeader
      * @param count
+     * @throws TikaException 
      */
     private void unmarshalCharArray(byte[] data, ChmItspHeader chmItspHeader,
-            int count) {
+            int count) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmItspHeader);
         this.setDataRemained(data.length);
@@ -127,10 +129,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         this.setDataRemained(this.getDataRemained() - count);
     }
 
-    private int unmarshalInt32(byte[] data, int dataLenght, int dest) {
+    private int unmarshalInt32(byte[] data, int dataLenght, int dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > this.getDataRemained())
-            throw new ChmParsingException("4 > dataLenght");
+            throw new TikaException("4 > dataLenght");
         dest = data[this.getCurrentPlace()]
                 | data[this.getCurrentPlace() + 1] << 8
                 | data[this.getCurrentPlace() + 2] << 16
@@ -141,10 +143,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         return dest;
     }
 
-    private long unmarshalUInt32(byte[] data, int dataLenght, long dest) {
+    private long unmarshalUInt32(byte[] data, int dataLenght, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > dataLenght)
-            throw new ChmParsingException("4 > dataLenght");
+            throw new TikaException("4 > dataLenght");
         dest = data[this.getCurrentPlace()]
                 | data[this.getCurrentPlace() + 1] << 8
                 | data[this.getCurrentPlace() + 2] << 16
@@ -469,15 +471,13 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
     }
 
     // @Override
-    public void parse(byte[] data, ChmItspHeader chmItspHeader) {
+    public void parse(byte[] data, ChmItspHeader chmItspHeader) throws TikaException {
         /* we only know how to deal with the 0x58 and 0x60 byte structures */
         if (data.length != ChmConstants.CHM_ITSP_V1_LEN)
-            throw new ChmParsingException(
-                    "we only know how to deal with the 0x58 and 0x60 byte structures");
+            throw new ChmParsingException("we only know how to deal with the 0x58 and 0x60 byte structures");
 
         /* unmarshal common fields */
-        chmItspHeader.unmarshalCharArray(data, chmItspHeader,
-                ChmConstants.CHM_SIGNATURE_LEN);
+        chmItspHeader.unmarshalCharArray(data, chmItspHeader, ChmConstants.CHM_SIGNATURE_LEN);
         // ChmCommons.unmarshalCharArray(data, chmItspHeader,
         // ChmConstants.CHM_SIGNATURE_LEN);
         chmItspHeader.setVersion(chmItspHeader.unmarshalInt32(data,

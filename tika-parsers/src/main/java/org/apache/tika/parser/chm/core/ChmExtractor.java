@@ -21,7 +21,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
@@ -30,7 +30,6 @@ import org.apache.tika.parser.chm.accessor.ChmLzxcResetTable;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons.EntryType;
-import org.apache.tika.parser.chm.exception.ChmParsingException;
 import org.apache.tika.parser.chm.lzx.ChmBlockInfo;
 import org.apache.tika.parser.chm.lzx.ChmLzxBlock;
 
@@ -143,7 +142,7 @@ public class ChmExtractor {
         this.data = data;
     }
 
-    public ChmExtractor(InputStream is) {
+    public ChmExtractor(InputStream is) throws TikaException, IOException {
         ChmAssert.assertInputStreamNotNull(is);
         try {
             setData(ChmCommons.toByteArray(is));
@@ -152,10 +151,8 @@ public class ChmExtractor {
             setChmItsfHeader(new ChmItsfHeader());
             // getChmItsfHeader().parse(Arrays.copyOfRange(getData(), 0,
             // ChmConstants.CHM_ITSF_V3_LEN - 1), getChmItsfHeader());
-            getChmItsfHeader().parse(
-                    ChmCommons.copyOfRange(getData(), 0,
-                            ChmConstants.CHM_ITSF_V3_LEN - 1),
-                    getChmItsfHeader());
+            getChmItsfHeader().parse(ChmCommons.copyOfRange(getData(), 0,
+                            ChmConstants.CHM_ITSF_V3_LEN - 1), getChmItsfHeader());
 
             /* Creates and parses chm itsp header */
             setChmItspHeader(new ChmItspHeader());
@@ -165,9 +162,8 @@ public class ChmExtractor {
             // ChmConstants.CHM_ITSP_V1_LEN), getChmItspHeader());
             getChmItspHeader().parse(
                     ChmCommons.copyOfRange(getData(), (int) getChmItsfHeader()
-                            .getDirOffset(), (int) getChmItsfHeader()
-                            .getDirOffset() + ChmConstants.CHM_ITSP_V1_LEN),
-                    getChmItspHeader());
+                            .getDirOffset(), (int) getChmItsfHeader().getDirOffset() + 
+                            ChmConstants.CHM_ITSP_V1_LEN), getChmItspHeader());
 
             /* Creates instance of ChmDirListingContainer */
             setChmDirList(new ChmDirectoryListingSet(getData(),
@@ -178,13 +174,8 @@ public class ChmExtractor {
                     ChmConstants.LZXC.getBytes());
             byte[] dir_chunk = null;
             if (indexOfResetData > 0)
-                dir_chunk = ChmCommons.copyOfRange(
-                        getData(),
-                        indexOfResetData,
-                        indexOfResetData
-                                + getChmDirList()
-                                        .getDirectoryListingEntryList()
-                                        .get(indexOfControlData).getLength());
+                dir_chunk = ChmCommons.copyOfRange( getData(), indexOfResetData, indexOfResetData  
+                        + getChmDirList().getDirectoryListingEntryList().get(indexOfControlData).getLength());
             // dir_chunk = Arrays.copyOfRange(getData(), indexOfResetData,
             // indexOfResetData
             // +
@@ -207,25 +198,21 @@ public class ChmExtractor {
             // dir_chunk = Arrays.copyOfRange(getData(), startIndex, startIndex
             // +
             // getChmDirList().getDirectoryListingEntryList().get(indexOfResetTable).getLength());
-            dir_chunk = ChmCommons.copyOfRange(getData(), startIndex,
-                    startIndex
-                            + getChmDirList().getDirectoryListingEntryList()
-                                    .get(indexOfResetTable).getLength());
+            dir_chunk = ChmCommons.copyOfRange(getData(), startIndex, startIndex
+                            + getChmDirList().getDirectoryListingEntryList().get(indexOfResetTable).getLength());
 
             getChmLzxcResetTable().parse(dir_chunk, getChmLzxcResetTable());
 
-            setIndexOfContent(ChmCommons.indexOf(getChmDirList()
-                    .getDirectoryListingEntryList(), ChmConstants.CONTENT));
-            setLzxBlockOffset((getChmDirList().getDirectoryListingEntryList()
-                    .get(getIndexOfContent()).getOffset() + getChmItsfHeader()
-                    .getDataOffset()));
-            setLzxBlockLength(getChmDirList().getDirectoryListingEntryList()
-                    .get(getIndexOfContent()).getLength());
+            setIndexOfContent(ChmCommons.indexOf(getChmDirList().getDirectoryListingEntryList(), 
+                    ChmConstants.CONTENT));
+            setLzxBlockOffset((getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent()).getOffset() 
+                    + getChmItsfHeader().getDataOffset()));
+            setLzxBlockLength(getChmDirList().getDirectoryListingEntryList().get(getIndexOfContent()).getLength());
 
             setLzxBlocksCache(new ArrayList<ChmLzxBlock>());
 
         } catch (IOException e) {
-            System.err.println(e.getMessage());
+            // ignore
         }
     }
 
@@ -248,8 +235,9 @@ public class ChmExtractor {
      * @param directoryListingEntry
      * 
      * @return decompressed data
+     * @throws TikaException 
      */
-    public byte[][] extractChmEntry(DirectoryListingEntry directoryListingEntry) {
+    public byte[][] extractChmEntry(DirectoryListingEntry directoryListingEntry) throws TikaException {
         byte[][] tmp = null;
         byte[] dataSegment = null;
         ChmLzxBlock lzxBlock = null;
@@ -364,9 +352,8 @@ public class ChmExtractor {
                     }
                 }
             }
-        } catch (ChmParsingException e) {
-            // e.printStackTrace();
-            // System.err.println("Unknown exception");
+        } catch (Exception e) {
+            throw new TikaException(e.getMessage());
         }
         return (tmp != null) ? tmp : (new byte[1][]);
     }

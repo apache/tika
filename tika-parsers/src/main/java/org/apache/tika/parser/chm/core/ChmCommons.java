@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.accessor.ChmLzxcResetTable;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
@@ -34,9 +35,9 @@ public class ChmCommons {
     private ChmCommons() {
     }
 
-    public static void assertByteArrayNotNull(byte[] data) {
+    public static void assertByteArrayNotNull(byte[] data) throws TikaException {
         if (data == null)
-            throw new ChmParsingException("byte[] is null");
+            throw new TikaException("byte[] is null");
     }
 
     /**
@@ -88,8 +89,9 @@ public class ChmCommons {
 
     public static byte[] getChmBlockSegment(byte[] data,
             ChmLzxcResetTable resetTable, int blockNumber, int lzxcBlockOffset,
-            int lzxcBlockLength) {
-        ChmAssert.assertChmBlockSegment(data, resetTable, blockNumber, lzxcBlockOffset, lzxcBlockLength);
+            int lzxcBlockLength) throws TikaException {
+        ChmAssert.assertChmBlockSegment(data, resetTable, blockNumber,
+                lzxcBlockOffset, lzxcBlockLength);
         int blockLength = -1;
         // TODO add int_max_value checking
         if (blockNumber < (resetTable.getBlockAddress().length - 1)) {
@@ -203,8 +205,9 @@ public class ChmCommons {
      * @param buffer
      * @param fileToBeSaved
      *            file name
+     * @throws TikaException 
      */
-    public static void writeFile(byte[][] buffer, String fileToBeSaved) {
+    public static void writeFile(byte[][] buffer, String fileToBeSaved) throws TikaException {
         FileOutputStream output = null;
         if (buffer != null && fileToBeSaved != null
                 && !ChmCommons.isEmpty(fileToBeSaved)) {
@@ -215,8 +218,7 @@ public class ChmCommons {
                         output.write(buffer[i]);
                     }
             } catch (FileNotFoundException e) {
-                System.err.println("The " + fileToBeSaved
-                        + " does not seem correct");
+                throw new TikaException(e.getMessage());
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
@@ -261,8 +263,9 @@ public class ChmCommons {
      * @return byte array
      * 
      * @throws IOException
+     * @throws TikaException 
      */
-    public static byte[] toByteArray(InputStream is) throws IOException {
+    public static byte[] toByteArray(InputStream is) throws IOException, TikaException {
         if (is != null) {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             int nRead;
@@ -275,11 +278,11 @@ public class ChmCommons {
                 is.close();
                 buffer.close();
             } catch (Exception e) {
-                System.err.println(e.getMessage());
+                throw new TikaException(e.getMessage());
             }
             return buffer.toByteArray();
         } else
-            throw new ChmParsingException("InputStream is null");
+            throw new IOException("InputStream is null");
     }
 
     /**
@@ -288,8 +291,9 @@ public class ChmCommons {
      * @param text
      * @param pattern
      * @return index of the reset table
+     * @throws ChmParsingException 
      */
-    public static final int indexOfResetTableBlock(byte[] text, byte[] pattern) {
+    public static final int indexOfResetTableBlock(byte[] text, byte[] pattern) throws ChmParsingException {
         return (indexOf(text, pattern)) - 4;
     }
 
@@ -301,8 +305,9 @@ public class ChmCommons {
      * @param pattern
      *            byte[]
      * @return an index, if nothing found returns -1
+     * @throws ChmParsingException 
      */
-    public static int indexOf(byte[] text, byte[] pattern) {
+    public static int indexOf(byte[] text, byte[] pattern) throws ChmParsingException {
         int[] next = null;
         int i = 0, j = -1;
 

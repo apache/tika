@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
@@ -216,7 +217,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
         this.unknown_18 = unknown_18;
     }
 
-    private long unmarshalUInt32(byte[] data, long dest) {
+    private long unmarshalUInt32(byte[] data, long dest) throws ChmParsingException {
         assert (data != null && data.length > 0);
         if (4 > getDataRemained())
             throw new ChmParsingException("4 > dataLenght");
@@ -231,7 +232,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     }
 
     private void unmarshalCharArray(byte[] data,
-            ChmLzxcControlData chmLzxcControlData, int count) {
+            ChmLzxcControlData chmLzxcControlData, int count) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
         ChmAssert.assertChmAccessorNotNull(chmLzxcControlData);
         ChmAssert.assertPositiveInt(count);
@@ -261,12 +262,11 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     }
 
     // @Override
-    public void parse(byte[] data, ChmLzxcControlData chmLzxcControlData) {
+    public void parse(byte[] data, ChmLzxcControlData chmLzxcControlData) throws TikaException {
         if (data == null || (data.length < ChmConstants.CHM_LZXC_MIN_LEN))
             throw new ChmParsingException("we want at least 0x18 bytes");
         chmLzxcControlData.setDataRemained(data.length);
-        chmLzxcControlData.setSize(unmarshalUInt32(data,
-                chmLzxcControlData.getSize()));
+        chmLzxcControlData.setSize(unmarshalUInt32(data, chmLzxcControlData.getSize()));
         chmLzxcControlData.unmarshalCharArray(data, chmLzxcControlData,
                 ChmConstants.CHM_SIGNATURE_LEN);
         chmLzxcControlData.setVersion(unmarshalUInt32(data,
