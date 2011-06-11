@@ -20,6 +20,7 @@ import java.io.IOException;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
@@ -85,12 +86,12 @@ public class TestChmLzxState extends TestCase {
         }
     }
 
-    public void testChmLzxStateConstructor() {
+    public void testChmLzxStateConstructor() throws TikaException {
         chmLzxState = new ChmLzxState(windowSize);
         Assert.assertNotNull(chmLzxState);
     }
 
-    public void testToString() {
+    public void testToString() throws TikaException {
         if (chmLzxState == null)
             testChmLzxStateConstructor();
         Assert.assertTrue(chmLzxState.toString().length() > 20);
