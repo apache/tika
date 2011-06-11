@@ -20,7 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.parser.chm.exception.ChmParsingException;
+import org.apache.tika.exception.TikaException;
 
 public class TestUtils {
     /**
@@ -31,8 +31,9 @@ public class TestUtils {
      * @return byte[]
      * 
      * @throws IOException
+     * @throws TikaException 
      */
-    public static byte[] toByteArray(InputStream is) throws IOException {
+    public static byte[] toByteArray(InputStream is) throws IOException, TikaException {
         synchronized (is) {
             if (is != null) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -46,11 +47,11 @@ public class TestUtils {
                     is.close();
                     buffer.close();
                 } catch (Exception e) {
-                    System.err.println(e.getMessage());
+                    new TikaException(e.getMessage());
                 }
                 return buffer.toByteArray();
             } else
-                throw new ChmParsingException("InputStream is null");
+                throw new IOException("InputStream is null");
         }
     }
 }

@@ -51,7 +51,7 @@ public class TestChmExtractor extends TestCase {
         Assert.assertNotNull(chmExtractor.getChmDirList());
     }
 
-    public void testExtractChmEntry() {
+    public void testExtractChmEntry() throws TikaException {
         ChmDirectoryListingSet entries = chmExtractor.getChmDirList();
         byte[][] localFile;
         int count = 0;
