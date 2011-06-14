@@ -38,6 +38,7 @@ import org.xml.sax.SAXException;
 import com.sun.syndication.feed.synd.SyndContent;
 import com.sun.syndication.feed.synd.SyndEntry;
 import com.sun.syndication.feed.synd.SyndFeed;
+import com.sun.syndication.io.FeedException;
 import com.sun.syndication.io.SyndFeedInput;
 
 /**
@@ -57,48 +58,53 @@ public class FeedParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
 
-    public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
-            SAXException, TikaException {
-        SyndFeed feed = null;
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
         // set the encoding?
         try {
-            SyndFeedInput feedInput = new SyndFeedInput();
-            InputSource input = new InputSource(stream);
-            feed = feedInput.build(input);
-        } catch (Exception e) {
-            throw new TikaException(e.getMessage());
+            SyndFeed feed = new SyndFeedInput().build(
+                    new InputSource(stream));
+
+            String title = stripTags(feed.getTitleEx());
+            String description = stripTags(feed.getDescriptionEx());
+
+            metadata.set(Metadata.TITLE, title);
+            metadata.set(Metadata.DESCRIPTION, description);
+            // store the other fields in the metadata
+
+            XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+
+            xhtml.element("h1", title);
+            xhtml.element("p", description);
+
+            xhtml.startElement("ul");
+            for (Object e : feed.getEntries()) {
+                SyndEntry entry = (SyndEntry) e;
+                String link = entry.getLink();
+                if (link != null) {
+                    xhtml.startElement("li");
+                    xhtml.startElement("a", "href", link);
+                    xhtml.characters(stripTags(entry.getTitleEx()));
+                    xhtml.endElement("a");
+                    SyndContent content = entry.getDescription();
+                    if (content != null) {
+                        xhtml.newline();
+                        xhtml.characters(content.getValue());
+                    }
+                    xhtml.endElement("li");
+                }
+            }
+            xhtml.endElement("ul");
+
+            xhtml.endDocument();
+        } catch (FeedException e) {
+            throw new TikaException("RSS parse error", e);
         }
 
-        String feedDesc = stripTags(feed.getDescriptionEx());
-        String feedTitle = stripTags(feed.getTitleEx());
-
-        metadata.set(Metadata.TITLE, feedTitle);
-        metadata.set(Metadata.DESCRIPTION, feedDesc);
-        // store the other fields in the metadata
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-
-        List entries = feed.getEntries();
-        for (Iterator i = entries.iterator(); i.hasNext();) {
-            SyndEntry entry = (SyndEntry) i.next();
-            String link = entry.getLink();
-            if (link == null)
-                continue;
-            SyndContent description = entry.getDescription();
-
-            String title = stripTags(entry.getTitleEx());
-            xhtml.startElement("a", "href", link);
-            xhtml.characters(title);
-            xhtml.endElement("a");
-            xhtml.startElement("p");
-            if (description != null)
-                xhtml.characters(description.getValue());
-            xhtml.endElement("p");
-        }
-
-        xhtml.endDocument();
     }
 
     private static String stripTags(SyndContent c) {
