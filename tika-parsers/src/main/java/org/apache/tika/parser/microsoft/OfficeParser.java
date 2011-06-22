@@ -28,7 +28,6 @@ import java.util.Set;
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
-import org.apache.poi.poifs.crypt.EcmaDecryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.Entry;
@@ -224,7 +223,7 @@ public class OfficeParser extends AbstractParser {
                     break;
                 case ENCRYPTED:
                     EncryptionInfo info = new EncryptionInfo(filesystem);
-                    Decryptor d = new EcmaDecryptor(info);
+                    Decryptor d = Decryptor.getInstance(info);
 
                     try {
                         if (!d.verifyPassword(Decryptor.DEFAULT_PASSWORD)) {
