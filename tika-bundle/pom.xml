@@ -64,7 +64,7 @@
               tika-core;inline=true,
               tika-parsers;inline=true,
               netcdf,
-              commons-compress,
+              commons-compress, commons-codec,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               xmlbeans, dom4j,
