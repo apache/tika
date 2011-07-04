@@ -706,7 +706,16 @@ public class HtmlParserTest extends TestCase {
         assertFalse(content.contains("boilerplate"));
         assertFalse(content.contains("footer"));
     }
-    
-    
+
+    /**
+     * Test case for TIKA-434 - Pushback buffer overflow in TagSoup
+     */
+    public void testPushback() throws IOException, TikaException {
+        String content = new Tika().parseToString(
+                HtmlParserTest.class.getResourceAsStream("/test-documents/tika434.html"), new Metadata());
+
+
+        assertNotNull(content);
+    }
 
 }
