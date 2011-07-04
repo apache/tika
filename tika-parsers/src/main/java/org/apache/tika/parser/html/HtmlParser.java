@@ -16,10 +16,7 @@
  */
 package org.apache.tika.parser.html;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,7 +35,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.utils.CharsetUtils;
+import org.ccil.cowan.tagsoup.HTMLScanner;
 import org.ccil.cowan.tagsoup.HTMLSchema;
+import org.ccil.cowan.tagsoup.ScanHandler;
 import org.ccil.cowan.tagsoup.Schema;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -202,6 +201,15 @@ public class HtmlParser extends AbstractParser {
 
         parser.setContentHandler(new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata)));
+
+        parser.setProperty(org.ccil.cowan.tagsoup.Parser.scannerProperty,
+                new HTMLScanner() {
+                    @Override
+                    public void scan(Reader r0, ScanHandler h) throws IOException, SAXException {
+                        super.scan(new PushbackReader(new BufferedReader(r0), 2), h);
+                    }
+                });
+
         parser.parse(source);
     }
 
