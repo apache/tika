@@ -2554,6 +2554,13 @@
     <glob pattern="*.p7r"/>
   </mime-type>
 
+  <mime-type type="application/x-prt">
+    <glob pattern="*.prt"/>
+    <magic priority="50">
+      <match value="0M3C" type="string" offset="8" />
+    </magic>
+  </mime-type>
+  
   <mime-type type="application/x-quattro-pro">
     <glob pattern="*.qpw"/>
     <glob pattern="*.wb1"/>
