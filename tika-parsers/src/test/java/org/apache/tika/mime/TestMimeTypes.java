@@ -311,6 +311,11 @@ public class TestMimeTypes extends TestCase {
         assertTypeByData("image/vnd.dwg", "testDWG2010.dwg");
     }
 
+    public void testprtDetection() throws Exception {
+       assertTypeByName("application/x-prt", "x.prt");
+       assertTypeByData("application/x-prt", "testCADKEY.prt");
+   }
+
     public void testWmfDetection() throws Exception {
         // TODO: Need a test wmf file
         assertTypeByName("application/x-msmetafile", "x.wmf");
