@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
-import java.util.zip.InflaterOutputStream;
 
 import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.LittleEndian;
@@ -22,6 +21,8 @@ import org.xml.sax.SAXException;
  *  format. It outputs text from note entries.
  */
 public class PRTParser extends AbstractParser {
+    private static final long serialVersionUID = 4659638314375035178L;
+    
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-prt"));
     public static final String PRT_MIME_TYPE = "application/x-prt";
          
