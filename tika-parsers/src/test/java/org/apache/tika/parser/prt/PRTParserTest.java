@@ -25,7 +25,10 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class PRTParserTest extends TestCase {
-    public void testPRTParser() throws Exception {
+    /**
+     * Try with a simple file
+     */
+    public void testPRTParserBasics() throws Exception {
        InputStream input = PRTParserTest.class.getResourceAsStream(
              "/test-documents/testCADKEY.prt");
        try  {
@@ -35,10 +38,13 @@ public class PRTParserTest extends TestCase {
 
           assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
 
+          // This file has a date
           assertEquals("2011-06-20T16:54:00",
                 metadata.get(Metadata.DATE));
           assertEquals("2011-06-20T16:54:00",
                 metadata.get(Metadata.CREATION_DATE));
+          // But no description
+          assertEquals(null, metadata.get(Metadata.DESCRIPTION));
 
           String contents = handler.toString();
           
@@ -53,6 +59,56 @@ public class PRTParserTest extends TestCase {
           assertContains("You've managed to extract all the text!", contents);
           assertContains("This is more text", contents);
           assertContains("Text Inside a PRT file", contents);
+       } finally {
+          input.close();
+       }
+    }
+
+    /**
+     * Now a more complex one
+     */
+    public void testPRTParserComplex() throws Exception {
+       InputStream input = PRTParserTest.class.getResourceAsStream(
+             "/test-documents/testCADKEY2.prt");
+       try  {
+          Metadata metadata = new Metadata();
+          ContentHandler handler = new BodyContentHandler();
+          new PRTParser().parse(input, handler, metadata);
+
+          assertEquals("application/x-prt", metadata.get(Metadata.CONTENT_TYPE));
+
+          // File has both a date and a description
+          assertEquals("1997-04-01T08:59:00",
+                metadata.get(Metadata.DATE));
+          assertEquals("1997-04-01T08:59:00",
+                metadata.get(Metadata.CREATION_DATE));
+          assertEquals("TIKA TEST PART DESCRIPTION INFORMATION\r\n",
+                metadata.get(Metadata.DESCRIPTION));
+
+          String contents = handler.toString();
+          
+          assertContains("ITEM", contents);
+          assertContains("REQ.", contents);
+          assertContains("DESCRIPTION", contents);
+          assertContains("MAT'L", contents);
+          assertContains("TOLERANCES UNLESS", contents);
+          assertContains("FRACTIONS", contents);
+          assertContains("ANGLES", contents);
+          assertContains("Acme Corporation", contents);
+
+          assertContains("DATE", contents);
+          assertContains("CHANGE", contents);
+          assertContains("DRAWN BY", contents);
+          assertContains("SCALE", contents);
+          assertContains("TIKA TEST DRAWING", contents);
+          assertContains("TIKA LETTERS", contents);
+          assertContains("5.82", contents);
+          assertContains("112"+'\u00b0', contents); // Degrees
+          assertContains("TIKA TEST LETTER", contents);
+          assertContains("17.11", contents);
+          assertContains('\u00d8'+" 2.000", contents); // Diameter
+          assertContains("Diameter", contents);
+          assertContains("The Apache Tika toolkit", contents);
        } finally {
           input.close();
        }

@@ -18,6 +18,7 @@ package org.apache.tika.parser.prt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Set;
 
@@ -46,6 +47,10 @@ public class PRTParser extends AbstractParser {
        return SUPPORTED_TYPES;
     }
     
+    /**
+     * How long do we allow a text run to claim to be, before we
+     * decide we're confused and it's not really text after all?
+     */
     private static final int MAX_SANE_TEXT_LENGTH = 0x0800;
     
     /*
@@ -81,6 +86,13 @@ public class PRTParser extends AbstractParser {
        }
        metadata.set(Metadata.CONTENT_TYPE, PRT_MIME_TYPE);
        
+       // The description, if set, is the next up-to-500 bytes
+       byte[] desc = new byte[500];
+       IOUtils.readFully(stream, desc);
+       String description = extractText(desc, true);
+       if(description.length() > 0) {
+          metadata.set(Metadata.DESCRIPTION, description);
+       }
        
        // Now look for text
        while( (read = stream.read()) > -1) {
@@ -173,12 +185,43 @@ public class PRTParser extends AbstractParser {
           return;
        }
        
-       // TODO Is this the right character set?
-       String text = new String(str, 0, length-1, "UTF-8");
+       String text = extractText(str, false);
        
        xhtml.startElement("p");
        xhtml.characters(text);
        xhtml.endElement("p");
+    }
+    
+    /**
+     * Does our best to turn the bytes into text
+     */
+    private String extractText(byte[] data, boolean trim) throws TikaException {
+       // The text is always stored null terminated, but sometimes
+       //  may have extra null padding too
+       int length = data.length - 1;
+       if(trim) {
+          for(int i=0; i<data.length; i++) {
+             if(data[i] == 0) {
+                length = i;
+                break;
+             }
+          }
+       }
+       
+       // We believe that the text is basically stored as CP437
+       // That said, there are a few characters slightly wrong for that...
+       String text;
+       try {
+          text = new String(data, 0, length, "cp437");
+       } catch(UnsupportedEncodingException e) {
+          throw new TikaException("JVM Broken, core codepage CP437 missing!");
+       }
+       
+       // Fix up the known character issues
+       text = text.replace("\u03C6","\u00D8");
+
+       // All done, as best as we can!
+       return text;
     }
     
     /**
