@@ -16,7 +16,10 @@
  */
 package org.apache.tika;
 
-import junit.framework.TestCase;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -24,16 +27,10 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ParseUtils;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
-
 /**
  * Junit test class for Tika {@link Parser}s.
  */
-public class TestParsers extends TestCase {
+public class TestParsers extends TikaTest {
 
     private TikaConfig tc;
 
@@ -216,31 +213,4 @@ public class TestParsers extends TestCase {
         Parser parser = tc.getParser(MediaType.parse("audio/mpeg"));
         assertNotNull(parser);
     }
-
-    /**
-     * This method will give you back the filename incl. the absolute path name
-     * to the resource. If the resource does not exist it will give you back the
-     * resource name incl. the path.
-     * 
-     * @param name
-     *            The named resource to search for.
-     * @return an absolute path incl. the name which is in the same directory as
-     *         the the class you've called it from.
-     */
-    public File getResourceAsFile(String name) throws URISyntaxException {
-        URL url = this.getClass().getResource(name);
-        if (url != null) {
-            return new File(url.toURI());
-        } else {
-            // We have a file which does not exists
-            // We got the path
-            url = this.getClass().getResource(".");
-            return new File(new File(url.toURI()), name);
-        }
-    }
-
-    public InputStream getResourceAsStream(String name) {
-        return this.getClass().getResourceAsStream(name);
-    }
-
 }
