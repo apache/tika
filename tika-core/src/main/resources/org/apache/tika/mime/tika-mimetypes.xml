@@ -2354,9 +2354,34 @@
   <mime-type type="application/x-font-type1">
     <glob pattern="*.pfa"/>
     <glob pattern="*.pfb"/>
-    <glob pattern="*.pfm"/>
-    <glob pattern="*.afm"/>
+    <magic priority="40">
+      <!-- Match for PFB, the binary format -->
+      <match value="\x80\x01\xFF\xFF\x00\x00%!PS-Adobe-Font" type="string" 
+              mask="0xFFFF0000FFFFFFFFFFFFFFFFFFFFFFFFF" offset="0" />
+      <!-- Match for PFA, the text format" -->
+      <match value="%!PS-AdobeFont-1.0" type="string" offset="0" />
+    </magic>
   </mime-type>
+
+  <mime-type type="application/x-font-adobe-metric">
+    <_comment>Adobe Font Metric</_comment>
+    <glob pattern="*.afm"/>
+    <glob pattern="*.acfm"/>
+    <glob pattern="*.amfm"/>
+    <magic priority="40">
+      <match value="StartFontMetrics" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
+  <mime-type type="application/x-font-printer-metric">
+    <_comment>Printer Font Metric</_comment>
+    <glob pattern="*.pfm"/>
+    <magic priority="40">
+      <match value="0x0001FFFF0000436f707972" type="string" offset="0"
+              mask="0xFFFF0000FFFFFFFFFFFFFF" />
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-font-vfont"/>
 
   <mime-type type="application/x-foxmail">
