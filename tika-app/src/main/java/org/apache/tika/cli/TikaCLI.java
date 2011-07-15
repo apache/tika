@@ -61,6 +61,7 @@ import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.language.LanguageProfilerBuilder;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -225,6 +226,22 @@ public class TikaCLI {
             writer.flush();
         }
     };
+    
+    
+    /* Creates ngram profile */
+    private final OutputType CREATE_PROFILE = new OutputType() {
+        @Override
+        public void process(InputStream stream, OutputStream output)
+                throws Exception {
+            ngp = LanguageProfilerBuilder.create(profileName, stream, encoding);
+            FileOutputStream fos = new FileOutputStream(new File(profileName + ".ngp"));
+            ngp.save(fos);//saves ngram profile
+            fos.close();
+            PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
+            writer.println("ngram profile location:=" + new File(ngp.getName()).getCanonicalPath());
+            writer.flush();
+        }
+    };
 
     private ParseContext context;
     
@@ -235,6 +252,8 @@ public class TikaCLI {
     private Metadata metadata;
 
     private OutputType type = XML;
+    
+    private LanguageProfilerBuilder ngp = null;
 
     /**
      * Output character encoding, or <code>null</code> for platform default
@@ -247,6 +266,8 @@ public class TikaCLI {
 
     private boolean fork = false;
 
+    private String profileName = null;
+    
     public TikaCLI() throws Exception {
         context = new ParseContext();
         detector = new DefaultDetector();
@@ -313,6 +334,9 @@ public class TikaCLI {
         } else if (arg.startsWith("--client=")) {
             URI uri = new URI(arg.substring("--client=".length()));
             parser = new NetworkParser(uri);
+        } else if(arg.startsWith("--create-profile=")){
+            profileName = arg.substring("--create-profile=".length());
+            type = CREATE_PROFILE;
         } else {
             pipeMode = false;
             metadata = new Metadata();
@@ -367,6 +391,8 @@ public class TikaCLI {
         out.println("    -eX or --encoding=X  Use output encoding X");
         out.println("    -z  or --extract     Extract all attachements into current directory");        
         out.println();
+        out.println("    --create-profile=X");
+        out.println("         Create NGram profile, where X is a profile name");
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
         out.println("    --list-parser-details");

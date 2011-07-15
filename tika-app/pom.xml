@@ -35,7 +35,13 @@
   <url>http://tika.apache.org/</url>
 
   <dependencies>
-    <dependency>
+  	<dependency>
+  		<groupId>junit</groupId>
+  		<artifactId>junit</artifactId>
+  		<version>3.8.2</version>
+  		<scope>test</scope>
+  	</dependency>
+  	<dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
@@ -53,6 +59,7 @@
       <version>1.7.1</version>
       <scope>provided</scope>
     </dependency>
+ 
   </dependencies>
 
   <build>
@@ -63,6 +70,10 @@
       </resource>
       <resource>
         <directory>src/main/resources-filtered</directory>
+        <filtering>true</filtering>
+      </resource>
+      <resource>
+        <directory>src/test/resources</directory>
         <filtering>true</filtering>
       </resource>
     </resources>
