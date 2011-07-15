@@ -89,6 +89,19 @@ public class RTFParserTest extends TikaTest {
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
     }
     
+    public void testJapaneseText() throws Exception {
+       String content = getText("testRTFJapanese.rtf");
+
+       assertContains("1.", content);
+       assertContains("4.", content);
+       
+       // Special version of (GHQ)
+       assertContains("\uff08\uff27\uff28\uff31\uff09", content);
+       
+       // 6 other characters
+       assertContains("\u6771\u4eac\u90fd\u4e09\u9df9\u5e02", content);
+    }
+
     private String getText(String filename) throws Exception {
        File file = getResourceAsFile("/test-documents/" + filename);
        
