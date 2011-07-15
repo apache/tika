@@ -18,7 +18,7 @@ package org.apache.tika;
 
 import junit.framework.TestCase;
 
-public class TikaTest extends TestCase {
+public class TikaDetectionTest extends TestCase {
 
     private final Tika tika = new Tika();
 
