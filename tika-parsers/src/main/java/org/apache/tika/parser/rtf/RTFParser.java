@@ -121,6 +121,9 @@ public class RTFParser extends AbstractParser {
                 xhtml.startDocument();
                 xhtml.element("p", sd.getText(0, sd.getLength()));
                 xhtml.endDocument();
+                
+                // TODO Extract some of the metadata
+                metadata.add(Metadata.CONTENT_TYPE, "application/rtf");
             } finally {
                 in.close();
             }
