@@ -17,6 +17,7 @@
 package org.apache.tika.mime;
 
 // Junit imports
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -413,9 +414,30 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/x-font-adobe-metric", "testAFM.afm");
        
        assertTypeByName("application/x-font-printer-metric", "x.pfm");
+       // TODO Get a sample .pfm file
+       assertTypeByData(
+             "application/x-font-printer-metric", 
+             new byte[] {0x00, 0x01, 256-0xb1, 0x0a, 0x00, 0x00, 0x43, 0x6f,  
+                         0x70, 0x79, 0x72, 0x69, 0x67, 0x68, 0x74, 0x20}
+       );
        
        assertTypeByName("application/x-font-type1", "x.pfa");
+       // TODO Get a sample .pfa file
+       assertTypeByData(
+             "application/x-font-type1", 
+             new byte[] {0x25, 0x21, 0x50, 0x53, 0x2d, 0x41, 0x64, 0x6f,
+                         0x62, 0x65, 0x46, 0x6f, 0x6e, 0x74, 0x2d, 0x31,
+                         0x2e, 0x30, 0x20, 0x20, 0x2d, 0x2a, 0x2d, 0x20}
+       );
+       
        assertTypeByName("application/x-font-type1", "x.pfb");
+       // TODO Get a sample .pfm file
+       assertTypeByData(
+             "application/x-font-type1", 
+             new byte[] {-0x80, 0x01, 0x09, 0x05, 0x00, 0x00, 0x25, 0x21,
+                          0x50, 0x53, 0x2d, 0x41, 0x64, 0x6f, 0x62, 0x65,
+                          0x46, 0x6f, 0x6e, 0x74, 0x2d, 0x31, 0x2e, 0x30 }
+       );
     }
 
     /**
@@ -472,6 +494,17 @@ public class TestMimeTypes extends TestCase {
         } finally {
             stream.close();
         }
+    }
+    
+    private void assertTypeByData(String expected, byte[] data)
+            throws IOException {
+       InputStream stream = new ByteArrayInputStream(data);
+       try {
+          Metadata metadata = new Metadata();
+          assertEquals(expected, repo.detect(stream, metadata).toString());
+       } finally {
+          stream.close();
+       }
     }
     
     private void assertTypeByNameAndData(String expected, String filename)
