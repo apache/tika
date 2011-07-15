@@ -18,19 +18,17 @@ package org.apache.tika.parser.prt;
 
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
-public class PRTParserTest extends TestCase {
+public class PRTParserTest extends TikaTest {
     /**
      * Try with a simple file
      */
     public void testPRTParserBasics() throws Exception {
-       InputStream input = PRTParserTest.class.getResourceAsStream(
-             "/test-documents/testCADKEY.prt");
+       InputStream input = getResourceAsStream("/test-documents/testCADKEY.prt");
        try  {
           Metadata metadata = new Metadata();
           ContentHandler handler = new BodyContentHandler();
@@ -68,8 +66,7 @@ public class PRTParserTest extends TestCase {
      * Now a more complex one
      */
     public void testPRTParserComplex() throws Exception {
-       InputStream input = PRTParserTest.class.getResourceAsStream(
-             "/test-documents/testCADKEY2.prt");
+       InputStream input = getResourceAsStream("/test-documents/testCADKEY2.prt");
        try  {
           Metadata metadata = new Metadata();
           ContentHandler handler = new BodyContentHandler();
@@ -112,9 +109,5 @@ public class PRTParserTest extends TestCase {
        } finally {
           input.close();
        }
-    }
-    
-    public void assertContains(String needle, String haystack) {
-       assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
 }
