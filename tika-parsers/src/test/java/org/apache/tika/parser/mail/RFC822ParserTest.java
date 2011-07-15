@@ -199,6 +199,25 @@ public class RFC822ParserTest extends TestCase {
                 new ByteArrayInputStream(data), handler, metadata, context);
         assertEquals(name, metadata.get(Metadata.AUTHOR));
     }
+    
+    /**
+     * Test for TIKA-678 - not all headers may be present
+     */
+    public void testSomeMissingHeaders() throws Exception {
+       Parser parser = new RFC822Parser();
+       Metadata metadata = new Metadata();
+       InputStream stream = getStream("test-documents/testRFC822-limitedheaders");
+       ContentHandler handler = new BodyContentHandler();
+
+       parser.parse(stream, handler, metadata, new ParseContext());
+       assertEquals("xyz, abc", metadata.get(Metadata.AUTHOR));
+       assertEquals("xyz, abc", metadata.get(Metadata.MESSAGE_FROM));
+       assertEquals(true, metadata.isMultiValued(Metadata.MESSAGE_TO));
+       assertEquals("abc", metadata.getValues(Metadata.MESSAGE_TO)[0]);
+       assertEquals("def", metadata.getValues(Metadata.MESSAGE_TO)[1]);
+       assertEquals("abcd", metadata.get(Metadata.SUBJECT));
+       assertTrue(handler.toString().contains("bar biz bat"));
+    }
 
     private static InputStream getStream(String name) {
         return Thread.currentThread().getContextClassLoader()
