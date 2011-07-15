@@ -404,6 +404,19 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-raw-casio", "x.bay");
         assertTypeByName("image/x-raw-rawzor", "x.rwz");
     }
+    
+    /**
+     * Tests that we correctly detect the font types
+     */
+    public void testFontDetection() throws Exception {
+       assertTypeByName("application/x-font-adobe-metric", "x.afm");
+       assertTypeByData("application/x-font-adobe-metric", "testAFM.afm");
+       
+       assertTypeByName("application/x-font-printer-metric", "x.pfm");
+       
+       assertTypeByName("application/x-font-type1", "x.pfa");
+       assertTypeByName("application/x-font-type1", "x.pfb");
+    }
 
     /**
      * Tests MimeTypes.getMimeType(URL), which examines both the byte header

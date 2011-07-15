@@ -552,8 +552,11 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("application/x-font-ttf", tika.detect("x.ttc"));
         assertEquals("application/x-font-type1", tika.detect("x.pfa"));
         assertEquals("application/x-font-type1", tika.detect("x.pfb"));
-        assertEquals("application/x-font-type1", tika.detect("x.pfm"));
-        assertEquals("application/x-font-type1", tika.detect("x.afm"));
+        // TODO Get these fixed upstream too
+        //assertEquals("application/x-font-type1", tika.detect("x.pfm"));
+        //assertEquals("application/x-font-type1", tika.detect("x.afm"));
+        assertEquals("application/x-font-printer-metric", tika.detect("x.pfm"));
+        assertEquals("application/x-font-adobe-metric", tika.detect("x.afm"));
         assertEquals("application/x-futuresplash", tika.detect("x.spl"));
         assertEquals("application/x-gnumeric", tika.detect("x.gnumeric"));
         assertEquals("application/x-gtar", tika.detect("x.gtar"));
