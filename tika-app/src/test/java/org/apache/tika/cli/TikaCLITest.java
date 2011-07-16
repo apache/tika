@@ -19,6 +19,7 @@ package org.apache.tika.cli;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
 import junit.framework.Assert;
@@ -76,7 +77,7 @@ public class TikaCLITest extends TestCase{
 	public void testListParsers() throws Exception{
 		String[] params = {"--list-parser"};
 		TikaCLI.main(params);
-		Assert.assertTrue(outContent != null && outContent.size() >= 1447);
+		Assert.assertTrue(outContent != null && outContent.toString().contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
 	}
 	
 	/**
@@ -173,5 +174,15 @@ public class TikaCLITest extends TestCase{
 		if(profile != null && profile.exists())
 			profile.delete();
 		System.setOut(stdout);
+		closeStreams();
 	}
+	
+    private void closeStreams() throws IOException {
+        if(outContent != null)
+            outContent.close();
+        if(stdout != null)
+            stdout.close();
+        if(reassign != null)
+            reassign.close();
+    }
 }
