@@ -47,6 +47,7 @@ public class AutoDetectParserTest extends TestCase {
     private static final String PLAINTEXT  = "text/plain";
     private static final String WORD       = "application/msword";
     private static final String XML        = "application/xml";
+    private static final String RSS        = "application/rss+xml";
     private static final String BMP        = "image/x-ms-bmp";
     private static final String GIF        = "image/gif";
     private static final String JPEG       = "image/jpeg";
@@ -198,6 +199,10 @@ public class AutoDetectParserTest extends TestCase {
         assertAutoDetect("testXML.xml", XML, "Lius");
     }
 
+    public void testRss() throws Exception {
+        assertAutoDetect("/test-documents/rsstest.rss", "feed", RSS, "application/rss+xml", "Sample RSS File for Junit test");
+    }
+    
     public void testImages() throws Exception {
        assertAutoDetect("testBMP.bmp", BMP, null);
        assertAutoDetect("testGIF.gif", GIF, null);
