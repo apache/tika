@@ -1,4 +1,20 @@
-﻿Corwynt Isabel oedd y corwynt costliest a deadliest yn 2003 tymor corwynt Iwerydd. Y storm a enwir nawfed, corwynt bumed, a'r ail corwynt mawr y tymor, Isabel ffurfio o ton trofannol ar Medi 6 yn y Cefnfor Iwerydd trofannol. Mae'n symud northwestward, ac o fewn amgylchedd o olau cneifio gwynt a dŵr cynnes yn gyson cryfhau i gyrraedd brig wyntoedd o 165 milltir yr awr (265 km / h) ar Fedi 11. Ar ôl amrywio mewn dwysedd am bedwar diwrnod, Isabel gwanhau raddol a gwneud landfall ar y banciau Allanol o North Carolina gyda gwyntoedd o 105 milltir yr awr (165 km / h) ar Fedi 18. Mae'n gyflym gwanhau dros dir a daeth yn 
+﻿#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+Corwynt Isabel oedd y corwynt costliest a deadliest yn 2003 tymor corwynt Iwerydd. Y storm a enwir nawfed, corwynt bumed, a'r ail corwynt mawr y tymor, Isabel ffurfio o ton trofannol ar Medi 6 yn y Cefnfor Iwerydd trofannol. Mae'n symud northwestward, ac o fewn amgylchedd o olau cneifio gwynt a dŵr cynnes yn gyson cryfhau i gyrraedd brig wyntoedd o 165 milltir yr awr (265 km / h) ar Fedi 11. Ar ôl amrywio mewn dwysedd am bedwar diwrnod, Isabel gwanhau raddol a gwneud landfall ar y banciau Allanol o North Carolina gyda gwyntoedd o 105 milltir yr awr (165 km / h) ar Fedi 18. Mae'n gyflym gwanhau dros dir a daeth yn 
 extratropical dros Pennsylvania orllewinol y diwrnod nesaf.
 Yng Ngogledd Carolina, yr ymchwydd storm o'r Isabel olchi allan dogn o Hatteras Ynys i ffurfio hyn a elwir answyddogol fel Isabel Inlet. Difrod oedd 
 fwyaf ar hyd y Banciau Allanol, lle mae miloedd o gartrefi eu difrodi neu eu dinistrio hyd yn oed. Mae gwaethaf o effeithiau Isabel digwydd yn Virginia, 
