@@ -14,37 +14,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.server;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.EncryptedDocumentException;
+import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
-@Path("/tika")
+@Path("/tika{id:(/.*)?}")
 public class TikaResource {
   public static final String GREETING = "This is Tika Server. Please PUT\n";
   private final Log logger = LogFactory.getLog(TikaResource.class);
+
+  static {
+    ExtractorFactory.setAllThreadsPreferEventExtractors(true);
+  }
 
   @SuppressWarnings({"SameReturnValue"})
   @GET
@@ -56,12 +66,20 @@ public class TikaResource {
   public static AutoDetectParser createParser() {
     final AutoDetectParser parser = new AutoDetectParser();
 
-    parser.setFallback(new AbstractParser() {
+    Map<MediaType,Parser> parsers = parser.getParsers();
+    parsers.put(MediaType.APPLICATION_XML, new HtmlParser());
+    parser.setParsers(parsers);
+
+    parser.setFallback(new Parser() {
       public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
         return parser.getSupportedTypes(parseContext);
       }
 
       public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
+        throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
+      }
+
+      public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata) {
         throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
       }
     });
@@ -70,9 +88,21 @@ public class TikaResource {
   }
 
   public static void fillMetadata(AutoDetectParser parser, Metadata metadata, HttpHeaders httpHeaders) {
-    javax.ws.rs.core.MediaType mediaType = httpHeaders.getMediaType();
+    List<String> fileName = httpHeaders.getRequestHeader("File-Name");
+    if (fileName!=null && !fileName.isEmpty()) {
+      metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName.get(0));
+    }
 
-    if (mediaType !=null && !mediaType.equals(javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
+    javax.ws.rs.core.MediaType mediaType = httpHeaders.getMediaType();
+    if (mediaType!=null && "xml".equals(mediaType.getSubtype()) ) {
+      mediaType = null;
+    }
+
+    if (mediaType !=null && mediaType.equals(javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
+      mediaType = null;
+    }
+
+    if (mediaType !=null) {
       metadata.add(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE, mediaType.toString());
 
       final Detector detector = parser.getDetector();
@@ -94,18 +124,41 @@ public class TikaResource {
   @PUT
   @Consumes("*/*")
   @Produces("text/plain")
-  public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders) {
+  public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
     final AutoDetectParser parser = createParser();
     final Metadata metadata = new Metadata();
 
     fillMetadata(parser, metadata, httpHeaders);
 
+    logRequest(logger, info, metadata);
+
     return new StreamingOutput() {
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-        BodyContentHandler body = new BodyContentHandler(outputStream);
+        BodyContentHandler body = new BodyContentHandler(new WriteOutContentHandler(outputStream) {
+          @Override
+          public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+            super.startElement(uri, localName, qName, attributes);
+
+            if ("img".equals(localName) && attributes.getValue("alt")!=null) {
+              String nfo = "[image: "+attributes.getValue("alt")+ ']';
+
+              characters(nfo.toCharArray(), 0, nfo.length());
+            }
+
+            if ("a".equals(localName) && attributes.getValue("name")!=null) {
+              String nfo = "[bookmark: "+attributes.getValue("name")+ ']';
+
+              characters(nfo.toCharArray(), 0, nfo.length());
+            }
+          }
+        });
+
+        TikaInputStream tis = TikaInputStream.get(is);
 
         try {
-          parser.parse(is, body, metadata);
+          tis.getFile();
+
+          parser.parse(tis, body, metadata);
         } catch (SAXException e) {
           throw new WebApplicationException(e);
         } catch (TikaException e) {
@@ -125,11 +178,31 @@ public class TikaResource {
             throw new WebApplicationException(Response.status(422).build());
           }
 
-          logger.warn("Text extraction failed", e);
+          logger.warn(String.format(
+                  "%s: Text extraction failed",
+                  info.getPath()
+          ), e);
 
           throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        } finally {
+          tis.close();
         }
       }
     };
+  }
+
+  public static void logRequest(Log logger, UriInfo info, Metadata metadata) {
+    if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)==null) {
+      logger.info(String.format(
+              "%s (autodetecting type)",
+              info.getPath()
+      ));
+    } else {
+      logger.info(String.format(
+              "%s (%s)",
+              info.getPath(),
+              metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)
+      ));
+    }
   }
 }

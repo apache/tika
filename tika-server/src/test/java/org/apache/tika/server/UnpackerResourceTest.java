@@ -14,9 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.server;
 
-import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.test.framework.JerseyTest;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.tika.io.IOUtils;
@@ -29,8 +29,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class UnpackerResourceTest extends JerseyTest {
   private static final String UNPACKER_PATH = "/unpacker";
@@ -71,7 +69,7 @@ public class UnpackerResourceTest extends JerseyTest {
   @Test
   public void testDocWAV() throws Exception {
     InputStream is =
-            webResource
+            resource()
                     .path(UNPACKER_PATH)
                     .type(APPLICATION_MSWORD)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -87,7 +85,7 @@ public class UnpackerResourceTest extends JerseyTest {
   @Test
   public void testDocPicture() throws Exception {
     InputStream is =
-            webResource
+            resource()
                     .path(UNPACKER_PATH)
                     .type(APPLICATION_MSWORD)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
@@ -102,7 +100,7 @@ public class UnpackerResourceTest extends JerseyTest {
   @Test
   public void testDocPictureNoOle() throws Exception {
     InputStream is =
-            webResource
+            resource()
                     .path(UNPACKER_PATH)
                     .type(APPLICATION_MSWORD)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream("2pic.doc"));
@@ -117,7 +115,7 @@ public class UnpackerResourceTest extends JerseyTest {
   @Test
   public void testImageDOCX() throws Exception {
     InputStream is =
-            webResource
+            resource()
                     .path(UNPACKER_PATH)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
 
@@ -133,7 +131,7 @@ public class UnpackerResourceTest extends JerseyTest {
   public void testExeDOCX() throws Exception {
     String TEST_DOCX_EXE = "2exe.docx";
     InputStream is =
-            webResource
+            resource()
                     .path(UNPACKER_PATH)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
 
@@ -163,7 +161,7 @@ public class UnpackerResourceTest extends JerseyTest {
   @Test
   public void testImageXSL() throws Exception {
     InputStream is =
-            webResource
+            resource()
                     .path(UNPACKER_PATH)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream("pic.xls"));
 
