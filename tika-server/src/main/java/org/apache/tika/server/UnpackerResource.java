@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.server;
 
 import org.apache.commons.lang.mutable.MutableInt;
@@ -24,13 +25,13 @@ import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -40,15 +41,15 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.*;
+import javax.ws.rs.core.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.zip.ZipOutputStream;
 
-@Path("/unpacker")
+@Path("/unpacker{id:(/.*)?}")
 public class UnpackerResource {
   private static final Log logger = LogFactory.getLog(UnpackerResource.class);
 
@@ -62,25 +63,15 @@ public class UnpackerResource {
   @Produces("application/zip")
   public StreamingOutput getText(
           InputStream is,
-          @Context HttpHeaders httpHeaders
+          @Context HttpHeaders httpHeaders,
+          @Context UriInfo info
   ) throws Exception {
-    if (!is.markSupported()) {
-      is = new BufferedInputStream(is);
-    }
-    
-    Parser parser;
+    Metadata metadata = new Metadata();
 
-    javax.ws.rs.core.MediaType mediaType = httpHeaders.getMediaType();
-    if (mediaType !=null && !mediaType.equals(javax.ws.rs.core.MediaType.APPLICATION_OCTET_STREAM_TYPE)) {
-      parser = tikaConfig.getParser(new MediaType(httpHeaders.getMediaType().getType(), httpHeaders.getMediaType().getSubtype()));
-    } else {
-      MediaType type = tikaConfig.getMimeRepository().detect(is, new Metadata());
-      parser = tikaConfig.getParser(type);
-    }
+    AutoDetectParser parser = TikaResource.createParser();
 
-    if (parser==null) {
-      throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
-    }
+    TikaResource.fillMetadata(parser, metadata, httpHeaders);
+    TikaResource.logRequest(logger, info, metadata);
 
     ContentHandler ch = new DefaultHandler();
 
@@ -91,9 +82,16 @@ public class UnpackerResource {
 
     pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, zout));
 
-    parser.parse(is, ch, new Metadata(), pc);
+    try {
+      parser.parse(is, ch, metadata, pc);
+    } catch (TikaException ex) {
+      logger.warn(String.format(
+              "%s: Unpacker failed",
+              info.getPath()
+      ), ex);
+    }
 
-    if (count.intValue()==0) {
+    if (count.intValue() == 0) {
       throw new WebApplicationException(Response.Status.NO_CONTENT);
     }
 

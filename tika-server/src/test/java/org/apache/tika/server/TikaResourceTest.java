@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.server;
 
 import com.sun.jersey.api.client.ClientResponse;
@@ -38,14 +39,14 @@ public class TikaResourceTest extends JerseyTest {
    */
   @Test
   public void testHelloWorld() {
-    String responseMsg = webResource.path(TIKA_PATH).get(String.class);
+    String responseMsg = resource().path(TIKA_PATH).get(String.class);
     assertEquals(TikaResource.GREETING, responseMsg);
   }
 
   @Test
   public void testSimpleWord() {
     String responseMsg =
-            webResource.path(TIKA_PATH)
+            resource().path(TIKA_PATH)
             .type("application/msword")
                     .put(String.class, ClassLoader.getSystemResourceAsStream(TEST_DOC));
 
@@ -54,7 +55,7 @@ public class TikaResourceTest extends JerseyTest {
 
   @Test
   public void testApplicationWadl() {
-    String serviceWadl = webResource.path("application.wadl").
+    String serviceWadl = resource().path("application.wadl").
             accept(MediaTypes.WADL).get(String.class);
 
     assertTrue(serviceWadl.length() > 0);
@@ -63,7 +64,7 @@ public class TikaResourceTest extends JerseyTest {
   @Test
   public void testPasswordXLS() throws Exception {
     ClientResponse cr =
-            webResource
+            resource()
                     .path(TIKA_PATH)
                     .type("application/vnd.ms-excel")                    
                     .put(ClientResponse.class, ClassLoader.getSystemResourceAsStream("password.xls"));

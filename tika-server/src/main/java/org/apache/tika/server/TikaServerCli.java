@@ -14,42 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.server;
 
-import com.sun.grizzly.http.SelectorThread;
-import com.sun.jersey.api.container.grizzly.GrizzlyWebContainerFactory;
+import com.sun.jersey.api.core.PackagesResourceConfig;
+import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 
-import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
+import java.util.Properties;
 
 public class TikaServerCli {
   private static final Log logger = LogFactory.getLog(TikaServerCli.class);
-
   public static final int DEFAULT_PORT = 9998;
 
   private static Options getOptions() {
     Options options = new Options();
     options.addOption("p", "port", true, "listen port (default = "+DEFAULT_PORT+ ')');
-
     options.addOption("h", "help", false, "this help message");
 
     return options;
   }
 
   public static void main(String[] args) {
+    Properties properties = new Properties();
     try {
-      TikaServerCli cli = new TikaServerCli();
+      properties.load(ClassLoader.getSystemResourceAsStream("tikaserver-version.properties"));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
 
-      Map<String, String> params = new HashMap<String, String>();
+    logger.info("Starting Tikaserver "+properties.getProperty("tikaserver.version"));
 
-      params.put("com.sun.jersey.config.property.packages", "org.apache.tika.server");
-
-      Options options = cli.getOptions();
+    try {
+      Options options = getOptions();
 
       CommandLineParser cliParser = new GnuParser();
       CommandLine line = cliParser.parse(options, args);
@@ -59,18 +62,24 @@ public class TikaServerCli {
       if (line.hasOption("port")) {
         port = Integer.valueOf(line.getOptionValue("port"));
       }
-
       if (line.hasOption("help")) {
         HelpFormatter helpFormatter = new HelpFormatter();
         helpFormatter.printHelp("tikaserver", options);
         System.exit(-1);
       }
 
-      String baseUri = "http://localhost/";
-      URI buildUri = UriBuilder.fromUri(baseUri).port(port).build();
-      SelectorThread threadSelector = GrizzlyWebContainerFactory.create(buildUri, params);
+      Server server = new Server(port);
+      ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
+      context.setContextPath("/");
+      server.setHandler(context);
 
-      logger.info("Started at " + buildUri);
+      context.addServlet(new ServletHolder(new ServletContainer(new PackagesResourceConfig("org.apache.tika.server"))), "/*");
+
+      server.start();
+
+      logger.info("Started");
+
+      server.join();
     } catch (Exception ex) {
       logger.fatal("Can't start", ex);
       System.exit(-1);

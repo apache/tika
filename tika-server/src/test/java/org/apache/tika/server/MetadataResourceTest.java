@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.server;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -36,7 +37,7 @@ public class MetadataResourceTest extends JerseyTest {
   @Test
   public void testSimpleWord() throws Exception {
     Reader reader =
-            webResource.path(META_PATH)
+            resource().path(META_PATH)
             .type("application/msword")
                     .put(Reader.class, ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
