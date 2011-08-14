@@ -69,7 +69,12 @@ public class TikaConfig {
 
     public TikaConfig(URL url)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(url.toString()));
+        this(url, getContextClassLoader());
+    }
+
+    public TikaConfig(URL url, ClassLoader loader)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(url.toString()).getDocumentElement(), loader);
     }
 
     public TikaConfig(InputStream stream)
@@ -100,8 +105,13 @@ public class TikaConfig {
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
+        this(element, getContextClassLoader());
+    }
+
+    public TikaConfig(Element element, ClassLoader loader)
+            throws TikaException, IOException {
         this.mimeTypes = typesFromDomElement(element);
-        this.parser = parserFromDomElement(element, mimeTypes);
+        this.parser = parserFromDomElement(element, mimeTypes, loader);
     }
 
     /**
@@ -140,6 +150,7 @@ public class TikaConfig {
      * @throws TikaException if problem with MimeTypes or parsing XML config
      */
     public TikaConfig() throws TikaException, IOException {
+        ClassLoader loader = getContextClassLoader();
         String config = System.getProperty("tika.config");
         if (config == null) {
             config = System.getenv("TIKA_CONFIG");
@@ -147,21 +158,22 @@ public class TikaConfig {
         if (config == null) {
             this.mimeTypes = MimeTypes.getDefaultMimeTypes();
             this.parser = new DefaultParser(
-                    mimeTypes.getMediaTypeRegistry(), getContextClassLoader());
+                    mimeTypes.getMediaTypeRegistry(), loader);
         } else {
             InputStream stream;
             File file = new File(config);
             if (file.isFile()) {
                 stream = new FileInputStream(file);
             } else {
-                stream = getContextClassLoader().getResourceAsStream(config);
+                stream = loader.getResourceAsStream(config);
             }
             if (stream != null) {
                 try {
                     Element element =
                         getBuilder().parse(stream).getDocumentElement();
                     this.mimeTypes = typesFromDomElement(element);
-                    this.parser = parserFromDomElement(element, mimeTypes);
+                    this.parser =
+                        parserFromDomElement(element, mimeTypes, loader);
                 } catch (SAXException e) {
                     throw new TikaException(
                             "Specified Tika configuration has syntax errors: "
@@ -301,10 +313,9 @@ public class TikaConfig {
     }
 
     private static CompositeParser parserFromDomElement(
-            Element element, MimeTypes mimeTypes)
+            Element element, MimeTypes mimeTypes, ClassLoader loader)
             throws TikaException, IOException {
         List<Parser> parsers = new ArrayList<Parser>();
-        ClassLoader loader = getContextClassLoader();
         NodeList nodes = element.getElementsByTagName("parser");
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node = (Element) nodes.item(i);
