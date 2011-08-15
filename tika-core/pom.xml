@@ -60,11 +60,18 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Import-Package>*</Import-Package>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Bundle-Activator>
               org.apache.tika.config.TikaActivator
             </Bundle-Activator>
+            <Export-Package>
+              org.apache.tika.*;version=${project.version},
+            </Export-Package>
+            <Import-Package>
+              org.apache.tika.*;version=${project.version},
+              org.osgi.framework;version="[1.4,2)",
+              *
+            </Import-Package>
           </instructions>
         </configuration>
       </plugin>
