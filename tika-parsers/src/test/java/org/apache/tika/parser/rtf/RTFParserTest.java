@@ -89,6 +89,11 @@ public class RTFParserTest extends TikaTest {
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
     }
     
+    public void testGothic() throws Exception {
+    	String content = getText("testRTFUnicodeGothic.rtf");
+    	assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
+    }
+    
     public void testJapaneseText() throws Exception {
        String content = getText("testRTFJapanese.rtf");
 
