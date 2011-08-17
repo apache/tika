@@ -102,6 +102,12 @@ public class RTFParserTest extends TikaTest {
        assertContains("\u6771\u4eac\u90fd\u4e09\u9df9\u5e02", content);
     }
 
+    public void testTextWithCurlyBraces() throws Exception {
+        String content = getText("testRTFWithCurlyBraces.rtf");
+        //assertContains("{ some text inside curly brackets }", content);
+        assertContains("{  some text inside curly brackets  }", content);
+    }
+
     private String getText(String filename) throws Exception {
        File file = getResourceAsFile("/test-documents/" + filename);
        
