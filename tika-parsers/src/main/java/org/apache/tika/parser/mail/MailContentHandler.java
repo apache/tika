@@ -25,6 +25,7 @@ import org.apache.james.mime4j.field.AbstractField;
 import org.apache.james.mime4j.field.AddressListField;
 import org.apache.james.mime4j.field.DateTimeField;
 import org.apache.james.mime4j.field.MailboxListField;
+import org.apache.james.mime4j.field.ParsedField;
 import org.apache.james.mime4j.field.UnstructuredField;
 import org.apache.james.mime4j.field.address.AddressList;
 import org.apache.james.mime4j.field.address.MailboxList;
@@ -45,14 +46,17 @@ import org.xml.sax.SAXException;
  */
 class MailContentHandler implements ContentHandler {
 
+    private boolean strictParsing = false;
+
     private XHTMLContentHandler handler;
     private Metadata metadata;
 
     private boolean inPart = false;
-
-    MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata) {
+    
+    MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, boolean strictParsing) {
         this.handler = xhtml;
         this.metadata = metadata;
+        this.strictParsing = strictParsing;
     }
 
     public void body(BodyDescriptor body, InputStream is) throws MimeException,
@@ -127,80 +131,65 @@ class MailContentHandler implements ContentHandler {
             return;
         }
 
-        String fieldname = field.getName();
-        if (fieldname.equalsIgnoreCase("From")) {
-            MailboxListField fromField =
-                (MailboxListField) AbstractField.parse(field.getRaw());
-            MailboxList mailboxList = fromField.getMailboxList();
-            if (fromField.isValidField() && mailboxList != null) {
-                for (int i = 0; i < mailboxList.size(); i++) {
-                    String from = mailboxList.get(i).getDisplayString();
+        try {
+            String fieldname = field.getName();
+            ParsedField parsedField = AbstractField.parse(field.getRaw());
+            if (fieldname.equalsIgnoreCase("From")) {
+                MailboxListField fromField = (MailboxListField) parsedField;
+                MailboxList mailboxList = fromField.getMailboxList();
+                if (fromField.isValidField() && mailboxList != null) {
+                    for (int i = 0; i < mailboxList.size(); i++) {
+                        String from = mailboxList.get(i).getDisplayString();
+                        metadata.add(Metadata.MESSAGE_FROM, from);
+                        metadata.add(Metadata.AUTHOR, from);
+                    }
+                } else {
+                    String from = stripOutFieldPrefix(field, "From:");
+                    if (from.startsWith("<")) {
+                        from = from.substring(1);
+                    }
+                    if (from.endsWith(">")) {
+                        from = from.substring(0, from.length() - 1);
+                    }
                     metadata.add(Metadata.MESSAGE_FROM, from);
                     metadata.add(Metadata.AUTHOR, from);
                 }
-            } else {
-                String from =
-                    stripOutFieldPrefix(field.getRaw().toString(), "From:");
-                if (from.startsWith("<")) {
-                    from = from.substring(1);
-                }
-                if (from.endsWith(">")) {
-                    from = from.substring(0, from.length() - 1);
-                }
-                metadata.add(Metadata.MESSAGE_FROM, from);
-                metadata.add(Metadata.AUTHOR, from);
+            } else if (fieldname.equalsIgnoreCase("Subject")) {
+                metadata.add(Metadata.SUBJECT,
+                        ((UnstructuredField) parsedField).getValue());
+            } else if (fieldname.equalsIgnoreCase("To")) {
+                processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
+            } else if (fieldname.equalsIgnoreCase("CC")) {
+                processAddressList(parsedField, "Cc:", Metadata.MESSAGE_CC);
+            } else if (fieldname.equalsIgnoreCase("BCC")) {
+                processAddressList(parsedField, "Bcc:", Metadata.MESSAGE_BCC);
+            } else if (fieldname.equalsIgnoreCase("Date")) {
+                DateTimeField dateField = (DateTimeField) parsedField;
+                metadata.set(Metadata.DATE, dateField.getDate());
+                metadata.set(Metadata.CREATION_DATE, dateField.getDate());
             }
-        } else if (fieldname.equalsIgnoreCase("Subject")) {
-            UnstructuredField subjectField =
-                (UnstructuredField) AbstractField.parse(field.getRaw());
-            metadata.add(Metadata.SUBJECT, subjectField.getValue());
-        } else if (fieldname.equalsIgnoreCase("To")) {
-            AddressListField toField =
-                (AddressListField) AbstractField.parse(field.getRaw());
-            if (toField.isValidField()) {
-                AddressList addressList = toField.getAddressList();
-                for (int i = 0; i < addressList.size(); ++i) {
-                    metadata.add(Metadata.MESSAGE_TO, addressList.get(i).getDisplayString());
-                }
-            } else {
-                String to = stripOutFieldPrefix(field.getRaw().toString(), "To:");
-                for (String eachTo : to.split(",")) {
-                    metadata.add(Metadata.MESSAGE_TO, eachTo.trim());
-                }
+        } catch (RuntimeException me) {
+            if (strictParsing) {
+                throw me;
             }
-        } else if (fieldname.equalsIgnoreCase("CC")) {
-            AddressListField ccField =
-                (AddressListField) AbstractField.parse(field.getRaw());
-            if (ccField.isValidField()) {
-                AddressList addressList = ccField.getAddressList();
-                for (int i = 0; i < addressList.size(); ++i) {
-                    metadata.add(Metadata.MESSAGE_CC, addressList.get(i).getDisplayString());
-                }
-            } else {
-                String Cc = stripOutFieldPrefix(field.getRaw().toString(), "Cc:");
-                for (String eachCc : Cc.split(",")) {
-                    metadata.add(Metadata.MESSAGE_CC, eachCc.trim());
-                }
+        }
+    }
+
+    private void processAddressList(ParsedField field, String addressListType,
+            String metadataField) throws MimeException {
+        AddressListField toField = (AddressListField) field;
+        if (toField.isValidField()) {
+            AddressList addressList = toField.getAddressList();
+            for (int i = 0; i < addressList.size(); ++i) {
+                metadata.add(metadataField, addressList.get(i)
+                        .getDisplayString());
             }
-        } else if (fieldname.equalsIgnoreCase("BCC")) {
-            AddressListField bccField =
-                (AddressListField) AbstractField.parse(field.getRaw());
-            if(bccField.isValidField()){
-                AddressList addressList = bccField.getAddressList();
-                for (int i = 0; i < addressList.size(); ++i) {
-                    metadata.add(Metadata.MESSAGE_BCC, addressList.get(i).getDisplayString());
-                }
-            } else {
-                String Bcc = stripOutFieldPrefix(field.getRaw().toString(), "Bcc:");
-                for(String eachBcc : Bcc.split(",")){
-                    metadata.add(Metadata.MESSAGE_CC, eachBcc.trim());
-                }
+        } else {
+            String to = stripOutFieldPrefix(field,
+                    addressListType);
+            for (String eachTo : to.split(",")) {
+                metadata.add(metadataField, eachTo.trim());
             }
-        }  else if (fieldname.equalsIgnoreCase("Date")) {
-            DateTimeField dateField =
-                (DateTimeField) AbstractField.parse(field.getRaw());
-            metadata.set(Metadata.DATE, dateField.getDate());
-            metadata.set(Metadata.CREATION_DATE, dateField.getDate());
         }
     }
 
@@ -228,12 +217,13 @@ class MailContentHandler implements ContentHandler {
         inPart = true;
     }
 
-    public String stripOutFieldPrefix(String rawField, String fieldname){
-        String temp = rawField.substring(fieldname.length(), rawField.length());
-        while (temp.startsWith(" ")) {
-            temp = temp.substring(1);
+    private String stripOutFieldPrefix(Field field, String fieldname) {
+        String temp = field.getRaw().toString();
+        int loc = fieldname.length();
+        while (temp.charAt(loc) ==' ') {
+            loc++;
         }
-        return temp;
+        return temp.substring(loc);
     }
 
 }
