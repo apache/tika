@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.detect;
+package org.apache.tika.parser.pkg;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,7 +28,9 @@ import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TemporaryFiles;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -68,8 +70,9 @@ public class ZipContainerDetector implements Detector {
             return MediaType.APPLICATION_ZIP;
         }
 
+        TemporaryFiles tmp = new TemporaryFiles();
         try {
-            File file = TikaInputStream.get(input).getFile();
+            File file = TikaInputStream.get(input, tmp).getFile();
             ZipFile zip = new ZipFile(file);
 
             MediaType type = detectOpenDocument(zip);
@@ -88,6 +91,8 @@ public class ZipContainerDetector implements Detector {
             return type;
         } catch (IOException e) {
             return MediaType.APPLICATION_ZIP;
+        } finally {
+            tmp.dispose();
         }
     }
 
@@ -168,4 +173,5 @@ public class ZipContainerDetector implements Detector {
             return null;
         }
     }
+
 }

@@ -1317,7 +1317,9 @@
     <glob pattern="*.wks"/>
     <glob pattern="*.wcm"/>
     <glob pattern="*.wdb"/>
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
+
   <mime-type type="application/vnd.ms-wpl">
     <glob pattern="*.wpl"/>
   </mime-type>
@@ -1430,6 +1432,7 @@
       </match>
     </magic>
     <glob pattern="*.odf"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
 
   <mime-type type="application/vnd.oasis.opendocument.formula-template">

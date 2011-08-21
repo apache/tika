@@ -18,12 +18,7 @@ package org.apache.tika.detect;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.ZipException;
 
-import org.apache.poi.poifs.common.POIFSConstants;
-import org.apache.poi.poifs.storage.HeaderBlockConstants;
-import org.apache.poi.util.IOUtils;
-import org.apache.poi.util.LittleEndian;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -38,14 +33,14 @@ import org.apache.tika.mime.MimeTypes;
  *  to handle detection for non container formats. 
  * Should normally be used with a {@link TikaInputStream} to minimise 
  *  the memory usage.
+ *
+ * @deprecated Use the {@link DefaultDetector} class instead
  */
 public class ContainerAwareDetector implements Detector {
 
     private Detector fallbackDetector;
 
-    private Detector zipDetector;
-
-    private Detector poifsDetector;
+    private Detector defaultDetector;
 
     /**
      * Creates a new container detector, which will use the
@@ -54,16 +49,12 @@ public class ContainerAwareDetector implements Detector {
      */
     public ContainerAwareDetector(Detector fallbackDetector) {
         this.fallbackDetector = fallbackDetector;
-        poifsDetector = new POIFSContainerDetector();
-        zipDetector = new ZipContainerDetector();
+        this.defaultDetector = new DefaultDetector();
     }
 
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        MediaType type = zipDetector.detect(input, metadata);
-        if (MediaType.OCTET_STREAM.equals(type)) {
-            type = poifsDetector.detect(input, metadata);
-        }
+        MediaType type = defaultDetector.detect(input, metadata);
         if (MediaType.OCTET_STREAM.equals(type)) {
             return fallbackDetector.detect(input, metadata);
         }
