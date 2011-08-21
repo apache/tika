@@ -128,7 +128,9 @@ public class XHTMLContentHandler extends SafeContentHandler {
             // Call directly, so we don't go through our startElement(), which will
             // ignore these elements.
             super.startElement(XHTML, "html", "html", EMPTY_ATTRIBUTES);
+            newline();
             super.startElement(XHTML, "head", "head", EMPTY_ATTRIBUTES);
+            newline();
         }
     }
 
@@ -165,6 +167,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
                         attributes.addAttribute("", "content", "content", "CDATA", value);
                         super.startElement(XHTML, "meta", "meta", attributes);
                         super.endElement(XHTML, "meta", "meta");
+                        newline();
                     }
                 }
             }
@@ -175,10 +178,11 @@ public class XHTMLContentHandler extends SafeContentHandler {
                 char[] titleChars = title.toCharArray();
                 super.characters(titleChars, 0, titleChars.length);
             }
-            
             super.endElement(XHTML, "title", "title");
+            newline();
             
             super.endElement(XHTML, "head", "head");
+            newline();
             
             if (useFrameset) {
                 super.startElement(XHTML, "frameset", "frameset", EMPTY_ATTRIBUTES);
