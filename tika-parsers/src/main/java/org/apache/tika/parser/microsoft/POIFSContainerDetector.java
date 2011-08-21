@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.detect;
+package org.apache.tika.parser.microsoft;
 
 import static org.apache.tika.mime.MediaType.application;
 
@@ -27,6 +27,8 @@ import java.util.Set;
 
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TemporaryFiles;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -89,46 +91,50 @@ public class POIFSContainerDetector implements Detector {
         }
 
         // We can only detect the exact type when given a TikaInputStream
-        if (!TikaInputStream.isTikaInputStream(input)) {
-            return OLE;
+        if (TikaInputStream.isTikaInputStream(input)) {
+            TemporaryFiles tmp = new TemporaryFiles();
+            try {
+                // Look for known top level entry names to detect the document type
+                Set<String> names =
+                    getTopLevelNames(TikaInputStream.get(input, tmp));
+                if (names.contains("Workbook")) {
+                    return XLS;
+                } else if (names.contains("EncryptedPackage")) {
+                    return OLE;
+                } else if (names.contains("WordDocument")) {
+                    return DOC;
+                } else if (names.contains("Quill")) {
+                    return PUB;
+                } else if (names.contains("PowerPoint Document")) {
+                    return PPT;
+                } else if (names.contains("VisioDocument")) {
+                    return VSD;
+                } else if (names.contains("CONTENTS")) {
+                    return WPS;
+                } else if (names.contains("\u0001Ole10Native")) {
+                    return OLE;
+                } else if (names.contains("PerfectOffice_MAIN")) {
+                    if (names.contains("SlideShow")) {
+                        return MediaType.application("x-corelpresentations"); // .shw
+                    } else if (names.contains("PerfectOffice_OBJECTS")) {
+                        return MediaType.application("x-quattro-pro"); // .wb?
+                    }
+                } else if (names.contains("NativeContent_MAIN")) {
+                    return MediaType.application("x-quattro-pro"); // .qpw
+                } else {
+                    for (String name : names) {
+                        if (name.startsWith("__substg1.0_")) {
+                            return MSG;
+                        }
+                    }
+                }
+            } finally {
+                tmp.dispose();
+            }
         }
 
-        // Look for known top level entry names to detect the document type
-        Set<String> names = getTopLevelNames(TikaInputStream.get(input));
-        if (names.contains("Workbook")) {
-            return XLS;
-        } else if (names.contains("EncryptedPackage")) {
-            return OLE;
-        } else if (names.contains("WordDocument")) {
-            return DOC;
-        } else if (names.contains("Quill")) {
-            return PUB;
-        } else if (names.contains("PowerPoint Document")) {
-            return PPT;
-        } else if (names.contains("VisioDocument")) {
-            return VSD;
-        } else if (names.contains("CONTENTS")) {
-            return WPS;
-        } else if (names.contains("\u0001Ole10Native")) {
-            return OLE;
-        } else if (names.contains("PerfectOffice_MAIN")) {
-            if (names.contains("SlideShow")) {
-                return MediaType.application("x-corelpresentations"); // .shw
-            } else if (names.contains("PerfectOffice_OBJECTS")) {
-                return MediaType.application("x-quattro-pro"); // .wb?
-            } else {
-                return OLE;
-            }
-        } else if (names.contains("NativeContent_MAIN")) {
-            return MediaType.application("x-quattro-pro"); // .qpw
-        } else {
-            for (String name : names) {
-                if (name.startsWith("__substg1.0_")) {
-                    return MSG;
-                }
-            }
-            return OLE;
-        }
+        // Couldn't detect a more specific type
+        return OLE;
     }
 
     private static Set<String> getTopLevelNames(TikaInputStream stream)

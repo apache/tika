@@ -32,7 +32,7 @@ import org.apache.tika.mime.MimeTypes;
  */
 public class TestContainerAwareDetector extends TestCase {
 
-    private final ContainerAwareDetector detector =
+    private final Detector detector =
         new ContainerAwareDetector(MimeTypes.getDefaultMimeTypes());
 
     private void assertDetect(String file, String type) throws Exception {
@@ -135,7 +135,7 @@ public class TestContainerAwareDetector extends TestCase {
         TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
         try {
             assertEquals(
-                    MediaType.APPLICATION_ZIP,
+                    MediaType.application("x-tika-ooxml"),
                     detector.detect(xlsx, new Metadata()));
         } finally {
             xlsx.close();

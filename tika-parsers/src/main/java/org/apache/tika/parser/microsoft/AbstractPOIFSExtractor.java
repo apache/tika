@@ -31,7 +31,6 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
-import org.apache.tika.detect.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -40,6 +39,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
+import org.apache.tika.parser.pkg.ZipContainerDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 

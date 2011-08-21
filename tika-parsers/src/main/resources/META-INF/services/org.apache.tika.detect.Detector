@@ -13,5 +13,5 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-org.apache.tika.detect.POIFSContainerDetector
-org.apache.tika.detect.ZipContainerDetector
+org.apache.tika.parser.microsoft.POIFSContainerDetector
+org.apache.tika.parser.pkg.ZipContainerDetector
