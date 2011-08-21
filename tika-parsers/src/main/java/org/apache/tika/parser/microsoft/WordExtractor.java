@@ -54,6 +54,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         super(context);
     }
 
+    // True if we are currently in the named style tag:
+    private boolean curStrikeThrough;
+    private boolean curBold;
+    private boolean curItalic;
+
     protected void parse(
             NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
@@ -187,6 +192,20 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           }
        }
        
+       // Close any still open style tags
+       if (curStrikeThrough) {
+         xhtml.endElement("s");
+         curStrikeThrough = false;
+       }
+       if (curItalic) {
+         xhtml.endElement("i");
+         curItalic = false;
+       }
+       if (curBold) {
+         xhtml.endElement("b");
+         curBold = false;
+       }
+
        xhtml.endElement(tas.getTag());
        
        return 0;
@@ -198,14 +217,47 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        if(cr.text().equals("\r"))
           return;
        
-       List<String> tags = new ArrayList<String>();
        if(!skipStyling) {
-          if(cr.isBold()) tags.add("b");
-          if(cr.isItalic()) tags.add("i");
-          if(cr.isStrikeThrough()) tags.add("s");
-          for(String tag : tags) {
-             xhtml.startElement(tag);
-          }
+         if (cr.isBold() != curBold) {
+           // Enforce nesting -- must close s and i tags
+           if (curStrikeThrough) {
+             xhtml.endElement("s");
+             curStrikeThrough = false;
+           }
+           if (curItalic) {
+             xhtml.endElement("i");
+             curItalic = false;
+           }
+           if (cr.isBold()) {
+             xhtml.startElement("b");
+           } else {
+             xhtml.endElement("b");
+           }
+           curBold = cr.isBold();
+         }
+
+         if (cr.isItalic() != curItalic) {
+           // Enforce nesting -- must close s tag
+           if (curStrikeThrough) {
+             xhtml.endElement("s");
+             curStrikeThrough = false;
+           }
+           if (cr.isItalic()) {
+             xhtml.startElement("i");
+           } else {
+             xhtml.endElement("i");
+           }
+           curItalic = cr.isItalic();
+         }
+
+         if (cr.isStrikeThrough() != curStrikeThrough) {
+           if (cr.isStrikeThrough()) {
+             xhtml.startElement("s");
+           } else {
+             xhtml.endElement("s");
+           }
+           curStrikeThrough = cr.isStrikeThrough();
+         }
        }
        
        // Clean up the text
@@ -217,10 +269,6 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        }
        
        xhtml.characters(text);
-
-       for(int tn=tags.size()-1; tn>=0; tn--) {
-          xhtml.endElement(tags.get(tn));
-       }
     }
     /**
      * Can be \13..text..\15 or \13..control..\14..text..\15 .
