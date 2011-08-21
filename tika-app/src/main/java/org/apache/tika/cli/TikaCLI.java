@@ -582,7 +582,7 @@ public class TikaCLI {
                 SAXTransformerFactory.newInstance();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, method);
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
         if (encoding != null) {
             handler.getTransformer().setOutputProperty(
                     OutputKeys.ENCODING, encoding);
