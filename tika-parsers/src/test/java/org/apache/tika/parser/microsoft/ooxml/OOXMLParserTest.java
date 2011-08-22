@@ -167,8 +167,18 @@ public class OOXMLParserTest extends TestCase {
 		//"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2 
 		//"xps" // TIKA-418: Not yet supported by POI
 	};
-	for(String extension : extensions) {
-	    String filename = "testPPT." + extension;
+
+        String[] mimeTypes = new String[] {
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow"
+        };
+
+        for (int i=0; i<extensions.length; i++) {
+            String extension = extensions[i];
+            String filename = "testPPT." + extension;
+
             InputStream input = OOXMLParserTest.class
                     .getResourceAsStream("/test-documents/"+filename);
     
@@ -183,7 +193,8 @@ public class OOXMLParserTest extends TestCase {
                 parser.parse(input, handler, metadata, context);
     
                 assertEquals(
-                        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                        "Mime-type checking for " + filename,
+                        mimeTypes[i],
                         metadata.get(Metadata.CONTENT_TYPE));
                 assertEquals("Attachment Test", metadata.get(Metadata.TITLE));
                 assertEquals("Rajiv", metadata.get(Metadata.AUTHOR));

@@ -46,7 +46,7 @@ import org.xml.sax.SAXException;
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
     public XSLFPowerPointExtractorDecorator(ParseContext context, XSLFPowerPointExtractor extractor) {
-        super(context, extractor, "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        super(context, extractor, null);
     }
 
     /**
