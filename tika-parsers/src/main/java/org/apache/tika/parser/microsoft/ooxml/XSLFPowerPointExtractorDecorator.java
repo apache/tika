@@ -60,7 +60,6 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         XSLFSlide[] slides = xmlSlideShow.getSlides();
         for (XSLFSlide slide : slides) {
-            CTSlide rawSlide = slide._getCTSlide();
             CTSlideIdListEntry slideId = slide._getCTSlideId();
 
             CTNotesSlide notes = xmlSlideShow._getXSLFSlideShow().getNotes(
