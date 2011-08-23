@@ -71,9 +71,10 @@ public class ZipContainerDetector implements Detector {
         }
 
         TemporaryFiles tmp = new TemporaryFiles();
+        ZipFile zip = null;
         try {
             File file = TikaInputStream.get(input, tmp).getFile();
-            ZipFile zip = new ZipFile(file);
+            zip = new ZipFile(file);
 
             MediaType type = detectOpenDocument(zip);
             if (type == null) {
@@ -92,6 +93,12 @@ public class ZipContainerDetector implements Detector {
         } catch (IOException e) {
             return MediaType.APPLICATION_ZIP;
         } finally {
+            if (zip!=null) {
+                try {
+                    zip.close();
+                } catch (IOException e) {
+                }
+            }
             tmp.dispose();
         }
     }
