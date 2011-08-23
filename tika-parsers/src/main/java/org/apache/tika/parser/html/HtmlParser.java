@@ -31,13 +31,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.utils.CharsetUtils;
-import org.ccil.cowan.tagsoup.HTMLScanner;
 import org.ccil.cowan.tagsoup.HTMLSchema;
-import org.ccil.cowan.tagsoup.ScanHandler;
 import org.ccil.cowan.tagsoup.Schema;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -201,14 +198,6 @@ public class HtmlParser extends AbstractParser {
 
         parser.setContentHandler(new XHTMLDowngradeHandler(
                 new HtmlHandler(mapper, handler, metadata)));
-
-        parser.setProperty(org.ccil.cowan.tagsoup.Parser.scannerProperty,
-                new HTMLScanner() {
-                    @Override
-                    public void scan(Reader r0, ScanHandler h) throws IOException, SAXException {
-                        super.scan(new PushbackReader(new BufferedReader(r0), 2), h);
-                    }
-                });
 
         parser.parse(source);
     }
