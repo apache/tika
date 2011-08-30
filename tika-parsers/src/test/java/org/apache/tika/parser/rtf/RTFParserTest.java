@@ -82,13 +82,31 @@ public class RTFParserTest extends TikaTest {
         assertContains("starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty", content);
     }
 
+    public void testHexEscapeInsideWord() throws Exception {
+        String content = getText("testRTFHexEscapeInsideWord.rtf");
+        assertContains("ESPÍRITO", content);
+    }
+
+    public void testWindowsCodepage1250() throws Exception {
+        String content = getText("testRTFWindowsCodepage1250.rtf");
+        assertContains("zażółć gęślą jaźń", content);
+        assertContains("ZAŻÓŁĆ GĘŚLĄ JAŹŃ", content);
+    }
+
     public void testRTFTableCellSeparation() throws Exception {
         String content = getText("testRTFTableCellSeparation.rtf");
-
+        // TODO: why do we insert extra whitespace...?
         content = content.replaceAll("\\s+"," ");
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
     }
     
+    public void testRTFTableCellSeparation2() throws Exception {
+        String content = getText("testRTFTableCellSeparation2.rtf");
+        // TODO: why do we insert extra whitespace...?
+        content = content.replaceAll("\\s+"," ");
+        assertContains("Station Fax", content);
+    }
+
     public void testGothic() throws Exception {
     	String content = getText("testRTFUnicodeGothic.rtf");
     	assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
