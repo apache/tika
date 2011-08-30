@@ -60,7 +60,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try {
            rawSlideShow = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
         } catch(Exception e) {
-           throw new IOException(e);
+           throw new IOException(e.getMessage()); // Shouldn't happen
         }
 
         XSLFSlide[] slides = slideShow.getSlides();
@@ -116,7 +116,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
        try {
           document = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
        } catch(Exception e) {
-          throw new TikaException(e.getMessage());
+          throw new TikaException(e.getMessage()); // Shouldn't happen
        }
        
        for (CTSlideIdListEntry ctSlide : document.getSlideReferences().getSldIdList()) {
