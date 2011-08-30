@@ -28,10 +28,11 @@ import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
-import org.apache.poi.xslf.usermodel.XMLSlideShow;
-import org.apache.poi.xslf.usermodel.XSLFSlide;
-import org.apache.poi.xslf.usermodel.XSLFCommonSlideData;
 import org.apache.poi.xslf.usermodel.DrawingParagraph;
+import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFCommonSlideData;
+import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -39,7 +40,6 @@ import org.apache.xmlbeans.XmlException;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTComment;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentList;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTNotesSlide;
-import org.openxmlformats.schemas.presentationml.x2006.main.CTSlide;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
 
@@ -55,20 +55,34 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException,
             XmlException, IOException {
-        XSLFSlideShow slideShow = (XSLFSlideShow) extractor.getDocument();
-        XMLSlideShow xmlSlideShow = new XMLSlideShow(slideShow);
+        XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
+        XSLFSlideShow rawSlideShow = null;
+        try {
+           rawSlideShow = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
+        } catch(Exception e) {
+           throw new IOException(e);
+        }
 
-        XSLFSlide[] slides = xmlSlideShow.getSlides();
+        XSLFSlide[] slides = slideShow.getSlides();
         for (XSLFSlide slide : slides) {
-            CTSlideIdListEntry slideId = slide._getCTSlideId();
-
-            CTNotesSlide notes = xmlSlideShow._getXSLFSlideShow().getNotes(
-                    slideId);
-            CTCommentList comments = xmlSlideShow._getXSLFSlideShow()
-                    .getSlideComments(slideId);
+           // Find the ID, until we ditch the raw slideshow
+           CTSlideIdListEntry slideId = null;
+           for(CTSlideIdListEntry id : rawSlideShow.getSlideReferences().getSldIdList()) {
+              if(rawSlideShow.getSlidePart(id).getPartName().equals(slide.getPackagePart().getPartName())) {
+                 slideId = id;
+              }
+           }
+           if(slideId == null) {
+              // This shouldn't normally happen
+              continue;
+           }
+           
+            CTNotesSlide notes = rawSlideShow.getNotes(slideId);
+            CTCommentList comments = rawSlideShow.getSlideComments(slideId);
 
             xhtml.startElement("div");
-            extractShapeContent(slide.getCommonSlideData(), xhtml);
+            XSLFCommonSlideData common = new XSLFCommonSlideData(slide.getXmlObject().getCSld());
+            extractShapeContent(common, xhtml);
 
             if (comments != null) {
                 for (CTComment comment : comments.getCmArray()) {
@@ -97,7 +111,13 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
        List<PackagePart> parts = new ArrayList<PackagePart>();
-       XSLFSlideShow document = (XSLFSlideShow) extractor.getDocument();
+       XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
+       XSLFSlideShow document = null;
+       try {
+          document = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
+       } catch(Exception e) {
+          throw new TikaException(e.getMessage());
+       }
        
        for (CTSlideIdListEntry ctSlide : document.getSlideReferences().getSldIdList()) {
           // Add the slide
@@ -113,9 +133,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
           
           // If it has drawings, return those too
           try {
-             // TODO Improve when we upgrade POI
-//             for(PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
-             for(PackageRelationship rel : slidePart.getRelationshipsByType("http://schemas.openxmlformats.org/officeDocument/2006/relationships/vmlDrawing")) {
+             for(PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
                 if(rel.getTargetMode() == TargetMode.INTERNAL) {
                    PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
                    parts.add( rel.getPackage().getPart(relName) );

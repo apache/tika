@@ -26,8 +26,8 @@ import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
+import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -78,7 +78,7 @@ public class OOXMLExtractorFactory {
                      "Expecting UserModel based POI OOXML extractor with a document, but none found. " +
                      "The extractor returned was a " + poiExtractor
                );
-            } else if (document instanceof XSLFSlideShow) {
+            } else if (document instanceof XMLSlideShow) {
                 extractor = new XSLFPowerPointExtractorDecorator(
                         context, (XSLFPowerPointExtractor) poiExtractor);
             } else if (document instanceof XWPFDocument) {
