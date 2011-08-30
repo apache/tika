@@ -35,7 +35,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.8-beta3</poi.version>
+    <poi.version>3.8-beta4</poi.version>
   </properties>
 
   <dependencies>
