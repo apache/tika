@@ -55,9 +55,9 @@ public class TrueTypeParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         TrueTypeFont font;
-        TikaInputStream tis = TikaInputStream.get(stream);
         TTFParser parser = new TTFParser();
-        if (tis.hasFile()) {
+        TikaInputStream tis = TikaInputStream.cast(stream);
+        if (tis != null && tis.hasFile()) {
             font = parser.parseTTF(tis.getFile());
         } else {
             font = parser.parseTTF(stream);

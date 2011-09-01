@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft;
 
 import static org.apache.tika.mime.MediaType.application;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
@@ -29,7 +28,6 @@ import java.util.Set;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -92,10 +90,8 @@ public class POIFSContainerDetector implements Detector {
         }
 
         // We can only detect the exact type when given a TikaInputStream
-        if (TikaInputStream.isTikaInputStream(input)) {
-            // No TemporaryResources as this is for sure a TikaInputStream
-            TikaInputStream tis = TikaInputStream.get(input);
-
+        TikaInputStream tis = TikaInputStream.cast(input);
+        if (tis != null) {
             // Look for known top level entry names to detect the document type
             Set<String> names = getTopLevelNames(tis);
             if (names.contains("Workbook")) {

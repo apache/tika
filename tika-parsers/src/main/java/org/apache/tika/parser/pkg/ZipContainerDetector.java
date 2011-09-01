@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pkg;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -30,7 +29,6 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -66,41 +64,29 @@ public class ZipContainerDetector implements Detector {
         }
 
         // We can only detect the exact type when given a TikaInputStream
-        if (!TikaInputStream.isTikaInputStream(input)) {
-            return MediaType.APPLICATION_ZIP;
-        }
+        TikaInputStream tis = TikaInputStream.cast(input);
+        if (tis != null) {
+            try {
+                ZipFile zip = new ZipFile(tis.getFile());
 
-        TemporaryResources tmp = new TemporaryResources();
-        ZipFile zip = null;
-        try {
-            File file = TikaInputStream.get(input, tmp).getFile();
-            zip = new ZipFile(file);
-
-            MediaType type = detectOpenDocument(zip);
-            if (type == null) {
-                type = detectOfficeOpenXML(zip, TikaInputStream.get(input));
-            }
-            if (type == null) {
-                type = detectIWork(zip);
-            }
-            if (type == null && zip.getEntry("META-INF/MANIFEST.MF") != null) {
-                type = MediaType.application("java-archive");
-            }
-            if (type == null) {
-                type = MediaType.APPLICATION_ZIP;
-            }
-            return type;
-        } catch (IOException e) {
-            return MediaType.APPLICATION_ZIP;
-        } finally {
-            if (zip!=null) {
-                try {
-                    zip.close();
-                } catch (IOException e) {
+                MediaType type = detectOpenDocument(zip);
+                if (type == null) {
+                    type = detectOfficeOpenXML(zip, tis);
                 }
+                if (type == null) {
+                    type = detectIWork(zip);
+                }
+                if (type != null) {
+                    return type;
+                } else if (zip.getEntry("META-INF/MANIFEST.MF") != null) {
+                    return MediaType.application("java-archive");
+                }
+            } catch (IOException ignore) {
             }
-            tmp.close();
         }
+
+        // Fallback: it's still a zip file, we just don't know what kind of one
+        return MediaType.APPLICATION_ZIP;
     }
 
     private MediaType detectOpenDocument(ZipFile zip) {

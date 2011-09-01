@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,29 +51,30 @@ public abstract class AbstractPOIContainerExtractionTest extends TestCase {
 
     protected TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
         TikaInputStream stream = getTestFile(filename);
-        assertEquals(true, extractor.isSupported(stream));
-        
-        // Process it
-        TrackingHandler handler = new TrackingHandler();
-        if(recurse) {
-           extractor.extract(stream, extractor, handler);
-        } else {
-           extractor.extract(stream, null, handler);
+        try {
+            assertEquals(true, extractor.isSupported(stream));
+
+            // Process it
+            TrackingHandler handler = new TrackingHandler();
+            if(recurse) {
+                extractor.extract(stream, extractor, handler);
+            } else {
+                extractor.extract(stream, null, handler);
+            }
+
+            // So they can check what happened
+            return handler;
+        } finally {
+            stream.close();
         }
-        
-        // So they can check what happened
-        return handler;
     }
     
     protected TikaInputStream getTestFile(String filename) throws Exception {
-       InputStream input = AbstractPOIContainerExtractionTest.class.getResourceAsStream(
-             "/test-documents/" + filename);
+        URL input = AbstractPOIContainerExtractionTest.class.getResource(
+               "/test-documents/" + filename);
         assertNotNull(filename + " not found", input);
-        
-        TikaInputStream stream = TikaInputStream.get(input);
-        assertNotNull(stream);
-        
-        return stream;
+
+        return TikaInputStream.get(input);
     }
     
     public static class TrackingHandler implements EmbeddedResourceHandler {
