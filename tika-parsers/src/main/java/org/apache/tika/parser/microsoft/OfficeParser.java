@@ -163,17 +163,15 @@ public class OfficeParser extends AbstractParser {
         xhtml.startDocument();
 
         NPOIFSFileSystem filesystem;
-        if(stream instanceof TikaInputStream) {
-            TikaInputStream tstream = (TikaInputStream)stream;
-            if(tstream.getOpenContainer() != null) {
-                filesystem = (NPOIFSFileSystem)tstream.getOpenContainer();
-            } else if(tstream.hasFile()) {
-                filesystem = new NPOIFSFileSystem(tstream.getFileChannel());
-            } else {
-                filesystem = new NPOIFSFileSystem(tstream);
-            }
-        } else {
+        TikaInputStream tstream = TikaInputStream.cast(stream);
+        if (tstream == null) {
             filesystem = new NPOIFSFileSystem(stream);
+        } else if (tstream.getOpenContainer() instanceof NPOIFSFileSystem) {
+            filesystem = (NPOIFSFileSystem) tstream.getOpenContainer();
+        } else if (tstream.hasFile()) {
+            filesystem = new NPOIFSFileSystem(tstream.getFileChannel());
+        } else {
+            filesystem = new NPOIFSFileSystem(tstream);
         }
 
         // Parse summary entries first, to make metadata available early
