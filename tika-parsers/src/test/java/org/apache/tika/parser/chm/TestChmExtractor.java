@@ -17,7 +17,6 @@
 package org.apache.tika.parser.chm;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -27,7 +26,6 @@ import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
@@ -65,25 +63,23 @@ public class TestChmExtractor extends TestCase {
         Assert.assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER, count);
     }
 
-    public void testChmParser() {
+    public void testChmParser() throws Exception{
         List<String> files = new ArrayList<String>();
         files.add("/test-documents/testChm.chm");
         files.add("/test-documents/testChm3.chm");
 
         for (String fileName : files) {
+            InputStream stream =
+                    TestChmBlockInfo.class.getResourceAsStream(fileName);
             try {
-                InputStream stream = TikaInputStream.get(TestChmBlockInfo.class
-                        .getResource(fileName));
                 CHMDocumentInformation chmDocInfo = CHMDocumentInformation.load(stream);
                 Metadata md = new Metadata();
                 String text = chmDocInfo.getText();
                 chmDocInfo.getCHMDocInformation(md);
                 assertEquals(TestParameters.VP_CHM_MIME_TYPE, md.toString().trim());
                 assertTrue(text.length() > 0);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (TikaException e) {
-                e.printStackTrace();
+            } finally {
+                stream.close();
             }
         }
     }
