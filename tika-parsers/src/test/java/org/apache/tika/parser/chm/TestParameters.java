@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.chm;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.core.ChmCommons.EntryType;
 
 /**
@@ -36,7 +40,20 @@ public class TestParameters {
 
     static final int BUFFER_SIZE = 16384;
 
-    static final String chmFile = "/test-documents/testChm.chm";
+    static final byte[] chmData = readResource("/test-documents/testChm.chm");
+
+    private static byte[] readResource(String name) {
+        try {
+            InputStream stream = TestParameters.class.getResourceAsStream(name);
+            try {
+                return IOUtils.toByteArray(stream);
+            } finally {
+                stream.close();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /* Verification points */
     static final String VP_CHM_MIME_TYPE = "Content-Type=application/x-chm";

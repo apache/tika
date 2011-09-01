@@ -19,7 +19,6 @@ package org.apache.tika.parser.chm;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
@@ -33,9 +32,7 @@ public class TestChmItsfHeader extends TestCase {
 
     public void setUp() throws Exception {
         chmItsfHeader = new ChmItsfHeader();
-        byte[] data = TestUtils
-                .toByteArray(TikaInputStream.get(TestChmBlockInfo.class
-                        .getResource(TestParameters.chmFile)));
+        byte[] data = TestParameters.chmData;
         // chmItsfHeader.parse(Arrays.copyOfRange(data, 0,
         // ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
         chmItsfHeader.parse(ChmCommons.copyOfRange(data, 0,

@@ -21,7 +21,6 @@ import java.util.Iterator;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
@@ -44,8 +43,7 @@ public class TestChmBlockInfo extends TestCase {
     private ChmLzxcControlData chmLzxcControlData = null;
 
     public void setUp() throws Exception {
-        data = TestUtils.toByteArray(TikaInputStream.get(TestChmBlockInfo.class
-                .getResource(TestParameters.chmFile)));
+        data = TestParameters.chmData;
         /* Creates and parses itsf header */
         ChmItsfHeader chmItsHeader = new ChmItsfHeader();
         // chmItsHeader.parse(Arrays.copyOfRange(data, 0,

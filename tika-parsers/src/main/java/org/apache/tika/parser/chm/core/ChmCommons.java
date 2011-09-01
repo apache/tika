@@ -16,11 +16,9 @@
  */
 package org.apache.tika.parser.chm.core;
 
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Iterator;
 import java.util.List;
 
@@ -252,37 +250,6 @@ public class ChmCommons {
             j--;
             i++;
         }
-    }
-
-    /**
-     * Returns byte array Closes the InputStream
-     * 
-     * @param is
-     *            InputStream of chm file
-     * 
-     * @return byte array
-     * 
-     * @throws IOException
-     * @throws TikaException 
-     */
-    public static byte[] toByteArray(InputStream is) throws IOException, TikaException {
-        if (is != null) {
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            int nRead;
-            byte[] data = new byte[16384];
-            while ((nRead = is.read(data, 0, data.length)) != -1) {
-                buffer.write(data, 0, nRead);
-            }
-            buffer.flush();
-            try {
-                is.close();
-                buffer.close();
-            } catch (Exception e) {
-                throw new TikaException(e.getMessage());
-            }
-            return buffer.toByteArray();
-        } else
-            throw new IOException("InputStream is null");
     }
 
     /**

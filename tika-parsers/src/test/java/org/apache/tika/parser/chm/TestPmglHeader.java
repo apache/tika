@@ -14,12 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.chm;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.apache.tika.io.TikaInputStream;
+
 import org.apache.tika.parser.chm.accessor.ChmPmglHeader;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
@@ -28,9 +27,7 @@ public class TestPmglHeader extends TestCase {
     ChmPmglHeader chmPmglHeader = null;
 
     public void setUp() throws Exception {
-        byte[] data = ChmCommons
-                .toByteArray(TikaInputStream.get(TestChmBlockInfo.class
-                        .getResource(TestParameters.chmFile)));
+        byte[] data = TestParameters.chmData;
         chmPmglHeader = new ChmPmglHeader();
         chmPmglHeader.parse(ChmCommons.copyOfRange(data,
                 ChmConstants.START_PMGL, ChmConstants.START_PMGL

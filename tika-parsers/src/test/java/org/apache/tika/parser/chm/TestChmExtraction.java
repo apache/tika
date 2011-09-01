@@ -17,7 +17,6 @@
 
 package org.apache.tika.parser.chm;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,8 +28,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import junit.framework.TestCase;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 public class TestChmExtraction extends TestCase {
@@ -52,9 +49,7 @@ public class TestChmExtraction extends TestCase {
                     for (String fileName : files) {
                         InputStream stream = null;
                         try {
-                            stream = TikaInputStream
-                                    .get(TestChmExtraction.class
-                                            .getResource(fileName));
+                            stream = TestChmExtraction.class.getResourceAsStream(fileName);
 
                             CHMDocumentInformation chmDocInfo = CHMDocumentInformation
                                     .load(stream);
@@ -64,11 +59,7 @@ public class TestChmExtraction extends TestCase {
                             chmDocInfo.getCHMDocInformation(md);
                             assertEquals(TestParameters.VP_CHM_MIME_TYPE, md.toString().trim());
                             assertTrue(text.length() > 0);
-                        } catch (TikaException e) {
-                            e.printStackTrace();
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
+                        } catch (Exception e) {
                             e.printStackTrace();
                         } finally {
                             try {
