@@ -16,6 +16,8 @@
  */
 package org.apache.tika.detect;
 
+import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -94,6 +96,39 @@ public class TestContainerAwareDetector extends TestCase {
         // .xlsb is an OOXML file containing the binary parts, and not
         //  an OLE2 file as you might initially expect!
         assertDetect("testEXCEL.xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12");
+    }
+
+    /**
+     * Check that temporary files created by Tika are removed after
+     * closing TikaInputStream.
+     */
+    public void testRemovalTempfiles() throws Exception {
+        assertRemovalTempfiles("testWORD.docx");
+        assertRemovalTempfiles("test-documents.zip");
+    }
+
+    private int countTemporaryFiles() {
+        return new File(System.getProperty("java.io.tmpdir")).listFiles(
+                new FilenameFilter() {
+                    public boolean accept(File dir, String name) {
+                        return name.startsWith("apache-tika-");
+                    }
+                }).length;
+    }
+
+    private void assertRemovalTempfiles(String fileName) throws Exception {
+        int numberOfTempFiles = countTemporaryFiles();
+
+        TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource(
+                        "/test-documents/" + fileName));
+        try {
+            detector.detect(stream, new Metadata());
+        } finally {
+            stream.close();
+        }
+
+        assertEquals(numberOfTempFiles, countTemporaryFiles());
     }
 
     public void testDetectIWork() throws Exception {
