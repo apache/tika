@@ -25,7 +25,7 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
-import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.DelegatingParser;
@@ -90,7 +90,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
 
         // Use the delegate parser to parse this entry
-        TemporaryFiles tmp = new TemporaryFiles();
+        TemporaryResources tmp = new TemporaryResources();
         try {
             DELEGATING_PARSER.parse(
                     TikaInputStream.get(new CloseShieldInputStream(stream), tmp),
@@ -99,7 +99,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         } catch (TikaException e) {
             // Could not parse the entry, just skip the content
         } finally {
-            tmp.dispose();
+            tmp.close();
         }
 
         if(outputHtml) {

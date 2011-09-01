@@ -16,9 +16,32 @@
  */
 package org.apache.tika.parser.rtf;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
+import javax.swing.text.StyleContext;
+import javax.swing.text.rtf.RTFEditorKit;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TaggedInputStream;
-import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -27,13 +50,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import javax.swing.text.*;
-import javax.swing.text.rtf.RTFEditorKit;
-import java.io.*;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * RTF parser
@@ -106,7 +122,7 @@ public class RTFParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         TaggedInputStream tagged = new TaggedInputStream(stream);
-        TemporaryFiles tmp = new TemporaryFiles();
+        TemporaryResources tmp = new TemporaryResources();
         try {
             File tempFile = tmp.createTemporaryFile();
             createUnicodeRtfTempFile(tempFile, stream);

@@ -25,7 +25,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -106,7 +106,7 @@ public class ParserContainerExtractor implements ContainerExtractor {
                 InputStream stream, ContentHandler ignored,
                 Metadata metadata, ParseContext context)
                 throws IOException, SAXException, TikaException {
-            TemporaryFiles tmp = new TemporaryFiles();
+            TemporaryResources tmp = new TemporaryResources();
             try {
                 TikaInputStream tis = TikaInputStream.get(stream, tmp);
 
@@ -121,8 +121,13 @@ public class ParserContainerExtractor implements ContainerExtractor {
                     // Use a temporary file to process the stream twice
                     File file = tis.getFile();
 
-                    // Let the handler process the embedded resource 
-                    handler.handle(filename, type, TikaInputStream.get(file));
+                    // Let the handler process the embedded resource
+                    InputStream input = TikaInputStream.get(file);
+                    try {
+                        handler.handle(filename, type, input);
+                    } finally {
+                        input.close();
+                    }
 
                     // Recurse
                     extractor.extract(tis, extractor, handler);
