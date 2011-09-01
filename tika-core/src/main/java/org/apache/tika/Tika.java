@@ -197,7 +197,12 @@ public class Tika {
      */
     public String detect(byte[] prefix, String name) {
         try {
-            return detect(TikaInputStream.get(prefix), name);
+            InputStream stream = TikaInputStream.get(prefix);
+            try {
+                return detect(stream, name);
+            } finally {
+                stream.close();
+            }
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected IOException", e);
         }
@@ -218,7 +223,12 @@ public class Tika {
      */
     public String detect(byte[] prefix) {
         try {
-            return detect(TikaInputStream.get(prefix));
+            InputStream stream = TikaInputStream.get(prefix);
+            try {
+                return detect(stream);
+            } finally {
+                stream.close();
+            }
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected IOException", e);
         }
@@ -284,8 +294,13 @@ public class Tika {
      * Input metadata like a file name or a content type hint can be passed
      * in the given metadata instance. Metadata information extracted from
      * the document is returned in that same metadata instance.
+     * <p>
+     * The returned reader will be responsible for closing the given stream.
+     * The stream and any associated resources will be closed at or before
+     * the time when the {@link Reader#close()} method is called.
      *
      * @param stream the document to be parsed
+     * @param metadata document metadata
      * @return extracted text content
      * @throws IOException if the document can not be read or parsed
      */
@@ -298,6 +313,10 @@ public class Tika {
 
     /**
      * Parses the given document and returns the extracted text content.
+     * <p>
+     * The returned reader will be responsible for closing the given stream.
+     * The stream and any associated resources will be closed at or before
+     * the time when the {@link Reader#close()} method is called.
      *
      * @param stream the document to be parsed
      * @return extracted text content
@@ -340,6 +359,11 @@ public class Tika {
      * only up to {@link #getMaxStringLength()} first characters extracted
      * from the input document. Use the {@link #setMaxStringLength(int)}
      * method to adjust this limitation.
+     * <p>
+     * <strong>NOTE:</strong> Unlike most other Tika methods that taken an
+     * {@link InputStream}, this method will close the given stream for
+     * you as a convenience. With other methods you are still responsible
+     * for closing the stream or a wrapper instance returned by Tika.
      *
      * @param stream the document to be parsed
      * @param metadata document metadata
@@ -375,6 +399,11 @@ public class Tika {
      * only up to {@link #getMaxStringLength()} first characters extracted
      * from the input document. Use the {@link #setMaxStringLength(int)}
      * method to adjust this limitation.
+     * <p>
+     * <strong>NOTE:</strong> Unlike most other Tika methods that taken an
+     * {@link InputStream}, this method will close the given stream for
+     * you as a convenience. With other methods you are still responsible
+     * for closing the stream or a wrapper instance returned by Tika.
      *
      * @param stream the document to be parsed
      * @return extracted text content

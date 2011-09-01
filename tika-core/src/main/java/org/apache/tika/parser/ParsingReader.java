@@ -131,6 +131,10 @@ public class ParsingReader extends Reader {
      * Creates a reader for the text content of the given binary stream
      * with the given document metadata. The given parser is used for
      * parsing. A new background thread is started for the parsing task.
+     * <p>
+     * The created reader will be responsible for closing the given stream.
+     * The stream and any associated resources will be closed at or before
+     * the time when the {@link #close()} method is called on this reader.
      *
      * @param parser parser instance
      * @param stream binary stream
@@ -162,6 +166,10 @@ public class ParsingReader extends Reader {
      * <em>must</em> run the parsing task asynchronously in a separate thread,
      * since the current thread must return to the caller that can then
      * consume the parsed text through the {@link Reader} interface.
+     * <p>
+     * The created reader will be responsible for closing the given stream.
+     * The stream and any associated resources will be closed at or before
+     * the time when the {@link #close()} method is called on this reader.
      *
      * @param parser parser instance
      * @param stream binary stream
