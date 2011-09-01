@@ -360,7 +360,7 @@ public class Tika {
      * from the input document. Use the {@link #setMaxStringLength(int)}
      * method to adjust this limitation.
      * <p>
-     * <strong>NOTE:</strong> Unlike most other Tika methods that taken an
+     * <strong>NOTE:</strong> Unlike most other Tika methods that take an
      * {@link InputStream}, this method will close the given stream for
      * you as a convenience. With other methods you are still responsible
      * for closing the stream or a wrapper instance returned by Tika.
@@ -400,7 +400,7 @@ public class Tika {
      * from the input document. Use the {@link #setMaxStringLength(int)}
      * method to adjust this limitation.
      * <p>
-     * <strong>NOTE:</strong> Unlike most other Tika methods that taken an
+     * <strong>NOTE:</strong> Unlike most other Tika methods that take an
      * {@link InputStream}, this method will close the given stream for
      * you as a convenience. With other methods you are still responsible
      * for closing the stream or a wrapper instance returned by Tika.
