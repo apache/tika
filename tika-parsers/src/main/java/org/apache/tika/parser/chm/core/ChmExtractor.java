@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
@@ -145,7 +146,7 @@ public class ChmExtractor {
     public ChmExtractor(InputStream is) throws TikaException, IOException {
         ChmAssert.assertInputStreamNotNull(is);
         try {
-            setData(ChmCommons.toByteArray(is));
+            setData(IOUtils.toByteArray(is));
 
             /* Creates and parses chm itsf header */
             setChmItsfHeader(new ChmItsfHeader());

@@ -17,22 +17,21 @@
 
 package org.apache.tika.parser.chm;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 
 public class TestChmDocumentInformation extends TestCase {
     private CHMDocumentInformation chmDoc = null;
 
     public void setUp() throws Exception {
-        chmDoc = CHMDocumentInformation
-                .load(TikaInputStream.get(TestChmBlockInfo.class
-                        .getResource(TestParameters.chmFile)));
+        chmDoc = CHMDocumentInformation.load(
+                new ByteArrayInputStream(TestParameters.chmData));
     }
 
     public void testGetCHMDocInformation() throws TikaException, IOException {

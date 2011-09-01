@@ -29,7 +29,6 @@ import java.net.URISyntaxException;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 
 public class LanguageProfilerBuilderTest extends TestCase {
     /* Test members */
@@ -44,8 +43,14 @@ public class LanguageProfilerBuilderTest extends TestCase {
     private final int maxlen = 1000;
 
     public void testCreateProfile() throws TikaException, IOException, URISyntaxException {
-        TikaInputStream is = TikaInputStream.get(LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName));
-        ngramProfile = LanguageProfilerBuilder.create(profileName, is , encoding);
+        InputStream is =
+                LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName);
+        try {
+            ngramProfile = LanguageProfilerBuilder.create(profileName, is , encoding);
+        } finally {
+            is.close();
+        }
+
         File f = new File(profileName + "." + FILE_EXTENSION);
         FileOutputStream fos = new FileOutputStream(f);
         ngramProfile.save(fos);

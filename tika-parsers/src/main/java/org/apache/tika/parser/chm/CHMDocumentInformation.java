@@ -49,22 +49,9 @@ public class CHMDocumentInformation {
      * @throws IOException 
      */
     public static CHMDocumentInformation load(InputStream is) throws TikaException, IOException {
-        return new CHMDocumentInformation().getInstance(is);
-    }
-
-    /**
-     * Returns instance of chm document information
-     * 
-     * @param is
-     *            InputStream
-     * 
-     * @return
-     * @throws TikaException 
-     * @throws IOException 
-     */
-    private CHMDocumentInformation getInstance(InputStream is) throws TikaException, IOException {
-        setChmExtractor(new ChmExtractor(is));
-        return this;
+        CHMDocumentInformation document = new CHMDocumentInformation();
+        document.setChmExtractor(new ChmExtractor(is));
+        return document;
     }
 
     /**

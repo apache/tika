@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.chm;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -37,8 +38,7 @@ public class TestChmExtractor extends TestCase {
 
     public void setUp() throws Exception {
         chmExtractor = new ChmExtractor(
-                TikaInputStream.get(TestChmBlockInfo.class
-                        .getResource(TestParameters.chmFile)));
+                new ByteArrayInputStream(TestParameters.chmData));
     }
 
     public void testEnumerateChm() {
