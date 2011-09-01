@@ -68,18 +68,21 @@ public class ZipContainerDetector implements Detector {
         if (tis != null) {
             try {
                 ZipFile zip = new ZipFile(tis.getFile());
-
-                MediaType type = detectOpenDocument(zip);
-                if (type == null) {
-                    type = detectOfficeOpenXML(zip, tis);
-                }
-                if (type == null) {
-                    type = detectIWork(zip);
-                }
-                if (type != null) {
-                    return type;
-                } else if (zip.getEntry("META-INF/MANIFEST.MF") != null) {
-                    return MediaType.application("java-archive");
+                try {
+                    MediaType type = detectOpenDocument(zip);
+                    if (type == null) {
+                        type = detectOfficeOpenXML(zip, tis);
+                    }
+                    if (type == null) {
+                        type = detectIWork(zip);
+                    }
+                    if (type != null) {
+                        return type;
+                    } else if (zip.getEntry("META-INF/MANIFEST.MF") != null) {
+                        return MediaType.application("java-archive");
+                    }
+                } finally {
+                    zip.close();
                 }
             } catch (IOException ignore) {
             }
