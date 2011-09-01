@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.NullOutputStream;
-import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -80,9 +80,8 @@ public class ExternalParser extends AbstractParser {
      * @see Runtime#exec(String[])
      */
     private String[] command = new String[] { "cat" };
-    
-    private TemporaryFiles tmp = new TemporaryFiles();
-    
+
+    private TemporaryResources tmp = new TemporaryResources();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return getSupportedTypes();

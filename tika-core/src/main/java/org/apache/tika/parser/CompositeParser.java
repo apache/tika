@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -234,7 +234,7 @@ public class CompositeParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata);
-        TemporaryFiles tmp = new TemporaryFiles();
+        TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             TaggedContentHandler taggedHandler = new TaggedContentHandler(handler);

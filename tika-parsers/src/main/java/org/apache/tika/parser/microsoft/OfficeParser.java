@@ -165,13 +165,13 @@ public class OfficeParser extends AbstractParser {
         NPOIFSFileSystem filesystem;
         if(stream instanceof TikaInputStream) {
             TikaInputStream tstream = (TikaInputStream)stream;
-        	   if(tstream.getOpenContainer() != null) {
-        	      filesystem = (NPOIFSFileSystem)tstream.getOpenContainer();
-        	   } else if(tstream.hasFile()) {
-        	      filesystem = new NPOIFSFileSystem(tstream.getFile());
-        	   } else {
-        	    filesystem = new NPOIFSFileSystem(tstream);
-        	   }
+            if(tstream.getOpenContainer() != null) {
+                filesystem = (NPOIFSFileSystem)tstream.getOpenContainer();
+            } else if(tstream.hasFile()) {
+                filesystem = new NPOIFSFileSystem(tstream.getFileChannel());
+            } else {
+                filesystem = new NPOIFSFileSystem(tstream);
+            }
         } else {
             filesystem = new NPOIFSFileSystem(stream);
         }

@@ -30,6 +30,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.channels.FileChannel;
 import java.sql.Blob;
 import java.sql.SQLException;
 
@@ -84,24 +85,43 @@ public class TikaInputStream extends TaggedInputStream {
      * when you <em>don't</em> explicitly close the returned stream. The
      * recommended access pattern is:
      * <pre>
-     * TemporaryFiles tmp = new TemporaryFiles();
+     * TemporaryResources tmp = new TemporaryResources();
      * try {
      *     TikaInputStream stream = TikaInputStream.get(..., tmp);
      *     // process stream but don't close it
      * } finally {
-     *     tmp.dispose();
+     *     tmp.close();
      * }
      * </pre>
+     * <p>
+     * The given stream instance will <em>not</em> be closed when the
+     * {@link TemporaryResources#close()} method is called. The caller
+     * is expected to explicitly close the original stream when it's no
+     * longer used.
      *
      * @param stream normal input stream
      * @return a TikaInputStream instance
      */
-    public static TikaInputStream get(InputStream stream, TemporaryFiles tmp) {
+    public static TikaInputStream get(
+            InputStream stream, TemporaryResources tmp) {
         if (stream instanceof TikaInputStream) {
             return (TikaInputStream) stream;
         } else {
+            // Make sure that the stream is buffered and that it
+            // (properly) supports the mark feature
+            if (!(stream instanceof BufferedInputStream)
+                    && !(stream instanceof ByteArrayInputStream)) {
+                stream = new BufferedInputStream(stream);
+            }
             return new TikaInputStream(stream, tmp, -1);
         }
+    }
+
+    /**
+     * @deprecated Use the {@link #get(InputStream, TemporaryResources)} instead
+     */
+    public static TikaInputStream get(InputStream stream, TemporaryFiles tmp) {
+        return get(stream, (TemporaryResources) tmp);
     }
 
     /**
@@ -109,9 +129,10 @@ public class TikaInputStream extends TaggedInputStream {
      * This method can be used to access the functionality of this class
      * even when given just a normal input stream instance.
      * <p>
-     * Use this method instead of the {@link #get(InputStream, TemporaryFiles)}
-     * alternative when you <em>do</em> explicitly close the returned stream.
-     * The recommended access pattern is:
+     * Use this method instead of the
+     * {@link #get(InputStream, TemporaryResources)} alternative when you
+     * <em>do</em> explicitly close the returned stream. The recommended
+     * access pattern is:
      * <pre>
      * TikaInputStream stream = TikaInputStream.get(...);
      * try {
@@ -120,12 +141,16 @@ public class TikaInputStream extends TaggedInputStream {
      *     stream.close();
      * }
      * </pre>
+     * <p>
+     * The given stream instance will be closed along with any other resources
+     * associated with the returned TikaInputStream instance when the
+     * {@link #close()} method is called.
      *
      * @param stream normal input stream
      * @return a TikaInputStream instance
      */
     public static TikaInputStream get(InputStream stream) {
-        return get(stream, new TemporaryFiles());
+        return get(stream, new TemporaryResources());
     }
 
     /**
@@ -156,7 +181,8 @@ public class TikaInputStream extends TaggedInputStream {
     public static TikaInputStream get(byte[] data, Metadata metadata) {
         metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
         return new TikaInputStream(
-                new ByteArrayInputStream(data), new TemporaryFiles(), data.length);
+                new ByteArrayInputStream(data),
+                new TemporaryResources(), data.length);
     }
 
     /**
@@ -247,7 +273,7 @@ public class TikaInputStream extends TaggedInputStream {
         } else {
             return new TikaInputStream(
                     new BufferedInputStream(blob.getBinaryStream()),
-                    null, length);
+                    new TemporaryResources(), length);
         }
     }
 
@@ -355,25 +381,7 @@ public class TikaInputStream extends TaggedInputStream {
 
         return new TikaInputStream(
                 new BufferedInputStream(connection.getInputStream()),
-                new TemporaryFiles(), length);
-    }
-
-    /**
-     * Makes sure that a stream is buffered and correctly supports the
-     * mark feature by wrapping the given stream to a
-     * {@link BufferedInputStream} if needed.
-     *
-     * @param stream original stream
-     * @return buffered stream that supports the mark feature
-     */
-    private static InputStream withBufferingAndMarkSupport(InputStream stream) {
-        if (stream instanceof ByteArrayInputStream) {
-            return stream;
-        } else if (stream instanceof BufferedInputStream) {
-            return stream;
-        } else {
-            return new BufferedInputStream(stream);
-        }
+                new TemporaryResources(), length);
     }
 
     /**
@@ -386,9 +394,9 @@ public class TikaInputStream extends TaggedInputStream {
     private File file;
 
     /**
-     * Temporary file provider.
+     * Tracker of temporary resources.
      */
-    private final TemporaryFiles tmp;
+    private final TemporaryResources tmp;
 
     /**
      * Total length of the stream, or -1 if unknown.
@@ -422,20 +430,25 @@ public class TikaInputStream extends TaggedInputStream {
     private TikaInputStream(File file) throws FileNotFoundException {
         super(new BufferedInputStream(new FileInputStream(file)));
         this.file = file;
-        this.tmp = new TemporaryFiles();
+        this.tmp = new TemporaryResources();
         this.length = file.length();
     }
 
     /**
      * Creates a TikaInputStream instance. This private constructor is used
      * by the static factory methods based on the available information.
+     * <p>
+     * The given stream needs to be included in the given temporary resource
+     * collection if the caller wants it also to get closed when the
+     * {@link #close()} method is invoked.
      *
      * @param stream <em>buffered</em> stream (must support the mark feature)
+     * @param tmp tracker for temporary resources associated with this stream
      * @param length total length of the stream, or -1 if unknown
      */
     private TikaInputStream(
-            InputStream stream, TemporaryFiles tmp, long length) {
-        super(withBufferingAndMarkSupport(stream));
+            InputStream stream, TemporaryResources tmp, long length) {
+        super(stream);
         this.file = null;
         this.tmp = tmp;
         this.length = length;
@@ -489,6 +502,9 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public void setOpenContainer(Object container) {
         openContainer = container;
+        if (container instanceof Closeable) {
+            tmp.addResource((Closeable) container);
+        }
     }
 
     public boolean hasFile() {
@@ -497,11 +513,10 @@ public class TikaInputStream extends TaggedInputStream {
 
     public File getFile() throws IOException {
         if (file == null) {
-            if (in == null) {
-                throw new IOException("Stream has already been read");
-            } else if (position > 0) {
+            if (position > 0) {
                 throw new IOException("Stream is already being read");
             } else {
+                // Spool the entire stream into a temporary file
                 file = tmp.createTemporaryFile();
                 OutputStream out = new FileOutputStream(file);
                 try {
@@ -509,13 +524,35 @@ public class TikaInputStream extends TaggedInputStream {
                 } finally {
                     out.close();
                 }
-                in.close();
-                // Re-point the stream at the file now we have it
-                in = new BufferedInputStream(new FileInputStream(file));
+
+                // Create a new input stream and make sure it'll get closed
+                FileInputStream newStream = new FileInputStream(file);
+                tmp.addResource(newStream);
+
+                // Replace the spooled stream with the new stream in a way
+                // that still ends up closing the old stream if or when the
+                // close() method is called. The closing of the new stream
+                // is already being handled as noted above.
+                final InputStream oldStream = in;
+                in = new BufferedInputStream(newStream) {
+                    @Override
+                    public void close() throws IOException {
+                        oldStream.close();
+                    }
+                };
+
                 length = file.length();
             }
         }
         return file;
+    }
+
+    public FileChannel getFileChannel() throws IOException {
+        FileInputStream fis = new FileInputStream(getFile());
+        tmp.addResource(fis);
+        FileChannel channel = fis.getChannel();
+        tmp.addResource(channel);
+        return channel;
     }
 
     public boolean hasLength() {
@@ -549,46 +586,10 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     @Override
-    public int available() throws IOException {
-        if (in == null) {
-            return 0;
-        } else {
-            return super.available();
-        }
-    }
-
-    @Override
     public long skip(long ln) throws IOException {
-        if (in == null) {
-            return 0;
-        } else {
-            long n = super.skip(ln);
-            position += n;
-            return n;
-        }
-    }
-
-    @Override
-    public int read() throws IOException {
-        if (in == null) {
-            return -1;
-        } else {
-            return super.read();
-        }
-    }
-
-    @Override
-    public int read(byte[] bts, int off, int len) throws IOException {
-        if (in == null) {
-            return -1;
-        } else {
-            return super.read(bts, off, len);
-        }
-    }
-
-    @Override
-    public int read(byte[] bts) throws IOException {
-        return read(bts, 0, bts.length);
+        long n = super.skip(ln);
+        position += n;
+        return n;
     }
 
     @Override
@@ -611,33 +612,22 @@ public class TikaInputStream extends TaggedInputStream {
 
     @Override
     public void close() throws IOException {
-        if (in != null) {
-            in.close();
-            in = null;
-        }
-        if (openContainer != null) {
-           if (openContainer instanceof Closeable) {
-              ((Closeable)openContainer).close();
-           }
-           openContainer = null;
-        }
         file = null;
-        tmp.dispose();
+        mark = -1;
+
+        // The close method was explicitly called, so we indeed
+        // are expected to close the input stream. Handle that
+        // by adding that stream as a resource to be tracked before
+        // closing all of them. This way also possible exceptions from
+        // the close() calls get managed properly.
+        tmp.addResource(in);
+        tmp.close();
     }
 
     @Override
-    protected void beforeRead(int n) throws IOException {
-        if (in == null) {
-            throw new IOException("End of the stream reached");
-        }
-    }
-
-    @Override
-    protected void afterRead(int n) throws IOException {
+    protected void afterRead(int n) {
         if (n != -1) {
             position += n;
-        } else if (mark == -1) {
-            close();
         }
     }
 

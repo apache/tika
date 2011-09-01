@@ -21,6 +21,7 @@ import static org.apache.tika.mime.MediaType.application;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -28,7 +29,7 @@ import java.util.Set;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -92,44 +93,41 @@ public class POIFSContainerDetector implements Detector {
 
         // We can only detect the exact type when given a TikaInputStream
         if (TikaInputStream.isTikaInputStream(input)) {
-            TemporaryFiles tmp = new TemporaryFiles();
-            try {
-                // Look for known top level entry names to detect the document type
-                Set<String> names =
-                    getTopLevelNames(TikaInputStream.get(input, tmp));
-                if (names.contains("Workbook")) {
-                    return XLS;
-                } else if (names.contains("EncryptedPackage")) {
-                    return OLE;
-                } else if (names.contains("WordDocument")) {
-                    return DOC;
-                } else if (names.contains("Quill")) {
-                    return PUB;
-                } else if (names.contains("PowerPoint Document")) {
-                    return PPT;
-                } else if (names.contains("VisioDocument")) {
-                    return VSD;
-                } else if (names.contains("CONTENTS")) {
-                    return WPS;
-                } else if (names.contains("\u0001Ole10Native")) {
-                    return OLE;
-                } else if (names.contains("PerfectOffice_MAIN")) {
-                    if (names.contains("SlideShow")) {
-                        return MediaType.application("x-corelpresentations"); // .shw
-                    } else if (names.contains("PerfectOffice_OBJECTS")) {
-                        return MediaType.application("x-quattro-pro"); // .wb?
-                    }
-                } else if (names.contains("NativeContent_MAIN")) {
-                    return MediaType.application("x-quattro-pro"); // .qpw
-                } else {
-                    for (String name : names) {
-                        if (name.startsWith("__substg1.0_")) {
-                            return MSG;
-                        }
+            // No TemporaryResources as this is for sure a TikaInputStream
+            TikaInputStream tis = TikaInputStream.get(input);
+
+            // Look for known top level entry names to detect the document type
+            Set<String> names = getTopLevelNames(tis);
+            if (names.contains("Workbook")) {
+                return XLS;
+            } else if (names.contains("EncryptedPackage")) {
+                return OLE;
+            } else if (names.contains("WordDocument")) {
+                return DOC;
+            } else if (names.contains("Quill")) {
+                return PUB;
+            } else if (names.contains("PowerPoint Document")) {
+                return PPT;
+            } else if (names.contains("VisioDocument")) {
+                return VSD;
+            } else if (names.contains("CONTENTS")) {
+                return WPS;
+            } else if (names.contains("\u0001Ole10Native")) {
+                return OLE;
+            } else if (names.contains("PerfectOffice_MAIN")) {
+                if (names.contains("SlideShow")) {
+                    return MediaType.application("x-corelpresentations"); // .shw
+                } else if (names.contains("PerfectOffice_OBJECTS")) {
+                    return MediaType.application("x-quattro-pro"); // .wb?
+                }
+            } else if (names.contains("NativeContent_MAIN")) {
+                return MediaType.application("x-quattro-pro"); // .qpw
+            } else {
+                for (String name : names) {
+                    if (name.startsWith("__substg1.0_")) {
+                        return MSG;
                     }
                 }
-            } finally {
-                tmp.dispose();
             }
         }
 
@@ -141,10 +139,10 @@ public class POIFSContainerDetector implements Detector {
             throws IOException {
         // Force the document stream to a (possibly temporary) file
         // so we don't modify the current position of the stream
-        File file = stream.getFile();
+        FileChannel channel = stream.getFileChannel();
 
         try {
-            NPOIFSFileSystem fs = new NPOIFSFileSystem(file);
+            NPOIFSFileSystem fs = new NPOIFSFileSystem(channel);
 
             // Optimize a possible later parsing process by keeping
             // a reference to the already opened POI file system

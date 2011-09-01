@@ -16,24 +16,19 @@
  */
 package org.apache.tika.io;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-public class TemporaryFiles {
+/**
+ * @deprecated Use the {@link TemporaryResources} class instead
+ */
+public class TemporaryFiles extends TemporaryResources {
 
-    private final List<File> files = new ArrayList<File>();
-
-    public File createTemporaryFile() throws IOException {
-        File file = File.createTempFile("apache-tika-", ".tmp");
-        files.add(file);
-        return file;
-    }
-
+    @Override
     public void dispose() {
-        for (File file : files) {
-            file.delete();
+        try {
+            close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

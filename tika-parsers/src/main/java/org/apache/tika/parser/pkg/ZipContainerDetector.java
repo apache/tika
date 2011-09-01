@@ -30,7 +30,7 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.TemporaryFiles;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -70,7 +70,7 @@ public class ZipContainerDetector implements Detector {
             return MediaType.APPLICATION_ZIP;
         }
 
-        TemporaryFiles tmp = new TemporaryFiles();
+        TemporaryResources tmp = new TemporaryResources();
         ZipFile zip = null;
         try {
             File file = TikaInputStream.get(input, tmp).getFile();
@@ -99,7 +99,7 @@ public class ZipContainerDetector implements Detector {
                 } catch (IOException e) {
                 }
             }
-            tmp.dispose();
+            tmp.close();
         }
     }
 
