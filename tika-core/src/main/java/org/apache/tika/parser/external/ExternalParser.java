@@ -81,8 +81,6 @@ public class ExternalParser extends AbstractParser {
      */
     private String[] command = new String[] { "cat" };
 
-    private TemporaryResources tmp = new TemporaryResources();
-
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return getSupportedTypes();
     }
@@ -134,25 +132,37 @@ public class ExternalParser extends AbstractParser {
      *  has been called to set patterns.
      */
     public void parse(
-            final InputStream stream, ContentHandler handler,
+            InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         XHTMLContentHandler xhtml =
             new XHTMLContentHandler(handler, metadata);
-        
+
+        TemporaryResources tmp = new TemporaryResources();
+        try {
+            parse(TikaInputStream.get(stream, tmp),
+                    xhtml, metadata, tmp);
+        } finally {
+            tmp.dispose();
+        }
+    }
+
+    private void parse(
+            TikaInputStream stream, XHTMLContentHandler xhtml,
+            Metadata metadata, TemporaryResources tmp)
+            throws IOException, SAXException, TikaException {
         boolean inputToStdIn = true;
         boolean outputFromStdOut = true;
         boolean hasPatterns = (metadataPatterns != null && !metadataPatterns.isEmpty());
-        
-        TikaInputStream tikaStream = TikaInputStream.get(stream);
+
         File output = null;
-        
+
         // Build our command
         String[] cmd = new String[command.length];
         System.arraycopy(command, 0, cmd, 0, command.length);
         for(int i=0; i<cmd.length; i++) {
            if(cmd[i].indexOf(INPUT_FILE_TOKEN) != -1) {
-              cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, tikaStream.getFile().toString());
+              cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
               inputToStdIn = false;
            }
            if(cmd[i].indexOf(OUTPUT_FILE_TOKEN) != -1) {
@@ -168,7 +178,7 @@ public class ExternalParser extends AbstractParser {
         } else {
            process = Runtime.getRuntime().exec( cmd );
         }
-        
+
         try {
             if(inputToStdIn) {
                sendInput(process, stream);
@@ -202,12 +212,10 @@ public class ExternalParser extends AbstractParser {
             } catch (InterruptedException ignore) {
             }
         }
-        
+
         // Grab the output if we haven't already
-        if(!outputFromStdOut) {
-           FileInputStream out = new FileInputStream(output);
-           extractOutput(out, xhtml);
-           tmp.dispose();
+        if (!outputFromStdOut) {
+            extractOutput(new FileInputStream(output), xhtml);
         }
     }
 
@@ -255,8 +263,6 @@ public class ExternalParser extends AbstractParser {
                 try {
                     IOUtils.copy(stream, stdin);
                 } catch (IOException e) {
-                } finally {
-                    IOUtils.closeQuietly(stdin);
                 }
             }
         }.start();
