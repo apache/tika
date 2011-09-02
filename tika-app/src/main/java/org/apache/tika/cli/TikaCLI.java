@@ -591,7 +591,9 @@ public class TikaCLI {
         return handler;
     }
 
-    private static class FileEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+    private class FileEmbeddedDocumentExtractor
+            implements EmbeddedDocumentExtractor {
+
         private int count = 0;
         private final TikaConfig config = TikaConfig.getDefaultConfig();
 
@@ -603,14 +605,15 @@ public class TikaCLI {
             String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
 
             if (name == null) {
-                name = Integer.toString(count);
+                name = "file" + count++;
             }
 
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            MediaType contentType = detector.detect(inputStream, metadata);
 
             if (name.indexOf('.')==-1 && contentType!=null) {
                 try {
-                    name += config.getMimeRepository().forName(contentType).getExtension();
+                    name += config.getMimeRepository().forName(
+                            contentType.toString()).getExtension();
                 } catch (MimeTypeException e) {
                     e.printStackTrace();
                 }
@@ -629,8 +632,6 @@ public class TikaCLI {
             IOUtils.copy(inputStream, os);
 
             os.close();
-
-            count++;
         }
     }
 

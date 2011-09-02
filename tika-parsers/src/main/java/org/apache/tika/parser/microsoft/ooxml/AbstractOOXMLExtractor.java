@@ -16,18 +16,22 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
-import org.apache.poi.openxml4j.opc.PackagePartName;
 import org.apache.poi.openxml4j.opc.PackageRelationship;
-import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
+import org.apache.poi.poifs.filesystem.Ole10Native;
+import org.apache.poi.poifs.filesystem.Ole10NativeException;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -53,7 +57,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     static final String RELATION_IMAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image";
     static final String RELATION_OLE_OBJECT = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject";
     static final String RELATION_PACKAGE = "http://schemas.openxmlformats.org/officeDocument/2006/relationships/package";
-   
+
+    private static final String TYPE_OLE_OBJECT =
+            "application/vnd.openxmlformats-officedocument.oleObject";
+
     protected POIXMLTextExtractor extractor;
 
     private final EmbeddedDocumentExtractor embeddedExtractor;
@@ -92,70 +99,109 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getXHTML(org.xml.sax.ContentHandler,
      *      org.apache.tika.metadata.Metadata)
      */
-    public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
+    public void getXHTML(
+            ContentHandler handler, Metadata metadata, ParseContext context)
             throws SAXException, XmlException, IOException, TikaException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
+
         buildXHTML(xhtml);
-        xhtml.endDocument();
-        
+
         // Now do any embedded parts
-        List<PackagePart> mainParts = getMainDocumentParts();
-        for(PackagePart part : mainParts) {
-           PackageRelationshipCollection rels;
-           try {
-              rels = part.getRelationships();
-           } catch(InvalidFormatException e) {
-              throw new TikaException("Corrupt OOXML file", e);
-           }
-           
-           for(PackageRelationship rel : rels) {
-              // Is it an embedded type (not part of the document)
-              if( rel.getRelationshipType().equals(RELATION_AUDIO) ||
-                  rel.getRelationshipType().equals(RELATION_IMAGE) ||
-                  rel.getRelationshipType().equals(RELATION_OLE_OBJECT) ||
-                  rel.getRelationshipType().equals(RELATION_PACKAGE) ) {
-                 if(rel.getTargetMode() == TargetMode.INTERNAL) {
-                    PackagePartName relName;
-                    try {
-                       relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                    } catch(InvalidFormatException e) {
-                       throw new TikaException("Broken OOXML file", e);
+        handleEmbeddedParts(handler);
+
+        xhtml.endDocument();
+    }
+
+    private void handleEmbeddedParts(ContentHandler handler)
+            throws TikaException, IOException, SAXException {
+        try {
+            for (PackagePart source : getMainDocumentParts()) {
+                for (PackageRelationship rel : source.getRelationships()) {
+                    if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                        URI uri = rel.getTargetURI();
+                        PackagePart target = rel.getPackage().getPart(
+                                PackagingURIHelper.createPartName(uri));
+
+                        String type = rel.getRelationshipType();
+                        if (RELATION_OLE_OBJECT.equals(type)
+                                && TYPE_OLE_OBJECT.equals(target.getContentType())) {
+                            handleEmbeddedOLE(target, handler);
+                        } else if (RELATION_AUDIO.equals(type)
+                                || RELATION_IMAGE.equals(type)
+                                || RELATION_PACKAGE.equals(type)
+                                || RELATION_OLE_OBJECT.equals(type)) {
+                            handleEmbeddedFile(target, handler);
+                        }
                     }
-                    PackagePart relPart = rel.getPackage().getPart(relName);
-                    handleEmbedded(rel, relPart, handler, context);
-                 }
-              }
-           }
+                }
+            }
+        } catch (InvalidFormatException e) {
+            throw new TikaException("Broken OOXML file", e);
         }
     }
-    
-    /**
-     * Handles an embedded resource in the file
-     */
-    protected void handleEmbedded(PackageRelationship rel, PackagePart part, 
-            ContentHandler handler, ParseContext context)
-            throws SAXException, XmlException, IOException, TikaException {
-       // Get the name
-       String name = rel.getTargetURI().toString();
-       if(name.indexOf('/') > -1) {
-          name = name.substring(name.lastIndexOf('/')+1);
-       }
-       
-       // Get the content type
-       String type = part.getContentType();
-       
-       // Call the recursing handler
-       Metadata metadata = new Metadata();
-       metadata.set(Metadata.RESOURCE_NAME_KEY, name);
-       metadata.set(Metadata.CONTENT_TYPE, type);
 
-       if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-         embeddedExtractor.parseEmbedded(
-                 TikaInputStream.get(part.getInputStream()),
-                 new EmbeddedContentHandler(handler),
-                 metadata, false);
-       }
+    /**
+     * Handles an embedded OLE object in the document
+     */
+    private void handleEmbeddedOLE(PackagePart part, ContentHandler handler)
+            throws IOException, SAXException {
+        POIFSFileSystem fs = new POIFSFileSystem(part.getInputStream());
+        try {
+            Metadata metadata = new Metadata();
+            TikaInputStream stream = null;
+
+            DirectoryNode root = fs.getRoot();
+            if (root.hasEntry("CONTENTS")) {
+                stream = TikaInputStream.get(
+                        fs.createDocumentInputStream("CONTENTS"));
+            } else if (root.hasEntry("\u0001Ole10Native")) {
+                Ole10Native ole =
+                        Ole10Native.createFromEmbeddedOleObject(fs);
+                metadata.set(Metadata.RESOURCE_NAME_KEY, ole.getLabel());
+                byte[] data = ole.getDataBuffer();
+                if (data != null) {
+                    stream = TikaInputStream.get(data);
+                }
+            }
+
+            if (stream != null
+                    && embeddedExtractor.shouldParseEmbedded(metadata)) {
+                embeddedExtractor.parseEmbedded(
+                        stream, new EmbeddedContentHandler(handler),
+                        metadata, false);
+            }
+        } catch (FileNotFoundException e) {
+            // There was no CONTENTS entry, so skip this part
+        } catch (Ole10NativeException e) {
+            // Could not process an OLE 1.0 entry, so skip this part
+        }
+    }
+
+    /**
+     * Handles an embedded file in the document
+     */
+    protected void handleEmbeddedFile(PackagePart part, ContentHandler handler)
+            throws SAXException, IOException {
+        Metadata metadata = new Metadata();
+
+        // Get the name
+        String name = part.getPartName().getName();
+        metadata.set(
+                Metadata.RESOURCE_NAME_KEY,
+                name.substring(name.lastIndexOf('/') + 1));
+
+        // Get the content type
+        metadata.set(
+                Metadata.CONTENT_TYPE, part.getContentType());
+
+        // Call the recursing handler
+        if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+            embeddedExtractor.parseEmbedded(
+                    TikaInputStream.get(part.getInputStream()),
+                    new EmbeddedContentHandler(handler),
+                    metadata, false);
+        }
     }
 
     /**
