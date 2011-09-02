@@ -65,4 +65,9 @@ public class SafeContentHandlerTest extends TestCase {
         assertEquals("ab a c bc", output.toString());
     }
 
+    public void testInvalidSurrogates() throws SAXException {
+        safe.ignorableWhitespace("\udb00\ubfff".toCharArray(), 0, 2);
+        assertEquals(" \ubfff", output.toString());
+    }
+
 }
