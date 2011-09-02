@@ -214,7 +214,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private void handleCharacterRun(CharacterRun cr, boolean skipStyling, XHTMLContentHandler xhtml) 
           throws SAXException {
        // Skip trailing newlines
-       if(cr.text().equals("\r"))
+       if(!isRendered(cr) || cr.text().equals("\r"))
           return;
        
        if(!skipStyling) {
@@ -347,7 +347,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
     private void handlePictureCharacterRun(CharacterRun cr, Picture picture, PicturesSource pictures, XHTMLContentHandler xhtml) 
           throws SAXException, IOException, TikaException {
-       if(picture == null) {
+       if(!isRendered(cr) || picture == null) {
           // Oh dear, we've run out...
           // Probably caused by multiple \u0008 images referencing
           //  the same real image
@@ -469,6 +469,17 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           return tag.length()==2 && tag.startsWith("h");
        }
     }
+    
+    /**
+     * Determines if character run should be included in the extraction.
+     * 
+     * @param cr character run.
+     * @return true if character run should be included in extraction.
+     */
+    private boolean isRendered(final CharacterRun cr) {
+ 	   return cr == null || !cr.isMarkedDeleted();
+    }
+    
     
     /**
      * Provides access to the pictures both by offset, iteration
