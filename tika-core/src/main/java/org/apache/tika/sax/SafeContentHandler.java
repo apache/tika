@@ -16,8 +16,10 @@
  */
 package org.apache.tika.sax;
 
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 /**
  * Content handler decorator that makes sure that the character events
@@ -49,6 +51,20 @@ public class SafeContentHandler extends ContentHandlerDecorator {
      */
     protected interface Output {
         void write(char[] ch, int start, int length) throws SAXException;
+    }
+
+    private static class StringOutput implements Output {
+
+        private final StringBuilder builder = new StringBuilder();
+
+        public void write(char[] ch, int start, int length) {
+            builder.append(ch, start, length);
+        }
+
+        public String toString() {
+            return builder.toString();
+        }
+
     }
 
     /**
@@ -94,8 +110,12 @@ public class SafeContentHandler extends ContentHandlerDecorator {
             throws SAXException {
         int end = start + length;
 
-        for (int i = start; i < end; i++) {
-            if (isInvalid(ch[i])) {
+        int i = start;
+        while (i < end) {
+            int c = Character.codePointAt(ch, i, end);
+            int j = i + Character.charCount(c);
+
+            if (isInvalid(c)) {
                 // Output any preceding valid characters
                 if (i > start) {
                     output.write(ch, start, i - start);
@@ -105,8 +125,10 @@ public class SafeContentHandler extends ContentHandlerDecorator {
                 writeReplacement(output);
 
                 // Continue with the rest of the array
-                start = i + 1;
+                start = j;
             }
+
+            i = j;
         }
 
         // Output any remaining valid characters
@@ -114,22 +136,57 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * Checks whether the given character (more accurately a UTF-16 code unit)
-     * is an invalid XML character and should be replaced for output.
-     * Subclasses can override this method to use an alternative definition
-     * of which characters should be replaced in the XML output.
+     * Checks if the given string contains any invalid XML characters.
+     *
+     * @param value string to be checked
+     * @return <code>true</code> if the string contains invalid XML characters,
+     *         <code>false</code> otherwise
+     */
+    private boolean isInvalid(String value) {
+        char[] ch = value.toCharArray();
+
+        int i = 0;
+        while (i < ch.length) {
+            int c = Character.codePointAt(ch, i);
+            if (isInvalid(c)) {
+                return true;
+            }
+            i = i + Character.charCount(c);
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks whether the given Unicode character is an invalid XML character
+     * and should be replaced for output. Subclasses can override this method
+     * to use an alternative definition of which characters should be replaced
+     * in the XML output. The default definition from the XML specification is:
+     * <pre>
+     * Char ::= #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+     * </pre>
      *
      * @param ch character
      * @return <code>true</code> if the character should be replaced,
      *         <code>false</code> otherwise
      */
-    protected boolean isInvalid(char ch) {
-        // TODO: Correct handling of multi-word characters
+    protected boolean isInvalid(int ch) {
         if (ch < 0x20) {
             return ch != 0x09 && ch != 0x0A && ch != 0x0D;
+        } else if (ch < 0xE000) {
+            return ch > 0xD7FF;
+        } else if (ch < 0x10000) {
+            return ch > 0xFFFD;
         } else {
-            return ch >= 0xFFFE;
+            return ch > 0x10FFFF;
         }
+    }
+
+    /**
+     * @deprecated Use {@link #isInvalid(int)} instead
+     */
+    protected boolean isInvalid(char ch) {
+        return isInvalid((int) ch);
     }
 
     /**
@@ -144,6 +201,34 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     }
 
     //------------------------------------------------------< ContentHandler >
+
+    @Override
+    public void startElement(
+            String uri, String localName, String name, Attributes atts)
+            throws SAXException {
+        // Look for any invalid characters in attribute values.
+        for (int i = 0; i < atts.getLength(); i++) {
+            if (isInvalid(atts.getValue(i))) {
+                // Found an invalid character, so need to filter the attributes
+                AttributesImpl filtered = new AttributesImpl();
+                for (int j = 0; j < atts.getLength(); j++) {
+                    String value = atts.getValue(j);
+                    if (j >= i && isInvalid(value)) {
+                        // Filter the attribute value when needed
+                        Output buffer = new StringOutput();
+                        filter(value.toCharArray(), 0, value.length(), buffer);
+                        value = buffer.toString();
+                    }
+                    filtered.addAttribute(
+                            atts.getURI(j), atts.getLocalName(j),
+                            atts.getQName(j), atts.getType(j), value);
+                }
+                atts = filtered;
+                break;
+            }
+        }
+        super.startElement(uri, localName, name, atts);
+    }
 
     @Override
     public void characters(char[] ch, int start, int length)
