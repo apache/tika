@@ -19,6 +19,7 @@ package org.apache.tika.parser.image;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
@@ -34,19 +35,24 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.xml.sax.SAXException;
 
-import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
+import com.drew.imaging.jpeg.JpegSegmentReader;
 import com.drew.imaging.tiff.TiffMetadataReader;
 import com.drew.imaging.tiff.TiffProcessingException;
 import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
+import com.drew.metadata.MetadataReader;
 import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifDirectory;
+import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.exif.GpsDirectory;
 import com.drew.metadata.iptc.IptcDirectory;
+import com.drew.metadata.iptc.IptcReader;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
+import com.drew.metadata.jpeg.JpegCommentReader;
 import com.drew.metadata.jpeg.JpegDirectory;
+import com.drew.metadata.jpeg.JpegReader;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
@@ -85,17 +91,42 @@ public class ImageMetadataExtractor {
     public void parseJpeg(File file)
             throws IOException, SAXException, TikaException {
         try {
-            com.drew.metadata.Metadata jpegMetadata =
-                JpegMetadataReader.readMetadata(file);
-
-            handle(jpegMetadata);
+            JpegSegmentReader reader = new JpegSegmentReader(file);
+            extractMetadataFromSegment(
+                    reader, JpegSegmentReader.SEGMENT_APP1, ExifReader.class);
+            extractMetadataFromSegment(
+                    reader, JpegSegmentReader.SEGMENT_APPD, IptcReader.class);
+            extractMetadataFromSegment(
+                    reader, JpegSegmentReader.SEGMENT_SOF0, JpegReader.class);
+            extractMetadataFromSegment(
+                    reader, JpegSegmentReader.SEGMENT_COM, JpegCommentReader.class);
         } catch (JpegProcessingException e) {
-            throw new TikaException("Can't read JPEG metadata", e);
-        } catch (MetadataException e) {
             throw new TikaException("Can't read JPEG metadata", e);
         }
     }
-    
+
+    private void extractMetadataFromSegment(
+            JpegSegmentReader reader, byte marker,
+            Class<? extends MetadataReader> klass) {
+        try {
+            Constructor<? extends MetadataReader> constructor =
+                    klass.getConstructor(byte[].class);
+
+            int n = reader.getSegmentCount(marker);
+            for (int i = 0; i < n; i++) {
+                byte[] segment = reader.readSegment(marker, i);
+
+                com.drew.metadata.Metadata metadata =
+                        new com.drew.metadata.Metadata();
+                constructor.newInstance(segment).extract(metadata);
+
+                handle(metadata);
+            }
+        } catch (Exception e) {
+            // Unable to read this kind of metadata, so skip
+        }
+    }
+
     protected void parseTiff(InputStream stream)
             throws IOException, SAXException, TikaException {
         try {
@@ -190,7 +221,12 @@ public class ImageMetadataExtractor {
                 String name = tag.getTagName();
                 if (!MetadataFields.isMetadataField(name)) {
                    try {
-                      String value = tag.getDescription();
+                      String value = tag.getDescription().trim();
+                      if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+                          value = Boolean.TRUE.toString();
+                      } else if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
+                          value = Boolean.FALSE.toString();
+                      }
                       metadata.set(name, value);
                    } catch(MetadataException e) {
                       // Either something's corrupt, or it's a JPEG tag
