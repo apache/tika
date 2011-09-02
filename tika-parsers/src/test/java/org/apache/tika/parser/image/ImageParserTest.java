@@ -38,7 +38,7 @@ public class ImageParserTest extends TestCase {
 
         assertEquals("75", metadata.get("height"));
         assertEquals("100", metadata.get("width"));
-        assertEquals("8 8 8 ", metadata.get("Data BitsPerSample"));
+        assertEquals("8 8 8", metadata.get("Data BitsPerSample"));
         assertEquals("1.0", metadata.get("Dimension PixelAspectRatio"));
         assertEquals("0", metadata.get("Dimension VerticalPhysicalPixelSpacing"));
         assertEquals("0", metadata.get("Dimension HorizontalPhysicalPixelSpacing"));
@@ -59,7 +59,7 @@ public class ImageParserTest extends TestCase {
 
         assertEquals("75", metadata.get("height"));
         assertEquals("100", metadata.get("width"));
-        assertEquals("TRUE", metadata.get("Compression Lossless"));
+        assertEquals("true", metadata.get("Compression Lossless"));
         assertEquals("Normal", metadata.get("Dimension ImageOrientation"));
         assertEquals("lzw", metadata.get("Compression CompressionTypeName"));
         assertEquals("0", metadata.get("Dimension HorizontalPixelOffset"));
@@ -70,7 +70,7 @@ public class ImageParserTest extends TestCase {
         assertEquals("RGB", metadata.get("Chroma ColorSpaceType"));
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get("CommentExtensions CommentExtension"));
         assertEquals("value=Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership., encoding=ISO-8859-1, compression=none", metadata.get("Text TextEntry"));
-        assertEquals("TRUE", metadata.get("Chroma BlackIsZero"));
+        assertEquals("true", metadata.get("Chroma BlackIsZero"));
         assertEquals("disposalMethod=none, userInputFlag=false, transparentColorFlag=false, delayTime=0, transparentColorIndex=0", metadata.get("GraphicControlExtension"));
         assertEquals("0", metadata.get("Dimension VerticalPixelOffset"));
         assertEquals("image/gif", metadata.get("Content-Type"));

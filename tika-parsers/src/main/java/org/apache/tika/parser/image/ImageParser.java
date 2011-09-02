@@ -152,15 +152,17 @@ public class ImageParser extends AbstractParser {
 
             int length = map.getLength();
             if (length == 1) {
-                metadata.add(parents, map.item(0).getNodeValue());
+                metadata.add(parents, normalize(map.item(0).getNodeValue()));
             } else if (length > 1) {
-                StringBuffer value = new StringBuffer();
+                StringBuilder value = new StringBuilder();
                 for (int i = 0; i < length; i++) {
                     if (i > 0) {
                         value.append(", ");
                     }
                     Node attr = map.item(i);
-                    value.append(attr.getNodeName()).append("=").append(attr.getNodeValue());
+                    value.append(attr.getNodeName());
+                    value.append("=");
+                    value.append(normalize(attr.getNodeValue()));
                 }
                 metadata.add(parents, value.toString());
             }
@@ -172,6 +174,20 @@ public class ImageParser extends AbstractParser {
             loadNode(metadata, child, parents, true);
             child = child.getNextSibling();
         }
+    }
+
+    private static String normalize(String value) {
+        if (value != null) {
+            value = value.trim();
+        } else {
+            value = "";
+        }
+        if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
+            return Boolean.TRUE.toString();
+        } else if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
+            return Boolean.FALSE.toString();
+        }
+        return value;
     }
 
 }
