@@ -253,4 +253,13 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals("smbprn.00009008.KdcPjl.pdf", handler.filenames.get(1));
        assertEquals(TYPE_PDF, handler.mediaTypes.get(1));
     }
+
+    public void testEmbeddedOfficeFilesXML() throws Exception {
+        ContainerExtractor extractor = new ParserContainerExtractor();
+        TrackingHandler handler;
+
+        handler = process("EmbeddedDocument.docx", extractor, false);
+        assertTrue(handler.filenames.contains("Microsoft_Office_Excel_97-2003_Worksheet1.bin"));
+        assertEquals(2, handler.filenames.size());
+    }
 }
