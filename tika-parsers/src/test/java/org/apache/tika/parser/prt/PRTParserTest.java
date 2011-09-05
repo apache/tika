@@ -103,7 +103,7 @@ public class PRTParserTest extends TikaTest {
           assertContains("112"+'\u00b0', contents); // Degrees
           assertContains("TIKA TEST LETTER", contents);
           assertContains("17.11", contents);
-          assertContains('\u00d8'+" 2.000", contents); // Diameter
+          assertContains('\u00d8'+"\ufffd2.000", contents); // Diameter
           assertContains("Diameter", contents);
           assertContains("The Apache Tika toolkit", contents);
        } finally {
