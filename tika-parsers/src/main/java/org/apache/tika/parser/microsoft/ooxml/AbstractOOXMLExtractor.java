@@ -38,6 +38,7 @@ import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
@@ -151,11 +152,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             Metadata metadata = new Metadata();
             TikaInputStream stream = null;
 
-            DirectoryNode root = fs.getRoot();
-            if (root.hasEntry("CONTENTS")) {
-                stream = TikaInputStream.get(
-                        fs.createDocumentInputStream("CONTENTS"));
-            } else if (root.hasEntry("\u0001Ole10Native")) {
+            OfficeParser.POIFSDocumentType dt = OfficeParser.POIFSDocumentType.detectType(fs);
+
+            if (dt.equals(OfficeParser.POIFSDocumentType.OLE10_NATIVE)) {
                 Ole10Native ole =
                         Ole10Native.createFromEmbeddedOleObject(fs);
                 metadata.set(Metadata.RESOURCE_NAME_KEY, ole.getLabel());
@@ -163,13 +162,15 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 if (data != null) {
                     stream = TikaInputStream.get(data);
                 }
-            }
 
-            if (stream != null
-                    && embeddedExtractor.shouldParseEmbedded(metadata)) {
-                embeddedExtractor.parseEmbedded(
-                        stream, new EmbeddedContentHandler(handler),
-                        metadata, false);
+                if (stream != null
+                        && embeddedExtractor.shouldParseEmbedded(metadata)) {
+                    embeddedExtractor.parseEmbedded(
+                            stream, new EmbeddedContentHandler(handler),
+                            metadata, false);
+                }
+            } else {
+                handleEmbeddedFile(part, handler);
             }
         } catch (FileNotFoundException e) {
             // There was no CONTENTS entry, so skip this part
