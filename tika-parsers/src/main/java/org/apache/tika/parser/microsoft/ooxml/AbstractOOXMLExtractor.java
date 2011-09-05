@@ -38,7 +38,7 @@ import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.OfficeParser;
+import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
@@ -152,9 +152,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             Metadata metadata = new Metadata();
             TikaInputStream stream = null;
 
-            OfficeParser.POIFSDocumentType dt = OfficeParser.POIFSDocumentType.detectType(fs);
-
-            if (dt.equals(OfficeParser.POIFSDocumentType.OLE10_NATIVE)) {
+            DirectoryNode root = fs.getRoot();
+            if (POIFSDocumentType.OLE10_NATIVE.equals(
+                    POIFSDocumentType.detectType(root))) {
+                // TIKA-704: OLE 1.0 embedded document
                 Ole10Native ole =
                         Ole10Native.createFromEmbeddedOleObject(fs);
                 metadata.set(Metadata.RESOURCE_NAME_KEY, ole.getLabel());
@@ -165,6 +166,18 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                 if (stream != null
                         && embeddedExtractor.shouldParseEmbedded(metadata)) {
+                    embeddedExtractor.parseEmbedded(
+                            stream, new EmbeddedContentHandler(handler),
+                            metadata, false);
+                }
+            } else if (root.hasEntry("CONTENTS")
+                    && root.hasEntry("\u0001Ole")
+                    && root.hasEntry("\u0001CompObj")
+                    && root.hasEntry("\u0003ObjInfo")) {
+                // TIKA-704: OLE 2.0 embedded non-Office document?
+                stream = TikaInputStream.get(
+                        fs.createDocumentInputStream("CONTENTS"));
+                if (embeddedExtractor.shouldParseEmbedded(metadata)) {
                     embeddedExtractor.parseEmbedded(
                             stream, new EmbeddedContentHandler(handler),
                             metadata, false);
