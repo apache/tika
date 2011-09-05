@@ -55,19 +55,19 @@ public class SafeContentHandlerTest extends TestCase {
         safe.characters("ab\u0007".toCharArray(), 0, 3);
         safe.characters("a\u000Bc".toCharArray(), 0, 3);
         safe.characters("\u0019bc".toCharArray(), 0, 3);
-        assertEquals("ab a c bc", output.toString());
+        assertEquals("ab\ufffda\ufffdc\ufffdbc", output.toString());
     }
 
     public void testInvalidWhitespace() throws SAXException {
         safe.ignorableWhitespace("ab\u0000".toCharArray(), 0, 3);
         safe.ignorableWhitespace("a\u0001c".toCharArray(), 0, 3);
         safe.ignorableWhitespace("\u0002bc".toCharArray(), 0, 3);
-        assertEquals("ab a c bc", output.toString());
+        assertEquals("ab\ufffda\ufffdc\ufffdbc", output.toString());
     }
 
     public void testInvalidSurrogates() throws SAXException {
         safe.ignorableWhitespace("\udb00\ubfff".toCharArray(), 0, 2);
-        assertEquals(" \ubfff", output.toString());
+        assertEquals("\ufffd\ubfff", output.toString());
     }
 
 }

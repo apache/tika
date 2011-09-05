@@ -43,7 +43,7 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     /**
      * Replacement for invalid characters.
      */
-    private static final char[] REPLACEMENT = new char[] { ' ' };
+    private static final char[] REPLACEMENT = new char[] { '\ufffd' };
 
     /**
      * Internal interface that allows both character and

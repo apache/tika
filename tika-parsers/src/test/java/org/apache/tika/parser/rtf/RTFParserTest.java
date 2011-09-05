@@ -21,7 +21,6 @@ import java.io.FileInputStream;
 import java.io.StringWriter;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.WriteOutContentHandler;
@@ -30,11 +29,9 @@ import org.apache.tika.sax.WriteOutContentHandler;
  * Junit test class for the Tika {@link RTFParser}
  */
 public class RTFParserTest extends TikaTest {
-    private TikaConfig tc;
     private RTFParser parser;
 
     public void setUp() throws Exception {
-        tc = TikaConfig.getDefaultConfig();
         parser = new RTFParser();
     }
 
@@ -96,6 +93,7 @@ public class RTFParserTest extends TikaTest {
     public void testRTFTableCellSeparation() throws Exception {
         String content = getText("testRTFTableCellSeparation.rtf");
         // TODO: why do we insert extra whitespace...?
+        content = content.replaceAll("\ufffd", " ");
         content = content.replaceAll("\\s+"," ");
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
     }
@@ -103,6 +101,7 @@ public class RTFParserTest extends TikaTest {
     public void testRTFTableCellSeparation2() throws Exception {
         String content = getText("testRTFTableCellSeparation2.rtf");
         // TODO: why do we insert extra whitespace...?
+        content = content.replaceAll("\ufffd", " ");
         content = content.replaceAll("\\s+"," ");
         assertContains("Station Fax", content);
     }

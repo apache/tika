@@ -102,7 +102,9 @@ public class TestParsers extends TikaTest {
         String s1 = ParseUtils.getStringContent(file, tc);
         String s2 = ParseUtils.getStringContent(file, tc, "application/rtf");
         assertEquals(s1, s2);
-        String content = s1.replaceAll("\\s+"," ");
+        String content = s1;
+        content = content.replaceAll("\ufffd", " ");
+        content = content.replaceAll("\\s+"," ");
         assertTrue(content.contains("a b c d \u00E4 \u00EB \u00F6 \u00FC"));
     }
 
