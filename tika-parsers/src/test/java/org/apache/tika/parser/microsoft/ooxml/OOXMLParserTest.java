@@ -25,8 +25,7 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import junit.framework.TestCase;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.ContainerAwareDetector;
 import org.apache.tika.io.TikaInputStream;
@@ -38,7 +37,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
-public class OOXMLParserTest extends TestCase {
+public class OOXMLParserTest extends TikaTest {
     private Parser parser;
    
     @Override
@@ -455,4 +454,141 @@ public class OOXMLParserTest extends TestCase {
             input.close();
         }
     }
+
+    public void testVarious() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = OOXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testWORD_various.docx");
+        try {
+            new AutoDetectParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        String content = handler.toString();
+        //content = content.replaceAll("\\s+"," ");
+        assertContains("Footnote appears here", content);
+        assertContains("This is a footnote.", content);
+        assertContains("This is the header text.", content);
+        assertContains("This is the footer text.", content);
+        assertContains("Here is a text box", content);
+        assertContains("Bold", content);
+        assertContains("italic", content);
+        assertContains("underline", content);
+        assertContains("superscript", content);
+        assertContains("subscript", content);
+        assertContains("Here is a citation:", content);
+        assertContains("Figure 1 This is a caption for Figure 1", content);
+        assertContains("(Kramer)", content);
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+"," "));
+        assertContains("This is a hyperlink", content);
+        assertContains("Here is a list:", content);
+        for(int row=1;row<=3;row++) {
+            //assertContains("·\tBullet " + row, content);
+            //assertContains("\u00b7\tBullet " + row, content);
+            assertContains("Bullet " + row, content);
+        }
+        assertContains("Here is a numbered list:", content);
+        for(int row=1;row<=3;row++) {
+            //assertContains(row + ")\tNumber bullet " + row, content);
+            //assertContains(row + ") Number bullet " + row, content);
+            // TODO: OOXMLExtractor fails to number the bullets:
+            assertContains("Number bullet " + row, content);
+        }
+
+        for(int row=1;row<=2;row++) {
+            for(int col=1;col<=3;col++) {
+                assertContains("Row " + row + " Col " + col, content);
+            }
+        }
+
+        assertContains("Keyword1 Keyword2", content);
+        assertEquals("Keyword1 Keyword2",
+                     metadata.get(Metadata.KEYWORDS));
+
+        assertContains("Subject is here", content);
+        assertEquals("Subject is here",
+                     metadata.get(Metadata.SUBJECT));
+
+        assertContains("Suddenly some Japanese text:", content);
+        // Special version of (GHQ)
+        assertContains("\uff08\uff27\uff28\uff31\uff09", content);
+        // 6 other characters
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", content);
+
+        assertContains("And then some Gothic text:", content);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
+    }
+
+    // TODO: once we fix TIKA-705, enable this:
+    /*
+    public void testVariousPPTX() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = OOXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_various.pptx");
+        try {
+            new AutoDetectParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        String content = handler.toString();
+        //content = content.replaceAll("\\s+"," ");
+        assertContains("Footnote appears here", content);
+        assertContains("This is a footnote.", content);
+        assertContains("This is the header text.", content);
+        assertContains("This is the footer text.", content);
+        assertContains("Here is a text box", content);
+        assertContains("Bold", content);
+        assertContains("italic", content);
+        assertContains("underline", content);
+        assertContains("superscript", content);
+        assertContains("subscript", content);
+        assertContains("Here is a citation:", content);
+        assertContains("Figure 1 This is a caption for Figure 1", content);
+        assertContains("(Kramer)", content);
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+"," "));
+        assertContains("This is a hyperlink", content);
+        assertContains("Here is a list:", content);
+        for(int row=1;row<=3;row++) {
+            //assertContains("·\tBullet " + row, content);
+            //assertContains("\u00b7\tBullet " + row, content);
+            assertContains("Bullet " + row, content);
+        }
+        assertContains("Here is a numbered list:", content);
+        for(int row=1;row<=3;row++) {
+            //assertContains(row + ")\tNumber bullet " + row, content);
+            //assertContains(row + ") Number bullet " + row, content);
+            // TODO: OOXMLExtractor fails to number the bullets:
+            assertContains("Number bullet " + row, content);
+        }
+
+        for(int row=1;row<=2;row++) {
+            for(int col=1;col<=3;col++) {
+                assertContains("Row " + row + " Col " + col, content);
+            }
+        }
+
+        assertContains("Keyword1 Keyword2", content);
+        assertEquals("Keyword1 Keyword2",
+                     metadata.get(Metadata.KEYWORDS));
+
+        assertContains("Subject is here", content);
+        assertEquals("Subject is here",
+                     metadata.get(Metadata.SUBJECT));
+
+        assertContains("Suddenly some Japanese text:", content);
+        // Special version of (GHQ)
+        assertContains("\uff08\uff27\uff28\uff31\uff09", content);
+        // 6 other characters
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", content);
+
+        assertContains("And then some Gothic text:", content);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
+    }
+    */
 }
