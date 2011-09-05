@@ -106,8 +106,13 @@ public class POIFSContainerDetector implements Detector {
                 return PPT;
             } else if (names.contains("VisioDocument")) {
                 return VSD;
+            } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
+               return WPS;
             } else if (names.contains("CONTENTS")) {
-                return WPS;
+               // CONTENTS without SPELLING normally means some sort of
+               //  embedded non-office file inside an OLE2 document
+               // This is most commonly triggered on nested directories
+               return OLE;
             } else if (names.contains("\u0001Ole10Native")) {
                 return OLE;
             } else if (names.contains("PerfectOffice_MAIN")) {
