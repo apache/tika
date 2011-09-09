@@ -475,4 +475,24 @@ public class Tika {
         this.maxStringLength = maxStringLength;
     }
 
+    /**
+     * Returns the parser instance used by this facade.
+     *
+     * @since Apache Tika 1.0
+     * @return parser instance
+     */
+    public Parser getParser() {
+        return parser;
+    }
+
+    /**
+     * Returns the detector instance used by this facade.
+     *
+     * @since Apache Tika 1.0
+     * @return detector instance
+     */
+    public Detector getDetector() {
+        return detector;
+    }
+
 }
