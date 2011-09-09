@@ -16,11 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import org.apache.tika.detect.ContainerAwareDetector;
+import org.apache.tika.Tika;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
-import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 
 /**
@@ -32,11 +30,9 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
     
     @Override
     protected void setUp() throws Exception {
-       ContainerAwareDetector detector = new ContainerAwareDetector(
-               MimeTypes.getDefaultMimeTypes());
-       extractor = new ParserContainerExtractor(
-             new AutoDetectParser(detector), detector
-       );
+        Tika tika = new Tika();
+        extractor = new ParserContainerExtractor(
+                tika.getParser(), tika.getDetector());
     }
 
    /**
@@ -259,4 +255,39 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
        assertEquals(TYPE_EMF, handler.mediaTypes.get(7));  // Icon of embedded office doc
        assertEquals(TYPE_EMF, handler.mediaTypes.get(8));  // Icon of embedded office doc
     }
+
+    public void testEmbeddedOutlook() throws Exception {
+        TrackingHandler handler =
+                process("EmbeddedOutlook.docx", extractor, false);
+
+        assertEquals(2, handler.filenames.size());
+        assertEquals(2, handler.mediaTypes.size());
+
+        assertEquals("image1.emf", handler.filenames.get(0));
+        assertEquals(TYPE_EMF, handler.mediaTypes.get(0));
+
+        assertEquals("licensedTestMsgwAtt.msg", handler.filenames.get(1));
+        assertEquals(TYPE_MSG, handler.mediaTypes.get(1));
+    }
+
+    public void testEmbeddedPDF() throws Exception {
+        TrackingHandler handler =
+                process("EmbeddedPDF.docx", extractor, false);
+
+        assertEquals(4, handler.filenames.size());
+        assertEquals(4, handler.mediaTypes.size());
+
+        assertEquals("image1.emf", handler.filenames.get(0));
+        assertEquals(TYPE_EMF, handler.mediaTypes.get(0));
+
+        assertNull(handler.filenames.get(1));
+        assertEquals(TYPE_PDF, handler.mediaTypes.get(1));
+
+        assertEquals("image2.emf", handler.filenames.get(2));
+        assertEquals(TYPE_EMF, handler.mediaTypes.get(2));
+
+        assertNull(handler.filenames.get(3));
+        assertEquals(TYPE_PDF, handler.mediaTypes.get(3));
+    }
+
 }
