@@ -274,20 +274,14 @@ public class OOXMLContainerExtractionTest extends AbstractPOIContainerExtraction
         TrackingHandler handler =
                 process("EmbeddedPDF.docx", extractor, false);
 
-        assertEquals(4, handler.filenames.size());
-        assertEquals(4, handler.mediaTypes.size());
+        assertEquals(2, handler.filenames.size());
+        assertEquals(2, handler.mediaTypes.size());
 
         assertEquals("image1.emf", handler.filenames.get(0));
         assertEquals(TYPE_EMF, handler.mediaTypes.get(0));
 
         assertNull(handler.filenames.get(1));
         assertEquals(TYPE_PDF, handler.mediaTypes.get(1));
-
-        assertEquals("image2.emf", handler.filenames.get(2));
-        assertEquals(TYPE_EMF, handler.mediaTypes.get(2));
-
-        assertNull(handler.filenames.get(3));
-        assertEquals(TYPE_PDF, handler.mediaTypes.get(3));
     }
 
 }
