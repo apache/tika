@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.poi.hslf.extractor.PowerPointExtractor;
 import org.apache.poi.hslf.model.OLEShape;
+import org.apache.poi.hslf.usermodel.ObjectData;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -42,18 +43,21 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
         List<OLEShape> shapeList = powerPointExtractor.getOLEShapes();
         for (OLEShape shape : shapeList) {
-            TikaInputStream stream =
-                TikaInputStream.get(shape.getObjectData().getData());
-            try {
-                String mediaType = null;
-                if ("Excel.Chart.8".equals(shape.getProgID())) {
-                    mediaType = "application/vnd.ms-excel";
+            ObjectData data = shape.getObjectData();
+            if(data != null) {
+                TikaInputStream stream =
+                    TikaInputStream.get(data.getData());
+                try {
+                    String mediaType = null;
+                    if ("Excel.Chart.8".equals(shape.getProgID())) {
+                        mediaType = "application/vnd.ms-excel";
+                    }
+                    handleEmbeddedResource(
+                            stream, Integer.toString(shape.getObjectID()),
+                            mediaType, xhtml, false);
+                } finally {
+                    stream.close();
                 }
-                handleEmbeddedResource(
-                        stream, Integer.toString(shape.getObjectID()),
-                        mediaType, xhtml, false);
-            } finally {
-                stream.close();
             }
         }
     }
