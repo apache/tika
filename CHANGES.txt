@@ -6,6 +6,14 @@ The most notable changes in Tika 1.0 over previous releases are:
 
  * A parser for CHM help files was added. (TIKA-245)
 
+ * The RTF parser was rewritten to perform its own direct shallow
+   parse of the RTF content, instead of using RTFEditorKit from
+   javax.swing.  This fixes several issues in the old parser,
+   including doubling of Unicode characters in certain cases
+   (TIKA-683), exceptions on mal-formed RTF docs (TIKA-666), and
+   missing text from some elements (header/footer, hyperlinks,
+   footnotes, text inside pictures).
+
  
 Release 0.9 - 02/13/2011
 

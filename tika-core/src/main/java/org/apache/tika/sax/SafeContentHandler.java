@@ -16,6 +16,11 @@
  */
 package org.apache.tika.sax;
 
+/*
+import java.util.ArrayList;
+import java.util.List;
+*/
+
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -200,12 +205,48 @@ public class SafeContentHandler extends ContentHandlerDecorator {
         output.write(REPLACEMENT, 0, REPLACEMENT.length);
     }
 
+
+    /*
+    private final List<String> elements = new ArrayList<String>();
+
+    // Called only from assert
+    private boolean verifyStartElement(String name) {
+        // TODO: we could strengthen this to do full
+        // XTHML validation, eg you shouldn't start p inside
+        // another p (but ODF parser, at least, seems to
+        // violate this):
+        //if (name.equals("p")) {
+        //assert elements.size() == 0 || !elements.get(elements.size()-1).equals("p");
+        //}
+        elements.add(name);
+        return true;
+    }
+
+    // Called only from assert
+    private boolean verifyEndElement(String name) {
+        assert elements.size() > 0: "end tag=" + name + " with no startElement";
+        final String currentElement = elements.get(elements.size()-1);
+        assert currentElement.equals(name): "mismatched elements open=" + currentElement + " close=" + name;
+        elements.remove(elements.size()-1);
+        return true;
+    }
+
+    // Called only from assert
+    private boolean verifyEndDocument() {
+        assert elements.size() == 0;
+        return true;
+    }
+    */
+
     //------------------------------------------------------< ContentHandler >
 
     @Override
     public void startElement(
             String uri, String localName, String name, Attributes atts)
             throws SAXException {
+        // TODO: enable this, but some parsers currently
+        // trip it
+        //assert verifyStartElement(name);
         // Look for any invalid characters in attribute values.
         for (int i = 0; i < atts.getLength(); i++) {
             if (isInvalid(atts.getValue(i))) {
@@ -228,6 +269,23 @@ public class SafeContentHandler extends ContentHandlerDecorator {
             }
         }
         super.startElement(uri, localName, name, atts);
+    }
+
+    @Override
+    public void endElement(String uri, String localName, String name)
+            throws SAXException {
+        // TODO: enable this, but some parsers currently
+        // trip it
+        //assert verifyEndElement(name);
+        super.endElement(uri, localName, name);
+    }
+
+    @Override
+    public void endDocument() throws SAXException {
+        // TODO: enable this, but some parsers currently
+        // trip it
+        //assert verifyEndDocument();
+        super.endDocument();
     }
 
     @Override

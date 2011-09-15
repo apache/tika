@@ -16,6 +16,8 @@
  */
 package org.apache.tika.utils;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.util.HashMap;
@@ -51,6 +53,9 @@ public class CharsetUtils {
      */
     public static boolean isSupported(String charsetName) {
         try {
+            if (isSupportedICU != null && ((Boolean) isSupportedICU.invoke(null, charsetName)).booleanValue()) {
+                return true;
+            }
             return Charset.isSupported(charsetName);
         } catch (IllegalCharsetNameException e) {
             return false;
@@ -103,11 +108,54 @@ public class CharsetUtils {
         }
         
         try {
-            Charset cs = Charset.forName(result);
+            Charset cs = forName(result);
             return cs.name();
         } catch (Exception e) {
             return null;
         }
     }
 
+    private static Method getCharsetICU;
+    private static Method isSupportedICU;
+
+    static {
+        // See if we can load the icu4j CharsetICU class
+        Class icuCharset = null;
+        try  {
+            icuCharset = CharsetUtils.class.getClassLoader().loadClass("com.ibm.icu.charset.CharsetICU");
+        } 
+        catch (ClassNotFoundException e)  {
+        }
+        if (icuCharset != null) {
+            try {
+                getCharsetICU = icuCharset.getMethod("forNameICU", String.class);
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+            try {
+                isSupportedICU = icuCharset.getMethod("isSupported", String.class);
+            } catch (Throwable t) {
+            }
+            // TODO: would be nice to somehow log that we
+            // successfully found ICU
+        }
+    }
+
+    /** Returns Charset impl, if one exists.  This method
+     *  optionally uses ICU4J's CharsetICU.forNameICU,
+     *  if it is found on the classpath, else only uses
+     *  JDK's builtin Charset.forName. */
+    public static Charset forName(String name) {
+        if (getCharsetICU != null) {
+            try {
+                Charset cs = (Charset) getCharsetICU.invoke(null, name);
+                if (cs != null) {
+                    return cs;
+                }
+            } catch (InvocationTargetException ite) {
+            } catch (IllegalAccessException iae) {
+            }
+        }
+        return Charset.forName(name);
+    }
 }
