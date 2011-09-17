@@ -278,14 +278,19 @@ public class OOXMLParserTest extends TikaTest {
         }
     }
 
-    /**
-     * Test that the word converter is able to generate the
-     *  correct HTML for the document
-     */
-    public void testWordHTML() throws Exception {
+    private static class XMLResult {
+        public final String xml;
+        public final Metadata metadata;
+
+        public XMLResult(String xml, Metadata metadata) {
+            this.xml = xml;
+            this.metadata = metadata;
+      }
+    }
+
+    private XMLResult getXML(String filePath) throws Exception {
         InputStream input = null;
         Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
         
         StringWriter sw = new StringWriter();
         SAXTransformerFactory factory = (SAXTransformerFactory)
@@ -296,58 +301,79 @@ public class OOXMLParserTest extends TikaTest {
         handler.setResult(new StreamResult(sw));
 
         // Try with a document containing various tables and formattings
-        input = OOXMLParserTest.class.getResourceAsStream("/test-documents/testWORD.docx");
+        input = OOXMLParserTest.class.getResourceAsStream(filePath);
         try {
-            parser.parse(TikaInputStream.get(input), handler, metadata, context);
-            String xml = sw.toString();
-            assertEquals(
-                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Sample Word Document", metadata.get(Metadata.TITLE));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
-            assertTrue(xml.contains("Sample Word Document"));
-            
-            // Check that custom headings came through
-            assertTrue(xml.contains("<h1 class=\"title\">"));
-            // Regular headings
-            assertTrue(xml.contains("<h1>Heading Level 1</h1>"));
-            assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
-            // Headings with anchor tags in them
-            assertTrue(xml.replaceAll("\r?\n", "").contains("<h3><a name=\"OnLevel3\"/>Heading Level 3</h3>"));
-            // Bold and italic
-            assertTrue(xml.contains("<b>BOLD</b>"));
-            assertTrue(xml.contains("<i>ITALIC</i>"));
-            // Table
-            assertTrue(xml.contains("<table>"));
-            assertTrue(xml.contains("<td>"));
-            // Links
-            assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
-            // Anchor links
-            assertTrue(xml.contains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>"));
-            // Paragraphs with other styles
-            assertTrue(xml.contains("<p class=\"signature\">This one"));
+            parser.parse(TikaInputStream.get(input), handler, metadata, new ParseContext());
+            return new XMLResult(sw.toString(), metadata);
         } finally {
             input.close();
         }
-        
-        // Try with a document that contains images
-        sw = new StringWriter();
-        handler.setResult(new StreamResult(sw));
-        input = OOXMLParserTest.class.getResourceAsStream("/test-documents/testWORD_3imgs.docx");
-        try {
-            parser.parse(TikaInputStream.get(input), handler, metadata, context);
-            String xml = sw.toString();
+    }
+
+    /**
+     * Test that the word converter is able to generate the
+     *  correct HTML for the document
+     */
+    public void testWordHTML() throws Exception {
+
+      XMLResult result = getXML("/test-documents/testWORD.docx");
+      String xml = result.xml;
+      Metadata metadata = result.metadata;
+      assertEquals(
+                   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                   metadata.get(Metadata.CONTENT_TYPE));
+      assertEquals("Sample Word Document", metadata.get(Metadata.TITLE));
+      assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
+      assertTrue(xml.contains("Sample Word Document"));
             
-            // Images 2-4 (there is no 1!)
-//            assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image2.png\"/>"));
-//            assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image3.jpeg\"/>"));
-//            assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image4.png\"/>"));
+      // Check that custom headings came through
+      assertTrue(xml.contains("<h1 class=\"title\">"));
+      // Regular headings
+      assertTrue(xml.contains("<h1>Heading Level 1</h1>"));
+      assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
+      // Headings with anchor tags in them
+      assertTrue(xml.replaceAll("\r?\n", "").contains("<h3><a name=\"OnLevel3\"/>Heading Level 3</h3>"));
+      // Bold and italic
+      assertTrue(xml.contains("<b>BOLD</b>"));
+      assertTrue(xml.contains("<i>ITALIC</i>"));
+      // Table
+      assertTrue(xml.contains("<table>"));
+      assertTrue(xml.contains("<td>"));
+      // Links
+      assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
+      // Anchor links
+      assertTrue(xml.contains("<a href=\"#OnMainHeading\">The Main Heading Bookmark</a>"));
+      // Paragraphs with other styles
+      assertTrue(xml.contains("<p class=\"signature\">This one"));
+
+      result = getXML("/test-documents/testWORD_3imgs.docx");
+      xml = result.xml;
+
+      // Images 2-4 (there is no 1!)
+      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\"/>"));
+      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\"/>"));
+      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\"/>"));
             
-            // Text too
-            assertTrue(xml.contains("<p>The end!</p>"));
-        } finally {
-            input.close();
-        }
+      // Text too
+      assertTrue(xml.contains("<p>The end!</p>"));
+
+      // TIKA-692: test document containing multiple
+      // character runs within a bold tag:
+      xml = getXML("/test-documents/testWORD_bold_character_runs.docx").xml;
+
+      // Make sure bold text arrived as single
+      // contiguous string even though Word parser
+      // handled this as 3 character runs
+      assertTrue("Bold text wasn't contiguous: "+xml, xml.contains("F<b>oob</b>a<b>r</b>"));
+
+      // TIKA-692: test document containing multiple
+      // character runs within a bold tag:
+      xml = getXML("/test-documents/testWORD_bold_character_runs2.docx").xml;
+            
+      // Make sure bold text arrived as single
+      // contiguous string even though Word parser
+      // handled this as 3 character runs
+      assertTrue("Bold text wasn't contiguous: "+xml, xml.contains("F<b>oob</b>a<b>r</b>"));
     }
 
     /**
