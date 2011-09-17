@@ -93,20 +93,34 @@ public class TextDetector implements Detector {
 
         input.mark(NUMBER_OF_BYTES_TO_TEST);
         try {
-            for (int i = 0; i < NUMBER_OF_BYTES_TO_TEST; i++) {
-                int ch = input.read();
-                if (ch == -1) {
-                    if (i > 0) {
-                        return MediaType.TEXT_PLAIN;
-                    } else {
-                        // See https://issues.apache.org/jira/browse/TIKA-483
-                        return MediaType.OCTET_STREAM;
-                    }
-                } else if (ch < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[ch]) {
-                    return MediaType.OCTET_STREAM;
+            int chars = 0;
+            int controls = 0;
+            int asciis = 0;
+            int ch = input.read();
+            while (ch != -1 && chars < NUMBER_OF_BYTES_TO_TEST) {
+                if (ch < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[ch]) {
+                    controls++;
+                } else if (ch < 127) {
+                    asciis++;
                 }
+                ch = input.read();
+                chars++;
             }
-            return MediaType.TEXT_PLAIN;
+            if (chars == 0) {
+                // Empty document, so treat it as binary
+                // See https://issues.apache.org/jira/browse/TIKA-483
+                return MediaType.OCTET_STREAM;
+            } else if (controls == 0) {
+                // No control characters, so treat it as text
+                return MediaType.TEXT_PLAIN;
+            } else if (controls < chars * 2 / 100
+                    && asciis > chars * 90 / 100) {
+                // Almost plain text (< 2% control, > 90% ASCII range)
+                // See https://issues.apache.org/jira/browse/TIKA-688
+                return MediaType.TEXT_PLAIN;
+            } else {
+                return MediaType.OCTET_STREAM;
+            }
         } finally {
             input.reset();
         }
