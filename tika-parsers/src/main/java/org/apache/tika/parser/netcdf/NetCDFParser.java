@@ -25,11 +25,13 @@ import java.util.Set;
 
 //TIKA imports
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -46,8 +48,8 @@ import ucar.nc2.NetcdfFile;
  */
 public class NetCDFParser extends AbstractParser {
 
-    private final Set<MediaType> SUPPORTED_TYPES = Collections
-            .singleton(MediaType.application("x-netcdf"));
+    private final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.application("x-netcdf"));
 
     /*
      * (non-Javadoc)
@@ -70,37 +72,34 @@ public class NetCDFParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
-
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        this.writeStreamToMemory(stream, os);
+        IOUtils.copy(stream, os);
 
-        NetcdfFile ncFile = NetcdfFile.openInMemory("", os.toByteArray());
-
-        // first parse out the set of global attributes
-        for (Attribute attr : ncFile.getGlobalAttributes()) {
-            String attrName = attr.getName();
-            if (attr.getDataType().isString()) {
-                metadata.add(attrName, attr.getStringValue());
-            } else if (attr.getDataType().isNumeric()) {
-                metadata.add(attrName, String.valueOf(attr.getNumericValue()
-                        .intValue()));
-            }
+        String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        if (name == null) {
+            name = "";
         }
-
-    }
-
-    protected void writeStreamToMemory(InputStream is, ByteArrayOutputStream os)
-            throws TikaException {
-        byte[] buf = new byte[512];
 
         try {
-            while ((is.read(buf, 0, 512)) != -1) {
-                os.write(buf);
+            NetcdfFile ncFile = NetcdfFile.openInMemory(name, os.toByteArray());
+
+            // first parse out the set of global attributes
+            for (Attribute attr : ncFile.getGlobalAttributes()) {
+                String attrName = attr.getName();
+                if (attr.getDataType().isString()) {
+                    metadata.add(attrName, attr.getStringValue());
+                } else if (attr.getDataType().isNumeric()) {
+                    int value = attr.getNumericValue().intValue();
+                    metadata.add(attrName, String.valueOf(value));
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new TikaException(e.getMessage());
-        }
+        } catch (IOException e) {
+            throw new TikaException("NetCDF parse error", e);
+        } 
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.endDocument();
     }
 
 }
