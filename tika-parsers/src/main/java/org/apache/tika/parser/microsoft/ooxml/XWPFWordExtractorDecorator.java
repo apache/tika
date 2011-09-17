@@ -126,34 +126,50 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           xhtml.endElement("a");
        }
        
+       // True if we are currently in the named style tag:
+       boolean curBold = false;
+       boolean curItalic = false;
+
        // Do the text
        for(XWPFRun run : paragraph.getRuns()) {
-          List<String> tags = new ArrayList<String>();
+         System.out.println("RUN: " + run.toString());
+
+          if (run.isBold() != curBold) {
+            if (curItalic) {
+              xhtml.endElement("i");
+              curItalic = false;
+            }
+            if (run.isBold()) {
+              xhtml.startElement("b");
+            } else {
+              xhtml.endElement("b");
+            }
+            curBold = run.isBold();
+          }
+
+          if (run.isItalic() != curItalic) {
+            if (run.isItalic()) {
+              xhtml.startElement("i");
+            } else {
+              xhtml.endElement("i");
+            }
+            curItalic = run.isItalic();
+          }
+
+          boolean addedHREF = false;
           if(run instanceof XWPFHyperlinkRun) {
              XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun)run;
              XWPFHyperlink link = linkRun.getHyperlink(document);
              if(link != null && link.getURL() != null) {
                 xhtml.startElement("a", "href", link.getURL());
-                tags.add("a");
+                addedHREF = true;
              } else if(linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
                 xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
-                tags.add("a");
+                addedHREF = true;
              }
           }
-          if(run.isBold()) {
-             xhtml.startElement("b");
-             tags.add("b");
-          }
-          if(run.isItalic()) {
-             xhtml.startElement("i");
-             tags.add("i");
-          }
-          
+
           xhtml.characters(run.toString());
-          
-          for(int i=tags.size()-1; i>=0; i--) {
-             xhtml.endElement(tags.get(i));
-          }
           
           // If we have any pictures, output them
           for(XWPFPicture picture : run.getEmbeddedPictures()) {
@@ -170,6 +186,20 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                 }
              }
           }
+
+          if (addedHREF) {
+            xhtml.endElement("a");
+          }
+       }
+       
+       // Close any still open style tags
+       if (curItalic) {
+         xhtml.endElement("i");
+         curItalic = false;
+       }
+       if (curBold) {
+         xhtml.endElement("b");
+         curBold = false;
        }
        
        // Now do any comments for the paragraph

@@ -146,7 +146,7 @@ public class TikaCLI {
         @Override
         protected ContentHandler getContentHandler(OutputStream output)
                 throws Exception {
-            return getTransformerHandler(output, "xml", encoding);
+            return getTransformerHandler(output, "xml", encoding, prettyPrint);
         }
     };
 
@@ -154,7 +154,7 @@ public class TikaCLI {
         @Override
         protected ContentHandler getContentHandler(OutputStream output)
                 throws Exception {
-            return getTransformerHandler(output, "html", encoding);
+            return getTransformerHandler(output, "html", encoding, prettyPrint);
         }
     };
 
@@ -267,6 +267,8 @@ public class TikaCLI {
     private boolean fork = false;
 
     private String profileName = null;
+
+    private boolean prettyPrint;
     
     public TikaCLI() throws Exception {
         context = new ParseContext();
@@ -324,6 +326,8 @@ public class TikaCLI {
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
+        } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
+            prettyPrint = true;
         } else if (arg.equals("-p") || arg.equals("--port")
                 || arg.equals("-s") || arg.equals("--server")) {
             serverMode = true;
@@ -374,22 +378,24 @@ public class TikaCLI {
         out.println("usage: java -jar tika-app.jar [option...] [file|port...]");
         out.println();
         out.println("Options:");
-        out.println("    -?  or --help        Print this usage message");
-        out.println("    -v  or --verbose     Print debug level messages");
+        out.println("    -?  or --help          Print this usage message");
+        out.println("    -v  or --verbose       Print debug level messages");
         out.println();
-        out.println("    -g  or --gui         Start the Apache Tika GUI");
-        out.println("    -s  or --server      Start the Apache Tika server");
+        out.println("    -g  or --gui           Start the Apache Tika GUI");
+        out.println("    -s  or --server        Start the Apache Tika server");
         out.println();
-        out.println("    -x  or --xml         Output XHTML content (default)");
-        out.println("    -h  or --html        Output HTML content");
-        out.println("    -j  or --json        Output JSON content");
-        out.println("    -t  or --text        Output plain text content");
-        out.println("    -T  or --text-main   Output plain text content (main content only)");
-        out.println("    -m  or --metadata    Output only metadata");
-        out.println("    -l  or --language    Output only language");
-        out.println("    -d  or --detect      Detect document type");
-        out.println("    -eX or --encoding=X  Use output encoding X");
-        out.println("    -z  or --extract     Extract all attachements into current directory");        
+        out.println("    -x  or --xml           Output XHTML content (default)");
+        out.println("    -h  or --html          Output HTML content");
+        out.println("    -j  or --json          Output JSON content");
+        out.println("    -t  or --text          Output plain text content");
+        out.println("    -T  or --text-main     Output plain text content (main content only)");
+        out.println("    -m  or --metadata      Output only metadata");
+        out.println("    -l  or --language      Output only language");
+        out.println("    -d  or --detect        Detect document type");
+        out.println("    -eX or --encoding=X    Use output encoding X");
+        out.println("    -z  or --extract       Extract all attachements into current directory");        
+        out.println("    -r  or --pretty-print  For XML and XHTML outputs, adds newlines and");
+        out.println("                           whitespace, for better readability");
         out.println();
         out.println("    --create-profile=X");
         out.println("         Create NGram profile, where X is a profile name");
@@ -576,13 +582,13 @@ public class TikaCLI {
      *         if the transformer can not be created
      */
     private static TransformerHandler getTransformerHandler(
-            OutputStream output, String method, String encoding)
+            OutputStream output, String method, String encoding, boolean prettyPrint)
             throws TransformerConfigurationException {
         SAXTransformerFactory factory = (SAXTransformerFactory)
                 SAXTransformerFactory.newInstance();
         TransformerHandler handler = factory.newTransformerHandler();
         handler.getTransformer().setOutputProperty(OutputKeys.METHOD, method);
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, prettyPrint ? "yes" : "no");
         if (encoding != null) {
             handler.getTransformer().setOutputProperty(
                     OutputKeys.ENCODING, encoding);
