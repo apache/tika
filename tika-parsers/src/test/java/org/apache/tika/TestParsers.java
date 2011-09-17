@@ -19,8 +19,6 @@ package org.apache.tika;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -175,16 +173,15 @@ public class TestParsers extends TikaTest {
     }
 
     public void testComment() throws Exception {
-        // TIKA-717: re-enable ppt, rtf once we fix it
+        // TIKA-717: re-enable ppt once we fix it
         //final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "pdf", "rtf"};
-        final String[] extensions = new String[] {"pptx", "doc", "docx", "pdf"};
-        final List<String> failures = new ArrayList<String>();
+        final String[] extensions = new String[] {"pptx", "doc", "docx", "pdf", "rtf"};
         for(String extension : extensions) {
             verifyComment(extension, "testComment");
-            if (extension.equals("pdf")) {
-                // TIKA-717: re-enable once we fix this:
-                //verifyComment(extension, "testComment2");
-            }
+            // TIKA-717: re-enable once we fix this:
+            //if (extension.equals("pdf")) {
+            //verifyComment(extension, "testComment2");
+            //}
         }
     }
 }
