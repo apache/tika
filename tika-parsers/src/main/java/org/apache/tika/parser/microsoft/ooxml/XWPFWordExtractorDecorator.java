@@ -132,8 +132,6 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
        // Do the text
        for(XWPFRun run : paragraph.getRuns()) {
-         System.out.println("RUN: " + run.toString());
-
           if (run.isBold() != curBold) {
             if (curItalic) {
               xhtml.endElement("i");
