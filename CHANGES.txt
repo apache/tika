@@ -6,6 +6,11 @@ The most notable changes in Tika 1.0 over previous releases are:
 
  * A parser for CHM help files was added. (TIKA-245)
 
+ * TIKA-698: Invalid characters are now replaced with the Unicode
+   replacement character (U+FFFD), whereas before such characters were
+   replaced with spaces, so you may need to change your processing of
+   Tika's output to now handle U+FFFD.
+
  * The RTF parser was rewritten to perform its own direct shallow
    parse of the RTF content, instead of using RTFEditorKit from
    javax.swing.  This fixes several issues in the old parser,
