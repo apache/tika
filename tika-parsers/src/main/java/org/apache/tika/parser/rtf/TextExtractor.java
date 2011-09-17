@@ -900,6 +900,18 @@ final class TextExtractor {
             pushText();
             // Text inside a shape
             groupState.ignore = false;
+        } else if (equals("atnid")) {
+            pushText();
+            // Annotation ID
+            groupState.ignore = false;
+        } else if (equals("atnauthor")) {
+            pushText();
+            // Annotation author
+            groupState.ignore = false;
+        } else if (equals("annotation")) {
+            pushText();
+            // Annotation
+            groupState.ignore = false;
         } else if (equals("cell")) {
             // TODO: we should produce a table output here?
             //addOutputChar(' ');
