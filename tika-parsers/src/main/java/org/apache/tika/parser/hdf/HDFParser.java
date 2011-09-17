@@ -26,11 +26,13 @@ import java.util.Set;
 
 //TIKA imports
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.netcdf.NetCDFParser;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -50,8 +52,8 @@ import ucar.nc2.NetcdfFile;
  */
 public class HDFParser extends AbstractParser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections
-            .singleton(MediaType.application("x-hdf"));
+    private static final Set<MediaType> SUPPORTED_TYPES =
+        Collections.singleton(MediaType.application("x-hdf"));
 
     /*
      * (non-Javadoc)
@@ -76,10 +78,22 @@ public class HDFParser extends AbstractParser {
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         ByteArrayOutputStream os = new ByteArrayOutputStream();
-        this.writeStreamToMemory(stream, os);
+        IOUtils.copy(stream, os);
 
-        NetcdfFile ncFile = NetcdfFile.openInMemory("", os.toByteArray());
-        this.unravelStringMet(ncFile, null, metadata);
+        String name = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        if (name == null) {
+            name = "";
+        }
+        try {
+            NetcdfFile ncFile = NetcdfFile.openInMemory(name, os.toByteArray());
+            unravelStringMet(ncFile, null, metadata);
+        } catch (IOException e) {
+            throw new TikaException("HDF parse error", e);
+        }
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.endDocument();
     }
 
     protected void unravelStringMet(NetcdfFile ncFile, Group group, Metadata met) {
@@ -100,20 +114,6 @@ public class HDFParser extends AbstractParser {
 
         for (Group g : group.getGroups()) {
             unravelStringMet(ncFile, g, met);
-        }
-    }
-
-    protected void writeStreamToMemory(InputStream is, ByteArrayOutputStream os)
-            throws TikaException {
-        byte[] buf = new byte[512];
-
-        try {
-            while ((is.read(buf, 0, 512)) != -1) {
-                os.write(buf);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new TikaException(e.getMessage());
         }
     }
 
