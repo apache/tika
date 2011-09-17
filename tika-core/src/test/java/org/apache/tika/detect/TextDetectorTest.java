@@ -58,12 +58,21 @@ public class TextDetectorTest extends TestCase {
         byte[] data = new byte[512];
         Arrays.fill(data, (byte) '.');
         assertText(data);
+        Arrays.fill(data, 100, 109, (byte) 0x1f);
+        assertText(data); // almost text
+        Arrays.fill(data, 100, 110, (byte) 0x1f);
+        assertNotText(data); // no longer almost text, too many control chars
         Arrays.fill(data, (byte) 0x1f);
         assertNotText(data);
 
         data = new byte[513];
         Arrays.fill(data, (byte) '.');
+        data[0] = 0x1f;
         assertText(data);
+        Arrays.fill(data, 100, 150, (byte) 0x83);
+        assertText(data); // almost text
+        Arrays.fill(data, 100, 200, (byte) 0x83);
+        assertNotText(data); // no longer almost text, too many non-ASCII
         Arrays.fill(data, (byte) 0x1f);
         assertNotText(data);
     }
