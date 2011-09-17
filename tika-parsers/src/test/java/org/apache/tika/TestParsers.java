@@ -19,6 +19,8 @@ package org.apache.tika;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -161,5 +163,28 @@ public class TestParsers extends TikaTest {
 
         Parser parser = tc.getParser(MediaType.parse("audio/mpeg"));
         assertNotNull(parser);
+    }
+
+    private void verifyComment(String extension, String fileName) throws Exception {
+        File file = getResourceAsFile("/test-documents/" + fileName + "." + extension);
+        String content = ParseUtils.getStringContent(file, tc);
+        assertTrue(extension + ": content=" + content + " did not extract text",
+                   content.contains("Here is some text"));
+        assertTrue(extension + ": content=" + content + " did not extract comment",
+                   content.contains("Here is a comment"));
+    }
+
+    public void testComment() throws Exception {
+        // TIKA-717: re-enable ppt, rtf once we fix it
+        //final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "pdf", "rtf"};
+        final String[] extensions = new String[] {"pptx", "doc", "docx", "pdf"};
+        final List<String> failures = new ArrayList<String>();
+        for(String extension : extensions) {
+            verifyComment(extension, "testComment");
+            if (extension.equals("pdf")) {
+                // TIKA-717: re-enable once we fix this:
+                //verifyComment(extension, "testComment2");
+            }
+        }
     }
 }
