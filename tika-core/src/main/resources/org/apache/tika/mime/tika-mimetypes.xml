@@ -2954,6 +2954,12 @@
   <mime-type type="audio/mpeg4-generic"/>
 
   <mime-type type="audio/ogg">
+    <magic priority="60">
+      <!-- For a single stream file -->
+      <match value="OggS\000.......................\001vorbis" type="string" 
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFF" 
+             offset="0"/>
+    </magic>
     <glob pattern="*.oga"/>
     <glob pattern="*.ogg"/>
     <glob pattern="*.spx"/>
