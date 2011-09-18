@@ -16,7 +16,7 @@
  */
 
 /**
- * Multi-valued metadata container, and set of constant metadata fields.
+ * Tika parsers.
  */
 @aQute.bnd.annotation.Version("0.10")
-package org.apache.tika.metadata;
+package org.apache.tika.parser;
