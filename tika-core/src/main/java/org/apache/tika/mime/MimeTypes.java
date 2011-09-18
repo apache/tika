@@ -36,6 +36,7 @@ import javax.xml.namespace.QName;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.metadata.Metadata;
 
@@ -74,41 +75,6 @@ public final class MimeTypes implements Detector, Serializable {
      * Name of the {@link #xml xml} type, application/xml.
      */
     public static final String XML = "application/xml";
-
-
-    
-    /**
-     * Lookup table for all the ASCII/ISO-Latin/UTF-8/etc. control bytes
-     * in the range below 0x20 (the space character). If an entry in this
-     * table is <code>true</code> then that byte is very unlikely to occur
-     * in a plain text document.
-     * <p>
-     * The contents of this lookup table are based on the following definition
-     * from section 4 of the "Content-Type Processing Model" Internet-draft
-     * (<a href="http://webblaze.cs.berkeley.edu/2009/mime-sniff/mime-sniff.txt"
-     * >draft-abarth-mime-sniff-01</a>).
-     * <pre>
-     * +-------------------------+
-     * | Binary data byte ranges |
-     * +-------------------------+
-     * | 0x00 -- 0x08            |
-     * | 0x0B                    |
-     * | 0x0E -- 0x1A            |
-     * | 0x1C -- 0x1F            |
-     * +-------------------------+
-     * </pre>
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-154">TIKA-154</a>
-     */
-    private static final boolean[] IS_CONTROL_BYTE = new boolean[0x20];
-    static {
-        Arrays.fill(IS_CONTROL_BYTE, true);
-        IS_CONTROL_BYTE[0x09] = false; // tabulator
-        IS_CONTROL_BYTE[0x0A] = false; // new line
-        IS_CONTROL_BYTE[0x0C] = false; // new page
-        IS_CONTROL_BYTE[0x0D] = false; // carriage return
-        IS_CONTROL_BYTE[0x1B] = false; // escape
-    }
 
     /**
      * Root type, application/octet-stream.
@@ -255,15 +221,14 @@ public final class MimeTypes implements Detector, Serializable {
             return result;
         }
 
-
         // Finally, assume plain text if no control bytes are found
-        for (int i = 0; i < data.length; i++) {
-            int b = data[i] & 0xFF; // prevent sign extension
-            if (b < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[b]) {
-                return rootMimeType;
-            }
+        try {
+            TextDetector detector = new TextDetector();
+            ByteArrayInputStream stream = new ByteArrayInputStream(data);
+            return forName(detector.detect(stream, new Metadata()).toString());
+        } catch (Exception e) {
+            return rootMimeType;
         }
-        return textMimeType;
     }
 
     /**
