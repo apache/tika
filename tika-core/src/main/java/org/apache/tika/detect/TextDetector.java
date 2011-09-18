@@ -27,7 +27,9 @@ import org.apache.tika.mime.MediaType;
  * Content type detection of plain text documents. This detector looks at the
  * beginning of the document input stream and considers the document to be
  * a text document if no ASCII (ISO-Latin-1, UTF-8, etc.) control bytes are
- * found.
+ * found. As a special case some control bytes (up to 2% of all characters)
+ * are also allowed in a text document if it also contains no or just a few
+ * (less than 10%) characters above the 7-bit ASCII range.
  * <p>
  * Note that text documents with a character encoding like UTF-16 are better
  * detected with {@link MagicDetector} and an appropriate magic byte pattern.
@@ -35,6 +37,9 @@ import org.apache.tika.mime.MediaType;
  * @since Apache Tika 0.3
  */
 public class TextDetector implements Detector {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = 4774601079503507765L;
 
     /**
      * The number of bytes from the beginning of the document stream
