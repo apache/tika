@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import org.apache.poi.POIXMLDocument;
@@ -120,9 +121,21 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             for (PackagePart source : getMainDocumentParts()) {
                 for (PackageRelationship rel : source.getRelationships()) {
                     if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                        // TODO Simply this when on POI 3.8 beta 5
                         URI uri = rel.getTargetURI();
+                        if(uri.getFragment() != null) {
+                           // TODO Workaround for TIKA-705 needed until 3.8 beta 5
+                           try {
+                              String u = uri.toString();
+                              uri = new URI(u.substring(0, u.indexOf('#')));
+                           } catch(URISyntaxException e) {
+                              throw new TikaException("Broken OOXML file", e);
+                           }
+                        }
                         PackagePart target = rel.getPackage().getPart(
                                 PackagingURIHelper.createPartName(uri));
+                        // TODO Simpler version in POI 3.8 beta 5
+                        // PackagePart target = source.getRelatedPart(rel);
 
                         String type = rel.getRelationshipType();
                         if (RELATION_OLE_OBJECT.equals(type)
