@@ -28,7 +28,7 @@ import java.io.InputStream;
 
 import junit.framework.TestCase;
 
-import org.apache.james.mime4j.parser.MimeEntityConfig;
+import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -192,12 +192,13 @@ public class RFC822ParserTest extends TestCase {
         } catch (TikaException expected) {
         }
 
-        MimeEntityConfig config = new MimeEntityConfig();
+        MimeConfig config = new MimeConfig();
+        config.setMaxHeaderLen(-1);
         config.setMaxLineLen(-1);
-        context.set(MimeEntityConfig.class, config);
+        context.set(MimeConfig.class, config);
         parser.parse(
                 new ByteArrayInputStream(data), handler, metadata, context);
-        assertEquals(name, metadata.get(Metadata.AUTHOR));
+        assertEquals(name.trim(), metadata.get(Metadata.AUTHOR));
     }
     
     /**
@@ -210,8 +211,12 @@ public class RFC822ParserTest extends TestCase {
        ContentHandler handler = new BodyContentHandler();
 
        parser.parse(stream, handler, metadata, new ParseContext());
-       assertEquals("xyz, abc", metadata.get(Metadata.AUTHOR));
-       assertEquals("xyz, abc", metadata.get(Metadata.MESSAGE_FROM));
+       assertEquals(true, metadata.isMultiValued(Metadata.AUTHOR));
+       assertEquals("xyz", metadata.getValues(Metadata.AUTHOR)[0]);
+       assertEquals("abc", metadata.getValues(Metadata.AUTHOR)[1]);
+       assertEquals(true, metadata.isMultiValued(Metadata.MESSAGE_FROM));
+       assertEquals("xyz", metadata.getValues(Metadata.MESSAGE_FROM)[0]);
+       assertEquals("abc", metadata.getValues(Metadata.MESSAGE_FROM)[1]);
        assertEquals(true, metadata.isMultiValued(Metadata.MESSAGE_TO));
        assertEquals("abc", metadata.getValues(Metadata.MESSAGE_TO)[0]);
        assertEquals("def", metadata.getValues(Metadata.MESSAGE_TO)[1]);
