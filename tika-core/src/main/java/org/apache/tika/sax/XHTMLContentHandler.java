@@ -177,6 +177,9 @@ public class XHTMLContentHandler extends SafeContentHandler {
             if (title != null && title.length() > 0) {
                 char[] titleChars = title.toCharArray();
                 super.characters(titleChars, 0, titleChars.length);
+            } else {
+                // TIKA-725: Prefer <title></title> over <title/>
+                super.characters(new char[0], 0, 0);
             }
             super.endElement(XHTML, "title", "title");
             newline();
