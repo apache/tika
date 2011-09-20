@@ -20,17 +20,22 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.james.mime4j.MimeException;
-import org.apache.james.mime4j.descriptor.BodyDescriptor;
-import org.apache.james.mime4j.field.AbstractField;
-import org.apache.james.mime4j.field.AddressListField;
-import org.apache.james.mime4j.field.DateTimeField;
-import org.apache.james.mime4j.field.MailboxListField;
-import org.apache.james.mime4j.field.ParsedField;
-import org.apache.james.mime4j.field.UnstructuredField;
-import org.apache.james.mime4j.field.address.AddressList;
-import org.apache.james.mime4j.field.address.MailboxList;
+import org.apache.james.mime4j.codec.DecodeMonitor;
+import org.apache.james.mime4j.codec.DecoderUtil;
+import org.apache.james.mime4j.dom.address.Address;
+import org.apache.james.mime4j.dom.address.AddressList;
+import org.apache.james.mime4j.dom.address.Group;
+import org.apache.james.mime4j.dom.address.Mailbox;
+import org.apache.james.mime4j.dom.address.MailboxList;
+import org.apache.james.mime4j.dom.field.AddressListField;
+import org.apache.james.mime4j.dom.field.DateTimeField;
+import org.apache.james.mime4j.dom.field.MailboxListField;
+import org.apache.james.mime4j.dom.field.ParsedField;
+import org.apache.james.mime4j.dom.field.UnstructuredField;
+import org.apache.james.mime4j.field.LenientFieldParser;
 import org.apache.james.mime4j.parser.ContentHandler;
-import org.apache.james.mime4j.parser.Field;
+import org.apache.james.mime4j.stream.BodyDescriptor;
+import org.apache.james.mime4j.stream.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -133,13 +138,14 @@ class MailContentHandler implements ContentHandler {
 
         try {
             String fieldname = field.getName();
-            ParsedField parsedField = AbstractField.parse(field.getRaw());
+            ParsedField parsedField = LenientFieldParser.getParser().parse(
+                    field, DecodeMonitor.SILENT);
             if (fieldname.equalsIgnoreCase("From")) {
                 MailboxListField fromField = (MailboxListField) parsedField;
                 MailboxList mailboxList = fromField.getMailboxList();
                 if (fromField.isValidField() && mailboxList != null) {
                     for (int i = 0; i < mailboxList.size(); i++) {
-                        String from = mailboxList.get(i).getDisplayString();
+                        String from = getDisplayString(mailboxList.get(i));
                         metadata.add(Metadata.MESSAGE_FROM, from);
                         metadata.add(Metadata.AUTHOR, from);
                     }
@@ -181,8 +187,7 @@ class MailContentHandler implements ContentHandler {
         if (toField.isValidField()) {
             AddressList addressList = toField.getAddressList();
             for (int i = 0; i < addressList.size(); ++i) {
-                metadata.add(metadataField, addressList.get(i)
-                        .getDisplayString());
+                metadata.add(metadataField, getDisplayString(addressList.get(i)));
             }
         } else {
             String to = stripOutFieldPrefix(field,
@@ -190,6 +195,21 @@ class MailContentHandler implements ContentHandler {
             for (String eachTo : to.split(",")) {
                 metadata.add(metadataField, eachTo.trim());
             }
+        }
+    }
+
+    private String getDisplayString(Address address) {
+        if (address instanceof Mailbox) {
+            Mailbox mailbox = (Mailbox) address;
+            String name = mailbox.getName();
+            if (name != null && name.length() > 0) {
+                name = DecoderUtil.decodeEncodedWords(name, DecodeMonitor.SILENT);
+                return name + " <" + mailbox.getAddress() + ">";
+            } else {
+                return mailbox.getAddress();
+            }
+        } else {
+            return address.toString();
         }
     }
 

@@ -24,6 +24,9 @@ The most notable changes in Tika 0.10 over previous releases are:
 
  * The Tika GUI got a facelift and some extra features (TIKA-635)
 
+ * The apache-mime4j dependency of the email message parser was upgraded
+   from version 0.6 to 0.7 (TIKA-716). The parser also now accepts a
+   MimeConfig object in the ParseContext as configuration (TIKA-640).
 
 Release 0.9 - 02/13/2011
 
