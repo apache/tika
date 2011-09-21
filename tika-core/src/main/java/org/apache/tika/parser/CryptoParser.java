@@ -28,6 +28,7 @@ import java.util.Set;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -82,7 +83,7 @@ public abstract class CryptoParser extends DelegatingParser {
 
             Key key = context.get(Key.class);
             if (key == null) {
-                throw new TikaException("No decryption key provided");
+                throw new EncryptedDocumentException("No decryption key provided");
             }
 
             AlgorithmParameters params = context.get(AlgorithmParameters.class);

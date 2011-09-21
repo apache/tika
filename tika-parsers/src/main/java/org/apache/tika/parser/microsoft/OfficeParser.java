@@ -33,6 +33,7 @@ import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -225,7 +226,7 @@ public class OfficeParser extends AbstractParser {
 
                     try {
                         if (!d.verifyPassword(Decryptor.DEFAULT_PASSWORD)) {
-                            throw new TikaException("Unable to process: document is encrypted");
+                            throw new EncryptedDocumentException();
                         }
 
                         OOXMLParser parser = new OOXMLParser();
@@ -234,7 +235,7 @@ public class OfficeParser extends AbstractParser {
                                         new BodyContentHandler(xhtml)),
                                         metadata, context);
                     } catch (GeneralSecurityException ex) {
-                        throw new TikaException("Unable to process encrypted document", ex);
+                        throw new EncryptedDocumentException(ex);
                     }
             }
         }
