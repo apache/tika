@@ -72,7 +72,7 @@
               asm,
               metadata-extractor,
               boilerpipe, rome,
-              apache-mime4j
+              apache-mime4j-core, apache-mime4j-dom
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
