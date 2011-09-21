@@ -114,4 +114,20 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("And then some Gothic text:", content);
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
+
+    public void testMasterSlide() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterFooter.ppt");
+        try {
+            new OfficeParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        String content = handler.toString();
+        assertContains("Master footer is here", content);
+    }
 }
