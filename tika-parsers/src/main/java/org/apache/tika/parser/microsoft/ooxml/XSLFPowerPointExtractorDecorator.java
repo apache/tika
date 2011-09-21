@@ -33,6 +33,7 @@ import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFCommonSlideData;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xslf.usermodel.XSLFSlideMaster;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -77,20 +78,30 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
               continue;
            }
            
+            XSLFSlideMaster master = slide.getMasterSheet();
             CTNotesSlide notes = rawSlideShow.getNotes(slideId);
             CTCommentList comments = rawSlideShow.getSlideComments(slideId);
 
+            // TODO In POI 3.8 beta 5, improve how we get this
             xhtml.startElement("div");
             XSLFCommonSlideData common = new XSLFCommonSlideData(slide.getXmlObject().getCSld());
             extractShapeContent(common, xhtml);
 
+            // If there are comments, extract them
             if (comments != null) {
                 for (CTComment comment : comments.getCmArray()) {
                     xhtml.element("p", comment.getText());
                 }
             }
+            
+            // Get text from the master slide
+            if(master != null) {
+               // TODO In POI 3.8 beta 5, improve how we get this
+               extractShapeContent(new XSLFCommonSlideData(master.getXmlObject().getCSld()), xhtml);
+            }
 
             if (notes != null) {
+               // TODO In POI 3.8 beta 5, improve how we get this
                 extractShapeContent(new XSLFCommonSlideData(notes.getCSld()), xhtml);
             }
             xhtml.endElement("div");

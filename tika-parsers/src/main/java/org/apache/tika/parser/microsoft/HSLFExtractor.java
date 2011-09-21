@@ -39,7 +39,12 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             throws IOException, SAXException, TikaException {
         PowerPointExtractor powerPointExtractor =
             new PowerPointExtractor(filesystem);
-        xhtml.element("p", powerPointExtractor.getText(true, true));
+        powerPointExtractor.setSlidesByDefault(true);
+        powerPointExtractor.setNotesByDefault(true);
+        powerPointExtractor.setCommentsByDefault(true);
+        powerPointExtractor.setMasterByDefault(true);
+        
+        xhtml.element("p", powerPointExtractor.getText());
 
         List<OLEShape> shapeList = powerPointExtractor.getOLEShapes();
         for (OLEShape shape : shapeList) {
