@@ -60,6 +60,7 @@ import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
@@ -273,7 +274,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             // Create event factory and process Workbook (fire events)
             DocumentInputStream documentInputStream = filesystem.createDocumentInputStream("Workbook");
             HSSFEventFactory eventFactory = new HSSFEventFactory();
-            eventFactory.processEvents(hssfRequest, documentInputStream);
+            try {
+                eventFactory.processEvents(hssfRequest, documentInputStream);
+            } catch (org.apache.poi.EncryptedDocumentException e) {
+                throw new EncryptedDocumentException(e);
+            }
             
             // Output any extra text that came after all the sheets
             processExtraText(); 
