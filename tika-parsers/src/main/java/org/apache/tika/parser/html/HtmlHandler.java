@@ -18,6 +18,7 @@ package org.apache.tika.parser.html;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -33,19 +34,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-@SuppressWarnings("serial")
 class HtmlHandler extends TextContentHandler {
 
     // List of attributes that need to be resolved.
-    private static final Set<String> URI_ATTRIBUTES = new HashSet<String>() {{
-        add("src");
-        add("href");
-        add("longdesc");
-        add("data");
-        add("cite");
-        add("codebase");
-        add("classid");
-    }};
+    private static final Set<String> URI_ATTRIBUTES =
+        new HashSet<String>(Arrays.asList("src", "href", "longdesc", "cite"));
 
     private final HtmlMapper mapper;
 
