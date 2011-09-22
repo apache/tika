@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -65,7 +66,7 @@ public class FeedParser extends AbstractParser {
         // set the encoding?
         try {
             SyndFeed feed = new SyndFeedInput().build(
-                    new InputSource(stream));
+                    new InputSource(new CloseShieldInputStream(stream)));
 
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());

@@ -32,6 +32,7 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -57,18 +58,19 @@ public class OOXMLExtractorFactory {
             OOXMLExtractor extractor;
 
             POIXMLTextExtractor poiExtractor;
-            if(stream instanceof TikaInputStream && 
-            	    ((TikaInputStream)stream).getOpenContainer() != null) {
-               poiExtractor = ExtractorFactory.createExtractor(
-                    (OPCPackage)((TikaInputStream)stream).getOpenContainer()
-               );
-            } else if (stream instanceof TikaInputStream &&
-                    ((TikaInputStream) stream).hasFile()) {
-                poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(((TikaInputStream) stream).getFile());
+            TikaInputStream tis = TikaInputStream.cast(stream);
+            if (tis != null && tis.getOpenContainer() instanceof OPCPackage) {
+                poiExtractor = ExtractorFactory.createExtractor(
+                        (OPCPackage) tis.getOpenContainer());
+            } else if (tis != null && tis.hasFile()) {
+                poiExtractor = (POIXMLTextExtractor)
+                        ExtractorFactory.createExtractor(tis.getFile());
             } else {
-               poiExtractor = (POIXMLTextExtractor) ExtractorFactory.createExtractor(stream);
+                InputStream shield = new CloseShieldInputStream(stream);
+                poiExtractor = (POIXMLTextExtractor)
+                        ExtractorFactory.createExtractor(shield);
             }
-            
+
             POIXMLDocument document = poiExtractor.getDocument();
             if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
                extractor = new XSSFExcelExtractorDecorator(

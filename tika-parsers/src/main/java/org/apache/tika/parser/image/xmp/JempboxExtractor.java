@@ -44,14 +44,10 @@ public class JempboxExtractor {
     public JempboxExtractor(Metadata metadata) {
         this.metadata = metadata;
     }
-    
-    public void parse(InputStream file)
-            throws IOException, TikaException {
-    	
+
+    public void parse(InputStream file) throws IOException, TikaException {
         ByteArrayOutputStream xmpraw = new ByteArrayOutputStream();
-        boolean found = scanner.parse(file, xmpraw);
-        file.close();
-        if (!found) {
+        if (!scanner.parse(file, xmpraw)) {
             return;
         }
 

@@ -35,6 +35,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -166,13 +167,15 @@ public class OfficeParser extends AbstractParser {
         NPOIFSFileSystem filesystem;
         TikaInputStream tstream = TikaInputStream.cast(stream);
         if (tstream == null) {
-            filesystem = new NPOIFSFileSystem(stream);
+            filesystem =
+                new NPOIFSFileSystem(new CloseShieldInputStream(stream));
         } else if (tstream.getOpenContainer() instanceof NPOIFSFileSystem) {
             filesystem = (NPOIFSFileSystem) tstream.getOpenContainer();
         } else if (tstream.hasFile()) {
             filesystem = new NPOIFSFileSystem(tstream.getFileChannel());
         } else {
-            filesystem = new NPOIFSFileSystem(tstream);
+            filesystem =
+                new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
         }
 
         // Parse summary entries first, to make metadata available early

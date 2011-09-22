@@ -31,6 +31,7 @@ import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
@@ -71,7 +72,8 @@ public class PDFParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        PDDocument pdfDocument = PDDocument.load(stream, true);
+        PDDocument pdfDocument =
+            PDDocument.load(new CloseShieldInputStream(stream), true);
         try {
             if (pdfDocument.isEncrypted()) {
                 try {
