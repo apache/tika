@@ -198,8 +198,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
               MAPIRtfAttribute rtf = new MAPIRtfAttribute(
                     MAPIProperty.RTF_COMPRESSED, Types.BINARY, chunk.getValue()
               );
-              RTFParser rtfParser = new RTFParser();
               // Disabled pending a fix to TIKA-632
+//              RTFParser rtfParser = new RTFParser();
 //              rtfParser.parse(
 //                    new ByteArrayInputStream(rtf.getData()),
 //                    xhtml, new Metadata(), new ParseContext()

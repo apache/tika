@@ -172,4 +172,47 @@ public class OutlookParserTest extends TestCase {
         assertEquals(2, content.split("<body>").length);
         //assertEquals(2, content.split("<\\/body>").length); // TODO Fix
     }
+    
+    /**
+     * Disabled pending a fix for TIKA-632
+     */
+    public void DISABLEDtestOutlookHTMLfromRTF() throws Exception {
+        Parser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+       
+        // Check the HTML version
+        StringWriter sw = new StringWriter();
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                 SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        handler.setResult(new StreamResult(sw));
+
+        InputStream stream = OutlookParserTest.class.getResourceAsStream(
+                "/test-documents/test-outlook2003.msg");
+        try {
+           parser.parse(stream, handler, metadata, new ParseContext());
+        } finally {
+           stream.close();
+        }
+         
+        // As the HTML version should have been processed, ensure
+        //  we got some of the links
+        String content = sw.toString().replaceAll("<p>\\s+","<p>");
+//System.err.println(content);
+        assertTrue(content.contains("<dd>New Outlook User</dd>"));
+        assertTrue(content.contains("designed <i>to help you"));
+        assertTrue(content.contains("<p>Cached Exchange Mode"));
+        
+        // Link - check text around it, and the link itself
+        assertTrue(content.contains("sign up for a free subscription"));
+        assertTrue(content.contains("Office Newsletter"));
+        assertTrue(content.contains("newsletter will be sent to you"));
+        assertTrue(content.contains("http://r.office.microsoft.com/r/rlidNewsletterSignUp?clid=1033"));
+        
+        // Make sure we don't have nested html docs
+        assertEquals(2, content.split("<body>").length);
+        //assertEquals(2, content.split("<\\/body>").length); // TODO Fix
+    }
 }
