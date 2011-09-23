@@ -282,4 +282,12 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     private InputStream         fInputStream = null;  // User's input stream, or null if the user
                                                       //   gave us a byte array.
 
+    public String toString() {
+       String s = "Match of " + fRecognizer.getName();
+       if(fRecognizer.getLanguage() != null) {
+          s += " in " + fRecognizer.getLanguage();
+       }
+       s += " with confidence " + fConfidence;
+       return s;
+    }
 }
