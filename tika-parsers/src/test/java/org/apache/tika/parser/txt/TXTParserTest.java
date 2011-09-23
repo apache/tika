@@ -58,7 +58,7 @@ public class TXTParserTest extends TestCase {
         assertTrue(content.contains("autodetection"));
         assertTrue(content.contains("stream"));
     }
-
+    
     public void testUTF8Text() throws Exception {
         String text = "I\u00F1t\u00EBrn\u00E2ti\u00F4n\u00E0liz\u00E6ti\u00F8n";
 
@@ -202,6 +202,17 @@ public class TXTParserTest extends TestCase {
 
         assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("IBM500", metadata.get(Metadata.CONTENT_ENCODING));
+        
+        // Additional check that it isn't too eager on short blocks of text
+        metadata = new Metadata();
+        writer = new StringWriter();
+        parser.parse(
+                new ByteArrayInputStream("<html><body>hello world</body></html>".getBytes("UTF-8")),
+                new WriteOutContentHandler(writer),
+                metadata,
+                new ParseContext());
+
+        assertNotSame("IBM500", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
 }
