@@ -191,4 +191,17 @@ public class TXTParserTest extends TestCase {
         assertEquals("IBM866", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
+    public void testEBCDIC_CP500() throws Exception {
+        Metadata metadata = new Metadata();
+        StringWriter writer = new StringWriter();
+        parser.parse(
+                TXTParserTest.class.getResourceAsStream("/test-documents/english.cp500.txt"),
+                new WriteOutContentHandler(writer),
+                metadata,
+                new ParseContext());
+
+        assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("IBM500", metadata.get(Metadata.CONTENT_ENCODING));
+    }
+
 }
