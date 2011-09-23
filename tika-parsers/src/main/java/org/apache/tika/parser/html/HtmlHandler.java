@@ -169,9 +169,21 @@ class HtmlHandler extends TextContentHandler {
             return;
         }
 
+        boolean isObject = name.equals("object");
+        String codebase = null;
+        if (isObject) {
+            codebase = atts.getValue("", "codebase");
+            if (codebase != null) {
+                codebase = resolve(codebase);
+            } else {
+                codebase = metadata.get(Metadata.CONTENT_LOCATION);
+            }
+        }
+
         AttributesImpl newAttributes = new AttributesImpl(atts);
         for (int att = 0; att < newAttributes.getLength(); att++) {
-            String normAttrName = mapper.mapSafeAttribute(name, newAttributes.getLocalName(att));
+            String attrName = newAttributes.getLocalName(att);
+            String normAttrName = mapper.mapSafeAttribute(name, attrName);
             if (normAttrName == null) {
                 newAttributes.removeAttribute(att);
                 att--;
@@ -183,6 +195,14 @@ class HtmlHandler extends TextContentHandler {
                 // into the HtmlMapper code.
                 if (URI_ATTRIBUTES.contains(normAttrName)) {
                     newAttributes.setValue(att, resolve(newAttributes.getValue(att)));
+                } else if (isObject && "codebase".equals(normAttrName)) {
+                    newAttributes.setValue(att, codebase);
+                } else if (isObject
+                        && ("data".equals(normAttrName)
+                                || "classid".equals(normAttrName))) {
+                    newAttributes.setValue(
+                            att,
+                            resolve(codebase, newAttributes.getValue(att)));
                 }
             }
         }
@@ -244,16 +264,17 @@ class HtmlHandler extends TextContentHandler {
     }
 
     private String resolve(String url) {
-        url = url.trim();
-        
-        // Return the URL as-is if no base URL is available
-        if (metadata.get(Metadata.CONTENT_LOCATION) == null) {
-            return url;
-        }
+        return resolve(metadata.get(Metadata.CONTENT_LOCATION), url);
+    }
 
-        // Check for common non-hierarchical and pseudo URI prefixes
+    private String resolve(String base, String url) {
+        url = url.trim();
+
+        // Return the URL as-is if no base URL is available or if the URL
+        // matches a common non-hierarchical or pseudo URI prefix
         String lower = url.toLowerCase(Locale.ENGLISH);
-        if (lower.startsWith("urn:")
+        if (base == null
+                || lower.startsWith("urn:")
                 || lower.startsWith("mailto:")
                 || lower.startsWith("tel:")
                 || lower.startsWith("data:")
@@ -263,19 +284,20 @@ class HtmlHandler extends TextContentHandler {
         }
 
         try {
-            URL base = new URL(metadata.get(Metadata.CONTENT_LOCATION).trim());
+            URL baseURL = new URL(base.trim());
 
             // We need to handle one special case, where the relativeUrl is
             // just a query string (like "?pid=1"), and the baseUrl doesn't
             // end with a '/'. In that case, the URL class removes the last
             // portion of the path, which we don't want.
-            String path = base.getPath();
+            String path = baseURL.getPath();
             if (url.startsWith("?") && path.length() > 0 && !path.endsWith("/")) {
                 return new URL(
-                        base.getProtocol(), base.getHost(), base.getPort(),
-                        base.getPath() + url).toExternalForm();
+                        baseURL.getProtocol(),
+                        baseURL.getHost(), baseURL.getPort(),
+                        baseURL.getPath() + url).toExternalForm();
             } else {
-                return new URL(base, url).toExternalForm();
+                return new URL(baseURL, url).toExternalForm();
             }
         } catch (MalformedURLException e) {
             // Unknown or broken format; just return the URL as received.
