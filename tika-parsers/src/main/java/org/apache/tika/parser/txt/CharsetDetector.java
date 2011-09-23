@@ -528,6 +528,13 @@ public class CharsetDetector {
         recognizers.add(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_rtl());
         recognizers.add(new CharsetRecog_sbcs.CharsetRecog_IBM420_ar_ltr());
 
+        recognizers.add(new CharsetRecog_sbcs.CharsetRecog_EBCDIC_500_en());
+        recognizers.add(new CharsetRecog_sbcs.CharsetRecog_EBCDIC_500_de());
+        recognizers.add(new CharsetRecog_sbcs.CharsetRecog_EBCDIC_500_es());
+        recognizers.add(new CharsetRecog_sbcs.CharsetRecog_EBCDIC_500_fr());
+        recognizers.add(new CharsetRecog_sbcs.CharsetRecog_EBCDIC_500_it());
+        recognizers.add(new CharsetRecog_sbcs.CharsetRecog_EBCDIC_500_nl());
+        
         recognizers.add(new CharsetRecog_sbcs.CharsetRecog_IBM866_ru());
 
         // Create an array of all charset names, as a side effect.

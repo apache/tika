@@ -1334,6 +1334,123 @@ abstract class CharsetRecog_sbcs extends CharsetRecognizer {
             matchFinish(det);
             return result;
         }
+    }
+    
+    static abstract class CharsetRecog_EBCDIC_500 extends CharsetRecog_sbcs
+    {
+        // This maps EBCDIC 500 codepoints onto either space (not of interest), or a lower
+        //  case ISO_8859_1 number/letter/accented-letter codepoint for ngram matching
+        // Because we map to ISO_8859_1, we can re-use the ngrams from those detectors
+        protected static byte[] byteMap = {
+/* 0x00-0x07 */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x08-0x0f */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x10-0x17 */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x18-0x1f */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x20-0x27 */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x28-0x2f */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x30-0x37 */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x38-0x3f */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x40-0x47 */ (byte)0x20, (byte)0x20, (byte)0xe2, (byte)0xe4, (byte)0xe0, (byte)0xe1, (byte)0xe3, (byte)0xe5,
+/* 0x48-0x4f */ (byte)0xe7, (byte)0xf1, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x50-0x57 */ (byte)0x20, (byte)0xe9, (byte)0xea, (byte)0xeb, (byte)0xe8, (byte)0xed, (byte)0xee, (byte)0xef,
+/* 0x58-0x5f */ (byte)0xec, (byte)0xdf, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x60-0x67 */ (byte)0x20, (byte)0x20, (byte)0xe2, (byte)0xe4, (byte)0xe0, (byte)0xe1, (byte)0xe3, (byte)0xe5,
+/* 0x68-0x6f */ (byte)0xe7, (byte)0xf1, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x70-0x77 */ (byte)0xf8, (byte)0xe9, (byte)0xea, (byte)0xeb, (byte)0xe8, (byte)0xed, (byte)0xee, (byte)0xef,
+/* 0x78-0x7f */ (byte)0xec, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x80-0x87 */ (byte)0xd8, (byte)'a',  (byte)'b',  (byte)'c',  (byte)'d',  (byte)'e',  (byte)'f',  (byte)'g',
+/* 0x88-0x8f */ (byte)'h',  (byte)'i',  (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0x90-0x97 */ (byte)0x20, (byte)'j',  (byte)'k',  (byte)'l',  (byte)'m',  (byte)'n',  (byte)'o',  (byte)'p', 
+/* 0x98-0x9f */ (byte)'q',  (byte)'r',  (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0xa0-0xa7 */ (byte)0x20, (byte)0x20, (byte)'s',  (byte)'t',  (byte)'u',  (byte)'v',  (byte)'w',  (byte)'x',
+/* 0xa8-0xaf */ (byte)'y',  (byte)'z',  (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0xb0-0xb7 */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0xb8-0xbf */ (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20, (byte)0x20,
+/* 0xc0-0xc7 */ (byte)0x20, (byte)'a',  (byte)'b',  (byte)'c',  (byte)'d',  (byte)'e',  (byte)'f',  (byte)'g',
+/* 0xc8-0xcf */ (byte)'h',  (byte)'i',  (byte)0x20, (byte)0xf4, (byte)0xf6, (byte)0xf2, (byte)0xf3, (byte)0xf5,
+/* 0xd0-0xd7 */ (byte)0x20, (byte)'j',  (byte)'k',  (byte)'l',  (byte)'m',  (byte)'n',  (byte)'o',  (byte)'p', 
+/* 0xd8-0xdf */ (byte)'q',  (byte)'r',  (byte)0x20, (byte)0xfb, (byte)0xfc, (byte)0xf9, (byte)0xfa, (byte)0xff,
+/* 0xe0-0xe7 */ (byte)0x20, (byte)0x20, (byte)'s',  (byte)'t',  (byte)'u',  (byte)'v',  (byte)'w',  (byte)'x',
+/* 0xe8-0xef */ (byte)'y',  (byte)'z',  (byte)0x20, (byte)0xf4, (byte)0xf6, (byte)0xf2, (byte)0xf3, (byte)0xf5,
+/* 0xf0-0xf7 */ (byte)'0',  (byte)'1',  (byte)'2',  (byte)'3',  (byte)'4',  (byte)'5',  (byte)'6',  (byte)'7', 
+/* 0xf8-0xff */ (byte)'8',  (byte)'9',  (byte)0x20, (byte)0xfb, (byte)0xfc, (byte)0xf9, (byte)0xfa, (byte)0x20,
+        };
         
+        public String getName()
+        {
+            return "IBM500";
+        }
+    }
+    
+    static class CharsetRecog_EBCDIC_500_en extends CharsetRecog_EBCDIC_500
+    {
+        public String getLanguage()
+        {
+            return "en";
+        }
+        public int match(CharsetDetector det)
+        {
+            return match(det, CharsetRecog_8859_1_en.ngrams, byteMap);
+        }
+    }
+    
+    static class CharsetRecog_EBCDIC_500_de extends CharsetRecog_EBCDIC_500
+    {
+        public String getLanguage()
+        {
+            return "de";
+        }
+        public int match(CharsetDetector det)
+        {
+            return match(det, CharsetRecog_8859_1_de.ngrams, byteMap);
+        }
+    }
+    
+    static class CharsetRecog_EBCDIC_500_fr extends CharsetRecog_EBCDIC_500
+    {
+        public String getLanguage()
+        {
+            return "fr";
+        }
+        public int match(CharsetDetector det)
+        {
+            return match(det, CharsetRecog_8859_1_fr.ngrams, byteMap);
+        }
+    }
+    
+    static class CharsetRecog_EBCDIC_500_es extends CharsetRecog_EBCDIC_500
+    {
+        public String getLanguage()
+        {
+            return "es";
+        }
+        public int match(CharsetDetector det)
+        {
+            return match(det, CharsetRecog_8859_1_es.ngrams, byteMap);
+        }
+    }
+    
+    static class CharsetRecog_EBCDIC_500_it extends CharsetRecog_EBCDIC_500
+    {
+        public String getLanguage()
+        {
+            return "it";
+        }
+        public int match(CharsetDetector det)
+        {
+            return match(det, CharsetRecog_8859_1_it.ngrams, byteMap);
+        }
+    }
+    
+    static class CharsetRecog_EBCDIC_500_nl extends CharsetRecog_EBCDIC_500
+    {
+        public String getLanguage()
+        {
+            return "nl";
+        }
+        public int match(CharsetDetector det)
+        {
+            return match(det, CharsetRecog_8859_1_nl.ngrams, byteMap);
+        }
     }
 }
