@@ -545,7 +545,10 @@ public class HtmlParserTest extends TestCase {
         String result = sw.toString();
         
         // <object> tag should exist with fully resolved URLs
-        assertTrue(Pattern.matches("(?s).*<object data=\"http://domain.com/object.data\".*<param .* name=\"name\" value=\"value\"/>.*</object>.*$", result));
+        assertTrue(
+              "<object> tag not correctly found in:\n" + result,
+              Pattern.matches("(?s).*<object data=\"http://domain.com/object.data\".*<param .* name=\"name\" value=\"value\"/>.*</object>.*$", result)
+        );
     }
 
     /**
