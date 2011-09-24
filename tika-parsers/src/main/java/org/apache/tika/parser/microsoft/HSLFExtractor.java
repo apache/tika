@@ -66,12 +66,15 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          }
 
          // Slide master, if present
+         // TODO: re-enable this once we fix TIKA-712
+         /*
          MasterSheet master = slide.getMasterSheet();
          if(master != null) {
             xhtml.startElement("p", "class", "slide-master-content");
             textRunsToText(xhtml, master.getTextRuns() );
             xhtml.endElement("p");
          }
+         */
 
          // Slide text
          {

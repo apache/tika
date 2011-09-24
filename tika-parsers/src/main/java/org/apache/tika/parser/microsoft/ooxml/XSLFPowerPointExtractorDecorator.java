@@ -95,10 +95,13 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
             
             // Get text from the master slide
+            // TODO: re-enable this once we fix TIKA-712
+            /*
             if(master != null) {
                // TODO In POI 3.8 beta 5, improve how we get this
                extractShapeContent(new XSLFCommonSlideData(master.getXmlObject().getCSld()), xhtml);
             }
+            */
 
             if (notes != null) {
                // TODO In POI 3.8 beta 5, improve how we get this
