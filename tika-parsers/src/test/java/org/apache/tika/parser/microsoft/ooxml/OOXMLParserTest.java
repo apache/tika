@@ -618,7 +618,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
 
-    public void testMasterSlide() throws Exception {
+    public void testMasterFooter() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
@@ -633,4 +633,42 @@ public class OOXMLParserTest extends TikaTest {
         String content = handler.toString();
         assertContains("Master footer is here", content);
     }
+
+    // TODO: once we fix TIKA-712, re-enable this
+    /*
+    public void testMasterText() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = OOXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterText.pptx");
+        try {
+            new AutoDetectParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        String content = handler.toString();
+        assertContains("Text that I added to the master slide", content);
+    }
+    */
+
+    // TODO: once we fix TIKA-712, re-enable this
+    /*
+    public void testMasterText2() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = OOXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterText2.pptx");
+        try {
+            new AutoDetectParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        String content = handler.toString();
+        assertContains("Text that I added to the master slide", content);
+    }
+    */
 }

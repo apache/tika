@@ -115,7 +115,7 @@ public class PowerPointParserTest extends TikaTest {
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
-    public void testMasterSlide() throws Exception {
+    public void testMasterFooter() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
@@ -130,4 +130,43 @@ public class PowerPointParserTest extends TikaTest {
         String content = handler.toString();
         assertContains("Master footer is here", content);
     }
+
+    // TODO: once we fix TIKA-712, re-enable this
+    /*
+    public void testMasterText() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterText.ppt");
+        try {
+            new OfficeParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        String content = handler.toString();
+        assertContains("Text that I added to the master slide", content);
+    }
+    */
+
+    // TODO: once we fix TIKA-712, re-enable this
+    /*
+    public void testMasterText2() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterText2.ppt");
+        try {
+            new OfficeParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        String content = handler.toString();
+        assertContains("Text that I added to the master slide", content);
+    }
+    */
+
 }
