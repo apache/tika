@@ -28,7 +28,7 @@ import org.xml.sax.SAXException;
  * Abstract base class for new parsers. This method implements the old
  * deprecated parse method so subclasses won't have to.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 public abstract class AbstractParser implements Parser {
 

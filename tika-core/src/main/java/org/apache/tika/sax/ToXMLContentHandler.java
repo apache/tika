@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
  * etc.) and to explicitly include namespace declaration attributes and
  * corresponding namespace prefixes in element and attribute names.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 public class ToXMLContentHandler extends ToTextContentHandler {
 
