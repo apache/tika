@@ -77,9 +77,9 @@ public class ToXMLContentHandler extends ToTextContentHandler {
 
     private final String encoding;
 
-    private boolean inStartElement = false;
+    protected boolean inStartElement = false;
 
-    private final Map<String, String> namespaces =
+    protected final Map<String, String> namespaces =
         new HashMap<String, String>();
 
     private ElementInfo currentElement;
