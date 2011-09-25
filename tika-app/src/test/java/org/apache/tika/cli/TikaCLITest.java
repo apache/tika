@@ -16,12 +16,11 @@
  */
 package org.apache.tika.cli;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.net.URI;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -34,19 +33,15 @@ public class TikaCLITest extends TestCase{
     private File profile = null;
     private ByteArrayOutputStream outContent = null;
     private PrintStream stdout = null;
-    private PrintStream reassign = null;
     private URI testDataURI = new File("src/test/resources/test-data/").toURI();
     private String resorcePrefix = testDataURI.toString();
-
 
     public void setUp() throws Exception {
         profile = new File("welsh.ngp");
         outContent = new ByteArrayOutputStream();
         stdout = System.out;
-        reassign = new PrintStream(outContent);
-        System.setOut(reassign);
+        System.setOut(new PrintStream(outContent));
     }
-
 
     /**
      * Creates a welsh language profile
@@ -176,16 +171,6 @@ public class TikaCLITest extends TestCase{
         if(profile != null && profile.exists())
             profile.delete();
         System.setOut(stdout);
-        closeStreams();
-    }
-
-    private void closeStreams() throws IOException {
-        if(outContent != null)
-            outContent.close();
-        if(stdout != null)
-            stdout.close();
-        if(reassign != null)
-            reassign.close();
     }
 
 }
