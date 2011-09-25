@@ -22,7 +22,7 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * Base class for SAX handlers that map SAX events into document metadata.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 class AbstractMetadataHandler extends DefaultHandler {
 

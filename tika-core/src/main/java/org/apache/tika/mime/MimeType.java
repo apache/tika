@@ -340,7 +340,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     /**
      * Returns the list of all known file extensions of this media type.
      *
-     * @since Apache Tika 1.0
+     * @since Apache Tika 0.10
      * @return known extensions in order of preference (best first)
      */
     public List<String> getExtensions() {

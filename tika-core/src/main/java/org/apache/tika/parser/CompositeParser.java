@@ -90,7 +90,7 @@ public class CompositeParser extends AbstractParser {
      * all media types for which more than one parser declares support. This
      * is useful in tracking down conflicting parser definitions.
      *
-     * @since Apache Tika 1.0
+     * @since Apache Tika 0.10
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-660">TIKA-660</a>
      * @param context parsing context
      * @return media types that are supported by at least two component parsers

@@ -478,7 +478,7 @@ public class Tika {
     /**
      * Returns the parser instance used by this facade.
      *
-     * @since Apache Tika 1.0
+     * @since Apache Tika 0.10
      * @return parser instance
      */
     public Parser getParser() {
@@ -488,7 +488,7 @@ public class Tika {
     /**
      * Returns the detector instance used by this facade.
      *
-     * @since Apache Tika 1.0
+     * @since Apache Tika 0.10
      * @return detector instance
      */
     public Detector getDetector() {

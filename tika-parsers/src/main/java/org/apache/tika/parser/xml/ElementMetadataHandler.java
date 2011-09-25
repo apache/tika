@@ -23,7 +23,7 @@ import org.xml.sax.Attributes;
  * SAX event handler that maps the contents of an XML element into
  * a metadata field.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 public class ElementMetadataHandler extends AbstractMetadataHandler {
 

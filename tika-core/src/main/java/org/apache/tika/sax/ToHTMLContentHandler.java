@@ -29,7 +29,7 @@ import org.xml.sax.SAXException;
  * The incoming SAX events are expected to be well-formed (properly nested,
  * etc.) and valid HTML.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 public class ToHTMLContentHandler extends ToXMLContentHandler {
 

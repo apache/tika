@@ -99,7 +99,7 @@ public class TikaInputStream extends TaggedInputStream {
      * is expected to explicitly close the original stream when it's no
      * longer used.
      *
-     * @since Apache Tika 1.0
+     * @since Apache Tika 0.10
      * @param stream normal input stream
      * @return a TikaInputStream instance
      */
@@ -158,7 +158,7 @@ public class TikaInputStream extends TaggedInputStream {
      * Returns the given stream casts to a TikaInputStream, or
      * <code>null</code> if the stream is not a TikaInputStream.
      *
-     * @since Apache Tika 1.0
+     * @since Apache Tika 0.10
      * @param stream normal input stream
      * @return a TikaInputStream instance
      */

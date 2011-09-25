@@ -30,7 +30,7 @@ import org.apache.tika.exception.TikaException;
  * <p>
  * Note that this class is not thread-safe.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 public class TemporaryResources implements Closeable {
 

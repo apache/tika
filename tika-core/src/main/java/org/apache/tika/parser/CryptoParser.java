@@ -40,7 +40,7 @@ import org.xml.sax.SAXException;
  * another parser instance. The decryption key and other settings as well
  * as the delegate parser are taken from the parsing context.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 public abstract class CryptoParser extends DelegatingParser {
 

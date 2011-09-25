@@ -42,7 +42,7 @@ import java.io.InputStream;
  * code in the fictional processStream() method can affect the the state of
  * the original stream.
  *
- * @since Apache Tika 1.0
+ * @since Apache Tika 0.10
  */
 public class LookaheadInputStream extends InputStream {
 
