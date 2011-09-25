@@ -43,9 +43,9 @@ public class SerializerTest extends TestCase {
         assertCharacters("content", new ToXMLContentHandler());
         assertCharacterEscaping("&lt;&amp;\"&gt;", new ToXMLContentHandler());
         assertIgnorableWhitespace(" \t\r\n", new ToXMLContentHandler());
-        assertEmptyElement("<p />", new ToXMLContentHandler());
+        assertEmptyElement("<br />", new ToXMLContentHandler());
         assertEmptyElementWithAttributes(
-                "<p class=\"test\" />",
+                "<meta name=\"foo\" value=\"bar\" />",
                 new ToXMLContentHandler());
         assertEmptyElementWithAttributeEscaping(
                 "<p class=\"&lt;&amp;&quot;&gt;\" />",
@@ -54,6 +54,24 @@ public class SerializerTest extends TestCase {
         assertElementWithAttributes(
                 "<p class=\"test\">content</p>",
                 new ToXMLContentHandler());
+    }
+
+    public void testToHTMLContentHandler() throws Exception {
+        assertStartDocument("", new ToHTMLContentHandler());
+        assertCharacters("content", new ToHTMLContentHandler());
+        assertCharacterEscaping("&lt;&amp;\"&gt;", new ToHTMLContentHandler());
+        assertIgnorableWhitespace(" \t\r\n", new ToHTMLContentHandler());
+        assertEmptyElement("<br>", new ToHTMLContentHandler());
+        assertEmptyElementWithAttributes(
+                "<meta name=\"foo\" value=\"bar\">",
+                new ToHTMLContentHandler());
+        assertEmptyElementWithAttributeEscaping(
+                "<p class=\"&lt;&amp;&quot;&gt;\"></p>",
+                new ToHTMLContentHandler());
+        assertElement("<p>content</p>", new ToHTMLContentHandler());
+        assertElementWithAttributes(
+                "<p class=\"test\">content</p>",
+                new ToHTMLContentHandler());
     }
 
     private void assertStartDocument(String expected, ContentHandler handler)
@@ -83,17 +101,18 @@ public class SerializerTest extends TestCase {
     private void assertEmptyElement(String expected, ContentHandler handler)
             throws Exception {
         AttributesImpl attributes = new AttributesImpl();
-        handler.startElement("", "p", "p", attributes);
-        handler.endElement("", "p", "p");
+        handler.startElement("", "br", "br", attributes);
+        handler.endElement("", "br", "br");
         assertEquals(expected, handler.toString());
     }
 
     private void assertEmptyElementWithAttributes(
             String expected, ContentHandler handler) throws Exception {
         AttributesImpl attributes = new AttributesImpl();
-        attributes.addAttribute("", "class", "class", "CDATA", "test");
-        handler.startElement("", "p", "p", attributes);
-        handler.endElement("", "p", "p");
+        attributes.addAttribute("", "name", "name", "CDATA", "foo");
+        attributes.addAttribute("", "value", "value", "CDATA", "bar");
+        handler.startElement("", "meta", "meta", attributes);
+        handler.endElement("", "meta", "meta");
         assertEquals(expected, handler.toString());
     }
 
