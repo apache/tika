@@ -16,25 +16,26 @@
  */
 package org.apache.tika.sax;
 
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.UUID;
 
+import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * SAX event handler that writes all character content out to
- * a {@link Writer} character stream.
+ * SAX event handler that writes content up to an optional write
+ * limit out to a character stream or other decorated handler.
  */
-public class WriteOutContentHandler extends DefaultHandler {
+public class WriteOutContentHandler extends ContentHandlerDecorator {
 
     /**
-     * The character stream.
+     * The unique tag associated with exceptions from stream.
      */
-    private final Writer writer;
+    private final Serializable tag = UUID.randomUUID();
 
     /**
      * The maximum number of characters to write to the character stream.
@@ -47,9 +48,29 @@ public class WriteOutContentHandler extends DefaultHandler {
      */
     private int writeCount = 0;
 
-    private WriteOutContentHandler(Writer writer, int writeLimit) {
-        this.writer = writer;
+    /**
+     * Creates a content handler that writes content up to the given
+     * write limit to the given content handler.
+     *
+     * @since Apache Tika 1.0
+     * @param handler content handler to be decorated
+     * @param writeLimit write limit
+     */
+    public WriteOutContentHandler(ContentHandler handler, int writeLimit) {
+        super(handler);
         this.writeLimit = writeLimit;
+    }
+
+    /**
+     * Creates a content handler that writes content up to the given
+     * write limit to the given character stream.
+     *
+     * @since Apache Tika 1.0
+     * @param writer character stream
+     * @param writeLimit write limit
+     */
+    public WriteOutContentHandler(Writer writer, int writeLimit) {
+        this(new ToTextContentHandler(writer), writeLimit);
     }
 
     /**
@@ -110,62 +131,19 @@ public class WriteOutContentHandler extends DefaultHandler {
     @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
-        try {
-            if (writeLimit == -1 || writeCount + length <= writeLimit) {
-                writer.write(ch, start, length);
-                writeCount += length;
-            } else {
-                writer.write(ch, start, writeLimit - writeCount);
-                writeCount = writeLimit;
-                throw new WriteLimitReachedException(
-                      "Your document contained more than " + writeLimit + " " +
-                      "characters, and so your requested limit has been " +
-                      "reached. To receive the full text of the document, " +
-                      "increase your limit. " +
-                      "(Text up to the limit is however available)."
-                );
-            }
-        } catch (IOException e) {
-            throw new SAXException("Error writing out character content", e);
+        if (writeLimit == -1 || writeCount + length <= writeLimit) {
+            super.characters(ch, start, length);
+            writeCount += length;
+        } else {
+            super.characters(ch, start, writeLimit - writeCount);
+            writeCount = writeLimit;
+            throw new WriteLimitReachedException(
+                    "Your document contained more than " + writeLimit
+                    + " characters, and so your requested limit has been"
+                    + " reached. To receive the full text of the document,"
+                    + " increase your limit. (Text up to the limit is"
+                    + " however available).", tag);
         }
-    }
-
-
-    /**
-     * Writes the given ignorable characters to the given character stream.
-     */
-    @Override
-    public void ignorableWhitespace(char[] ch, int start, int length)
-            throws SAXException {
-        characters(ch, start, length);
-    }
-
-    /**
-     * Flushes the character stream so that no characters are forgotten
-     * in internal buffers.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-179">TIKA-179</a>
-     * @throws SAXException if the stream can not be flushed
-     */
-    @Override
-    public void endDocument() throws SAXException {
-        try {
-            writer.flush();
-        } catch (IOException e) {
-            throw new SAXException("Error flushing character output", e);
-        }
-    }
-
-    /**
-     * Returns the contents of the internal string buffer where
-     * all the received characters have been collected. Only works
-     * when this object was constructed using the empty default
-     * constructor or by passing a {@link StringWriter} to the
-     * other constructor.
-     */
-    @Override
-    public String toString() {
-        return writer.toString();
     }
 
     /**
@@ -179,7 +157,7 @@ public class WriteOutContentHandler extends DefaultHandler {
      */
     public boolean isWriteLimitReached(Throwable t) {
         if (t instanceof WriteLimitReachedException) {
-            return this == ((WriteLimitReachedException) t).getSource();
+            return tag.equals(((WriteLimitReachedException) t).tag);
         } else {
             return t.getCause() != null && isWriteLimitReached(t.getCause());
         }
@@ -188,13 +166,17 @@ public class WriteOutContentHandler extends DefaultHandler {
     /**
      * The exception used as a signal when the write limit has been reached.
      */
-    private class WriteLimitReachedException extends SAXException {
-        public WriteLimitReachedException(String message) {
-           super(message);
-        }
+    private static class WriteLimitReachedException extends SAXException {
 
-        public WriteOutContentHandler getSource() {
-            return WriteOutContentHandler.this;
+        /** Serial version UID */
+        private static final long serialVersionUID = -1850581945459429943L;
+
+        /** Serializable tag of the handler that caused this exception */
+        private final Serializable tag;
+
+        public WriteLimitReachedException(String message, Serializable tag) {
+           super(message);
+           this.tag = tag;
         }
 
     }
