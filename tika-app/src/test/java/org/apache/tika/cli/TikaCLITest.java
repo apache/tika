@@ -29,155 +29,156 @@ import junit.framework.TestCase;
  * Tests the Tika's cli
  */
 public class TikaCLITest extends TestCase{
+
     /* Test members */
-	private File profile = null;
-	private ByteArrayOutputStream outContent = null;
-	private PrintStream stdout = null;
-	private PrintStream reassign = null;
-	private URI testDataURI = new File("src/test/resources/test-data/").toURI();
-	private String resorcePrefix = testDataURI.toString();
-	
-	
-	public void setUp() throws Exception {
-		profile = new File("welsh.ngp");
-		outContent = new ByteArrayOutputStream();
-		stdout = System.out;
-		reassign = new PrintStream(outContent);
-		System.setOut(reassign);
-	}
-	
-    	
-	/**
-	 * Creates a welsh language profile
-	 * 
-	 * @throws Exception
-	 */
-	public void testCreateProfile() throws Exception {
-		String[] params = {"--create-profile=welsh", "-eUTF-8", resorcePrefix + "welsh_corpus.txt"};
-		TikaCLI.main(params);
-		Assert.assertTrue(profile.exists());
-	}
-	
-	/**
-	 * Tests --list-parser-detail option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testListParserDetail() throws Exception{
-		String[] params = {"--list-parser-detail"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("application/vnd.oasis.opendocument.text-web"));
-	}
-	
-	/**
-	 * Tests --list-parser option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testListParsers() throws Exception{
-		String[] params = {"--list-parser"};
-		TikaCLI.main(params);
-		//Assert was commented temporarily for finding the problem
-//		Assert.assertTrue(outContent != null && outContent.toString().contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
-	}
-	
-	/**
-	 * Tests -x option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testXMLOutput() throws Exception{
-		String[] params = {"-x", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
-	}
-	
-	/**
-	 * Tests a -h option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testHTMLOutput() throws Exception{
-		String[] params = {"-h", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
-	}
-	
-	/**
-	 * Tests -t option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testTextOutput() throws Exception{
-		String[] params = {"-t", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("finished off the cake"));
-	}
-	
-	/**
-	 * Tests -m option of the cli
-	 * @throws Exception
-	 */
-	public void testMetadataOutput() throws Exception{
-		String[] params = {"-m", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("text/plain"));
-	}
-	
-	/**
-	 * Tests -l option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testLanguageOutput() throws Exception{
-		String[] params = {"-l", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("en"));
-	}
-	
-	/**
-	 * Tests -d option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testDetectOutput() throws Exception{
-		String[] params = {"-d", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("text/plain"));
-	}
-	
-	/**
-	 * Tests --list-met-models option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testListMetModels() throws Exception{
-		String[] params = {"--list-met-models", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("text/plain"));
-	}
-	
-	/**
-	 * Tests --list-supported-types option of the cli
-	 * 
-	 * @throws Exception
-	 */
-	public void testListSupportedTypes() throws Exception{
-		String[] params = {"--list-supported-types", resorcePrefix + "alice.cli.test"};
-		TikaCLI.main(params);
-		Assert.assertTrue(outContent.toString().contains("supertype: application/octet-stream"));
-	}
-	
-	/**
-	 * Tears down the test. Returns the System.out
-	 */
-	public void tearDown() throws Exception {
-		if(profile != null && profile.exists())
-			profile.delete();
-		System.setOut(stdout);
-		closeStreams();
-	}
-	
+    private File profile = null;
+    private ByteArrayOutputStream outContent = null;
+    private PrintStream stdout = null;
+    private PrintStream reassign = null;
+    private URI testDataURI = new File("src/test/resources/test-data/").toURI();
+    private String resorcePrefix = testDataURI.toString();
+
+
+    public void setUp() throws Exception {
+        profile = new File("welsh.ngp");
+        outContent = new ByteArrayOutputStream();
+        stdout = System.out;
+        reassign = new PrintStream(outContent);
+        System.setOut(reassign);
+    }
+
+
+    /**
+     * Creates a welsh language profile
+     * 
+     * @throws Exception
+     */
+    public void testCreateProfile() throws Exception {
+        String[] params = {"--create-profile=welsh", "-eUTF-8", resorcePrefix + "welsh_corpus.txt"};
+        TikaCLI.main(params);
+        Assert.assertTrue(profile.exists());
+    }
+
+    /**
+     * Tests --list-parser-detail option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testListParserDetail() throws Exception{
+        String[] params = {"--list-parser-detail"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("application/vnd.oasis.opendocument.text-web"));
+    }
+
+    /**
+     * Tests --list-parser option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testListParsers() throws Exception{
+        String[] params = {"--list-parser"};
+        TikaCLI.main(params);
+        //Assert was commented temporarily for finding the problem
+        //		Assert.assertTrue(outContent != null && outContent.toString().contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
+    }
+
+    /**
+     * Tests -x option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testXMLOutput() throws Exception{
+        String[] params = {"-x", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
+    }
+
+    /**
+     * Tests a -h option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testHTMLOutput() throws Exception{
+        String[] params = {"-h", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
+    }
+
+    /**
+     * Tests -t option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testTextOutput() throws Exception{
+        String[] params = {"-t", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("finished off the cake"));
+    }
+
+    /**
+     * Tests -m option of the cli
+     * @throws Exception
+     */
+    public void testMetadataOutput() throws Exception{
+        String[] params = {"-m", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("text/plain"));
+    }
+
+    /**
+     * Tests -l option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testLanguageOutput() throws Exception{
+        String[] params = {"-l", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("en"));
+    }
+
+    /**
+     * Tests -d option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testDetectOutput() throws Exception{
+        String[] params = {"-d", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("text/plain"));
+    }
+
+    /**
+     * Tests --list-met-models option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testListMetModels() throws Exception{
+        String[] params = {"--list-met-models", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("text/plain"));
+    }
+
+    /**
+     * Tests --list-supported-types option of the cli
+     * 
+     * @throws Exception
+     */
+    public void testListSupportedTypes() throws Exception{
+        String[] params = {"--list-supported-types", resorcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        Assert.assertTrue(outContent.toString().contains("supertype: application/octet-stream"));
+    }
+
+    /**
+     * Tears down the test. Returns the System.out
+     */
+    public void tearDown() throws Exception {
+        if(profile != null && profile.exists())
+            profile.delete();
+        System.setOut(stdout);
+        closeStreams();
+    }
+
     private void closeStreams() throws IOException {
         if(outContent != null)
             outContent.close();
@@ -186,4 +187,5 @@ public class TikaCLITest extends TestCase{
         if(reassign != null)
             reassign.close();
     }
+
 }
