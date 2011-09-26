@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.10-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -133,6 +133,16 @@
       <organization>NASA Jet Propulsion Laboratory</organization>
       <organizationUrl>http://www.jpl.nasa.gov</organizationUrl>
       <timezone>-8</timezone>
+      <properties />
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Michael McCandless</name>
+      <id>mikemccand</id>
+      <email>mikemccand@apache.org</email>
+      <organization>IBM</organization>
       <properties />
       <roles>
         <role>committer</role>
