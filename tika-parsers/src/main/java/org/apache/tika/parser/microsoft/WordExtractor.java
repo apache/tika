@@ -158,7 +158,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        if (document.getStyleSheet().numStyles()>p.getStyleIndex()) {
            StyleDescription style =
               document.getStyleSheet().getStyleDescription(p.getStyleIndex());
-           tas = buildParagraphTagAndStyle(style.getName(), (parentTableLevel>0));
+           if (style!=null) {
+               tas = buildParagraphTagAndStyle(style.getName(), (parentTableLevel>0));
+           } else {
+               tas = new TagAndStyle("p", null);
+           }
        } else {
            tas = new TagAndStyle("p", null);
        }
