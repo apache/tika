@@ -36,6 +36,7 @@
 
   <properties>
     <poi.version>3.8-beta4</poi.version>
+    <codec.version>1.5</codec.version> <!-- NOTE: sync with POI -->
     <mime4j.version>0.7</mime4j.version>
   </properties>
 
@@ -68,7 +69,7 @@
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-      <version>1.4</version>
+      <version>${codec.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
