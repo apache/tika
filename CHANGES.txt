@@ -28,6 +28,179 @@ The most notable changes in Tika 0.10 over previous releases are:
    from version 0.6 to 0.7 (TIKA-716). The parser also now accepts a
    MimeConfig object in the ParseContext as configuration (TIKA-640).
 
+Tika relies on the current set of major dependencies (generated using 
+mvn dependency:tree from the top-level tika src dir):
+
+org.apache.tika:tika-parent:pom:0.10
+org.apache.tika:tika-core:bundle:0.10
++- org.osgi:org.osgi.core:jar:4.0.0:provided
++- biz.aQute:bndlib:jar:1.43.0:provided
+\- junit:junit:jar:3.8.1:test
+org.apache.tika:tika-parsers:bundle:0.10
++- org.apache.tika:tika-core:jar:0.10:compile
++- edu.ucar:netcdf:jar:4.2-min:compile
+|  \- org.slf4j:slf4j-api:jar:1.5.6:compile
++- org.apache.james:apache-mime4j-core:jar:0.7:compile
++- org.apache.james:apache-mime4j-dom:jar:0.7:compile
++- org.apache.commons:commons-compress:jar:1.1:compile
++- commons-codec:commons-codec:jar:1.4:compile
++- org.apache.pdfbox:pdfbox:jar:1.6.0:compile
+|  +- org.apache.pdfbox:fontbox:jar:1.6.0:compile
+|  +- org.apache.pdfbox:jempbox:jar:1.6.0:compile
+|  \- commons-logging:commons-logging:jar:1.1.1:compile
++- org.bouncycastle:bcmail-jdk15:jar:1.45:compile
++- org.bouncycastle:bcprov-jdk15:jar:1.45:compile
++- org.apache.poi:poi:jar:3.8-beta4:compile
++- org.apache.poi:poi-scratchpad:jar:3.8-beta4:compile
++- org.apache.poi:poi-ooxml:jar:3.8-beta4:compile
+|  +- org.apache.poi:poi-ooxml-schemas:jar:3.8-beta4:compile
+|  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:compile
+|  \- dom4j:dom4j:jar:1.6.1:compile
++- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:compile
++- org.ccil.cowan.tagsoup:tagsoup:jar:1.2.1:compile
++- asm:asm:jar:3.1:compile
++- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:compile
++- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:compile
++- rome:rome:jar:0.9:compile
+|  \- jdom:jdom:jar:1.0:compile
++- junit:junit:jar:3.8.1:test
++- org.mockito:mockito-core:jar:1.7:test
+|  +- org.hamcrest:hamcrest-core:jar:1.1:test
+|  \- org.objenesis:objenesis:jar:1.0:test
+\- org.slf4j:slf4j-log4j12:jar:1.5.6:test
+   \- log4j:log4j:jar:1.2.14:test
+org.apache.tika:tika-app:bundle:0.10
++- junit:junit:jar:3.8.2:test
++- org.apache.tika:tika-parsers:jar:0.10:provided
+|  +- org.apache.tika:tika-core:jar:0.10:provided
+|  +- edu.ucar:netcdf:jar:4.2-min:provided
+|  +- org.apache.james:apache-mime4j-core:jar:0.7:provided
+|  +- org.apache.james:apache-mime4j-dom:jar:0.7:provided
+|  +- org.apache.commons:commons-compress:jar:1.1:provided
+|  +- commons-codec:commons-codec:jar:1.4:provided
+|  +- org.apache.pdfbox:pdfbox:jar:1.6.0:provided
+|  |  +- org.apache.pdfbox:fontbox:jar:1.6.0:provided
+|  |  +- org.apache.pdfbox:jempbox:jar:1.6.0:provided
+|  |  \- commons-logging:commons-logging:jar:1.1.1:provided
+|  +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+|  +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+|  +- org.apache.poi:poi:jar:3.8-beta4:provided
+|  +- org.apache.poi:poi-scratchpad:jar:3.8-beta4:provided
+|  +- org.apache.poi:poi-ooxml:jar:3.8-beta4:provided
+|  |  +- org.apache.poi:poi-ooxml-schemas:jar:3.8-beta4:provided
+|  |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+|  |  \- dom4j:dom4j:jar:1.6.1:provided
+|  +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+|  +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2.1:provided
+|  +- asm:asm:jar:3.1:provided
+|  +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+|  +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+|  \- rome:rome:jar:0.9:provided
+|     \- jdom:jdom:jar:1.0:provided
++- org.slf4j:slf4j-log4j12:jar:1.5.6:provided
+|  +- org.slf4j:slf4j-api:jar:1.5.6:provided
+|  \- log4j:log4j:jar:1.2.14:provided
+\- com.google.code.gson:gson:jar:1.7.1:provided
+org.apache.tika:tika-bundle:bundle:0.10
++- org.apache.tika:tika-core:jar:0.10:provided
+\- org.apache.tika:tika-parsers:jar:0.10:provided
+   +- edu.ucar:netcdf:jar:4.2-min:provided
+   |  \- org.slf4j:slf4j-api:jar:1.5.6:provided
+   +- org.apache.james:apache-mime4j-core:jar:0.7:provided
+   +- org.apache.james:apache-mime4j-dom:jar:0.7:provided
+   +- org.apache.commons:commons-compress:jar:1.1:provided
+   +- commons-codec:commons-codec:jar:1.4:provided
+   +- org.apache.pdfbox:pdfbox:jar:1.6.0:provided
+   |  +- org.apache.pdfbox:fontbox:jar:1.6.0:provided
+   |  +- org.apache.pdfbox:jempbox:jar:1.6.0:provided
+   |  \- commons-logging:commons-logging:jar:1.1.1:provided
+   +- org.bouncycastle:bcmail-jdk15:jar:1.45:provided
+   +- org.bouncycastle:bcprov-jdk15:jar:1.45:provided
+   +- org.apache.poi:poi:jar:3.8-beta4:provided
+   +- org.apache.poi:poi-scratchpad:jar:3.8-beta4:provided
+   +- org.apache.poi:poi-ooxml:jar:3.8-beta4:provided
+   |  +- org.apache.poi:poi-ooxml-schemas:jar:3.8-beta4:provided
+   |  |  \- org.apache.xmlbeans:xmlbeans:jar:2.3.0:provided
+   |  \- dom4j:dom4j:jar:1.6.1:provided
+   +- org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:jar:1.0.1:provided
+   +- org.ccil.cowan.tagsoup:tagsoup:jar:1.2.1:provided
+   +- asm:asm:jar:3.1:provided
+   +- com.drewnoakes:metadata-extractor:jar:2.4.0-beta-1:provided
+   +- de.l3s.boilerpipe:boilerpipe:jar:1.1.0:provided
+   \- rome:rome:jar:0.9:provided
+      \- jdom:jdom:jar:1.0:provided
+org.apache.tika:tika:pom:0.10
+
+   
+   
+The following people have contributed to Tika 0.10 by submitting or commenting
+on the issues resolved in this release:
+
+Alain Viret
+Alex Ott
+Alexander Chow
+Andreas Kemkes
+Andrew Khoury
+Babak Farhang
+Benjamin Douglas
+Benson Margulies
+Chris A. Mattmann
+chris hudson
+Chris Lott
+Cristian Vat
+Curt Arnold
+Cynthia L Wong
+Dave Brosius
+David Benson
+Enrico Donelli
+Erik Hetzner
+Erna de Groot
+Gabriele Columbro
+Gavin
+Geoff Jarrad
+Gregory Kanevsky 
+GŸnter rombauts
+Henning Gross
+Henri Bergius
+Ingo Renner
+Ingo Wiarda
+Izaak Alpert 
+Jan H¿ydahl
+Jens Wilmer
+Jeremy Anderson
+Joseph Vychtrle
+Joshua Turner
+Jukka Zitting
+Julien Nioche
+Karl Heinz Marbaise
+Ken Krugler
+Kostya Gribov
+Luciano Leggieri
+Mads Hansen
+Mark Butler
+Matt Sheppard
+Maxim Valyanskiy
+Michael McCandless
+Michael Pisula
+Murad Shahid
+Nick Burch
+Oleg Tikhonov 
+Pablo Queixalos
+Paul Jakubik
+Raimund Merkert
+Rajiv Kumar
+Robert Trickey
+Sami Siren
+samraj
+Selva Ganesan
+Sjoerd Smeets
+Stephen Duncan Jr
+Tran Nam Quang
+Uwe Schindler
+Vitaliy Filippov
+
+See http://s.apache.org/vR for more details on these contributions.
+
 Release 0.9 - 02/13/2011
 
 The most notable changes in Tika 0.9 over previous releases are:
