@@ -22,7 +22,6 @@ import java.util.HashSet;
 import org.apache.poi.hslf.HSLFSlideShow;
 import org.apache.poi.hslf.model.Comment;
 import org.apache.poi.hslf.model.HeadersFooters;
-import org.apache.poi.hslf.model.MasterSheet;
 import org.apache.poi.hslf.model.Notes;
 import org.apache.poi.hslf.model.OLEShape;
 import org.apache.poi.hslf.model.Shape;
@@ -49,7 +48,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
       SlideShow _show = new SlideShow(ss);
       Slide[] _slides = _show.getSlides();
 
-      xhtml.startElement("div", "style", "slideShow");
+      xhtml.startElement("div", "class", "slideShow");
 
       /* Iterate over slides and extract text */
       for( Slide slide : _slides ) {
@@ -97,11 +96,18 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          // Comments, if present
          for( Comment comment : slide.getComments() ) {
             xhtml.startElement("p", "class", "slide-comment");
-            xhtml.startElement("b");
-            xhtml.characters( comment.getAuthor() );
-            xhtml.endElement("b");
-            xhtml.characters( "&nbsp-&nbsp");
-            xhtml.characters( comment.getText() );
+            if (comment.getAuthor() != null) {
+               xhtml.startElement("b");
+               xhtml.characters( comment.getAuthor() );
+               xhtml.endElement("b");
+               
+               if (comment.getText() != null) {
+                  xhtml.characters( " - ");
+               }
+            }
+            if (comment.getText() != null) {
+               xhtml.characters( comment.getText() );
+            }
             xhtml.endElement("p");
          }
 
@@ -136,7 +142,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          // Repeat the Notes header, if set
          if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
             xhtml.startElement("p", "class", "slide-note-header");
-            xhtml.characters( hf.getFooterText() );
+            xhtml.characters( hf.getHeaderText() );
             xhtml.endElement("p");
          }
 
@@ -170,7 +176,16 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
    private void handleSlideEmbeddedResources(Slide slide, XHTMLContentHandler xhtml) 
                 throws TikaException, SAXException, IOException {
-      for( Shape shape : slide.getShapes() ) {
+      Shape[] shapes;
+      try {
+         shapes = slide.getShapes();
+      } catch(NullPointerException e) {
+         // Sometimes HSLF hits problems
+         // Please open POI bugs for any you come across!
+         return;
+      }
+      
+      for( Shape shape : shapes ) {
          if( shape instanceof OLEShape ) {
             OLEShape oleShape = (OLEShape)shape;
             
