@@ -288,8 +288,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("<i>italic then </i><b><i>bold then</i></b><b> not italic</b>", content);
     }
 
-    // Disable until I can add this file:
-    public void DISABLEtestHyperlink() throws Exception {
+    public void testHyperlink() throws Exception {
         String content = getXML("testRTFHyperlink.rtf").xml;
         assertContains("our most <a href=\"http://r.office.microsoft.com/r/rlidwelcomeFAQ?clid=1033\">frequently asked questions</a>", content);
     }
