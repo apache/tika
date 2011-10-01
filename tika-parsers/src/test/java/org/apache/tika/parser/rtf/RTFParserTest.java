@@ -288,6 +288,11 @@ public class RTFParserTest extends TikaTest {
         assertContains("<i>italic then </i><b><i>bold then</i></b><b> not italic</b>", content);
     }
 
+    public void testHyperlink() throws Exception {
+        String content = getXML("testRTFHyperlink.rtf").xml;
+        assertContains("our most <a href=\"http://r.office.microsoft.com/r/rlidwelcomeFAQ?clid=1033\">frequently asked questions</a>", content);
+    }
+
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
        
