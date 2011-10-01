@@ -173,10 +173,7 @@ public class OutlookParserTest extends TestCase {
         //assertEquals(2, content.split("<\\/body>").length); // TODO Fix
     }
     
-    /**
-     * Disabled pending a fix for TIKA-632
-     */
-    public void DISABLEDtestOutlookHTMLfromRTF() throws Exception {
+    public void testOutlookHTMLfromRTF() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
        
@@ -200,10 +197,9 @@ public class OutlookParserTest extends TestCase {
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString().replaceAll("<p>\\s+","<p>");
-//System.err.println(content);
         assertTrue(content.contains("<dd>New Outlook User</dd>"));
         assertTrue(content.contains("designed <i>to help you"));
-        assertTrue(content.contains("<p>Cached Exchange Mode"));
+        assertTrue(content.contains("<p><a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>"));
         
         // Link - check text around it, and the link itself
         assertTrue(content.contains("sign up for a free subscription"));

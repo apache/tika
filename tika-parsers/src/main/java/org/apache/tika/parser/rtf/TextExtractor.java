@@ -94,7 +94,14 @@ final class TextExtractor {
     private String nextMetaData;
     private boolean inParagraph;
 
-    private final StringBuilder headerBuffer = new StringBuilder();
+    // Non-zero if we are processing inside a field destination:
+    private int fieldState;
+    
+    // Non-null if we've seen the url for a HYPERLINK but not yet
+    // its text:
+    private String pendingURL;
+
+    private final StringBuilder pendingBuffer = new StringBuilder();
 
     // Used to process the sub-groups inside the upr
     // group:
@@ -298,8 +305,8 @@ final class TextExtractor {
             pushBytes();
         }
 
-        if (inHeader) {
-            headerBuffer.append(ch);
+        if (inHeader || fieldState == 1) {
+            pendingBuffer.append(ch);
         } else {
             if (pendingCharCount == pendingChars.length) {
                 // Gradual but exponential growth:
@@ -534,7 +541,7 @@ final class TextExtractor {
     // Decodes the buffered bytes in pendingBytes
     // into UTF16 code units, and sends the characters
     // to the out ContentHandler, if we are in the body,
-    // else appends the characters to the headerBuffer
+    // else appends the characters to the pendingBuffer
     private void pushBytes() throws IOException, SAXException, TikaException {
         if (pendingByteCount > 0 && (!groupState.ignore || nextMetaData != null)) {
 
@@ -552,8 +559,8 @@ final class TextExtractor {
 
                 final int pos = outputBuffer.position();
                 if (pos > 0) {
-                    if (inHeader) {
-                        headerBuffer.append(outputArray, 0, pos);
+                    if (inHeader || fieldState == 1) {
+                        pendingBuffer.append(outputArray, 0, pos);
                     } else {
                         lazyStartParagraph();
                         out.characters(outputArray, 0, pos);
@@ -571,8 +578,8 @@ final class TextExtractor {
 
                 final int pos = outputBuffer.position();
                 if (pos > 0) {
-                    if (inHeader) {
-                        headerBuffer.append(outputArray, 0, pos);
+                    if (inHeader || fieldState == 1) {
+                        pendingBuffer.append(outputArray, 0, pos);
                     } else {
                         lazyStartParagraph();
                         out.characters(outputArray, 0, pos);
@@ -973,6 +980,16 @@ final class TextExtractor {
         } else if (equals("rdblquote")) {
             // unicode RIGHT DOUBLE QUOTATION MARK
             addOutputChar('\u201D');
+        } else if (equals("fldinst")) {
+            fieldState = 1;
+            groupState.ignore = false;
+        } else if (equals("fldrslt") && fieldState == 2) {
+            assert pendingURL != null;
+            lazyStartParagraph();
+            out.startElement("a", "href", pendingURL);
+            pendingURL = null;
+            fieldState = 3;
+            groupState.ignore = false;
         }
     }
 
@@ -997,10 +1014,10 @@ final class TextExtractor {
 
         if (inHeader) {
             if (nextMetaData != null) {
-                metadata.add(nextMetaData, headerBuffer.toString());
+                metadata.add(nextMetaData, pendingBuffer.toString());
                 nextMetaData = null;
             }
-            headerBuffer.setLength(0);
+            pendingBuffer.setLength(0);
         }
 
         assert groupState.depth > 0;
@@ -1035,5 +1052,35 @@ final class TextExtractor {
         }
         groupState = outerGroupState;
         assert groupStates.size() == groupState.depth;
+
+        if (fieldState == 1) {
+            String s = pendingBuffer.toString().trim();
+            pendingBuffer.setLength(0);
+            if (s.startsWith("HYPERLINK")) {
+                s = s.substring(9).trim();
+                // TODO: what other instructions can be in a
+                // HYPERLINK destination?
+                final boolean isLocalLink = s.indexOf("\\l ") != -1;
+                int idx = s.indexOf('"');
+                if (idx != -1) {
+                    int idx2 = s.indexOf('"', 1+idx);
+                    if (idx2 != -1) {
+                        s = s.substring(1+idx, idx2);
+                    }
+                }
+                pendingURL = (isLocalLink ? "#" : "") + s;
+                fieldState = 2;
+            } else {
+                fieldState = 0;
+            }
+
+            // TODO: we could process the other known field
+            // types.  Right now, we will extract their text
+            // inlined, but fail to record them in metadata
+            // as a field value.
+        } else if (fieldState == 3) {
+            out.endElement("a");
+            fieldState = 0;
+        }
     }
 }

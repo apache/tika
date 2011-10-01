@@ -1,5 +1,10 @@
 Apache Tika Change Log
 ======================
+Release 0.11 - Current Development
+
+ * TIKA-632: Hyperlinks in RTF documents are now extracted as an <a
+   href=...>...</a> element.
+
 Release 0.10 - 09/25/2011
 
 The most notable changes in Tika 0.10 over previous releases are:
