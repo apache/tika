@@ -37,7 +37,7 @@ import java.util.Arrays;
  */
 public class CharsetDetector {
 
-//   Question: Should we have getters corresponding to the setters for inut text
+//   Question: Should we have getters corresponding to the setters for input text
 //   and declared encoding?
 
 //   A thought: If we were to create our own type of Java Reader, we could defer
