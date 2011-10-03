@@ -212,4 +212,22 @@ public class PDFParserTest extends TikaTest {
         // chars, so we cannot test this here:
         //assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
+
+    // TIKA-738: re-enable this
+    public void IGNOREtestAnnotations() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf");
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        String content = handler.toString();
+        content = content.replaceAll("[\\s\u00a0]+"," ");
+        assertContains("Here is some text", content);
+        assertContains("Here is a comment", content);
+    }
 }

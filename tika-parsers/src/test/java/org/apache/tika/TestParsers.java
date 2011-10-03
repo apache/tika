@@ -191,10 +191,6 @@ public class TestParsers extends TikaTest {
         final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "pdf", "rtf"};
         for(String extension : extensions) {
             verifyComment(extension, "testComment");
-            // TIKA-717: re-enable once we fix this:
-            //if (extension.equals("pdf")) {
-            //verifyComment(extension, "testComment2");
-            //}
         }
     }
 }
