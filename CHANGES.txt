@@ -8,6 +8,10 @@ Release 0.11 - Current Development
  * TIKA-733: Try to be robust when an RTF has too many closing {'s vs
    opening {'s.
 
+ * TIKA-711: From Word (.doc) documents we now extract optional hyphen
+   as Unicode zero-width space (U+200B), and non-breaking hyphen as
+   Unicode non-breaking hyphen (U+2011).
+
 Release 0.10 - 09/25/2011
 
 The most notable changes in Tika 0.10 over previous releases are:
