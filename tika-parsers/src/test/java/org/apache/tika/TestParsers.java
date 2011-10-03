@@ -164,15 +164,14 @@ public class TestParsers extends TikaTest {
     }
 
     public void testOptionalHyphen() throws Exception {
-        // TIKA-711: re-enable doc once it's fixed
-        //final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "rtf", "pdf"};
-        final String[] extensions = new String[] {"ppt", "pptx", "docx", "rtf", "pdf"};
+        final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "rtf", "pdf"};
         for(String extension : extensions) {
             File file = getResourceAsFile("/test-documents/testOptionalHyphen." + extension);
             String content = ParseUtils.getStringContent(file, tc);
             assertTrue("optional hyphen was not handled for '" + extension + "' file type: " + content,
                        content.contains("optionalhyphen") ||
                        content.contains("optional\u00adhyphen") ||   // soft hyphen
+                       content.contains("optional\u200bhyphen") ||   // zero width space
                        content.contains("optional\u2027"));          // hyphenation point
             
         }

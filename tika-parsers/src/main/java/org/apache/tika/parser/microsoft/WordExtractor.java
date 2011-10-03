@@ -50,6 +50,10 @@ import org.xml.sax.helpers.AttributesImpl;
 
 public class WordExtractor extends AbstractPOIFSExtractor {
 
+    private static final char RECORD_SEPARATOR = 30;
+    private static final char UNICODECHAR_NONBREAKING_HYPHEN = '\u2011';
+    private static final char UNICODECHAR_ZERO_WIDTH_SPACE = '\u200b';
+
     public WordExtractor(ParseContext context) {
         super(context);
     }
@@ -271,6 +275,14 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           // Strip the table cell end marker
           text = text.substring(0, text.length()-1);
        }
+
+       // Copied from POI's org/apache/poi/hwpf/converter/AbstractWordConverter.processCharacters:
+
+       // Non-breaking hyphens are returned as char 30
+       text = text.replace((char) 30, UNICODECHAR_NONBREAKING_HYPHEN);
+
+       // Non-required hyphens to zero-width space
+       text = text.replace((char) 31, UNICODECHAR_ZERO_WIDTH_SPACE);
        
        xhtml.characters(text);
     }
