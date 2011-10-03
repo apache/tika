@@ -1023,34 +1023,39 @@ final class TextExtractor {
         assert groupState.depth > 0;
         ansiSkip = 0;
 
-        // Restore group state:
-        final GroupState outerGroupState = groupStates.removeLast();
+        // Be robust if RTF doc is corrupt (has too many
+        // closing }s):
+        // TODO: log a warning?
+        if (groupStates.size() > 0) {
+            // Restore group state:
+            final GroupState outerGroupState = groupStates.removeLast();
 
-        // Close italic, if outer does not have italic or
-        // bold changed:
-        if (groupState.italic) {
-            if (!outerGroupState.italic ||
-                groupState.bold != outerGroupState.bold) {
-                end("i");
-                groupState.italic = false;
+            // Close italic, if outer does not have italic or
+            // bold changed:
+            if (groupState.italic) {
+                if (!outerGroupState.italic ||
+                    groupState.bold != outerGroupState.bold) {
+                    end("i");
+                    groupState.italic = false;
+                }
             }
-        }
 
-        // Close bold
-        if (groupState.bold && !outerGroupState.bold) {
-            end("b");
-        }
+            // Close bold
+            if (groupState.bold && !outerGroupState.bold) {
+                end("b");
+            }
 
-        // Open bold
-        if (!groupState.bold && outerGroupState.bold) {
-            start("b");
-        }
+            // Open bold
+            if (!groupState.bold && outerGroupState.bold) {
+                start("b");
+            }
 
-        // Open italic
-        if (!groupState.italic && outerGroupState.italic) {
-            start("i");
+            // Open italic
+            if (!groupState.italic && outerGroupState.italic) {
+                start("i");
+            }
+            groupState = outerGroupState;
         }
-        groupState = outerGroupState;
         assert groupStates.size() == groupState.depth;
 
         if (fieldState == 1) {
