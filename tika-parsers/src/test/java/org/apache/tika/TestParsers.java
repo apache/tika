@@ -188,9 +188,7 @@ public class TestParsers extends TikaTest {
     }
 
     public void testComment() throws Exception {
-        // TIKA-717: re-enable ppt once we fix it
-        //final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "pdf", "rtf"};
-        final String[] extensions = new String[] {"pptx", "doc", "docx", "pdf", "rtf"};
+        final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "pdf", "rtf"};
         for(String extension : extensions) {
             verifyComment(extension, "testComment");
             // TIKA-717: re-enable once we fix this:
