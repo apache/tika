@@ -17,6 +17,7 @@
 package org.apache.tika.sax;
 
 import java.io.IOException;
+import java.util.LinkedList;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -54,6 +55,11 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     private int currentDepth = 0;
 
     /**
+     * Current number of nested &lt;div class="package-entr"&gt; elements.
+     */
+    private LinkedList<Integer> packageEntryDepths = new LinkedList<Integer>();
+
+    /**
      * Output threshold.
      */
     private long threshold = 1000000;
@@ -66,7 +72,12 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * Maximum XML element nesting level.
      */
-    private int maxDepth = 30;
+    private int maxDepth = 100;
+
+    /**
+     * Maximum package entry nesting level.
+     */
+    private int maxPackageEntryDepth = 10;
 
     /**
      * Decorates the given content handler with zip bomb prevention based
@@ -138,6 +149,26 @@ public class SecureContentHandler extends ContentHandlerDecorator {
 
 
     /**
+     * Sets the maximum package entry nesting level. If this depth level is
+     * exceeded then an exception gets thrown.
+     *
+     * @param depth maximum package entry nesting level
+     */
+    public void setMaximumPackageEntryDepth(int depth) {
+        this.maxPackageEntryDepth = depth;
+    }
+
+    /**
+     * Returns the maximum package entry nesting level.
+     *
+     * @return maximum package entry nesting level
+     */
+    public int getMaximumPackageEntryDepth() {
+        return maxPackageEntryDepth;
+    }
+
+
+    /**
      * Sets the maximum XML element nesting level. If this depth level is
      * exceeded then an exception gets thrown.
      *
@@ -199,20 +230,37 @@ public class SecureContentHandler extends ContentHandlerDecorator {
             String uri, String localName, String name, Attributes atts)
             throws SAXException {
         currentDepth++;
-        if (currentDepth < maxDepth) {
-            super.startElement(uri, localName, name, atts);
-        } else {
+        if (currentDepth >= maxDepth) {
             throw new SecureSAXException(
                     "Suspected zip bomb: "
                     + currentDepth + " levels of XML element nesting");
         }
+
+        if ("div".equals(name)
+                && "package-entry".equals(atts.getValue("class"))) {
+            packageEntryDepths.addLast(currentDepth);
+            if (packageEntryDepths.size() >= maxPackageEntryDepth) {
+                throw new SecureSAXException(
+                        "Suspected zip bomb: "
+                        + packageEntryDepths.size()
+                        + " levels of package entry nesting");
+            }
+        }
+
+        super.startElement(uri, localName, name, atts);
     }
 
     @Override
     public void endElement(
             String uri, String localName, String name) throws SAXException {
-        currentDepth--;
         super.endElement(uri, localName, name);
+
+        if (!packageEntryDepths.isEmpty()
+                && packageEntryDepths.getLast() == currentDepth) {
+            packageEntryDepths.removeLast();
+        }
+
+        currentDepth--;
     }
 
     @Override

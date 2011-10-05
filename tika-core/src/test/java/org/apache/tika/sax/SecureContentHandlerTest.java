@@ -20,9 +20,11 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.NullInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -110,6 +112,40 @@ public class SecureContentHandlerTest extends TestCase {
             fail("Expected SAXException not thrown");
         } catch (SAXException e) {
             // expected
+        }
+    }
+
+    public void testNestedElements() throws SAXException {
+        for (int i = 1; i < handler.getMaximumDepth(); i++) {
+            handler.startElement("", "x", "x", new AttributesImpl());
+        }
+        try {
+            handler.startElement("", "x", "x", new AttributesImpl());
+            fail("Nested XML element limit exceeded");
+        } catch (SAXException e) {
+            try {
+                handler.throwIfCauseOf(e);
+                throw e;
+            } catch (TikaException expected) {
+            }
+        }
+    }
+
+    public void testNestedEntries() throws SAXException {
+        AttributesImpl atts = new AttributesImpl();
+        atts.addAttribute("", "class", "class", "CDATA", "package-entry");
+        for (int i = 1; i < handler.getMaximumPackageEntryDepth(); i++) {
+            handler.startElement("", "div", "div", atts);
+        }
+        try {
+            handler.startElement("", "div", "div", atts);
+            fail("Nested XML element limit exceeded");
+        } catch (SAXException e) {
+            try {
+                handler.throwIfCauseOf(e);
+                throw e;
+            } catch (TikaException expected) {
+            }
         }
     }
 
