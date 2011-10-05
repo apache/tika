@@ -134,8 +134,8 @@ class PDF2XHTML extends PDFTextStripper {
         inParagraph = true;
         try {
             handler.startElement("p");
-        } catch (SAXException se) {
-            throw new IOException(se);
+        } catch (SAXException e) {
+            throw new IOExceptionWithCause("Unable to start a paragraph", e);
         }
     }
 
@@ -149,8 +149,8 @@ class PDF2XHTML extends PDFTextStripper {
         inParagraph = false;
         try {
             handler.endElement("p");
-        } catch (SAXException se) {
-            throw new IOException(se);
+        } catch (SAXException e) {
+            throw new IOExceptionWithCause("Unable to end a paragraph", e);
         }
     }
 
