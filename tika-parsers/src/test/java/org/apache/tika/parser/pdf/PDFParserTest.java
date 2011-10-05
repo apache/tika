@@ -17,6 +17,12 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.InputStream;
+import java.io.StringWriter;
+
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -25,7 +31,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
-
 /**
  * Test case for parsing pdf files.
  */
@@ -229,5 +234,42 @@ public class PDFParserTest extends TikaTest {
         content = content.replaceAll("[\\s\u00a0]+"," ");
         assertContains("Here is some text", content);
         assertContains("Here is a comment", content);
+    }
+
+    public void testPageNumber() throws Exception {
+        final XMLResult result = getXML("testPageNumber.pdf");
+        final String content = result.xml.replaceAll("\\s+","");
+        assertContains("<p>1</p>", content);
+    }
+
+    private static class XMLResult {
+        public final String xml;
+        public final Metadata metadata;
+
+        public XMLResult(String xml, Metadata metadata) {
+            this.xml = xml;
+            this.metadata = metadata;
+      }
+    }
+
+    private XMLResult getXML(String filename) throws Exception {
+        Metadata metadata = new Metadata();
+        Parser parser = new AutoDetectParser(); // Should auto-detect!        
+        StringWriter sw = new StringWriter();
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                 SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.setResult(new StreamResult(sw));
+
+        // Try with a document containing various tables and formattings
+        InputStream input = getResourceAsStream("/test-documents/" + filename);
+        try {
+            parser.parse(input, handler, metadata, new ParseContext());
+            return new XMLResult(sw.toString(), metadata);
+        } finally {
+            input.close();
+        }
     }
 }
