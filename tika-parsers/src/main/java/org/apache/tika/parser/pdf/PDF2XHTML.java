@@ -37,6 +37,9 @@ import org.xml.sax.SAXException;
  */
 class PDF2XHTML extends PDFTextStripper {
 
+    // TODO: remove once PDFBOX-1130 is fixed:
+    private boolean inParagraph = false;
+
     /**
      * Converts the given PDF document (and related metadata) to a stream
      * of XHTML SAX events sent to the given content handler.
@@ -117,6 +120,37 @@ class PDF2XHTML extends PDFTextStripper {
             handler.endElement("div");
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
+        }
+    }
+
+    @Override
+    protected void writeParagraphStart() throws IOException {
+        // TODO: remove once PDFBOX-1130 is fixed
+        if (inParagraph) {
+            // Close last paragraph
+            writeParagraphEnd();
+        }
+        assert !inParagraph;
+        inParagraph = true;
+        try {
+            handler.startElement("p");
+        } catch (SAXException se) {
+            throw new IOException(se);
+        }
+    }
+
+    @Override
+    protected void writeParagraphEnd() throws IOException {
+        // TODO: remove once PDFBOX-1130 is fixed
+        if (!inParagraph) {
+            writeParagraphStart();
+        }
+        assert inParagraph;
+        inParagraph = false;
+        try {
+            handler.endElement("p");
+        } catch (SAXException se) {
+            throw new IOException(se);
         }
     }
 

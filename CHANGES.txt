@@ -12,6 +12,9 @@ Release 0.11 - Current Development
    as Unicode zero-width space (U+200B), and non-breaking hyphen as
    Unicode non-breaking hyphen (U+2011).
 
+ * TIKA-742: Paragraphs are now extracted within each page of a PDF
+   document.
+
 Release 0.10 - 09/25/2011
 
 The most notable changes in Tika 0.10 over previous releases are:
