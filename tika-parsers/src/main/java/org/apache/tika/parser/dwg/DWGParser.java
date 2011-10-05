@@ -58,6 +58,7 @@ public class DWGParser extends AbstractParser {
         null, // Unknown?
         Metadata.RELATION, // Hyperlink
     };
+
     /** For the 2000 file, they're indexed */
     private static final String[] HEADER_2000_PROPERTIES_ENTRIES = {
        null, 
@@ -70,17 +71,19 @@ public class DWGParser extends AbstractParser {
        Metadata.KEYWORDS, // 0x07
        Metadata.LAST_AUTHOR, // 0x08
    };
-   private static final String HEADER_2000_PROPERTIES_MARKER_STR =
-      "DWGPROPS COOKIE";
-   private static final byte[] HEADER_2000_PROPERTIES_MARKER =
-      new byte[HEADER_2000_PROPERTIES_MARKER_STR.length()];
-   static {
-      StringUtil.putCompressedUnicode(
-            HEADER_2000_PROPERTIES_MARKER_STR,
-            HEADER_2000_PROPERTIES_MARKER, 0
-      );
-   }
-    
+
+    private static final String HEADER_2000_PROPERTIES_MARKER_STR =
+            "DWGPROPS COOKIE";
+
+    private static final byte[] HEADER_2000_PROPERTIES_MARKER =
+            new byte[HEADER_2000_PROPERTIES_MARKER_STR.length()];
+
+    static {
+        StringUtil.putCompressedUnicode(
+                HEADER_2000_PROPERTIES_MARKER_STR,
+                HEADER_2000_PROPERTIES_MARKER, 0);
+    }
+
     /** 
      * How far to skip after the last standard property, before
      *  we find any custom properties that might be there.
@@ -101,18 +104,19 @@ public class DWGParser extends AbstractParser {
 
         if (version.equals("AC1015")) {
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-            if(skipTo2000PropertyInfoSection(stream, header)){
+            if (skipTo2000PropertyInfoSection(stream, header)) {
                 get2000Props(stream,metadata,xhtml);
             }
         } else if (version.equals("AC1018")) {
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-            if(skipToPropertyInfoSection(stream, header)){
+            if (skipToPropertyInfoSection(stream, header)) {
                 get2004Props(stream,metadata,xhtml);
             }
         } else if (version.equals("AC1021") || version.equals("AC1024")) {
             metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-            skipToPropertyInfoSection(stream, header);
-            get2007and2010Props(stream,metadata,xhtml);
+            if (skipToPropertyInfoSection(stream, header)) {
+                get2007and2010Props(stream,metadata,xhtml);
+            }
         } else {
             throw new TikaException(
                     "Unsupported AutoCAD drawing version: " + version);
@@ -132,7 +136,7 @@ public class DWGParser extends AbstractParser {
             String headerValue = read2004String(stream);
             handleHeader(i, headerValue, metadata, xhtml);
         }
-        
+
         // Custom properties
         int customCount = skipToCustomProperties(stream);
         for (int i = 0; i < customCount; i++) {
@@ -143,6 +147,7 @@ public class DWGParser extends AbstractParser {
            }
         }
     }
+
     private String read2004String(InputStream stream) throws IOException {
        int stringLen = LittleEndian.readUShort(stream);
 
@@ -168,7 +173,7 @@ public class DWGParser extends AbstractParser {
             String headerValue = read2007and2010String(stream);
             handleHeader(i, headerValue, metadata, xhtml);
         }
-        
+
         // Custom properties
         int customCount = skipToCustomProperties(stream);
         for (int i = 0; i < customCount; i++) {
@@ -179,13 +184,14 @@ public class DWGParser extends AbstractParser {
            }
         }
     }
+
     private String read2007and2010String(InputStream stream) throws IOException {
        int stringLen = LittleEndian.readUShort(stream);
 
        byte[] stringData = new byte[stringLen * 2];
        IOUtils.readFully(stream, stringData);
        String value = StringUtil.getFromUnicodeLE(stringData);
-       
+
        // Some strings are null terminated
        if(value.charAt(value.length()-1) == 0) {
            value = value.substring(0, value.length()-1);
@@ -210,7 +216,7 @@ public class DWGParser extends AbstractParser {
                // We think this means the end of properties
                break;
             }
-            
+
             byte[] value = new byte[length];
             IOUtils.readFully(stream, value);
             if(valueType == 0x1e) {
@@ -236,7 +242,7 @@ public class DWGParser extends AbstractParser {
             propCount++;
         }
     }
-    
+
     private void handleHeader(
             int headerNumber, String value, Metadata metadata,
             XHTMLContentHandler xhtml) throws SAXException {
@@ -270,6 +276,7 @@ public class DWGParser extends AbstractParser {
         }
         return true;
     }
+
     /**
      * We think it can be anywhere...
      */
@@ -292,6 +299,7 @@ public class DWGParser extends AbstractParser {
        }
        return false;
     }
+
     private int skipToCustomProperties(InputStream stream) 
             throws IOException {
        // There should be 4 zero bytes next
