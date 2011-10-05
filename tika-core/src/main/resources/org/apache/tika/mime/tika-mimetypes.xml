@@ -3327,6 +3327,13 @@
     <alias type="application/x-autocad"/>
     <glob pattern="*.dwg"/>
     <magic priority="50">
+      <match value="MC0.0" type="string" offset="0"/>
+      <match value="AC1.2" type="string" offset="0"/>
+      <match value="AC1.40" type="string" offset="0"/>
+      <match value="AC1.50" type="string" offset="0"/>
+      <match value="AC2.10" type="string" offset="0"/>
+      <match value="AC2.21" type="string" offset="0"/>
+      <match value="AC2.22" type="string" offset="0"/>
       <!-- "AC" followed by four numbers -->
       <match value="AC0000" type="string" offset="0"
              mask="0xFFFFF0F0F0F0"/>
