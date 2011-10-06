@@ -64,18 +64,7 @@ public class ID3v24Handler implements ID3Tags {
             } else if (tag.name.equals("TRCK")) {
                 trackNumber = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TCON")) {
-                String rawGenre = getTagString(tag.data, 0, tag.data.length);
-                int open = rawGenre.indexOf("(");
-                int close = rawGenre.indexOf(")");
-                if (open == -1 && close == -1) {
-                   genre = rawGenre;
-                } else if (open < close) {
-                    try {
-                        int genreID = Integer.parseInt(rawGenre.substring(open+1, close));
-                        genre = ID3Tags.GENRES[genreID];
-                    } catch(NumberFormatException ignore) {
-                    }
-                }
+               genre = ID3v22Handler.extractGenre( getTagString(tag.data, 0, tag.data.length) );
             }
         }
     }
