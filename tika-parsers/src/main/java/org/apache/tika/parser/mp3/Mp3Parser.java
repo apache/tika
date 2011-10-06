@@ -109,7 +109,9 @@ public class Mp3Parser extends AbstractParser {
             }
         }
         if (audioAndTags.lyrics != null && audioAndTags.lyrics.hasLyrics()) {
-        	xhtml.element("p", audioAndTags.lyrics.lyricsText);
+           xhtml.startElement("p", "class", "lyrics");
+           xhtml.characters(audioAndTags.lyrics.lyricsText);
+           xhtml.endElement("p");
         }
 
         xhtml.endDocument();
