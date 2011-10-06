@@ -59,22 +59,33 @@ public class ID3v22Handler implements ID3Tags {
             } else if (tag.name.equals("TRK")) {
                 trackNumber = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TCO")) {
-                String rawGenre = getTagString(tag.data, 0, tag.data.length);
-                int open = rawGenre.indexOf("(");
-                int close = rawGenre.indexOf(")");
-                if (open < close) {
-                    try {
-                        int genreID = Integer.parseInt(rawGenre.substring(open+1, close));
-                        genre = ID3Tags.GENRES[genreID];
-                    } catch(NumberFormatException ignore) {
-                    }
-                }
+                genre = extractGenre( getTagString(tag.data, 0, tag.data.length) );
             }
         }
     }
 
     private String getTagString(byte[] data, int offset, int length) {
         return ID3v2Frame.getTagString(data, offset, length);
+    }
+    
+    protected static String extractGenre(String rawGenre) {
+       int open = rawGenre.indexOf("(");
+       int close = rawGenre.indexOf(")");
+       if (open == -1 && close == -1) {
+          return rawGenre;
+       } else if (open < close) {
+           String genreStr = rawGenre.substring(0, open).trim();
+           try {
+               int genreID = Integer.parseInt(rawGenre.substring(open+1, close));
+               return ID3Tags.GENRES[genreID];
+           } catch(ArrayIndexOutOfBoundsException invalidNum) {
+              return genreStr;
+           } catch(NumberFormatException notANum) {
+              return genreStr;
+           }
+       } else {
+          return null;
+       }
     }
 
     public boolean getTagsPresent() {
