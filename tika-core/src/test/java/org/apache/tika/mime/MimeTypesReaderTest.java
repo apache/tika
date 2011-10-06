@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.SortedSet;
 import junit.framework.TestCase;
 
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * These tests try to ensure that the MimeTypesReader
@@ -119,6 +121,51 @@ public class MimeTypesReaderTest extends TestCase {
         } catch (Exception e) {
             fail(e.getMessage());
         }
+    }
+    
+    /**
+     * TIKA-746 Ensures that the custom mimetype maps were also 
+     *  loaded and used
+     */
+    public void testCustomMimeTypes() {
+       // Check that it knows about our two special ones
+       String helloWorld = "hello/world";
+       String helloWorldFile = "hello/world-file";
+       try {
+          assertNotNull(this.mimeTypes.forName(helloWorld));
+          assertNotNull(this.mimeTypes.forName(helloWorldFile));
+       } catch (Exception e) {
+          fail(e.getMessage());
+       }
+       
+       // Check that the details come through as expected
+       try {
+          MimeType hw = this.mimeTypes.forName(helloWorld);
+          MimeType hwf = this.mimeTypes.forName(helloWorldFile);
+          
+          // The parent has no comments, globs etc
+          assertEquals("", hw.getDescription());
+          assertEquals("", hw.getExtension());
+          assertEquals(0, hw.getExtensions().size());
+          
+          // The file one does
+          assertEquals("A \"Hello World\" file", hwf.getDescription());
+          assertEquals(".hello.world", hwf.getExtension());
+          
+          // Check that we can correct detect with the file one:
+          // By name
+          Metadata m = new Metadata();
+          m.add(Metadata.RESOURCE_NAME_KEY, "test.hello.world");
+          assertEquals(hwf.toString(), this.mimeTypes.detect(null, m).toString());
+          
+          // By contents
+          m = new Metadata();
+          ByteArrayInputStream s = new ByteArrayInputStream(
+                "Hello, World!".getBytes("ASCII"));
+          assertEquals(hwf.toString(), this.mimeTypes.detect(s, m).toString());
+       } catch (Exception e) {
+          fail(e.getMessage());
+       }
     }
 
 }
