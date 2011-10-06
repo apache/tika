@@ -561,7 +561,8 @@ public final class MimeTypes implements Detector, Serializable {
     }
     
     /**
-     * Get the default MimeTypes
+     * Get the default MimeTypes. This includes all the build in
+     *  mimetypes, and any custom override ones present. 
      * 
      * @return MimeTypes
      * @throws MimeTypeException
@@ -569,7 +570,7 @@ public final class MimeTypes implements Detector, Serializable {
      */
     public static MimeTypes getDefaultMimeTypes() {
         try {
-            return MimeTypesFactory.create("tika-mimetypes.xml");
+            return MimeTypesFactory.create("tika-mimetypes.xml", "custom-mimetypes.xml");
         } catch (MimeTypeException e) {
             throw new RuntimeException("Unable to read default mimetypes", e);
         } catch (IOException e) {
