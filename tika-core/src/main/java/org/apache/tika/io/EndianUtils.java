@@ -169,7 +169,203 @@ public class EndianUtils {
       (ch7 <<  8) +
       (ch8 <<  0);
    }
+   
+   
+   /**
+    * Get a LE short value from the beginning of a byte array
+    *
+    *@param  data  the byte array
+    *@return       the short (16-bit) value
+    */
+   public static short getShortLE(byte[] data) {
+      return getShortLE(data, 0);
+   }
+   /**
+    * Get a LE short value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the short (16-bit) value
+    */
+   public static short getShortLE(byte[] data, int offset) {
+      return (short)getUShortLE(data, offset);
+   }
 
+   /**
+    * Get a LE unsigned short value from the beginning of a byte array
+    *
+    *@param  data  the byte array
+    *@return       the unsigned short (16-bit) value in an int
+    */
+   public static int getUShortLE(byte[] data) {
+      return getUShortLE(data, 0);
+   }
+   /**
+    * Get a LE unsigned short value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the unsigned short (16-bit) value in an integer
+    */
+   public static int getUShortLE(byte[] data, int offset) {
+      int b0 = data[offset] & 0xFF;
+      int b1 = data[offset+1] & 0xFF;
+      return (b1 << 8) + (b0 << 0);
+   }
+   
+   /**
+    * Get a BE short value from the beginning of a byte array
+    *
+    *@param  data  the byte array
+    *@return       the short (16-bit) value
+    */
+   public static short getShortBE(byte[] data) {
+      return getShortBE(data, 0);
+   }
+   /**
+    * Get a BE short value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the short (16-bit) value
+    */
+   public static short getShortBE(byte[] data, int offset) {
+      return (short)getUShortBE(data, offset);
+   }
+
+   /**
+    * Get a BE unsigned short value from the beginning of a byte array
+    *
+    *@param  data  the byte array
+    *@return       the unsigned short (16-bit) value in an int
+    */
+   public static int getUShortBE(byte[] data) {
+      return getUShortBE(data, 0);
+   }
+   /**
+    * Get a BE unsigned short value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the unsigned short (16-bit) value in an integer
+    */
+   public static int getUShortBE(byte[] data, int offset) {
+      int b0 = data[offset] & 0xFF;
+      int b1 = data[offset+1] & 0xFF;
+      return (b0 << 8) + (b1 << 0);
+   }
+
+   /**
+    * Get a LE int value from the beginning of a byte array
+    *
+    *@param  data  the byte array
+    *@return the int (32-bit) value
+    */
+   public static int getIntLE(byte[] data) {
+       return getIntLE(data, 0);
+   }
+   /**
+    * Get a LE int value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the int (32-bit) value
+    */
+   public static int getIntLE(byte[] data, int offset) {
+       int i=offset;
+       int b0 = data[i++] & 0xFF;
+       int b1 = data[i++] & 0xFF;
+       int b2 = data[i++] & 0xFF;
+       int b3 = data[i++] & 0xFF;
+       return (b3 << 24) + (b2 << 16) + (b1 << 8) + (b0 << 0);
+   }
+
+   /**
+    * Get a BE int value from the beginning of a byte array
+    *
+    *@param  data  the byte array
+    *@return the int (32-bit) value
+    */
+   public static int getIntBE(byte[] data) {
+       return getIntBE(data, 0);
+   }
+   /**
+    * Get a BE int value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the int (32-bit) value
+    */
+   public static int getIntBE(byte[] data, int offset) {
+       int i=offset;
+       int b0 = data[i++] & 0xFF;
+       int b1 = data[i++] & 0xFF;
+       int b2 = data[i++] & 0xFF;
+       int b3 = data[i++] & 0xFF;
+       return (b0 << 24) + (b1 << 16) + (b2 << 8) + (b3 << 0);
+   }
+
+   /**
+    * Get a LE unsigned int value from a byte array
+    *
+    *@param  data    the byte array
+    *@return         the unsigned int (32-bit) value in a long
+    */
+   public static long getUIntLE(byte[] data) {
+       return getUIntLE(data,0);
+   }
+   /**
+    * Get a LE unsigned int value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the unsigned int (32-bit) value in a long
+    */
+   public static long getUIntLE(byte[] data, int offset) {
+       long retNum = getIntLE(data, offset);
+       return retNum & 0x00FFFFFFFFl;
+   }
+
+   /**
+    * Get a BE unsigned int value from a byte array
+    *
+    *@param  data    the byte array
+    *@return         the unsigned int (32-bit) value in a long
+    */
+   public static long getUIntBE(byte[] data) {
+       return getUIntBE(data,0);
+   }
+   /**
+    * Get a BE unsigned int value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the unsigned int (32-bit) value in a long
+    */
+   public static long getUIntBE(byte[] data, int offset) {
+       long retNum = getIntBE(data, offset);
+       return retNum & 0x00FFFFFFFFl;
+   }
+
+   /**
+    * Get a LE long value from a byte array
+    *
+    *@param  data    the byte array
+    *@param  offset  a starting offset into the byte array
+    *@return         the long (64-bit) value
+    */
+   public static long getLongLE(byte[] data, int offset) {
+      long result = 0;
+
+      for (int j = offset + LONG_SIZE - 1; j >= offset; j--) {
+         result <<= 8;
+         result |= 0xff & data[j];
+      }
+      return result;
+   }
+   private static final int LONG_SIZE = 8;
+
+   
    /**
     *  Convert an 'unsigned' byte to an integer. ie, don't carry across the
     *  sign.
@@ -195,7 +391,9 @@ public class EndianUtils {
       return (short) ( data[offset] & 0xFF );
    }
    
+   
    public static class BufferUnderrunException extends TikaException {
+      private static final long serialVersionUID = 8358288231138076276L;
       public BufferUnderrunException() {
          super("Insufficient data left in stream for required read");
       }

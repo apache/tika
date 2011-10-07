@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.poi.util.IOUtils;
-import org.apache.poi.util.LittleEndian;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -135,7 +135,7 @@ public class PRTParser extends AbstractParser {
           return;
        }
        
-       int length = LittleEndian.readUShort(stream);
+       int length = EndianUtils.readUShortLE(stream);
        if(length <= MAX_SANE_TEXT_LENGTH) {
           // Length sanity check passed
           handleText(length, stream, xhtml);
@@ -146,7 +146,7 @@ public class PRTParser extends AbstractParser {
           XHTMLContentHandler xhtml, Last5 l5) 
     throws IOException, SAXException, TikaException {
        // Is it 8 byte zero padded?
-       int maybeLength = LittleEndian.readUShort(stream);
+       int maybeLength = EndianUtils.readUShortLE(stream);
        if(maybeLength == 0) {
           // Check the next 6 bytes too
           for(int i=0; i<6; i++) {
@@ -161,7 +161,7 @@ public class PRTParser extends AbstractParser {
           
           byte[] b2 = new byte[2];
           IOUtils.readFully(stream, b2);
-          int length = LittleEndian.getUShort(b2);
+          int length = EndianUtils.getUShortLE(b2);
           if(length > 1 && length <= MAX_SANE_TEXT_LENGTH) {
              // Length sanity check passed
              handleText(length, stream, xhtml);
