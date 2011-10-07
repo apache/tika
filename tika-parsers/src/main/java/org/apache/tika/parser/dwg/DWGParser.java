@@ -22,9 +22,9 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.poi.util.IOUtils;
-import org.apache.poi.util.LittleEndian;
 import org.apache.poi.util.StringUtil;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -130,7 +130,7 @@ public class DWGParser extends AbstractParser {
      */
     private void get2004Props(
             InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+            throws IOException, TikaException, SAXException {
        // Standard properties
         for (int i = 0; i < HEADER_PROPERTIES_ENTRIES.length; i++) {
             String headerValue = read2004String(stream);
@@ -148,8 +148,8 @@ public class DWGParser extends AbstractParser {
         }
     }
 
-    private String read2004String(InputStream stream) throws IOException {
-       int stringLen = LittleEndian.readUShort(stream);
+    private String read2004String(InputStream stream) throws IOException, TikaException {
+       int stringLen = EndianUtils.readUShortLE(stream);
 
        byte[] stringData = new byte[stringLen];
        IOUtils.readFully(stream, stringData);
@@ -167,7 +167,7 @@ public class DWGParser extends AbstractParser {
      */
     private void get2007and2010Props(
             InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+            throws IOException, TikaException, SAXException {
         // Standard properties
         for (int i = 0; i < HEADER_PROPERTIES_ENTRIES.length; i++) {
             String headerValue = read2007and2010String(stream);
@@ -185,8 +185,8 @@ public class DWGParser extends AbstractParser {
         }
     }
 
-    private String read2007and2010String(InputStream stream) throws IOException {
-       int stringLen = LittleEndian.readUShort(stream);
+    private String read2007and2010String(InputStream stream) throws IOException, TikaException {
+       int stringLen = EndianUtils.readUShortLE(stream);
 
        byte[] stringData = new byte[stringLen * 2];
        IOUtils.readFully(stream, stringData);
@@ -202,11 +202,11 @@ public class DWGParser extends AbstractParser {
 
     private void get2000Props(
             InputStream stream, Metadata metadata, XHTMLContentHandler xhtml)
-            throws IOException, SAXException {
+            throws IOException, TikaException, SAXException {
         int propCount = 0;
         while(propCount < 30) {
-            int propIdx = LittleEndian.readUShort(stream);
-            int length = LittleEndian.readUShort(stream);
+            int propIdx = EndianUtils.readUShortLE(stream);
+            int length = EndianUtils.readUShortLE(stream);
             int valueType = stream.read();
             
             if(propIdx == 0x28) {
@@ -262,9 +262,9 @@ public class DWGParser extends AbstractParser {
      * Grab the offset, then skip there
      */
     private boolean skipToPropertyInfoSection(InputStream stream, byte[] header)
-            throws IOException {
+            throws IOException, TikaException {
         // The offset is stored in the header from 0x20 onwards
-        long offsetToSection = LittleEndian.getLong(header, 0x20);
+        long offsetToSection = EndianUtils.getLongLE(header, 0x20);
         long toSkip = offsetToSection - header.length;
         if(offsetToSection == 0){
             return false;
@@ -301,7 +301,7 @@ public class DWGParser extends AbstractParser {
     }
 
     private int skipToCustomProperties(InputStream stream) 
-            throws IOException {
+            throws IOException, TikaException {
        // There should be 4 zero bytes next
        byte[] padding = new byte[4];
        IOUtils.readFully(stream, padding);
@@ -312,7 +312,7 @@ public class DWGParser extends AbstractParser {
           IOUtils.readFully(stream, padding);
           
           // We should now have the count
-          int count = LittleEndian.readUShort(stream);
+          int count = EndianUtils.readUShortLE(stream);
           
           // Sanity check it
           if(count > 0 && count < 0x7f) {
