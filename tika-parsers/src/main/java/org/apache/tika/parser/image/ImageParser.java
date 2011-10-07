@@ -55,7 +55,6 @@ public class ImageParser extends AbstractParser {
                 MediaType.image("png"),
                 MediaType.image("vnd.wap.wbmp"),
                 MediaType.image("x-icon"),
-                MediaType.image("x-psd"),
                 MediaType.image("x-xcf"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
