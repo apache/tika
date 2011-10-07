@@ -3303,6 +3303,12 @@
     <alias type="image/x-psd"/>
     <alias type="application/photoshop"/>
     <glob pattern="*.psd"/>
+    <magic priority="50">
+      <!-- Version of 0x0001 is PSD -->
+      <match value="8BPS\x00\x01" type="string" offset="0"/>
+      <!-- Version of 0x0002 is PSB -->
+      <match value="8BPS\x00\x02" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="image/vnd.adobe.premiere">
