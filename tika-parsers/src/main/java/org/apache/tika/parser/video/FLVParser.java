@@ -104,7 +104,7 @@ public class FLVParser extends AbstractParser {
             return readAMFStrictArray(input);
         case 11:
             final Date date = new Date((long) input.readDouble());
-            input.skip(2); // time zone
+            input.readShort(); // time zone
             return date;
         case 13:
             return "UNDEFINED";
@@ -205,8 +205,8 @@ public class FLVParser extends AbstractParser {
             }
 
             int datalen = readUInt24(datainput); //body length
-            stream.skip(4); // timestamp
-            stream.skip(3); // streamid
+            readUInt32(datainput); // timestamp
+            readUInt24(datainput); // streamid
 
             if (type == TYPE_METADATA) {
                 // found metadata Tag, read content to buffer
@@ -242,9 +242,8 @@ public class FLVParser extends AbstractParser {
 
             } else {
                 // Tag was not metadata, skip over data we cannot handle
-                for (int skiplen = 0; skiplen < datalen;) {
-                    long currentSkipLen = datainput.skip(datalen - skiplen);
-                    skiplen += currentSkipLen;
+                for (int i = 0; i < datalen; i++) {
+                    datainput.readByte();
                 }
             }
 
