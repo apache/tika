@@ -22,6 +22,7 @@ org.apache.tika.parser.feed.FeedParser
 org.apache.tika.parser.font.TrueTypeParser
 org.apache.tika.parser.html.HtmlParser
 org.apache.tika.parser.image.ImageParser
+org.apache.tika.parser.image.PSDParser
 org.apache.tika.parser.image.TiffParser
 org.apache.tika.parser.iwork.IWorkPackageParser
 org.apache.tika.parser.jpeg.JpegParser
