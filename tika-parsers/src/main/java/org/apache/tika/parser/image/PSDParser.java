@@ -18,15 +18,15 @@ package org.apache.tika.parser.image;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
-import org.apache.poi.util.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.mime.MediaType;
@@ -181,7 +181,11 @@ public class PSDParser extends AbstractParser {
        
        private String getDataAsString() {
           // Will be null padded
-          return new String(data, 0, data.length-1, Charset.forName("ASCII"));
+          try {
+             return new String(data, 0, data.length-1, "ASCII");
+          } catch(UnsupportedEncodingException e) {
+             throw new RuntimeException("Something is very broken in your JVM!");
+          }
        }
     }
 }
