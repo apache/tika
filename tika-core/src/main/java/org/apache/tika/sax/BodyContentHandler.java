@@ -42,7 +42,7 @@ public class BodyContentHandler extends ContentHandlerDecorator {
      * The XPath matcher used to select the XHTML body contents.
      */
     private static final Matcher MATCHER =
-        PARSER.parse("/xhtml:html/xhtml:body/descendant:node()");
+        PARSER.parse("/xhtml:html/xhtml:body/descendant::node()");
 
     /**
      * Creates a content handler that passes all XHTML body events to the
