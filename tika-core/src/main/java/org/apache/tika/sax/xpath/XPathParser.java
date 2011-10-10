@@ -23,6 +23,7 @@ import java.util.Map;
  * Parser for a very simple XPath subset. Only the following XPath constructs
  * (with namespaces) are supported:
  * <ul>
+ *   <li><code>.../node()</code></li>
  *   <li><code>.../text()</code></li>
  *   <li><code>.../@*</code></li>
  *   <li><code>.../@name</code></li>
@@ -31,6 +32,10 @@ import java.util.Map;
  *   <li><code>...//*...</code></li>
  *   <li><code>...//name...</code></li>
  * </ul>
+ * <p>
+ * In addition the non-abbreviated <code>.../descendant::node()</code>
+ * construct can be used for cases where the descendant-or-self axis
+ * used by the <code>...//node()</code> construct is not appropriate.
  */
 public class XPathParser {
 
@@ -60,7 +65,8 @@ public class XPathParser {
             return TextMatcher.INSTANCE;
         } else if (xpath.equals("/node()")) {
             return NodeMatcher.INSTANCE;
-        } else if (xpath.equals("/descendant:node()")) {
+        } else if (xpath.equals("/descendant::node()")
+                || xpath.equals("/descendant:node()")) { // for compatibility
             return new CompositeMatcher(
                     TextMatcher.INSTANCE,
                     new ChildMatcher(new SubtreeMatcher(NodeMatcher.INSTANCE)));
