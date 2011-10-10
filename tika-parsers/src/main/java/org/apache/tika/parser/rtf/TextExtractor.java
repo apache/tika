@@ -86,6 +86,8 @@ final class TextExtractor {
     private GroupState groupState = new GroupState();
 
     private boolean inHeader = true;
+    private int chIndex;
+    private int lastGroupStart;
     private int fontTableState;
     private int fontTableDepth;
 
@@ -336,6 +338,7 @@ final class TextExtractor {
                 pushBack = -2;
             } else {
                 b = in.read();
+                chIndex++;
             }
             if (b == -1) {
                 break;
@@ -625,7 +628,10 @@ final class TextExtractor {
             // after the 1987 RTF spec).  Note that
             // sometimes we un-ignore within this group, eg
             // when handling upr escape.
-            groupState.ignore = true;
+            if (chIndex == lastGroupStart+2) {
+                // Only ignore if \* comes right after {:
+                groupState.ignore = true;
+            }
             break;
         case '-':
             // Optional hyphen -> unicode SOFT HYPHEN
@@ -1007,6 +1013,8 @@ final class TextExtractor {
             uprState = 1;
             groupState.ignore = true;
         }
+
+        lastGroupStart = chIndex;
     }
 
     // Pop current GroupState
