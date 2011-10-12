@@ -34,6 +34,7 @@ import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -81,7 +82,7 @@ abstract class AbstractPOIFSExtractor {
     /**
      * Handle an office document that's embedded at the POIFS level
      */
-    protected void handleEmbededOfficeDoc(
+    protected void handleEmbeddedOfficeDoc(
             DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
         // Is it an embedded OLE2 document, or an embedded OOXML document?
@@ -103,56 +104,60 @@ abstract class AbstractPOIFSExtractor {
             // It's regular OLE2
         }
 
-       // Need to dump the directory out to a new temp file, so
-       //  it's stand along
-       POIFSFileSystem newFS = new POIFSFileSystem();
-       copy(dir, newFS.getRoot());
+        // What kind of document is it?
+        Metadata metadata = new Metadata();
+        POIFSDocumentType type = POIFSDocumentType.detectType(dir);
+        TikaInputStream embedded = null;
 
-       File tmpFile = File.createTempFile("tika", ".ole2");
-       try {
-           FileOutputStream out = new FileOutputStream(tmpFile);
-           newFS.writeFilesystem(out);
-           out.close();
+        TemporaryResources tmp = new TemporaryResources();
+        try {
+            if (type == POIFSDocumentType.OLE10_NATIVE) {
+                Entry entry = dir.getEntry(Ole10Native.OLE10_NATIVE);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                IOUtils.copy(new DocumentInputStream((DocumentEntry) entry), bos);
+                byte[] data = bos.toByteArray();
 
-           // What kind of document is it?
-           Metadata metadata = new Metadata();
-           POIFSDocumentType type = POIFSDocumentType.detectType(dir);
-
-           TikaInputStream embedded;
-
-           if (type==POIFSDocumentType.OLE10_NATIVE) {
-               Entry entry = dir.getEntry(Ole10Native.OLE10_NATIVE);
-               ByteArrayOutputStream bos = new ByteArrayOutputStream();
-               IOUtils.copy(new DocumentInputStream((DocumentEntry) entry), bos);
-               byte[] data = bos.toByteArray();
-
-               try {
+                try {
                     Ole10Native ole = new Ole10Native(data, 0);
                     byte[] dataBuffer = ole.getDataBuffer();
 
                     metadata.set("resourceName", dir.getName() + '/' + ole.getLabel());
 
                     embedded = TikaInputStream.get(dataBuffer);
-               } catch (Ole10NativeException ex) {
-                 embedded = TikaInputStream.get(data);
-               }
-           } else {
-               metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
-               metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
+                } catch (Ole10NativeException ex) {
+                    embedded = TikaInputStream.get(data);
+                }
+                tmp.addResource(embedded);
+            } else {
+                metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+                metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
+            }
 
-               embedded = TikaInputStream.get(tmpFile);
-           }
+            // Should we parse it?
+            if (extractor.shouldParseEmbedded(metadata)) {
+                if (embedded == null) {
+                    // Need to dump the directory out to a new temp file, so
+                    // it's stand alone
 
-           try {
-               if (extractor.shouldParseEmbedded(metadata)) {
-                   extractor.parseEmbedded(embedded, xhtml, metadata, true);
-               }
-           } finally {
-               embedded.close();
-           }
-       } finally {
-           tmpFile.delete();
-       }
+                    // TODO: can/should we use NPOIFileSystem here?
+                    POIFSFileSystem newFS = new POIFSFileSystem();
+                    copy(dir, newFS.getRoot());
+                    File tmpFile = tmp.createTemporaryFile();
+                    FileOutputStream out = new FileOutputStream(tmpFile);
+                    try {
+                        newFS.writeFilesystem(out);
+                    } finally {
+                        out.close();
+                    }
+
+                    embedded = TikaInputStream.get(tmpFile);
+                    tmp.addResource(embedded);
+                }
+                extractor.parseEmbedded(embedded, xhtml, metadata, true);
+            }
+        } finally {
+            tmp.dispose();
+        }
     }
 
     protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
@@ -164,8 +169,12 @@ abstract class AbstractPOIFSExtractor {
                 copy((DirectoryEntry)entry, newDir);
             } else {
                 // Copy entry
-                InputStream contents = new DocumentInputStream((DocumentEntry)entry); 
-                destDir.createDocument(entry.getName(), contents);
+                InputStream contents = new DocumentInputStream((DocumentEntry)entry);
+                try {
+                    destDir.createDocument(entry.getName(), contents);
+                } finally {
+                    contents.close();
+                }
             }
         }
     }
