@@ -50,7 +50,6 @@ import org.xml.sax.helpers.AttributesImpl;
 
 public class WordExtractor extends AbstractPOIFSExtractor {
 
-    private static final char RECORD_SEPARATOR = 30;
     private static final char UNICODECHAR_NONBREAKING_HYPHEN = '\u2011';
     private static final char UNICODECHAR_ZERO_WIDTH_SPACE = '\u200b';
 
@@ -121,7 +120,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             for (Entry entry : op) {
                 if (entry.getName().startsWith("_")
                         && entry instanceof DirectoryEntry) {
-                    handleEmbededOfficeDoc((DirectoryEntry) entry, xhtml);
+                    handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml);
                 }
             }
         } catch(FileNotFoundException e) {
