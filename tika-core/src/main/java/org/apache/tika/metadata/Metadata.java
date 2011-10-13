@@ -49,7 +49,7 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * All dates are represented as UTC
      */
     private static final DateFormat iso8601Format =
-        createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", "UTF");
+        createDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", "UTC");
 
     /**
      * Some parsers will have the date as a ISO-8601 string
@@ -65,7 +65,7 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
         createDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", null),    // With timezone
         createDateFormat("yyyy-MM-dd'T'HH:mm:ss", null),     // Without timezone
         // yyyy-mm-dd hh...
-        createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", "UTF"), // UTC/Zulu
+        createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", "UTC"), // UTC/Zulu
         createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null),    // With timezone
         createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null),     // Without timezone
     };
