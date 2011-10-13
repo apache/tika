@@ -2034,6 +2034,7 @@
   <mime-type type="application/vnd.wmc"/>
   <mime-type type="application/vnd.wmf.bootstrap"/>
   <mime-type type="application/vnd.wordperfect">
+    <alias type="application/wordperfect"/>
     <glob pattern="*.wpd"/>
   </mime-type>
   <mime-type type="application/vnd.wqd">
