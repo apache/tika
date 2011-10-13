@@ -57,7 +57,8 @@ public class RFC822Parser extends AbstractParser {
             SAXException, TikaException {
         // Get the mime4j configuration, or use a default one
         MimeConfig config = new MimeConfig();
-        config.setMaxLineLen(10000); // max length of any individual header
+        config.setMaxLineLen(100000);
+        config.setMaxHeaderLen(100000); // max length of any individual header
         config = context.get(MimeConfig.class, config);
 
         MimeStreamParser parser = new MimeStreamParser(config);
