@@ -173,7 +173,7 @@ public class RFC822ParserTest extends TestCase {
      */
     public void testLongHeader() throws Exception {
         StringBuilder inputBuilder = new StringBuilder();
-        for (int i = 0; i < 200; ++i) {
+        for (int i = 0; i < 2000; ++i) {
             inputBuilder.append( //len > 50
                     "really really really really really really long name ");
         }
