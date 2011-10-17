@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.apache.tika.mime.MediaType.application;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
@@ -25,12 +23,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+
+import static org.apache.tika.mime.MediaType.application;
 
 /**
  * A detector that works on a POIFS OLE2 document
@@ -76,24 +77,42 @@ public class POIFSContainerDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
-        // Check if the document starts with the OLE header
-        input.mark(8);
-        try {
-            if (input.read() != 0xd0 || input.read() != 0xcf
+        // If this is a TikaInputStream wrapping an already
+        // parsed NPOIFileSystem/DirectoryNode, just get the
+        // names from the root:
+        TikaInputStream tis = TikaInputStream.cast(input);
+        Set<String> names = null;
+        if (tis != null) {
+            Object container = tis.getOpenContainer();
+            if (container instanceof NPOIFSFileSystem) {
+                names = getTopLevelNames(((NPOIFSFileSystem) container).getRoot());
+            } else if (container instanceof DirectoryNode) {
+                names = getTopLevelNames((DirectoryNode) container);
+            }
+        }
+
+        if (names == null) {
+            // Check if the document starts with the OLE header
+            input.mark(8);
+            try {
+                if (input.read() != 0xd0 || input.read() != 0xcf
                     || input.read() != 0x11 || input.read() != 0xe0
                     || input.read() != 0xa1 || input.read() != 0xb1
                     || input.read() != 0x1a || input.read() != 0xe1) {
-                return MediaType.OCTET_STREAM;
+                    return MediaType.OCTET_STREAM;
+                }
+            } finally {
+                input.reset();
             }
-        } finally {
-            input.reset();
         }
 
         // We can only detect the exact type when given a TikaInputStream
-        TikaInputStream tis = TikaInputStream.cast(input);
-        if (tis != null) {
+        if (names == null && tis != null) {
             // Look for known top level entry names to detect the document type
-            Set<String> names = getTopLevelNames(tis);
+            names = getTopLevelNames(tis);
+        }
+
+        if (names != null) {
             if (names.contains("Workbook")) {
                 return XLS;
             } else if (names.contains("EncryptedPackage")) {
@@ -149,11 +168,7 @@ public class POIFSContainerDetector implements Detector {
             // a reference to the already opened POI file system
             stream.setOpenContainer(fs);
 
-            Set<String> names = new HashSet<String>();
-            for (Entry entry : fs.getRoot()) {
-                names.add(entry.getName());
-            }
-            return names;
+            return getTopLevelNames(fs.getRoot());
         } catch (IOException e) {
             // Parse error in POI, so we don't know the file type
             return Collections.emptySet();
@@ -163,4 +178,11 @@ public class POIFSContainerDetector implements Detector {
         }
     }
 
+    private static Set<String> getTopLevelNames(DirectoryNode root) {
+        Set<String> names = new HashSet<String>();
+        for (Entry entry : root) {
+            names.add(entry.getName());
+        }
+        return names;
+    }
 }

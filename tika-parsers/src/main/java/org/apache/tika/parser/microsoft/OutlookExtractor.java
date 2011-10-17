@@ -30,6 +30,7 @@ import org.apache.poi.hsmf.datatypes.MAPIProperty;
 import org.apache.poi.hsmf.datatypes.StringChunk;
 import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -51,10 +52,14 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
     private final MAPIMessage msg;
 
     public OutlookExtractor(NPOIFSFileSystem filesystem, ParseContext context) throws TikaException {
+        this(filesystem.getRoot(), context);
+    }
+
+    public OutlookExtractor(DirectoryNode root, ParseContext context) throws TikaException {
         super(context);
         
         try {
-            this.msg = new MAPIMessage(filesystem.getRoot());
+            this.msg = new MAPIMessage(root);
         } catch (IOException e) {
             throw new TikaException("Failed to parse Outlook message", e);
         }

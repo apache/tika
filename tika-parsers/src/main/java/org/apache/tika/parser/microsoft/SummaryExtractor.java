@@ -27,6 +27,7 @@ import org.apache.poi.hpsf.NoPropertySetStreamException;
 import org.apache.poi.hpsf.PropertySet;
 import org.apache.poi.hpsf.SummaryInformation;
 import org.apache.poi.hpsf.UnexpectedPropertySetTypeException;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
@@ -54,16 +55,21 @@ class SummaryExtractor {
 
     public void parseSummaries(NPOIFSFileSystem filesystem)
             throws IOException, TikaException {
-        parseSummaryEntryIfExists(filesystem, SUMMARY_INFORMATION);
-        parseSummaryEntryIfExists(filesystem, DOCUMENT_SUMMARY_INFORMATION);
+        parseSummaries(filesystem.getRoot());
+    }
+
+    public void parseSummaries(DirectoryNode root)
+            throws IOException, TikaException {
+        parseSummaryEntryIfExists(root, SUMMARY_INFORMATION);
+        parseSummaryEntryIfExists(root, DOCUMENT_SUMMARY_INFORMATION);
     }
 
     private void parseSummaryEntryIfExists(
-            NPOIFSFileSystem filesystem, String entryName)
+            DirectoryNode root, String entryName)
             throws IOException, TikaException {
         try {
             DocumentEntry entry =
-                (DocumentEntry) filesystem.getRoot().getEntry(entryName);
+                (DocumentEntry) root.getEntry(entryName);
             PropertySet properties =
                 new PropertySet(new DocumentInputStream(entry));
             if (properties.isSummaryInformation()) {
@@ -134,7 +140,7 @@ class SummaryExtractor {
      * Attempt to parse custom document properties and add to the collection of metadata
      * @param customProperties
      */
-    private void parse(CustomProperties customProperties){
+    private void parse(CustomProperties customProperties) {
         if (customProperties != null) {
             for (String name : customProperties.nameSet()) {
                 // Apply the custom prefix

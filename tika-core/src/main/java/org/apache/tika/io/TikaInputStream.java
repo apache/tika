@@ -649,12 +649,15 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     public String toString() {
-       String str = "TikaInputStream of ";
-       if(hasFile()) {
-          str += file.toString();
-       } else {
-          str += in.toString();
-       }
-       return str;
+        String str = "TikaInputStream of ";
+        if (hasFile()) {
+            str += file.toString();
+        } else {
+            str += in.toString();
+        }
+        if (openContainer != null) {
+            str += " (in " + openContainer + ")";
+        }
+        return str;
     }
 }
