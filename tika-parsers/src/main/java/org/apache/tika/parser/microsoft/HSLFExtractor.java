@@ -29,6 +29,7 @@ import org.apache.poi.hslf.model.Slide;
 import org.apache.poi.hslf.model.TextRun;
 import org.apache.poi.hslf.usermodel.ObjectData;
 import org.apache.poi.hslf.usermodel.SlideShow;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -44,7 +45,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
    protected void parse(
          NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
          throws IOException, SAXException, TikaException {
-      HSLFSlideShow ss = new HSLFSlideShow(filesystem.getRoot());
+       parse(filesystem.getRoot(), xhtml);
+   }
+    
+   protected void parse(
+         DirectoryNode root, XHTMLContentHandler xhtml)
+         throws IOException, SAXException, TikaException {
+      HSLFSlideShow ss = new HSLFSlideShow(root);
       SlideShow _show = new SlideShow(ss);
       Slide[] _slides = _show.getSlides();
 

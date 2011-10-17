@@ -39,6 +39,7 @@ import org.apache.poi.hwpf.usermodel.Table;
 import org.apache.poi.hwpf.usermodel.TableCell;
 import org.apache.poi.hwpf.usermodel.TableRow;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
@@ -65,11 +66,17 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     protected void parse(
             NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
+        parse(filesystem.getRoot(), xhtml);
+    }
+
+    protected void parse(
+            DirectoryNode root, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
         HWPFDocument document;
         try {
-            document = new HWPFDocument(filesystem.getRoot());
+            document = new HWPFDocument(root);
         } catch(OldWordFileFormatException e) {
-            parseWord6(filesystem, xhtml);
+            parseWord6(root, xhtml);
             return;
         }
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
@@ -115,8 +122,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         
         // Handle any embeded office documents
         try {
-            DirectoryEntry op =
-                (DirectoryEntry) filesystem.getRoot().getEntry("ObjectPool");
+            DirectoryEntry op = (DirectoryEntry) root.getEntry("ObjectPool");
             for (Entry entry : op) {
                 if (entry.getName().startsWith("_")
                         && entry instanceof DirectoryEntry) {
@@ -418,12 +424,30 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     protected void parseWord6(
             NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
-        HWPFOldDocument doc = new HWPFOldDocument(filesystem.getRoot());
+        parseWord6(filesystem.getRoot(), xhtml);
+    }
+
+    protected void parseWord6(
+            DirectoryNode root, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
+        HWPFOldDocument doc = new HWPFOldDocument(root);
         Word6Extractor extractor = new Word6Extractor(doc);
         
         for(String p : extractor.getParagraphText()) {
             xhtml.element("p", p);
         }
+    }
+
+    private static final Map<String,TagAndStyle> fixedParagraphStyles = new HashMap<String,TagAndStyle>();
+    private static final TagAndStyle defaultParagraphStyle = new TagAndStyle("p", null);
+    static {
+        fixedParagraphStyles.put("Default", defaultParagraphStyle);
+        fixedParagraphStyles.put("Normal", defaultParagraphStyle);
+        fixedParagraphStyles.put("heading", new TagAndStyle("h1", null));
+        fixedParagraphStyles.put("Heading", new TagAndStyle("h1", null));
+        fixedParagraphStyles.put("Title", new TagAndStyle("h1", "title"));
+        fixedParagraphStyles.put("Subtitle", new TagAndStyle("h2", "subtitle"));
+        fixedParagraphStyles.put("HTML Preformatted", new TagAndStyle("pre", null));
     }
     
     /**
@@ -431,37 +455,32 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      *  what style should be applied to it. 
      */
     public static TagAndStyle buildParagraphTagAndStyle(String styleName, boolean isTable) {
+       TagAndStyle tagAndStyle = fixedParagraphStyles.get(styleName);
+       if (tagAndStyle != null) {
+           return tagAndStyle;
+       }
+
+       if (styleName.equals("Table Contents") && isTable) {
+           return defaultParagraphStyle;
+       }
+
        String tag = "p";
        String styleClass = null;
-       
-       if(styleName.equals("Default") || styleName.equals("Normal")) {
-          // Already setup
-       } else if(styleName.equals("Table Contents") && isTable) {
-          // Already setup
-       } else if(styleName.equals("heading") || styleName.equals("Heading")) {
-          tag = "h1";
-       } else if(styleName.startsWith("heading") || styleName.startsWith("Heading")) {
-          // "Heading 3" or "Heading2" or "heading 4"
-          int num = 1;
-          try {
-             num = Integer.parseInt( 
-                   styleName.substring(styleName.length()-1)
-             );
-          } catch(NumberFormatException e) {}
-          // Turn it into a H1 - H6 (H7+ isn't valid!)
-          tag = "h" + Math.min(num, 6);
-       } else if(styleName.equals("Title")) {
-          tag = "h1";
-          styleClass = "title";
-       } else if(styleName.equals("Subtitle")) {
-          tag = "h2";
-          styleClass = "subtitle";
-       } else if(styleName.equals("HTML Preformatted")) {
-          tag = "pre";
+
+       if(styleName.startsWith("heading") || styleName.startsWith("Heading")) {
+           // "Heading 3" or "Heading2" or "heading 4"
+           int num = 1;
+           try {
+               num = Integer.parseInt(
+                                      styleName.substring(styleName.length()-1)
+                                      );
+           } catch(NumberFormatException e) {}
+           // Turn it into a H1 - H6 (H7+ isn't valid!)
+           tag = "h" + Math.min(num, 6);
        } else {
-          styleClass = styleName.replace(' ', '_');
-          styleClass = styleClass.substring(0,1).toLowerCase() +
-                         styleClass.substring(1);
+           styleClass = styleName.replace(' ', '_');
+           styleClass = styleClass.substring(0,1).toLowerCase() +
+               styleClass.substring(1);
        }
 
        return new TagAndStyle(tag,styleClass);

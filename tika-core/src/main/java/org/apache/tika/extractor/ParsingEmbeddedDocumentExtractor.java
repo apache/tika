@@ -16,8 +16,6 @@
  */
 package org.apache.tika.extractor;
 
-import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -36,6 +34,8 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -92,11 +92,26 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // Use the delegate parser to parse this entry
         TemporaryResources tmp = new TemporaryResources();
         try {
+            final TikaInputStream newStream = TikaInputStream.get(new CloseShieldInputStream(stream), tmp);
+            if (stream instanceof TikaInputStream) {
+                final Object container = ((TikaInputStream) stream).getOpenContainer();
+
+                // TODO: we can't let ZipPackage through,
+                // becase of POI bug 51949.  This is less
+                // efficient because the inner parser will
+                // have to re-open the zip archive again.
+                // Once we upgrade to POI 3.8 beta 5 we can
+                // remove this:
+                if ((container != null && !(container.getClass().getSimpleName().equals("ZipPackage")))) {
+                    newStream.setOpenContainer(container);
+                }
+            }
             DELEGATING_PARSER.parse(
-                    TikaInputStream.get(new CloseShieldInputStream(stream), tmp),
-                    new EmbeddedContentHandler(new BodyContentHandler(handler)),
-                    metadata, context);
+                                    newStream,
+                                    new EmbeddedContentHandler(new BodyContentHandler(handler)),
+                                    metadata, context);
         } catch (TikaException e) {
+            // TODO: can we log a warning somehow?
             // Could not parse the entry, just skip the content
         } finally {
             tmp.close();

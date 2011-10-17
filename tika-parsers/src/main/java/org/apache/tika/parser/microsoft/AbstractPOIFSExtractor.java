@@ -17,11 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -29,12 +25,10 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -64,11 +58,11 @@ abstract class AbstractPOIFSExtractor {
        try {
            Metadata metadata = new Metadata();
            if(filename != null) {
-              metadata.set(Metadata.TIKA_MIME_FILE, filename);
-              metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+               metadata.set(Metadata.TIKA_MIME_FILE, filename);
+               metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
            }
            if(mediaType != null) {
-              metadata.set(Metadata.CONTENT_TYPE, mediaType);
+               metadata.set(Metadata.CONTENT_TYPE, mediaType);
            }
 
            if (extractor.shouldParseEmbedded(metadata)) {
@@ -85,11 +79,13 @@ abstract class AbstractPOIFSExtractor {
     protected void handleEmbeddedOfficeDoc(
             DirectoryEntry dir, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
+
         // Is it an embedded OLE2 document, or an embedded OOXML document?
-        try {
+
+        if (dir.hasEntry("Package")) {
+            // It's OOXML (has a ZipFile):
             Entry ooxml = dir.getEntry("Package");
 
-            // It's OOXML
             TikaInputStream stream = TikaInputStream.get(
                     new DocumentInputStream((DocumentEntry) ooxml));
             try {
@@ -100,34 +96,35 @@ abstract class AbstractPOIFSExtractor {
             } finally {
                 stream.close();
             }
-        } catch(FileNotFoundException e) {
-            // It's regular OLE2
         }
+
+        // It's regular OLE2:
 
         // What kind of document is it?
         Metadata metadata = new Metadata();
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         TikaInputStream embedded = null;
 
-        TemporaryResources tmp = new TemporaryResources();
         try {
             if (type == POIFSDocumentType.OLE10_NATIVE) {
                 Entry entry = dir.getEntry(Ole10Native.OLE10_NATIVE);
                 ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+                // TODO: once we upgrade to POI 3.8 beta 5
+                // we can avoid this full copy/serialize by
+                // passing the DirectoryNode instead:
                 IOUtils.copy(new DocumentInputStream((DocumentEntry) entry), bos);
                 byte[] data = bos.toByteArray();
 
                 try {
+                    // Maybe unwrap OLE10Native record:
                     Ole10Native ole = new Ole10Native(data, 0);
-                    byte[] dataBuffer = ole.getDataBuffer();
-
-                    metadata.set("resourceName", dir.getName() + '/' + ole.getLabel());
-
-                    embedded = TikaInputStream.get(dataBuffer);
+                    data = ole.getDataBuffer();
+                    metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '/' + ole.getLabel());
                 } catch (Ole10NativeException ex) {
-                    embedded = TikaInputStream.get(data);
+                    // Not an OLE10Native record
                 }
-                tmp.addResource(embedded);
+                embedded = TikaInputStream.get(data);
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
@@ -136,45 +133,18 @@ abstract class AbstractPOIFSExtractor {
             // Should we parse it?
             if (extractor.shouldParseEmbedded(metadata)) {
                 if (embedded == null) {
-                    // Need to dump the directory out to a new temp file, so
-                    // it's stand alone
-
-                    // TODO: can/should we use NPOIFileSystem here?
-                    POIFSFileSystem newFS = new POIFSFileSystem();
-                    copy(dir, newFS.getRoot());
-                    File tmpFile = tmp.createTemporaryFile();
-                    FileOutputStream out = new FileOutputStream(tmpFile);
-                    try {
-                        newFS.writeFilesystem(out);
-                    } finally {
-                        out.close();
-                    }
-
-                    embedded = TikaInputStream.get(tmpFile);
-                    tmp.addResource(embedded);
+                    // Make a TikaInputStream that just
+                    // passes the root directory of the
+                    // embedded document, and is otherwise
+                    // empty (byte[0]):
+                    embedded = TikaInputStream.get(new byte[0]);
+                    embedded.setOpenContainer(dir);
                 }
                 extractor.parseEmbedded(embedded, xhtml, metadata, true);
             }
         } finally {
-            tmp.dispose();
-        }
-    }
-
-    protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
-            throws IOException {
-        for (Entry entry : sourceDir) {
-            if (entry instanceof DirectoryEntry) {
-                // Need to recurse
-                DirectoryEntry newDir = destDir.createDirectory(entry.getName());
-                copy((DirectoryEntry)entry, newDir);
-            } else {
-                // Copy entry
-                InputStream contents = new DocumentInputStream((DocumentEntry)entry);
-                try {
-                    destDir.createDocument(entry.getName(), contents);
-                } finally {
-                    contents.close();
-                }
+            if (embedded != null) {
+                embedded.close();
             }
         }
     }

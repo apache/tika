@@ -57,6 +57,7 @@ import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
@@ -133,11 +134,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     protected void parse(
             NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException, TikaException {
+        parse(filesystem.getRoot(), xhtml, locale);
+    }
+
+    protected void parse(
+            DirectoryNode root, XHTMLContentHandler xhtml,
+            Locale locale) throws IOException, SAXException, TikaException {
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
-        listener.processFile(filesystem, isListenForAllRecords());
+        listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
 
-        for (Entry entry : filesystem.getRoot()) {
+        for (Entry entry : root) {
             if (entry.getName().startsWith("MBD")
                     && entry instanceof DirectoryEntry) {
                 try {
@@ -246,6 +253,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          */
     	public void processFile(NPOIFSFileSystem filesystem, boolean listenForAllRecords)
     		throws IOException, SAXException, TikaException {
+            processFile(filesystem.getRoot(), listenForAllRecords);
+        }
+
+    	public void processFile(DirectoryNode root, boolean listenForAllRecords)
+    		throws IOException, SAXException, TikaException {
 
     		// Set up listener and register the records we want to process
             HSSFRequest hssfRequest = new HSSFRequest();
@@ -272,7 +284,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
 
             // Create event factory and process Workbook (fire events)
-            DocumentInputStream documentInputStream = filesystem.createDocumentInputStream("Workbook");
+            DocumentInputStream documentInputStream = root.createDocumentInputStream("Workbook");
             HSSFEventFactory eventFactory = new HSSFEventFactory();
             try {
                 eventFactory.processEvents(hssfRequest, documentInputStream);

@@ -21,8 +21,10 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
@@ -30,6 +32,7 @@ import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
 import org.apache.poi.poifs.crypt.EncryptionInfo;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
@@ -115,37 +118,27 @@ public class OfficeParser extends AbstractParser {
             return UNKNOWN;
         }
 
+        private final static Map<String,POIFSDocumentType> typeMap = new HashMap<String,POIFSDocumentType>();
+        static {
+            typeMap.put("Workbook", WORKBOOK);
+            typeMap.put("EncryptedPackage", ENCRYPTED);
+            typeMap.put("WordDocument", WORDDOCUMENT);
+            typeMap.put("Quill", PUBLISHER);
+            typeMap.put("PowerPoint Document", POWERPOINT);
+            typeMap.put("VisioDocument", VISIO);
+            typeMap.put("CONTENTS", WORKS);
+            typeMap.put("\u0001Ole10Native", POIFSDocumentType.OLE10_NATIVE);
+        }
+
         public static POIFSDocumentType detectType(Entry entry) {
             String name = entry.getName();
-
-            if ("Workbook".equals(name)) {
-                return WORKBOOK;
+            POIFSDocumentType type = typeMap.get(name);
+            if (type != null) {
+                return type;
             }
-            if ("EncryptedPackage".equals(name)) {
-                return ENCRYPTED;
-            }
-            if ("WordDocument".equals(name)) {
-                return WORDDOCUMENT;
-            }
-            if ("Quill".equals(name)) {
-                return PUBLISHER;
-            }
-            if ("PowerPoint Document".equals(entry.getName())) {
-                return POWERPOINT;
-            }
-            if ("VisioDocument".equals(entry.getName())) {
-                return VISIO;
-            }
-            if ("CONTENTS".equals(entry.getName())) {
-               return WORKS;
-           }
             if (entry.getName().startsWith("__substg1.0_")) {
                 return OUTLOOK;
             }
-            if ("\u0001Ole10Native".equals(name)) {
-              return POIFSDocumentType.OLE10_NATIVE;
-            }
-
             return UNKNOWN;
         }
     }
@@ -164,26 +157,36 @@ public class OfficeParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        NPOIFSFileSystem filesystem;
+        final DirectoryNode root;
         TikaInputStream tstream = TikaInputStream.cast(stream);
         if (tstream == null) {
-            filesystem =
-                new NPOIFSFileSystem(new CloseShieldInputStream(stream));
-        } else if (tstream.getOpenContainer() instanceof NPOIFSFileSystem) {
-            filesystem = (NPOIFSFileSystem) tstream.getOpenContainer();
-        } else if (tstream.hasFile()) {
-            filesystem = new NPOIFSFileSystem(tstream.getFileChannel());
+            root = new NPOIFSFileSystem(new CloseShieldInputStream(stream)).getRoot();
         } else {
-            filesystem =
-                new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
+            final Object container = tstream.getOpenContainer();
+            if (container instanceof NPOIFSFileSystem) {
+                root = ((NPOIFSFileSystem) container).getRoot();
+            } else if (container instanceof DirectoryNode) {
+                root = (DirectoryNode) container;
+            } else if (tstream.hasFile()) {
+                root = new NPOIFSFileSystem(tstream.getFileChannel()).getRoot();
+            } else {
+                root = new NPOIFSFileSystem(new CloseShieldInputStream(tstream)).getRoot();
+            }
         }
+        parse(root, context, metadata, xhtml);
+        xhtml.endDocument();
+    }
+
+    protected void parse(
+            DirectoryNode root, ParseContext context, Metadata metadata, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
 
         // Parse summary entries first, to make metadata available early
-        new SummaryExtractor(metadata).parseSummaries(filesystem);
+        new SummaryExtractor(metadata).parseSummaries(root);
 
         // Parse remaining document entries
         boolean outlookExtracted = false;
-        for (Entry entry : filesystem.getRoot()) {
+        for (Entry entry : root) {
             POIFSDocumentType type = POIFSDocumentType.detectType(entry);
 
             if (type!=POIFSDocumentType.UNKNOWN) {
@@ -193,22 +196,22 @@ public class OfficeParser extends AbstractParser {
             switch (type) {
                 case PUBLISHER:
                     PublisherTextExtractor publisherTextExtractor =
-                        new PublisherTextExtractor(filesystem);
+                        new PublisherTextExtractor(root);
                     xhtml.element("p", publisherTextExtractor.getText());
                     break;
                 case WORDDOCUMENT:
-                    new WordExtractor(context).parse(filesystem, xhtml);
+                    new WordExtractor(context).parse(root, xhtml);
                     break;
                 case POWERPOINT:
-                    new HSLFExtractor(context).parse(filesystem, xhtml);
+                    new HSLFExtractor(context).parse(root, xhtml);
                     break;
                 case WORKBOOK:
                     Locale locale = context.get(Locale.class, Locale.getDefault());
-                    new ExcelExtractor(context).parse(filesystem, xhtml, locale);
+                    new ExcelExtractor(context).parse(root, xhtml, locale);
                     break;
                 case VISIO:
                     VisioTextExtractor visioTextExtractor =
-                        new VisioTextExtractor(filesystem);
+                        new VisioTextExtractor(root);
                     for (String text : visioTextExtractor.getAllText()) {
                         xhtml.element("p", text);
                     }
@@ -218,13 +221,13 @@ public class OfficeParser extends AbstractParser {
                         outlookExtracted = true;
 
                         OutlookExtractor extractor =
-                            new OutlookExtractor(filesystem, context);
+                            new OutlookExtractor(root, context);
 
                         extractor.parse(xhtml, metadata);
                     }
                     break;
                 case ENCRYPTED:
-                    EncryptionInfo info = new EncryptionInfo(filesystem);
+                    EncryptionInfo info = new EncryptionInfo(root);
                     Decryptor d = Decryptor.getInstance(info);
 
                     try {
@@ -234,7 +237,7 @@ public class OfficeParser extends AbstractParser {
 
                         OOXMLParser parser = new OOXMLParser();
 
-                        parser.parse(d.getDataStream(filesystem), new EmbeddedContentHandler(
+                        parser.parse(d.getDataStream(root), new EmbeddedContentHandler(
                                         new BodyContentHandler(xhtml)),
                                         metadata, context);
                     } catch (GeneralSecurityException ex) {
@@ -242,8 +245,6 @@ public class OfficeParser extends AbstractParser {
                     }
             }
         }
-
-        xhtml.endDocument();
     }
 
     private void setType(Metadata metadata, MediaType type) {
