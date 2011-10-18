@@ -76,7 +76,7 @@ public class AutoDetectParser extends CompositeParser {
 
     public AutoDetectParser(TikaConfig config) {
         super(config.getMediaTypeRegistry(), config.getParser());
-        setDetector(new DefaultDetector(config.getMimeRepository()));
+        setDetector(config.getDetector());
     }
 
     /**
@@ -84,7 +84,7 @@ public class AutoDetectParser extends CompositeParser {
      */
     public void setConfig(TikaConfig config) {
         setParsers(config.getParsers());
-        setDetector(new DefaultDetector(config.getMimeRepository()));
+        setDetector(config.getDetector());
         setMediaTypeRegistry(config.getMediaTypeRegistry());
     }
 
