@@ -75,6 +75,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.XMPContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -192,14 +193,32 @@ public class TikaCLI {
     };
 
     private final OutputType JSON = new OutputType() {
-       @Override
-       protected ContentHandler getContentHandler(OutputStream output)
-               throws Exception {
-           final PrintWriter writer =
-               new PrintWriter(getOutputWriter(output, encoding));
-           return new NoDocumentJSONMetHandler(writer);
-       }
-   };
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
+            final PrintWriter writer =
+                    new PrintWriter(getOutputWriter(output, encoding));
+            return new NoDocumentJSONMetHandler(writer);
+        }
+    };
+
+    private final OutputType XMP = new OutputType() {
+        @Override
+        protected ContentHandler getContentHandler(OutputStream output)
+                throws Exception {
+            final ContentHandler handler =
+                    getTransformerHandler(output, "xml", encoding, prettyPrint);
+            return new DefaultHandler() {
+                @Override
+                public void endDocument() throws SAXException {
+                    XMPContentHandler xmp = new XMPContentHandler(handler);
+                    xmp.startDocument();
+                    xmp.metadata(metadata);
+                    xmp.endDocument();
+                }
+            };
+        }
+    };
 
     private final OutputType LANGUAGE = new OutputType() {
         @Override
@@ -308,7 +327,9 @@ public class TikaCLI {
         } else if (arg.startsWith("--encoding=")) {
             encoding = arg.substring("--encoding=".length());
         } else  if (arg.equals("-j") || arg.equals("--json")) {
-            type = JSON;            
+            type = JSON;
+        } else  if (arg.equals("-y") || arg.equals("--xmp")) {
+            type = XMP;
         } else if (arg.equals("-x") || arg.equals("--xml")) {
             type = XML;
         } else if (arg.equals("-h") || arg.equals("--html")) {
@@ -386,10 +407,11 @@ public class TikaCLI {
         out.println();
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");
-        out.println("    -j  or --json          Output JSON content");
         out.println("    -t  or --text          Output plain text content");
         out.println("    -T  or --text-main     Output plain text content (main content only)");
         out.println("    -m  or --metadata      Output only metadata");
+        out.println("    -j  or --json          Output metadata in JSON");
+        out.println("    -y  or --xmp           Output metadata in XMP");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("    -eX or --encoding=X    Use output encoding X");
@@ -430,7 +452,7 @@ public class TikaCLI {
         out.println();
         out.println("- Server mode");
         out.println();
-        out.println("    Use the \"-server\" (or \"-s\") option to start the");
+        out.println("    Use the \"--server\" (or \"-s\") option to start the");
         out.println("    Apache Tika server. The server will listen to the");
         out.println("    ports you specify as one or more arguments.");
         out.println();
