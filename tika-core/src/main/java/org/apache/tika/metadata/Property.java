@@ -18,8 +18,12 @@ package org.apache.tika.metadata;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * XMP property definition. Each instance of this class defines a single
@@ -30,7 +34,7 @@ import java.util.Set;
  *
  * @since Apache Tika 0.7
  */
-public final class Property {
+public final class Property implements Comparable<Property> {
 
     public static enum PropertyType {
         SIMPLE, STRUCTURE, BAG, SEQ, ALT
@@ -40,6 +44,9 @@ public final class Property {
         BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE,
         MIME_TYPE, PROPER_NAME, RATIONAL, REAL, TEXT, URI, URL, XPATH
     }
+
+    private static final Map<String, Property> properties =
+            new HashMap<String, Property>();
 
     private final String name;
 
@@ -66,6 +73,10 @@ public final class Property {
                     new HashSet<String>(Arrays.asList(choices.clone())));
         } else {
             this.choices = null;
+        }
+
+        synchronized (properties) {
+            properties.put(name, this);
         }
     }
 
@@ -114,6 +125,19 @@ public final class Property {
      */
     public Set<String> getChoices() {
         return choices;
+    }
+
+    public static SortedSet<Property> getProperties(String prefix) {
+        SortedSet<Property> set = new TreeSet<Property>();
+        String p = prefix + ":";
+        synchronized (properties) {
+            for (String name : properties.keySet()) {
+                if (name.startsWith(p)) {
+                    set.add(properties.get(name));
+                }
+            }
+        }
+        return set;
     }
 
     public static Property internalBoolean(String name) {
@@ -180,6 +204,22 @@ public final class Property {
 
     public static Property externalText(String name) {
         return new Property(name, false, ValueType.TEXT);
+    }
+
+    //----------------------------------------------------------< Comparable >
+
+    public int compareTo(Property o) {
+        return name.compareTo(o.name);
+    }
+
+    //--------------------------------------------------------------< Object >
+
+    public boolean equals(Object o) {
+        return o instanceof Property && name.equals(((Property) o).name);
+    }
+
+    public int hashCode() {
+        return name.hashCode();
     }
 
 }
