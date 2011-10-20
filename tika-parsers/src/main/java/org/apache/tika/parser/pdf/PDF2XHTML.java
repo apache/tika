@@ -53,12 +53,12 @@ class PDF2XHTML extends PDFTextStripper {
      * @throws TikaException if the PDF document can not be processed
      */
     public static void process(
-            PDDocument document, ContentHandler handler, Metadata metadata, boolean extractAnnotationText)
+            PDDocument document, ContentHandler handler, Metadata metadata, boolean extractAnnotationText, boolean enableAutoSpace)
             throws SAXException, TikaException {
         try {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content handler.
-            new PDF2XHTML(handler, metadata, extractAnnotationText).writeText(document, new Writer() {
+            new PDF2XHTML(handler, metadata, extractAnnotationText, enableAutoSpace).writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {
                 }
@@ -81,12 +81,20 @@ class PDF2XHTML extends PDFTextStripper {
     private final XHTMLContentHandler handler;
     private final boolean extractAnnotationText;
 
-    private PDF2XHTML(ContentHandler handler, Metadata metadata, boolean extractAnnotationText)
+    private PDF2XHTML(ContentHandler handler, Metadata metadata, boolean extractAnnotationText, boolean enableAutoSpace)
             throws IOException {
         this.handler = new XHTMLContentHandler(handler, metadata);
         this.extractAnnotationText = extractAnnotationText;
         setForceParsing(true);
         setSortByPosition(false);
+        if (enableAutoSpace) {
+            setWordSeparator(" ");
+        } else {
+            setWordSeparator("");
+        }
+        // TODO: maybe expose setting these too:
+        //setAverageCharTolerance(1.0f);
+        //setSpacingTolerance(1.0f);
     }
 
     @Override
@@ -224,7 +232,7 @@ class PDF2XHTML extends PDFTextStripper {
     @Override
     protected void writeWordSeparator() throws IOException {
         try {
-            handler.characters(" ");
+            handler.characters(getWordSeparator());
         } catch (SAXException e) {
             throw new IOExceptionWithCause(
                     "Unable to write a space character", e);

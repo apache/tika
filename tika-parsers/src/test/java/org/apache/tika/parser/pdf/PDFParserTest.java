@@ -258,6 +258,41 @@ public class PDFParserTest extends TikaTest {
         assertContains("<p>1</p>", content);
     }
 
+    public void testDisableAutoSpace() throws Exception {
+        PDFParser parser = new PDFParser();
+        parser.setEnableAutoSpace(false);
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getResourceAsStream("/test-documents/testExtraSpaces.pdf");
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        String content = handler.toString();
+        content = content.replaceAll("[\\s\u00a0]+"," ");
+        // Text is correct when autoSpace is off:
+        assertContains("Here is some formatted text", content);
+
+        parser.setEnableAutoSpace(true);
+        handler = new BodyContentHandler();
+        metadata = new Metadata();
+        context = new ParseContext();
+        stream = getResourceAsStream("/test-documents/testExtraSpaces.pdf");
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        content = handler.toString();
+        content = content.replaceAll("[\\s\u00a0]+"," ");
+        // Text is correct when autoSpace is off:
+
+        // Text has extra spaces when autoSpace is on
+        assertEquals(-1, content.indexOf("Here is some formatted text"));
+    }
+
     private static class XMLResult {
         public final String xml;
         public final Metadata metadata;
