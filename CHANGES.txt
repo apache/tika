@@ -17,6 +17,8 @@ Release 0.11 - Current Development
 
  * TIKA-753: Improve performance when extracting embedded office docs.
 
+ * TIKA-738: Optionally extract text from PDF annotations.
+
 Release 0.10 - 09/25/2011
 
 The most notable changes in Tika 0.10 over previous releases are:

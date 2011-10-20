@@ -218,8 +218,7 @@ public class PDFParserTest extends TikaTest {
         //assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
-    // TIKA-738: re-enable this
-    public void IGNOREtestAnnotations() throws Exception {
+    public void testAnnotations() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -234,6 +233,23 @@ public class PDFParserTest extends TikaTest {
         content = content.replaceAll("[\\s\u00a0]+"," ");
         assertContains("Here is some text", content);
         assertContains("Here is a comment", content);
+
+        // Test w/ annotation text disabled:
+        PDFParser pdfParser = new PDFParser();
+        pdfParser.setExtractAnnotationText(false);
+        handler = new BodyContentHandler();
+        metadata = new Metadata();
+        context = new ParseContext();
+        stream = getResourceAsStream("/test-documents/testAnnotations.pdf");
+        try {
+            pdfParser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        content = handler.toString();
+        content = content.replaceAll("[\\s\u00a0]+"," ");
+        assertContains("Here is some text", content);
+        assertEquals(-1, content.indexOf("Here is a comment"));
     }
 
     public void testPageNumber() throws Exception {
