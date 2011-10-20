@@ -54,6 +54,9 @@ public class PDFParser extends AbstractParser {
     /** Serial version UID */
     private static final long serialVersionUID = -752276948656079347L;
 
+    // True if we let PDFBox "guess" where spaces should go:
+    private boolean enableAutoSpace = true;
+
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -90,7 +93,7 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
-            PDF2XHTML.process(pdfDocument, handler, metadata, extractAnnotationText);
+            PDF2XHTML.process(pdfDocument, handler, metadata, extractAnnotationText, enableAutoSpace);
         } finally {
             pdfDocument.close();
         }
@@ -166,6 +169,21 @@ public class PDFParser extends AbstractParser {
         } else {
             addMetadata(metadata, name, value.toString());
         }
+    }
+
+    /**
+     *  If true (the default), the parser should estimate
+     *  where spaces should be inserted between words.  For
+     *  many PDFs this is necessary as they do not include
+     *  explicit whitespace characters.
+     */
+    public void setEnableAutoSpace(boolean v) {
+        enableAutoSpace = v;
+    }
+
+    /** @see #setEnableAutoSpace. */
+    public boolean getEnableAutoSpace() {
+        return enableAutoSpace;
     }
 
     /**
