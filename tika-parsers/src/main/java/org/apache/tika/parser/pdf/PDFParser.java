@@ -61,6 +61,8 @@ public class PDFParser extends AbstractParser {
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
 
+    private boolean extractAnnotationText = true;
+
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("pdf"));
 
@@ -88,7 +90,7 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
-            PDF2XHTML.process(pdfDocument, handler, metadata);
+            PDF2XHTML.process(pdfDocument, handler, metadata, extractAnnotationText);
         } finally {
             pdfDocument.close();
         }
@@ -164,5 +166,20 @@ public class PDFParser extends AbstractParser {
         } else {
             addMetadata(metadata, name, value.toString());
         }
+    }
+
+    /**
+     * If true (the default), text in annotations will be
+     * extracted.
+     */
+    public void setExtractAnnotationText(boolean v) {
+        extractAnnotationText = v;
+    }
+
+    /**
+     * If true, text in annotations will be extracted.
+     */
+    public boolean getExtractAnnotationText() {
+        return extractAnnotationText;
     }
 }
