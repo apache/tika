@@ -73,7 +73,7 @@ public class TikaConfig {
 
     public TikaConfig(URL url)
             throws TikaException, IOException, SAXException {
-        this(url, getContextClassLoader());
+        this(url, ServiceLoader.getContextClassLoader());
     }
 
     public TikaConfig(URL url, ClassLoader loader)
@@ -109,7 +109,7 @@ public class TikaConfig {
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
-        this(element, getContextClassLoader());
+        this(element, ServiceLoader.getContextClassLoader());
     }
 
     public TikaConfig(Element element, ClassLoader loader)
@@ -156,7 +156,7 @@ public class TikaConfig {
      * @throws TikaException if problem with MimeTypes or parsing XML config
      */
     public TikaConfig() throws TikaException, IOException {
-        ClassLoader loader = getContextClassLoader();
+        ClassLoader loader = ServiceLoader.getContextClassLoader();
         String config = System.getProperty("tika.config");
         if (config == null) {
             config = System.getenv("TIKA_CONFIG");
@@ -308,17 +308,6 @@ public class TikaConfig {
             child = child.getNextSibling();
         }
         return null;
-    }
-
-    private static ClassLoader getContextClassLoader() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            loader = TikaConfig.class.getClassLoader();
-        }
-        if (loader == null) {
-            loader = ClassLoader.getSystemClassLoader();
-        }
-        return loader;
     }
 
     private static MimeTypes typesFromDomElement(Element element)
