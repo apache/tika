@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
+import java.util.Properties;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -491,6 +492,33 @@ public class Tika {
      */
     public Detector getDetector() {
         return detector;
+    }
+
+    //--------------------------------------------------------------< Object >
+
+    public String toString() {
+        String version = null;
+
+        try {
+            InputStream stream = Tika.class.getResourceAsStream(
+                    "/META-INF/maven/org.apache.tika/tika-core/pom.properties");
+            if (stream != null) {
+                try {
+                    Properties properties = new Properties();
+                    properties.load(stream);
+                    version = properties.getProperty("version");
+                } finally {
+                    stream.close();
+                }
+            }
+        } catch (Exception ignore) {
+        }
+
+        if (version != null) {
+            return "Apache Tika " + version;
+        } else {
+            return "Apache Tika";
+        }
     }
 
 }

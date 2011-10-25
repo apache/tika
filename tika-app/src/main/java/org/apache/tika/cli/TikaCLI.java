@@ -52,6 +52,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -300,6 +301,9 @@ public class TikaCLI {
         if (arg.equals("-?") || arg.equals("--help")) {
             pipeMode = false;
             usage();
+        } else if (arg.equals("-V") || arg.equals("--version")) {
+            pipeMode = false;
+            version();
         } else if (arg.equals("-v") || arg.equals("--verbose")) {
             Logger.getRootLogger().setLevel(Level.DEBUG);
         } else if (arg.equals("-g") || arg.equals("--gui")) {
@@ -401,6 +405,7 @@ public class TikaCLI {
         out.println("Options:");
         out.println("    -?  or --help          Print this usage message");
         out.println("    -v  or --verbose       Print debug level messages");
+        out.println("    -V  or --version       Print the Apache Tika version number");
         out.println();
         out.println("    -g  or --gui           Start the Apache Tika GUI");
         out.println("    -s  or --server        Start the Apache Tika server");
@@ -456,6 +461,10 @@ public class TikaCLI {
         out.println("    Apache Tika server. The server will listen to the");
         out.println("    ports you specify as one or more arguments.");
         out.println();
+    }
+
+    private void version() {
+        System.out.println(new Tika().toString());
     }
 
     private void displayMetModels(){
