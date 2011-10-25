@@ -51,7 +51,7 @@ public class ServiceLoader {
      * @return context class loader, or <code>null</code> if no loader
      *         is available
      */
-    private static ClassLoader getContextClassLoader() {
+    static ClassLoader getContextClassLoader() {
         ClassLoader loader = contextClassLoader;
         if (loader == null) {
             loader = Thread.currentThread().getContextClassLoader();
