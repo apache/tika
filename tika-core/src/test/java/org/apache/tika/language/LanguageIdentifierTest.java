@@ -35,10 +35,10 @@ import org.apache.tika.io.IOUtils;
 public class LanguageIdentifierTest extends TestCase {
 
     private static final String[] languages = new String[] {
-        // TODO - currently Estonian, Greek and Lithuanian fail these tests.
+        // TODO - currently Estonian and Greek fail these tests.
         // Enable when language detection works better.
         "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it",
-        /* "lt", */ "nl", "pt", "sv"
+        "lt", "nl", "pt", "sv"
     };
 
     public void setUp() {
@@ -52,7 +52,10 @@ public class LanguageIdentifierTest extends TestCase {
             LanguageIdentifier identifier = null;
             identifier = new LanguageIdentifier(writer.getProfile());
             assertEquals(language, identifier.getLanguage());
-            assertTrue(identifier.toString(), identifier.isReasonablyCertain());
+            // Lithuanian is detected but isn't reasonably certain:
+            if (!language.equals("lt")) {
+                assertTrue(identifier.toString(), identifier.isReasonablyCertain());
+            }
         }
     }
 
@@ -99,12 +102,15 @@ public class LanguageIdentifierTest extends TestCase {
         for (String language : languages) {
             for (String other : languages) {
                 if (!language.equals(other)) {
+                    if (language.equals("lt") || other.equals("lt")) {
+                        continue;
+                    }
                     ProfilingWriter writer = new ProfilingWriter();
                     writeTo(language, writer);
                     writeTo(other, writer);
                     LanguageIdentifier identifier = null;
                     identifier = new LanguageIdentifier(writer.getProfile());
-                    assertFalse(identifier.isReasonablyCertain());
+                    assertFalse("mix of " + language + " and " + other + " incorrectly detected as " + identifier, identifier.isReasonablyCertain());
                 }
             }
         }
@@ -119,7 +125,7 @@ public class LanguageIdentifierTest extends TestCase {
             new LanguageIdentifier(writer.getProfile());
         assertEquals(estonian, identifier.getLanguage());
     }
-    
+
     private void writeTo(String language, Writer writer) throws IOException {
         InputStream stream =
             LanguageIdentifierTest.class.getResourceAsStream(language + ".test");

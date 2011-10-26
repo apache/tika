@@ -22,6 +22,8 @@ Release 0.11 - Current Development
  * TIKA-724: Added option to PDFParser to enable (the default) or
    disable auto-space insertion.
 
+ * TIKA-582: Lithuanian was never detected by LanguageIdentifier.
+
 Release 0.10 - 09/25/2011
 
 The most notable changes in Tika 0.10 over previous releases are:
