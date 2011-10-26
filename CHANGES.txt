@@ -1,6 +1,13 @@
 Apache Tika Change Log
 ======================
-Release 0.11 - Current Development
+
+Release 1.0 - Current Development
+
+ * Configuration: The context class loader of the current thread is
+   no longer used as the default for loading configured parser and
+   detector classes. You can still pass an explicit class loader
+   to the configuration mechanism to get the previous behaviour.
+   (TIKA-565)
 
  * TIKA-632: Hyperlinks in RTF documents are now extracted as an <a
    href=...>...</a> element.
