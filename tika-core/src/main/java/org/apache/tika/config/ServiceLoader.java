@@ -54,9 +54,6 @@ public class ServiceLoader {
     static ClassLoader getContextClassLoader() {
         ClassLoader loader = contextClassLoader;
         if (loader == null) {
-            loader = Thread.currentThread().getContextClassLoader();
-        }
-        if (loader == null) {
             loader = ServiceLoader.class.getClassLoader();
         }
         if (loader == null) {
