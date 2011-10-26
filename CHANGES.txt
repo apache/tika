@@ -9,27 +9,24 @@ Release 1.0 - Current Development
    to the configuration mechanism to get the previous behaviour.
    (TIKA-565)
 
- * TIKA-632: Hyperlinks in RTF documents are now extracted as an <a
-   href=...>...</a> element.
+ * RTF: Hyperlinks in RTF documents are now extracted as an
+   <a href=...>...</a> element. The RTF parser is also now more
+   robust when encountering too many closing {'s vs. opening {'s.
+   (TIKA-632, TIKA-733)
 
- * TIKA-733: Try to be robust when an RTF has too many closing {'s vs
-   opening {'s.
-
- * TIKA-711: From Word (.doc) documents we now extract optional hyphen
+ * MS Word: From Word (.doc) documents we now extract optional hyphen
    as Unicode zero-width space (U+200B), and non-breaking hyphen as
-   Unicode non-breaking hyphen (U+2011).
+   Unicode non-breaking hyphen (U+2011). (TIKA-711)
 
- * TIKA-742: Paragraphs are now extracted within each page of a PDF
-   document.
+ * MS Office: Performance of extracting embedded office docs was improved.
+   (TIKA-753)
 
- * TIKA-753: Improve performance when extracting embedded office docs.
+ * PDF: The PDF parser now extracts paragraphs within each page and
+   can also optionally extract text from PDF annotations. There's also
+   an option to enable (the default) or disable auto-space insertion.
+   (TIKA-742, TIKA-738, TIKA-724)
 
- * TIKA-738: Optionally extract text from PDF annotations.
-
- * TIKA-724: Added option to PDFParser to enable (the default) or
-   disable auto-space insertion.
-
- * TIKA-582: Lithuanian was never detected by LanguageIdentifier.
+ * Language detection: Tika can now detect Lithuanian. (TIKA-582)
 
 Release 0.10 - 09/25/2011
 
