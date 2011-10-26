@@ -65,6 +65,12 @@ public class MimeTypesFactory {
         return mimeTypes;
     }
 
+    /** @see #create(InputStream...) */
+    public static MimeTypes create(InputStream stream)
+            throws IOException, MimeTypeException {
+        return create(new InputStream[] { stream });
+    }
+
     /**
      * Creates and returns a MimeTypes instance from the resource
      * at the location specified by the URL.  Opens and closes the
@@ -88,6 +94,12 @@ public class MimeTypesFactory {
                stream.close();
             }
         }
+    }
+
+    /** @see #create(URL...) */
+    public static MimeTypes create(URL url)
+            throws IOException, MimeTypeException {
+        return create(new URL[] { url });
     }
 
     /**
