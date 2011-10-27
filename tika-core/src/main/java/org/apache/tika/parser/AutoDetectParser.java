@@ -80,15 +80,6 @@ public class AutoDetectParser extends CompositeParser {
     }
 
     /**
-     * @deprecated This method will be removed in Tika 1.0
-     */
-    public void setConfig(TikaConfig config) {
-        setParsers(config.getParsers());
-        setDetector(config.getDetector());
-        setMediaTypeRegistry(config.getMediaTypeRegistry());
-    }
-
-    /**
      * Returns the type detector used by this parser to auto-detect the type
      * of a document.
      *

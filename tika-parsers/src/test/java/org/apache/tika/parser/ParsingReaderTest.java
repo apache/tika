@@ -79,8 +79,8 @@ public class ParsingReaderTest extends TestCase {
         Metadata metadata = new Metadata();
         InputStream stream = ParsingReaderTest.class.getResourceAsStream(
                 "/test-documents/testEXCEL.xls");
-        Reader reader =
-            new ParsingReader(new AutoDetectParser(), stream, metadata);
+        Reader reader = new ParsingReader(
+                new AutoDetectParser(), stream, metadata, new ParseContext());
         try {
             // Metadata should already be available
             assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));

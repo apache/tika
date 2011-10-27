@@ -67,16 +67,4 @@ public interface Parser extends Serializable {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException;
 
-    /**
-     * The parse() method from Tika 0.4 and earlier. Please use the
-     * {@link #parse(InputStream, ContentHandler, Metadata, ParseContext)}
-     * method instead in new code. Calls to this backwards compatibility
-     * method are forwarded to the new parse() method with an empty parse
-     * context.
-     *
-     * @deprecated This method will be removed in Apache Tika 1.0.
-     */
-    void parse(InputStream stream, ContentHandler handler, Metadata metadata)
-        throws IOException, SAXException, TikaException;
-
 }

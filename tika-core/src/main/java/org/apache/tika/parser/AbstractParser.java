@@ -40,7 +40,12 @@ public abstract class AbstractParser implements Parser {
     /**
      * Calls the
      * {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)}
-     * method with an empty {@link ParseContext}.
+     * method with an empty {@link ParseContext}. This method exists as a
+     * leftover from Tika 0.x when the three-argument parse() method still
+     * existed in the {@link Parser} interface. No new code should call this
+     * method anymore, it's only here for backwards compatibility.
+     *
+     * @deprecated use the {@link Parser#parse(InputStream, ContentHandler, Metadata, ParseContext)} method instead
      */
     public void parse(
             InputStream stream, ContentHandler handler, Metadata metadata)

@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 //TIKA imports
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.hdf.HDFParser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -54,7 +55,7 @@ public class HDFParserTest extends TestCase {
         InputStream stream = HDFParser.class
                 .getResourceAsStream("/test-documents/test.he5");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }

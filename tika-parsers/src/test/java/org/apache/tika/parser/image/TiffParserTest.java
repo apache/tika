@@ -17,6 +17,8 @@
 package org.apache.tika.parser.image;
 
 import junit.framework.TestCase;
+
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.metadata.Metadata;
@@ -34,7 +36,7 @@ public class TiffParserTest extends TestCase {
         metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
         InputStream stream =
             getClass().getResourceAsStream("/test-documents/testTIFF.tif");
-        parser.parse(stream, new DefaultHandler(), metadata);
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or " +
         		"more contributor license agreements.  See the NOTICE file " +

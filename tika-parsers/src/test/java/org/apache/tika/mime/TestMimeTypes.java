@@ -21,11 +21,11 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 
@@ -36,35 +36,27 @@ import org.apache.tika.metadata.Metadata;
  */
 public class TestMimeTypes extends TestCase {
 
+    private Tika tika;
+
     private MimeTypes repo;
 
-    private static URL u;
-
-    static {
-        try {
-            u = new URL("http://mydomain.com/x.pdf?x=y");
-        } catch (MalformedURLException e) {
-            fail(e.getMessage());
-        }
-    }
+    private URL u;
 
     private static final File f = new File("/a/b/c/x.pdf");
 
-    public TestMimeTypes() {
-        try {
-            repo = TikaConfig.getDefaultConfig().getMimeRepository();
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-
+    protected void setUp() throws Exception{
+        TikaConfig config = TikaConfig.getDefaultConfig();
+        repo = config.getMimeRepository();
+        tika = new Tika(config);
+        u = new URL("http://mydomain.com/x.pdf?x=y");
     }
 
     public void testCaseSensitivity() {
-        MimeType type = repo.getMimeType("test.PDF");
+        String type = tika.detect("test.PDF");
         assertNotNull(type);
-        assertEquals(repo.getMimeType("test.pdf"), type);
-        assertEquals(repo.getMimeType("test.PdF"), type);
-        assertEquals(repo.getMimeType("test.pdF"), type);
+        assertEquals(type, tika.detect("test.pdf"));
+        assertEquals(type, tika.detect("test.PdF"));
+        assertEquals(type, tika.detect("test.pdF"));
     }
 
     public void testLoadMimeTypes() throws MimeTypeException {
@@ -77,8 +69,8 @@ public class TestMimeTypes extends TestCase {
      */
     public void testGuessMimeTypes() throws Exception {
         assertTypeByName("application/pdf", "x.pdf");
-        assertEquals("application/pdf", repo.getMimeType(u).getName());
-        assertEquals("application/pdf", repo.getMimeType(f).getName());
+        assertEquals("application/pdf", tika.detect(u.toExternalForm()));
+        assertEquals("application/pdf", tika.detect(f.getPath()));
         assertTypeByName("text/plain", "x.txt");
         assertTypeByName("text/html", "x.htm");
         assertTypeByName("text/html", "x.html");
@@ -361,15 +353,13 @@ public class TestMimeTypes extends TestCase {
         String pattern = "rtg_sst_grb_0\\.5\\.\\d{8}";
         this.repo.addPattern(testType, pattern, true);
         String testFileName = "rtg_sst_grb_0.5.12345678";
-        assertNotNull(this.repo.getMimeType(testFileName));
-        assertEquals(this.repo.getMimeType(testFileName).getName(), "foo/bar");
+        assertEquals("foo/bar", tika.detect(testFileName));
 
         MimeType testType2 = new MimeType(MediaType.parse("foo/bar2"));
         this.repo.add(testType2);
         assertNotNull(repo.forName("foo/bar2"));
         this.repo.addPattern(testType2, pattern, false);
-        assertNotNull(this.repo.getMimeType(testFileName));
-        assertNotSame("foo/bar2", this.repo.getMimeType(testFileName).getName());
+        assertNotSame("foo/bar2", tika.detect(testFileName));
     }
     
     public void testRawDetection() throws Exception {

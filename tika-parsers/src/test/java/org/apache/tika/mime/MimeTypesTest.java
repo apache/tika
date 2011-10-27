@@ -19,8 +19,10 @@ package org.apache.tika.mime;
 import static org.apache.tika.mime.MediaType.OCTET_STREAM;
 import static org.apache.tika.mime.MediaType.TEXT_PLAIN;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
+
+import org.apache.tika.metadata.Metadata;
 
 import junit.framework.TestCase;
 
@@ -93,15 +95,9 @@ public class MimeTypesTest extends TestCase {
         assertTrue(html.compareTo(html) == 0);
     }
 
-    /** Test getMimeType(byte[]) */
-    public void testGetMimeType_byteArray() {
-        try {
-            types.getMimeType((byte[])null);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
-
+    /** Test getMimeType(byte[]) 
+     * @throws IOException */
+    public void testGetMimeType_byteArray() throws IOException {
         // Plain text detection
         assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
         assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
@@ -111,28 +107,19 @@ public class MimeTypesTest extends TestCase {
         assertNotText(new byte[] { '\t', '\r', '\n', 0x0E, 0x1C });
     }
 
-    private void assertText(byte[] prefix) {
+    private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
 
-    private void assertNotText(byte[] prefix) {
+    private void assertNotText(byte[] prefix) throws IOException {
         assertMagic("application/octet-stream", prefix);
     }
 
-    private void assertMagic(String expected, byte[] prefix) {
-        MimeType type = types.getMimeType(prefix);
+    private void assertMagic(String expected, byte[] prefix) throws IOException {
+        MediaType type =
+                types.detect(new ByteArrayInputStream(prefix), new Metadata());
         assertNotNull(type);
-        assertEquals(expected, type.getName());
-    }
-
-    /** Test getMimeType(InputStream) */
-    public void testGetMimeType_InputStream() throws IOException {
-        try {
-            types.getMimeType((InputStream)null);
-            fail("Expected IllegalArgumentException");
-        } catch (IllegalArgumentException e) {
-            // expected result
-        }
+        assertEquals(expected, type.toString());
     }
 
 }

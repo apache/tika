@@ -24,6 +24,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URL;
+
+import org.apache.tika.metadata.Metadata;
 
 import junit.framework.TestCase;
 
@@ -101,6 +104,16 @@ public class TikaInputStreamTest extends TestCase {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         IOUtils.copy(stream, buffer);
         return buffer.toString("UTF-8");
+    }
+
+    public void testGetMetadata() throws Exception {
+        URL url = TikaInputStreamTest.class.getResource("test.txt");
+        Metadata metadata = new Metadata();
+        TikaInputStream.get(url, metadata).close();
+        assertEquals("test.txt", metadata.get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals(
+                Long.toString(new File(url.toURI()).length()),
+                metadata.get(Metadata.CONTENT_LENGTH));
     }
 
 }

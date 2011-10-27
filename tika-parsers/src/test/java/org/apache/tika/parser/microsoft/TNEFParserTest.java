@@ -16,13 +16,13 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import org.apache.tika.detect.ContainerAwareDetector;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -35,9 +35,7 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
    
    public void testBasics() throws Exception {
       TikaInputStream stream = getTestFile(file);
-      ContainerAwareDetector detector =
-         new ContainerAwareDetector(MimeTypes.getDefaultMimeTypes());
-      
+      Detector detector = new DefaultDetector();
       try {
          assertEquals(
                  MediaType.application("vnd.ms-tnef"),
