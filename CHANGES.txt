@@ -18,6 +18,9 @@ Release 1.0 - Current Development
    as Unicode zero-width space (U+200B), and non-breaking hyphen as
    Unicode non-breaking hyphen (U+2011). (TIKA-711)
 
+ * Outlook: Tika can now process also attachments in Outlook messages.
+   (TIKA-396)
+
  * MS Office: Performance of extracting embedded office docs was improved.
    (TIKA-753)
 
@@ -26,7 +29,13 @@ Release 1.0 - Current Development
    an option to enable (the default) or disable auto-space insertion.
    (TIKA-742, TIKA-738, TIKA-724)
 
- * Language detection: Tika can now detect Lithuanian. (TIKA-582)
+ * Language detection: Tika can now detect Belarusian, Catalan, Esperanto,
+   Galician, Lithuanian, Romanian, Slovak, Slovenian, and Ukrainian.
+   (TIKA-681, TIKA-582)
+
+ * Java: Tika no longer ships retrotranslated Java 1.4 binaries along
+   with the normal ones that work with Java 5 and higher. (TIKA-744)
+
 
 Release 0.10 - 09/25/2011
 
