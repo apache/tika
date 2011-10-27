@@ -119,13 +119,6 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
-     * @deprecated Use the {@link #get(InputStream, TemporaryResources)} instead
-     */
-    public static TikaInputStream get(InputStream stream, TemporaryFiles tmp) {
-        return get(stream, (TemporaryResources) tmp);
-    }
-
-    /**
      * Casts or wraps the given stream to a TikaInputStream instance.
      * This method can be used to access the functionality of this class
      * even when given just a normal input stream instance.

@@ -188,13 +188,6 @@ public class SafeContentHandler extends ContentHandlerDecorator {
     }
 
     /**
-     * @deprecated Use {@link #isInvalid(int)} instead
-     */
-    protected boolean isInvalid(char ch) {
-        return isInvalid((int) ch);
-    }
-
-    /**
      * Outputs the replacement for an invalid character. Subclasses can
      * override this method to use a custom replacement.
      *

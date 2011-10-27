@@ -101,7 +101,8 @@ public class ParsingReader extends Reader {
      * @throws IOException if the document can not be parsed
      */
     public ParsingReader(InputStream stream) throws IOException {
-        this(new AutoDetectParser(), stream, new Metadata());
+        this(new AutoDetectParser(), stream, new Metadata(), new ParseContext());
+        context.set(Parser.class, parser);
     }
 
     /**
@@ -113,7 +114,8 @@ public class ParsingReader extends Reader {
      * @throws IOException if the document can not be parsed
      */
     public ParsingReader(InputStream stream, String name) throws IOException {
-        this(new AutoDetectParser(), stream, getMetadata(name));
+        this(new AutoDetectParser(), stream, getMetadata(name), new ParseContext());
+        context.set(Parser.class, parser);
     }
 
     /**
@@ -200,27 +202,6 @@ public class ParsingReader extends Reader {
         reader.mark(1);
         reader.read();
         reader.reset();
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
-     */
-    public ParsingReader(Parser parser, InputStream stream, Metadata metadata)
-            throws IOException {
-        this(parser, stream, metadata, new ParseContext());
-        context.set(Parser.class, parser);
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
-     */
-    public ParsingReader(
-            Parser parser, InputStream stream, Metadata metadata,
-            Executor executor) throws IOException {
-        this(parser, stream, metadata, new ParseContext(), executor);
-        context.set(Parser.class, parser);
     }
 
     /**

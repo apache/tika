@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 //TIKA imports
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -46,7 +47,7 @@ public class NetCDFParserTest extends TestCase {
         InputStream stream = NetCDFParser.class
                 .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
         try {
-            parser.parse(stream, handler, metadata);
+            parser.parse(stream, handler, metadata, new ParseContext());
         } finally {
             stream.close();
         }

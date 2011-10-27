@@ -86,26 +86,8 @@ public class TikaConfig {
         this(getBuilder().parse(stream));
     }
 
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
-     */
-    public TikaConfig(InputStream stream, Parser delegate)
-            throws TikaException, IOException, SAXException {
-        this(stream);
-    }
-
     public TikaConfig(Document document) throws TikaException, IOException {
         this(document.getDocumentElement());
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
-     */
-    public TikaConfig(Document document, Parser delegate)
-            throws TikaException, IOException {
-        this(document);
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
@@ -165,8 +147,7 @@ public class TikaConfig {
             this.mimeTypes = MimeTypes.getDefaultMimeTypes();
             this.parser = new DefaultParser(
                     mimeTypes.getMediaTypeRegistry(), loader);
-            this.detector = new DefaultDetector(
-                  MimeTypes.getDefaultMimeTypes(), loader);
+            this.detector = new DefaultDetector(mimeTypes, loader);
         } else {
             InputStream stream;
             File file = new File(config);
@@ -198,15 +179,6 @@ public class TikaConfig {
         }
     }
 
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
-     */
-    public TikaConfig(Element element, Parser delegate)
-            throws TikaException, IOException {
-        this(element);
-    }
-
     private static String getText(Node node) {
         if (node.getNodeType() == Node.TEXT_NODE) {
             return node.getNodeValue();
@@ -223,26 +195,12 @@ public class TikaConfig {
     }
 
     /**
-     * @deprecated Use the {@link #getParser()} method instead
-     */
-    public Parser getParser(MediaType mimeType) {
-        return parser.getParsers().get(mimeType);
-    }
-
-    /**
      * Returns the configured parser instance.
      *
      * @return configured parser
      */
     public Parser getParser() {
         return parser;
-    }
-
-    /**
-     * @deprecated Use the {@link #getParser()} method instead
-     */
-    public Map<MediaType, Parser> getParsers() {
-        return parser.getParsers();
     }
 
     /**
@@ -279,15 +237,6 @@ public class TikaConfig {
             throw new RuntimeException(
                     "Unable to access default configuration", e);
         }
-    }
-
-    /**
-     * @deprecated This method will be removed in Apache Tika 1.0
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-275">TIKA-275</a>
-     */
-    public static TikaConfig getDefaultConfig(Parser delegate)
-            throws TikaException {
-        return getDefaultConfig();
     }
 
     private static DocumentBuilder getBuilder() throws TikaException {

@@ -26,8 +26,6 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.ContainerAwareDetector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
@@ -38,16 +36,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
 public class OOXMLParserTest extends TikaTest {
-    private Parser parser;
-   
-    @Override
-    protected void setUp() throws Exception {
-       TikaConfig config = TikaConfig.getDefaultConfig();
-       ContainerAwareDetector detector = new ContainerAwareDetector(
-             config.getMimeRepository()
-       );
-       parser = new AutoDetectParser(detector);
-    }
+
+    private Parser parser = new AutoDetectParser();
 
    public void testExcel() throws Exception {
         InputStream input = OOXMLParserTest.class

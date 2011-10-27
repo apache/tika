@@ -27,15 +27,13 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypes;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
  */
 public class TestContainerAwareDetector extends TestCase {
 
-    private final Detector detector =
-        new ContainerAwareDetector(MimeTypes.getDefaultMimeTypes());
+    private final Detector detector = new DefaultDetector();
 
     private void assertDetect(String file, String type) throws Exception {
         TikaInputStream stream = TikaInputStream.get(
