@@ -2,6 +2,9 @@ Apache Tika Change Log
 ======================
 
 Release 1.0 - Current Development
+---------------------------------
+
+The most notable changes in Tika 1.0 over previous releases are:
 
  * Configuration: The context class loader of the current thread is
    no longer used as the default for loading configured parser and
@@ -67,7 +70,9 @@ mvn dependency:tree from tika-parsers):
    +- rome:rome:jar:0.9:compile
       \- jdom:jdom:jar:1.0:compile
 
+
 Release 0.10 - 09/25/2011
+-------------------------
 
 The most notable changes in Tika 0.10 over previous releases are:
 
@@ -129,72 +134,74 @@ mvn dependency:tree from tika-parsers):
 The following people have contributed to Tika 0.10 by submitting or commenting
 on the issues resolved in this release:
 
-Alain Viret
-Alex Ott
-Alexander Chow
-Andreas Kemkes
-Andrew Khoury
-Babak Farhang
-Benjamin Douglas
-Benson Margulies
-Chris A. Mattmann
-chris hudson
-Chris Lott
-Cristian Vat
-Curt Arnold
-Cynthia L Wong
-Dave Brosius
-David Benson
-Enrico Donelli
-Erik Hetzner
-Erna de Groot
-Gabriele Columbro
-Gavin
-Geoff Jarrad
-Gregory Kanevsky 
-gunter rombauts
-Henning Gross
-Henri Bergius
-Ingo Renner
-Ingo Wiarda
-Izaak Alpert
-Jan Høydahl
-Jens Wilmer
-Jeremy Anderson
-Joseph Vychtrle
-Joshua Turner
-Jukka Zitting
-Julien Nioche
-Karl Heinz Marbaise
-Ken Krugler
-Kostya Gribov
-Luciano Leggieri
-Mads Hansen
-Mark Butler
-Matt Sheppard
-Maxim Valyanskiy
-Michael McCandless
-Michael Pisula
-Murad Shahid
-Nick Burch
-Oleg Tikhonov 
-Pablo Queixalos
-Paul Jakubik
-Raimund Merkert
-Rajiv Kumar
-Robert Trickey
-Sami Siren
-samraj
-Selva Ganesan
-Sjoerd Smeets
-Stephen Duncan Jr
-Tran Nam Quang
-Uwe Schindler
-Vitaliy Filippov
+   Alain Viret
+   Alex Ott
+   Alexander Chow
+   Andreas Kemkes
+   Andrew Khoury
+   Babak Farhang
+   Benjamin Douglas
+   Benson Margulies
+   Chris A. Mattmann
+   chris hudson
+   Chris Lott
+   Cristian Vat
+   Curt Arnold
+   Cynthia L Wong
+   Dave Brosius
+   David Benson
+   Enrico Donelli
+   Erik Hetzner
+   Erna de Groot
+   Gabriele Columbro
+   Gavin
+   Geoff Jarrad
+   Gregory Kanevsky
+   gunter rombauts
+   Henning Gross
+   Henri Bergius
+   Ingo Renner
+   Ingo Wiarda
+   Izaak Alpert
+   Jan Høydahl
+   Jens Wilmer
+   Jeremy Anderson
+   Joseph Vychtrle
+   Joshua Turner
+   Jukka Zitting
+   Julien Nioche
+   Karl Heinz Marbaise
+   Ken Krugler
+   Kostya Gribov
+   Luciano Leggieri
+   Mads Hansen
+   Mark Butler
+   Matt Sheppard
+   Maxim Valyanskiy
+   Michael McCandless
+   Michael Pisula
+   Murad Shahid
+   Nick Burch
+   Oleg Tikhonov
+   Pablo Queixalos
+   Paul Jakubik
+   Raimund Merkert
+   Rajiv Kumar
+   Robert Trickey
+   Sami Siren
+   samraj
+   Selva Ganesan
+   Sjoerd Smeets
+   Stephen Duncan Jr
+   Tran Nam Quang
+   Uwe Schindler
+   Vitaliy Filippov
 
 See http://s.apache.org/vR for more details on these contributions.
 
+
 Release 0.9 - 02/13/2011
+------------------------
 
 The most notable changes in Tika 0.9 over previous releases are:
 
@@ -253,43 +260,44 @@ mvn dependency:tree from tika-parsers):
 The following people have contributed to Tika 0.9 by submitting or commenting
 on the issues resolved in this release:
 
-Alex Skochin
-Alexander Chow
-Antoine L.
-Antoni Mylka
-Benjamin Douglas
-Benson Margulies
-Chris A. Mattmann
-Cristian Vat
-Cyriel Vringer
-David Benson
-Erik Hetzner
-Gabriel Miklos
-Geoff Jarrad
-Jukka Zitting
-Ken Krugler
-Kostya Gribov
-Leszek Piotrowicz
-Martijn van Groningen
-Maxim Valyanskiy
-Michel Tremblay
-Nick Burch
-paul
-Paul Pearcy
-Peter van Raamsdonk
-Piotr Bartosiewicz
-Reinhard Schwab
-Scott Severtson
-Shinsuke Sugaya
-Staffan Olsson
-Steve Kearns
-Tom Klonikowski
-Žygimantas Medelis
+   Alex Skochin
+   Alexander Chow
+   Antoine L.
+   Antoni Mylka
+   Benjamin Douglas
+   Benson Margulies
+   Chris A. Mattmann
+   Cristian Vat
+   Cyriel Vringer
+   David Benson
+   Erik Hetzner
+   Gabriel Miklos
+   Geoff Jarrad
+   Jukka Zitting
+   Ken Krugler
+   Kostya Gribov
+   Leszek Piotrowicz
+   Martijn van Groningen
+   Maxim Valyanskiy
+   Michel Tremblay
+   Nick Burch
+   paul
+   Paul Pearcy
+   Peter van Raamsdonk
+   Piotr Bartosiewicz
+   Reinhard Schwab
+   Scott Severtson
+   Shinsuke Sugaya
+   Staffan Olsson
+   Steve Kearns
+   Tom Klonikowski
+   Žygimantas Medelis
 
 See http://s.apache.org/qi for more details on these contributions.
 
 
 Release 0.8 - 11/07/2010
+------------------------
 
 The most notable changes in Tika 0.8 over previous releases are:
 
@@ -345,68 +353,68 @@ mvn dependency:tree from tika-parsers):
 The following people have contributed to Tika 0.8 by submitting or commenting
 on the issues resolved in this release:
 
-Łukasz Wiktor
-Adam Wilmer
-Alex Baranau
-Alex Ott
-André Ricardo
-Andrey Barhatov
-Andrey Sidorenko
-Antoni Mylka
-Antoni Mylka
-Arturo Beltran
-Attila Király
-Brad Greenlee
-Bruno Dumon
-Chris A. Mattmann
-Chris Bamford
-Christophe Gourmelon
-Dave Meikle
-David Weekly
-Dmitry Kuzmenko
-Erik Hetzner
-Geoff Jarrad
-Gerd Bremer
-Grant Ingersoll
-Jan Høydahl
-Jean-Philippe Ricard
-Jeremias Maerki
-Joao Garcia
-Jukka Zitting
-Julien Nioche
-Ken Krugler
-Liam O'Boyle
-Mads Hansen
-Marcel May
-Markus Goldbach
-Martijn van Groningen
-Maxim Valyanskiy
-Mike Hays
-Miroslav Pokorny
-Nick Burch
-Otis Gospodnetic
-Peter van Raamsdonk
-Peter Wolanin
-Peter_Lenahan@ibi.com
-Piotr Bartosiewicz
-Radek
-Rajiv Kumar
-Reinhard Schwab
-rick cameron
-Robert Muir
-Sanjeev Rao
-Simon Tyler
-Sjoerd Smeets
-Slavomir Varchula
-Staffan Olsson
-Tom De Leu
-Uwe Schindler
-Victor Kazakov
+   Łukasz Wiktor
+   Adam Wilmer
+   Alex Baranau
+   Alex Ott
+   André Ricardo
+   Andrey Barhatov
+   Andrey Sidorenko
+   Antoni Mylka
+   Arturo Beltran
+   Attila Király
+   Brad Greenlee
+   Bruno Dumon
+   Chris A. Mattmann
+   Chris Bamford
+   Christophe Gourmelon
+   Dave Meikle
+   David Weekly
+   Dmitry Kuzmenko
+   Erik Hetzner
+   Geoff Jarrad
+   Gerd Bremer
+   Grant Ingersoll
+   Jan Høydahl
+   Jean-Philippe Ricard
+   Jeremias Maerki
+   Joao Garcia
+   Jukka Zitting
+   Julien Nioche
+   Ken Krugler
+   Liam O'Boyle
+   Mads Hansen
+   Marcel May
+   Markus Goldbach
+   Martijn van Groningen
+   Maxim Valyanskiy
+   Mike Hays
+   Miroslav Pokorny
+   Nick Burch
+   Otis Gospodnetic
+   Peter van Raamsdonk
+   Peter Wolanin
+   Peter_Lenahan@ibi.com
+   Piotr Bartosiewicz
+   Radek
+   Rajiv Kumar
+   Reinhard Schwab
+   rick cameron
+   Robert Muir
+   Sanjeev Rao
+   Simon Tyler
+   Sjoerd Smeets
+   Slavomir Varchula
+   Staffan Olsson
+   Tom De Leu
+   Uwe Schindler
+   Victor Kazakov
 
 See http://s.apache.org/ab0 for more details on these contributions.
 
+
 Release 0.7 - 3/31/2010
----------------------------------
+-----------------------
 
 The most notable changes in Tika 0.7 over previous releases are:
 
@@ -421,31 +429,32 @@ The most notable changes in Tika 0.7 over previous releases are:
 
  * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
    performance and fixes a number of text extraction issues. (TIKA-380)
-   
+
 The following people have contributed to Tika 0.7 by submitting or commenting
 on the issues resolved in this release:
 
-Adam Rauch 
-Benson Margulies 
-Brett S. 
-Chris A. Mattmann 
-Daan de Wit 
-Dave Meikle 
-Durville 
-Ingo Renner 
-Jukka Zitting 
-Ken Krugler 
-Kenny Neal 
-Markus Goldbach
-Maxim Valyanskiy 
-Nick Burch  
-Sami Siren 
-Uwe Schindler 
+   Adam Rauch
+   Benson Margulies
+   Brett S.
+   Chris A. Mattmann
+   Daan de Wit
+   Dave Meikle
+   Durville
+   Ingo Renner
+   Jukka Zitting
+   Ken Krugler
+   Kenny Neal
+   Markus Goldbach
+   Maxim Valyanskiy
+   Nick Burch
+   Sami Siren
+   Uwe Schindler
 
 See http://tinyurl.com/yklopby for more details on these contributions.
 
+
 Release 0.6 - 01/20/2010
----------------------------------
+------------------------
 
 The most notable changes in Tika 0.6 over the previous release are:
 
@@ -489,24 +498,25 @@ The most notable changes in Tika 0.6 over the previous release are:
 The following people have contributed to Tika 0.6 by submitting or commenting
 on the issues resolved in this release:
 
-Andrzej Bialecki
-Bertrand Delacretaz
-Chris A. Mattmann
-Dave Meikle
-Erik Hetzner
-Felix Meschberger
-Jukka Zitting
-Julien Nioche
-Ken Krugler  
-Luke Nezda
-Maxim Valyanskiy
-Niall Pemberton
-Peter Wolanin 
-Piotr B.
-Sami Siren
-Yuan-Fang Li
+   Andrzej Bialecki
+   Bertrand Delacretaz
+   Chris A. Mattmann
+   Dave Meikle
+   Erik Hetzner
+   Felix Meschberger
+   Jukka Zitting
+   Julien Nioche
+   Ken Krugler
+   Luke Nezda
+   Maxim Valyanskiy
+   Niall Pemberton
+   Peter Wolanin
+   Piotr B.
+   Sami Siren
+   Yuan-Fang Li
 
 See http://tinyurl.com/yc3dk67 for more details on these contributions.
+
 
 Release 0.5 - 11/14/2009
 ------------------------
@@ -539,30 +549,31 @@ The most notable changes in Tika 0.5 over the previous release are:
 The following people have contributed to Tika 0.5 by submitting or commenting
 on the issues resolved in this release:
 
-Alex Baranov
-Bart Hanssens
-Benson Margulies
-Chris A. Mattmann
-Daan de Wit
-Erik Hetzner
-Frank Hellwig
-Jeff Cadow
-Joachim Zittmayr
-Jukka Zitting 
-Julien Nioche
-Ken Krugler
-Maxim Valyanskiy
-MRIT64
-Paul Borgermans
-Piotr B.
-Robert Newson
-Sascha Szott
-Ted Dunning
-Thilo Goetz
-Uwe Schindler
-Yuan-Fang Li
+   Alex Baranov
+   Bart Hanssens
+   Benson Margulies
+   Chris A. Mattmann
+   Daan de Wit
+   Erik Hetzner
+   Frank Hellwig
+   Jeff Cadow
+   Joachim Zittmayr
+   Jukka Zitting
+   Julien Nioche
+   Ken Krugler
+   Maxim Valyanskiy
+   MRIT64
+   Paul Borgermans
+   Piotr B.
+   Robert Newson
+   Sascha Szott
+   Ted Dunning
+   Thilo Goetz
+   Uwe Schindler
+   Yuan-Fang Li
 
 See http://tinyurl.com/yl9prwp for more details on these contributions.
+
 
 Release 0.4 - 07/14/2009
 ------------------------
@@ -606,93 +617,95 @@ The most notable changes in Tika 0.4 over the previous release are:
 The following people have contributed to Tika 0.4 by submitting or commenting
 on the issues resolved in this release:
 
-Chris A. Mattmann 
-Daan de Wit
-Dave Meikle 
-David Weekly
-Jeremias Maerki  	
-Jonathan Koren
-Jukka Zitting
-Karl Heinz Marbaise
-Keith R. Bennett
-Maxim Valyanskiy
-Niall Pemberton 
-Robert Burrell Donkin
-Sami Siren
-Siddharth Gargate 
-Uwe Schindler 
+   Chris A. Mattmann
+   Daan de Wit
+   Dave Meikle
+   David Weekly
+   Jeremias Maerki
+   Jonathan Koren
+   Jukka Zitting
+   Karl Heinz Marbaise
+   Keith R. Bennett
+   Maxim Valyanskiy
+   Niall Pemberton
+   Robert Burrell Donkin
+   Sami Siren
+   Siddharth Gargate
+   Uwe Schindler
 
 See http://tinyurl.com/mgv9o3 for more details on these contributions.
+
 
 Release 0.3 - 03/09/2009
 ------------------------
 
 The most notable changes in Tika 0.3 over the previous release are:
 
-  * Tika now supports mime type glob patterns specified using
-    standard JDK 1.4 (and beyond) syntax via the isregex attribute
-    on the glob tag. See:
-    
-    http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html
-    
-    for more information. (TIKA-194)
+ * Tika now supports mime type glob patterns specified using
+   standard JDK 1.4 (and beyond) syntax via the isregex attribute
+   on the glob tag. See:
 
-  * Tika now supports the Office Open XML format used by
-    Microsoft Office 2007. (TIKA-152)
+     http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html
 
-  * All the metadata keys for Microsoft Office document properties are now
-    included as constants in the MSOffice interface. Clients should use
-    these constants instead of the raw string values to refer to specific
-    metadata items. (TIKA-186)
+   for more information. (TIKA-194)
 
-  * Automatic detection of document types in Tika has been improved.
-    For example Tika can now detect plain text just by looking at the first
-    few bytes of the document. (TIKA-154)
+ * Tika now supports the Office Open XML format used by
+   Microsoft Office 2007. (TIKA-152)
 
-  * Tika now disables the loading of all external entities in XML files
-    that it parses as input documents. This improves security and avoids
-    problems with potentially broken references. (TIKA-185)
+ * All the metadata keys for Microsoft Office document properties are now
+   included as constants in the MSOffice interface. Clients should use
+   these constants instead of the raw string values to refer to specific
+   metadata items. (TIKA-186)
 
-  * Tika now replaces all invalid XML characters in the extracted text
-    content with spaces. This prevents problems when output from Tika
-    is processed with XML tools. (TIKA-180)
+ * Automatic detection of document types in Tika has been improved.
+   For example Tika can now detect plain text just by looking at the first
+   few bytes of the document. (TIKA-154)
 
-  * The Tika CLI now correctly flushes its buffers when invoked with the
-    --text argument. This prevents the end of the text output from being
-    lost. (TIKA-179)
+ * Tika now disables the loading of all external entities in XML files
+   that it parses as input documents. This improves security and avoids
+   problems with potentially broken references. (TIKA-185)
 
-  * Embedded text in MIDI files is now extracted. For example many karaoke
-    files contain song lyrics embedded as MIDI text.
+ * Tika now replaces all invalid XML characters in the extracted text
+   content with spaces. This prevents problems when output from Tika
+   is processed with XML tools. (TIKA-180)
 
-  * The text content of Microsoft Outlook message files no longer appears as
-    multiple copies in the extracted text. (TIKA-197)
+ * The Tika CLI now correctly flushes its buffers when invoked with the
+   --text argument. This prevents the end of the text output from being
+   lost. (TIKA-179)
 
-  * The ParsingReader class now makes most document metadata available
-    already before any of the extracted text is consumed. This makes it
-    easier for example to construct Lucene Document instances that contain
-    both extracted text and metadata. (TIKA-203)
+ * Embedded text in MIDI files is now extracted. For example many karaoke
+   files contain song lyrics embedded as MIDI text.
+
+ * The text content of Microsoft Outlook message files no longer appears as
+   multiple copies in the extracted text. (TIKA-197)
+
+ * The ParsingReader class now makes most document metadata available
+   already before any of the extracted text is consumed. This makes it
+   easier for example to construct Lucene Document instances that contain
+   both extracted text and metadata. (TIKA-203)
 
 See http://tinyurl.com/tika-0-3-changes for a list of all changes in Tika 0.3.
 
 The following people have contributed to Tika 0.3 by submitting or commenting
 on the issues resolved in this release:
 
-    Andrzej Rusin
-    Chris A. Mattmann
-    Dave Meikle
-    Georger Araújo
-    Guillermo Arribas
-    Jonathan Koren
-    Jukka Zitting
-    Karl Heinz Marbaise
-    Kumar Raja Jana
-    Paul Borgermans
-    Peter Becker
-    Sébastien Michel
-    Uwe Schindler
+   Andrzej Rusin
+   Chris A. Mattmann
+   Dave Meikle
+   Georger Araújo
+   Guillermo Arribas
+   Jonathan Koren
+   Jukka Zitting
+   Karl Heinz Marbaise
+   Kumar Raja Jana
+   Paul Borgermans
+   Peter Becker
+   Sébastien Michel
+   Uwe Schindler
 
 See http://tinyurl.com/tika-0-3-contributions for more details on
 these contributions.
+
 
 Release 0.2 - 12/04/2008
 ------------------------
@@ -802,6 +815,7 @@ Release 0.2 - 12/04/2008
 
 45. TIKA-171 - New ContentHandler for plain text output that has no problem with
                missing white space after XHTML block tags (Uwe Schindler & Jukka Zitting)
+
 
 Release 0.1-incubating - 12/27/2007
 -----------------------------------
