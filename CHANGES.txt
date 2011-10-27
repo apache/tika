@@ -196,13 +196,13 @@ Gabriele Columbro
 Gavin
 Geoff Jarrad
 Gregory Kanevsky 
-GŸnter rombauts
+gunter rombauts
 Henning Gross
 Henri Bergius
 Ingo Renner
 Ingo Wiarda
-Izaak Alpert 
-Jan H¿ydahl
+Izaak Alpert
+Jan HÃ¸ydahl
 Jens Wilmer
 Jeremy Anderson
 Joseph Vychtrle
@@ -858,7 +858,7 @@ on the issues resolved in this release:
     Andrzej Rusin
     Chris A. Mattmann
     Dave Meikle
-    Georger Araï¿½jo
+    Georger AraÃºjo
     Guillermo Arribas
     Jonathan Koren
     Jukka Zitting
@@ -866,7 +866,7 @@ on the issues resolved in this release:
     Kumar Raja Jana
     Paul Borgermans
     Peter Becker
-    Sï¿½bastien Michel
+    SÃ©bastien Michel
     Uwe Schindler
 
 See http://tinyurl.com/tika-0-3-contributions for more details on
