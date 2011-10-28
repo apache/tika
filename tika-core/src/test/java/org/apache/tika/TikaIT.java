@@ -21,7 +21,10 @@ import junit.framework.TestCase;
 public class TikaIT extends TestCase {
 
     public void testToString() {
-        System.out.println(new Tika().toString());
+        String version = new Tika().toString();
+        assertNotNull(version);
+        assertTrue(version.matches(
+                "Apache Tika \\d+\\.\\d+(\\.\\d+)?(-SNAPSHOT)?"));
     }
 
 }
