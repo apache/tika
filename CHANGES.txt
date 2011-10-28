@@ -45,6 +45,9 @@ The most notable changes in Tika 1.0 over previous releases are:
  * Java: Tika no longer ships retrotranslated Java 1.4 binaries along
    with the normal ones that work with Java 5 and higher. (TIKA-744)
 
+ * OpenOffice documents: header/footer text is now extracted for text,
+   presentation and spreadsheet documents (TIKA-736)
+
 Tika 1.0 relies on the following set of major dependencies (generated using
 mvn dependency:tree from tika-parsers):
 

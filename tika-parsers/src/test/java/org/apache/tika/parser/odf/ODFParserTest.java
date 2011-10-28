@@ -18,16 +18,16 @@ package org.apache.tika.parser.odf;
 
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
-public class ODFParserTest extends TestCase {
+public class ODFParserTest extends TikaTest {
     /**
      * For now, allow us to run some tests against both
      *  the old and the new parser
@@ -207,4 +207,51 @@ public class ODFParserTest extends TestCase {
           input.close();
       }
    }
+
+    public void testODPMasterFooter() throws Exception {
+        InputStream input = ODFParserTest.class.getResourceAsStream(
+            "/test-documents/testMasterFooter.odp");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new AutoDetectParser().parse(input, handler, metadata);
+  
+            String content = handler.toString();
+            assertContains("Master footer is here", content);
+        } finally {
+            input.close();
+        }
+    }  
+
+    public void testODTFooter() throws Exception {
+        InputStream input = ODFParserTest.class.getResourceAsStream(
+            "/test-documents/testFooter.odt");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new AutoDetectParser().parse(input, handler, metadata);
+  
+            String content = handler.toString();
+            assertContains("Here is some text...", content);
+            assertContains("Here is some text on page 2", content);
+            assertContains("Here is footer text", content);
+        } finally {
+            input.close();
+        }
+    }  
+
+    public void testODSFooter() throws Exception {
+        InputStream input = ODFParserTest.class.getResourceAsStream(
+            "/test-documents/testFooter.ods");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new AutoDetectParser().parse(input, handler, metadata);
+  
+            String content = handler.toString();
+            assertContains("Here is a footer in the center area", content);
+        } finally {
+            input.close();
+        }
+    }  
 }
