@@ -25,6 +25,8 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+//import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+//import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
@@ -33,6 +35,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -106,12 +109,37 @@ public class OpenDocumentParser extends AbstractParser {
             InputStream stream, ContentHandler baseHandler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-       
+
+        // TODO: reuse the already opened ZIPFile, if
+        // present
+
+        /*
+        ZipFile zipFile;
+        if (stream instanceof TikaInputStream) {
+            TikaInputStream tis = (TikaInputStream) stream;
+            Object container = ((TikaInputStream) stream).getOpenContainer();
+            if (container instanceof ZipFile) {
+                zipFile = (ZipFile) container;
+            } else if (tis.hasFile()) {
+                zipFile = new ZipFile(tis.getFile());                
+            }
+        }
+        */
+
+        // TODO: if incoming IS is a TIS with a file
+        // associated, we should open ZipFile so we can
+        // visit metadata, mimetype first; today we lose
+        // all the metadata if meta.xml is hit after
+        // content.xml in the stream.  Then we can still
+        // read-once for the content.xml.
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(baseHandler, metadata);
+
         // As we don't know which of the metadata or the content
         //  we'll hit first, catch the endDocument call initially
         EndDocumentShieldingContentHandler handler = 
-          new EndDocumentShieldingContentHandler(baseHandler);
-       
+          new EndDocumentShieldingContentHandler(xhtml);
+
         // Process the file in turn
         ZipInputStream zip = new ZipInputStream(stream);
         ZipEntry entry = zip.getNextEntry();
@@ -122,7 +150,19 @@ public class OpenDocumentParser extends AbstractParser {
             } else if (entry.getName().equals("meta.xml")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith("content.xml")) {
-                content.parse(zip, handler, metadata, context);
+                if (content instanceof OpenDocumentContentParser) {
+                    ((OpenDocumentContentParser) content).parseInternal(zip, handler, metadata, context);
+                } else {
+                    // Foreign content parser was set:
+                    content.parse(zip, handler, metadata, context);
+                }
+            } else if (entry.getName().endsWith("styles.xml")) {
+                if (content instanceof OpenDocumentContentParser) {
+                    ((OpenDocumentContentParser) content).parseInternal(zip, handler, metadata, context);
+                } else {
+                    // Foreign content parser was set:
+                    content.parse(zip, handler, metadata, context);
+                }
             }
             entry = zip.getNextEntry();
         }

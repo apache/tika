@@ -46,6 +46,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -74,6 +75,8 @@ public class OpenDocumentContentParser extends AbstractParser {
     public static final String XLINK_NS = "http://www.w3.org/1999/xlink";
 
     protected static final char[] TAB = new char[] { '\t' };
+
+    private static final Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
 
     /**
      * Mappings between ODF tag names and XHTML tag names
@@ -174,9 +177,17 @@ public class OpenDocumentContentParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        final XHTMLContentHandler xhtml =
-            new XHTMLContentHandler(handler,metadata);
-        DefaultHandler dh = new ElementMappingContentHandler(xhtml, MAPPINGS) {
+        parseInternal(stream,
+                      new XHTMLContentHandler(handler,metadata),
+                      metadata, context);
+    }
+
+    void parseInternal(
+            InputStream stream, final ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+
+        DefaultHandler dh = new ElementMappingContentHandler(handler, MAPPINGS) {
 
             private final BitSet textNodeStack = new BitSet();
 
@@ -231,7 +242,7 @@ public class OpenDocumentContentParser extends AbstractParser {
              * Check if a node is a text node
              */
             private boolean isTextNode(String namespaceURI, String localName) {
-                if (TEXT_NS.equals(namespaceURI)) {
+                if (TEXT_NS.equals(namespaceURI) && !localName.equals("page-number") && !localName.equals("page-count")) {
                     return true;
                 }
                 if (SVG_NS.equals(namespaceURI)) {
@@ -263,10 +274,10 @@ public class OpenDocumentContentParser extends AbstractParser {
                 // call next handler if no filtering
                 if (completelyFiltered == 0) {
                     // special handling of text:h, that are directly passed
-                    // to xhtml handler
+                    // to incoming handler
                     if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
-                        xhtml.startElement(headingStack.push(
-                                getXHTMLHeaderTagName(atts)));
+                        final String el = headingStack.push(getXHTMLHeaderTagName(atts));
+                        handler.startElement(XHTMLContentHandler.XHTML, el, el, EMPTY_ATTRIBUTES);
                     } else {
                         super.startElement(
                                 namespaceURI, localName, qName, atts);
@@ -281,9 +292,10 @@ public class OpenDocumentContentParser extends AbstractParser {
                 // call next handler if no filtering
                 if (completelyFiltered == 0) {
                     // special handling of text:h, that are directly passed
-                    // to xhtml handler
+                    // to incoming handler
                     if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
-                        xhtml.endElement(headingStack.pop());
+                        final String el = headingStack.pop();
+                        handler.endElement(XHTMLContentHandler.XHTML, el, el);
                     } else {
                         super.endElement(namespaceURI,localName,qName);
                     }

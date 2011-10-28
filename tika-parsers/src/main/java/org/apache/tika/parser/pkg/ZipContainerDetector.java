@@ -82,6 +82,10 @@ public class ZipContainerDetector implements Detector {
                         return MediaType.application("java-archive");
                     }
                 } finally {
+                    // TODO: shouldn't we record the open
+                    // container so it can be later
+                    // reused...?
+                    // tis.setOpenContainer(zip);
                     zip.close();
                 }
             } catch (IOException ignore) {
