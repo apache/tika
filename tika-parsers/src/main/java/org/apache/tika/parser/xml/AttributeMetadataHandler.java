@@ -32,7 +32,7 @@ public class AttributeMetadataHandler extends AbstractMetadataHandler {
 
     private final String localName;
 
-    protected AttributeMetadataHandler(
+    public AttributeMetadataHandler(
             String uri, String localName, Metadata metadata, String name) {
         super(metadata, name);
         this.uri = uri;

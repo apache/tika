@@ -83,6 +83,14 @@ public class ODFParserTest extends TikaTest {
              assertEquals(
                    "NeoOffice/2.2$Unix OpenOffice.org_project/680m18$Build-9161",
                    metadata.get("generator"));
+             
+             // Check the document statistics
+             assertEquals("1", metadata.get(Metadata.PAGE_COUNT));
+             assertEquals("1", metadata.get(Metadata.PARAGRAPH_COUNT));
+             assertEquals("14", metadata.get(Metadata.WORD_COUNT));
+             assertEquals("78", metadata.get(Metadata.CHARACTER_COUNT));
+             
+             // Check the old style statistics (these will be removed shortly)
              assertEquals("0", metadata.get("nbTab"));
              assertEquals("0", metadata.get("nbObject"));
              assertEquals("0", metadata.get("nbImg"));
@@ -140,6 +148,10 @@ public class ODFParserTest extends TikaTest {
            assertEquals("true", metadata.get("custom:Info 4"));
            
            // No statistics present
+           assertEquals(null, metadata.get(Metadata.PAGE_COUNT));
+           assertEquals(null, metadata.get(Metadata.PARAGRAPH_COUNT));
+           assertEquals(null, metadata.get(Metadata.WORD_COUNT));
+           assertEquals(null, metadata.get(Metadata.CHARACTER_COUNT));
            assertEquals(null, metadata.get("nbTab"));
            assertEquals(null, metadata.get("nbObject"));
            assertEquals(null, metadata.get("nbImg"));
@@ -190,7 +202,13 @@ public class ODFParserTest extends TikaTest {
            assertEquals(null, metadata.get("custom:Info 3"));
            assertEquals(null, metadata.get("custom:Info 4"));
            
-           // No statistics present
+           // Check the document statistics
+           assertEquals("2", metadata.get(Metadata.PAGE_COUNT));
+           assertEquals("13", metadata.get(Metadata.PARAGRAPH_COUNT));
+           assertEquals("54", metadata.get(Metadata.WORD_COUNT));
+           assertEquals("351", metadata.get(Metadata.CHARACTER_COUNT));
+           
+           // Check the old style statistics (these will be removed shortly)
            assertEquals("0", metadata.get("nbTab"));
            assertEquals("2", metadata.get("nbObject"));
            assertEquals("0", metadata.get("nbImg"));
