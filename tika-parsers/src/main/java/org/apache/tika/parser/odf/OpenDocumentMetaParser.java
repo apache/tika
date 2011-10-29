@@ -17,9 +17,11 @@
 package org.apache.tika.parser.odf;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PagedText;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xml.AttributeDependantMetadataHandler;
 import org.apache.tika.parser.xml.DcXMLParser;
+import org.apache.tika.parser.xml.AttributeMetadataHandler;
 import org.apache.tika.parser.xml.MetadataHandler;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.xpath.CompositeMatcher;
@@ -37,8 +39,8 @@ public class OpenDocumentMetaParser extends DcXMLParser {
      */
     private static final long serialVersionUID = -8739250869531737584L;
    
-    private static final XPathParser META_XPATH = new XPathParser(
-            "meta", "urn:oasis:names:tc:opendocument:xmlns:meta:1.0");
+    private static final String META_NS = "urn:oasis:names:tc:opendocument:xmlns:meta:1.0"; 
+    private static final XPathParser META_XPATH = new XPathParser("meta", META_NS);
 
     private static ContentHandler getMeta(
             ContentHandler ch, Metadata md, String name, String element) {
@@ -65,9 +67,9 @@ public class OpenDocumentMetaParser extends DcXMLParser {
     private static ContentHandler getStatistic(
             ContentHandler ch, Metadata md, String name, String attribute) {
         Matcher matcher =
-            META_XPATH.parse("//meta:document-statistic/@meta:" + attribute);
-        ContentHandler branch =
-            new MatchingContentHandler(new MetadataHandler(md, name), matcher);
+            META_XPATH.parse("//meta:document-statistic/@meta:"+attribute);
+        ContentHandler branch = new MatchingContentHandler(
+              new AttributeMetadataHandler(META_NS, attribute, md, name), matcher);
         return new TeeContentHandler(ch, branch);
     }
 
@@ -87,10 +89,18 @@ public class OpenDocumentMetaParser extends DcXMLParser {
         ch = getStatistic(ch, md, "nbTab", "table-count");
         ch = getStatistic(ch, md, "nbObject", "object-count");
         ch = getStatistic(ch, md, "nbImg", "image-count");
+        ch = getStatistic(ch, md, Metadata.PAGE_COUNT, "page-count");
+        ch = getStatistic(ch, md, PagedText.N_PAGES.getName(), "page-count");
+        ch = getStatistic(ch, md, Metadata.PARAGRAPH_COUNT, "paragraph-count");
+        ch = getStatistic(ch, md, Metadata.WORD_COUNT, "word-count");
+        ch = getStatistic(ch, md, Metadata.CHARACTER_COUNT, "character-count");
+        // Legacy Statistics Attributes, replaced with real keys above
+        // TODO remove these soon!
         ch = getStatistic(ch, md, "nbPage", "page-count");
         ch = getStatistic(ch, md, "nbPara", "paragraph-count");
         ch = getStatistic(ch, md, "nbWord", "word-count");
         ch = getStatistic(ch, md, "nbCharacter", "character-count");
+        // Normalise the rest
         ch = new NSNormalizerContentHandler(ch);
         return ch;
     }
