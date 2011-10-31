@@ -24,8 +24,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -41,6 +43,15 @@ public class ServiceLoader {
      * <code>null</code> to automatically select the context class loader.
      */
     private static volatile ClassLoader contextClassLoader = null;
+
+    /**
+     * The dynamic set of services available in an OSGi environment.
+     * Managed by the {@link TikaActivator} class and used as an additional
+     * source of service instances in the {@link #loadServiceProviders(Class)}
+     * method.
+     */
+    private static final Map<Object, Object> services =
+            new HashMap<Object, Object>();
 
     /**
      * Returns the context class loader of the current thread. If such
@@ -74,6 +85,18 @@ public class ServiceLoader {
         contextClassLoader = loader;
     }
 
+    static void addService(Object reference, Object service) {
+        synchronized (services) {
+            services.put(reference, service);
+        }
+    }
+
+    static Object removeService(Object reference) {
+        synchronized (services) {
+            return services.remove(reference);
+        }
+    }
+
     private final ClassLoader loader;
 
     private final LoadErrorHandler handler;
@@ -90,7 +113,7 @@ public class ServiceLoader {
     public ServiceLoader() {
         this(getContextClassLoader());
     }
-    
+
     /**
      * Returns all the available service resources matching the
      *  given pattern, such as all instances of tika-mimetypes.xml 
@@ -111,18 +134,27 @@ public class ServiceLoader {
     /**
      * Returns all the available service providers of the given type.
      *
-     * @param service service provider interface
+     * @param iface service provider interface
      * @return available service providers
      */
     @SuppressWarnings("unchecked")
-    public <T> List<T> loadServiceProviders(Class<T> service) {
+    public <T> List<T> loadServiceProviders(Class<T> iface) {
         List<T> providers = new ArrayList<T>();
+
+        synchronized (services) {
+            for (Object service : services.values()) {
+                if (iface.isAssignableFrom(service.getClass())) {
+                    providers.add((T) service);
+                }
+            }
+        }
 
         if (loader != null) {
             Set<String> names = new HashSet<String>();
 
-            String serviceName = service.getName();
-            Enumeration<URL> resources = findServiceResources("META-INF/services/" + serviceName);
+            String serviceName = iface.getName();
+            Enumeration<URL> resources =
+                    findServiceResources("META-INF/services/" + serviceName);
             for (URL resource : Collections.list(resources)) {
                 try {
                     names.addAll(getServiceClassNames(resource));
@@ -134,7 +166,7 @@ public class ServiceLoader {
             for (String name : names) {
                 try {
                     Class<?> klass = loader.loadClass(name);
-                    if (service.isAssignableFrom(klass)) {
+                    if (iface.isAssignableFrom(klass)) {
                         providers.add((T) klass.newInstance());
                     }
                 } catch (Throwable t) {
