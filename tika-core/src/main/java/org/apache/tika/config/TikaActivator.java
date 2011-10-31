@@ -18,6 +18,9 @@ package org.apache.tika.config;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceEvent;
+import org.osgi.framework.ServiceListener;
+import org.osgi.framework.ServiceReference;
 
 /**
  * Bundle activator that adjust the class loading mechanism of the
@@ -30,15 +33,36 @@ import org.osgi.framework.BundleContext;
  *
  * @since Apache Tika 0.9
  */
-public class TikaActivator implements BundleActivator {
+public class TikaActivator
+        implements BundleActivator, ServiceListener {
+
+    private BundleContext bundleContext;
+
+    //-----------------------------------------------------< BundleActivator >
 
     public void start(BundleContext context) throws Exception {
-        ServiceLoader.setContextClassLoader(
-                TikaActivator.class.getClassLoader());
+        bundleContext = context;
+        bundleContext.addServiceListener(this,
+                "(|(objectClass=org.apache.tika.detect.Detector)"
+                + "(objectClass=org.apache.tika.parser.Parser))");
     }
 
     public void stop(BundleContext context) throws Exception {
-        ServiceLoader.setContextClassLoader(null);
+        bundleContext.removeServiceListener(this);
+    }
+
+    //-----------------------------------------------------< ServiceListener >
+
+    public synchronized void serviceChanged(ServiceEvent event) {
+        if (event.getType() == ServiceEvent.REGISTERED) {
+            ServiceReference reference = event.getServiceReference();
+            Object service = bundleContext.getService(reference);
+            ServiceLoader.addService(reference, service);
+        } else if (event.getType() == ServiceEvent.UNREGISTERING) {
+            ServiceReference reference = event.getServiceReference();
+            ServiceLoader.removeService(reference);
+            bundleContext.ungetService(reference);
+        }
     }
 
 }
