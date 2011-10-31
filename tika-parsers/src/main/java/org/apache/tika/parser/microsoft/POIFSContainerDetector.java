@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
@@ -39,6 +41,7 @@ import static org.apache.tika.mime.MediaType.application;
  * This should work for all OLE2 documents, whether
  *  they are ones supported by POI or not.
  */
+@Component @Service(Detector.class)
 public class POIFSContainerDetector implements Detector {
 
     /**

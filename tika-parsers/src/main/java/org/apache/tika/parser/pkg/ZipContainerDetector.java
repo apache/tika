@@ -21,6 +21,8 @@ import java.io.InputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -39,6 +41,7 @@ import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
  * A detector that works on a Zip document
  *  to figure out exactly what the file is
  */
+@Component @Service(Detector.class)
 public class ZipContainerDetector implements Detector {
     /**
      * Serial version UID
