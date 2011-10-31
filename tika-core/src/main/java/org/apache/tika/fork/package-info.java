@@ -18,5 +18,5 @@
 /**
  * Forked parser.
  */
-@aQute.bnd.annotation.Version("0.10")
+@aQute.bnd.annotation.Version("1.0.0")
 package org.apache.tika.fork;
