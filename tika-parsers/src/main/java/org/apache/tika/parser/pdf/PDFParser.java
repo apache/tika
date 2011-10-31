@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
@@ -38,6 +40,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -49,6 +52,7 @@ import org.xml.sax.SAXException;
  * document. If no password is given, then this parser will try decrypting
  * the document using the empty password that's often used with PDFs.
  */
+@Component @Service(Parser.class)
 public class PDFParser extends AbstractParser {
 
     /** Serial version UID */

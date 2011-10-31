@@ -23,11 +23,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -37,6 +40,7 @@ import org.xml.sax.SAXException;
  * elements that contain the (optional) entry name as a &lt;h1&gt; element
  * and the full structured body content of the parsed entry.
  */
+@Component @Service(Parser.class)
 public class PackageParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
