@@ -23,9 +23,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-//TIKA imports
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
@@ -37,7 +34,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-//NETCDF imports
 import ucar.nc2.Attribute;
 import ucar.nc2.NetcdfFile;
 
@@ -48,8 +44,10 @@ import ucar.nc2.NetcdfFile;
  * href="http://www.unidata.ucar.edu/software/netcdf-java/">NetCDF for Java</a>
  * API.
  */
-@Component @Service(Parser.class)
 public class NetCDFParser extends AbstractParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = -5940938274907708665L;
 
     private final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("x-netcdf"));

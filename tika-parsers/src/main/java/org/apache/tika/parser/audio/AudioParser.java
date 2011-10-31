@@ -23,30 +23,29 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.AudioFileFormat.Type;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-@Component @Service(Parser.class)
 public class AudioParser extends AbstractParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = -6015684081240882695L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(

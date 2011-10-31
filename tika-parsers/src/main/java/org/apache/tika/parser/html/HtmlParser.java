@@ -16,7 +16,10 @@
  */
 package org.apache.tika.parser.html;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,15 +28,12 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.CharsetDetector;
 import org.apache.tika.parser.txt.CharsetMatch;
 import org.apache.tika.utils.CharsetUtils;
@@ -48,8 +48,10 @@ import org.xml.sax.SAXException;
  * and post-processes the events to produce XHTML and metadata expected by
  * Tika clients.
  */
-@Component @Service(Parser.class)
 public class HtmlParser extends AbstractParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = 7895315240498733128L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(

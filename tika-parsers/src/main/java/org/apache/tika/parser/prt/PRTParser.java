@@ -22,8 +22,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
@@ -31,7 +29,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -40,17 +37,19 @@ import org.xml.sax.SAXException;
  * A basic text extracting parser for the CADKey PRT (CAD Drawing)
  *  format. It outputs text from note entries.
  */
-@Component @Service(Parser.class)
+
 public class PRTParser extends AbstractParser {
+
+    /** Serial version UID */
     private static final long serialVersionUID = 4659638314375035178L;
-    
+
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MediaType.application("x-prt"));
     public static final String PRT_MIME_TYPE = "application/x-prt";
-         
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
        return SUPPORTED_TYPES;
     }
-    
+
     /**
      * How long do we allow a text run to claim to be, before we
      * decide we're confused and it's not really text after all?

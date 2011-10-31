@@ -30,14 +30,11 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -46,11 +43,9 @@ import org.xml.sax.SAXException;
  * Mbox (mailbox) parser. This version returns the headers for the first email
  * via metadata, which means headers from subsequent emails will be lost.
  */
-@Component @Service(Parser.class)
 public class MboxParser extends AbstractParser {
-    /**
-     * Serial version UID
-     */
+
+    /** Serial version UID */
     private static final long serialVersionUID = -1762689436731160661L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =

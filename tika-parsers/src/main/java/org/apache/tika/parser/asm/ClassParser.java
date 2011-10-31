@@ -21,22 +21,21 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
  * Parser for Java .class files.
  */
-@Component @Service(Parser.class)
 public class ClassParser extends AbstractParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = -3531388963354454357L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("java-vm"));

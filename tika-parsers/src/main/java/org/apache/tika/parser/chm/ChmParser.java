@@ -21,23 +21,21 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-@Component @Service(Parser.class)
 public class ChmParser extends AbstractParser {
 
+    /** Serial version UID */
     private static final long serialVersionUID = 5938777307516469802L;
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections
-            .singleton(MediaType.application("chm"));
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.singleton(MediaType.application("chm"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;

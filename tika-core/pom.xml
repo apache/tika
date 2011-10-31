@@ -35,7 +35,7 @@
   <url>http://tika.apache.org/</url>
 
   <dependencies>
-    <!-- Optional OSGi dependency, used only when running within OSGi -->
+    <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
