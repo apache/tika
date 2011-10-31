@@ -18,6 +18,14 @@ The most notable changes in Tika 1.0 over previous releases are:
    to the configuration mechanism to get the previous behaviour.
    (TIKA-565)
 
+ * OSGi: The tika-core bundle will now automatically pick up and use
+   any available Parser and Detector services when deployed to an OSGi
+   environment. The tika-parsers bundle provides such services based on
+   for all the supported file formats for which the upstream parser library
+   is available. If you don't want to track all the parser libraries as
+   separate OSGi bundles, you can use the tika-bundle bundle that packages
+   tika-parsers together with all its upstream dependencies. (TIKA-565)
+
  * RTF: Hyperlinks in RTF documents are now extracted as an
    <a href=...>...</a> element. The RTF parser is also now more
    robust when encountering too many closing {'s vs. opening {'s.
