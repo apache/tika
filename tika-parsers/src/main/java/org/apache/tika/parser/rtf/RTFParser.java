@@ -21,12 +21,15 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -34,6 +37,7 @@ import org.xml.sax.SAXException;
 /**
  * RTF parser
  */
+@Component @Service(Parser.class)
 public class RTFParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections

@@ -22,6 +22,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
@@ -29,6 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -37,6 +40,7 @@ import org.xml.sax.SAXException;
  * A basic text extracting parser for the CADKey PRT (CAD Drawing)
  *  format. It outputs text from note entries.
  */
+@Component @Service(Parser.class)
 public class PRTParser extends AbstractParser {
     private static final long serialVersionUID = 4659638314375035178L;
     

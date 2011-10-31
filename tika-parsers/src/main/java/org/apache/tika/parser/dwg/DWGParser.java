@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.poi.util.IOUtils;
 import org.apache.poi.util.StringUtil;
 import org.apache.tika.exception.TikaException;
@@ -29,6 +31,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -39,6 +42,7 @@ import org.xml.sax.SAXException;
  * Note that we use Apache POI for various parts of the processing, as
  *  lots of the low level string/int/short concepts are the same.
  */
+@Component @Service(Parser.class)
 public class DWGParser extends AbstractParser {
 
     private static MediaType TYPE = MediaType.image("vnd.dwg");

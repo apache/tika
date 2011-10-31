@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.felix.scr.annotations.Component;
+import org.apache.felix.scr.annotations.Service;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
@@ -30,6 +32,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -42,7 +45,8 @@ import org.xml.sax.SAXException;
  * to better control the parsing process.
  *
  * @author jnioche@digitalpebble.com
- **/
+ */
+@Component @Service(Parser.class)
 public class RFC822Parser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
