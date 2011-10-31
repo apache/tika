@@ -129,6 +129,36 @@
               org.apache.tika.*,
               *;resolution:=optional
             </Import-Package>
+            <_exportcontents>
+              org.apache.tika.parser.asm,
+              org.apache.tika.parser.audio,
+              org.apache.tika.parser.chm,
+              org.apache.tika.parser.dwg,
+              org.apache.tika.parser.epub,
+              org.apache.tika.parser.feed,
+              org.apache.tika.parser.font,
+              org.apache.tika.parser.hdf,
+              org.apache.tika.parser.html,
+              org.apache.tika.parser.image,
+              org.apache.tika.parser.image.xmp,
+              org.apache.tika.parser.iwork,
+              org.apache.tika.parser.jpeg,
+              org.apache.tika.parser.mail,
+              org.apache.tika.parser.mbox,
+              org.apache.tika.parser.microsoft,
+              org.apache.tika.parser.microsoft.ooxml,
+              org.apache.tika.parser.mp3,
+              org.apache.tika.parser.netcdf,
+              org.apache.tika.parser.odf,
+              org.apache.tika.parser.opendocument,
+              org.apache.tika.parser.pdf,
+              org.apache.tika.parser.pkg,
+              org.apache.tika.parser.prt,
+              org.apache.tika.parser.rtf,
+              org.apache.tika.parser.txt,
+              org.apache.tika.parser.video,
+              org.apache.tika.parser.xml
+            </_exportcontents>
             <Service-Component>
               OSGI-INF/serviceComponents.xml
             </Service-Component>
