@@ -90,6 +90,17 @@
             <goals>
               <goal>check</goal>
             </goals>
+            <configuration>
+              <skip>true</skip>
+              <comparisonArtifacts>
+                <comparisonArtifact>
+                  <groupId>org.apache.tika</groupId>
+                  <artifactId>tika-core</artifactId>
+                  <version>0.10</version>
+                  <type>jar</type>
+                </comparisonArtifact>
+              </comparisonArtifacts>
+            </configuration>
           </execution>
         </executions>
       </plugin>
