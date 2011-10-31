@@ -137,17 +137,16 @@ public class TikaConfig {
      * @throws TikaException if problem with MimeTypes or parsing XML config
      */
     public TikaConfig() throws TikaException, IOException {
-        ClassLoader loader = ServiceLoader.getContextClassLoader();
         String config = System.getProperty("tika.config");
         if (config == null) {
             config = System.getenv("TIKA_CONFIG");
         }
         if (config == null) {
             this.mimeTypes = MimeTypes.getDefaultMimeTypes();
-            this.parser = new DefaultParser(
-                    mimeTypes.getMediaTypeRegistry(), loader);
-            this.detector = new DefaultDetector(mimeTypes, loader);
+            this.parser = new DefaultParser(mimeTypes.getMediaTypeRegistry());
+            this.detector = new DefaultDetector(mimeTypes);
         } else {
+            ClassLoader loader = ServiceLoader.getContextClassLoader();
             InputStream stream;
             File file = new File(config);
             if (file.isFile()) {

@@ -75,8 +75,6 @@
           <excludes>
             <exclude>.*/**</exclude>
             <exclude>CHANGES.txt</exclude>
-            <exclude>tika-bundle-it/.*/**</exclude>
-            <exclude>tika-bundle-it/target/**</exclude>
             <exclude>tika-server/.*/**</exclude>
             <exclude>tika-server/target/**</exclude>
           </excludes>
@@ -198,12 +196,6 @@ A release vote template has been generated for you:
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>integrationTesting</id>
-      <modules>
-        <module>tika-bundle-it</module>
-      </modules>
     </profile>
   </profiles>
 
