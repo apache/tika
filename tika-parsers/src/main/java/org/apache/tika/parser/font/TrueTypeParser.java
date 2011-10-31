@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.fontbox.ttf.TTFParser;
 import org.apache.fontbox.ttf.TrueTypeFont;
 import org.apache.tika.exception.TikaException;
@@ -33,7 +31,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -41,8 +38,10 @@ import org.xml.sax.SAXException;
 /**
  * Parser for TrueType font files (TTF).
  */
-@Component @Service(Parser.class)
 public class TrueTypeParser extends AbstractParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = 44788554612243032L;
 
     private static final MediaType TYPE =
         MediaType.application("x-font-ttf");

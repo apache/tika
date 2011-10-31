@@ -27,8 +27,6 @@ import java.util.zip.ZipInputStream;
 
 //import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 //import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
@@ -45,8 +43,10 @@ import org.xml.sax.helpers.DefaultHandler;
 /**
  * OpenOffice parser
  */
-@Component @Service(Parser.class)
 public class OpenDocumentParser extends AbstractParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = -6410276875438618287L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(

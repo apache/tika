@@ -21,19 +21,14 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
@@ -51,11 +46,13 @@ import com.sun.syndication.io.SyndFeedInput;
  * Uses Rome for parsing the feeds. A feed description is put in a paragraph
  * with its link and title in an anchor.
  */
-@Component @Service(Parser.class)
 public class FeedParser extends AbstractParser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Collections
-            .unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+    /** Serial version UID */
+    private static final long serialVersionUID = -3785361933034525186L;
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
                     MediaType.application("rss+xml"),
                     MediaType.application("atom+xml"))));
 

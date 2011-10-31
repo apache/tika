@@ -47,12 +47,21 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Optional OSGi dependencies, used only when running within OSGi -->
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.compendium</artifactId>
+      <version>4.2.0</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.scr.annotations</artifactId>
       <scope>provided</scope>
     </dependency>
 
+    <!-- Upstream parser libraries -->
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>netcdf</artifactId>
@@ -151,6 +160,8 @@
       <artifactId>rome</artifactId>
       <version>0.9</version>
     </dependency>
+
+    <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>

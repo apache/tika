@@ -24,22 +24,17 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-//TIKA imports
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.netcdf.NetCDFParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-//NetCDF imports
 import ucar.nc2.Attribute;
 import ucar.nc2.Group;
 import ucar.nc2.NetcdfFile;
@@ -51,10 +46,11 @@ import ucar.nc2.NetcdfFile;
  * we are able to use it to parse HDF files as well. See <a href=
  * "http://www.unidata.ucar.edu/software/netcdf-java/formats/FileTypes.html"
  * >this link</a> for more information.
- * 
  */
-@Component @Service(Parser.class)
 public class HDFParser extends AbstractParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = 1091208208003437549L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("x-hdf"));

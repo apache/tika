@@ -16,20 +16,19 @@
  */
 package org.apache.tika.parser.xml;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 
 /**
  * Dublin Core metadata parser
  */
-@Component @Service(Parser.class)
 public class DcXMLParser extends XMLParser {
+
+    /** Serial version UID */
+    private static final long serialVersionUID = 4905318835463880819L;
 
     private static ContentHandler getDublinCoreHandler(
             Metadata metadata, String name, String element) {

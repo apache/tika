@@ -101,9 +101,17 @@ public class ServiceLoader {
 
     private final LoadErrorHandler handler;
 
-    public ServiceLoader(ClassLoader loader, LoadErrorHandler handler) {
+    private final boolean dynamic;
+
+    public ServiceLoader(
+            ClassLoader loader, LoadErrorHandler handler, boolean dynamic) {
         this.loader = loader;
         this.handler = handler;
+        this.dynamic = dynamic;
+    }
+
+    public ServiceLoader(ClassLoader loader, LoadErrorHandler handler) {
+        this(loader, handler, false);
     }
 
     public ServiceLoader(ClassLoader loader) {
@@ -111,7 +119,7 @@ public class ServiceLoader {
     }
 
     public ServiceLoader() {
-        this(getContextClassLoader());
+        this(getContextClassLoader(), LoadErrorHandler.IGNORE, true);
     }
 
     /**
@@ -141,10 +149,12 @@ public class ServiceLoader {
     public <T> List<T> loadServiceProviders(Class<T> iface) {
         List<T> providers = new ArrayList<T>();
 
-        synchronized (services) {
-            for (Object service : services.values()) {
-                if (iface.isAssignableFrom(service.getClass())) {
-                    providers.add((T) service);
+        if (dynamic) {
+            synchronized (services) {
+                for (Object service : services.values()) {
+                    if (iface.isAssignableFrom(service.getClass())) {
+                        providers.add((T) service);
+                    }
                 }
             }
         }

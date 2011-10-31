@@ -29,8 +29,6 @@ import javax.xml.namespace.QName;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
@@ -38,7 +36,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
@@ -55,11 +52,9 @@ import org.xml.sax.SAXException;
  * <li>Numbers format version 1.x. Currently only tested with Numbers version 2.0.x
  * </ol>
  */
-@Component @Service(Parser.class)
 public class IWorkPackageParser extends AbstractParser {
-    /**
-     * Serial version UID
-     */
+
+    /** Serial version UID */
     private static final long serialVersionUID = -2160322853809682372L;
 
     /**

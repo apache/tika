@@ -23,25 +23,20 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
  * Office Open XML (OOXML) parser.
  */
-@Component @Service(Parser.class)
 public class OOXMLParser extends AbstractParser {
-    /**
-     * Serial version UID 
-     */
+
+    /** Serial version UID */
     private static final long serialVersionUID = 6535995710857776481L;
    
     private static final Set<MediaType> SUPPORTED_TYPES =

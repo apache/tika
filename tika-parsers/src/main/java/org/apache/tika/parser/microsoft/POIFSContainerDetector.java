@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.apache.tika.mime.MediaType.application;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
@@ -23,8 +25,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
@@ -33,20 +33,15 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
-import static org.apache.tika.mime.MediaType.application;
-
 /**
  * A detector that works on a POIFS OLE2 document
  *  to figure out exactly what the file is.
  * This should work for all OLE2 documents, whether
  *  they are ones supported by POI or not.
  */
-@Component @Service(Detector.class)
 public class POIFSContainerDetector implements Detector {
 
-    /**
-     * Serial version UID.
-     */
+    /** Serial version UID */
     private static final long serialVersionUID = -3028021741663605293L;
 
     /** The OLE base file format */
