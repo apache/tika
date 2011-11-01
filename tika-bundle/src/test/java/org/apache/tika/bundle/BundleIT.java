@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
@@ -47,13 +48,13 @@ public class BundleIT {
     private final File TARGET = new File("target");
 
     @Configuration
-    public Option[] configuration() throws IOException {
-        String root = "file://" + TARGET.getCanonicalPath();
+    public Option[] configuration() throws IOException, URISyntaxException {
+        File base = new File(TARGET, "test-bundles");
         return CoreOptions.options(
                 junitBundles(),
                 mavenBundle("org.apache.felix", "org.apache.felix.scr", "1.6.0"),
-                bundle(root + "/test-bundles/tika-core.jar"),
-                bundle(root + "/test-bundles/tika-bundle.jar"));
+                bundle(new File(base, "tika-core.jar").toURL().toURI().toString()),
+                bundle(new File(base, "tika-bundle.jar").toURL().toURI().toString()));
     }
  
     @Test
