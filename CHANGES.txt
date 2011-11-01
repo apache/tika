@@ -6,11 +6,12 @@ Release 1.0 - Current Development
 
 The most notable changes in Tika 1.0 over previous releases are:
 
- * API: All methods, classes and interfaces that were marked as deprecated
-   in Tika 0.10 have been removed to clean up the API. You may need to adjust
-   and recompile client code accordingly. The declared OSGi package versions
-   are now 1.0, and will thus not resolve for client bundles that still refer
-   to 0.x versions. (TIKA-703, TIKA-565)
+ * API: All methods, classes and interfaces that were marked as
+   deprecated in Tika 0.10 have been removed to clean up the API
+   (TIKA-703). You may need to adjust and recompile client code
+   accordingly. The declared OSGi package versions are now 1.0, and
+   will thus not resolve for client bundles that still refer to 0.x
+   versions (TIKA-565).
 
  * Configuration: The context class loader of the current thread is
    no longer used as the default for loading configured parser and
@@ -26,10 +27,10 @@ The most notable changes in Tika 1.0 over previous releases are:
    separate OSGi bundles, you can use the tika-bundle bundle that packages
    tika-parsers together with all its upstream dependencies. (TIKA-565)
 
- * RTF: Hyperlinks in RTF documents are now extracted as an
-   <a href=...>...</a> element. The RTF parser is also now more
-   robust when encountering too many closing {'s vs. opening {'s.
-   (TIKA-632, TIKA-733)
+ * RTF: Hyperlinks in RTF documents are now extracted as an <a
+   href=...>...</a> element (TIKA-632). The RTF parser is also now
+   more robust when encountering too many closing {'s vs. opening {'s
+   (TIKA-733).
 
  * MS Word: From Word (.doc) documents we now extract optional hyphen
    as Unicode zero-width space (U+200B), and non-breaking hyphen as
@@ -41,14 +42,14 @@ The most notable changes in Tika 1.0 over previous releases are:
  * MS Office: Performance of extracting embedded office docs was improved.
    (TIKA-753)
 
- * PDF: The PDF parser now extracts paragraphs within each page and
-   can also optionally extract text from PDF annotations. There's also
-   an option to enable (the default) or disable auto-space insertion.
-   (TIKA-742, TIKA-738, TIKA-724)
+ * PDF: The PDF parser now extracts paragraphs within each page 
+   (TIKA-742) and  can now optionally extract text from PDF 
+   annotations (TIKA-738). There's also an option to enable (the 
+   default) or disable auto-space insertion (TIKA-724). 
 
- * Language detection: Tika can now detect Belarusian, Catalan, Esperanto,
-   Galician, Lithuanian, Romanian, Slovak, Slovenian, and Ukrainian.
-   (TIKA-681, TIKA-582)
+ * Language detection: Tika can now detect Belarusian, Catalan,
+   Esperanto, Galician, Lithuanian (TIKA-582), Romanian, Slovak,
+   Slovenian, and Ukrainian (TIKA-681).
 
  * Java: Tika no longer ships retrotranslated Java 1.4 binaries along
    with the normal ones that work with Java 5 and higher. (TIKA-744)
