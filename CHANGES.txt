@@ -66,7 +66,7 @@ mvn dependency:tree from tika-parsers):
    |  \- org.slf4j:slf4j-api:jar:1.5.6:compile
    +- org.apache.james:apache-mime4j-core:jar:0.7:compile
    +- org.apache.james:apache-mime4j-dom:jar:0.7:compile
-   +- org.apache.commons:commons-compress:jar:1.1:compile
+   +- org.apache.commons:commons-compress:jar:1.3:compile
    +- commons-codec:commons-codec:jar:1.5:compile
    +- org.apache.pdfbox:pdfbox:jar:1.6.0:compile
    |  +- org.apache.pdfbox:fontbox:jar:1.6.0:compile
