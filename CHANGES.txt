@@ -88,6 +88,38 @@ mvn dependency:tree from tika-parsers):
    +- rome:rome:jar:0.9:compile
       \- jdom:jdom:jar:1.0:compile
 
+The following people have contributed to Tika 1.0 by submitting or commenting
+on the issues resolved in this release:
+
+Andrzej Bialecki
+Antoni Mylka
+Benson Margulies
+Chris A. Mattmann
+Cristian Vat
+Dave Meikle
+David Smiley
+Dennis Adler
+Erik Hetzner
+Ingo Renner
+Jeremias Maerki
+Jeremy Anderson
+Jeroen van Vianen
+John Bartak
+Jukka Zitting
+Julien Nioche
+Ken Krugler
+Mark Butler
+Maxim Valyanskiy
+Michael Bryant
+Michael McCandless 
+Nick Burch
+Pablo Queixalos
+Uwe Schindler
+Žygimantas Medelis
+
+
+See http://s.apache.org/Zk6 for more details on these contributions.
+
 
 Release 0.10 - 09/25/2011
 -------------------------
@@ -181,7 +213,7 @@ on the issues resolved in this release:
    Ingo Renner
    Ingo Wiarda
    Izaak Alpert
-   Jan Høydahl
+   Jan H√∏ydahl
    Jens Wilmer
    Jeremy Anderson
    Joseph Vychtrle
@@ -309,7 +341,7 @@ on the issues resolved in this release:
    Staffan Olsson
    Steve Kearns
    Tom Klonikowski
-   Žygimantas Medelis
+   ≈Ωygimantas Medelis
 
 See http://s.apache.org/qi for more details on these contributions.
 
@@ -371,16 +403,16 @@ mvn dependency:tree from tika-parsers):
 The following people have contributed to Tika 0.8 by submitting or commenting
 on the issues resolved in this release:
 
-   Łukasz Wiktor
+   ≈Åukasz Wiktor
    Adam Wilmer
    Alex Baranau
    Alex Ott
-   André Ricardo
+   Andr√© Ricardo
    Andrey Barhatov
    Andrey Sidorenko
    Antoni Mylka
    Arturo Beltran
-   Attila Király
+   Attila Kir√°ly
    Brad Greenlee
    Bruno Dumon
    Chris A. Mattmann
@@ -393,7 +425,7 @@ on the issues resolved in this release:
    Geoff Jarrad
    Gerd Bremer
    Grant Ingersoll
-   Jan Høydahl
+   Jan H√∏ydahl
    Jean-Philippe Ricard
    Jeremias Maerki
    Joao Garcia
@@ -710,7 +742,7 @@ on the issues resolved in this release:
    Andrzej Rusin
    Chris A. Mattmann
    Dave Meikle
-   Georger Araújo
+   Georger Ara√∫jo
    Guillermo Arribas
    Jonathan Koren
    Jukka Zitting
@@ -718,7 +750,7 @@ on the issues resolved in this release:
    Kumar Raja Jana
    Paul Borgermans
    Peter Becker
-   Sébastien Michel
+   S√©bastien Michel
    Uwe Schindler
 
 See http://tinyurl.com/tika-0-3-contributions for more details on
