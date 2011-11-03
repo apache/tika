@@ -18,6 +18,7 @@ package org.apache.tika.mime;
 
 // JDK imports
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -32,6 +33,7 @@ import java.util.TreeSet;
 
 import javax.xml.namespace.QName;
 
+import org.apache.tika.Tika;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.TextDetector;
 import org.apache.tika.detect.XmlRootExtractor;
@@ -120,10 +122,11 @@ public final class MimeTypes implements Detector, Serializable {
      * Find the Mime Content Type of a document from its name.
      * Returns application/octet-stream if no better match is found.
      *
+     * @deprecated Use {@link Tika#detect(String)} instead
      * @param name of the document to analyze.
      * @return the Mime Content Type of the specified document name
      */
-    private MimeType getMimeType(String name) {
+    public MimeType getMimeType(String name) {
         MimeType type = patterns.matches(name);
         if (type != null) {
             return type;
@@ -134,6 +137,21 @@ public final class MimeTypes implements Detector, Serializable {
         } else {
             return rootMimeType;
         }
+    }
+
+    /**
+     * Find the Mime Content Type of a document stored in the given file.
+     * Returns application/octet-stream if no better match is found.
+     *
+     * @deprecated Use {@link Tika#detect(File)} instead
+     * @param file file to analyze
+     * @return the Mime Content Type of the specified document
+     * @throws MimeTypeException if the type can't be detected
+     * @throws IOException if the file can't be read
+     */
+    public MimeType getMimeType(File file)
+            throws MimeTypeException, IOException {
+        return forName(new Tika(this).detect(file));
     }
 
     /**

@@ -193,6 +193,13 @@ public class TikaConfig {
     }
 
     /**
+     * @deprecated Use the {@link #getParser()} method instead
+     */
+    public Parser getParser(MediaType mimeType) {
+        return parser.getParsers().get(mimeType);
+    }
+
+    /**
      * Returns the configured parser instance.
      *
      * @return configured parser
