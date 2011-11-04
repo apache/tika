@@ -53,12 +53,16 @@ class PDF2XHTML extends PDFTextStripper {
      * @throws TikaException if the PDF document can not be processed
      */
     public static void process(
-            PDDocument document, ContentHandler handler, Metadata metadata, boolean extractAnnotationText, boolean enableAutoSpace)
+            PDDocument document, ContentHandler handler, Metadata metadata,
+            boolean extractAnnotationText, boolean enableAutoSpace,
+            boolean suppressDuplicateOverlappingText)
             throws SAXException, TikaException {
         try {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content handler.
-            new PDF2XHTML(handler, metadata, extractAnnotationText, enableAutoSpace).writeText(document, new Writer() {
+            new PDF2XHTML(handler, metadata,
+                          extractAnnotationText, enableAutoSpace,
+                          suppressDuplicateOverlappingText).writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {
                 }
@@ -81,7 +85,9 @@ class PDF2XHTML extends PDFTextStripper {
     private final XHTMLContentHandler handler;
     private final boolean extractAnnotationText;
 
-    private PDF2XHTML(ContentHandler handler, Metadata metadata, boolean extractAnnotationText, boolean enableAutoSpace)
+    private PDF2XHTML(ContentHandler handler, Metadata metadata,
+                      boolean extractAnnotationText, boolean enableAutoSpace,
+                      boolean suppressDuplicateOverlappingText)
             throws IOException {
         this.handler = new XHTMLContentHandler(handler, metadata);
         this.extractAnnotationText = extractAnnotationText;
@@ -95,6 +101,7 @@ class PDF2XHTML extends PDFTextStripper {
         // TODO: maybe expose setting these too:
         //setAverageCharTolerance(1.0f);
         //setSpacingTolerance(1.0f);
+        setSuppressDuplicateOverlappingText(suppressDuplicateOverlappingText);
     }
 
     @Override
