@@ -293,6 +293,36 @@ public class PDFParserTest extends TikaTest {
         assertEquals(-1, content.indexOf("Here is some formatted text"));
     }
 
+    public void testDuplicateOverlappingText() throws Exception {
+        PDFParser parser = new PDFParser();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getResourceAsStream("/test-documents/testOverlappingText.pdf");
+        // Default is false (keep overlapping text):
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        String content = handler.toString();
+        assertContains("Text the first timeText the second time", content);
+
+        parser.setSuppressDuplicateOverlappingText(true);
+        handler = new BodyContentHandler();
+        metadata = new Metadata();
+        context = new ParseContext();
+        stream = getResourceAsStream("/test-documents/testOverlappingText.pdf");
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        content = handler.toString();
+        // "Text the first" was dedup'd:
+        assertContains("Text the first timesecond time", content);
+    }
+
     private static class XMLResult {
         public final String xml;
         public final Metadata metadata;

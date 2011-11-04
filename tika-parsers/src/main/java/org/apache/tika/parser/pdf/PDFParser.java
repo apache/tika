@@ -57,6 +57,9 @@ public class PDFParser extends AbstractParser {
     // True if we let PDFBox "guess" where spaces should go:
     private boolean enableAutoSpace = true;
 
+    // True if we let PDFBox remove duplicate overlapping text:
+    private boolean suppressDuplicateOverlappingText;
+
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -93,7 +96,7 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
-            PDF2XHTML.process(pdfDocument, handler, metadata, extractAnnotationText, enableAutoSpace);
+            PDF2XHTML.process(pdfDocument, handler, metadata, extractAnnotationText, enableAutoSpace, suppressDuplicateOverlappingText);
         } finally {
             pdfDocument.close();
         }
@@ -200,4 +203,23 @@ public class PDFParser extends AbstractParser {
     public boolean getExtractAnnotationText() {
         return extractAnnotationText;
     }
+
+    /**
+     *  If true, the parser should try to remove duplicated
+     *  text over the same region.  This is needed for some
+     *  PDFs that achieve bolding by re-writing the same
+     *  text in the same area.  Note that this can
+     *  slow down extraction substantially (PDFBOX-956) and
+     *  sometimes remove characters that were not in fact
+     *  duplicated (PDFBOX-1155).  By default this is disabled.
+     */
+    public void setSuppressDuplicateOverlappingText(boolean v) {
+        suppressDuplicateOverlappingText = v;
+    }
+
+    /** @see #setSuppressDuplicateOverlappingText. */
+    public boolean getSuppressDuplicateOverlappingText() {
+        return suppressDuplicateOverlappingText;
+    }
+
 }

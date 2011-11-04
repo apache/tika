@@ -1,6 +1,14 @@
 Apache Tika Change Log
 ======================
 
+Release 1.1 - Current Development
+---------------------------------
+
+ * PDF: Allow controlling whether overlapping duplicated text should
+   be removed.  Disabling this (the default) can give big
+   speedups to text extraction and may workaround cases where
+   non-duplicated characters were incorrectly removed.  (TIKA-767)
+
 Release 1.0 - 11/4/2011
 ---------------------------------
 
