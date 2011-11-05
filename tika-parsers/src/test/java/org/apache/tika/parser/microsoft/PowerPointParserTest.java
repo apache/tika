@@ -129,6 +129,9 @@ public class PowerPointParserTest extends TikaTest {
 
         String content = handler.toString();
         assertContains("Master footer is here", content);
+
+        // Make sure boilerplate text didn't come through:
+        assertEquals(-1, content.indexOf("Click to edit Master"));
     }
 
     // TODO: once we fix TIKA-712, re-enable this
@@ -147,6 +150,9 @@ public class PowerPointParserTest extends TikaTest {
 
         String content = handler.toString();
         assertContains("Text that I added to the master slide", content);
+
+        // Make sure boilerplate text didn't come through:
+        assertEquals(-1, content.indexOf("Click to edit Master"));
     }
     */
 
@@ -166,6 +172,9 @@ public class PowerPointParserTest extends TikaTest {
 
         String content = handler.toString();
         assertContains("Text that I added to the master slide", content);
+
+        // Make sure boilerplate text didn't come through:
+        assertEquals(-1, content.indexOf("Click to edit Master"));
     }
     */
 
