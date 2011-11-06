@@ -661,4 +661,20 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Text that I added to the master slide", content);
     }
     */
+
+    public void testWordArt() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = OOXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testWordArt.pptx");
+        try {
+            new AutoDetectParser().parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+        String content = handler.toString();
+        assertContains("Here is some red word Art", content);
+    }
+
 }
