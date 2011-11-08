@@ -772,6 +772,11 @@ final class TextExtractor {
             } else if (equals("f")) {
                 // Change current font
                 final String fontCharset = fontToCharset.get((int) param);
+
+                // Push any buffered text before changing
+                // font:
+                pushText();
+
                 if (fontCharset != null) {
                     groupState.fontCharset = fontCharset;
                 } else {
