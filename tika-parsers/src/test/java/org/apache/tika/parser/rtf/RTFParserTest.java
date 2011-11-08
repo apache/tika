@@ -274,6 +274,11 @@ public class RTFParserTest extends TikaTest {
         assertContains("<p>The quick brown fox jumps over the lazy dog</p>", getXML("testRTFIgnoredControlWord.rtf").xml);
     }
 
+    public void testFontAfterBufferedText() throws Exception {
+        assertContains("\u0423\u0432\u0430\u0436\u0430\u0435\u043c\u044b\u0439 \u043a\u043b\u0438\u0435\u043d\u0442!",
+                       getXML("testFontAfterBufferedText.rtf").xml);
+    }
+
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
        
