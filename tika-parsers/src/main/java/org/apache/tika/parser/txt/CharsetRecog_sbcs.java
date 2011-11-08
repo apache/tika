@@ -1297,11 +1297,12 @@ abstract class CharsetRecog_sbcs extends CharsetRecognizer {
         }
         
         private boolean isLamAlef(byte b) {
-            byte shapedLamAlef[] = {(byte)0xb2,(byte)0xb3,(byte)0xb4,(byte)0xb5,(byte)0xb7,(byte)0xb8 };
-            for (int i = 0; i<shapedLamAlef.length; i++)
-                if (b == shapedLamAlef[i])
-                    return true;
-            return false;
+            // Return true if byte is any of these:
+            //
+            //   {(byte)0xb2,(byte)0xb3,(byte)0xb4,(byte)0xb5,(byte)0xb7,(byte)0xb8}
+            // 
+            // NOTE: 0xb2 is -78; 0xb8 is -72:
+            return (b <= (byte)0xb8) && (b >= (byte)0xb2) && (b != (byte)0xb6);
         }
         
         protected void matchFinish(CharsetDetector det) {
