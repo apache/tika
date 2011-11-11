@@ -4,6 +4,9 @@ Apache Tika Change Log
 Release 1.1 - Current Development
 ---------------------------------
 
+ * Performance: Loading of the default media type registry is now
+   significantly faster. (TIKA-780)
+
  * PDF: Allow controlling whether overlapping duplicated text should
    be removed.  Disabling this (the default) can give big
    speedups to text extraction and may workaround cases where
