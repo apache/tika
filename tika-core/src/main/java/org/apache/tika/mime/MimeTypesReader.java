@@ -101,14 +101,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
 
     private int priority;
 
-    private Clause clause = null;
-
-    private List<Clause> clauses = new LinkedList<Clause>();
-
-    private final LinkedList<List<Clause>> clauseStack =
-            new LinkedList<List<Clause>>();
-
-    private final StringBuilder characters = new StringBuilder();
+    private StringBuilder characters = null;
 
     MimeTypesReader(MimeTypes types) {
         this.types = types;
@@ -161,6 +154,8 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
         } else if (SUB_CLASS_OF_TAG.equals(qName)) {
             String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
             types.setSuperType(type, MediaType.parse(parent));
+        } else if (COMMENT_TAG.equals(qName)) {
+            characters = new StringBuilder();
         } else if (GLOB_TAG.equals(qName)) {
             String pattern = attributes.getValue(PATTERN_ATTR);
             String isRegex = attributes.getValue(ISREGEX_ATTR);
@@ -183,9 +178,8 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
             if (kind == null) {
                 kind = "string";
             }
-            clause = new MagicMatch(type.getType(), kind, offset, value, mask);
-            clauseStack.addLast(clauses);
-            clauses = null;
+            current = new ClauseRecord(
+                    new MagicMatch(type.getType(), kind, offset, value, mask));
         } else if (MAGIC_TAG.equals(qName)) {
             String value = attributes.getValue(MAGIC_PRIORITY_ATTR);
             if (value != null && value.length() > 0) {
@@ -193,6 +187,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
             } else {
                 priority = 50;
             }
+            current = new ClauseRecord(null);
         }
     }
 
@@ -203,40 +198,66 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
                 type = null;
             } else if (COMMENT_TAG.equals(qName)) {
                 type.setDescription(characters.toString().trim());
+                characters = null;
             } else if (MATCH_TAG.equals(qName)) {
-                if (clauses != null) {
-                    Clause subclause;
-                    if (clauses.size() == 1) {
-                        subclause = clauses.get(0);
-                    } else {
-                        subclause = new OrClause(clauses);
-                    }
-                    clause = new AndClause(clause, subclause);
-                }
-                clauses = clauseStack.removeLast();
-                if (clauses == null) {
-                    clauses = Collections.singletonList(clause);
-                } else {
-                    if (clauses.size() == 1) {
-                        clauses = new ArrayList<Clause>(clauses);
-                    }
-                    clauses.add(clause);
-                }
+                current.stop();
             } else if (MAGIC_TAG.equals(qName)) {
-                if (clauses != null) {
-                    for (Clause clause : clauses) {
-                        type.addMagic(new Magic(type, priority, clause));
-                    }
-                    clauses = null;
+                for (Clause clause : current.getClauses()) {
+                    type.addMagic(new Magic(type, priority, clause));
                 }
+                current = null;
             }
         }
-        characters.setLength(0);
     }
 
     @Override
     public void characters(char[] ch, int start, int length) {
-        characters.append(ch, start, length);
+        if (characters != null) {
+            characters.append(ch, start, length);
+        }
+    }
+
+    private ClauseRecord current = new ClauseRecord(null);
+
+    private class ClauseRecord {
+
+        private ClauseRecord parent;
+
+        private Clause clause;
+
+        private List<Clause> subclauses = null;
+
+        public ClauseRecord(Clause clause) {
+            this.parent = current;
+            this.clause = clause;
+        }
+
+        public void stop() {
+            if (subclauses != null) {
+                Clause subclause;
+                if (subclauses.size() == 1) {
+                    subclause = subclauses.get(0);
+                } else {
+                    subclause = new OrClause(subclauses);
+                }
+                clause = new AndClause(clause, subclause);
+            }
+            if (parent.subclauses == null) {
+                parent.subclauses = Collections.singletonList(clause);
+            } else {
+                if (parent.subclauses.size() == 1) {
+                    parent.subclauses = new ArrayList<Clause>(parent.subclauses);
+                }
+                parent.subclauses.add(clause);
+            }
+
+            current = current.parent;
+        }
+ 
+        public List<Clause> getClauses() {
+            return subclauses;
+        }
+
     }
 
 }
