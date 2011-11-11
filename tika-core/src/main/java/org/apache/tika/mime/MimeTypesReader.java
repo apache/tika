@@ -16,24 +16,28 @@
  */
 package org.apache.tika.mime;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.sax.SAXResult;
 
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * A reader for XML files compliant with the freedesktop MIME-info DTD.
@@ -85,14 +89,26 @@ import org.xml.sax.SAXException;
  *         type CDATA #REQUIRED&gt;
  *  ]&gt;
  * </pre>
- * 
- * 
+ *
  * @see http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec
- * 
  */
-final class MimeTypesReader implements MimeTypesReaderMetKeys {
+class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
 
     private final MimeTypes types;
+
+    /** Current type */
+    private MimeType type = null;
+
+    private int priority;
+
+    private Clause clause = null;
+
+    private List<Clause> clauses = new LinkedList<Clause>();
+
+    private final LinkedList<List<Clause>> clauseStack =
+            new LinkedList<List<Clause>>();
+
+    private final StringBuilder characters = new StringBuilder();
 
     MimeTypesReader(MimeTypes types) {
         this.types = types;
@@ -100,10 +116,10 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
 
     void read(InputStream stream) throws IOException, MimeTypeException {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(new InputSource(stream));
-            read(document);
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            factory.setNamespaceAware(false);
+            SAXParser parser = factory.newSAXParser();
+            parser.parse(stream, this);
         } catch (ParserConfigurationException e) {
             throw new MimeTypeException("Unable to create an XML parser", e);
         } catch (SAXException e) {
@@ -112,144 +128,115 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
     }
 
     void read(Document document) throws MimeTypeException {
-        Element element = document.getDocumentElement();
-        if (element != null && element.getTagName().equals(MIME_INFO_TAG)) {
-            NodeList nodes = element.getChildNodes();
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Node node = nodes.item(i);
-                if (node.getNodeType() == Node.ELEMENT_NODE) {
-                    Element child = (Element) node;
-                    if (child.getTagName().equals(MIME_TYPE_TAG)) {
-                        readMimeType(child);
-                    }
-                }
-            }
-        } else {
-            throw new MimeTypeException(
-                    "Not a <" + MIME_INFO_TAG + "/> configuration document: "
-                    + element.getTagName());
+        try {
+            TransformerFactory factory = TransformerFactory.newInstance();
+            Transformer transformer = factory.newTransformer();
+            transformer.transform(new DOMSource(document), new SAXResult(this));
+        } catch (TransformerException e) {
+            throw new MimeTypeException("Failed to parse type registry", e);
         }
     }
 
-    /** Read Element named mime-type. */
-    private void readMimeType(Element element) throws MimeTypeException {
-        String name = element.getAttribute(MIME_TYPE_TYPE_ATTR);
-        MimeType type = types.forName(name);
+    @Override
+    public InputSource resolveEntity(String publicId, String systemId) {
+        return new InputSource(new ByteArrayInputStream(new byte[0]));
+    }
 
-        NodeList nodes = element.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Node node = nodes.item(i);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
-                Element nodeElement = (Element) node;
-                if (nodeElement.getTagName().equals(COMMENT_TAG)) {
-                    type.setDescription(
-                            nodeElement.getFirstChild().getNodeValue());
-                } else if (nodeElement.getTagName().equals(GLOB_TAG)) {
-                    boolean useRegex = Boolean.valueOf(nodeElement.getAttribute(ISREGEX_ATTR));
-                    types.addPattern(type, nodeElement.getAttribute(PATTERN_ATTR), useRegex);
-                } else if (nodeElement.getTagName().equals(MAGIC_TAG)) {
-                    readMagic(nodeElement, type);
-                } else if (nodeElement.getTagName().equals(ALIAS_TAG)) {
-                    String alias = nodeElement.getAttribute(ALIAS_TYPE_ATTR);
-                    MediaType aliasType = MediaType.parse(alias);
-                    if (aliasType != null) {
-                        types.addAlias(type, aliasType);
+    @Override
+    public void startElement(
+            String uri, String localName, String qName,
+            Attributes attributes) throws SAXException {
+        if (type == null) {
+            if (MIME_TYPE_TAG.equals(qName)) {
+                String name = attributes.getValue(MIME_TYPE_TYPE_ATTR);
+                try {
+                    type = types.forName(name);
+                } catch (MimeTypeException e) {
+                    throw new SAXException(e);
+                }
+            }
+        } else if (ALIAS_TAG.equals(qName)) {
+            String alias = attributes.getValue(ALIAS_TYPE_ATTR);
+            types.addAlias(type, MediaType.parse(alias));
+        } else if (SUB_CLASS_OF_TAG.equals(qName)) {
+            String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
+            types.setSuperType(type, MediaType.parse(parent));
+        } else if (GLOB_TAG.equals(qName)) {
+            String pattern = attributes.getValue(PATTERN_ATTR);
+            String isRegex = attributes.getValue(ISREGEX_ATTR);
+            if (pattern != null) {
+                try {
+                    types.addPattern(type, pattern, Boolean.valueOf(isRegex));
+                } catch (MimeTypeException e) {
+                    throw new SAXException(e);
+                }
+            }
+        } else if (ROOT_XML_TAG.equals(qName)) {
+            String namespace = attributes.getValue(NS_URI_ATTR);
+            String name = attributes.getValue(LOCAL_NAME_ATTR);
+            type.addRootXML(namespace, name);
+        } else if (MATCH_TAG.equals(qName)) {
+            String kind = attributes.getValue(MATCH_TYPE_ATTR);
+            String offset = attributes.getValue(MATCH_OFFSET_ATTR);
+            String value = attributes.getValue(MATCH_VALUE_ATTR);
+            String mask = attributes.getValue(MATCH_MASK_ATTR);
+            if (kind == null) {
+                kind = "string";
+            }
+            clause = new MagicMatch(type.getType(), kind, offset, value, mask);
+            clauseStack.addLast(clauses);
+            clauses = null;
+        } else if (MAGIC_TAG.equals(qName)) {
+            String value = attributes.getValue(MAGIC_PRIORITY_ATTR);
+            if (value != null && value.length() > 0) {
+                priority = Integer.parseInt(value);
+            } else {
+                priority = 50;
+            }
+        }
+    }
+
+    @Override
+    public void endElement(String uri, String localName, String qName) {
+        if (type != null) {
+            if (MIME_TYPE_TAG.equals(qName)) {
+                type = null;
+            } else if (COMMENT_TAG.equals(qName)) {
+                type.setDescription(characters.toString().trim());
+            } else if (MATCH_TAG.equals(qName)) {
+                if (clauses != null) {
+                    Clause subclause;
+                    if (clauses.size() == 1) {
+                        subclause = clauses.get(0);
                     } else {
-                        throw new MimeTypeException(
-                                "Invalid media type alias: " + alias);
+                        subclause = new OrClause(clauses);
                     }
-                } else if (nodeElement.getTagName().equals(ROOT_XML_TAG)) {
-                    readRootXML(nodeElement, type);
-                } else if (nodeElement.getTagName().equals(SUB_CLASS_OF_TAG)) {
-                    String parent = nodeElement.getAttribute(SUB_CLASS_TYPE_ATTR);
-                    types.setSuperType(type, MediaType.parse(parent));
+                    clause = new AndClause(clause, subclause);
+                }
+                clauses = clauseStack.removeLast();
+                if (clauses == null) {
+                    clauses = Collections.singletonList(clause);
+                } else {
+                    if (clauses.size() == 1) {
+                        clauses = new ArrayList<Clause>(clauses);
+                    }
+                    clauses.add(clause);
+                }
+            } else if (MAGIC_TAG.equals(qName)) {
+                if (clauses != null) {
+                    for (Clause clause : clauses) {
+                        type.addMagic(new Magic(type, priority, clause));
+                    }
+                    clauses = null;
                 }
             }
         }
-
-        types.add(type);
+        characters.setLength(0);
     }
 
-    /**
-     * Read Element named magic. 
-     * @throws MimeTypeException if the configuration is invalid
-     */
-    private void readMagic(Element element, MimeType mimeType)
-            throws MimeTypeException {
-        int priority = 50;
-        String value = element.getAttribute(MAGIC_PRIORITY_ATTR);
-        if (value != null && value.length() > 0) {
-            priority = Integer.parseInt(value);
-        }
-
-        for (Clause clause : readMatches(element, mimeType.getType())) {
-            Magic magic = new Magic(mimeType, priority, clause);
-            mimeType.addMagic(magic);
-        }
-    }
-
-    private List<Clause> readMatches(Element element, MediaType mediaType) throws MimeTypeException {
-        NodeList nodes = element.getChildNodes();
-        int n = nodes.getLength();
-        if (n == 0) {
-            return Collections.emptyList();
-        }
-
-        List<Clause> clauses = new ArrayList<Clause>();
-        for (int i = 0; i < n; i++) {
-            Node node = nodes.item(i);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
-                Element nodeElement = (Element) node;
-                if (nodeElement.getTagName().equals(MATCH_TAG)) {
-                    clauses.add(readMatch(nodeElement, mediaType));
-                }
-            }
-        }
-        return clauses;
-    }
-
-    /** Read Element named match. */
-    private Clause readMatch(Element element, MediaType mediaType) throws MimeTypeException {
-        Clause clause = getMagicClause(element, mediaType);
-
-        List<Clause> subClauses = readMatches(element, mediaType);
-        if (subClauses.size() == 0) {
-            return clause;
-        } else if (subClauses.size() == 1) {
-            return new AndClause(clause, subClauses.get(0));
-        } else {
-            return new AndClause(clause, new OrClause(subClauses));
-        }
-    }
-
-    private Clause getMagicClause(Element element, MediaType mediaType)
-            throws MimeTypeException {
-        String type = "string";
-        String offset = null;
-        String value = null;
-        String mask = null;
-
-        NamedNodeMap attrs = element.getAttributes();
-        for (int i = 0; i < attrs.getLength(); i++) {
-            Attr attr = (Attr) attrs.item(i);
-            if (attr.getName().equals(MATCH_OFFSET_ATTR)) {
-                offset = attr.getValue();
-            } else if (attr.getName().equals(MATCH_TYPE_ATTR)) {
-                type = attr.getValue();
-            } else if (attr.getName().equals(MATCH_VALUE_ATTR)) {
-                value = attr.getValue();
-            } else if (attr.getName().equals(MATCH_MASK_ATTR)) {
-                mask = attr.getValue();
-            }
-        }
-
-        return new MagicMatch(mediaType, type, offset, value, mask);
-    }
-
-    /** Read Element named root-XML. */
-    private void readRootXML(Element element, MimeType mimeType) {
-        mimeType.addRootXML(element.getAttribute(NS_URI_ATTR), element
-                .getAttribute(LOCAL_NAME_ATTR));
+    @Override
+    public void characters(char[] ch, int start, int length) {
+        characters.append(ch, start, length);
     }
 
 }
