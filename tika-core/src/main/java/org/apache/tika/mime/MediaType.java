@@ -17,8 +17,10 @@
 package org.apache.tika.mime;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
@@ -115,7 +117,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
                 int slash = string.indexOf('/');
                 if (slash == -1) {
                     return null;
-                } else if (isSimpleName(string.substring(0, slash))
+                } else if (SIMPLE_TYPES.size() < 10000
+                        && isSimpleName(string.substring(0, slash))
                         && isSimpleName(string.substring(slash + 1))) {
                     type = new MediaType(string, slash);
                     SIMPLE_TYPES.put(string, type);
@@ -228,18 +231,15 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
             builder.append(subtype);
 
             SortedMap<String, String> map = new TreeMap<String, String>();
-            if (!(parameters instanceof SortedMap<?, ?>)) {
-                parameters = new TreeMap<String, String>(parameters);
-            }
             for (Map.Entry<String, String> entry : parameters.entrySet()) {
                 String key = entry.getKey().trim().toLowerCase(Locale.ENGLISH);
-                String value = entry.getValue();
-
-                map.put(key, value);
-
+                map.put(key, entry.getValue());
+            }
+            for (Map.Entry<String, String> entry : map.entrySet()) {
                 builder.append("; ");
-                builder.append(key);
+                builder.append(entry.getKey());
                 builder.append("=");
+                String value = entry.getValue();
                 if (SPECIAL_OR_WHITESPACE.matcher(value).find()) {
                     builder.append('"');
                     builder.append(SPECIAL.matcher(value).replaceAll("\\\\$0"));
