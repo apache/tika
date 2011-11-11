@@ -80,10 +80,10 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     private String description = "";
 
     /** The magics associated to this Mime-Type */
-    private final ArrayList<Magic> magics = new ArrayList<Magic>();
+    private List<Magic> magics = null;
 
     /** The root-XML associated to this Mime-Type */
-    private final ArrayList<RootXML> rootXML = new ArrayList<RootXML>();
+    private List<RootXML> rootXML = null;
 
     /** The minimum length of data to provides for magic analyzis */
     private int minLength = 0;
@@ -92,7 +92,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * All known file extensions of this type, in order of preference
      * (best first).
      */
-    private final List<String> extensions = new ArrayList<String>();
+    private List<String> extensions = null;
 
     /**
      * Creates a media type with the give name and containing media type
@@ -156,33 +156,41 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * @param localName
      */
     void addRootXML(String namespaceURI, String localName) {
+        if (rootXML == null) {
+            rootXML = new ArrayList<RootXML>();
+        }
         rootXML.add(new RootXML(this, namespaceURI, localName));
     }
 
     boolean matchesXML(String namespaceURI, String localName) {
-        for (RootXML xml : rootXML) {
-            if (xml.matches(namespaceURI, localName)) {
-                return true;
+        if (rootXML != null) {
+            for (RootXML xml : rootXML) {
+                if (xml.matches(namespaceURI, localName)) {
+                    return true;
+                }
             }
         }
         return false;
     }
 
     boolean hasRootXML() {
-        return (rootXML.size() > 0);
+        return rootXML != null;
     }
 
-    RootXML[] getRootXMLs() {
-        return rootXML.toArray(new RootXML[rootXML.size()]);
-    }
-
-    Magic[] getMagics() {
-        return magics.toArray(new Magic[magics.size()]);
+    List<Magic> getMagics() {
+        if (magics != null) {
+            return magics;
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     void addMagic(Magic magic) {
         if (magic == null) {
             return;
+        }
+        if (magics == null) {
+            magics = new ArrayList<Magic>();
         }
         magics.add(magic);
     }
@@ -192,11 +200,11 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     }
 
     public boolean hasMagic() {
-        return (magics.size() > 0);
+        return magics != null;
     }
 
     public boolean matchesMagic(byte[] data) {
-        for (int i = 0; i < magics.size(); i++) {
+        for (int i = 0; magics != null && i < magics.size(); i++) {
             Magic magic = magics.get(i);
             if (magic.eval(data)) {
                 return true;
@@ -330,7 +338,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * @return preferred file extension or empty string
      */
     public String getExtension() {
-        if (extensions.isEmpty()) {
+        if (extensions == null) {
             return "";
         } else {
             return extensions.get(0);
@@ -344,7 +352,11 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * @return known extensions in order of preference (best first)
      */
     public List<String> getExtensions() {
-        return Collections.unmodifiableList(extensions);
+        if (extensions != null) {
+            return Collections.unmodifiableList(extensions);
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     /**
@@ -353,6 +365,11 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * @param extension file extension
      */
     void addExtension(String extension) {
+        if (extensions == null) {
+            extensions = Collections.singletonList(extension);
+        } else if (extensions.size() == 1) {
+            extensions = new ArrayList<String>(extensions);
+        }
         if (!extensions.contains(extension)) {
             extensions.add(extension);
         }

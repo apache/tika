@@ -16,17 +16,16 @@
  */
 package org.apache.tika.mime;
 
-import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.tika.detect.MagicDetector;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -184,17 +183,20 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
         }
 
         for (Clause clause : readMatches(element, mimeType.getType())) {
-            Magic magic = new Magic(mimeType);
-            magic.setPriority(priority);
-            magic.setClause(clause);
+            Magic magic = new Magic(mimeType, priority, clause);
             mimeType.addMagic(magic);
         }
     }
 
     private List<Clause> readMatches(Element element, MediaType mediaType) throws MimeTypeException {
-        List<Clause> clauses = new ArrayList<Clause>();
         NodeList nodes = element.getChildNodes();
-        for (int i = 0; i < nodes.getLength(); i++) {
+        int n = nodes.getLength();
+        if (n == 0) {
+            return Collections.emptyList();
+        }
+
+        List<Clause> clauses = new ArrayList<Clause>();
+        for (int i = 0; i < n; i++) {
             Node node = nodes.item(i);
             if (node.getNodeType() == Node.ELEMENT_NODE) {
                 Element nodeElement = (Element) node;
@@ -208,52 +210,7 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
 
     /** Read Element named match. */
     private Clause readMatch(Element element, MediaType mediaType) throws MimeTypeException {
-        String type = "string";
-        int start = 0;
-        int end = 0;
-        String value = null;
-        String mask = null;
-
-        NamedNodeMap attrs = element.getAttributes();
-        for (int i = 0; i < attrs.getLength(); i++) {
-            Attr attr = (Attr) attrs.item(i);
-            if (attr.getName().equals(MATCH_OFFSET_ATTR)) {
-                String offset = attr.getValue();
-                int colon = offset.indexOf(':');
-                if (colon == -1) {
-                    start = Integer.parseInt(offset);
-                    end = start;
-                } else {
-                    start = Integer.parseInt(offset.substring(0, colon));
-                    end = Integer.parseInt(offset.substring(colon + 1));
-                }
-            } else if (attr.getName().equals(MATCH_TYPE_ATTR)) {
-                type = attr.getValue();
-            } else if (attr.getName().equals(MATCH_VALUE_ATTR)) {
-                value = attr.getValue();
-            } else if (attr.getName().equals(MATCH_MASK_ATTR)) {
-                mask = attr.getValue();
-            }
-        }
-
-        if (value == null) {
-            throw new MimeTypeException("Missing magic byte pattern");
-        } else if (start < 0 || end < start) {
-            throw new MimeTypeException(
-                    "Invalid offset range: [" + start + "," + end + "]");
-        }
-
-        byte[] patternBytes = decodeValue(type, value);
-        int length = patternBytes.length;
-        byte[] maskBytes = null;
-        if (mask != null) {
-            maskBytes = decodeValue(type, mask);
-            length = Math.max(patternBytes.length, maskBytes.length);
-        }
-
-        MagicDetector detector = new MagicDetector(
-                mediaType, patternBytes, maskBytes, start, end);
-        Clause clause = new MagicMatch(detector, length);
+        Clause clause = getMagicClause(element, mediaType);
 
         List<Clause> subClauses = readMatches(element, mediaType);
         if (subClauses.size() == 0) {
@@ -265,122 +222,28 @@ final class MimeTypesReader implements MimeTypesReaderMetKeys {
         }
     }
 
-    private byte[] decodeValue(String type, String value)
+    private Clause getMagicClause(Element element, MediaType mediaType)
             throws MimeTypeException {
-        // Preliminary check
-        if ((value == null) || (type == null)) {
-            return null;
+        String type = "string";
+        String offset = null;
+        String value = null;
+        String mask = null;
+
+        NamedNodeMap attrs = element.getAttributes();
+        for (int i = 0; i < attrs.getLength(); i++) {
+            Attr attr = (Attr) attrs.item(i);
+            if (attr.getName().equals(MATCH_OFFSET_ATTR)) {
+                offset = attr.getValue();
+            } else if (attr.getName().equals(MATCH_TYPE_ATTR)) {
+                type = attr.getValue();
+            } else if (attr.getName().equals(MATCH_VALUE_ATTR)) {
+                value = attr.getValue();
+            } else if (attr.getName().equals(MATCH_MASK_ATTR)) {
+                mask = attr.getValue();
+            }
         }
 
-        byte[] decoded = null;
-        String tmpVal = null;
-        int radix = 8;
-
-        // hex
-        if (value.startsWith("0x")) {
-            tmpVal = value.substring(2);
-            radix = 16;
-        } else {
-            tmpVal = value;
-            radix = 8;
-        }
-
-        if (type.equals("string") || type.equals("unicodeLE") || type.equals("unicodeBE")) {
-            decoded = decodeString(value, type);
-            
-        } else if (type.equals("byte")) {
-            decoded = tmpVal.getBytes();
-
-        } else if (type.equals("host16") || type.equals("little16")) {
-            int i = Integer.parseInt(tmpVal, radix);
-            decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
-
-        } else if (type.equals("big16")) {
-            int i = Integer.parseInt(tmpVal, radix);
-            decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
-
-        } else if (type.equals("host32") || type.equals("little32")) {
-            long i = Long.parseLong(tmpVal, radix);
-            decoded = new byte[] { (byte) ((i & 0x000000FF)),
-                    (byte) ((i & 0x0000FF00) >> 8),
-                    (byte) ((i & 0x00FF0000) >> 16),
-                    (byte) ((i & 0xFF000000) >> 24) };
-
-        } else if (type.equals("big32")) {
-            long i = Long.parseLong(tmpVal, radix);
-            decoded = new byte[] { (byte) ((i & 0xFF000000) >> 24),
-                    (byte) ((i & 0x00FF0000) >> 16),
-                    (byte) ((i & 0x0000FF00) >> 8), (byte) ((i & 0x000000FF)) };
-        }
-        return decoded;
-    }
-
-    private byte[] decodeString(String value, String type) throws MimeTypeException {
-        if (value.startsWith("0x")) {
-            byte[] vals = new byte[(value.length() - 2) / 2];
-            for (int i = 0; i < vals.length; i++) {
-                vals[i] = (byte)
-                Integer.parseInt(value.substring(2 + i * 2, 4 + i * 2), 16);
-            }
-            return vals;
-        }
-
-        try {
-            CharArrayWriter decoded = new CharArrayWriter();
-
-            for (int i = 0; i < value.length(); i++) {
-                if (value.charAt(i) == '\\') {
-                    if (value.charAt(i + 1) == '\\') {
-                        decoded.write('\\');
-                        i++;
-                    } else if (value.charAt(i + 1) == 'x') {
-                        decoded.write(Integer.parseInt(
-                                value.substring(i + 2, i + 4), 16));
-                        i += 3;
-                    } else {
-                        int j = i + 1;
-                        while ((j < i + 4) && (j < value.length())
-                                && (Character.isDigit(value.charAt(j)))) {
-                            j++;
-                        }
-                        decoded.write(Short.decode(
-                                "0" + value.substring(i + 1, j)).byteValue());
-                        i = j - 1;
-                    }
-                } else {
-                    decoded.write(value.charAt(i));
-                }
-            }
-            
-            // Now turn the chars into bytes
-            char[] chars = decoded.toCharArray();
-            byte[] bytes;
-            if("unicodeLE".equals(type)) {
-               bytes = new byte[chars.length*2];
-               for(int i=0; i<chars.length; i++) {
-                  bytes[i*2] = (byte)(chars[i] & 0xff);
-                  bytes[i*2+1] = (byte)(chars[i] >> 8);
-               }
-            }
-            else if("unicodeBE".equals(type)) {
-               bytes = new byte[chars.length*2];
-               for(int i=0; i<chars.length; i++) {
-                  bytes[i*2] = (byte)(chars[i] >> 8);
-                  bytes[i*2+1] = (byte)(chars[i] & 0xff);
-               }
-            }
-            else {
-               // Copy with truncation
-               bytes = new byte[chars.length];
-               for(int i=0; i<bytes.length; i++) {
-                  bytes[i] = (byte)chars[i];
-               }
-            }
-            
-            return bytes;
-        } catch (NumberFormatException e) {
-            throw new MimeTypeException("Invalid string value: " + value, e);
-        }
+        return new MagicMatch(mediaType, type, offset, value, mask);
     }
 
     /** Read Element named root-XML. */

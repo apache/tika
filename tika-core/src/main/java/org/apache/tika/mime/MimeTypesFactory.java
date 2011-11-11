@@ -46,6 +46,7 @@ public class MimeTypesFactory {
     public static MimeTypes create(Document document) throws MimeTypeException {
         MimeTypes mimeTypes = new MimeTypes();
         new MimeTypesReader(mimeTypes).read(document);
+        mimeTypes.init();
         return mimeTypes;
     }
 
@@ -62,6 +63,7 @@ public class MimeTypesFactory {
         for(InputStream inputStream : inputStreams) {
            reader.read(inputStream);
         }
+        mimeTypes.init();
         return mimeTypes;
     }
 
