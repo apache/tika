@@ -14,7 +14,8 @@ Release 1.1 - Current Development
 
  * RTF: Fixed case where a font change would result in processing
    bytes in the wrong font's charset, producing bogus text output
-   (TIKA-777)
+   (TIKA-777).  Don't output whitespace in ignored group states,
+   avoiding excessive whitespace output (TIKA-781).
 
 Release 1.0 - 11/4/2011
 ---------------------------------

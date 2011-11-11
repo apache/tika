@@ -268,6 +268,7 @@ public class RTFParserTest extends TikaTest {
     public void testHyperlink() throws Exception {
         String content = getXML("testRTFHyperlink.rtf").xml;
         assertContains("our most <a href=\"http://r.office.microsoft.com/r/rlidwelcomeFAQ?clid=1033\">frequently asked questions</a>", content);
+        assertEquals(-1, content.indexOf("<p>\t\t</p>"));
     }
 
     public void testIgnoredControlWord() throws Exception {
