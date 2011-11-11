@@ -91,6 +91,10 @@
               <goal>check</goal>
             </goals>
             <configuration>
+              <excludes>
+                <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
+                <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
+              </excludes>
               <comparisonArtifacts>
                 <comparisonArtifact>
                   <groupId>org.apache.tika</groupId>
