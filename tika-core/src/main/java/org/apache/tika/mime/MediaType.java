@@ -36,9 +36,6 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
      */
     private static final long serialVersionUID = -3831000556189036392L;
 
-    private static final SortedMap<String, String> NO_PARAMETERS =
-        Collections.unmodifiableSortedMap(new TreeMap<String, String>());
-
     private static final Pattern SPECIAL =
         Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=]");
 
@@ -60,41 +57,50 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
             "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*"
             + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*");
 
-    public static final MediaType OCTET_STREAM = application("octet-stream");
+    /**
+     * Set of basic types with normalized "type/subtype" names.
+     * Used to optimize type lookup and to avoid having too many
+     * {@link MediaType} instances in memory.
+     */
+    private static final Map<String, MediaType> SIMPLE_TYPES =
+            new HashMap<String, MediaType>();
 
-    public static final MediaType TEXT_PLAIN = text("plain");
+    public static final MediaType OCTET_STREAM =
+            parse("application/octet-stream");
 
-    public static final MediaType APPLICATION_XML = application("xml");
+    public static final MediaType TEXT_PLAIN = parse("text/plain");
 
-    public static final MediaType APPLICATION_ZIP = application("zip");
+    public static final MediaType APPLICATION_XML = parse("application/xml");
+
+    public static final MediaType APPLICATION_ZIP = parse("application/zip");
 
     public static MediaType application(String type) {
-        return new MediaType("application", type);
+        return MediaType.parse("application/" + type);
     }
 
     public static MediaType audio(String type) {
-        return new MediaType("audio", type);
+        return MediaType.parse("audio/" + type);
     }
 
     public static MediaType image(String type) {
-        return new MediaType("image", type);
+        return MediaType.parse("image/" + type);
     }
 
     public static MediaType text(String type) {
-        return new MediaType("text", type);
+        return MediaType.parse("text/" + type);
     }
 
     public static MediaType video(String type) {
-        return new MediaType("video", type);
+        return MediaType.parse("video/" + type);
     }
 
     /**
-     * Parses the given string to a media type. The string is expected to be of
-     * the form "type/subtype(; parameter=...)*" as defined in RFC 2045, though
-     * we also handle "charset=xxx; type/subtype" for broken web servers.
-     * 
-     * @param string
-     *            media type string to be parsed
+     * Parses the given string to a media type. The string is expected
+     * to be of the form "type/subtype(; parameter=...)*" as defined in
+     * RFC 2045, though we also handle "charset=xxx; type/subtype" for
+     * broken web servers.
+     *
+     * @param string media type string to be parsed
      * @return parsed media type, or <code>null</code> if parsing fails
      */
     public static MediaType parse(String string) {
@@ -102,16 +108,22 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
             return null;
         }
 
-        int slash = string.indexOf('/');
-        if (slash == -1) {
-            return null;
-        }
-
-        // Optimization for the common case
-        String type = string.substring(0, slash);
-        String subtype = string.substring(slash + 1);
-        if (isValidName(type) && isValidName(subtype)) {
-            return new MediaType(type, subtype);
+        // Optimization for the common cases
+        synchronized (SIMPLE_TYPES) {
+            MediaType type = SIMPLE_TYPES.get(string);
+            if (type == null) {
+                int slash = string.indexOf('/');
+                if (slash == -1) {
+                    return null;
+                } else if (isSimpleName(string.substring(0, slash))
+                        && isSimpleName(string.substring(slash + 1))) {
+                    type = new MediaType(string, slash);
+                    SIMPLE_TYPES.put(string, type);
+                }
+            }
+            if (type != null) {
+                return type;
+            }
         }
 
         Matcher matcher;
@@ -131,12 +143,11 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         return null;
     }
 
-    private static boolean isValidName(String name) {
+    private static boolean isSimpleName(String name) {
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
             if (c != '-' && c != '+' && c != '.' && c != '_'
                     && !('0' <= c && c <= '9')
-                    && !('A' <= c && c <= 'Z')
                     && !('a' <= c && c <= 'z')) {
                 return false;
             }
@@ -146,7 +157,7 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
 
     private static Map<String, String> parseParameters(String string) {
         if (string.length() == 0) {
-            return NO_PARAMETERS;
+            return Collections.<String, String>emptyMap();
         }
 
         Map<String, String> parameters = new HashMap<String, String>();
@@ -176,33 +187,86 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         return parameters;
     }
 
-    private final String type;
-
-    private final String subtype;
+    /**
+     * Canonical string representation of this media type.
+     */
+    private final String string;
 
     /**
-     * Immutable map of media type parameters.
+     * Location of the "/" character separating the type and the subtype
+     * tokens in {@link #string}.
      */
-    private final SortedMap<String, String> parameters;
+    private final int slash;
+
+    /**
+     * Location of the first ";" character separating the type part of
+     * {@link #string} from possible parameters. Length of {@link #string}
+     * in case there are no parameters.
+     */
+    private final int semicolon;
+
+    /**
+     * Immutable sorted map of media type parameters.
+     */
+    private final Map<String, String> parameters;
 
     public MediaType(
             String type, String subtype, Map<String, String> parameters) {
-        this.type = type.trim().toLowerCase(Locale.ENGLISH);
-        this.subtype = subtype.trim().toLowerCase(Locale.ENGLISH);
+        type = type.trim().toLowerCase(Locale.ENGLISH);
+        subtype = subtype.trim().toLowerCase(Locale.ENGLISH);
+
+        this.slash = type.length();
+        this.semicolon = slash + 1 + subtype.length();
+
         if (parameters.isEmpty()) {
-            this.parameters = NO_PARAMETERS;
+            this.parameters = Collections.emptyMap();
+            this.string = type + '/' + subtype;
         } else {
+            StringBuilder builder = new StringBuilder();
+            builder.append(type);
+            builder.append('/');
+            builder.append(subtype);
+
             SortedMap<String, String> map = new TreeMap<String, String>();
-            for (Map.Entry<String, String> entry : parameters.entrySet()) {
-                map.put(entry.getKey().trim().toLowerCase(Locale.ENGLISH),
-                        entry.getValue());
+            if (!(parameters instanceof SortedMap<?, ?>)) {
+                parameters = new TreeMap<String, String>(parameters);
             }
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                String key = entry.getKey().trim().toLowerCase(Locale.ENGLISH);
+                String value = entry.getValue();
+
+                map.put(key, value);
+
+                builder.append("; ");
+                builder.append(key);
+                builder.append("=");
+                if (SPECIAL_OR_WHITESPACE.matcher(value).find()) {
+                    builder.append('"');
+                    builder.append(SPECIAL.matcher(value).replaceAll("\\\\$0"));
+                    builder.append('"');
+                } else {
+                    builder.append(value);
+                }
+            }
+
+            this.string = builder.toString();
             this.parameters = Collections.unmodifiableSortedMap(map);
         }
     }
 
     public MediaType(String type, String subtype) {
-        this(type, subtype, NO_PARAMETERS);
+        this(type, subtype, Collections.<String, String>emptyMap());
+    }
+
+    private MediaType(String string, int slash) {
+        assert slash != -1;
+        assert string.charAt(slash) == '/';
+        assert isSimpleName(string.substring(0, slash));
+        assert isSimpleName(string.substring(slash + 1));
+        this.string = string;
+        this.slash = slash;
+        this.semicolon = string.length();
+        this.parameters = Collections.emptyMap();
     }
 
     private static Map<String, String> union(
@@ -220,23 +284,24 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     public MediaType(MediaType type, Map<String, String> parameters) {
-        this(type.type, type.subtype, union(type.parameters, parameters));
+        this(type.getType(), type.getSubtype(),
+                union(type.parameters, parameters));
     }
 
     public MediaType getBaseType() {
         if (parameters.isEmpty()) {
             return this;
         } else {
-            return new MediaType(type, subtype);
+            return MediaType.parse(string.substring(0, semicolon));
         }
     }
 
     public String getType() {
-        return type;
+        return string.substring(0, slash);
     }
 
     public String getSubtype() {
-        return subtype;
+        return string.substring(slash + 1, semicolon);
     }
 
     /**
@@ -261,47 +326,24 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     }
 
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(type);
-        builder.append('/');
-        builder.append(subtype);
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            builder.append("; ");
-            builder.append(entry.getKey());
-            builder.append("=");
-            String value = entry.getValue();
-            if (SPECIAL_OR_WHITESPACE.matcher(value).find()) {
-                builder.append('"');
-                builder.append(SPECIAL.matcher(value).replaceAll("\\\\$0"));
-                builder.append('"');
-            } else {
-                builder.append(value);
-            }
-        }
-        return builder.toString();
+        return string;
     }
 
     public boolean equals(Object object) {
         if (object instanceof MediaType) {
             MediaType that = (MediaType) object;
-            return type.equals(that.type)
-                && subtype.equals(that.subtype)
-                && parameters.equals(that.parameters);
+            return string.equals(that.string);
         } else {
             return false;
         }
     }
 
     public int hashCode() {
-        int hash = 17;
-        hash = hash * 31 + type.hashCode();
-        hash = hash * 31 + subtype.hashCode();
-        hash = hash * 31 + parameters.hashCode();
-        return hash;
+        return string.hashCode();
     }
 
     public int compareTo(MediaType that) {
-        return toString().compareTo(that.toString());
+        return string.compareTo(that.string);
     }
 
 }
