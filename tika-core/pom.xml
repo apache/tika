@@ -91,12 +91,11 @@
               <goal>check</goal>
             </goals>
             <configuration>
-              <skip>true</skip>
               <comparisonArtifacts>
                 <comparisonArtifact>
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-core</artifactId>
-                  <version>0.10</version>
+                  <version>1.0</version>
                   <type>jar</type>
                 </comparisonArtifact>
               </comparisonArtifacts>
