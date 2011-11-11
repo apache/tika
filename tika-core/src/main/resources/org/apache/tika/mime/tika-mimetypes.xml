@@ -2144,7 +2144,7 @@
       <match value="=&lt;ar&gt;" type="string" offset="0"/>
       <match value="=!&lt;arch&gt;" type="string" offset="0"/>
     </magic>
-    <glob patter="*.ar"/>
+    <glob pattern="*.ar"/>
   </mime-type>
 
   <mime-type type="application/x-authorware-bin">
