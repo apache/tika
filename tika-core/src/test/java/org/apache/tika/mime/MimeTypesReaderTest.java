@@ -43,8 +43,7 @@ import org.apache.tika.metadata.Metadata;
 public class MimeTypesReaderTest extends TestCase {
 
     private MimeTypes mimeTypes;
-    private SortedSet<Magic> magics;
-    private SortedSet<MimeType> xmls;
+    private List<Magic> magics;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -54,11 +53,7 @@ public class MimeTypesReaderTest extends TestCase {
 
         Field magicsField = mimeTypes.getClass().getDeclaredField("magics");
         magicsField.setAccessible(true);
-        magics = (SortedSet<Magic>)magicsField.get(mimeTypes);
-
-        Field xmlsField = mimeTypes.getClass().getDeclaredField("xmls");
-        xmlsField.setAccessible(true);
-        xmls = (SortedSet<MimeType>)xmlsField.get(mimeTypes);
+        magics = (List<Magic>)magicsField.get(mimeTypes);
     }
 
     public void testHtmlMatches() throws Exception {
@@ -68,8 +63,8 @@ public class MimeTypesReaderTest extends TestCase {
        MimeType html = mimeTypes.forName("text/html");
        assertTrue(html.hasMagic());
        assertTrue(
-             "There should be at least "+minMatches+" HTML matches, found " + html.getMagics().length,
-             html.getMagics().length >= minMatches
+             "There should be at least "+minMatches+" HTML matches, found " + html.getMagics().size(),
+             html.getMagics().size() >= minMatches
        );
 
        // Check on the overall magics
@@ -93,8 +88,8 @@ public class MimeTypesReaderTest extends TestCase {
        MimeType excel = mimeTypes.forName("application/vnd.ms-excel");
        assertTrue(excel.hasMagic());
        assertTrue(
-             "There should be at least "+minMatches+" Excel matches, found " + excel.getMagics().length,
-             excel.getMagics().length >= minMatches
+             "There should be at least "+minMatches+" Excel matches, found " + excel.getMagics().size(),
+             excel.getMagics().size() >= minMatches
        );
 
        // Check on the overall magics

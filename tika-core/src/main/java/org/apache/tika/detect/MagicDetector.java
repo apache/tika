@@ -16,6 +16,7 @@
  */
 package org.apache.tika.detect;
 
+import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -29,6 +30,141 @@ import org.apache.tika.mime.MediaType;
  * @since Apache Tika 0.3
  */
 public class MagicDetector implements Detector {
+
+    public static MagicDetector parse(
+            MediaType mediaType,
+            String type, String offset, String value, String mask) {
+        int start = 0;
+        int end = 0;
+        if (offset != null) {
+            int colon = offset.indexOf(':');
+            if (colon == -1) {
+                start = Integer.parseInt(offset);
+                end = start;
+            } else {
+                start = Integer.parseInt(offset.substring(0, colon));
+                end = Integer.parseInt(offset.substring(colon + 1));
+            }
+        }
+
+        byte[] patternBytes = decodeValue(value, type);
+        byte[] maskBytes = null;
+        if (mask != null) {
+            maskBytes = decodeValue(mask, type);
+        }
+
+        return new MagicDetector(
+                mediaType, patternBytes, maskBytes, start, end);
+    }
+
+    private static byte[] decodeValue(String value, String type) {
+        // Preliminary check
+        if ((value == null) || (type == null)) {
+            return null;
+        }
+
+        byte[] decoded = null;
+        String tmpVal = null;
+        int radix = 8;
+
+        // hex
+        if (value.startsWith("0x")) {
+            tmpVal = value.substring(2);
+            radix = 16;
+        } else {
+            tmpVal = value;
+            radix = 8;
+        }
+
+        if (type.equals("string") || type.equals("unicodeLE")
+                || type.equals("unicodeBE")) {
+            decoded = decodeString(value, type);
+        } else if (type.equals("byte")) {
+            decoded = tmpVal.getBytes();
+        } else if (type.equals("host16") || type.equals("little16")) {
+            int i = Integer.parseInt(tmpVal, radix);
+            decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
+        } else if (type.equals("big16")) {
+            int i = Integer.parseInt(tmpVal, radix);
+            decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
+        } else if (type.equals("host32") || type.equals("little32")) {
+            long i = Long.parseLong(tmpVal, radix);
+            decoded = new byte[] {
+                    (byte) ((i & 0x000000FF)),
+                    (byte) ((i & 0x0000FF00) >> 8),
+                    (byte) ((i & 0x00FF0000) >> 16),
+                    (byte) ((i & 0xFF000000) >> 24) };
+        } else if (type.equals("big32")) {
+            long i = Long.parseLong(tmpVal, radix);
+            decoded = new byte[] {
+                    (byte) ((i & 0xFF000000) >> 24),
+                    (byte) ((i & 0x00FF0000) >> 16),
+                    (byte) ((i & 0x0000FF00) >> 8),
+                    (byte) ((i & 0x000000FF)) };
+        }
+        return decoded;
+    }
+
+    private static byte[] decodeString(String value, String type) {
+        if (value.startsWith("0x")) {
+            byte[] vals = new byte[(value.length() - 2) / 2];
+            for (int i = 0; i < vals.length; i++) {
+                vals[i] = (byte)
+                Integer.parseInt(value.substring(2 + i * 2, 4 + i * 2), 16);
+            }
+            return vals;
+        }
+
+        CharArrayWriter decoded = new CharArrayWriter();
+
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) == '\\') {
+                if (value.charAt(i + 1) == '\\') {
+                    decoded.write('\\');
+                    i++;
+                } else if (value.charAt(i + 1) == 'x') {
+                    decoded.write(Integer.parseInt(
+                            value.substring(i + 2, i + 4), 16));
+                    i += 3;
+                } else {
+                    int j = i + 1;
+                    while ((j < i + 4) && (j < value.length())
+                            && (Character.isDigit(value.charAt(j)))) {
+                        j++;
+                    }
+                    decoded.write(Short.decode(
+                            "0" + value.substring(i + 1, j)).byteValue());
+                    i = j - 1;
+                }
+            } else {
+                decoded.write(value.charAt(i));
+            }
+        }
+
+        // Now turn the chars into bytes
+        char[] chars = decoded.toCharArray();
+        byte[] bytes;
+        if ("unicodeLE".equals(type)) {
+            bytes = new byte[chars.length * 2];
+            for (int i = 0; i < chars.length; i++) {
+                bytes[i * 2] = (byte) (chars[i] & 0xff);
+                bytes[i * 2 + 1] = (byte) (chars[i] >> 8);
+            }
+        } else if ("unicodeBE".equals(type)) {
+            bytes = new byte[chars.length * 2];
+            for(int i = 0; i < chars.length; i++) {
+                bytes[i * 2] = (byte) (chars[i] >> 8);
+                bytes[i * 2 + 1] = (byte) (chars[i] & 0xff);
+            }
+        } else {
+            // Copy with truncation
+            bytes = new byte[chars.length];
+            for(int i = 0; i < bytes.length; i++) {
+                bytes[i] = (byte) chars[i];
+            }
+        }
+        return bytes;
+    }
 
     /**
      * The matching media type. Returned by the
@@ -69,8 +205,6 @@ public class MagicDetector implements Detector {
      * starts at this offset.
      */
     private final int offsetRangeEnd;
-    
-    private final String asString;
 
     /**
      * Creates a detector for input documents that have the exact given byte
@@ -136,13 +270,6 @@ public class MagicDetector implements Detector {
 
         this.offsetRangeBegin = offsetRangeBegin;
         this.offsetRangeEnd = offsetRangeEnd;
-        
-        // Build the string representation. Needs to be unique, as
-        //  these get compared. Compute now as may get compared a lot!
-        this.asString = "Magic Detection for " + type.toString() +
-          " looking for " + pattern.length + 
-          " bytes = " + this.pattern + 
-          " mask = " + this.mask;
     }
 
     /**
@@ -205,12 +332,20 @@ public class MagicDetector implements Detector {
         }
     }
 
+    public int getLength() {
+        return length;
+    }
+
     /**
      * Returns a string representation of the Detection Rule.
      * Should sort nicely by type and details, as we sometimes
      *  compare these.
      */
     public String toString() {
-       return asString;
+        // Needs to be unique, as these get compared.
+        return "Magic Detection for " + type +
+                " looking for " + pattern.length + 
+                " bytes = " + this.pattern + 
+                " mask = " + this.mask;
     }
 }

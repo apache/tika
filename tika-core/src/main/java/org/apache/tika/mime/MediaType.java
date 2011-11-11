@@ -45,15 +45,20 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
     private static final Pattern SPECIAL_OR_WHITESPACE =
         Pattern.compile("[\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]");
 
+    /**
+     * See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters.
+     */
+    private static final String VALID_CHARS =
+            "([^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]+)";
+
+    private static final Pattern TYPE_PATTERN = Pattern.compile(
+                    "(?s)\\s*" + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS
+                    + "\\s*($|;.*)");
+
     // TIKA-350: handle charset as first element in content-type
-    // See http://www.ietf.org/rfc/rfc2045.txt for valid mime-type characters.
-    private static final String VALID_MIMETYPE_CHARS = "[^\\c\\(\\)<>@,;:\\\\\"/\\[\\]\\?=\\s]";
-    private static final String MIME_TYPE_PATTERN_STRING = "(" + VALID_MIMETYPE_CHARS + "+)"
-                    + "\\s*/\\s*" + "(" + VALID_MIMETYPE_CHARS + "+)";
-    private static final Pattern CONTENT_TYPE_PATTERN = Pattern.compile(
-                    "(?is)\\s*" + MIME_TYPE_PATTERN_STRING + "\\s*($|;.*)");
-    private static final Pattern CONTENT_TYPE_CHARSET_FIRST_PATTERN = Pattern.compile(
-                    "(?i)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*" + MIME_TYPE_PATTERN_STRING);
+    private static final Pattern CHARSET_FIRST_PATTERN = Pattern.compile(
+            "(?is)\\s*(charset\\s*=\\s*[^\\c;\\s]+)\\s*;\\s*"
+            + VALID_CHARS + "\\s*/\\s*" + VALID_CHARS + "\\s*");
 
     public static final MediaType OCTET_STREAM = application("octet-stream");
 
@@ -97,39 +102,78 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
             return null;
         }
 
-        String type;
-        String subtype;
-        String params;
-        
-        Matcher m = CONTENT_TYPE_PATTERN.matcher(string);
-        if (m.matches()) {
-            type = m.group(1);
-            subtype = m.group(2);
-            params = m.group(3);
-        } else {
-            m = CONTENT_TYPE_CHARSET_FIRST_PATTERN.matcher(string);
-            if (m.matches()) {
-                params = m.group(1);
-                type = m.group(2);
-                subtype = m.group(3);
-            } else {
-                return null;
+        int slash = string.indexOf('/');
+        if (slash == -1) {
+            return null;
+        }
+
+        // Optimization for the common case
+        String type = string.substring(0, slash);
+        String subtype = string.substring(slash + 1);
+        if (isValidName(type) && isValidName(subtype)) {
+            return new MediaType(type, subtype);
+        }
+
+        Matcher matcher;
+        matcher = TYPE_PATTERN.matcher(string);
+        if (matcher.matches()) {
+            return new MediaType(
+                    matcher.group(1), matcher.group(2),
+                    parseParameters(matcher.group(3)));
+        }
+        matcher = CHARSET_FIRST_PATTERN.matcher(string);
+        if (matcher.matches()) {
+            return new MediaType(
+                    matcher.group(2), matcher.group(3),
+                    parseParameters(matcher.group(1)));
+        }
+
+        return null;
+    }
+
+    private static boolean isValidName(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c != '-' && c != '+' && c != '.' && c != '_'
+                    && !('0' <= c && c <= '9')
+                    && !('A' <= c && c <= 'Z')
+                    && !('a' <= c && c <= 'z')) {
+                return false;
             }
+        }
+        return name.length() > 0;
+    }
+
+    private static Map<String, String> parseParameters(String string) {
+        if (string.length() == 0) {
+            return NO_PARAMETERS;
         }
 
         Map<String, String> parameters = new HashMap<String, String>();
-        for (String paramPiece : params.split(";")) {
-            String[] keyValue = paramPiece.split("=", 2);
-            String key = keyValue[0].trim();
+        while (string.length() > 0) {
+            String key = string;
+            String value = "";
+
+            int semicolon = string.indexOf(';');
+            if (semicolon != -1) {
+                key = string.substring(0, semicolon);
+                string = string.substring(semicolon + 1);
+            } else {
+                string = "";
+            }
+
+            int equals = key.indexOf('=');
+            if (equals != -1) {
+                value = key.substring(equals + 1);
+                key = key.substring(0, equals);
+            }
+
+            key = key.trim();
             if (key.length() > 0) {
-                if (keyValue.length > 1) {
-                    parameters.put(key, keyValue[1].trim());
-                } else {
-                    parameters.put(key, "");
-                }
+                parameters.put(key, value.trim());
             }
         }
-        return new MediaType(type, subtype, parameters);
+        return parameters;
     }
 
     private final String type;

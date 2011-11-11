@@ -26,28 +26,25 @@ class Magic implements Clause, Comparable<Magic> {
 
     private final MimeType type;
 
-    private int priority = 50;
+    private final int priority;
 
-    private Clause clause = null;
+    private final Clause clause;
 
-    Magic(MimeType type) {
+    private final String string;
+
+    Magic(MimeType type, int priority, Clause clause) {
         this.type = type;
+        this.priority = priority;
+        this.clause = clause;
+        this.string = "[" + priority + "/" + clause + "]";
     }
 
     MimeType getType() {
         return type;
     }
 
-    void setPriority(int priority) {
-        this.priority = priority;
-    }
-
     int getPriority() {
         return priority;
-    }
-
-    void setClause(Clause clause) {
-        this.clause = clause;
     }
 
     public boolean eval(byte[] data) {
@@ -59,9 +56,7 @@ class Magic implements Clause, Comparable<Magic> {
     }
 
     public String toString() {
-        StringBuffer buf = new StringBuffer();
-        buf.append("[").append(priority).append("/").append(clause).append("]");
-        return buf.toString();
+        return string;
     }
 
     public int compareTo(Magic o) {
@@ -73,7 +68,7 @@ class Magic implements Clause, Comparable<Magic> {
             diff = o.type.compareTo(type);
         }
         if (diff == 0) {
-            diff = o.toString().compareTo(toString());
+            diff = o.string.compareTo(string);
         }
         return diff;
     }
@@ -81,23 +76,13 @@ class Magic implements Clause, Comparable<Magic> {
     public boolean equals(Object o) {
         if (o instanceof Magic) {
             Magic that = (Magic) o;
-
-            if (this.size() != that.size()) {
-                return false;
-            }
-
-            if (!this.type.equals(that.type)) {
-                return false;
-            }
-
-            return this.toString().equals(that.toString());
+            return type.equals(that.type) && string.equals(that.string);
         }
-
         return false;
     }
 
     public int hashCode() {
-        return size() ^ type.hashCode() ^ toString().hashCode();
+        return type.hashCode() ^ string.hashCode();
     }
 
 }

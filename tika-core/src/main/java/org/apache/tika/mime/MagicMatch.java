@@ -27,18 +27,38 @@ import org.apache.tika.metadata.Metadata;
  */
 class MagicMatch implements Clause {
 
-    private final MagicDetector detector;
+    private final MediaType mediaType;
 
-    private final int length;
+    private final String type;
 
-    MagicMatch(MagicDetector detector, int length) throws MimeTypeException {
-        this.detector = detector;
-        this.length = length;
+    private final String offset;
+
+    private final String value;
+
+    private final String mask;
+
+    private MagicDetector detector = null;
+
+    MagicMatch(
+            MediaType mediaType,
+            String type, String offset, String value, String mask) {
+        this.mediaType = mediaType;
+        this.type = type;
+        this.offset = offset;
+        this.value = value;
+        this.mask = mask;
+    }
+
+    private synchronized MagicDetector getDetector() {
+        if (detector == null) {
+            detector = MagicDetector.parse(mediaType, type, offset, value, mask);
+        }
+        return detector;
     }
 
     public boolean eval(byte[] data) {
         try {
-            return detector.detect(
+            return getDetector().detect(
                     new ByteArrayInputStream(data), new Metadata())
                     != MediaType.OCTET_STREAM;
         } catch (IOException e) {
@@ -48,11 +68,12 @@ class MagicMatch implements Clause {
     }
 
     public int size() {
-        return length;
+        return getDetector().getLength();
     }
 
     public String toString() {
-        return detector.toString();
+        return mediaType.toString()
+                + " " + type + " " + offset + " " +  value + " " + mask;
     }
 
 }
