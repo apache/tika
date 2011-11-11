@@ -901,6 +901,8 @@ final class TextExtractor {
             }
         }
 
+        final boolean ignored = groupState.ignore;
+
         if (equals("pard")) {
             // Reset styles
             pushText();
@@ -913,7 +915,9 @@ final class TextExtractor {
                 groupState.bold = false;
             }
         } else if (equals("par")) {
-            endParagraph(true);
+            if (!ignored) {
+                endParagraph(true);
+            }
         } else if (equals("shptxt")) {
             pushText();
             // Text inside a shape
@@ -940,19 +944,33 @@ final class TextExtractor {
             // embedded image data?
             groupState.ignore = true;
         } else if (equals("line")) {
-            addOutputChar('\n');
+            if (!ignored) {
+                addOutputChar('\n');
+            }
         } else if (equals("column")) {
-            addOutputChar(' ');
+            if (!ignored) {
+                addOutputChar(' ');
+            }
         } else if (equals("page")) {
-            addOutputChar('\n');
+            if (!ignored) {
+                addOutputChar('\n');
+            }
         } else if (equals("softline")) {
-            addOutputChar('\n');
+            if (!ignored) {
+                addOutputChar('\n');
+            }
         } else if (equals("softcolumn")) {
-            addOutputChar(' ');
+            if (!ignored) {
+                addOutputChar(' ');
+            }
         } else if (equals("softpage")) {
-            addOutputChar('\n');
+            if (!ignored) {
+                addOutputChar('\n');
+            }
         } else if (equals("tab")) {
-            addOutputChar('\t');
+            if (!ignored) {
+                addOutputChar('\t');
+            }
         } else if (equals("upr")) {
             uprState = 0;
         } else if (equals("ud") && uprState == 1) {
@@ -962,35 +980,55 @@ final class TextExtractor {
             // we want to keep that:
             groupState.ignore = false;
         } else if (equals("bullet")) {
-            // unicode BULLET
-            addOutputChar('\u2022');
+            if (!ignored) {
+                // unicode BULLET
+                addOutputChar('\u2022');
+            }
         } else if (equals("endash")) {
-            // unicode EN DASH
-            addOutputChar('\u2013');
+            if (!ignored) {
+                // unicode EN DASH
+                addOutputChar('\u2013');
+            }
         } else if (equals("emdash")) {
-            // unicode EM DASH
-            addOutputChar('\u2014');
+            if (!ignored) {
+                // unicode EM DASH
+                addOutputChar('\u2014');
+            }
         } else if (equals("enspace")) {
-            // unicode EN SPACE
-            addOutputChar('\u2002');
+            if (!ignored) {
+                // unicode EN SPACE
+                addOutputChar('\u2002');
+            }
         } else if (equals("qmspace")) {
-            // quarter em space -> unicode FOUR-PER-EM SPACE
-            addOutputChar('\u2005');
+            if (!ignored) {
+                // quarter em space -> unicode FOUR-PER-EM SPACE
+                addOutputChar('\u2005');
+            }
         } else if (equals("emspace")) {
-            // unicode EM SPACE
-            addOutputChar('\u2003');
+            if (!ignored) {
+                // unicode EM SPACE
+                addOutputChar('\u2003');
+            }
         } else if (equals("lquote")) {
-            // unicode LEFT SINGLE QUOTATION MARK
-            addOutputChar('\u2018');
+            if (!ignored) {
+                // unicode LEFT SINGLE QUOTATION MARK
+                addOutputChar('\u2018');
+            }
         } else if (equals("rquote")) {
-            // unicode RIGHT SINGLE QUOTATION MARK
-            addOutputChar('\u2019');
+            if (!ignored) {
+                // unicode RIGHT SINGLE QUOTATION MARK
+                addOutputChar('\u2019');
+            }
         } else if (equals("ldblquote")) {
-            // unicode LEFT DOUBLE QUOTATION MARK
-            addOutputChar('\u201C');
+            if (!ignored) {
+                // unicode LEFT DOUBLE QUOTATION MARK
+                addOutputChar('\u201C');
+            }
         } else if (equals("rdblquote")) {
-            // unicode RIGHT DOUBLE QUOTATION MARK
-            addOutputChar('\u201D');
+            if (!ignored) {
+                // unicode RIGHT DOUBLE QUOTATION MARK
+                addOutputChar('\u201D');
+            }
         } else if (equals("fldinst")) {
             fieldState = 1;
             groupState.ignore = false;
