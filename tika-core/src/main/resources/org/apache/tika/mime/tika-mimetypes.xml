@@ -3828,7 +3828,6 @@
     <glob pattern=".htaccess"/>
     <glob pattern="*.ihtml"/>
     <glob pattern="*.jmx"/>
-    <glob pattern="*.jsp"/>
     <glob pattern="*.junit"/>
     <glob pattern="*.jx"/>
     <glob pattern="*.manifest"/>
@@ -3868,6 +3867,15 @@
     <glob pattern="*.xsp"/>
     <glob pattern="*.xweb"/>
     <glob pattern="*.xwelcome"/>
+  </mime-type>
+
+  <mime-type type="application/x-httpd-jsp">
+    <sub-class-of type="text/plain"/>
+    <magic priority="50">
+      <match value="&lt;%@" type="string" offset="0"/>
+      <match value="&lt;%--" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.jsp"/>
   </mime-type>
 
   <mime-type type="text/prs.fallenstein.rst"/>
