@@ -56,6 +56,7 @@ public class TestContainerAwareDetector extends TestCase {
 
         // Try some ones that POI doesn't handle, that are still OLE2 based
         assertDetect("testWORKS.wps", "application/vnd.ms-works");
+        assertDetect("testWORKS2000.wps", "application/vnd.ms-works");
         assertDetect("testCOREL.shw", "application/x-corelpresentations");
         assertDetect("testQUATTRO.qpw", "application/x-quattro-pro");
         assertDetect("testQUATTRO.wb3", "application/x-quattro-pro");

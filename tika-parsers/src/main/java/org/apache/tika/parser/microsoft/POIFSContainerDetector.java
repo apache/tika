@@ -124,10 +124,14 @@ public class POIFSContainerDetector implements Detector {
             } else if (names.contains("VisioDocument")) {
                 return VSD;
             } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
+               // Newer Works files
+               return WPS;
+            } else if (names.contains("CONTENTS") && names.contains("\u0001CompObj")) {
+               // Normally an older Works file
                return WPS;
             } else if (names.contains("CONTENTS")) {
-               // CONTENTS without SPELLING normally means some sort of
-               //  embedded non-office file inside an OLE2 document
+               // CONTENTS without SPELLING nor CompObj normally means some sort
+               //  of embedded non-office file inside an OLE2 document
                // This is most commonly triggered on nested directories
                return OLE;
             } else if (names.contains("\u0001Ole10Native")) {
