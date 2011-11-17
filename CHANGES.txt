@@ -18,7 +18,10 @@ Release 1.1 - Current Development
  * RTF: Fixed case where a font change would result in processing
    bytes in the wrong font's charset, producing bogus text output
    (TIKA-777).  Don't output whitespace in ignored group states,
-   avoiding excessive whitespace output (TIKA-781).
+   avoiding excessive whitespace output (TIKA-781).  Binary embedded
+   content (using \bin control word) is now skipped correctly;
+   previously it could cause the parser to incorrectly extract binary
+   content as text (TIKA-782).
 
 Release 1.0 - 11/4/2011
 ---------------------------------
