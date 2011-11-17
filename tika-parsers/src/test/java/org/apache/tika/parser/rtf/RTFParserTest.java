@@ -280,6 +280,11 @@ public class RTFParserTest extends TikaTest {
                        getXML("testFontAfterBufferedText.rtf").xml);
     }
 
+    // TIKA-782
+    public void testBinControlWord() throws Exception {
+        assertTrue(getXML("testBinControlWord.rtf").xml.indexOf("\u00ff\u00ff\u00ff\u00ff") == -1);
+    }
+
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
        

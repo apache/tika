@@ -19,6 +19,7 @@ package org.apache.tika.parser.rtf;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
@@ -86,8 +87,6 @@ final class TextExtractor {
     private GroupState groupState = new GroupState();
 
     private boolean inHeader = true;
-    private int chIndex;
-    private int lastGroupStart;
     private int fontTableState;
     private int fontTableDepth;
 
@@ -233,22 +232,22 @@ final class TextExtractor {
         this.out = out;
     }
 
-    private static boolean isHexChar(char ch) {
+    private static boolean isHexChar(int ch) {
         return (ch >= '0' && ch <= '9') ||
             (ch >= 'a' && ch <= 'f') ||
             (ch >= 'A' && ch <= 'F');
     }
 
-    private static boolean isAlpha(char ch) {
+    private static boolean isAlpha(int ch) {
         return (ch >= 'a' && ch <= 'z') ||
             (ch >= 'A' && ch <= 'Z');
     }
 
-    private static boolean isDigit(char ch) {
+    private static boolean isDigit(int ch) {
         return ch >= '0' && ch <= '9';
     }
 
-    private static int hexValue(char ch) {
+    private static int hexValue(int ch) {
         if (ch >= '0' && ch <= '9') {
             return ch - '0';
         } else if (ch >= 'a' && ch <= 'z') {
@@ -271,7 +270,8 @@ final class TextExtractor {
 
     // Buffers the byte (unit in the current charset) for
     // output:
-    private void addOutputByte(byte b) throws IOException, SAXException, TikaException {
+    private void addOutputByte(int b) throws IOException, SAXException, TikaException {
+        assert b >= 0 && b < 256 : "byte value out of range: " + b;
 
         if (pendingCharCount != 0) {
             pushChars();
@@ -285,12 +285,12 @@ final class TextExtractor {
             pendingBytes = newArray;
             pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
         }
-        pendingBytes[pendingByteCount++] = b;
+        pendingBytes[pendingByteCount++] = (byte) b;
     }
 
-    // Buffers a byte as part of a control word:
-    private void addControl(byte b) {
-        assert isAlpha((char) b);
+   // Buffers a byte as part of a control word:
+    private void addControl(int b) {
+        assert isAlpha(b);
         // Save the byte in pending buffer:
         if (pendingControlCount == pendingControl.length) {
             // Gradual but exponential growth:
@@ -298,7 +298,7 @@ final class TextExtractor {
             System.arraycopy(pendingControl, 0, newArray, 0, pendingControl.length);
             pendingControl = newArray;
         }
-        pendingControl[pendingControlCount++] = b;
+        pendingControl[pendingControlCount++] = (byte) b;
     }
 
     // Buffers a UTF16 code unit for output
@@ -323,165 +323,144 @@ final class TextExtractor {
     // Shallow parses the entire doc, writing output to
     // this.out and this.metadata
     public void extract(InputStream in) throws IOException, SAXException, TikaException {
+//        in = new FilterInputStream(in) {
+//            public int read() throws IOException {
+//                int r = super.read();
+//                System.out.write(r);
+//                System.out.flush();
+//                return r;
+//            }
+//            public int read(byte b[], int off, int len) throws IOException {
+//                int r = super.read(b, off, len);
+//                System.out.write(b, off, r);
+//                System.out.flush();
+//                return r;
+//            }
+//        };
+        extract(new PushbackInputStream(in, 2));
+    }
+    
+    private void extract(PushbackInputStream in) throws IOException, SAXException, TikaException {
         out.startDocument();
 
-        int state = 0;
-        int pushBack = -2;
-        boolean negParam = false;
-        char hex1 = 0;
-        long param = 0;
-
         while (true) {
-            final int b;
-            if (pushBack != -2) {
-                b = pushBack;
-                pushBack = -2;
-            } else {
-                b = in.read();
-                chIndex++;
-            }
+            final int b = in.read();
             if (b == -1) {
                 break;
-            }
-
-            // NOTE: this is always a 8bit clean byte (ie
-            // < 128), but we use a char for
-            // convenience in the testing below:
-            final char ch = (char) b;
-
-            switch (state) {
-
-            case 0:
-                if (ch == '\\') {
-                    state = 1;
-                } else if (ch == '{') {
-                    pushText();
-                    processGroupStart();
-                } else if (ch == '}') {
-                    pushText();
-                    processGroupEnd();
-                } else if (ch != '\r' && ch != '\n' && (!groupState.ignore || nextMetaData != null)) {
-                    // Linefeed and carriage return are not
-                    // significant
-                    if (ansiSkip != 0) {
-                        ansiSkip--;
-                    } else {
-                        addOutputByte((byte) ch);
-                    }
+            } else if (b == '\\') {
+                parseControlToken(in);
+            } else if (b == '{') {
+                pushText();
+                processGroupStart(in);
+             } else if (b == '}') {
+                pushText();
+                processGroupEnd();
+                if (groupStates.isEmpty()) {
+                    // parsed document closing brace
+                    break;
                 }
-                break;
-
-            // saw \
-            case 1:
-                if (ch == '\'') {
-                    // escaped hex char
-                    state = 2;
-                } else if (isAlpha(ch)) {
-                    // control word
-                    //pushText();
-                    addControl((byte) ch);
-                    state = 4;
-                } else if (ch == '{' || ch == '}' || ch == '\\' || ch == '\r' || ch == '\n') {
-                    // escaped char
-                    addOutputByte((byte) ch);
-                    state = 0;
+            } else if (b != '\r' && b != '\n' && (!groupState.ignore || nextMetaData != null)) {
+                // Linefeed and carriage return are not
+                // significant
+                if (ansiSkip != 0) {
+                    ansiSkip--;
                 } else {
-                    // control symbol, eg \* or \~
-                    //pushText();
-                    processControlSymbol(ch);
-                    state = 0;
+                    addOutputByte(b);
                 }
-                break;
-
-            // saw \'
-            case 2:
-                if (isHexChar(ch)) {
-                    hex1 = ch;
-                    state = 3;
-                } else {
-                    // DOC ERROR (malformed hex escape): ignore 
-                    state = 0;
-                }
-                break;
-
-            // saw \'x
-            case 3: 
-                if (isHexChar(ch)) {
-                    if (ansiSkip != 0) {
-                        // Skip this ansi char since we are
-                        // still in the shadow of a unicode
-                        // escape:
-                        ansiSkip--;
-                    } else {
-                        // Unescape:
-                        addOutputByte((byte) (16*hexValue(hex1) + hexValue(ch)));
-                    }
-                    state = 0;
-                } else {
-                    // TODO: log a warning here, somehow?
-                    // DOC ERROR (malformed hex escape):
-                    // ignore
-                    state = 0;
-                }
-                break;
-
-            // inside control word
-            case 4:
-                if (isAlpha(ch)) {
-                    // still in control word
-                    addControl((byte) ch);
-                } else if (ch == '-') {
-                    // end of control word, start of negative parameter
-                    negParam = true;
-                    param = 0;
-                    state = 5;
-                } else if (isDigit(ch)) {
-                    // end of control word, start of positive parameter
-                    negParam = false;
-                    param = (long) (ch - '0');
-                    state = 5;
-                } else if (ch == ' ') {
-                    // space is consumed as part of the
-                    // control word, but is not added to the
-                    // control word
-                    processControlWord();
-                    pendingControlCount = 0;
-                    state = 0;
-                } else {
-                    processControlWord();
-                    pendingControlCount = 0;
-                    // eps transition back to start state
-                    pushBack = ch;
-                    state = 0;
-                }
-                break;
-
-            // inside control word's numeric param
-            case 5:
-                if (isDigit(ch)) {
-                    param = (10*param) + (long) (ch - '0');
-                } else {
-                    if (negParam) {
-                        param = -param;
-                    }
-                    processControlWord(param);
-                    pendingControlCount = 0;
-                    if (ch != ' ') {
-                        // space is consumed as part of the
-                        // control word
-                        pushBack = ch;
-                    }
-                    state = 0;
-                }
-                break;
-              
-            default:
-                throw new RuntimeException("invalid state");
             }
         }
 
         endParagraph(false);
         out.endDocument();
+    }
+    
+    private void parseControlToken(PushbackInputStream in) throws IOException, SAXException, TikaException {
+        int b = in.read();
+        if (b == '\'') {
+            // escaped hex char
+            parseHexChar(in);
+        } else if (isAlpha(b)) {
+            // control word
+            parseControlWord((char)b, in);
+        } else if (b == '{' || b == '}' || b == '\\' || b == '\r' || b == '\n') {
+            // escaped char
+            addOutputByte(b);
+        } else if (b != -1) {
+            // control symbol, eg \* or \~
+            processControlSymbol((char)b);
+        }
+    }
+    
+    private void parseHexChar(PushbackInputStream in) throws IOException, SAXException, TikaException {
+        int hex1 = in.read();
+        if (!isHexChar(hex1)) {
+            // DOC ERROR (malformed hex escape): ignore 
+            in.unread(hex1);
+            return;
+        }
+        
+        int hex2 = in.read();
+        if (!isHexChar(hex2)) {
+            // TODO: log a warning here, somehow?
+            // DOC ERROR (malformed hex escape):
+            // ignore
+            in.unread(hex2);
+            return;
+        }
+        
+        if (ansiSkip != 0) {
+            // Skip this ansi char since we are
+            // still in the shadow of a unicode
+            // escape:
+            ansiSkip--;
+        } else {
+            // Unescape:
+            addOutputByte(16*hexValue(hex1) + hexValue(hex2));
+        }
+    }
+
+    private void parseControlWord(int firstChar, PushbackInputStream in) throws IOException, SAXException, TikaException {
+        addControl(firstChar);
+        
+        int b = in.read();
+        while (isAlpha(b)) {
+            addControl(b);
+            b = in.read();
+        }
+        
+        boolean hasParam = false;
+        boolean negParam = false;
+        if (b == '-') {
+            negParam = true;
+            hasParam = true;
+            b = in.read();
+        }
+
+        int param = 0;
+        while (isDigit(b)) {
+            param *= 10;
+            param += (b - '0');
+            hasParam = true;
+            b = in.read();
+        }
+        
+        // space is consumed as part of the
+        // control word, but is not added to the
+        // control word
+        if (b != ' ') {
+            in.unread(b);
+        }
+        
+        if (hasParam) {
+            if (negParam) {
+                param = -param;
+            }
+            processControlWord(param, in);
+        } else {
+            processControlWord();
+        }
+        
+        pendingControlCount = 0;
     }
 
     private void lazyStartParagraph() throws IOException, SAXException, TikaException {
@@ -624,14 +603,9 @@ final class TextExtractor {
             addOutputChar('\u00a0');
             break;
         case '*':
-            // Ignorable destination (control words defined
-            // after the 1987 RTF spec).  Note that
-            // sometimes we un-ignore within this group, eg
-            // when handling upr escape.
-            if (chIndex == lastGroupStart+2) {
-                // Only ignore if \* comes right after {:
-                groupState.ignore = true;
-            }
+            // Ignorable destination (control words defined after
+            // the 1987 RTF spec). These are already handled by
+            // processGroupStart()
             break;
         case '-':
             // Optional hyphen -> unicode SOFT HYPHEN
@@ -689,8 +663,7 @@ final class TextExtractor {
     }
 
     // Handle control word that takes a parameter:
-    // Param is long because spec says max value is 1+ Integer.MAX_VALUE!
-    private void processControlWord(long param) throws IOException, SAXException, TikaException {
+    private void processControlWord(int param, PushbackInputStream in) throws IOException, SAXException, TikaException {
 
         // TODO: afN?  (associated font number)
 
@@ -719,13 +692,13 @@ final class TextExtractor {
         if (inHeader) {
             if (equals("ansicpg")) {
                 // ANSI codepage
-                final String cs = ANSICPG_MAP.get((int) param);
+                final String cs = ANSICPG_MAP.get(param);
                 if (cs != null) {
                     globalCharset = cs;
                 }
             } else if (equals("deff")) {
                 // Default font
-                globalDefaultFont = (int) param;
+                globalDefaultFont = param;
             }
 
             if (fontTableState == 1) {
@@ -736,9 +709,9 @@ final class TextExtractor {
                 } else {
                     if (equals("f")) {
                         // Start new font definition
-                        curFontID = (int) param;
+                        curFontID = param;
                     } else if (equals("fcharset")) {
-                        final String cs = FCHARSET_MAP.get((int) param);
+                        final String cs = FCHARSET_MAP.get(param);
                         if (cs != null) {
                             fontToCharset.put(curFontID, cs);
                         }
@@ -771,7 +744,7 @@ final class TextExtractor {
                 }
             } else if (equals("f")) {
                 // Change current font
-                final String fontCharset = fontToCharset.get((int) param);
+                final String fontCharset = fontToCharset.get(param);
 
                 // Push any buffered text before changing
                 // font:
@@ -788,24 +761,36 @@ final class TextExtractor {
             }
         }
 
-        // Process unicode escape.  This can appear in doc
+        // Process unicode escape. This can appear in doc
         // or in header, since the metadata (info) fields
         // in the header can be unicode escaped as well:
-        if (pendingControl[0] == 'u') {
-            if (pendingControlCount == 1) {
-                // Unicode escape
-                if (!groupState.ignore) {
-                    final char utf16CodeUnit = (char) (((int) param) & 0xffff);
-                    addOutputChar(utf16CodeUnit);
-                }
+        if (equals("u")) {
+            // Unicode escape
+            if (!groupState.ignore) {
+                final char utf16CodeUnit = (char) (param & 0xffff);
+                addOutputChar(utf16CodeUnit);
+            }
 
-                // After seeing a unicode escape we must
-                // skip the next ucSkip ansi chars (the
-                // "unicode shadow")
-                ansiSkip = groupState.ucSkip;
-            } else if (pendingControlCount == 2 && pendingControl[1] == 'c') {
-                // Change unicode shadow length
-                groupState.ucSkip = (int) param;
+            // After seeing a unicode escape we must
+            // skip the next ucSkip ansi chars (the
+            // "unicode shadow")
+            ansiSkip = groupState.ucSkip;
+        } else if (equals("uc")) {
+            // Change unicode shadow length
+            groupState.ucSkip = (int) param;
+        } else if (equals("bin")) {
+            if (param >= 0) {
+                int bytesToRead = param;
+                byte[] tmpArray = new byte[Math.min(1024, bytesToRead)];
+                while (bytesToRead > 0) {
+                    int r = in.read(tmpArray, 0, Math.min(bytesToRead, tmpArray.length));
+                    if (r < 0) {
+                        throw new TikaException("unexpected end of file: need " + param + " bytes of binary data, found " + (param-bytesToRead));
+                    }
+                    bytesToRead -= r;
+                }
+            } else {
+                // log some warning?
             }
         }
     }
@@ -1043,7 +1028,7 @@ final class TextExtractor {
     }
 
     // Push new GroupState
-    private void processGroupStart() throws IOException {
+    private void processGroupStart(PushbackInputStream in) throws IOException {
         ansiSkip = 0;
         // Push current groupState onto the stack
         groupStates.add(groupState);
@@ -1056,8 +1041,19 @@ final class TextExtractor {
             uprState = 1;
             groupState.ignore = true;
         }
-
-        lastGroupStart = chIndex;
+        
+        // Check for ignorable groups. Note that
+        // sometimes we un-ignore within this group, eg
+        // when handling upr escape.
+        int b2 = in.read();
+        if (b2 == '\\') {
+            int b3 = in.read();
+            if (b3 == '*') {
+                groupState.ignore = true;
+            }
+               in.unread(b3);
+        }
+        in.unread(b2);
     }
 
     // Pop current GroupState
