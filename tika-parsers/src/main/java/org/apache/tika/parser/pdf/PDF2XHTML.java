@@ -55,14 +55,14 @@ class PDF2XHTML extends PDFTextStripper {
     public static void process(
             PDDocument document, ContentHandler handler, Metadata metadata,
             boolean extractAnnotationText, boolean enableAutoSpace,
-            boolean suppressDuplicateOverlappingText)
+            boolean suppressDuplicateOverlappingText, boolean sortByPosition)
             throws SAXException, TikaException {
         try {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content handler.
             new PDF2XHTML(handler, metadata,
                           extractAnnotationText, enableAutoSpace,
-                          suppressDuplicateOverlappingText).writeText(document, new Writer() {
+                          suppressDuplicateOverlappingText, sortByPosition).writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {
                 }
@@ -87,12 +87,12 @@ class PDF2XHTML extends PDFTextStripper {
 
     private PDF2XHTML(ContentHandler handler, Metadata metadata,
                       boolean extractAnnotationText, boolean enableAutoSpace,
-                      boolean suppressDuplicateOverlappingText)
+                      boolean suppressDuplicateOverlappingText, boolean sortByPosition)
             throws IOException {
         this.handler = new XHTMLContentHandler(handler, metadata);
         this.extractAnnotationText = extractAnnotationText;
         setForceParsing(true);
-        setSortByPosition(false);
+        setSortByPosition(sortByPosition);
         if (enableAutoSpace) {
             setWordSeparator(" ");
         } else {

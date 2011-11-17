@@ -60,14 +60,20 @@ public class PDFParser extends AbstractParser {
     // True if we let PDFBox remove duplicate overlapping text:
     private boolean suppressDuplicateOverlappingText;
 
+    // True if we extract annotation text ourselves
+    // (workaround for PDFBOX-1143):
+    private boolean extractAnnotationText = true;
+
+    // True if we should sort text tokens by position
+    // (necessary for some PDFs, but messes up other PDFs):
+    private boolean sortByPosition = false;
+
     /**
      * Metadata key for giving the document password to the parser.
      *
      * @since Apache Tika 0.5
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
-
-    private boolean extractAnnotationText = true;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.application("pdf"));
@@ -96,7 +102,9 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
-            PDF2XHTML.process(pdfDocument, handler, metadata, extractAnnotationText, enableAutoSpace, suppressDuplicateOverlappingText);
+            PDF2XHTML.process(pdfDocument, handler, metadata,
+                              extractAnnotationText, enableAutoSpace,
+                              suppressDuplicateOverlappingText, sortByPosition);
         } finally {
             pdfDocument.close();
         }
@@ -220,6 +228,23 @@ public class PDFParser extends AbstractParser {
     /** @see #setSuppressDuplicateOverlappingText. */
     public boolean getSuppressDuplicateOverlappingText() {
         return suppressDuplicateOverlappingText;
+    }
+
+    /**
+     *  If true, sort text tokens by their x/y position
+     *  before extracting text.  This may be necessary for
+     *  some PDFs (if the text tokens are not rendered "in
+     *  order"), while for other PDFs it can produce the
+     *  wrong result (for example if there are 2 columns,
+     *  the text will be interleaved).  Default is false.
+     */
+    public void setSortByPosition(boolean v) {
+        sortByPosition = v;
+    }
+
+    /** @see #setSortByPosition. */
+    public boolean getSortByPosition() {
+        return sortByPosition;
     }
 
 }
