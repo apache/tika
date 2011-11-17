@@ -323,6 +323,39 @@ public class PDFParserTest extends TikaTest {
         assertContains("Text the first timesecond time", content);
     }
 
+    public void testSortByPosition() throws Exception {
+        PDFParser parser = new PDFParser();
+        parser.setEnableAutoSpace(false);
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
+        // Default is false (do not sort):
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        String content = handler.toString();
+        content = content.replaceAll("\\s+", " ");
+        assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
+
+        parser.setSortByPosition(true);
+        handler = new BodyContentHandler();
+        metadata = new Metadata();
+        context = new ParseContext();
+        stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        content = handler.toString();
+        content = content.replaceAll("\\s+", " ");
+        // Column text is now interleaved:
+        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
+    }
+
     private static class XMLResult {
         public final String xml;
         public final Metadata metadata;

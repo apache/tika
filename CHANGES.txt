@@ -10,7 +10,10 @@ Release 1.1 - Current Development
  * PDF: Allow controlling whether overlapping duplicated text should
    be removed.  Disabling this (the default) can give big
    speedups to text extraction and may workaround cases where
-   non-duplicated characters were incorrectly removed.  (TIKA-767)
+   non-duplicated characters were incorrectly removed (TIKA-767).
+   Allow controlling whether text tokens should be sorted by their x/y
+   position before extracting text (TIKA-612); this is necessary for
+   certain PDFs.
 
  * RTF: Fixed case where a font change would result in processing
    bytes in the wrong font's charset, producing bogus text output
