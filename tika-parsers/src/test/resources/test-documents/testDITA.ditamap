@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE map PUBLIC "-//OASIS//DTD DITA Map//EN" "http://docs.oasis-open.org/dita/v1.1/OS/dtd/map.dtd">
+<map id="apache-tika" title="Apache Tika">
+    <topicmeta>
+        <author>Apache Tika</author>
+        <copyright>
+            <copyryear year="2011"/>
+            <copyrholder>Apache Software Foundation</copyrholder>
+        </copyright>
+        <category>Version 1.x</category>
+        <category>Tika</category>
+        <category>Mime</category>
+        <prodinfo>
+            <prodname>Apache Tika</prodname>
+            <vrmlist>
+                <vrm version="1.x" release="Final" modification="2011/11/11"/>
+            </vrmlist>
+        </prodinfo>
+    </topicmeta>
+    <topicref href="testDITA.dita">
+        <topicref href="testDITA2.dita" />
+    </topicref>
+</map>
