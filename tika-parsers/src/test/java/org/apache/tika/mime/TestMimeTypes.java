@@ -333,7 +333,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/postscript", "x.epsi");
     }
     
-    public void testMicrosoftMultiMedia() throws Exception {
+    public void testMicrosoftMultiMediaDetection() throws Exception {
        assertTypeByName("video/x-ms-asf", "x.asf");
        assertTypeByName("video/x-ms-wmv", "x.wmv");
        assertTypeByName("audio/x-ms-wma", "x.wma");
@@ -341,6 +341,32 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("video/x-ms-asf", "testASF.asf");
        assertTypeByData("video/x-ms-wmv", "testWMV.wmv");
        assertTypeByData("audio/x-ms-wma", "testWMA.wma");
+    }
+    
+    /**
+     * All 3 DITA types are in theory handled by the same mimetype,
+     *  but we specialise them 
+     */
+    public void testDITADetection() throws Exception {
+       assertTypeByName("application/dita+topic+xml", "test.dita");
+       assertTypeByName("application/dita+map+xml", "test.ditamap");
+       assertTypeByName("application/dita+val+xml", "test.ditaval");
+       
+       assertTypeByData("application/dita+topic+xml", "testDITA.dita");
+       assertTypeByData("application/dita+topic+xml", "testDITA2.dita");
+       assertTypeByData("application/dita+map+xml", "testDITA.ditamap");
+       
+       assertTypeByNameAndData("application/dita+topic+xml", "testDITA.dita");
+       assertTypeByNameAndData("application/dita+topic+xml", "testDITA2.dita");
+       assertTypeByNameAndData("application/dita+map+xml", "testDITA.ditamap");
+       
+       // These are all children of the official type
+       assertEquals("application/dita+xml", 
+             repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.dita")).toString());
+       assertEquals("application/dita+xml", 
+             repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA2.dita")).toString());
+       assertEquals("application/dita+xml", 
+             repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.ditamap")).toString());
     }
 
     /**
@@ -499,15 +525,18 @@ public class TestMimeTypes extends TestCase {
     
     private void assertTypeByNameAndData(String expected, String filename)
 	    throws IOException {
-	InputStream stream = TestMimeTypes.class.getResourceAsStream(
-	        "/test-documents/" + filename);
-	try {
-	    Metadata metadata = new Metadata();
-	    metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
-	    assertEquals(expected, repo.detect(stream, metadata).toString());
-	} finally {
-	    stream.close();
-	}
-}
-
+       assertEquals(expected, getTypeByNameAndData(filename).toString());
+    }
+    private MediaType getTypeByNameAndData(String filename) throws IOException {
+       InputStream stream = TestMimeTypes.class.getResourceAsStream(
+             "/test-documents/" + filename);
+       assertNotNull("Test document not found: " + filename, stream);
+       try {
+          Metadata metadata = new Metadata();
+          metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+          return repo.detect(stream, metadata);
+       } finally {
+          stream.close();
+       }
+    }
 }

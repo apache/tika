@@ -72,8 +72,32 @@
 
   <mime-type type="application/dita+xml">
     <sub-class-of type="application/xml"/>
-    <glob pattern="*.dita"/>
+    <_comment>Darwin Information Typing Architecture</_comment>
+  </mime-type>
+
+  <mime-type type="application/dita+map+xml">
+    <sub-class-of type="application/dita+xml"/>
+    <_comment>DITA Map</_comment>
+    <root-XML localName="map"/>
+    <root-XML localName="map" namespaceURI="http://docs.oasis-open.org/namespace"/>
     <glob pattern="*.ditamap"/>
+  </mime-type>
+  <mime-type type="application/dita+topic+xml">
+    <sub-class-of type="application/dita+xml"/>
+    <_comment>DITA Topic</_comment>
+    <root-XML localName="topic"/>
+    <root-XML localName="topic" namespaceURI="http://docs.oasis-open.org/namespace"/>
+    <root-XML localName="task"/>
+    <root-XML localName="task" namespaceURI="http://docs.oasis-open.org/namespace"/>
+    <root-XML localName="concept"/>
+    <root-XML localName="concept" namespaceURI="http://docs.oasis-open.org/namespace"/>
+    <glob pattern="*.dita"/>
+  </mime-type>
+  <mime-type type="application/dita+val+xml">
+    <sub-class-of type="application/dita+xml"/>
+    <_comment>DITA Conditional Processing Profile</_comment>
+    <root-XML localName="val"/>
+    <root-XML localName="val" namespaceURI="http://docs.oasis-open.org/namespace"/>
     <glob pattern="*.ditaval"/>
   </mime-type>
 
