@@ -35,31 +35,52 @@ public class TestContainerAwareDetector extends TestCase {
 
     private final Detector detector = new DefaultDetector();
 
-    private void assertDetect(String file, String type) throws Exception {
-        TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource(
-                        "/test-documents/" + file));
-        try {
-            assertEquals(
-                    MediaType.parse(type),
-                    detector.detect(stream, new Metadata()));
-        } finally {
-            stream.close();
-        }
+    private void assertTypeByData(String file, String type) throws Exception {
+       assertTypeByNameAndData(file, null, type);
+    }
+    private void assertTypeByNameAndData(String file, String type) throws Exception {
+       assertTypeByNameAndData(file, file, type);
+    }
+    private void assertTypeByNameAndData(String dataFile, String name, String type) throws Exception {
+       TikaInputStream stream = TikaInputStream.get(
+               TestContainerAwareDetector.class.getResource(
+                       "/test-documents/" + dataFile));
+       try {
+           Metadata m = new Metadata();
+           if (name != null)
+              m.add(Metadata.RESOURCE_NAME_KEY, name);
+           
+           assertEquals(
+                   MediaType.parse(type),
+                   detector.detect(stream, m));
+       } finally {
+           stream.close();
+       }
     }
 
     public void testDetectOLE2() throws Exception {
         // Microsoft office types known by POI
-        assertDetect("testEXCEL.xls", "application/vnd.ms-excel");
-        assertDetect("testWORD.doc", "application/msword");
-        assertDetect("testPPT.ppt", "application/vnd.ms-powerpoint");
+        assertTypeByData("testEXCEL.xls", "application/vnd.ms-excel");
+        assertTypeByData("testWORD.doc", "application/msword");
+        assertTypeByData("testPPT.ppt", "application/vnd.ms-powerpoint");
 
         // Try some ones that POI doesn't handle, that are still OLE2 based
-        assertDetect("testWORKS.wps", "application/vnd.ms-works");
-        assertDetect("testWORKS2000.wps", "application/vnd.ms-works");
-        assertDetect("testCOREL.shw", "application/x-corelpresentations");
-        assertDetect("testQUATTRO.qpw", "application/x-quattro-pro");
-        assertDetect("testQUATTRO.wb3", "application/x-quattro-pro");
+        assertTypeByData("testWORKS.wps", "application/vnd.ms-works");
+        assertTypeByData("testWORKS2000.wps", "application/vnd.ms-works");
+        assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
+        assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro");
+        assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro");
+        
+        // With the filename and data
+        assertTypeByNameAndData("testEXCEL.xls", "application/vnd.ms-excel");
+        assertTypeByNameAndData("testWORD.doc", "application/msword");
+        assertTypeByNameAndData("testPPT.ppt", "application/vnd.ms-powerpoint");
+        
+        // With the wrong filename supplied, data will trump filename
+        // TODO Fix this! (TIKA-786)
+//        assertTypeByNameAndData("testEXCEL.xls", "notWord.doc",  "application/vnd.ms-excel");
+//        assertTypeByNameAndData("testWORD.doc",  "notExcel.xls", "application/msword");
+//        assertTypeByNameAndData("testPPT.ppt",   "notWord.doc",  "application/vnd.ms-powerpoint");
     }
 
     public void testOpenContainer() throws Exception {
@@ -78,23 +99,37 @@ public class TestContainerAwareDetector extends TestCase {
     }
 
     public void testDetectODF() throws Exception {
-        assertDetect("testODFwithOOo3.odt", "application/vnd.oasis.opendocument.text");
-        assertDetect("testOpenOffice2.odf", "application/vnd.oasis.opendocument.formula");
+        assertTypeByData("testODFwithOOo3.odt", "application/vnd.oasis.opendocument.text");
+        assertTypeByData("testOpenOffice2.odf", "application/vnd.oasis.opendocument.formula");
     }
 
     public void testDetectOOXML() throws Exception {
-        assertDetect("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        assertDetect("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        assertDetect("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        assertTypeByData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByData("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertTypeByData("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
 
         // Check some of the less common OOXML types
-        assertDetect("testPPT.pptm", "application/vnd.ms-powerpoint.presentation.macroenabled.12");
-        assertDetect("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
-        assertDetect("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
+        assertTypeByData("testPPT.pptm", "application/vnd.ms-powerpoint.presentation.macroenabled.12");
+        assertTypeByData("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
+        assertTypeByData("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
         
         // .xlsb is an OOXML file containing the binary parts, and not
         //  an OLE2 file as you might initially expect!
-        assertDetect("testEXCEL.xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12");
+        assertTypeByData("testEXCEL.xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12");
+
+        // With the filename and data
+        assertTypeByNameAndData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByNameAndData("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertTypeByNameAndData("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        
+        // With the wrong filename supplied, data will trump filename
+        // TODO Fix this! (TIKA-786)
+//        assertTypeByNameAndData("testEXCEL.xlsx", "notWord.docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+//        assertTypeByNameAndData("testWORD.docx",  "notExcel.xlsx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+//        assertTypeByNameAndData("testPPT.pptx",   "notWord.docx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        
+        // With an incorrect filename of a different container type, data trumps filename
+        assertTypeByNameAndData("testEXCEL.xlsx", "notOldExcel.xls", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
 
     /**
@@ -131,15 +166,15 @@ public class TestContainerAwareDetector extends TestCase {
     }
 
     public void testDetectIWork() throws Exception {
-        assertDetect("testKeynote.key", "application/vnd.apple.keynote");
-        assertDetect("testNumbers.numbers", "application/vnd.apple.numbers");
-        assertDetect("testPages.pages", "application/vnd.apple.pages");
+        assertTypeByData("testKeynote.key", "application/vnd.apple.keynote");
+        assertTypeByData("testNumbers.numbers", "application/vnd.apple.numbers");
+        assertTypeByData("testPages.pages", "application/vnd.apple.pages");
     }
 
     public void testDetectZip() throws Exception {
-        assertDetect("test-documents.zip", "application/zip");
-        assertDetect("test-zip-of-zip.zip", "application/zip");
-        assertDetect("testJAR.jar", "application/java-archive");
+        assertTypeByData("test-documents.zip", "application/zip");
+        assertTypeByData("test-zip-of-zip.zip", "application/zip");
+        assertTypeByData("testJAR.jar", "application/java-archive");
     }
 
     private TikaInputStream getTruncatedFile(String name, int n)
