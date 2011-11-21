@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -54,6 +55,7 @@ import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -312,6 +314,9 @@ public class TikaCLI {
         } else if (arg.equals("--list-parser") || arg.equals("--list-parsers")) {
             pipeMode = false;
             displayParsers(false);
+        } else if (arg.equals("--list-detector") || arg.equals("--list-detectors")) {
+           pipeMode = false;
+           displayDetectors();
         } else if (arg.equals("--list-parser-detail") || arg.equals("--list-parser-details")) {
             pipeMode = false;
             displayParsers(true);
@@ -430,6 +435,8 @@ public class TikaCLI {
         out.println("         List the available document parsers");
         out.println("    --list-parser-details");
         out.println("         List the available document parsers, and their supported mime types");
+        out.println("    --list-detectors");
+        out.println("         List the available document detectors");
         out.println("    --list-met-models");
         out.println("         List the available metadata models, and their supported keys");
         out.println("    --list-supported-types");
@@ -518,6 +525,27 @@ public class TikaCLI {
             Parser[] subParsers = sortParsers(invertMediaTypeMap(((CompositeParser) p).getParsers()));
             for(Parser sp : subParsers) {
                 displayParser(sp, includeMimeTypes, i+2);
+            }
+        }
+    }
+
+    /*
+     * Displays loaded detectors and their mime types
+     * If a detector is a composite detector, it will list the
+     *  sub detectors.
+     */
+    private void displayDetectors() {
+        displayDetector(detector, 0);
+    }
+     
+    private void displayDetector(Detector d, int i) {
+        boolean isComposite = (d instanceof CompositeDetector);
+        String name = d.getClass().getName();
+        System.out.println(indent(i) + name + (isComposite ? " (Composite Detector):" : ""));
+        if (isComposite) {
+            List<Detector> subDetectors = ((CompositeDetector)d).getDetectors();
+            for(Detector sd : subDetectors) {
+                displayDetector(sd, i+2);
             }
         }
     }

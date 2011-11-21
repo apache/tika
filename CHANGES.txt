@@ -23,6 +23,10 @@ Release 1.1 - Current Development
    previously it could cause the parser to incorrectly extract binary
    content as text (TIKA-782).
 
+ * CLI: New TikaCLI option "--list-detectors", which displays the
+   mimetype detectors that are available, similar to the existing
+   "--list-parsers" option for parsers. (TIKA-785).
+
 Release 1.0 - 11/4/2011
 ---------------------------------
 

@@ -19,6 +19,7 @@ package org.apache.tika.detect;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
@@ -65,4 +66,10 @@ public class CompositeDetector implements Detector {
         return type;
     }
 
+    /**
+     * Returns the component detectors.
+     */
+    public List<Detector> getDetectors() {
+       return Collections.unmodifiableList(detectors);
+    }
 }
