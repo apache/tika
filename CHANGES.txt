@@ -27,6 +27,13 @@ Release 1.1 - Current Development
    mimetype detectors that are available, similar to the existing
    "--list-parsers" option for parsers. (TIKA-785).
 
+ * Detectors: The order of detectors, as supplied via the service
+   registry loader, is now controlled. User supplied detectors are
+   prefered, then Tika detectors (such as the container aware ones),
+   and finally the core Tika MimeTypes is used as a backup. This
+   allows for specific, detailed detectors to take preference over
+   the default mime magic + filename detector. (TIKA-786)
+
 Release 1.0 - 11/4/2011
 ---------------------------------
 
