@@ -81,6 +81,10 @@ public class TestContainerAwareDetector extends TestCase {
 //        assertTypeByNameAndData("testEXCEL.xls", "notWord.doc",  "application/vnd.ms-excel");
 //        assertTypeByNameAndData("testWORD.doc",  "notExcel.xls", "application/msword");
 //        assertTypeByNameAndData("testPPT.ppt",   "notWord.doc",  "application/vnd.ms-powerpoint");
+        
+        // With a filename of a totally different type, data will trump filename
+        assertTypeByNameAndData("testEXCEL.xls", "notPDF.pdf",  "application/vnd.ms-excel");
+        assertTypeByNameAndData("testEXCEL.xls", "notPNG.png",  "application/vnd.ms-excel");
     }
 
     public void testOpenContainer() throws Exception {
@@ -201,21 +205,50 @@ public class TestContainerAwareDetector extends TestCase {
 
     public void testTruncatedFiles() throws Exception {
         // First up a truncated OOXML (zip) file
+       
+        // With only the data supplied, the best we can do is the container
         TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
+        Metadata m = new Metadata();
         try {
             assertEquals(
                     MediaType.application("x-tika-ooxml"),
-                    detector.detect(xlsx, new Metadata()));
+                    detector.detect(xlsx, m));
         } finally {
             xlsx.close();
         }
+        
+        // With truncated data + filename, we can use the filename to specialise
+        xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
+        m = new Metadata();
+        m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
+        try {
+            assertEquals(
+                    MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                    detector.detect(xlsx, m));
+        } finally {
+            xlsx.close();
+        }
+        
 
         // Now a truncated OLE2 file 
         TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400);
+        m = new Metadata();
         try {
             assertEquals(
                     MediaType.application("x-tika-msoffice"),
-                    detector.detect(xls, new Metadata()));
+                    detector.detect(xls, m));
+        } finally {
+            xls.close();
+        }
+        
+        // Finally a truncated OLE2 file, with a filename available
+        xls = getTruncatedFile("testEXCEL.xls", 400);
+        m = new Metadata();
+        m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xls");
+        try {
+            assertEquals(
+                    MediaType.application("vnd.ms-excel"),
+                    detector.detect(xls, m));
         } finally {
             xls.close();
         }
