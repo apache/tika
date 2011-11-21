@@ -348,25 +348,25 @@ public class TestMimeTypes extends TestCase {
      *  but we specialise them 
      */
     public void testDITADetection() throws Exception {
-       assertTypeByName("application/dita+topic+xml", "test.dita");
-       assertTypeByName("application/dita+map+xml", "test.ditamap");
-       assertTypeByName("application/dita+val+xml", "test.ditaval");
+       assertTypeByName("application/dita+xml; format=topic", "test.dita");
+       assertTypeByName("application/dita+xml; format=map", "test.ditamap");
+       assertTypeByName("application/dita+xml; format=val", "test.ditaval");
        
-       assertTypeByData("application/dita+topic+xml", "testDITA.dita");
-       assertTypeByData("application/dita+topic+xml", "testDITA2.dita");
-       assertTypeByData("application/dita+map+xml", "testDITA.ditamap");
+       assertTypeByData("application/dita+xml; format=task", "testDITA.dita");
+       assertTypeByData("application/dita+xml; format=concept", "testDITA2.dita");
+       assertTypeByData("application/dita+xml; format=map", "testDITA.ditamap");
        
-       assertTypeByNameAndData("application/dita+topic+xml", "testDITA.dita");
-       assertTypeByNameAndData("application/dita+topic+xml", "testDITA2.dita");
-       assertTypeByNameAndData("application/dita+map+xml", "testDITA.ditamap");
+       assertTypeByNameAndData("application/dita+xml; format=task", "testDITA.dita");
+       assertTypeByNameAndData("application/dita+xml; format=concept", "testDITA2.dita");
+       assertTypeByNameAndData("application/dita+xml; format=map", "testDITA.ditamap");
        
        // These are all children of the official type
+       assertEquals("application/dita+xml", 
+             repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.ditamap")).toString());
        assertEquals("application/dita+xml", 
              repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.dita")).toString());
        assertEquals("application/dita+xml", 
              repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA2.dita")).toString());
-       assertEquals("application/dita+xml", 
-             repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.ditamap")).toString());
     }
 
     /**
