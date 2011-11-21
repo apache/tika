@@ -77,10 +77,9 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByNameAndData("testPPT.ppt", "application/vnd.ms-powerpoint");
         
         // With the wrong filename supplied, data will trump filename
-        // TODO Fix this! (TIKA-786)
-//        assertTypeByNameAndData("testEXCEL.xls", "notWord.doc",  "application/vnd.ms-excel");
-//        assertTypeByNameAndData("testWORD.doc",  "notExcel.xls", "application/msword");
-//        assertTypeByNameAndData("testPPT.ppt",   "notWord.doc",  "application/vnd.ms-powerpoint");
+        assertTypeByNameAndData("testEXCEL.xls", "notWord.doc",  "application/vnd.ms-excel");
+        assertTypeByNameAndData("testWORD.doc",  "notExcel.xls", "application/msword");
+        assertTypeByNameAndData("testPPT.ppt",   "notWord.doc",  "application/vnd.ms-powerpoint");
         
         // With a filename of a totally different type, data will trump filename
         assertTypeByNameAndData("testEXCEL.xls", "notPDF.pdf",  "application/vnd.ms-excel");
@@ -127,10 +126,9 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByNameAndData("testPPT.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
         
         // With the wrong filename supplied, data will trump filename
-        // TODO Fix this! (TIKA-786)
-//        assertTypeByNameAndData("testEXCEL.xlsx", "notWord.docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-//        assertTypeByNameAndData("testWORD.docx",  "notExcel.xlsx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-//        assertTypeByNameAndData("testPPT.pptx",   "notWord.docx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        assertTypeByNameAndData("testEXCEL.xlsx", "notWord.docx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        assertTypeByNameAndData("testWORD.docx",  "notExcel.xlsx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        assertTypeByNameAndData("testPPT.pptx",   "notWord.docx", "application/vnd.openxmlformats-officedocument.presentationml.presentation");
         
         // With an incorrect filename of a different container type, data trumps filename
         assertTypeByNameAndData("testEXCEL.xlsx", "notOldExcel.xls", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
