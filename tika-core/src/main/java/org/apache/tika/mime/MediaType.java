@@ -288,6 +288,11 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
                 union(type.parameters, parameters));
     }
 
+    /**
+     * Returns the base form of the MediaType, excluding
+     *  any parameters, such as "text/plain" for
+     *  "text/plain; charset=utf-8"
+     */
     public MediaType getBaseType() {
         if (parameters.isEmpty()) {
             return this;
@@ -296,10 +301,18 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         }
     }
 
+    /**
+     * Return the Type of the MediaType, such as
+     *  "text" for "text/plain"
+     */
     public String getType() {
         return string.substring(0, slash);
     }
 
+    /**
+     * Return the Sub-Type of the MediaType, 
+     *  such as "plain" for "text/plain"
+     */
     public String getSubtype() {
         return string.substring(slash + 1, semicolon);
     }
