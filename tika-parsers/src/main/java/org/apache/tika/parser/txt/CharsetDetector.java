@@ -94,7 +94,7 @@ public class CharsetDetector {
         return this;
     }
     
-    private static final int kBufSize = 8000;
+    private static final int kBufSize = 12000;
 
     private static final int MAX_CONFIDENCE = 100;
 
