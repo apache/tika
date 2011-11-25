@@ -1327,6 +1327,7 @@
   <mime-type type="application/vnd.ms-project">
     <glob pattern="*.mpp"/>
     <glob pattern="*.mpt"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-tnef">
