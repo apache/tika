@@ -81,6 +81,7 @@ public class OfficeParser extends AbstractParser {
         ENCRYPTED("ole", MediaType.application("x-tika-msoffice")),
         POWERPOINT("ppt", MediaType.application("vnd.ms-powerpoint")),
         PUBLISHER("pub", MediaType.application("x-mspublisher")),
+        PROJECT("mpp", MediaType.application("vnd.ms-project")),
         VISIO("vsd", MediaType.application("vnd.visio")),
         WORKS("wps", MediaType.application("vnd.ms-works")),
         OUTLOOK("msg", MediaType.application("vnd.ms-outlook"));
@@ -119,6 +120,7 @@ public class OfficeParser extends AbstractParser {
             return UNKNOWN;
         }
 
+        // TODO Avoid this duplication with POIFSContainerDetector (TIKA-790)
         private final static Map<String,POIFSDocumentType> typeMap = new HashMap<String,POIFSDocumentType>();
         static {
             typeMap.put("Workbook", WORKBOOK);
@@ -129,6 +131,9 @@ public class OfficeParser extends AbstractParser {
             typeMap.put("VisioDocument", VISIO);
             typeMap.put("CONTENTS", WORKS);
             typeMap.put("\u0001Ole10Native", POIFSDocumentType.OLE10_NATIVE);
+            typeMap.put("Props", PROJECT);  // Project 8
+            typeMap.put("Props9", PROJECT); // Project 9, 10, 11
+            typeMap.put("Props12", PROJECT); // Project 12+
         }
 
         public static POIFSDocumentType detectType(Entry entry) {
@@ -209,6 +214,9 @@ public class OfficeParser extends AbstractParser {
                 case WORKBOOK:
                     Locale locale = context.get(Locale.class, Locale.getDefault());
                     new ExcelExtractor(context).parse(root, xhtml, locale);
+                    break;
+                case PROJECT:
+                    // We currently can't do anything beyond the metadata
                     break;
                 case VISIO:
                     VisioTextExtractor visioTextExtractor =
