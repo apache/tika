@@ -68,7 +68,9 @@ public class OfficeParser extends AbstractParser {
                     POIFSDocumentType.ENCRYPTED.type,
                     POIFSDocumentType.POWERPOINT.type,
                     POIFSDocumentType.PUBLISHER.type,
+                    POIFSDocumentType.PROJECT.type,
                     POIFSDocumentType.VISIO.type,
+                    // Works isn't supported
                     POIFSDocumentType.OUTLOOK.type,
                     MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12")
                     )));
