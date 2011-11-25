@@ -72,9 +72,8 @@ public class POIFSContainerDetector implements Detector {
     /** Microsoft Project */
     public static final MediaType MPP = application("vnd.ms-project");
 
-    /** Regexp for matching the MPP Project Properties stream */
+    /** Regexp for matching the MPP Project Data stream */
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
-    private static final Pattern mppPropsMatch = Pattern.compile("Props\\d+");
     
     public MediaType detect(InputStream input, Metadata metadata)
              throws IOException {
@@ -142,16 +141,13 @@ public class POIFSContainerDetector implements Detector {
                //  of embedded non-office file inside an OLE2 document
                // This is most commonly triggered on nested directories
                return OLE;
-            } else if (names.contains("\u0001CompObj")) {
+            } else if (names.contains("\u0001CompObj") &&
+                  (names.contains("Props") || names.contains("Props9") || names.contains("Props12"))) {
                // Could be Project, look for common name patterns
-               boolean matchedProps = false;
-               boolean matchedData = false;
                for (String name : names) {
-                  if (mppDataMatch.matcher(name).matches()) matchedData = true;
-                  if (mppPropsMatch.matcher(name).matches()) matchedProps = true;
-               }
-               if (matchedProps && matchedData) {
-                  return MPP;
+                  if (mppDataMatch.matcher(name).matches()) {
+                     return MPP;
+                  }
                }
             } else if (names.contains("\u0001Ole10Native")) {
                 return OLE;
