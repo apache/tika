@@ -63,10 +63,17 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testEXCEL.xls", "application/vnd.ms-excel");
         assertTypeByData("testWORD.doc", "application/msword");
         assertTypeByData("testPPT.ppt", "application/vnd.ms-powerpoint");
-
-        // Try some ones that POI doesn't handle, that are still OLE2 based
+        
+        assertTypeByData("test-outlook.msg", "application/vnd.ms-outlook");
+        assertTypeByData("test-outlook2003.msg", "application/vnd.ms-outlook");
+        assertTypeByData("testVISIO.vsd", "application/vnd.visio");
+        assertTypeByData("testPUBLISHER.pub", "application/x-mspublisher");
         assertTypeByData("testWORKS.wps", "application/vnd.ms-works");
         assertTypeByData("testWORKS2000.wps", "application/vnd.ms-works");
+        assertTypeByData("testPROJECT2003.mpp", "application/vnd.ms-project");
+        assertTypeByData("testPROJECT2007.mpp", "application/vnd.ms-project");
+
+        // Try some ones that POI doesn't handle, that are still OLE2 based
         assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
         assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro");
         assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro");
