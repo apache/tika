@@ -250,6 +250,26 @@ public class PDFParserTest extends TikaTest {
         content = content.replaceAll("[\\s\u00a0]+"," ");
         assertContains("Here is some text", content);
         assertEquals(-1, content.indexOf("Here is a comment"));
+
+        // TIKA-738: make sure no extra </p> tags
+        String xml = getXML("testAnnotations.pdf").xml;
+        assertEquals(substringCount("<p>", xml),
+                     substringCount("</p>", xml));
+    }
+
+    private static int substringCount(String needle, String haystack) {
+        int upto = -1;
+        int count = 0;
+        while(true) {
+            final int next = haystack.indexOf(needle, upto);
+            if (next == -1) {
+                break;
+            }
+            count++;
+            upto = next+1;
+        }
+
+        return count;
     }
 
     public void testPageNumber() throws Exception {
