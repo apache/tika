@@ -126,20 +126,19 @@ class PDF2XHTML extends PDFTextStripper {
     protected void startPage(PDPage page) throws IOException {
         try {
             handler.startElement("div", "class", "page");
-            handler.startElement("p");
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to start a page", e);
         }
+        writeParagraphStart();
     }
 
     @Override
     protected void endPage(PDPage page) throws IOException {
 
         try {
+            writeParagraphEnd();
             // TODO: remove once PDFBOX-1143 is fixed:
-            handler.endElement("p");
             if (extractAnnotationText) {
-                boolean foundTextAnnots = false;
                 for(Object o : page.getAnnotations()) {
                     if ((o instanceof PDAnnotation) && PDAnnotationMarkup.SUB_TYPE_FREETEXT.equals(((PDAnnotation) o).getSubtype())) {
                         // It's a text annotation:
@@ -149,11 +148,6 @@ class PDF2XHTML extends PDFTextStripper {
                         String contents = annot.getContents();
                         // TODO: maybe also annot.getRichContents()?
                         if (title != null || subject != null || contents != null) {
-                            if (!foundTextAnnots) {
-                                handler.endElement("p");
-                                foundTextAnnots = true;
-                            }
-
                             handler.startElement("div", "class", "annotation");
 
                             if (title != null) {

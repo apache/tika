@@ -13,7 +13,10 @@ Release 1.1 - Current Development
    non-duplicated characters were incorrectly removed (TIKA-767).
    Allow controlling whether text tokens should be sorted by their x/y
    position before extracting text (TIKA-612); this is necessary for
-   certain PDFs.
+   certain PDFs.  Fixed cases where too many </p> tags appear in the
+   XHTML output, causing NPE when opening some PDFs with the GUI
+   (TIKA-778).
+
 
  * RTF: Fixed case where a font change would result in processing
    bytes in the wrong font's charset, producing bogus text output
