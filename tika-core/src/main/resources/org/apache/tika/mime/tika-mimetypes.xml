@@ -2313,6 +2313,9 @@
 
   <mime-type type="application/x-debian-package">
     <sub-class-of type="application/x-archive"/>
+    <magic priority="60">
+      <match value="!&lt;arch&gt;\ndebian-binary" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.deb"/>
     <glob pattern="*.udeb"/>
   </mime-type>
