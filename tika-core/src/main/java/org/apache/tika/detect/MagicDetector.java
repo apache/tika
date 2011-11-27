@@ -126,6 +126,12 @@ public class MagicDetector implements Detector {
                     decoded.write(Integer.parseInt(
                             value.substring(i + 2, i + 4), 16));
                     i += 3;
+                } else if (value.charAt(i + 1) == 'r') {
+                    decoded.write((int)'\r');
+                    i++;
+                } else if (value.charAt(i + 1) == 'n') {
+                   decoded.write((int)'\n');
+                   i++;
                 } else {
                     int j = i + 1;
                     while ((j < i + 4) && (j < value.length())

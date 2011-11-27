@@ -204,9 +204,11 @@ public class TestMimeTypes extends TestCase {
        assertTypeByName("application/x-gzip", "test.tgz"); // See GZIP, not tar contents of it
        assertTypeByName("application/x-cpio", "test.cpio");
        
+       // TODO Add an example .deb and .udeb, then check these
+       
        // Check the mime magic patterns for them work too
-//       assertTypeByData("application/x-archive", "testARofText.ar"); // TODO TIKA-697
-//       assertTypeByData("application/x-archive", "testARofSND.ar");  // TODO TIKA-697 
+       assertTypeByData("application/x-archive", "testARofText.ar"); // TODO TIKA-697
+       assertTypeByData("application/x-archive", "testARofSND.ar");  // TODO TIKA-697 
        assertTypeByData("application/zip",    "test-documents.zip");
        assertTypeByData("application/x-gtar",  "test-documents.tar"); // GNU TAR
        assertTypeByData("application/x-gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
