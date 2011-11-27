@@ -196,6 +196,22 @@ public class TestMimeTypes extends TestCase {
        assertTypeByNameAndData("application/vnd.apple.numbers", "testNumbers.numbers");
        assertTypeByNameAndData("application/vnd.apple.pages", "testPages.pages");
     }
+    
+    public void testArchiveDetection() throws Exception {
+       assertTypeByName("application/x-archive", "test.ar");
+       assertTypeByName("application/zip",    "test.zip");
+       assertTypeByName("application/x-tar",  "test.tar");
+       assertTypeByName("application/x-gzip", "test.tgz"); // See GZIP, not tar contents of it
+       assertTypeByName("application/x-cpio", "test.cpio");
+       
+       // Check the mime magic patterns for them work too
+//       assertTypeByData("application/x-archive", "testARofText.ar"); // TODO TIKA-697
+//       assertTypeByData("application/x-archive", "testARofSND.ar");  // TODO TIKA-697 
+       assertTypeByData("application/zip",    "test-documents.zip");
+       assertTypeByData("application/x-gtar",  "test-documents.tar"); // GNU TAR
+       assertTypeByData("application/x-gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
+//       assertTypeByData("application/x-cpio", "test-documents.cpio"); // TODO Magic isn't correct?
+    }
 
     public void testJpegDetection() throws Exception {
         assertType("image/jpeg", "testJPEG.jpg");
