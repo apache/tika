@@ -80,7 +80,7 @@ public class OfficeParser extends AbstractParser {
         OLE10_NATIVE("ole", MediaType.application("x-tika-msoffice")),
         WORDDOCUMENT("doc", MediaType.application("msword")),
         UNKNOWN("unknown", MediaType.application("x-tika-msoffice")),
-        ENCRYPTED("ole", MediaType.application("x-tika-msoffice")),
+        ENCRYPTED("ole", MediaType.application("x-tika-ooxml-protected")),
         POWERPOINT("ppt", MediaType.application("vnd.ms-powerpoint")),
         PUBLISHER("pub", MediaType.application("x-mspublisher")),
         PROJECT("mpp", MediaType.application("vnd.ms-project")),
@@ -242,10 +242,13 @@ public class OfficeParser extends AbstractParser {
                     Decryptor d = Decryptor.getInstance(info);
 
                     try {
+                        // TODO Allow the user to specify the password via the ParseContext
                         if (!d.verifyPassword(Decryptor.DEFAULT_PASSWORD)) {
                             throw new EncryptedDocumentException();
                         }
 
+                        // Decrypt the OLE2 stream, and delegate the resulting OOXML
+                        //  file to the regular OOXML parser for normal handling
                         OOXMLParser parser = new OOXMLParser();
 
                         parser.parse(d.getDataStream(root), new EmbeddedContentHandler(

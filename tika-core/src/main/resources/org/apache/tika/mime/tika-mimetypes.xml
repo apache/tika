@@ -2774,6 +2774,13 @@
     </magic>
   </mime-type>
 
+  <!-- Note - password protected OOXML files are actually stored in -->
+  <!--  an OLE2 (application/x-tika-msoffice) container -->
+  <mime-type type="application/x-tika-ooxml-protected">
+    <sub-class-of type="application/x-tika-ooxml"/>
+    <_comment>Password Protected OOXML File</_comment>
+  </mime-type>
+
   <mime-type type="application/x-ustar">
     <glob pattern="*.ustar"/>
   </mime-type>

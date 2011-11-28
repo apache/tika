@@ -140,6 +140,47 @@ public class TestContainerAwareDetector extends TestCase {
         // With an incorrect filename of a different container type, data trumps filename
         assertTypeByNameAndData("testEXCEL.xlsx", "notOldExcel.xls", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
+    
+    /**
+     * Password Protected OLE2 files are fairly straightforward to detect, as they
+     *  have the same structure as regular OLE2 files. (Core streams may be encrypted
+     *  however)
+     */
+    public void testDetectProtectedOLE2() throws Exception {
+        assertTypeByData("testEXCEL_protected_passtika.xls", "application/vnd.ms-excel");
+        assertTypeByData("testWORD_protected_passtika.doc", "application/msword");
+        assertTypeByData("testPPT_protected_passtika.ppt", "application/vnd.ms-powerpoint");
+        assertTypeByNameAndData("testEXCEL_protected_passtika.xls", "application/vnd.ms-excel");
+        assertTypeByNameAndData("testWORD_protected_passtika.doc", "application/msword");
+        assertTypeByNameAndData("testPPT_protected_passtika.ppt", "application/vnd.ms-powerpoint");
+    }
+
+    /**
+     * Password Protected OOXML files are much more tricky beasts to work with.
+     * They have a very different structure to regular OOXML files, and instead
+     *  of being ZIP based they are actually an OLE2 file which contains the
+     *  OOXML structure within an encrypted stream.
+     * This makes detecting them much harder...
+     */
+    public void testDetectProtectedOOXML() throws Exception {
+        // Encrypted Microsoft Office OOXML files have OLE magic but
+        //  special streams, so we can tell they're Protected OOXML
+        assertTypeByData("testEXCEL_protected_passtika.xlsx", 
+                "application/x-tika-ooxml-protected");
+        assertTypeByData("testWORD_protected_passtika.docx", 
+                "application/x-tika-ooxml-protected");
+        assertTypeByData("testPPT_protected_passtika.pptx", 
+                "application/x-tika-ooxml-protected");
+        
+        // At the moment, we can't use the name to specialise
+        // See discussions on TIKA-790 for details
+        assertTypeByNameAndData("testEXCEL_protected_passtika.xlsx", 
+                "application/x-tika-ooxml-protected");
+        assertTypeByNameAndData("testWORD_protected_passtika.docx", 
+                "application/x-tika-ooxml-protected");
+        assertTypeByNameAndData("testPPT_protected_passtika.pptx", 
+                "application/x-tika-ooxml-protected");
+    }
 
     /**
      * Check that temporary files created by Tika are removed after
