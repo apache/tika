@@ -47,6 +47,9 @@ public class POIFSContainerDetector implements Detector {
 
     /** The OLE base file format */
     public static final MediaType OLE = application("x-tika-msoffice");
+    
+    /** The protected OOXML base file format */
+    public static final MediaType OOXML_PROTECTED = application("x-tika-ooxml-protected");
 
     /** Microsoft Excel */
     public static final MediaType XLS = application("vnd.ms-excel");
@@ -120,6 +123,15 @@ public class POIFSContainerDetector implements Detector {
         if (names != null) {
             if (names.contains("Workbook")) {
                 return XLS;
+            } else if (names.contains("EncryptedPackage") && 
+                    names.contains("EncryptionInfo") &&
+                    names.contains("\u0006DataSpaces")) {
+                // This is a protected OOXML document, which is an OLE2 file
+                //  with an Encrypted Stream which holds the OOXML data
+                // Without decrypting the stream, we can't tell what kind of
+                //  OOXML file we have. Return a general OOXML Protected type,
+                //  and hope the name based detection can guess the rest! 
+                return OOXML_PROTECTED;
             } else if (names.contains("EncryptedPackage")) {
                 return OLE;
             } else if (names.contains("WordDocument")) {
