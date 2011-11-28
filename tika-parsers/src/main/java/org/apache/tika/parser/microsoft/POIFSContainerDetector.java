@@ -50,6 +50,9 @@ public class POIFSContainerDetector implements Detector {
     
     /** The protected OOXML base file format */
     public static final MediaType OOXML_PROTECTED = application("x-tika-ooxml-protected");
+    
+    /** An OLE10 Native embedded document within another OLE2 document */
+    public static final MediaType OLE10_NATIVE = application("x-tika-msoffice-embedded");
 
     /** Microsoft Excel */
     public static final MediaType XLS = application("vnd.ms-excel");
@@ -119,7 +122,16 @@ public class POIFSContainerDetector implements Detector {
             // Look for known top level entry names to detect the document type
             names = getTopLevelNames(tis);
         }
-
+        
+        // Detect based on the names (as available)
+        return detect(names);
+    }
+    
+    /**
+     * Internal detection of the specific kind of OLE2 document, based on the 
+     *  names of the top level streams within the file.
+     */
+    protected static MediaType detect(Set<String> names) {
         if (names != null) {
             if (names.contains("Workbook")) {
                 return XLS;
@@ -142,6 +154,8 @@ public class POIFSContainerDetector implements Detector {
                 return PPT;
             } else if (names.contains("VisioDocument")) {
                 return VSD;
+            } else if (names.contains("\u0001Ole10Native")) {
+                return OLE10_NATIVE;
             } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
                // Newer Works files
                return WPS;
@@ -161,8 +175,6 @@ public class POIFSContainerDetector implements Detector {
                      return MPP;
                   }
                }
-            } else if (names.contains("\u0001Ole10Native")) {
-                return OLE;
             } else if (names.contains("PerfectOffice_MAIN")) {
                 if (names.contains("SlideShow")) {
                     return MediaType.application("x-corelpresentations"); // .shw
