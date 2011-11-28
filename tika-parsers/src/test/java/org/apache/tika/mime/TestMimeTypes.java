@@ -207,12 +207,12 @@ public class TestMimeTypes extends TestCase {
        // TODO Add an example .deb and .udeb, then check these
        
        // Check the mime magic patterns for them work too
-       assertTypeByData("application/x-archive", "testARofText.ar"); // TODO TIKA-697
-       assertTypeByData("application/x-archive", "testARofSND.ar");  // TODO TIKA-697 
+       assertTypeByData("application/x-archive", "testARofText.ar");
+       assertTypeByData("application/x-archive", "testARofSND.ar"); 
        assertTypeByData("application/zip",    "test-documents.zip");
        assertTypeByData("application/x-gtar",  "test-documents.tar"); // GNU TAR
        assertTypeByData("application/x-gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
-//       assertTypeByData("application/x-cpio", "test-documents.cpio"); // TODO Magic isn't correct?
+       assertTypeByData("application/x-cpio", "test-documents.cpio");
     }
 
     public void testJpegDetection() throws Exception {

@@ -83,7 +83,7 @@ public class MagicDetector implements Detector {
             decoded = tmpVal.getBytes();
         } else if (type.equals("host16") || type.equals("little16")) {
             int i = Integer.parseInt(tmpVal, radix);
-            decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
+            decoded = new byte[] { (byte) (i & 0x00FF), (byte) (i >> 8) };
         } else if (type.equals("big16")) {
             int i = Integer.parseInt(tmpVal, radix);
             decoded = new byte[] { (byte) (i >> 8), (byte) (i & 0x00FF) };
