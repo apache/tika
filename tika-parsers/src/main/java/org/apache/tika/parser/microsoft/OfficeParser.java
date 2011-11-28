@@ -21,10 +21,8 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
@@ -77,7 +75,7 @@ public class OfficeParser extends AbstractParser {
 
     public enum POIFSDocumentType {
         WORKBOOK("xls", MediaType.application("vnd.ms-excel")),
-        OLE10_NATIVE("ole", MediaType.application("x-tika-msoffice")),
+        OLE10_NATIVE("ole", MediaType.application("x-tika-msoffice-embedded")),
         WORDDOCUMENT("doc", MediaType.application("msword")),
         UNKNOWN("unknown", MediaType.application("x-tika-msoffice")),
         ENCRYPTED("ole", MediaType.application("x-tika-ooxml-protected")),
@@ -113,39 +111,15 @@ public class OfficeParser extends AbstractParser {
        }
 
         public static POIFSDocumentType detectType(DirectoryEntry node) {
+            Set<String> names = new HashSet<String>();
             for (Entry entry : node) {
-                POIFSDocumentType type = detectType(entry);
-                if (type!=UNKNOWN) {
-                    return type;
-                }
+                names.add(entry.getName());
             }
-            return UNKNOWN;
-        }
-
-        // TODO Avoid this duplication with POIFSContainerDetector (TIKA-790)
-        private final static Map<String,POIFSDocumentType> typeMap = new HashMap<String,POIFSDocumentType>();
-        static {
-            typeMap.put("Workbook", WORKBOOK);
-            typeMap.put("EncryptedPackage", ENCRYPTED);
-            typeMap.put("WordDocument", WORDDOCUMENT);
-            typeMap.put("Quill", PUBLISHER);
-            typeMap.put("PowerPoint Document", POWERPOINT);
-            typeMap.put("VisioDocument", VISIO);
-            typeMap.put("CONTENTS", WORKS);
-            typeMap.put("\u0001Ole10Native", POIFSDocumentType.OLE10_NATIVE);
-            typeMap.put("Props", PROJECT);  // Project 8
-            typeMap.put("Props9", PROJECT); // Project 9, 10, 11
-            typeMap.put("Props12", PROJECT); // Project 12+
-        }
-
-        public static POIFSDocumentType detectType(Entry entry) {
-            String name = entry.getName();
-            POIFSDocumentType type = typeMap.get(name);
-            if (type != null) {
-                return type;
-            }
-            if (entry.getName().startsWith("__substg1.0_")) {
-                return OUTLOOK;
+            MediaType type = POIFSContainerDetector.detect(names);
+            for (POIFSDocumentType poifsType : values()) {
+               if (type.equals(poifsType.type)) {
+                  return poifsType;
+               }
             }
             return UNKNOWN;
         }
@@ -193,71 +167,64 @@ public class OfficeParser extends AbstractParser {
         new SummaryExtractor(metadata).parseSummaries(root);
 
         // Parse remaining document entries
-        boolean outlookExtracted = false;
-        for (Entry entry : root) {
-            POIFSDocumentType type = POIFSDocumentType.detectType(entry);
+        POIFSDocumentType type = POIFSDocumentType.detectType(root);
 
-            if (type!=POIFSDocumentType.UNKNOWN) {
-                setType(metadata, type.getType());
-            }
+        if (type!=POIFSDocumentType.UNKNOWN) {
+            setType(metadata, type.getType());
+        }
 
-            switch (type) {
-                case PUBLISHER:
-                    PublisherTextExtractor publisherTextExtractor =
-                        new PublisherTextExtractor(root);
-                    xhtml.element("p", publisherTextExtractor.getText());
-                    break;
-                case WORDDOCUMENT:
-                    new WordExtractor(context).parse(root, xhtml);
-                    break;
-                case POWERPOINT:
-                    new HSLFExtractor(context).parse(root, xhtml);
-                    break;
-                case WORKBOOK:
-                    Locale locale = context.get(Locale.class, Locale.getDefault());
-                    new ExcelExtractor(context).parse(root, xhtml, locale);
-                    break;
-                case PROJECT:
-                    // We currently can't do anything beyond the metadata
-                    break;
-                case VISIO:
-                    VisioTextExtractor visioTextExtractor =
-                        new VisioTextExtractor(root);
-                    for (String text : visioTextExtractor.getAllText()) {
-                        xhtml.element("p", text);
-                    }
-                    break;
-                case OUTLOOK:
-                    if (!outlookExtracted) {
-                        outlookExtracted = true;
+        switch (type) {
+        case PUBLISHER:
+           PublisherTextExtractor publisherTextExtractor =
+              new PublisherTextExtractor(root);
+           xhtml.element("p", publisherTextExtractor.getText());
+           break;
+        case WORDDOCUMENT:
+           new WordExtractor(context).parse(root, xhtml);
+           break;
+        case POWERPOINT:
+           new HSLFExtractor(context).parse(root, xhtml);
+           break;
+        case WORKBOOK:
+           Locale locale = context.get(Locale.class, Locale.getDefault());
+           new ExcelExtractor(context).parse(root, xhtml, locale);
+           break;
+        case PROJECT:
+           // We currently can't do anything beyond the metadata
+           break;
+        case VISIO:
+           VisioTextExtractor visioTextExtractor =
+              new VisioTextExtractor(root);
+           for (String text : visioTextExtractor.getAllText()) {
+              xhtml.element("p", text);
+           }
+           break;
+        case OUTLOOK:
+           OutlookExtractor extractor =
+                 new OutlookExtractor(root, context);
 
-                        OutlookExtractor extractor =
-                            new OutlookExtractor(root, context);
+           extractor.parse(xhtml, metadata);
+           break;
+        case ENCRYPTED:
+           EncryptionInfo info = new EncryptionInfo(root);
+           Decryptor d = Decryptor.getInstance(info);
 
-                        extractor.parse(xhtml, metadata);
-                    }
-                    break;
-                case ENCRYPTED:
-                    EncryptionInfo info = new EncryptionInfo(root);
-                    Decryptor d = Decryptor.getInstance(info);
+           try {
+              // TODO Allow the user to specify the password via the ParseContext
+              if (!d.verifyPassword(Decryptor.DEFAULT_PASSWORD)) {
+                 throw new EncryptedDocumentException();
+              }
 
-                    try {
-                        // TODO Allow the user to specify the password via the ParseContext
-                        if (!d.verifyPassword(Decryptor.DEFAULT_PASSWORD)) {
-                            throw new EncryptedDocumentException();
-                        }
+              // Decrypt the OLE2 stream, and delegate the resulting OOXML
+              //  file to the regular OOXML parser for normal handling
+              OOXMLParser parser = new OOXMLParser();
 
-                        // Decrypt the OLE2 stream, and delegate the resulting OOXML
-                        //  file to the regular OOXML parser for normal handling
-                        OOXMLParser parser = new OOXMLParser();
-
-                        parser.parse(d.getDataStream(root), new EmbeddedContentHandler(
-                                        new BodyContentHandler(xhtml)),
-                                        metadata, context);
-                    } catch (GeneralSecurityException ex) {
-                        throw new EncryptedDocumentException(ex);
-                    }
-            }
+              parser.parse(d.getDataStream(root), new EmbeddedContentHandler(
+                    new BodyContentHandler(xhtml)),
+                    metadata, context);
+           } catch (GeneralSecurityException ex) {
+              throw new EncryptedDocumentException(ex);
+           }
         }
     }
 

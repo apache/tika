@@ -2761,6 +2761,11 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-tika-msoffice-embedded">
+    <sub-class-of type="application/x-tika-msoffice"/>
+    <_comment>OLE10 Native Embedded Document</_comment>
+  </mime-type>
+
   <!-- =================================================================== -->
   <!-- Office Open XML file formats                                        -->
   <!-- http://www.ecma-international.org/publications/standards/Ecma-376.htm -->
