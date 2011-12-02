@@ -162,5 +162,12 @@ public class MimeTypesReaderTest extends TestCase {
           fail(e.getMessage());
        }
     }
+    
+    public void testGetExtensionForPowerPoint() throws Exception {
+        MimeType mt = this.mimeTypes.forName("application/vnd.ms-powerpoint");
+        String ext = mt.getExtension();
+        assertEquals(".ppt",ext);
+        assertEquals(".ppt",mt.getExtensions().get(0));
+    }
 
 }

@@ -1288,8 +1288,8 @@
          <match value="P\x00o\x00w\x00e\x00r\x00P\x00o\x00i\x00n\x00t\x00 D\x00o\x00c\x00u\x00m\x00e\x00n\x00t" type="string" offset="1152:4096" />
       </match>
     </magic>
-    <glob pattern="*.ppz"/>
     <glob pattern="*.ppt"/>
+    <glob pattern="*.ppz"/>
     <glob pattern="*.pps"/>
     <glob pattern="*.pot"/>
     <glob pattern="*.ppa"/>
