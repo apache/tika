@@ -202,8 +202,7 @@ public class WordParserTest extends TikaTest {
         assertContains("This is a footnote.", content);
         assertContains("This is the header text.", content);
         assertContains("This is the footer text.", content);
-        // TODO: WordExtractor misses this
-        //assertContains("Here is a text box", content);
+        assertContains("Here is a text box", content);
         assertContains("Bold", content);
         assertContains("italic", content);
         assertContains("underline", content);

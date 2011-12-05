@@ -98,7 +98,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
 
         // Do everything else
-        for (String paragraph : wordExtractor.getFootnoteText()) {
+        for (String paragraph: wordExtractor.getMainTextboxText()) {
+            xhtml.element("p", paragraph);
+        }
+
+	for (String paragraph : wordExtractor.getFootnoteText()) {
             xhtml.element("p", paragraph);
         }
 
