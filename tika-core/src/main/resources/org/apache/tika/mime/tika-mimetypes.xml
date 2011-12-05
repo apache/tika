@@ -2365,6 +2365,15 @@
     <glob pattern="*.elc"/>
   </mime-type>
 
+  <mime-type type="application/x-emf">
+    <acronym>EMF</acronym>
+    <_comment>Extended Metafile</_comment>
+    <glob pattern="*.emf"/>
+    <magic priority="50">
+      <match value="0x01000000" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-font-bdf">
     <glob pattern="*.bdf"/>
   </mime-type>
@@ -2593,12 +2602,14 @@
     <glob pattern="*.m14"/>
   </mime-type>
   <mime-type type="application/x-msmetafile">
-    <alias type="image/x-emf"/>
     <alias type="image/x-wmf"/>
     <acronym>WMF</acronym>
     <_comment>Windows Metafile</_comment>
     <glob pattern="*.wmf"/>
-    <glob pattern="*.emf"/>
+    <magic priority="50">
+      <match value="0xd7cdc69a0000" type="string" offset="0"/>
+      <match value="0x010009000003" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/x-msmoney">
     <glob pattern="*.mny"/>
