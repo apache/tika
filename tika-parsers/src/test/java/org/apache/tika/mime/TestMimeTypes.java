@@ -328,16 +328,17 @@ public class TestMimeTypes extends TestCase {
    }
 
     public void testWmfDetection() throws Exception {
-        // TODO: Need a test wmf file
         assertTypeByName("application/x-msmetafile", "x.wmf");
+        assertTypeByData("application/x-msmetafile", "testWMF.wmf");
         assertTypeByName("application/x-msmetafile", "x.WMF");
-        // TODO: Need a test emf file
-        assertTypeByName("application/x-msmetafile", "x.emf");
-        assertTypeByName("application/x-msmetafile", "x.EMF");
+
+        assertTypeByName("application/x-emf", "x.emf");
+        assertTypeByData("application/x-emf","testEMF.emf");
+        assertTypeByName("application/x-emf", "x.EMF");
         // TODO: Need a test wmz file
         assertTypeByName("application/x-ms-wmz", "x.wmz");
         assertTypeByName("application/x-ms-wmz", "x.WMZ");
-        // TODO: Need a test emf file
+        // TODO: Need a test emz file
         assertTypeByName("application/x-gzip", "x.emz");
         assertTypeByName("application/x-gzip", "x.EMZ");
     }
