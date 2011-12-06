@@ -33,6 +33,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -164,7 +165,10 @@ class PackageExtractor {
                             entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
                         }
                         if (extractor.shouldParseEmbedded(entrydata)) {
-                            extractor.parseEmbedded(archive, xhtml, entrydata, true);
+                            // For detectors to work, we need a mark/reset supporting
+                            //  InputStream, which ArchiveInputStream isn't, so wrap
+                            TikaInputStream stream = TikaInputStream.get(archive);
+                            extractor.parseEmbedded(stream, xhtml, entrydata, true);
                         }
                     } else if (name != null && name.length() > 0) {
                         xhtml.element("p", name);
