@@ -414,6 +414,7 @@ public class TikaCLI {
         out.println();
         out.println("    -g  or --gui           Start the Apache Tika GUI");
         out.println("    -s  or --server        Start the Apache Tika server");
+        out.println("    -f  or --fork          Use Fork Mode for out-of-process extraction");
         out.println();
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");
