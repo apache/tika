@@ -170,7 +170,34 @@ public class OutlookParserTest extends TestCase {
         
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
-        //assertEquals(2, content.split("<\\/body>").length); // TODO Fix
+        assertEquals(2, content.split("<\\/body>").length);
+    }
+
+    public void testOutlookForwarded() throws Exception {
+        Parser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+       
+        // Check the HTML version
+        StringWriter sw = new StringWriter();
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                 SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+        handler.setResult(new StreamResult(sw));
+
+        InputStream stream = OutlookParserTest.class.getResourceAsStream(
+               "/test-documents/testMSG_forwarded.msg");
+        try {
+           parser.parse(stream, handler, metadata, new ParseContext());
+        } finally {
+           stream.close();
+        }
+         
+        // Make sure we don't have nested docs
+        String content = sw.toString();
+        assertEquals(2, content.split("<body>").length);
+        assertEquals(2, content.split("<\\/body>").length);
     }
     
     public void testOutlookHTMLfromRTF() throws Exception {
