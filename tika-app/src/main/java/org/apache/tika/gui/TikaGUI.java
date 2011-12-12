@@ -575,7 +575,13 @@ public class TikaGUI extends JFrame
       }
       
       public File requestSave(String embeddedName) throws IOException {
-         String suffix = embeddedName.substring(embeddedName.lastIndexOf('.'));
+         String suffix = ".tika";
+         
+         int splitAt = embeddedName.lastIndexOf('.');
+         if (splitAt > 0) {
+            embeddedName.substring(splitAt);
+         }
+         
          File tmp = File.createTempFile("tika-embedded-", suffix);
          wanted.put(embeddedName, tmp);
          return tmp;
