@@ -182,6 +182,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            }
            
            boolean doneBody = false;
+           xhtml.startElement("div", "class", "message-body");
            if(htmlChunk != null) {
               byte[] data = null;
               if(htmlChunk instanceof ByteChunk) {
@@ -215,6 +216,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            if(textChunk != null && !doneBody) {
               xhtml.element("p", ((StringChunk)textChunk).getValue());
            }
+           xhtml.endElement("div");
            
            // Process the attachments
            for (AttachmentChunks attachment : msg.getAttachmentFiles()) {
@@ -245,7 +247,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                }
 
                xhtml.endElement("div");
-               
            }
         } catch(ChunkNotFoundException e) {
            throw new TikaException("POI MAPIMessage broken - didn't return null on missing chunk", e);
