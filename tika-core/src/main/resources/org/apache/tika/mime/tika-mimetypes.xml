@@ -2256,6 +2256,17 @@
     </magic>
     <glob pattern="*.torrent"/>
   </mime-type>
+  
+  <mime-type type="application/x-bplist">
+    <!-- The priority is 60, as .webarchive files often contain 
+         (X)HTML content. The bplist magic must trump the XHTML 
+         magics further within the file. This must also be 
+         independent of the internal ordering of patterns within 
+         MimeTypes -->
+    <magic priority="60">
+      <match value="bplist" type="string" offset="0"/>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/x-bzip">
     <magic priority="40">
@@ -2813,6 +2824,10 @@
   </mime-type>
   <mime-type type="application/x-wais-source">
     <glob pattern="*.src"/>
+  </mime-type>
+  <mime-type type="application/x-webarchive">
+    <sub-class-of type="application/x-bplist"/>
+    <glob pattern="*.webarchive"/>
   </mime-type>
   <mime-type type="application/x-x509-ca-cert">
     <glob pattern="*.der"/>
