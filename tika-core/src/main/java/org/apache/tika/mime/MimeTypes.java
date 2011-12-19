@@ -210,7 +210,7 @@ public final class MimeTypes implements Detector, Serializable {
 
         // Finally, assume plain text if no control bytes are found
         try {
-            TextDetector detector = new TextDetector();
+            TextDetector detector = new TextDetector(getMinLength());
             ByteArrayInputStream stream = new ByteArrayInputStream(data);
             return forName(detector.detect(stream, new Metadata()).toString());
         } catch (Exception e) {
