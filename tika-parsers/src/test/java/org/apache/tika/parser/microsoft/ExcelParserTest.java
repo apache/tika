@@ -192,5 +192,22 @@ public class ExcelParserTest extends TestCase {
             input.close();
         }
     }
+    
+    public void testWorksSpreadsheet70() throws Exception {
+        InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testWORKSSpreadsheet7.0.xlr");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler(-1);
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            new OfficeParser().parse(input, handler, metadata, context);
+
+            String content = handler.toString();
+            assertTrue(content.contains("Microsoft Works"));
+        } finally {
+            input.close();
+        }
+    }
 
 }
