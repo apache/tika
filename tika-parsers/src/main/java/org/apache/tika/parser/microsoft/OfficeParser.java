@@ -69,6 +69,7 @@ public class OfficeParser extends AbstractParser {
                     POIFSDocumentType.PROJECT.type,
                     POIFSDocumentType.VISIO.type,
                     // Works isn't supported
+                    POIFSDocumentType.XLR.type, // but Works 7.0 Spreadsheet is
                     POIFSDocumentType.OUTLOOK.type,
                     MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12")
                     )));
@@ -84,6 +85,7 @@ public class OfficeParser extends AbstractParser {
         PROJECT("mpp", MediaType.application("vnd.ms-project")),
         VISIO("vsd", MediaType.application("vnd.visio")),
         WORKS("wps", MediaType.application("vnd.ms-works")),
+        XLR("xlr", MediaType.application("x-tika-msworks-spreadsheet")),
         OUTLOOK("msg", MediaType.application("vnd.ms-outlook"));
 
         private final String extension;
@@ -186,6 +188,7 @@ public class OfficeParser extends AbstractParser {
            new HSLFExtractor(context).parse(root, xhtml);
            break;
         case WORKBOOK:
+        case XLR:
            Locale locale = context.get(Locale.class, Locale.getDefault());
            new ExcelExtractor(context).parse(root, xhtml, locale);
            break;

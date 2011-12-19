@@ -71,6 +71,9 @@ public class POIFSContainerDetector implements Detector {
 
     /** Microsoft Works */
     public static final MediaType WPS = application("vnd.ms-works");
+    
+    /** Microsoft Works Spreadsheet 7.0 */
+    public static final MediaType XLR = application("x-tika-msworks-spreadsheet");
 
     /** Microsoft Outlook */
     public static final MediaType MSG = application("vnd.ms-outlook");
@@ -133,7 +136,12 @@ public class POIFSContainerDetector implements Detector {
      */
     protected static MediaType detect(Set<String> names) {
         if (names != null) {
-            if (names.contains("Workbook")) {
+            if (names.contains("WksSSWorkBook")) {
+                // This check has to be before names.contains("Workbook")
+                // Works 7.0 spreadsheet files contain both
+                // we want to avoid classifying this as Excel
+                return XLR; 
+            } else if (names.contains("Workbook")) {
                 return XLS;
             } else if (names.contains("EncryptedPackage") && 
                     names.contains("EncryptionInfo") &&

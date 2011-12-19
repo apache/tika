@@ -2777,6 +2777,17 @@
     <_comment>OLE10 Native Embedded Document</_comment>
   </mime-type>
 
+  <mime-type type="application/x-tika-msworks-spreadsheet">
+    <glob pattern="*.xlr"/>
+    <sub-class-of type="application/vnd.ms-excel"/>
+    <!-- this has to be highter than the Excel match -->
+    <magic priority="60">
+      <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
+         <match value="W\x00k\x00s\x00S\x00S\x00W\x00o\x00r\x00k\x00B\x00o\x00o\x00k" type="string" offset="1152:4096" />
+      </match>
+    </magic>
+  </mime-type>
+
   <!-- =================================================================== -->
   <!-- Office Open XML file formats                                        -->
   <!-- http://www.ecma-international.org/publications/standards/Ecma-376.htm -->
