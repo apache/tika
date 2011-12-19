@@ -529,6 +529,12 @@ public class TestMimeTypes extends TestCase {
         assertType("application/x-msaccess", "testACCESS.mdb");
         assertType("application/x-font-ttf", "testTrueType.ttf");
     }
+    
+    public void testWebArchiveDetection() throws Exception {
+        assertTypeByName("application/x-webarchive","x.webarchive");
+        assertTypeByData("application/x-bplist","testWEBARCHIVE.webarchive");
+        assertTypeByNameAndData("application/x-webarchive", "testWEBARCHIVE.webarchive");
+    }
 
     private void assertType(String expected, String filename) throws Exception {
         InputStream stream = TestMimeTypes.class.getResourceAsStream(
