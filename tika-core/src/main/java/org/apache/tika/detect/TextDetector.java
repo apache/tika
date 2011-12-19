@@ -45,7 +45,7 @@ public class TextDetector implements Detector {
      * The number of bytes from the beginning of the document stream
      * to test for control bytes.
      */
-    private static final int NUMBER_OF_BYTES_TO_TEST = 512;
+    private static final int DEFAULT_NUMBER_OF_BYTES_TO_TEST = 512;
 
     /**
      * Lookup table for all the ASCII/ISO-Latin/UTF-8/etc. control bytes
@@ -81,6 +81,24 @@ public class TextDetector implements Detector {
         IS_CONTROL_BYTE[0x1B] = false; // escape
     }
 
+    private final int bytesToTest;
+    
+    /**
+     * Constructs a {@link TextDetector} which will look at the default number
+     * of bytes from the beginning of the document.
+     */
+    public TextDetector() {
+        this(DEFAULT_NUMBER_OF_BYTES_TO_TEST);
+    }
+
+    /**
+     * Constructs a {@link TextDetector} which will look at a given number of
+     * bytes from the beginning of the document.
+     */
+    public TextDetector(int bytesToTest) {
+        this.bytesToTest = bytesToTest;
+    }
+    
     /**
      * Looks at the beginning of the document input stream to determine
      * whether the document is text or not.
@@ -96,13 +114,13 @@ public class TextDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
 
-        input.mark(NUMBER_OF_BYTES_TO_TEST);
+        input.mark(bytesToTest);
         try {
             int chars = 0;
             int controls = 0;
             int asciis = 0;
             int ch = input.read();
-            while (ch != -1 && chars < NUMBER_OF_BYTES_TO_TEST) {
+            while (ch != -1 && chars < bytesToTest) {
                 if (ch < IS_CONTROL_BYTE.length && IS_CONTROL_BYTE[ch]) {
                     controls++;
                 } else if (ch < 127) {
