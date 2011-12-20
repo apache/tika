@@ -28,9 +28,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 
 import org.apache.poi.ddf.EscherBSERecord;
-import org.apache.poi.ddf.EscherBitmapBlip;
 import org.apache.poi.ddf.EscherBlipRecord;
-import org.apache.poi.ddf.EscherMetafileBlip;
 import org.apache.poi.ddf.EscherRecord;
 import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
@@ -56,6 +54,7 @@ import org.apache.poi.hssf.record.SSTRecord;
 import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
+import org.apache.poi.hssf.usermodel.HSSFPictureData;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -550,37 +549,9 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
               if (escherRecord instanceof EscherBSERecord) {
                  EscherBlipRecord blip = ((EscherBSERecord) escherRecord).getBlipRecord();
                  if (blip != null) {
-                    // TODO When we have upgraded POI, we can use this code instead
-                    //HSSFPictureData picture = new HSSFPictureData(blip);
-                    //String mimeType = picture.getMimeType();
-                    //TikaInputStream stream = TikaInputStream.get(picture.getData());
-                    
-                    // This code is cut'n'paste from a newer version of POI
-                    String mimeType = "";
-                    switch (blip.getRecordId()) {
-                    case EscherMetafileBlip.RECORD_ID_WMF:
-                       mimeType =  "image/x-wmf";
-                       break;
-                    case EscherMetafileBlip.RECORD_ID_EMF:
-                       mimeType =  "image/x-emf";
-                       break;
-                    case EscherMetafileBlip.RECORD_ID_PICT:
-                       mimeType =  "image/x-pict";
-                       break;
-                    case EscherBitmapBlip.RECORD_ID_PNG:
-                       mimeType =  "image/png";
-                       break;
-                    case EscherBitmapBlip.RECORD_ID_JPEG:
-                       mimeType =  "image/jpeg";
-                       break;
-                    case EscherBitmapBlip.RECORD_ID_DIB:
-                       mimeType =  "image/bmp";
-                       break;
-                    default:
-                       mimeType =  "image/unknown";
-                       break;
-                    }
-                    TikaInputStream stream = TikaInputStream.get(blip.getPicturedata());
+                    HSSFPictureData picture = new HSSFPictureData(blip);
+                    String mimeType = picture.getMimeType();
+                    TikaInputStream stream = TikaInputStream.get(picture.getData());
                     
                     // Handle the embeded resource
                     extractor.handleEmbeddedResource(
