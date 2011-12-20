@@ -78,7 +78,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
               continue;
            }
            
-            XSLFSlideMaster master = slide.getMasterSheet();
+            XSLFSlideMaster master = slide.getSlideMaster();
             CTNotesSlide notes = rawSlideShow.getNotes(slideId);
             CTCommentList comments = rawSlideShow.getSlideComments(slideId);
 
