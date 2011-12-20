@@ -535,15 +535,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           picturesTable = doc.getPicturesTable();
           all = picturesTable.getAllPictures();
           
-          // Compute the Offset-Picture lookup
+          // Build the Offset-Picture lookup map
           lookup = new HashMap<Integer, Picture>();
           for(Picture p : all) {
-             // TODO Make this nicer when POI 3.7 is out
-             String name = p.suggestFullFileName();
-             if(name.indexOf('.') > -1)
-                name = name.substring(0, name.indexOf('.'));
-             int offset = Integer.parseInt(name, 16);
-             lookup.put(offset, p);
+             lookup.put(p.getStartOffset(), p);
           }
           
           // Work out which Pictures aren't referenced by
