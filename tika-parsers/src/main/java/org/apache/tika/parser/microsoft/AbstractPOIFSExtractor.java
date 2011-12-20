@@ -16,16 +16,15 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
-import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -107,24 +106,16 @@ abstract class AbstractPOIFSExtractor {
 
         try {
             if (type == POIFSDocumentType.OLE10_NATIVE) {
-                Entry entry = dir.getEntry(Ole10Native.OLE10_NATIVE);
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-                // TODO: once we upgrade to POI 3.8 beta 5
-                // we can avoid this full copy/serialize by
-                // passing the DirectoryNode instead:
-                IOUtils.copy(new DocumentInputStream((DocumentEntry) entry), bos);
-                byte[] data = bos.toByteArray();
-
                 try {
-                    // Maybe unwrap OLE10Native record:
-                    Ole10Native ole = new Ole10Native(data, 0);
-                    data = ole.getDataBuffer();
+                    // Try to un-wrap the OLE10Native record:
+                    Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode)dir);
                     metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '/' + ole.getLabel());
+                    
+                    byte[] data = ole.getDataBuffer();
+                    embedded = TikaInputStream.get(data);
                 } catch (Ole10NativeException ex) {
-                    // Not an OLE10Native record
+                    // Not a valid OLE10Native record, skip it
                 }
-                embedded = TikaInputStream.get(data);
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
