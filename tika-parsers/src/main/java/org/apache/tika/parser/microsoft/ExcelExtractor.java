@@ -51,6 +51,7 @@ import org.apache.poi.hssf.record.NumberRecord;
 import org.apache.poi.hssf.record.RKRecord;
 import org.apache.poi.hssf.record.Record;
 import org.apache.poi.hssf.record.SSTRecord;
+import org.apache.poi.hssf.record.StringRecord;
 import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
@@ -181,6 +182,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         private Exception exception = null;
 
         private SSTRecord sstRecord;
+        private FormulaRecord stringFormulaRecord;
         
         private short previousSid;
 
@@ -274,6 +276,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 hssfRequest.addListener(formatListener, LabelSSTRecord.sid);
                 hssfRequest.addListener(formatListener, NumberRecord.sid);
                 hssfRequest.addListener(formatListener, RKRecord.sid);
+                hssfRequest.addListener(formatListener, StringRecord.sid);
                 hssfRequest.addListener(formatListener, HyperlinkRecord.sid);
                 hssfRequest.addListener(formatListener, TextObjectRecord.sid);
                 hssfRequest.addListener(formatListener, SeriesTextRecord.sid);
@@ -375,7 +378,22 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
             case FormulaRecord.sid: // Cell value from a formula
                 FormulaRecord formula = (FormulaRecord) record;
-                addCell(record, new NumberCell(formula.getValue(), format));
+                if (formula.hasCachedResultString()) {
+                   // The String itself should be the next record
+                   stringFormulaRecord = formula;
+                } else {
+                   addTextCell(record, formatListener.formatNumberDateCell(formula));
+                }
+                break;
+                
+            case StringRecord.sid:
+                if (previousSid == FormulaRecord.sid) {
+                   // Cached string value of a string formula
+                   StringRecord sr = (StringRecord) record;
+                   addTextCell(stringFormulaRecord, sr.getString());
+                } else {
+                   // Some other string not associated with a cell, skip
+                }
                 break;
 
             case LabelRecord.sid: // strings stored directly in the cell
@@ -435,6 +453,10 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
 
             previousSid = record.getSid();
+            
+            if (stringFormulaRecord != record) {
+               stringFormulaRecord = null;
+            }
         }
 
         private void processExtraText() throws SAXException {
