@@ -164,6 +164,9 @@ public class POIFSContainerDetector implements Detector {
                 return VSD;
             } else if (names.contains("\u0001Ole10Native")) {
                 return OLE10_NATIVE;
+            } else if (names.contains("MatOST")) {
+            	// this occurs on older Works Word Processor files (versions 3.0 and 4.0)
+            	return WPS;
             } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
                // Newer Works files
                return WPS;

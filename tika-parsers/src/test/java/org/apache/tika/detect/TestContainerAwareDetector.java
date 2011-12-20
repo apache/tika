@@ -70,6 +70,11 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testPUBLISHER.pub", "application/x-mspublisher");
         assertTypeByData("testWORKS.wps", "application/vnd.ms-works");
         assertTypeByData("testWORKS2000.wps", "application/vnd.ms-works");
+        // older Works Word Processor files can't be recognized
+    	// they were created with Works Word Processor 7.0 (hence the text inside)
+    	// and exported to the older formats with the "Save As" feature
+        assertTypeByData("testWORKSWordProcessor3.0.wps","application/vnd.ms-works");
+        assertTypeByData("testWORKSWordProcessor4.0.wps","application/vnd.ms-works");
         assertTypeByData("testWORKSSpreadsheet7.0.xlr", "application/x-tika-msworks-spreadsheet");
         assertTypeByData("testPROJECT2003.mpp", "application/vnd.ms-project");
         assertTypeByData("testPROJECT2007.mpp", "application/vnd.ms-project");
@@ -78,6 +83,7 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
         assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro");
         assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro");
+        
         
         // With the filename and data
         assertTypeByNameAndData("testEXCEL.xls", "application/vnd.ms-excel");
