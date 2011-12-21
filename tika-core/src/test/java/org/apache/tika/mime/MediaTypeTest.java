@@ -21,6 +21,8 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
+import static java.util.Collections.singletonMap;
+
 public class MediaTypeTest extends TestCase {
 
     public void testBasics() {
@@ -129,6 +131,28 @@ public class MediaTypeTest extends TestCase {
             }
         }
         assertTrue(gotCharset && gotFoo && gotFoo2);
+    }
+
+    /**
+     * Per http://tools.ietf.org/html/rfc2045#section-5.1, charset can be in quotes
+     */
+    public void testParseWithParamsAndQuotedCharset() {
+        // Typical case, with a quoted charset
+        String mimeStringWithParams = "text/html;charset=\"UTF-8\"";
+
+        MediaType type = MediaType.parse(mimeStringWithParams);
+        assertNotNull(type);
+        assertEquals(singletonMap("charset", "UTF-8"), type.getParameters());
+        
+        // Complex case, with various different quoted and un-quoted forms
+        mimeStringWithParams = "text/html;charset=\'UTF-8\';test=\"true\";unquoted=here";
+
+        type = MediaType.parse(mimeStringWithParams);
+        assertNotNull(type);
+        assertEquals(3, type.getParameters().size());
+        assertEquals("UTF-8", type.getParameters().get("charset"));
+        assertEquals("true", type.getParameters().get("test"));
+        assertEquals("here", type.getParameters().get("unquoted"));
     }
 
     /**

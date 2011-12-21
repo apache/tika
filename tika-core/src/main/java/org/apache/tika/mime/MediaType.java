@@ -17,10 +17,8 @@
 package org.apache.tika.mime;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedMap;
@@ -163,6 +161,9 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
             return Collections.<String, String>emptyMap();
         }
 
+        // Extracts k1=v1, k2=v2 from mime/type; k1=v1; k2=v2
+        // Note - this logic isn't fully RFC2045 compliant yet, as it
+        //  doesn't fully handle quoted keys or values (eg containing ; or =)
         Map<String, String> parameters = new HashMap<String, String>();
         while (string.length() > 0) {
             String key = string;
@@ -184,10 +185,21 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
 
             key = key.trim();
             if (key.length() > 0) {
-                parameters.put(key, value.trim());
+                parameters.put(key, unquote(value.trim()));
             }
         }
         return parameters;
+    }
+    
+    private static String unquote(String s) {
+        if( s.startsWith("\"") && s.endsWith("\"")) {
+            return s.substring(1, s.length() - 1);
+        }
+        if( s.startsWith("'") && s.endsWith("'")) {
+           return s.substring(1, s.length() - 1);
+       }
+
+        return s;
     }
 
     /**
