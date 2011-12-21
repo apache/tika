@@ -26,10 +26,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
+import org.apache.poi.poifs.filesystem.DocumentInputStream;
+import org.apache.poi.poifs.filesystem.DocumentNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -44,6 +48,16 @@ public class POIFSContainerDetector implements Detector {
 
     /** Serial version UID */
     private static final long serialVersionUID = -3028021741663605293L;
+    
+    /** An ASCII String "StarImpress" */
+    private static final byte [] STAR_IMPRESS = new byte [] {
+        0x53, 0x74, 0x61, 0x72, 0x49, 0x6d, 0x70, 0x72, 0x65, 0x73, 0x73
+    };
+    
+    /** An ASCII String "StarDraw" */
+    private static final byte [] STAR_DRAW = new byte [] {
+        0x53, 0x74, 0x61, 0x72, 0x44, 0x72, 0x61, 0x77
+    };
 
     /** The OLE base file format */
     public static final MediaType OLE = application("x-tika-msoffice");
@@ -80,6 +94,18 @@ public class POIFSContainerDetector implements Detector {
     
     /** Microsoft Project */
     public static final MediaType MPP = application("vnd.ms-project");
+    
+    /** StarOffice Calc */
+    public static final MediaType SDC = application("vnd.stardivision.calc");
+    
+    /** StarOffice Draw */
+    public static final MediaType SDA = application("vnd.stardivision.draw");
+    
+    /** StarOffice Impress */
+    public static final MediaType SDD = application("vnd.stardivision.impress");
+    
+    /** StarOffice Writer */
+    public static final MediaType SDW = application("vnd.stardivision.writer");
 
     /** Regexp for matching the MPP Project Data stream */
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
@@ -127,16 +153,59 @@ public class POIFSContainerDetector implements Detector {
         }
         
         // Detect based on the names (as available)
-        return detect(names);
+        if (tis != null && 
+            tis.getOpenContainer() != null && 
+            tis.getOpenContainer() instanceof NPOIFSFileSystem) {
+            return detect(names, ((NPOIFSFileSystem)tis.getOpenContainer()).getRoot());
+        } else {
+            return detect(names, null);
+        }
+    }
+
+    /**
+     * Internal detection of the specific kind of OLE2 document, based on the
+     * names of the top level streams within the file.
+     * 
+     * @deprecated Use {@link #detect(Set, DirectoryEntry)} and pass the root
+     *             entry of the filesystem whose type is to be detected, as a
+     *             second argument.
+     */
+    protected static MediaType detect(Set<String> names) {
+        return detect(names, null);
     }
     
     /**
-     * Internal detection of the specific kind of OLE2 document, based on the 
-     *  names of the top level streams within the file.
+     * Internal detection of the specific kind of OLE2 document, based on the
+     * names of the top-level streams within the file. In some cases the
+     * detection may need access to the root {@link DirectoryEntry} of that file
+     * for best results. The entry can be given as a second, optional argument.
+     * 
+     * @param names
+     * @param root
+     * @return
      */
-    protected static MediaType detect(Set<String> names) {
+    protected static MediaType detect(Set<String> names, DirectoryEntry root) {
         if (names != null) {
-            if (names.contains("WksSSWorkBook")) {
+            if (names.contains("StarCalcDocument")) {
+                // Star Office Calc
+                return SDC;
+            } else if (names.contains("StarWriterDocument")) {
+                return SDW;
+            } else if (names.contains("StarDrawDocument3")) {
+                if (root == null) {
+                    /*
+                     * This is either StarOfficeDraw or StarOfficeImpress, we have
+                     * to consult the CompObj to distinguish them, if this method is
+                     * called in "legacy mode", without the root, just return
+                     * x-tika-msoffice. The one-argument method is only for backward
+                     * compatibility, if someone calls old API he/she can get the
+                     * old result.
+                     */
+                    return OLE;
+                } else {
+                    return processStarDrawOrImpress(root);
+                }
+            } else if (names.contains("WksSSWorkBook")) {
                 // This check has to be before names.contains("Workbook")
                 // Works 7.0 spreadsheet files contain both
                 // we want to avoid classifying this as Excel
@@ -165,8 +234,8 @@ public class POIFSContainerDetector implements Detector {
             } else if (names.contains("\u0001Ole10Native")) {
                 return OLE10_NATIVE;
             } else if (names.contains("MatOST")) {
-            	// this occurs on older Works Word Processor files (versions 3.0 and 4.0)
-            	return WPS;
+                // this occurs on older Works Word Processor files (versions 3.0 and 4.0)
+                return WPS;
             } else if (names.contains("CONTENTS") && names.contains("SPELLING")) {
                // Newer Works files
                return WPS;
@@ -205,6 +274,58 @@ public class POIFSContainerDetector implements Detector {
 
         // Couldn't detect a more specific type
         return OLE;
+    }
+
+    private static MediaType processStarDrawOrImpress(DirectoryEntry root) {
+        try {
+            Entry e = root.getEntry("\u0001CompObj");
+            if (e != null && e.isDocumentEntry()) {
+                DocumentNode dn = (DocumentNode)e;
+                DocumentInputStream stream = new DocumentInputStream(dn);
+                byte [] bytes = IOUtils.toByteArray(stream);
+                /*
+                 * This array contains a string with a normal ASCII name of the
+                 * application used to create this file. We want to search for that
+                 * name.
+                 */
+                if ( arrayContains(bytes, STAR_DRAW) ) {
+                    return SDA;
+                } else if (arrayContains(bytes, STAR_IMPRESS)) {
+                    return SDD;
+                }
+            } 
+        } catch (Exception e) {
+            /*
+             * "root.getEntry" can throw FileNotFoundException. The code inside
+             * "if" can throw IOExceptions. Theoretically. Practically no
+             * exceptions will likely ever appear.
+             * 
+             * Swallow all of them. If any occur, we just assume that we can't
+             * distinguish between Draw and Impress and return something safe:
+             * x-tika-msoffice
+             */
+        }
+        return OLE;
+    }
+    
+    // poor man's search for byte arrays, replace with some library call if
+    // you know one without adding new dependencies
+    private static boolean arrayContains(byte [] larger, byte [] smaller) {
+        int largerCounter = 0;
+        int smallerCounter = 0;
+        while (largerCounter < larger.length) {
+            if (larger[largerCounter] == smaller[smallerCounter]) {
+                largerCounter++;
+                smallerCounter++;
+                if (smallerCounter == smaller.length) {
+                    return true;
+                }
+            } else {
+                largerCounter = largerCounter - smallerCounter + 1;
+                smallerCounter=0;
+            }
+        }
+        return false;
     }
 
     private static Set<String> getTopLevelNames(TikaInputStream stream)

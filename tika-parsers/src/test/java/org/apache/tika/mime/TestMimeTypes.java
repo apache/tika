@@ -110,16 +110,6 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/vnd.ms-powerpoint.presentation.macroenabled.12", "x.pptm");
         assertTypeByName("application/vnd.ms-powerpoint.template.macroenabled.12", "x.potm");
         assertTypeByName("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "x.ppsm");
-
-        assertTypeByName("application/x-staroffice-template", "x.vor");
-        assertTypeByData("application/x-tika-msoffice", "testVORCalcTemplate.vor");
-        assertTypeByData("application/x-tika-msoffice", "testVORDrawTemplate.vor");
-        assertTypeByData("application/x-tika-msoffice", "testVORImpressTemplate.vor");
-        assertTypeByData("application/x-tika-msoffice", "testVORWriterTemplate.vor");
-        assertTypeByNameAndData("application/x-staroffice-template", "testVORCalcTemplate.vor");
-        assertTypeByNameAndData("application/x-staroffice-template", "testVORDrawTemplate.vor");
-        assertTypeByNameAndData("application/x-staroffice-template", "testVORImpressTemplate.vor");
-        assertTypeByNameAndData("application/x-staroffice-template", "testVORWriterTemplate.vor");
     }
 
     /**
@@ -159,16 +149,52 @@ public class TestMimeTypes extends TestCase {
      * @throws Exception
      */
     public void testWorksSpreadsheetDetection() throws Exception {
-    	assertTypeDetection("testWORKSSpreadsheet7.0.xlr",
-    			// with name-only, everything should be all right 
-    			"application/x-tika-msworks-spreadsheet",
-    			// this is possible due to MimeTypes guessing the type
-    	        // based on the WksSSWorkBook near the beginning of the
-    	        // file
-    			"application/x-tika-msworks-spreadsheet",
-    			// this is right, the magic-based detection works, there is
-    	        // no need for the name-based detection to refine it
-    			"application/x-tika-msworks-spreadsheet");
+        assertTypeDetection("testWORKSSpreadsheet7.0.xlr",
+                // with name-only, everything should be all right 
+                "application/x-tika-msworks-spreadsheet",
+                // this is possible due to MimeTypes guessing the type
+                // based on the WksSSWorkBook near the beginning of the
+                // file
+                "application/x-tika-msworks-spreadsheet",
+                // this is right, the magic-based detection works, there is
+                // no need for the name-based detection to refine it
+                "application/x-tika-msworks-spreadsheet");
+    }
+    
+    public void testStarOfficeDetection() throws Exception {
+        assertTypeDetection("testVORCalcTemplate.vor",
+                "application/x-staroffice-template",
+                "application/vnd.stardivision.calc",
+                "application/vnd.stardivision.calc");
+        assertTypeDetection("testVORDrawTemplate.vor",
+                "application/x-staroffice-template",
+                "application/vnd.stardivision.draw",
+                "application/vnd.stardivision.draw");
+        assertTypeDetection("testVORImpressTemplate.vor",
+                "application/x-staroffice-template",
+                "application/vnd.stardivision.impress",
+                "application/vnd.stardivision.impress");
+        assertTypeDetection("testVORWriterTemplate.vor",
+                "application/x-staroffice-template",
+                "application/vnd.stardivision.writer",
+                "application/vnd.stardivision.writer");
+        
+        assertTypeDetection("testStarOffice-5.2-calc.sdc",
+                "application/vnd.stardivision.calc",
+                "application/vnd.stardivision.calc",
+                "application/vnd.stardivision.calc");
+        assertTypeDetection("testStarOffice-5.2-draw.sda",
+                "application/vnd.stardivision.draw",
+                "application/vnd.stardivision.draw",
+                "application/vnd.stardivision.draw");
+        assertTypeDetection("testStarOffice-5.2-impress.sdd",
+                "application/vnd.stardivision.impress",
+                "application/vnd.stardivision.impress",
+                "application/vnd.stardivision.impress");
+        assertTypeDetection("testStarOffice-5.2-writer.sdw",
+                "application/vnd.stardivision.writer",
+                "application/vnd.stardivision.writer",
+                "application/vnd.stardivision.writer");
     }
     
     /**
@@ -178,21 +204,21 @@ public class TestMimeTypes extends TestCase {
      * @throws Exception
      */
     public void testOldWorksWordProcessorDetection() throws Exception {
-    	assertTypeDetection(
-    			"testWORKSWordProcessor3.0.wps",
-    			// .wps is just like any other works extension
-    			"application/vnd.ms-works",
-    			// this is due to MatOST substring
-    			"application/vnd.ms-works",
-    			// magic-based detection works, no need to refine it
-    			"application/vnd.ms-works");
-    	
-    	// files in version 4.0 are no different from those in version 3.0
-    	assertTypeDetection(
-    			"testWORKSWordProcessor4.0.wps",
-    			"application/vnd.ms-works",
-    			"application/vnd.ms-works",
-    			"application/vnd.ms-works");
+        assertTypeDetection(
+                "testWORKSWordProcessor3.0.wps",
+                // .wps is just like any other works extension
+                "application/vnd.ms-works",
+                // this is due to MatOST substring
+                "application/vnd.ms-works",
+                // magic-based detection works, no need to refine it
+                "application/vnd.ms-works");
+        
+        // files in version 4.0 are no different from those in version 3.0
+        assertTypeDetection(
+                "testWORKSWordProcessor4.0.wps",
+                "application/vnd.ms-works",
+                "application/vnd.ms-works",
+                "application/vnd.ms-works");
     }
     
     /**
@@ -596,14 +622,14 @@ public class TestMimeTypes extends TestCase {
     }
     
     private void assertTypeDetection(String filename, String byName, String byData, 
-    		String byNameAndData) throws IOException {
-    	assertTypeByName(byName, filename);
-    	assertTypeByData(byData, filename);
-    	assertTypeByNameAndData(byNameAndData, filename);
+            String byNameAndData) throws IOException {
+        assertTypeByName(byName, filename);
+        assertTypeByData(byData, filename);
+        assertTypeByNameAndData(byNameAndData, filename);
     }
     
     private void assertTypeByNameAndData(String expected, String filename)
-	    throws IOException {
+        throws IOException {
        assertEquals(expected, getTypeByNameAndData(filename).toString());
     }
     private MediaType getTypeByNameAndData(String filename) throws IOException {

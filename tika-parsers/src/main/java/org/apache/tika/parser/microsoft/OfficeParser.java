@@ -117,7 +117,7 @@ public class OfficeParser extends AbstractParser {
             for (Entry entry : node) {
                 names.add(entry.getName());
             }
-            MediaType type = POIFSContainerDetector.detect(names);
+            MediaType type = POIFSContainerDetector.detect(names, node);
             for (POIFSDocumentType poifsType : values()) {
                if (type.equals(poifsType.type)) {
                   return poifsType;

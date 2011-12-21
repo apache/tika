@@ -41,6 +41,10 @@ public class TestContainerAwareDetector extends TestCase {
     private void assertTypeByNameAndData(String file, String type) throws Exception {
        assertTypeByNameAndData(file, file, type);
     }
+    private void assertType(String file, String byData, String byNameAndData) throws Exception {
+       assertTypeByData(file, byData);
+       assertTypeByNameAndData(file, byNameAndData);
+    }
     private void assertTypeByNameAndData(String dataFile, String name, String type) throws Exception {
        TikaInputStream stream = TikaInputStream.get(
                TestContainerAwareDetector.class.getResource(
@@ -71,8 +75,8 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testWORKS.wps", "application/vnd.ms-works");
         assertTypeByData("testWORKS2000.wps", "application/vnd.ms-works");
         // older Works Word Processor files can't be recognized
-    	// they were created with Works Word Processor 7.0 (hence the text inside)
-    	// and exported to the older formats with the "Save As" feature
+        // they were created with Works Word Processor 7.0 (hence the text inside)
+        // and exported to the older formats with the "Save As" feature
         assertTypeByData("testWORKSWordProcessor3.0.wps","application/vnd.ms-works");
         assertTypeByData("testWORKSWordProcessor4.0.wps","application/vnd.ms-works");
         assertTypeByData("testWORKSSpreadsheet7.0.xlr", "application/x-tika-msworks-spreadsheet");
@@ -98,6 +102,42 @@ public class TestContainerAwareDetector extends TestCase {
         // With a filename of a totally different type, data will trump filename
         assertTypeByNameAndData("testEXCEL.xls", "notPDF.pdf",  "application/vnd.ms-excel");
         assertTypeByNameAndData("testEXCEL.xls", "notPNG.png",  "application/vnd.ms-excel");
+    }
+    
+    /**
+     * There is no way to distinguish "proper" StarOffice files from templates.
+     * All templates have the same extension but their actual type depends on
+     * the magic. Our current MimeTypes class doesn't allow us to use the same
+     * glob pattern in more than one mimetype.
+     * 
+     * @throws Exception
+     */
+    public void testDetectStarOfficeFiles() throws Exception {
+        assertType("testStarOffice-5.2-calc.sdc",
+                "application/vnd.stardivision.calc",
+                "application/vnd.stardivision.calc");
+        assertType("testVORCalcTemplate.vor",
+                "application/vnd.stardivision.calc",
+                "application/vnd.stardivision.calc");
+        assertType("testStarOffice-5.2-draw.sda",
+                "application/vnd.stardivision.draw",
+                "application/vnd.stardivision.draw");
+        assertType("testVORDrawTemplate.vor",
+                "application/vnd.stardivision.draw",
+                "application/vnd.stardivision.draw");
+        assertType("testStarOffice-5.2-impress.sdd",
+                "application/vnd.stardivision.impress",
+                "application/vnd.stardivision.impress");
+        assertType("testVORImpressTemplate.vor",
+                "application/vnd.stardivision.impress",
+                "application/vnd.stardivision.impress");
+        assertType("testStarOffice-5.2-writer.sdw",
+                "application/vnd.stardivision.writer",
+                "application/vnd.stardivision.writer");
+        assertType("testVORWriterTemplate.vor",
+                "application/vnd.stardivision.writer",
+                "application/vnd.stardivision.writer");
+
     }
 
     public void testOpenContainer() throws Exception {
