@@ -31,19 +31,15 @@ class MemoryURLStreamHandler extends URLStreamHandler {
 
     private static final AtomicInteger counter = new AtomicInteger();
 
-    private static class Record {
-        public WeakReference<URL> url;
-        public byte[] data;
-    }
-
-    private static final List<Record> records = new LinkedList<Record>();
+    private static final List<MemoryURLStreamRecord> records =
+        new LinkedList<MemoryURLStreamRecord>();
 
     public static URL createURL(byte[] data) {
         try {
             int i = counter.incrementAndGet();
             URL url =  new URL("tika-in-memory", "localhost", "/" + i);
 
-            Record record = new Record();
+            MemoryURLStreamRecord record = new MemoryURLStreamRecord();
             record.url = new WeakReference<URL>(url);
             record.data = data;
             records.add(record);
@@ -56,9 +52,9 @@ class MemoryURLStreamHandler extends URLStreamHandler {
 
     @Override
     protected URLConnection openConnection(URL u) throws IOException {
-        Iterator<Record> iterator = records.iterator();
+        Iterator<MemoryURLStreamRecord> iterator = records.iterator();
         while (iterator.hasNext()) {
-            Record record = iterator.next();
+            MemoryURLStreamRecord record = iterator.next();
             URL url = record.url.get();
             if (url == null) {
                 iterator.remove();

@@ -246,8 +246,10 @@ class ForkClient {
             Class<?>[] bootstrap = {
                     ForkServer.class, ForkObjectInputStream.class,
                     ForkProxy.class, ClassLoaderProxy.class,
-                    MemoryURLConnection.class, MemoryURLStreamHandler.class,
-                    MemoryURLStreamHandlerFactory.class
+                    MemoryURLConnection.class,
+                    MemoryURLStreamHandler.class,
+                    MemoryURLStreamHandlerFactory.class,
+                    MemoryURLStreamRecord.class
             };
             ClassLoader loader = ForkServer.class.getClassLoader();
             for (Class<?> klass : bootstrap) {
