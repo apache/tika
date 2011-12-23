@@ -20,6 +20,7 @@ import java.io.InputStream;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.Tika;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -31,24 +32,26 @@ import org.xml.sax.ContentHandler;
  *  wired in to the regular Parsers and their test data
  */
 public class ForkParserIntegrationTest extends TestCase {
+
     /**
      * Simple text parsing
-     * TODO Fix this test so it passes
      */
-    public void DISABLEDtestForkedTextParsing() throws Exception {
-       final ForkParser parser = new ForkParser(
-             ForkParserIntegrationTest.class.getClassLoader(),
-             new ForkParser());
+    public void testForkedTextParsing() throws Exception {
+        Tika tika = new Tika();
+        ForkParser parser = new ForkParser(
+                ForkParserIntegrationTest.class.getClassLoader(),
+                tika.getParser());
 
        try {
           ContentHandler output = new BodyContentHandler();
-          InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream("testTXT.txt");
+          InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
+                  "/test-documents/testTXT.txt");
           ParseContext context = new ParseContext();
           parser.parse(stream, output, new Metadata(), context);
 
           String content = output.toString();
           assertTrue(content.contains("Test d'indexation"));
-          assertTrue(content.contains("http://www.apache.org/"));
+          assertTrue(content.contains("http://www.apache.org"));
        } finally {
           parser.close();
        }
@@ -56,31 +59,28 @@ public class ForkParserIntegrationTest extends TestCase {
    
     /**
      * TIKA-808 - Ensure that parsing of our test PDFs work under
-     *  the Fork Parser, to ensure that complex parsing behaves
-     * TODO Fix this test so it passes
+     * the Fork Parser, to ensure that complex parsing behaves
      */
-    public void DISABLEDtestForkedPDFParsing() throws Exception {
-       final ForkParser parser = new ForkParser(
-             ForkParserIntegrationTest.class.getClassLoader(),
-             new ForkParser());
-       
-       try {
-          ContentHandler output = new BodyContentHandler();
-          InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream("testPDF.pdf");
-          ParseContext context = new ParseContext();
-          parser.parse(stream, output, new Metadata(), context);
-          
-          String content = output.toString();
-          assertTrue(content.contains("Apache Tika"));
-          assertTrue(content.contains("Tika - Content Analysis Toolkit"));
-          assertTrue(content.contains("incubator"));
-          assertTrue(content.contains("Apache Software Foundation"));
-      } finally {
-          parser.close();
-      }
+    public void testForkedPDFParsing() throws Exception {
+        Tika tika = new Tika();
+        ForkParser parser = new ForkParser(
+                ForkParserIntegrationTest.class.getClassLoader(),
+                tika.getParser());
+        try {
+            ContentHandler output = new BodyContentHandler();
+            InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
+                    "/test-documents/testPDF.pdf");
+            ParseContext context = new ParseContext();
+            parser.parse(stream, output, new Metadata(), context);
+
+            String content = output.toString();
+            assertTrue(content.contains("Apache Tika"));
+            assertTrue(content.contains("Tika - Content Analysis Toolkit"));
+            assertTrue(content.contains("incubator"));
+            assertTrue(content.contains("Apache Software Foundation"));
+        } finally {
+            parser.close();
+        }
     }
-    
-    public void testDUMMY() {
-       // To avoid warnings about no tests while others are disabled
-    }
+
 }
