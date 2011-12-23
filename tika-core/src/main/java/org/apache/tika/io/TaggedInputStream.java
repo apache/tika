@@ -18,6 +18,8 @@ package org.apache.tika.io;
 
  import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * An input stream decorator that tags potential exceptions so that the
@@ -59,6 +61,11 @@ import java.io.InputStream;
 public class TaggedInputStream extends ProxyInputStream {
 
     /**
+     * The unique (serializable) tag of this stream.
+     */
+    private final Serializable tag = UUID.randomUUID();
+
+    /**
      * Creates a tagging decorator for the given input stream.
      *
      * @param proxy input stream to be decorated
@@ -90,7 +97,7 @@ public class TaggedInputStream extends ProxyInputStream {
     public boolean isCauseOf(IOException exception) {
         if (exception instanceof TaggedIOException) {
             TaggedIOException tagged = (TaggedIOException) exception;
-            return this == tagged.getTag();
+            return tag.equals(tagged.getTag());
         } else {
             return false;
         }
@@ -109,7 +116,7 @@ public class TaggedInputStream extends ProxyInputStream {
     public void throwIfCauseOf(Exception exception) throws IOException {
         if (exception instanceof TaggedIOException) {
             TaggedIOException tagged = (TaggedIOException) exception;
-            if (this == tagged.getTag()) {
+            if (tag.equals(tagged.getTag())) {
                 throw tagged.getCause();
             }
         }
@@ -123,10 +130,10 @@ public class TaggedInputStream extends ProxyInputStream {
      */
     @Override
     protected void handleIOException(IOException e) throws IOException {
-        throw new TaggedIOException(e, this);
+        throw new TaggedIOException(e, tag);
     }
 
     public String toString() {
-        return "Tika Tagged InputStream wrapping " + in.toString(); 
+        return "Tika Tagged InputStream wrapping " + in;
     }
 }
