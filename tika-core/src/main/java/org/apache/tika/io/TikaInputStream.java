@@ -105,6 +105,9 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public static TikaInputStream get(
             InputStream stream, TemporaryResources tmp) {
+        if (stream == null) {
+            throw new NullPointerException("The Stream must not be null");
+        }
         if (stream instanceof TikaInputStream) {
             return (TikaInputStream) stream;
         } else {
