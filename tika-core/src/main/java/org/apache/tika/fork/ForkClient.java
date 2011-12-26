@@ -172,7 +172,7 @@ class ForkClient {
                 ForkResource resource =
                     resources.get(input.readUnsignedByte());
                 resource.process(input, output);
-            } else if (type == ForkServer.ERROR) {
+            } else if ((byte) type == ForkServer.ERROR) {
                 try {
                     return (Throwable) ForkObjectInputStream.readObject(
                             input, loader);

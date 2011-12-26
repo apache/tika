@@ -16,28 +16,38 @@
  */
 package org.apache.tika.parser.fork;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import junit.framework.TestCase;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Test that the ForkParser correctly behaves when
  *  wired in to the regular Parsers and their test data
  */
 public class ForkParserIntegrationTest extends TestCase {
-
+//    private TikaConfig tika = TikaConfig.getDefaultConfig();
+    private Tika tika = new Tika(); // TODO Use TikaConfig instead, when it works
+    
     /**
      * Simple text parsing
      */
     public void testForkedTextParsing() throws Exception {
-        Tika tika = new Tika();
         ForkParser parser = new ForkParser(
                 ForkParserIntegrationTest.class.getClassLoader(),
                 tika.getParser());
@@ -58,11 +68,69 @@ public class ForkParserIntegrationTest extends TestCase {
     }
    
     /**
+     * This error has a message and an equals() implementation as to be able 
+     * to match it against the serialized version of itself.
+     */
+    @SuppressWarnings("serial")
+    static class AnError extends Error {
+        private String message;
+        AnError(String message) {
+            super(message);
+            this.message = message;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            AnError anError = (AnError) o;
+
+            if (!message.equals(anError.message)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return message.hashCode();
+        }
+    }
+    
+    static class BrokenParser implements Parser {
+        public Error e = new AnError("Simulated fail"); 
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return new HashSet<MediaType>(Arrays.asList(MediaType.TEXT_PLAIN));
+        }
+
+        public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
+            throw e;
+        }
+    }
+    
+    /**
+     * TIKA-831 Parsers throwing errors should be caught and
+     *  properly reported
+     * TODO Disabled, pending a fix for the not serialized exception
+     */
+    public void DISABLEDtestParsingErrorInForkedParserShouldBeReported() throws Exception {
+        BrokenParser brokenParser = new BrokenParser();
+        Parser parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
+        Tika forkedTika = new Tika(TikaConfig.getDefaultConfig().getDetector(), parser);
+        InputStream stream = getClass().getResourceAsStream("/test-documents/testTXT.txt");
+        try {
+            forkedTika.parseToString(stream);
+            fail("Expected TikaException caused by Error");
+        } catch (TikaException e) {
+            assertEquals(brokenParser.e, e.getCause());
+        }
+    }
+
+    /**
      * TIKA-808 - Ensure that parsing of our test PDFs work under
      * the Fork Parser, to ensure that complex parsing behaves
      */
     public void testForkedPDFParsing() throws Exception {
-        Tika tika = new Tika();
         ForkParser parser = new ForkParser(
                 ForkParserIntegrationTest.class.getClassLoader(),
                 tika.getParser());
@@ -82,5 +150,4 @@ public class ForkParserIntegrationTest extends TestCase {
             parser.close();
         }
     }
-
 }
