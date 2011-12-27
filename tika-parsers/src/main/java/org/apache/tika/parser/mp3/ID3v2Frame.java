@@ -182,15 +182,16 @@ public class ID3v2Frame implements MP3Frame {
      */
     protected static String getTagString(byte[] data, int offset, int length) {
         int actualLength = length;
-        while (actualLength > 0 && data[actualLength-1] == 0) {
-            actualLength--;
-        }
         if (actualLength == 0) {
+            return "";
+        }
+        if (actualLength == 1 && data[offset] == 0) {
             return "";
         }
 
         // Does it have an encoding flag?
         // Detect by the first byte being sub 0x20
+        boolean doubleByte = false;
         String encoding = "ISO-8859-1";
         byte maybeEncodingFlag = data[offset];
         if (maybeEncodingFlag == 0 || maybeEncodingFlag == 1 ||
@@ -200,15 +201,29 @@ public class ID3v2Frame implements MP3Frame {
             if (maybeEncodingFlag == 1) {
                 // With BOM
                 encoding = "UTF-16";
+                doubleByte = true;
             } else if (maybeEncodingFlag == 2) {
                 // Without BOM
                 encoding = "UTF-16BE";
+                doubleByte = true;
             } else if (maybeEncodingFlag == 3) {
                 encoding = "UTF8";
             }
         }
+        
+        // Trim off null termination / padding (as present) 
+        while (doubleByte && actualLength >= 2 && data[offset+actualLength-1] == 0 && data[offset+actualLength-2] == 0) {
+           actualLength -= 2;
+        } 
+        while (!doubleByte && actualLength >= 1 && data[offset+actualLength-1] == 0) {
+           actualLength--;
+        }
+        if (actualLength == 0) {
+           return "";
+        }
 
         try {
+            // Build the base string
             return new String(data, offset, actualLength, encoding);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(
