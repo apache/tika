@@ -21,6 +21,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.NotSerializableException;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,6 +29,8 @@ import java.net.URL;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.CheckedOutputStream;
 import java.util.zip.Checksum;
+
+import org.apache.tika.exception.TikaException;
 
 class ForkServer implements Runnable, Checksum {
 
@@ -137,7 +140,17 @@ class ForkServer implements Runnable, Checksum {
             output.write(DONE);
         } catch (InvocationTargetException e) {
             output.write(ERROR);
-            ForkObjectInputStream.sendObject(e.getCause(), output);
+            
+            // Try to send the underlying Exception itself
+            Throwable toSend = e.getCause();
+            try {
+               ForkObjectInputStream.sendObject(toSend, output);
+            } catch (NotSerializableException nse) {
+               // Need to build a serializable version of it
+               TikaException te = new TikaException( toSend.getMessage() );
+               te.setStackTrace( toSend.getStackTrace() );
+               ForkObjectInputStream.sendObject(te, output);
+            }
         }
     }
 
