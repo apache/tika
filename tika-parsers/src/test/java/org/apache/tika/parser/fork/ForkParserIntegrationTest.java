@@ -71,8 +71,8 @@ public class ForkParserIntegrationTest extends TestCase {
      * This error has a message and an equals() implementation as to be able 
      * to match it against the serialized version of itself.
      */
-    @SuppressWarnings("serial")
     static class AnError extends Error {
+        private static final long serialVersionUID = -6197267350768803348L;
         private String message;
         AnError(String message) {
             super(message);
@@ -98,7 +98,9 @@ public class ForkParserIntegrationTest extends TestCase {
     }
     
     static class BrokenParser implements Parser {
+        private static final long serialVersionUID = 995871497930817839L;
         public Error e = new AnError("Simulated fail"); 
+        
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             return new HashSet<MediaType>(Arrays.asList(MediaType.TEXT_PLAIN));
         }
@@ -111,15 +113,15 @@ public class ForkParserIntegrationTest extends TestCase {
     /**
      * TIKA-831 Parsers throwing errors should be caught and
      *  properly reported
-     * TODO Disabled, pending a fix for the not serialized exception
      */
-    public void DISABLEDtestParsingErrorInForkedParserShouldBeReported() throws Exception {
+    public void testParsingErrorInForkedParserShouldBeReported() throws Exception {
         BrokenParser brokenParser = new BrokenParser();
         Parser parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
-        Tika forkedTika = new Tika(TikaConfig.getDefaultConfig().getDetector(), parser);
         InputStream stream = getClass().getResourceAsStream("/test-documents/testTXT.txt");
         try {
-            forkedTika.parseToString(stream);
+            ContentHandler output = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            parser.parse(stream, output, new Metadata(), context);
             fail("Expected TikaException caused by Error");
         } catch (TikaException e) {
             assertEquals(brokenParser.e, e.getCause());
