@@ -107,24 +107,25 @@ public class ExcelParserTest extends TestCase {
             // Date Format: d-mmm-yy
             assertTrue(content.contains("17-May-07"));
 
+            // Date Format: m/d/yy
+            assertTrue(content.contains("10/3/09"));
+            
+            // Date/Time Format: m/d/yy h:mm
+            assertTrue(content.contains("1/19/08 4:35"));
+
+            
             // Below assertions represent outstanding formatting issues to be addressed
             // they are included to allow the issues to be progressed with the Apache POI
             // team - See TIKA-103.
 
             /*************************************************************************
-            // Date Format: m/d/yy
-            assertTrue(content.contains("03/10/2009"));
-
-            // Date/Time Format
-            assertTrue(content.contains("19/01/2008 04:35"));
-
             // Custom Number (0 "dollars and" .00 "cents")
             assertTrue(content.contains("19 dollars and .99 cents"));
 
             // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
             assertTrue(content.contains("At 4:20 AM on Thursday May 17, 2007"));
 
-            // Fraction (2.5): # ?/?
+            // Fraction (2.5): # ?/?  (TODO Coming in POI 3.8 beta 6)
             assertTrue(content.contains("2 1 / 2"));
             **************************************************************************/
 
