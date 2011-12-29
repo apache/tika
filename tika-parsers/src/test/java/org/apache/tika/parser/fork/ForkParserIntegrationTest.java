@@ -26,7 +26,6 @@ import java.util.Set;
 import junit.framework.TestCase;
 
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
@@ -99,16 +98,43 @@ public class ForkParserIntegrationTest extends TestCase {
         }
     }
     
+    /**
+     * This error isn't serializable on the server, so can't be sent back
+     *  to the Fork Client once it has occured
+     */
+    static class WontBeSerializedError extends RuntimeException {
+       private static final long serialVersionUID = 1L;
+
+       WontBeSerializedError(String message) {
+          super(message);
+       }
+
+       private void writeObject(java.io.ObjectOutputStream out) {
+          RuntimeException e = new RuntimeException("Bang!");
+          boolean found = false;
+          for (StackTraceElement ste : e.getStackTrace()) {
+             if (ste.getClassName().equals(ForkParser.class.getName())) {
+                found = true;
+             }
+          }
+          if (!found) {
+             throw e;
+          }
+       }
+    }
+    
     static class BrokenParser implements Parser {
         private static final long serialVersionUID = 995871497930817839L;
-        public Error e = new AnError("Simulated fail"); 
+        public Error err = new AnError("Simulated fail");
+        public RuntimeException re = null;
         
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             return new HashSet<MediaType>(Arrays.asList(MediaType.TEXT_PLAIN));
         }
 
         public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-            throw e;
+            if (re != null) throw re;
+            throw err;
         }
     }
     
@@ -120,14 +146,31 @@ public class ForkParserIntegrationTest extends TestCase {
         BrokenParser brokenParser = new BrokenParser();
         Parser parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
         InputStream stream = getClass().getResourceAsStream("/test-documents/testTXT.txt");
+        
+        // With a serializable error, we'll get that back
         try {
             ContentHandler output = new BodyContentHandler();
             ParseContext context = new ParseContext();
             parser.parse(stream, output, new Metadata(), context);
             fail("Expected TikaException caused by Error");
         } catch (TikaException e) {
-            assertEquals(brokenParser.e, e.getCause());
+            assertEquals(brokenParser.err, e.getCause());
         }
+        
+        // With a non serializable one, we'll get something else
+        // TODO Fix this test
+        brokenParser = new BrokenParser();
+        brokenParser.re= new WontBeSerializedError("Can't Serialize");
+        parser = new ForkParser(ForkParser.class.getClassLoader(), brokenParser);
+//        try {
+//           ContentHandler output = new BodyContentHandler();
+//           ParseContext context = new ParseContext();
+//           parser.parse(stream, output, new Metadata(), context);
+//           fail("Expected TikaException caused by Error");
+//       } catch (TikaException e) {
+//           assertEquals(TikaException.class, e.getCause().getClass());
+//           assertEquals("Bang!", e.getCause().getMessage());
+//       }
     }
     
     /**
