@@ -109,7 +109,7 @@ public class Mp3ParserTest extends TestCase {
         assertEquals(null, metadata.get(XMPDM.COMPOSER));
         assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
         assertEquals("Rock", metadata.get(XMPDM.GENRE));
-        assertEquals("XXXID3v1 Comment\nTest Comment", metadata.get(XMPDM.LOG_COMMENT.getName()));
+        assertEquals("XXX - ID3v1 Comment\nTest Comment", metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
         
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
@@ -208,8 +208,10 @@ public class Mp3ParserTest extends TestCase {
        assertEquals("Test Artist \u2468\u2460", metadata.get(XMPDM.ARTIST));
        assertEquals("Test Album \u2460\u2468", metadata.get(XMPDM.ALBUM));
 
-       // TODO Fix comments
-//       assertEquals("Comment Desc - This is a comment", metadata.get(XMPDM.LOG_COMMENT));
+       assertEquals(
+             "Eng - Comment Desc\nThis is a \u1357\u2468\u2460 Comment", 
+             metadata.get(XMPDM.LOG_COMMENT)
+       );
        
        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
        assertEquals("44100", metadata.get("samplerate"));

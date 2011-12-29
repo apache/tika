@@ -60,7 +60,7 @@ public class ID3v24Handler implements ID3Tags {
             } else if (tag.name.equals("TCOM")) {
                 composer = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("COMM")) {
-                comment = getTagString(tag.data, 0, tag.data.length); 
+                comment = getCommentString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TRCK")) {
                 trackNumber = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TCON")) {
@@ -71,6 +71,9 @@ public class ID3v24Handler implements ID3Tags {
 
     private String getTagString(byte[] data, int offset, int length) {
         return ID3v2Frame.getTagString(data, offset, length);
+    }
+    private String getCommentString(byte[] data, int offset, int length) {
+        return ID3v2Frame.getCommentString(data, offset, length);
     }
 
     public boolean getTagsPresent() {

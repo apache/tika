@@ -55,7 +55,7 @@ public class ID3v22Handler implements ID3Tags {
             } else if (tag.name.equals("TCM")) {
                 composer = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("COM")) {
-                comment = getTagString(tag.data, 0, tag.data.length); 
+                comment = getCommentString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TRK")) {
                 trackNumber = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TCO")) {
@@ -66,6 +66,9 @@ public class ID3v22Handler implements ID3Tags {
 
     private String getTagString(byte[] data, int offset, int length) {
         return ID3v2Frame.getTagString(data, offset, length);
+    }
+    private String getCommentString(byte[] data, int offset, int length) {
+        return ID3v2Frame.getCommentString(data, offset, length);
     }
     
     protected static String extractGenre(String rawGenre) {
