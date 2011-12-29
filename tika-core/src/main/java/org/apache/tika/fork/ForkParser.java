@@ -130,7 +130,12 @@ public class ForkParser extends AbstractParser {
         try {
             t = client.call("parse", stream, handler, metadata, context);
             alive = true;
+        } catch (TikaException te) {
+            // Problem occurred on our side
+            alive = true;
+            throw te;
         } catch (IOException e) {
+            // Problem occurred on the other side
             throw new TikaException(
                     "Failed to communicate with a forked parser process."
                     + " The process has most likely crashed due to some error"

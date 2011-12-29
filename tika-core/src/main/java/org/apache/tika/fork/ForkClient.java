@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.NotSerializableException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
@@ -50,7 +52,7 @@ class ForkClient {
     private final InputStream error;
 
     public ForkClient(ClassLoader loader, Object object, String java)
-            throws IOException {
+            throws IOException, TikaException {
         boolean ok = false;
         try {
             this.loader = loader;
@@ -100,7 +102,7 @@ class ForkClient {
 
 
     public synchronized Throwable call(String method, Object... args)
-            throws IOException {
+            throws IOException, TikaException {
         List<ForkResource> r = new ArrayList<ForkResource>(resources);
         output.writeByte(ForkServer.CALL);
         output.writeUTF(method);
@@ -119,7 +121,7 @@ class ForkClient {
      * @throws IOException if the object could not be serialized
      */
     private void sendObject(Object object, List<ForkResource> resources)
-            throws IOException {
+            throws IOException, TikaException {
         int n = resources.size();
         if (object instanceof InputStream) {
             resources.add(new InputStreamResource((InputStream) object));
@@ -132,7 +134,14 @@ class ForkClient {
             object = new ClassLoaderProxy(n);
         }
 
-        ForkObjectInputStream.sendObject(object, output);
+        try {
+           ForkObjectInputStream.sendObject(object, output);
+        } catch(NotSerializableException nse) {
+           // Build a more friendly error message for this
+           throw new TikaException(
+                 "Unable to serialize " + object.getClass().getSimpleName() +
+                 " to pass to the Forked Parser", nse);
+        }
 
         waitForResponse(resources);
     }
