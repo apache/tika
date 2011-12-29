@@ -192,7 +192,7 @@ public class ID3v2Frame implements MP3Frame {
         // Does it have an encoding flag?
         // Detect by the first byte being sub 0x20
         boolean doubleByte = false;
-        String encoding = "ISO-8859-1";
+        String encoding = "ISO8859_1";
         byte maybeEncodingFlag = data[offset];
         if (maybeEncodingFlag == 0 || maybeEncodingFlag == 1 ||
               maybeEncodingFlag == 2 || maybeEncodingFlag == 3) {
