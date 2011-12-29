@@ -18,6 +18,7 @@ package org.apache.tika.parser.fork;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.NotSerializableException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -26,6 +27,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
@@ -126,6 +128,38 @@ public class ForkParserIntegrationTest extends TestCase {
         } catch (TikaException e) {
             assertEquals(brokenParser.e, e.getCause());
         }
+    }
+    
+    /**
+     * If we supply a non serializable object on the ParseContext,
+     *  check we get a helpful exception back
+     */
+    public void testParserHandlingOfNonSerializable() throws Exception {
+       ForkParser parser = new ForkParser(
+             ForkParserIntegrationTest.class.getClassLoader(),
+             tika.getParser());
+       
+       ParseContext context = new ParseContext();
+       context.set(Detector.class, new Detector() {
+          public MediaType detect(InputStream input, Metadata metadata) {
+             return MediaType.OCTET_STREAM;
+          }
+       });
+
+       try {
+          ContentHandler output = new BodyContentHandler();
+          InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
+              "/test-documents/testTXT.txt");
+          parser.parse(stream, output, new Metadata(), context);
+          fail("Should have blown up with a non serializable ParseContext");
+       } catch(TikaException e) {
+          // Check the right details
+          assertNotNull(e.getCause());
+          assertEquals(NotSerializableException.class, e.getCause().getClass());
+          assertEquals("Unable to serialize ParseContext to pass to the Forked Parser", e.getMessage());
+       } finally {
+          parser.close();
+       }
     }
 
     /**
