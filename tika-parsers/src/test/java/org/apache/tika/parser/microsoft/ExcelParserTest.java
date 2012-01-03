@@ -21,8 +21,14 @@ import java.util.Locale;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -211,4 +217,48 @@ public class ExcelParserTest extends TestCase {
         }
     }
 
+    /**
+     * We don't currently support the .xlsb file format 
+     *  (an OOXML container with binary blobs), but we 
+     *  shouldn't break on these files either (TIKA-826)  
+     */
+    public void testExcelXLSB() throws Exception {
+       Detector detector = new DefaultDetector();
+       AutoDetectParser parser = new AutoDetectParser();
+       
+       InputStream input = ExcelParserTest.class.getResourceAsStream(
+             "/test-documents/testEXCEL.xlsb");
+       Metadata m = new Metadata();
+       m.add(Metadata.RESOURCE_NAME_KEY, "excel.xlsb");
+       
+       // Should be detected correctly
+       MediaType type = null;
+       try {
+          type = detector.detect(input, m);
+          assertEquals("application/vnd.ms-excel.sheet.binary.macroenabled.12", type.toString());
+       } finally {
+          input.close();
+       }
+       
+       // OfficeParser won't handle it
+       assertEquals(false, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+       
+       // OOXMLParser won't handle it
+       assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
+       
+       // AutoDetectParser doesn't break on it
+       input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL.xlsb");
+
+       try {
+          ContentHandler handler = new BodyContentHandler(-1);
+          ParseContext context = new ParseContext();
+          context.set(Locale.class, Locale.US);
+          parser.parse(input, handler, m, context);
+
+          String content = handler.toString();
+          assertEquals("", content);
+       } finally {
+          input.close();
+       }
+    }
 }

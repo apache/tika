@@ -70,8 +70,7 @@ public class OfficeParser extends AbstractParser {
                     POIFSDocumentType.VISIO.type,
                     // Works isn't supported
                     POIFSDocumentType.XLR.type, // but Works 7.0 Spreadsheet is
-                    POIFSDocumentType.OUTLOOK.type,
-                    MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12")
+                    POIFSDocumentType.OUTLOOK.type
                     )));
 
     public enum POIFSDocumentType {

@@ -1372,6 +1372,7 @@
   </mime-type>
   <mime-type type="application/vnd.ms-xpsdocument">
     <glob pattern="*.xps"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
   <mime-type type="application/vnd.mseq">
     <glob pattern="*.mseq"/>

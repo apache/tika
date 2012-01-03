@@ -57,6 +57,18 @@ public class OOXMLParser extends AbstractParser {
                 MediaType.application("vnd.ms-word.document.macroenabled.12"),
                 MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.template"),
                 MediaType.application("vnd.ms-word.template.macroenabled.12"))));
+    
+    /**
+     * We claim to support all OOXML files, but we actually don't support a small
+     *  number of them.
+     * This list is used to decline certain formats that are not yet supported
+     *  by Tika and/or POI.
+     */
+    private static final Set<MediaType> UNSUPPORTED_OOXML_TYPES = 
+       Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12"),
+                MediaType.application("vnd.ms-xpsdocument")
+       )));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -66,7 +78,13 @@ public class OOXMLParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        // Is this an OOXML derived type that we can't help with?
+        String type = metadata.get(Metadata.CONTENT_TYPE);
+        if (type != null && UNSUPPORTED_OOXML_TYPES.contains(MediaType.parse(type))) {
+           return;
+        }
+
+        // Have the OOXML file processed
         OOXMLExtractorFactory.parse(stream, handler, metadata, context);
     }
-
 }
