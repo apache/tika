@@ -4,6 +4,9 @@ Apache Tika Change Log
 Release 1.1 - Current Development
 ---------------------------------
 
+ * Link Extraction: The rel attribute is now extracted from 
+   links per the LinkConteHandler. (TIKA-824)
+
  * MP3: Fixed handling of UTF-16 (two byte) ID3v2 tags (previously
    the last character in a UTF-16 tag could be corrupted) (TIKA-793)
 
