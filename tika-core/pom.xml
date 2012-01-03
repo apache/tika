@@ -94,6 +94,7 @@
               <excludes>
                 <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
                 <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
+                <exlude>org/apache/tika/parser/EmptyParser</exlude>
               </excludes>
               <comparisonArtifacts>
                 <comparisonArtifact>

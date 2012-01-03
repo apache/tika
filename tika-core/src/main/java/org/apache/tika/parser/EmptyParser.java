@@ -41,7 +41,7 @@ public class EmptyParser extends AbstractParser {
     /**
      * Singleton instance of this class.
      */
-    public static EmptyParser INSTANCE = new EmptyParser();
+    public static final EmptyParser INSTANCE = new EmptyParser();
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return Collections.emptySet();
