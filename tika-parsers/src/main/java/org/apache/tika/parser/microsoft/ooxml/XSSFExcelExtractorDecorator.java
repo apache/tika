@@ -174,7 +174,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     /**
      * Turns formatted sheet events into HTML
      */
-    protected class SheetTextAsHTML implements SheetContentsHandler {
+    protected static class SheetTextAsHTML implements SheetContentsHandler {
        private XHTMLContentHandler xhtml;
        private CommentsTable comments;
        private List<String> headers;
@@ -235,7 +235,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      * Allows access to headers/footers from raw xml strings
      */
     private static HeaderFooterHelper hfHelper = new HeaderFooterHelper();
-    protected class HeaderFooterFromString implements HeaderFooter {
+    protected static class HeaderFooterFromString implements HeaderFooter {
       private String text;
       protected HeaderFooterFromString(String text) {
          this.text = text;
@@ -260,7 +260,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      * Captures information on interesting tags, whilst
      *  delegating the main work to the formatting handler
      */
-    protected class XSSFSheetInterestingPartsCapturer implements ContentHandler {
+    protected static class XSSFSheetInterestingPartsCapturer implements ContentHandler {
       private ContentHandler delegate;
       private boolean hasProtection = false;
       

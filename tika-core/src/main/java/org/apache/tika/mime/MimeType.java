@@ -221,7 +221,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
      * Defines a RootXML description. RootXML is made of a localName and/or a
      * namespaceURI.
      */
-    class RootXML implements Serializable {
+    static class RootXML implements Serializable {
 
         /**
          * Serial version UID.
