@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
@@ -54,7 +55,154 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class OpenDocumentContentParser extends AbstractParser {
 
-    public static final String TEXT_NS =
+    private static final class OpenDocumentElementMappingContentHandler extends
+			ElementMappingContentHandler {
+		private final ContentHandler handler;
+		private final BitSet textNodeStack = new BitSet();
+		private int nodeDepth = 0;
+		private int completelyFiltered = 0;
+		private Stack<String> headingStack = new Stack<String>();
+
+		private OpenDocumentElementMappingContentHandler(ContentHandler handler,
+				Map<QName, TargetElement> mappings) {
+			super(handler, mappings);
+			this.handler = handler;
+		}
+
+		@Override
+		public void characters(char[] ch, int start, int length)
+		        throws SAXException {
+		    // only forward content of tags from text:-namespace
+		    if (completelyFiltered == 0 && nodeDepth > 0
+		            && textNodeStack.get(nodeDepth - 1)) {
+		        super.characters(ch,start,length);
+		    }
+		}
+
+		// helper for checking tags which need complete filtering
+		// (with sub-tags)
+		private boolean needsCompleteFiltering(
+		        String namespaceURI, String localName) {
+		    if (TEXT_NS.equals(namespaceURI)) {
+		        return localName.endsWith("-template")
+		            || localName.endsWith("-style");
+		    } else if (TABLE_NS.equals(namespaceURI)) {
+		        return "covered-table-cell".equals(localName);
+		    } else {
+		        return false;
+		    }
+		}
+
+		// map the heading level to <hX> HTML tags
+		private String getXHTMLHeaderTagName(Attributes atts) {
+		    String depthStr = atts.getValue(TEXT_NS, "outline-level");
+		    if (depthStr == null) {
+		        return "h1";
+		    }
+
+		    int depth = Integer.parseInt(depthStr);
+		    if (depth >= 6) {
+		        return "h6";
+		    } else if (depth <= 1) {
+		        return "h1";
+		    } else {
+		        return "h" + depth;
+		    }
+		}
+
+		/**
+		 * Check if a node is a text node
+		 */
+		private boolean isTextNode(String namespaceURI, String localName) {
+		    if (TEXT_NS.equals(namespaceURI) && !localName.equals("page-number") && !localName.equals("page-count")) {
+		        return true;
+		    }
+		    if (SVG_NS.equals(namespaceURI)) {
+		        return "title".equals(localName) ||
+		                "desc".equals(localName);
+		    }
+		    return false;
+		}
+
+		@Override
+		public void startElement(
+		        String namespaceURI, String localName, String qName,
+		        Attributes atts) throws SAXException {
+		    // keep track of current node type. If it is a text node,
+		    // a bit at the current depth ist set in textNodeStack.
+		    // characters() checks the top bit to determine, if the
+		    // actual node is a text node to print out nodeDepth contains
+		    // the depth of the current node and also marks top of stack.
+		    assert nodeDepth >= 0;
+
+		    textNodeStack.set(nodeDepth++, 
+		            isTextNode(namespaceURI, localName));
+		    // filter *all* content of some tags
+		    assert completelyFiltered >= 0;
+
+		    if (needsCompleteFiltering(namespaceURI, localName)) {
+		        completelyFiltered++;
+		    }
+		    // call next handler if no filtering
+		    if (completelyFiltered == 0) {
+		        // special handling of text:h, that are directly passed
+		        // to incoming handler
+		        if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
+		            final String el = headingStack.push(getXHTMLHeaderTagName(atts));
+		            handler.startElement(XHTMLContentHandler.XHTML, el, el, EMPTY_ATTRIBUTES);
+		        } else {
+		            super.startElement(
+		                    namespaceURI, localName, qName, atts);
+		        }
+		    }
+		}
+
+		@Override
+		public void endElement(
+		        String namespaceURI, String localName, String qName)
+		        throws SAXException {
+		    // call next handler if no filtering
+		    if (completelyFiltered == 0) {
+		        // special handling of text:h, that are directly passed
+		        // to incoming handler
+		        if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
+		            final String el = headingStack.pop();
+		            handler.endElement(XHTMLContentHandler.XHTML, el, el);
+		        } else {
+		            super.endElement(namespaceURI,localName,qName);
+		        }
+
+		        // special handling of tabulators
+		        if (TEXT_NS.equals(namespaceURI)
+		                && ("tab-stop".equals(localName)
+		                        || "tab".equals(localName))) {
+		            this.characters(TAB, 0, TAB.length);
+		        }
+		    }
+
+		    // revert filter for *all* content of some tags
+		    if (needsCompleteFiltering(namespaceURI,localName)) {
+		        completelyFiltered--;
+		    }
+		    assert completelyFiltered >= 0;
+
+		    // reduce current node depth
+		    nodeDepth--;
+		    assert nodeDepth >= 0;
+		}
+
+		@Override
+		public void startPrefixMapping(String prefix, String uri) {
+		    // remove prefix mappings as they should not occur in XHTML
+		}
+
+		@Override
+		public void endPrefixMapping(String prefix) {
+		    // remove prefix mappings as they should not occur in XHTML
+		}
+	}
+
+	public static final String TEXT_NS =
         "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
 
     public static final String TABLE_NS =
@@ -187,149 +335,7 @@ public class OpenDocumentContentParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
 
-        DefaultHandler dh = new ElementMappingContentHandler(handler, MAPPINGS) {
-
-            private final BitSet textNodeStack = new BitSet();
-
-            private int nodeDepth = 0;
-
-            private int completelyFiltered = 0;
-
-            private Stack<String> headingStack = new Stack<String>();
-
-            @Override
-            public void characters(char[] ch, int start, int length)
-                    throws SAXException {
-                // only forward content of tags from text:-namespace
-                if (completelyFiltered == 0 && nodeDepth > 0
-                        && textNodeStack.get(nodeDepth - 1)) {
-                    super.characters(ch,start,length);
-                }
-            }
-
-            // helper for checking tags which need complete filtering
-            // (with sub-tags)
-            private boolean needsCompleteFiltering(
-                    String namespaceURI, String localName) {
-                if (TEXT_NS.equals(namespaceURI)) {
-                    return localName.endsWith("-template")
-                        || localName.endsWith("-style");
-                } else if (TABLE_NS.equals(namespaceURI)) {
-                    return "covered-table-cell".equals(localName);
-                } else {
-                    return false;
-                }
-            }
-
-            // map the heading level to <hX> HTML tags
-            private String getXHTMLHeaderTagName(Attributes atts) {
-                String depthStr = atts.getValue(TEXT_NS, "outline-level");
-                if (depthStr == null) {
-                    return "h1";
-                }
-
-                int depth = Integer.parseInt(depthStr);
-                if (depth >= 6) {
-                    return "h6";
-                } else if (depth <= 1) {
-                    return "h1";
-                } else {
-                    return "h" + depth;
-                }
-            }
-
-            /**
-             * Check if a node is a text node
-             */
-            private boolean isTextNode(String namespaceURI, String localName) {
-                if (TEXT_NS.equals(namespaceURI) && !localName.equals("page-number") && !localName.equals("page-count")) {
-                    return true;
-                }
-                if (SVG_NS.equals(namespaceURI)) {
-                    return "title".equals(localName) ||
-                            "desc".equals(localName);
-                }
-                return false;
-            }
-
-            @Override
-            public void startElement(
-                    String namespaceURI, String localName, String qName,
-                    Attributes atts) throws SAXException {
-                // keep track of current node type. If it is a text node,
-                // a bit at the current depth ist set in textNodeStack.
-                // characters() checks the top bit to determine, if the
-                // actual node is a text node to print out nodeDepth contains
-                // the depth of the current node and also marks top of stack.
-                assert nodeDepth >= 0;
-
-                textNodeStack.set(nodeDepth++, 
-                        isTextNode(namespaceURI, localName));
-                // filter *all* content of some tags
-                assert completelyFiltered >= 0;
-
-                if (needsCompleteFiltering(namespaceURI, localName)) {
-                    completelyFiltered++;
-                }
-                // call next handler if no filtering
-                if (completelyFiltered == 0) {
-                    // special handling of text:h, that are directly passed
-                    // to incoming handler
-                    if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
-                        final String el = headingStack.push(getXHTMLHeaderTagName(atts));
-                        handler.startElement(XHTMLContentHandler.XHTML, el, el, EMPTY_ATTRIBUTES);
-                    } else {
-                        super.startElement(
-                                namespaceURI, localName, qName, atts);
-                    }
-                }
-            }
-
-            @Override
-            public void endElement(
-                    String namespaceURI, String localName, String qName)
-                    throws SAXException {
-                // call next handler if no filtering
-                if (completelyFiltered == 0) {
-                    // special handling of text:h, that are directly passed
-                    // to incoming handler
-                    if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
-                        final String el = headingStack.pop();
-                        handler.endElement(XHTMLContentHandler.XHTML, el, el);
-                    } else {
-                        super.endElement(namespaceURI,localName,qName);
-                    }
-
-                    // special handling of tabulators
-                    if (TEXT_NS.equals(namespaceURI)
-                            && ("tab-stop".equals(localName)
-                                    || "tab".equals(localName))) {
-                        this.characters(TAB, 0, TAB.length);
-                    }
-                }
-
-                // revert filter for *all* content of some tags
-                if (needsCompleteFiltering(namespaceURI,localName)) {
-                    completelyFiltered--;
-                }
-                assert completelyFiltered >= 0;
-
-                // reduce current node depth
-                nodeDepth--;
-                assert nodeDepth >= 0;
-            }
-
-            @Override
-            public void startPrefixMapping(String prefix, String uri) {
-                // remove prefix mappings as they should not occur in XHTML
-            }
-
-            @Override
-            public void endPrefixMapping(String prefix) {
-                // remove prefix mappings as they should not occur in XHTML
-            }
-
-        };
+        DefaultHandler dh = new OpenDocumentElementMappingContentHandler(handler, MAPPINGS);
 
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -354,3 +360,4 @@ public class OpenDocumentContentParser extends AbstractParser {
     }
 
 }
+	

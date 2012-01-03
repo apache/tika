@@ -44,7 +44,7 @@ public class LanguageProfile {
      */
     private long count = 0;
 
-    private class Counter {
+    private static class Counter {
         private long count = 0;
         public String toString() {
             return Long.toString(count);

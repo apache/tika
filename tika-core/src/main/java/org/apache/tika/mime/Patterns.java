@@ -56,7 +56,7 @@ class Patterns implements Serializable {
     private final SortedMap<String, MimeType> globs =
         new TreeMap<String, MimeType>(new LengthComparator());
 
-    private final class LengthComparator
+    private static final class LengthComparator
             implements Comparator<String>, Serializable {
 
         /**

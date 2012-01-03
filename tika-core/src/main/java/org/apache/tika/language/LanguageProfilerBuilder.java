@@ -552,7 +552,7 @@ public class LanguageProfilerBuilder {
     /**
      * Inner class that describes a NGram
      */
-    class NGramEntry implements Comparable<NGramEntry> {
+    static class NGramEntry implements Comparable<NGramEntry> {
 
         /** The NGRamProfile this NGram is related to */
         private LanguageProfilerBuilder profile = null;
@@ -682,7 +682,7 @@ public class LanguageProfilerBuilder {
 
     }
 
-    private class QuickStringBuffer implements CharSequence {
+    private static class QuickStringBuffer implements CharSequence {
 
         private char value[];
 
