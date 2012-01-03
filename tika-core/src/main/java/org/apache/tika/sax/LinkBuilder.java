@@ -24,6 +24,8 @@ class LinkBuilder {
 
     private String title = "";
 
+    private String rel = "";
+
     private final StringBuilder text = new StringBuilder();
 
     public LinkBuilder(String type) {
@@ -46,12 +48,20 @@ class LinkBuilder {
         }
     }
 
+    public void setRel(String rel) {
+        if (rel != null) {
+            this.rel = rel;
+        } else {
+            this.rel = "";
+        }
+    }
+
     public void characters(char[] ch, int offset, int length) {
         text.append(ch, offset, length);
     }
 
     public Link getLink() {
-        return new Link(type, uri, title, text.toString());
+        return new Link(type, uri, title, text.toString(), rel);
     }
 
 }

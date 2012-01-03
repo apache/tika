@@ -26,11 +26,22 @@ public class Link {
 
     private final String text;
 
+    private final String rel;
+
     public Link(String type, String uri, String title, String text) {
         this.type = type;
         this.uri = uri;
         this.title = title;
         this.text = text;
+        this.rel = "";
+    }
+
+    public Link(String type, String uri, String title, String text, String rel) {
+        this.type = type;
+        this.uri = uri;
+        this.title = title;
+        this.text = text;
+        this.rel = rel;
     }
 
     public boolean isAnchor() {
@@ -57,6 +68,10 @@ public class Link {
         return text;
     }
 
+    public String getRel() {
+      return rel;
+    }
+
     public String toString() {
         StringBuilder builder = new StringBuilder();
         if (isImage()) {
@@ -79,6 +94,10 @@ public class Link {
             if (title != null && title.length() > 0) {
                 builder.append("\" title=\"");
                 builder.append(title);
+            }
+            if (rel != null && rel.length() > 0) {
+                builder.append("\" rel=\"");
+                builder.append(rel);
             }
             builder.append("\">");
             builder.append(text);

@@ -62,11 +62,13 @@ public class LinkContentHandler extends DefaultHandler {
                 LinkBuilder builder = new LinkBuilder("a");
                 builder.setURI(attributes.getValue("", "href"));
                 builder.setTitle(attributes.getValue("", "title"));
+                builder.setRel(attributes.getValue("", "rel"));
                 builderStack.addFirst(builder);
             } else if ("img".equals(local)) {
                 LinkBuilder builder = new LinkBuilder("img");
                 builder.setURI(attributes.getValue("", "src"));
                 builder.setTitle(attributes.getValue("", "title"));
+                builder.setRel(attributes.getValue("", "rel"));
                 builderStack.addFirst(builder);
 
                 String alt = attributes.getValue("", "alt");
