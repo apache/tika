@@ -27,6 +27,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -81,6 +82,8 @@ public class OOXMLParser extends AbstractParser {
         // Is this an OOXML derived type that we can't help with?
         String type = metadata.get(Metadata.CONTENT_TYPE);
         if (type != null && UNSUPPORTED_OOXML_TYPES.contains(MediaType.parse(type))) {
+           // Not a supported type, delegate to Empty Parser 
+           EmptyParser.INSTANCE.parse(stream, handler, metadata, context);
            return;
         }
 
