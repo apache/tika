@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.mp3;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Takes an array of {@link ID3Tags} in preference order, and when asked for
  * a given tag, will return it from the first {@link ID3Tags} that has it.
@@ -82,13 +85,14 @@ public class CompositeTagHandler implements ID3Tags {
         return null;
     }
 
-    public String getComment() {
+    public List<ID3Comment> getComments() {
         for (ID3Tags tag : tags) {
-            if (tag.getComment() != null) {
-                return tag.getComment();
+            List<ID3Comment> comments = tag.getComments();
+            if (comments != null && comments.size() > 0) {
+                return comments;
             }
         }
-        return null;
+        return Collections.emptyList();
     }
 
     public String getGenre() {

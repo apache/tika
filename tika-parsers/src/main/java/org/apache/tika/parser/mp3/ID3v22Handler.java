@@ -17,6 +17,8 @@
 package org.apache.tika.parser.mp3;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.mp3.ID3v2Frame.RawTag;
@@ -35,9 +37,9 @@ public class ID3v22Handler implements ID3Tags {
     private String album;
     private String year;
     private String composer;
-    private String comment;
     private String genre;
     private String trackNumber;
+    private List<ID3Comment> comments = new ArrayList<ID3Comment>();
 
     public ID3v22Handler(ID3v2Frame frame)
             throws IOException, SAXException, TikaException {
@@ -55,7 +57,7 @@ public class ID3v22Handler implements ID3Tags {
             } else if (tag.name.equals("TCM")) {
                 composer = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("COM")) {
-                comment = getCommentString(tag.data, 0, tag.data.length); 
+                comments.add( getComment(tag.data, 0, tag.data.length) ); 
             } else if (tag.name.equals("TRK")) {
                 trackNumber = getTagString(tag.data, 0, tag.data.length); 
             } else if (tag.name.equals("TCO")) {
@@ -67,8 +69,8 @@ public class ID3v22Handler implements ID3Tags {
     private String getTagString(byte[] data, int offset, int length) {
         return ID3v2Frame.getTagString(data, offset, length);
     }
-    private String getCommentString(byte[] data, int offset, int length) {
-        return ID3v2Frame.getCommentString(data, offset, length);
+    private ID3Comment getComment(byte[] data, int offset, int length) {
+        return ID3v2Frame.getComment(data, offset, length);
     }
     
     protected static String extractGenre(String rawGenre) {
@@ -115,8 +117,8 @@ public class ID3v22Handler implements ID3Tags {
         return composer;
     }
 
-    public String getComment() {
-        return comment;
+    public List<ID3Comment> getComments() {
+        return comments;
     }
 
     public String getGenre() {

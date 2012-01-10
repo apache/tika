@@ -29,6 +29,7 @@ import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -77,7 +78,27 @@ public class Mp3Parser extends AbstractParser {
            metadata.set(XMPDM.ALBUM, tag.getAlbum());
            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
            metadata.set(XMPDM.GENRE, tag.getGenre());
-           metadata.set(XMPDM.LOG_COMMENT, tag.getComment());
+           
+           List<String> comments = new ArrayList<String>();
+           for (ID3Comment comment : tag.getComments()) {
+              StringBuffer cmt = new StringBuffer();
+              if (comment.getLanguage() != null) {
+                 cmt.append(comment.getLanguage());
+                 cmt.append(" - ");
+              }
+              if (comment.getDescription() != null) {
+                 cmt.append(comment.getDescription());
+                 if (comment.getText() != null) {
+                    cmt.append("\n");
+                 }
+              }
+              if (comment.getText() != null) {
+                 cmt.append(comment.getText());
+              }
+              
+              comments.add(cmt.toString());
+              metadata.add(XMPDM.LOG_COMMENT.getName(), cmt.toString());
+           }
 
            xhtml.element("h1", tag.getTitle());
            xhtml.element("p", tag.getArtist());
@@ -90,8 +111,10 @@ public class Mp3Parser extends AbstractParser {
                 xhtml.element("p", tag.getAlbum());
             }
             xhtml.element("p", tag.getYear());
-            xhtml.element("p", tag.getComment());
             xhtml.element("p", tag.getGenre());
+            for (String comment : comments) {
+               xhtml.element("p", comment);
+            }
         }
         if (audioAndTags.audio != null) {
             metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
