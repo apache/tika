@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.mp3;
 
+import java.util.List;
+
 
 /**
  * Interface that defines the common interface for ID3 tag parsers,
@@ -176,7 +178,12 @@ public interface ID3Tags {
     
     String getComposer();
 
-    String getComment();
+    /**
+     * Retrieves the comments, if any.
+     * Files may have more than one comment, but normally only 
+     *  one with any language/description pair.
+     */
+    List<ID3Comment> getComments();
 
     String getGenre();
 
@@ -184,4 +191,47 @@ public interface ID3Tags {
 
     String getTrackNumber();
 
+    /**
+     * Represents a comments in ID3 (especially ID3 v2), where are 
+     *  made up of several parts
+     */
+    public static class ID3Comment {
+        private String language;
+        private String description;
+        private String text;
+        
+        /**
+         * Creates an ID3 v1 style comment tag
+         */
+        public ID3Comment(String id3v1Text) {
+           this.text = id3v1Text;
+        }
+        /**
+         * Creates an ID3 v2 style comment tag
+         */
+        public ID3Comment(String language, String description, String text) {
+            this.language = language;
+            this.description = description;
+            this.text = text;
+        }
+
+        /**
+         * Gets the language, if present
+         */
+        public String getLanguage() {
+           return language;
+        }
+        /**
+         * Gets the description, if present
+         */
+        public String getDescription() {
+           return description;
+        }
+        /**
+         * Gets the text, if present
+         */
+        public String getText() {
+           return text;
+        }
+    }
 }

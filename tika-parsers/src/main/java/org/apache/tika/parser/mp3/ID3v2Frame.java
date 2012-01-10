@@ -21,6 +21,8 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
+import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
+
 /**
  * A frame of ID3v2 data, which is then passed to a handler to 
  * be turned into useful data.
@@ -234,16 +236,17 @@ public class ID3v2Frame implements MP3Frame {
         }
     }
     /**
-     * Returns the comment string, in the form [LANG]: [Desc]\n[Text]
+     * Builds up the ID3 comment, by parsing and extracting
+     *  the comment string parts from the given data. 
      */
-    protected static String getCommentString(byte[] data, int offset, int length) {
+    protected static ID3Comment getComment(byte[] data, int offset, int length) {
        // Comments must have an encoding
        int encodingFlag = data[offset];
        if (encodingFlag >= 0 && encodingFlag < encodings.length) {
           // Good, valid flag
        } else {
           // Invalid string
-          return "";
+          return null;
        }
        
        TextEncoding encoding = encodings[encodingFlag];
@@ -285,11 +288,7 @@ public class ID3v2Frame implements MP3Frame {
           }
           
           // Return
-          if (description == null || description.length() == 0) {
-             return lang + " - " + text;
-          } else {
-             return lang + " - " + description + "\n" + text;
-          }
+          return new ID3Comment(lang, description, text);
        } catch (UnsupportedEncodingException e) {
           throw new RuntimeException(
                   "Core encoding " + encoding.encoding + " is not available", e);

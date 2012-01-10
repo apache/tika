@@ -19,6 +19,8 @@ package org.apache.tika.parser.mp3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.ContentHandler;
@@ -35,7 +37,7 @@ public class ID3v1Handler implements ID3Tags {
     private String artist;
     private String album;
     private String year;
-    private String comment;
+    private ID3Comment comment;
     private String genre;
     private String trackNumber;
 
@@ -60,7 +62,9 @@ public class ID3v1Handler implements ID3Tags {
             artist = getString(tagData, 33, 63);
             album = getString(tagData, 63, 93);
             year = getString(tagData, 93, 97);
-            comment = getString(tagData, 97, 127);
+            
+            String commentStr = getString(tagData, 97, 127);
+            comment = new ID3Comment(commentStr);
 
             int genreID = (int) tagData[127] & 0xff; // unsigned byte
             genre = GENRES[Math.min(genreID, GENRES.length - 1)];
@@ -96,8 +100,8 @@ public class ID3v1Handler implements ID3Tags {
         return year;
     }
 
-    public String getComment() {
-        return comment;
+    public List<ID3Comment> getComments() {
+       return Arrays.asList(new ID3Comment[] {comment});
     }
 
     public String getGenre() {
