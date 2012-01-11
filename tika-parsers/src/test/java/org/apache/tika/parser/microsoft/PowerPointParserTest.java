@@ -17,6 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
+import java.util.Locale;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -178,4 +179,35 @@ public class PowerPointParserTest extends TikaTest {
     }
     */
 
+    /**
+     * Ensures that custom OLE2 (HPSF) properties are extracted
+     */
+    public void testCustomProperties() throws Exception {
+       InputStream input = PowerPointParserTest.class.getResourceAsStream(
+             "/test-documents/testPPT_custom_props.ppt");
+       Metadata metadata = new Metadata();
+       
+       try {
+          ContentHandler handler = new BodyContentHandler(-1);
+          ParseContext context = new ParseContext();
+          context.set(Locale.class, Locale.US);
+          new OfficeParser().parse(input, handler, metadata, context);
+       } finally {
+          input.close();
+       }
+       
+       assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("JOUVIN ETIENNE",       metadata.get(Metadata.AUTHOR));
+       assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals("2011-08-22T13:32:58Z", metadata.get(Metadata.LAST_SAVED));
+       assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
+       assertEquals("1",                    metadata.get(Metadata.SLIDE_COUNT));
+       assertEquals("3",                    metadata.get(Metadata.WORD_COUNT));
+       assertEquals("Test extraction properties pptx", metadata.get(Metadata.TITLE));
+       assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
+       assertEquals("3",                    metadata.get("custom:myCustomNumber"));
+       assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
+       assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
+       assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
+    }
 }
