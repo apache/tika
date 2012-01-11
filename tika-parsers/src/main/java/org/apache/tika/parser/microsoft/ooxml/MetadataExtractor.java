@@ -16,10 +16,12 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.POIXMLProperties.CoreProperties;
+import org.apache.poi.POIXMLProperties.CustomProperties;
 import org.apache.poi.POIXMLProperties.ExtendedProperties;
 import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
@@ -28,6 +30,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
+import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
 /**
@@ -56,6 +59,7 @@ public class MetadataExtractor {
                extractor.getPackage() != null)) {
             extractMetadata(extractor.getCoreProperties(), metadata);
             extractMetadata(extractor.getExtendedProperties(), metadata);
+            extractMetadata(extractor.getCustomProperties(), metadata);
         }
     }
 
@@ -127,6 +131,59 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.WORD_COUNT, propsHolder.getWords());
     }
 
+    private void extractMetadata(CustomProperties properties,
+          Metadata metadata) {
+       org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperties
+           props = properties.getUnderlyingProperties();
+
+       for(CTProperty property : props.getPropertyList()) {
+          String val = null;
+          Date date = null;
+
+          if (property.isSetLpwstr()) {
+             val = property.getLpwstr(); 
+          }
+          else if (property.isSetFiletime()) {
+             date = property.getFiletime().getTime(); 
+          }
+          else if (property.isSetDate()) {
+             date = property.getDate().getTime(); 
+          }
+          else if (property.isSetDecimal()) {
+             BigDecimal d = property.getDecimal();
+             if (d == null) {
+                val = null;
+             } else {
+                val = d.toPlainString();
+             }
+          }
+          else if (property.isSetBool()) {
+             val = Boolean.toString( property.getBool() );
+          }
+          else if (property.isSetInt()) {
+             val = Integer.toString( property.getInt() ); 
+          }
+          else if (property.isSetLpstr()) {
+             val = property.getLpstr(); 
+          }
+          else if (property.isSetI4()) {
+             /* Int4 */ 
+             val = Integer.toString(property.getI4()); 
+          }
+          else {
+             // This type isn't currently supported yet, skip the property
+          }
+          
+          String propName = "custom:" + property.getName();
+          if (date != null) {
+             Property tikaProp = Property.externalDate(propName);
+             metadata.set(tikaProp, date);
+          } else if (val != null) {
+             metadata.set(propName, val);
+          }
+       }
+    }
+    
     private void addProperty(Metadata metadata, Property property, Nullable<Date> value) {
         if (value.getValue() != null) {
             metadata.set(property, value.getValue());

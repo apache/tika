@@ -667,4 +667,36 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Here is some red word Art", content);
     }
 
+    /**
+     * Ensures that custom OOXML properties are extracted
+     */
+    public void testExcelCustomProperties() throws Exception {
+       InputStream input = OOXMLParserTest.class.getResourceAsStream(
+             "/test-documents/testEXCEL_custom_props.xlsx");
+       Metadata metadata = new Metadata();
+       
+       try {
+          ContentHandler handler = new BodyContentHandler(-1);
+          ParseContext context = new ParseContext();
+          context.set(Locale.class, Locale.US);
+          new OOXMLParser().parse(input, handler, metadata, context);
+       } finally {
+          input.close();
+       }
+       
+       assertEquals(
+             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+             metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals(null,                   metadata.get(Metadata.AUTHOR));
+       assertEquals(null,                   metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals("2006-09-12T15:06:44Z", metadata.get(Metadata.DATE));
+       assertEquals("2006-09-12T15:06:44Z", metadata.get(Metadata.CREATION_DATE));
+       assertEquals("2011-08-22T14:24:38Z", metadata.get(Metadata.LAST_MODIFIED));
+       assertEquals("Microsoft Excel",      metadata.get(Metadata.APPLICATION_NAME));
+       assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
+       assertEquals("3",                    metadata.get("custom:myCustomNumber"));
+       assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
+       assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
+       assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
+    }
 }
