@@ -21,7 +21,6 @@ import java.util.Locale;
 
 import junit.framework.TestCase;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
@@ -260,5 +259,35 @@ public class ExcelParserTest extends TestCase {
        } finally {
           input.close();
        }
+    }
+    
+    /**
+     * Ensures that custom OLE2 (HPSF) properties are extracted
+     */
+    public void testCustomProperties() throws Exception {
+       InputStream input = ExcelParserTest.class.getResourceAsStream(
+             "/test-documents/testEXCEL_custom_props.xls");
+       Metadata metadata = new Metadata();
+       
+       try {
+          ContentHandler handler = new BodyContentHandler(-1);
+          ParseContext context = new ParseContext();
+          context.set(Locale.class, Locale.US);
+          new OfficeParser().parse(input, handler, metadata, context);
+       } finally {
+          input.close();
+       }
+       
+       assertEquals("application/vnd.ms-excel", metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("",                     metadata.get(Metadata.AUTHOR));
+       assertEquals("",                     metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals("2011-08-22T13:45:54Z", metadata.get(Metadata.LAST_SAVED));
+       assertEquals("2006-09-12T15:06:44Z", metadata.get(Metadata.CREATION_DATE));
+       assertEquals("Microsoft Excel",      metadata.get(Metadata.APPLICATION_NAME));
+       assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
+       assertEquals("3",                    metadata.get("custom:myCustomNumber"));
+       assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
+       assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
+       assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
 }
