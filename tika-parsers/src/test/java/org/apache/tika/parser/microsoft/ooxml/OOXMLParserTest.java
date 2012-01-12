@@ -699,4 +699,72 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
+    public void testWordCustomProperties() throws Exception {
+       InputStream input = OOXMLParserTest.class.getResourceAsStream(
+             "/test-documents/testWORD_custom_props.docx");
+       Metadata metadata = new Metadata();
+
+       try {
+          ContentHandler handler = new BodyContentHandler(-1);
+          ParseContext context = new ParseContext();
+          context.set(Locale.class, Locale.US);
+          new OOXMLParser().parse(input, handler, metadata, context);
+       } finally {
+          input.close();
+       }
+
+       assertEquals(
+             "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+             metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("EJ04325S",             metadata.get(Metadata.AUTHOR));
+       assertEquals("Etienne Jouvin",       metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals("2011-07-29T16:52:00Z", metadata.get(Metadata.DATE));
+       assertEquals("2011-07-29T16:52:00Z", metadata.get(Metadata.CREATION_DATE));
+       assertEquals("2012-01-03T22:14:00Z", metadata.get(Metadata.LAST_MODIFIED));
+       assertEquals("Microsoft Office Word",metadata.get(Metadata.APPLICATION_NAME));
+       assertEquals("1",                    metadata.get(Metadata.PAGE_COUNT));
+       assertEquals("2",                    metadata.get(Metadata.WORD_COUNT));
+       assertEquals("My Title",             metadata.get(Metadata.TITLE));
+       assertEquals("My Keyword",           metadata.get(Metadata.KEYWORDS));
+       assertEquals("Normal.dotm",          metadata.get(Metadata.TEMPLATE));
+       assertEquals("My subject",           metadata.get(Metadata.SUBJECT));
+       assertEquals("EDF-DIT",              metadata.get(Metadata.PUBLISHER));
+       assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
+       assertEquals("3",                    metadata.get("custom:myCustomNumber"));
+       assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
+       assertEquals("2010-12-30T23:00:00Z", metadata.get("custom:MyCustomDate"));
+       assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
+    }
+    public void testPowerPointCustomProperties() throws Exception {
+       InputStream input = OOXMLParserTest.class.getResourceAsStream(
+             "/test-documents/testPPT_custom_props.pptx");
+       Metadata metadata = new Metadata();
+
+       try {
+          ContentHandler handler = new BodyContentHandler(-1);
+          ParseContext context = new ParseContext();
+          context.set(Locale.class, Locale.US);
+          new OOXMLParser().parse(input, handler, metadata, context);
+       } finally {
+          input.close();
+       }
+
+       // When detection / type is fixed, re-enable this
+//       assertEquals(
+//             "application/vnd.openxmlformats-officedocument.presentationml.presentation", 
+//             metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("JOUVIN ETIENNE",       metadata.get(Metadata.AUTHOR));
+       assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.DATE));
+       assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
+       assertEquals("2011-08-22T13:32:49Z", metadata.get(Metadata.LAST_MODIFIED));
+       assertEquals("1",                    metadata.get(Metadata.SLIDE_COUNT));
+       assertEquals("3",                    metadata.get(Metadata.WORD_COUNT));
+       assertEquals("Test extraction properties pptx", metadata.get(Metadata.TITLE));
+       assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
+       assertEquals("3",                    metadata.get("custom:myCustomNumber"));
+       assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
+       assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
+       assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
+    }
 }

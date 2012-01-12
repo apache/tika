@@ -65,6 +65,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private final DataFormatter formatter;
     private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
     private final List<Boolean> sheetProtected = new ArrayList<Boolean>();
+    
+    // TODO Have this detected rather than hard coded
     private static final String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     public XSSFExcelExtractorDecorator(
