@@ -45,9 +45,12 @@ import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
 
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
+    // TODO Have this detected rather than hard coded
+    //private static final String TYPE = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+    private static final String TYPE = null;
 
     public XSLFPowerPointExtractorDecorator(ParseContext context, XSLFPowerPointExtractor extractor) {
-        super(context, extractor, null);
+        super(context, extractor, TYPE);
     }
 
     /**

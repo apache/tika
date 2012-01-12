@@ -40,6 +40,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private XWPFStyles styles;
 
     public XWPFWordExtractorDecorator(ParseContext context, XWPFWordExtractor extractor) {
+        // TODO Have the type detected rather than hard coded
         super(context, extractor, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         
         document = (XWPFDocument) extractor.getDocument();

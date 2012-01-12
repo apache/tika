@@ -143,11 +143,60 @@ public class MetadataExtractor {
           if (property.isSetLpwstr()) {
              val = property.getLpwstr(); 
           }
-          else if (property.isSetFiletime()) {
-             date = property.getFiletime().getTime(); 
+          else if (property.isSetLpstr()) {
+             val = property.getLpstr(); 
           }
           else if (property.isSetDate()) {
              date = property.getDate().getTime(); 
+          }
+          else if (property.isSetFiletime()) {
+             date = property.getFiletime().getTime(); 
+          }
+
+          else if (property.isSetBool()) {
+             val = Boolean.toString( property.getBool() );
+          }
+
+          // Integers
+          else if (property.isSetI1()) {
+             val = Integer.toString(property.getI1()); 
+          }
+          else if (property.isSetI2()) {
+             val = Integer.toString(property.getI2()); 
+          }
+          else if (property.isSetI4()) {
+             val = Integer.toString(property.getI4()); 
+          }
+          else if (property.isSetI8()) {
+             val = Long.toString(property.getI8()); 
+          }
+          else if (property.isSetInt()) {
+             val = Integer.toString( property.getInt() ); 
+          }
+
+          // Unsigned Integers
+          else if (property.isSetUi1()) {
+             val = Integer.toString(property.getUi1()); 
+          }
+          else if (property.isSetUi2()) {
+             val = Integer.toString(property.getUi2()); 
+          }
+          else if (property.isSetUi4()) {
+             val = Long.toString(property.getUi4()); 
+          }
+          else if (property.isSetUi8()) {
+             val = property.getUi8().toString(); 
+          }
+          else if (property.isSetUint()) {
+             val = Long.toString(property.getUint()); 
+          }
+
+          // Reals
+          else if (property.isSetR4()) {
+             val = Float.toString( property.getR4() ); 
+          }
+          else if (property.isSetR8()) {
+             val = Double.toString( property.getR8() ); 
           }
           else if (property.isSetDecimal()) {
              BigDecimal d = property.getDecimal();
@@ -157,19 +206,25 @@ public class MetadataExtractor {
                 val = d.toPlainString();
              }
           }
-          else if (property.isSetBool()) {
-             val = Boolean.toString( property.getBool() );
+
+          else if (property.isSetArray()) {
+             // TODO Fetch the array values and output
           }
-          else if (property.isSetInt()) {
-             val = Integer.toString( property.getInt() ); 
+          else if (property.isSetVector()) {
+             // TODO Fetch the vector values and output
           }
-          else if (property.isSetLpstr()) {
-             val = property.getLpstr(); 
+
+          else if (property.isSetBlob() || property.isSetOblob()) {
+             // TODO Decode, if possible
           }
-          else if (property.isSetI4()) {
-             /* Int4 */ 
-             val = Integer.toString(property.getI4()); 
+          else if (property.isSetStream() || property.isSetOstream() ||
+                   property.isSetVstream()) {
+             // TODO Decode, if possible
           }
+          else if (property.isSetStorage() || property.isSetOstorage()) {
+             // TODO Decode, if possible
+          }
+          
           else {
              // This type isn't currently supported yet, skip the property
           }
