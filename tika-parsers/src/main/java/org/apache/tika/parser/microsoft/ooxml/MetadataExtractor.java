@@ -44,16 +44,11 @@ public class MetadataExtractor {
 
     private final POIXMLTextExtractor extractor;
 
-    private final String type;
-
-    public MetadataExtractor(POIXMLTextExtractor extractor, String type) {
+    public MetadataExtractor(POIXMLTextExtractor extractor) {
         this.extractor = extractor;
-        this.type = type;
     }
 
     public void extract(Metadata metadata) throws TikaException {
-        addProperty(metadata, Metadata.CONTENT_TYPE, type);
-        
         if (extractor.getDocument() != null ||
               (extractor instanceof XSSFEventBasedExcelExtractor && 
                extractor.getPackage() != null)) {

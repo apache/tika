@@ -35,7 +35,10 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pkg.ZipContainerDetector;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
@@ -56,21 +59,31 @@ public class OOXMLExtractorFactory {
         
         try {
             OOXMLExtractor extractor;
+            OPCPackage pkg;
 
-            POIXMLTextExtractor poiExtractor;
+            // Open the OPCPackage for the file
             TikaInputStream tis = TikaInputStream.cast(stream);
             if (tis != null && tis.getOpenContainer() instanceof OPCPackage) {
-                poiExtractor = ExtractorFactory.createExtractor(
-                        (OPCPackage) tis.getOpenContainer());
+                pkg = (OPCPackage) tis.getOpenContainer();
             } else if (tis != null && tis.hasFile()) {
-                poiExtractor = (POIXMLTextExtractor)
-                        ExtractorFactory.createExtractor(tis.getFile());
+                pkg = OPCPackage.open( tis.getFile().getPath() );
             } else {
                 InputStream shield = new CloseShieldInputStream(stream);
-                poiExtractor = (POIXMLTextExtractor)
-                        ExtractorFactory.createExtractor(shield);
+                pkg = OPCPackage.open(shield); 
             }
+            
+            // Get the type, and ensure it's one we handle
+            MediaType type = ZipContainerDetector.detectOfficeOpenXML(pkg);
+            if (type != null && OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
+               // Not a supported type, delegate to Empty Parser 
+               EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
+               return;
+            }
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
+            // Have the appropriate OOXML text extractor picked
+            POIXMLTextExtractor poiExtractor = ExtractorFactory.createExtractor(pkg);
+            
             POIXMLDocument document = poiExtractor.getDocument();
             if (poiExtractor instanceof XSSFEventBasedExcelExtractor) {
                extractor = new XSSFExcelExtractorDecorator(

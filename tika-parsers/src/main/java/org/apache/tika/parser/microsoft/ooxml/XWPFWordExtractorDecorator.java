@@ -24,7 +24,22 @@ import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.model.XWPFCommentsDecorator;
 import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
-import org.apache.poi.xwpf.usermodel.*;
+import org.apache.poi.xwpf.usermodel.BodyType;
+import org.apache.poi.xwpf.usermodel.IBody;
+import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFHeaderFooter;
+import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
+import org.apache.poi.xwpf.usermodel.XWPFHyperlinkRun;
+import org.apache.poi.xwpf.usermodel.XWPFParagraph;
+import org.apache.poi.xwpf.usermodel.XWPFPicture;
+import org.apache.poi.xwpf.usermodel.XWPFPictureData;
+import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFStyle;
+import org.apache.poi.xwpf.usermodel.XWPFStyles;
+import org.apache.poi.xwpf.usermodel.XWPFTable;
+import org.apache.poi.xwpf.usermodel.XWPFTableCell;
+import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
@@ -40,8 +55,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     private XWPFStyles styles;
 
     public XWPFWordExtractorDecorator(ParseContext context, XWPFWordExtractor extractor) {
-        // TODO Have the type detected rather than hard coded
-        super(context, extractor, "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        super(context, extractor);
         
         document = (XWPFDocument) extractor.getDocument();
         styles = document.getStyles();

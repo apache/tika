@@ -28,7 +28,7 @@ import org.xml.sax.SAXException;
 public class POIXMLTextExtractorDecorator extends AbstractOOXMLExtractor {
 
     public POIXMLTextExtractorDecorator(ParseContext context, POIXMLTextExtractor extractor) {
-        super(context, extractor, null);
+        super(context, extractor);
     }
 
     @Override

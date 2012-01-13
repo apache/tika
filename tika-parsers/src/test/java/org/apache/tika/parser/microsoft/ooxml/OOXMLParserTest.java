@@ -749,10 +749,9 @@ public class OOXMLParserTest extends TikaTest {
           input.close();
        }
 
-       // When detection / type is fixed, re-enable this
-//       assertEquals(
-//             "application/vnd.openxmlformats-officedocument.presentationml.presentation", 
-//             metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals(
+             "application/vnd.openxmlformats-officedocument.presentationml.presentation", 
+             metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("JOUVIN ETIENNE",       metadata.get(Metadata.AUTHOR));
        assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
        assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.DATE));

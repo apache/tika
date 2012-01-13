@@ -64,11 +64,8 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     private final EmbeddedDocumentExtractor embeddedExtractor;
 
-    private final String type;
-
-    public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor, String type) {
+    public AbstractOOXMLExtractor(ParseContext context, POIXMLTextExtractor extractor) {
         this.extractor = extractor;
-        this.type = type;
 
         EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
 
@@ -91,7 +88,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
      * @see org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getMetadataExtractor()
      */
     public MetadataExtractor getMetadataExtractor() {
-        return new MetadataExtractor(extractor, type);
+        return new MetadataExtractor(extractor);
     }
 
     /**
