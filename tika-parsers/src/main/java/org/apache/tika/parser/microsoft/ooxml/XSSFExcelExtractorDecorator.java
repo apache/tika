@@ -66,12 +66,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
     private final List<Boolean> sheetProtected = new ArrayList<Boolean>();
     
-    // TODO Have this detected rather than hard coded
-    private static final String TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-
     public XSSFExcelExtractorDecorator(
             ParseContext context, XSSFEventBasedExcelExtractor extractor, Locale locale) {
-        super(context, extractor, TYPE);
+        super(context, extractor);
 
         this.extractor = extractor;
         extractor.setFormulasNotResults(false);
@@ -350,7 +347,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
     @Override
     public MetadataExtractor getMetadataExtractor() {
-        return new MetadataExtractor(extractor, TYPE) {
+        return new MetadataExtractor(extractor) {
             @Override
             public void extract(Metadata metadata) throws TikaException {
                 super.extract(metadata);
