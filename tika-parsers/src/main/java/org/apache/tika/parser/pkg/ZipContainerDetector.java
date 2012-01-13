@@ -95,7 +95,7 @@ public class ZipContainerDetector implements Detector {
         return MediaType.APPLICATION_ZIP;
     }
 
-    private MediaType detectOpenDocument(ZipFile zip) {
+    private static MediaType detectOpenDocument(ZipFile zip) {
         try {
             ZipArchiveEntry mimetype = zip.getEntry("mimetype");
             if (mimetype != null) {
@@ -113,7 +113,7 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
-    private MediaType detectOfficeOpenXML(ZipFile zip, TikaInputStream stream) {
+    private static MediaType detectOfficeOpenXML(ZipFile zip, TikaInputStream stream) {
         try {
             if (zip.getEntry("_rels/.rels") != null
                     || zip.getEntry("[Content_Types].xml") != null) {
@@ -121,27 +121,8 @@ public class ZipContainerDetector implements Detector {
                 OPCPackage pkg = OPCPackage.open(stream.getFile().getPath(), PackageAccess.READ);
                 stream.setOpenContainer(pkg);
 
-                PackageRelationshipCollection core = 
-                    pkg.getRelationshipsByType(ExtractorFactory.CORE_DOCUMENT_REL);
-                if (core.size() != 1) {
-                    // Invalid OOXML Package received
-                    return null;
-                }
-
-                // Get the type of the core document part
-                PackagePart corePart = pkg.getPart(core.getRelationship(0));
-                String coreType = corePart.getContentType();
-
-                // Turn that into the type of the overall document
-                String docType = coreType.substring(0, coreType.lastIndexOf('.'));
-
-                // The Macro Enabled formats are a little special
-                if(docType.toLowerCase().endsWith("macroenabled")) {
-                    docType = docType.toLowerCase() + ".12";
-                }
-
-                // Build the MediaType object and return
-                return MediaType.parse(docType);
+                // Detect based on the open OPC Package
+                return detectOfficeOpenXML(pkg);
             } else {
                 return null;
             }
@@ -153,8 +134,35 @@ public class ZipContainerDetector implements Detector {
             return null;
         }
     }
+    /**
+     * Detects the type of an OfficeOpenXML (OOXML) file from
+     *  opened Package 
+     */
+    public static MediaType detectOfficeOpenXML(OPCPackage pkg) {
+        PackageRelationshipCollection core = 
+           pkg.getRelationshipsByType(ExtractorFactory.CORE_DOCUMENT_REL);
+        if (core.size() != 1) {
+            // Invalid OOXML Package received
+            return null;
+        }
 
-    private MediaType detectIWork(ZipFile zip) {
+        // Get the type of the core document part
+        PackagePart corePart = pkg.getPart(core.getRelationship(0));
+        String coreType = corePart.getContentType();
+
+        // Turn that into the type of the overall document
+        String docType = coreType.substring(0, coreType.lastIndexOf('.'));
+
+        // The Macro Enabled formats are a little special
+        if(docType.toLowerCase().endsWith("macroenabled")) {
+            docType = docType.toLowerCase() + ".12";
+        }
+
+        // Build the MediaType object and return
+        return MediaType.parse(docType);
+    }
+
+    private static MediaType detectIWork(ZipFile zip) {
         if (zip.getEntry(IWorkPackageParser.IWORK_COMMON_ENTRY) != null) {
             // Locate the appropriate index file entry, and reads from that
             // the root element of the document. That is used to the identify
@@ -172,5 +180,4 @@ public class ZipContainerDetector implements Detector {
             return null;
         }
     }
-
 }
