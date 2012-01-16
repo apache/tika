@@ -29,11 +29,20 @@ import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.DrawingParagraph;
+import org.apache.poi.xslf.usermodel.Placeholder;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
+import org.apache.poi.xslf.usermodel.XSLFComments;
 import org.apache.poi.xslf.usermodel.XSLFCommonSlideData;
+import org.apache.poi.xslf.usermodel.XSLFGroupShape;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
+import org.apache.poi.xslf.usermodel.XSLFShape;
+import org.apache.poi.xslf.usermodel.XSLFSheet;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
 import org.apache.poi.xslf.usermodel.XSLFSlideMaster;
+import org.apache.poi.xslf.usermodel.XSLFTable;
+import org.apache.poi.xslf.usermodel.XSLFTableCell;
+import org.apache.poi.xslf.usermodel.XSLFTableRow;
+import org.apache.poi.xslf.usermodel.XSLFTextShape;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -52,68 +61,63 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     /**
      * @see org.apache.poi.xslf.extractor.XSLFPowerPointExtractor#getText()
      */
-    @Override
-    protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException,
-            XmlException, IOException {
+    protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
-        XSLFSlideShow rawSlideShow = null;
-        try {
-           rawSlideShow = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
-        } catch(Exception e) {
-           throw new IOException(e.getMessage()); // Shouldn't happen
-        }
 
         XSLFSlide[] slides = slideShow.getSlides();
         for (XSLFSlide slide : slides) {
-           // Find the ID, until we ditch the raw slideshow
-           CTSlideIdListEntry slideId = null;
-           for(CTSlideIdListEntry id : rawSlideShow.getSlideReferences().getSldIdList()) {
-              if(rawSlideShow.getSlidePart(id).getPartName().equals(slide.getPackagePart().getPartName())) {
-                 slideId = id;
-              }
-           }
-           if(slideId == null) {
-              // This shouldn't normally happen
-              continue;
-           }
-           
-            XSLFSlideMaster master = slide.getSlideMaster();
-            CTNotesSlide notes = rawSlideShow.getNotes(slideId);
-            CTCommentList comments = rawSlideShow.getSlideComments(slideId);
+            // slide
+            extractContent(slide.getShapes(), false, xhtml);
 
-            // TODO In POI 3.8 beta 5, improve how we get this
-            xhtml.startElement("div");
-            XSLFCommonSlideData common = new XSLFCommonSlideData(slide.getXmlObject().getCSld());
-            extractShapeContent(common, xhtml);
+            // slide layout which is the master sheet for this slide
+            XSLFSheet slideLayout = slide.getMasterSheet();
+            extractContent(slideLayout.getShapes(), true, xhtml);
 
-            // If there are comments, extract them
+            // slide master which is the master sheet for all text layouts
+            XSLFSheet slideMaster = slideLayout.getMasterSheet();
+            extractContent(slideMaster.getShapes(), true, xhtml);
+
+            // notes (if present)
+            XSLFSheet slideNotes = slide.getNotes();
+            if (slideNotes != null) {
+                extractContent(slideNotes.getShapes(), false, xhtml);
+
+                // master sheet for this notes
+                XSLFSheet notesMaster = slideNotes.getMasterSheet();
+                extractContent(notesMaster.getShapes(), true, xhtml);
+            }
+
+            // comments (if present)
+            XSLFComments comments = slide.getComments();
             if (comments != null) {
-                for (CTComment comment : comments.getCmArray()) {
+                for (CTComment comment : comments.getCTCommentsList().getCmList()) {
                     xhtml.element("p", comment.getText());
                 }
             }
-            
-            // Get text from the master slide
-            // TODO: re-enable this once we fix TIKA-712
-            /*
-            if(master != null) {
-               // TODO In POI 3.8 beta 5, improve how we get this
-               extractShapeContent(new XSLFCommonSlideData(master.getXmlObject().getCSld()), xhtml);
-            }
-            */
-
-            if (notes != null) {
-               // TODO In POI 3.8 beta 5, improve how we get this
-                extractShapeContent(new XSLFCommonSlideData(notes.getCSld()), xhtml);
-            }
-            xhtml.endElement("div");
         }
     }
 
-    private void extractShapeContent(XSLFCommonSlideData data, XHTMLContentHandler xhtml)
+    private void extractContent(XSLFShape[] shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml)
             throws SAXException {
-        for (DrawingParagraph p : data.getText()) {
-            xhtml.element("p", p.getText().toString());
+        for (XSLFShape sh : shapes) {
+            if (sh instanceof XSLFTextShape) {
+                XSLFTextShape txt = (XSLFTextShape) sh;
+                Placeholder ph = txt.getTextType();
+                if (skipPlaceholders && ph != null) {
+                    continue;
+                }
+                xhtml.element("p", txt.getText());
+            } else if (sh instanceof XSLFGroupShape){
+                // recurse into groups of shapes
+                XSLFGroupShape group = (XSLFGroupShape)sh;
+                extractContent(group.getShapes(), skipPlaceholders, xhtml);
+            } else if (sh instanceof XSLFTable) {
+                XSLFTable tbl = (XSLFTable)sh;
+                for(XSLFTableRow row : tbl){
+                    List<XSLFTableCell> cells = row.getCells();
+                    extractContent(cells.toArray(new XSLFTableCell[cells.size()]), skipPlaceholders, xhtml);
+                }
+            }
         }
     }
     
