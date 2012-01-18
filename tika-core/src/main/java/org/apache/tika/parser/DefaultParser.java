@@ -16,6 +16,11 @@
  */
 package org.apache.tika.parser;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
 import javax.imageio.spi.ServiceRegistry;
 
 import org.apache.tika.config.ServiceLoader;
@@ -28,12 +33,40 @@ import org.apache.tika.mime.MediaTypeRegistry;
  * @since Apache Tika 0.8
  */
 public class DefaultParser extends CompositeParser {
-
     /** Serial version UID */
     private static final long serialVersionUID = 3612324825403757520L;
 
+    private static List<Parser> getDefaultParsers(ServiceLoader loader) {
+        // Find all the Parsers available as services
+        List<Parser> svcParsers = loader.loadServiceProviders(Parser.class);
+        List<Parser> parsers = new ArrayList<Parser>(svcParsers.size());
+
+        // Sort the list by classname, rather than discovery order 
+        Collections.sort(svcParsers, new Comparator<Parser>() {
+           public int compare(Parser p1, Parser p2) {
+              return p1.getClass().getName().compareTo(
+                   p2.getClass().getName());
+           }
+        });
+        
+        // CompositeParser takes the last parser for any given mime type, so put the 
+        // TikaParsers first so that non-Tika (user supplied) parsers can take presidence
+        for (Parser p : svcParsers) {
+           if (p.getClass().getName().startsWith("org.apache.tika")) {
+              parsers.add(p);
+           }
+        }
+        for (Parser p : svcParsers) {
+           if (!p.getClass().getName().startsWith("org.apache.tika")) {
+              parsers.add(p);
+           }
+        }
+        
+        return parsers;
+    }
+    
     private DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
-        super(registry, loader.loadServiceProviders(Parser.class));
+        super(registry, getDefaultParsers(loader));
     }
 
     public DefaultParser(MediaTypeRegistry registry, ClassLoader loader) {
