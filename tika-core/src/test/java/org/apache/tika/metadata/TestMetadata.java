@@ -308,6 +308,13 @@ public class TestMetadata extends TestCase {
         
         meta.set(Metadata.CREATION_DATE, "1969-12-31T12:00:01-12:00");
         assertEquals(1000, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        // Dates without times
+        meta.set(Metadata.CREATION_DATE, "1970-01-01");
+        assertEquals(0, meta.getDate(Metadata.CREATION_DATE).getTime());
+        
+        meta.set(Metadata.CREATION_DATE, "1970:01:01");
+        assertEquals(0, meta.getDate(Metadata.CREATION_DATE).getTime());
     }
     
     /**

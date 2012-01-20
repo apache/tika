@@ -68,6 +68,9 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
         createDateFormat("yyyy-MM-dd' 'HH:mm:ss'Z'", "UTC"), // UTC/Zulu
         createDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", null),    // With timezone
         createDateFormat("yyyy-MM-dd' 'HH:mm:ss", null),     // Without timezone
+        // Date without time, set to Midnight UTC
+        createDateFormat("yyyy-MM-dd", "UTC"), // Normal date format
+        createDateFormat("yyyy:MM:dd", "UTC"), // Image (IPTC/EXIF) format
     };
 
     private static DateFormat createDateFormat(String format, String timezone) {
