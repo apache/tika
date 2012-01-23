@@ -18,7 +18,9 @@ package org.apache.tika.parser.epub;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -44,7 +46,10 @@ public class EpubParser extends AbstractParser {
     private static final long serialVersionUID = 215176772484050550L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.application("epub+zip"));
+            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+            		MediaType.application("epub+zip"),
+                  MediaType.application("x-ibooks+zip")
+            )));
 
     private Parser meta = new DcXMLParser();
 
@@ -84,7 +89,8 @@ public class EpubParser extends AbstractParser {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".opf")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
-            } else if (entry.getName().endsWith(".html")) {
+            } else if (entry.getName().endsWith(".html") || 
+            		   entry.getName().endsWith(".xhtml")) {
                 content.parse(zip, handler, metadata, context);
             }
             entry = zip.getNextEntry();
