@@ -155,6 +155,15 @@ public class TestContainerAwareDetector extends TestCase {
         }
     }
 
+    /**
+     * EPub uses a similar mimetype entry to OpenDocument for storing
+     *  the mimetype within the parent zip file
+     */
+    public void testDetectEPub() throws Exception {
+       assertTypeByData("testEPUB.epub", "application/epub+zip");
+       assertTypeByData("testiBooks.ibooks", "application/x-ibooks+zip");
+    }
+
     public void testDetectODF() throws Exception {
         assertTypeByData("testODFwithOOo3.odt", "application/vnd.oasis.opendocument.text");
         assertTypeByData("testOpenOffice2.odf", "application/vnd.oasis.opendocument.formula");
