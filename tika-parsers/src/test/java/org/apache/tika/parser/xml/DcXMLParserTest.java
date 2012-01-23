@@ -40,9 +40,17 @@ public class DcXMLParserTest extends TestCase {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Tika test document", metadata.get(Metadata.TITLE));
             assertEquals("Rida Benjelloun", metadata.get(Metadata.CREATOR));
-            assertEquals(
-                    "Java, XML, XSLT, JDOM, Indexation",
-                    metadata.get(Metadata.SUBJECT));
+            
+            // The file contains 5 dc:subject tags, which come through as
+            //  a multi-valued Tika Metadata entry in file order
+            assertEquals(true, metadata.isMultiValued(Metadata.SUBJECT));
+            assertEquals(5,      metadata.getValues(Metadata.SUBJECT).length);
+            assertEquals("Java", metadata.getValues(Metadata.SUBJECT)[0]);
+            assertEquals("XML",  metadata.getValues(Metadata.SUBJECT)[1]);
+            assertEquals("XSLT", metadata.getValues(Metadata.SUBJECT)[2]);
+            assertEquals("JDOM", metadata.getValues(Metadata.SUBJECT)[3]);
+            assertEquals("Indexation", metadata.getValues(Metadata.SUBJECT)[4]);
+
             assertEquals(
                     "Framework d\'indexation des documents XML, HTML, PDF etc..",
                     metadata.get(Metadata.DESCRIPTION));

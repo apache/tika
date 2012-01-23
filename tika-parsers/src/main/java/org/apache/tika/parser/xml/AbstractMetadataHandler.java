@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.xml;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.tika.metadata.Metadata;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -44,11 +47,23 @@ class AbstractMetadataHandler extends DefaultHandler {
      */
     protected void addMetadata(String value) {
         if (value != null && value.length() > 0) {
-            String previous = metadata.get(name);
-            if (previous != null && previous.length() > 0) {
-                value = previous + ", " + value;
+            if (metadata.isMultiValued(name)) {
+                // Add the value, assuming it's not already there
+                List<String> previous = Arrays.asList(metadata.getValues(name));
+                if (!previous.contains(value)) {
+                    metadata.add(name, value);
+                }
+            } else {
+                // Set the value, assuming it's not already there
+                String previous = metadata.get(name);
+                if (previous != null && previous.length() > 0) {
+                    if (!previous.equals(value)) {
+                        metadata.add(name, value);
+                    }
+                } else {
+                    metadata.set(name, value);
+                }
             }
-            metadata.set(name, value);
         }
     }
 
