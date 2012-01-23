@@ -176,6 +176,10 @@ public final class Property implements Comparable<Property> {
     public static Property internalText(String name) {
         return new Property(name, true, ValueType.TEXT);
     }
+    
+    public static Property internalTextBag(String name) {
+        return new Property(name, true, PropertyType.BAG, ValueType.TEXT);
+    }
 
     public static Property internalURI(String name) {
         return new Property(name, true, ValueType.URI);
