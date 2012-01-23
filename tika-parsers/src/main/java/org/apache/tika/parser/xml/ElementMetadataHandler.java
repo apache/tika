@@ -161,20 +161,19 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
 
     @Override
     protected void addMetadata(String value) {
-    	if (logger.isTraceEnabled()) {
-    		logger.trace("adding " + name + "=" + value);
-    	}
-    	if (targetProperty != null && targetProperty.getPropertyType() != null &&
-    			targetProperty.getPropertyType() == Property.PropertyType.BAG) {
-		    if (value != null && value.length() > 0) {
-		        String[] previous = metadata.getValues(name);
-		        if (previous == null || !Arrays.asList(previous).contains(value)) {
-		        	metadata.add(name, value);
-		        }
-		    }
-    	} else {
-    		super.addMetadata(value);
-    	}
+        if (logger.isTraceEnabled()) {
+            logger.trace("adding " + name + "=" + value);
+        }
+        if (targetProperty != null && targetProperty.getPropertyType() != null &&
+             targetProperty.getPropertyType() == Property.PropertyType.BAG) {
+            if (value != null && value.length() > 0) {
+                String[] previous = metadata.getValues(name);
+                if (previous == null || !Arrays.asList(previous).contains(value)) {
+                    metadata.add(name, value);
+                }
+            }
+        } else {
+            super.addMetadata(value);
+        }
     }
-
 }
