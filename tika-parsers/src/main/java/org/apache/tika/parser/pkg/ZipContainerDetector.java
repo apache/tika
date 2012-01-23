@@ -95,6 +95,11 @@ public class ZipContainerDetector implements Detector {
         return MediaType.APPLICATION_ZIP;
     }
 
+    /**
+     * OpenDocument files, along with EPub files, have a mimetype
+     *  entry in the root of their Zip file. This entry contains the
+     *  mimetype of the overall file, stored as a single string.  
+     */
     private static MediaType detectOpenDocument(ZipFile zip) {
         try {
             ZipArchiveEntry mimetype = zip.getEntry("mimetype");
