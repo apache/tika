@@ -250,7 +250,7 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/msword -->
   <mime-type type="application/msword">
-    <!-- Use org.apache.tika.detect.ContainerAwareDetector for more reliable detection of OLE2 documents -->
+    <!-- Use DefaultDetector / org.apache.tika.parser.microsoft.POIFSContainerDetector for more reliable detection of OLE2 documents -->
     <alias type="application/vnd.ms-word"/>
     <_comment>Microsoft Word Document</_comment>
     <magic priority="50">
@@ -1204,7 +1204,7 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-excel -->
   <mime-type type="application/vnd.ms-excel">
-    <!-- Use org.apache.tika.detect.ContainerAwareDetector for more reliable detection of OLE2 documents -->
+    <!-- Use DefaultDetector / org.apache.tika.parser.microsoft.POIFSContainerDetector for more reliable detection of OLE2 documents -->
     <alias type="application/msexcel" />
     <_comment>Microsoft Excel Spreadsheet</_comment>
     <magic priority="50">
@@ -1280,7 +1280,7 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.ms-powerpoint -->
   <mime-type type="application/vnd.ms-powerpoint">
-    <!-- Use org.apache.tika.detect.ContainerAwareDetector for more reliable detection of OLE2 documents -->
+    <!-- Use DefaultDetector / org.apache.tika.parser.microsoft.POIFSContainerDetector for more reliable detection of OLE2 documents -->
     <alias type="application/mspowerpoint"/>
     <_comment>Microsoft Powerpoint Presentation</_comment>
     <magic priority="50">
@@ -2547,6 +2547,18 @@
       -->
       <match value="HWP Document File V" type="string" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="application/x-ibooks+zip">
+    <sub-class-of type="application/epub+zip" />
+    <acronym>iBooks</acronym>
+    <_comment>Apple iBooks Author publication format</_comment>
+    <magic priority="50">
+      <match value="PK\003\004" type="string" offset="0">
+        <match value="mimetypeapplication/x-ibooks+zip" type="string" offset="30"/>
+      </match>
+    </magic>
+    <glob pattern="*.ibooks"/>
   </mime-type>
 
   <mime-type type="application/x-iso9660-image">
