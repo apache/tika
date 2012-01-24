@@ -152,7 +152,7 @@ public class OOXMLParserTest extends TikaTest {
      */
     public void testPowerPoint() throws Exception {
 	String[] extensions = new String[] {
-		"pptx", "pptm", "ppsm", "ppsx",
+		"pptx", "pptm", "ppsm", "ppsx", "potm"
 		//"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2 
 		//"xps" // TIKA-418: Not yet supported by POI
 	};
@@ -161,7 +161,8 @@ public class OOXMLParserTest extends TikaTest {
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
                 "application/vnd.ms-powerpoint.presentation.macroenabled.12",
                 "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
-                "application/vnd.openxmlformats-officedocument.presentationml.slideshow"
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                "application/vnd.ms-powerpoint.template.macroenabled.12"
         };
 
         for (int i=0; i<extensions.length; i++) {
