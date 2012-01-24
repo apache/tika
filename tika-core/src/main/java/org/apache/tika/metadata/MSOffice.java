@@ -29,13 +29,7 @@ public interface MSOffice {
 
     String APPLICATION_NAME = "Application-Name";
 
-    String CHARACTER_COUNT = "Character Count";
-
-    String PAGE_COUNT = "Page-Count";
-
     String REVISION_NUMBER = "Revision-Number";
-
-    String WORD_COUNT = "Word-Count";
 
     String TEMPLATE = "Template";
 
@@ -43,11 +37,7 @@ public interface MSOffice {
 
     String TOTAL_TIME = "Total-Time";
 
-    String SLIDE_COUNT = "Slide-Count";
-
     String PRESENTATION_FORMAT = "Presentation-Format";
-
-    String PARAGRAPH_COUNT = "Paragraph-Count";
 
     String NOTES = "Notes";
 
@@ -69,6 +59,44 @@ public interface MSOffice {
 
     String SECURITY = "Security";
 
+    
+    /** The number of Slides are there in the (presentation) document */
+    Property SLIDE_COUNT = 
+       Property.internalInteger("Slide-Count");
+    
+    /** The number of Pages are there in the (paged) document */
+    Property PAGE_COUNT = 
+       Property.internalInteger("Page-Count");
+
+    /** The number of individual Paragraphs in the document */ 
+    Property PARAGRAPH_COUNT = 
+       Property.internalInteger("Paragraph-Count");
+
+    /** The number of Words in the document */
+    Property WORD_COUNT = 
+       Property.internalInteger("Word-Count");
+
+    /** The number of Characters in the document */
+    Property CHARACTER_COUNT = 
+       Property.internalInteger("Character Count");
+    
+    /** The number of Tables in the document */
+    Property TABLE_COUNT = 
+       Property.internalInteger("Table-Count");
+    
+    /** The number of Images in the document */
+    Property IMAGE_COUNT = 
+       Property.internalInteger("Image-Count");
+    
+    /** 
+     * The number of Objects in the document.
+     * This is typically non-Image resources embedded in the
+     *  document, such as other documents or non-Image media. 
+     */
+    Property OBJECT_COUNT = 
+       Property.internalInteger("Object-Count");
+
+    
     /** How long has been spent editing the document? */ 
     String EDIT_TIME = "Edit-Time"; 
 

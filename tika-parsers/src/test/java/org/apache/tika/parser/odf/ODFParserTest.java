@@ -89,6 +89,9 @@ public class ODFParserTest extends TikaTest {
              assertEquals("1", metadata.get(Metadata.PARAGRAPH_COUNT));
              assertEquals("14", metadata.get(Metadata.WORD_COUNT));
              assertEquals("78", metadata.get(Metadata.CHARACTER_COUNT));
+             assertEquals("0", metadata.get(Metadata.TABLE_COUNT));
+             assertEquals("0", metadata.get(Metadata.OBJECT_COUNT));
+             assertEquals("0", metadata.get(Metadata.IMAGE_COUNT));
              
              // Check the old style statistics (these will be removed shortly)
              assertEquals("0", metadata.get("nbTab"));
@@ -152,6 +155,9 @@ public class ODFParserTest extends TikaTest {
            assertEquals(null, metadata.get(Metadata.PARAGRAPH_COUNT));
            assertEquals(null, metadata.get(Metadata.WORD_COUNT));
            assertEquals(null, metadata.get(Metadata.CHARACTER_COUNT));
+           assertEquals(null, metadata.get(Metadata.TABLE_COUNT));
+           assertEquals(null, metadata.get(Metadata.OBJECT_COUNT));
+           assertEquals(null, metadata.get(Metadata.IMAGE_COUNT));
            assertEquals(null, metadata.get("nbTab"));
            assertEquals(null, metadata.get("nbObject"));
            assertEquals(null, metadata.get("nbImg"));
@@ -207,6 +213,9 @@ public class ODFParserTest extends TikaTest {
            assertEquals("13", metadata.get(Metadata.PARAGRAPH_COUNT));
            assertEquals("54", metadata.get(Metadata.WORD_COUNT));
            assertEquals("351", metadata.get(Metadata.CHARACTER_COUNT));
+           assertEquals("0", metadata.get(Metadata.TABLE_COUNT));
+           assertEquals("2", metadata.get(Metadata.OBJECT_COUNT));
+           assertEquals("0", metadata.get(Metadata.IMAGE_COUNT));
            
            // Check the old style statistics (these will be removed shortly)
            assertEquals("0", metadata.get("nbTab"));
