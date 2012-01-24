@@ -252,9 +252,15 @@ public class MetadataExtractor {
         }
     }
 
-    private void addProperty(Metadata metadata, String name, long value) {
+    private void addProperty(Metadata metadata, Property property, int value) {
+       if (value > 0) {
+           metadata.set(property, value);
+       }
+    }
+    
+    private void addProperty(Metadata metadata, String name, int value) {
         if (value > 0) {
-            metadata.set(name, Long.toString(value));
+            metadata.set(name, Integer.toString(value));
         }
     }
 }

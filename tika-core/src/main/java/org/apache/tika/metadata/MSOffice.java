@@ -43,10 +43,6 @@ public interface MSOffice {
 
     String MANAGER = "Manager";
 
-    String LINE_COUNT = "Line-Count";
-
-    String CHARACTER_COUNT_WITH_SPACES = "Character-Count-With-Spaces";
-
     String APPLICATION_VERSION = "Application-Version";
 
     String VERSION = "Version";
@@ -71,6 +67,10 @@ public interface MSOffice {
     /** The number of individual Paragraphs in the document */ 
     Property PARAGRAPH_COUNT = 
        Property.internalInteger("Paragraph-Count");
+    
+    /** The number of lines in the document */
+    Property LINE_COUNT = 
+       Property.internalInteger("Line-Count");
 
     /** The number of Words in the document */
     Property WORD_COUNT = 
@@ -80,6 +80,10 @@ public interface MSOffice {
     Property CHARACTER_COUNT = 
        Property.internalInteger("Character Count");
     
+    /** The number of Characters in the document, including spaces */
+    Property CHARACTER_COUNT_WITH_SPACES = 
+       Property.internalInteger("Character-Count-With-Spaces");
+
     /** The number of Tables in the document */
     Property TABLE_COUNT = 
        Property.internalInteger("Table-Count");

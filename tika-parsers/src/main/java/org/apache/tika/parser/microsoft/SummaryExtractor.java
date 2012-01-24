@@ -182,6 +182,12 @@ class SummaryExtractor {
         }
     }
 
+    private void set(Property property, int value) {
+        if (value > 0) {
+            metadata.set(property, value);
+        }
+    }
+
     private void set(String name, long value) {
         if (value > 0) {
             metadata.set(name, Long.toString(value));
