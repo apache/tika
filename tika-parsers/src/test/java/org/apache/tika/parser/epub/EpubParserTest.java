@@ -21,6 +21,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -32,7 +33,7 @@ public class EpubParserTest extends TestCase {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new EpubParser().parse(input, handler, metadata);
+            new EpubParser().parse(input, handler, metadata, new ParseContext());
 
             assertEquals("application/epub+zip",
                     metadata.get(Metadata.CONTENT_TYPE));

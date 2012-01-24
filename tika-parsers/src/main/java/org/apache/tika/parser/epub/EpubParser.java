@@ -33,6 +33,9 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.xml.DcXMLParser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -79,6 +82,13 @@ public class EpubParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        // Because an EPub file is often made up of multiple XHTML files,
+        //  we need explicit control over the start and end of the document
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        ContentHandler childHandler = new EmbeddedContentHandler(
+              new BodyContentHandler(xhtml));
+       
         ZipInputStream zip = new ZipInputStream(stream);
         ZipEntry entry = zip.getNextEntry();
         while (entry != null) {
@@ -91,10 +101,13 @@ public class EpubParser extends AbstractParser {
                 meta.parse(zip, new DefaultHandler(), metadata, context);
             } else if (entry.getName().endsWith(".html") || 
             		   entry.getName().endsWith(".xhtml")) {
-                content.parse(zip, handler, metadata, context);
+                content.parse(zip, childHandler, metadata, context);
             }
             entry = zip.getNextEntry();
         }
+        
+        // Finish everything
+        xhtml.endDocument();
     }
 
 }
