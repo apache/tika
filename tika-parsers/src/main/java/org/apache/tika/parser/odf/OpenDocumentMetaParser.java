@@ -83,23 +83,30 @@ public class OpenDocumentMetaParser extends DcXMLParser {
         ch = getMeta(ch, md, "editing-cycles", "editing-cycles");
         ch = getMeta(ch, md, "initial-creator", "initial-creator");
         ch = getMeta(ch, md, "generator", "generator");
+        
         // Process the user defined Meta Attributes
         ch = getUserDefined(ch, md);
+        
         // Process the OO Statistics Attributes
-        ch = getStatistic(ch, md, "nbTab", "table-count");
-        ch = getStatistic(ch, md, "nbObject", "object-count");
-        ch = getStatistic(ch, md, "nbImg", "image-count");
-        ch = getStatistic(ch, md, Metadata.PAGE_COUNT, "page-count");
-        ch = getStatistic(ch, md, PagedText.N_PAGES.getName(), "page-count");
-        ch = getStatistic(ch, md, Metadata.PARAGRAPH_COUNT, "paragraph-count");
-        ch = getStatistic(ch, md, Metadata.WORD_COUNT, "word-count");
-        ch = getStatistic(ch, md, Metadata.CHARACTER_COUNT, "character-count");
+        ch = getStatistic(ch, md, Metadata.OBJECT_COUNT.getName(), "object-count");
+        ch = getStatistic(ch, md, Metadata.IMAGE_COUNT.getName(),  "image-count");
+        ch = getStatistic(ch, md, Metadata.PAGE_COUNT.getName(),   "page-count");
+        ch = getStatistic(ch, md, PagedText.N_PAGES.getName(),     "page-count");
+        ch = getStatistic(ch, md, Metadata.TABLE_COUNT.getName(),  "table-count");
+        ch = getStatistic(ch, md, Metadata.PARAGRAPH_COUNT.getName(), "paragraph-count");
+        ch = getStatistic(ch, md, Metadata.WORD_COUNT.getName(),      "word-count");
+        ch = getStatistic(ch, md, Metadata.CHARACTER_COUNT.getName(), "character-count");
+        
         // Legacy Statistics Attributes, replaced with real keys above
-        // TODO remove these soon!
+        // TODO Remove these shortly, eg after Tika 1.1 (TIKA-770)
         ch = getStatistic(ch, md, "nbPage", "page-count");
         ch = getStatistic(ch, md, "nbPara", "paragraph-count");
         ch = getStatistic(ch, md, "nbWord", "word-count");
         ch = getStatistic(ch, md, "nbCharacter", "character-count");
+        ch = getStatistic(ch, md, "nbTab", "table-count");
+        ch = getStatistic(ch, md, "nbObject", "object-count");
+        ch = getStatistic(ch, md, "nbImg", "image-count");
+        
         // Normalise the rest
         ch = new NSNormalizerContentHandler(ch);
         return ch;
