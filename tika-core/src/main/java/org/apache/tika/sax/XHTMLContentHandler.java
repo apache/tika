@@ -291,7 +291,9 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     public void characters(String characters) throws SAXException {
-        characters(characters.toCharArray(), 0, characters.length());
+        if (characters != null && characters.length() > 0) {
+            characters(characters.toCharArray(), 0, characters.length());
+        }
     }
 
     public void newline() throws SAXException {
