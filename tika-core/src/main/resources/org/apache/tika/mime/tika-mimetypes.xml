@@ -3053,7 +3053,14 @@
   <mime-type type="audio/mobile-xmf"/>
   <mime-type type="audio/mp4">
     <alias type="audio/x-mp4a"/>
+    <magic priority="60">
+      <match value="ftypM4A " type="string" offset="4"/>
+      <match value="ftypM4B " type="string" offset="4"/>
+      <match value="ftypF4A " type="string" offset="4"/>
+      <match value="ftypF4B " type="string" offset="4"/>
+    </magic>
     <glob pattern="*.mp4a"/>
+    <glob pattern="*.m4a"/>
   </mime-type>
   <mime-type type="audio/mp4a-latm"/>
   <mime-type type="audio/mpa"/>
@@ -4176,10 +4183,27 @@
   <mime-type type="text/xml"/>
   <mime-type type="text/xml-external-parsed-entity"/>
   <mime-type type="video/3gpp">
+    <magic priority="60">
+      <match value="ftyp3ge6" type="string" offset="4"/>
+      <match value="ftyp3ge7" type="string" offset="4"/>
+      <match value="ftyp3gg6" type="string" offset="4"/>
+      <match value="ftyp3gp1" type="string" offset="4"/>
+      <match value="ftyp3gp2" type="string" offset="4"/>
+      <match value="ftyp3gp3" type="string" offset="4"/>
+      <match value="ftyp3gp4" type="string" offset="4"/>
+      <match value="ftyp3gp5" type="string" offset="4"/>
+      <match value="ftyp3gp6" type="string" offset="4"/>
+      <match value="ftyp3gs7" type="string" offset="4"/>
+    </magic>
     <glob pattern="*.3gp"/>
   </mime-type>
   <mime-type type="video/3gpp-tt"/>
   <mime-type type="video/3gpp2">
+    <magic priority="60">
+      <match value="ftyp3g2a" type="string" offset="4"/>
+      <match value="ftyp3g2b" type="string" offset="4"/>
+      <match value="ftyp3g2c" type="string" offset="4"/>
+    </magic>
     <glob pattern="*.3g2"/>
   </mime-type>
   <mime-type type="video/bmpeg"/>
@@ -4213,10 +4237,16 @@
   <mime-type type="video/mp1s"/>
   <mime-type type="video/mp2p"/>
   <mime-type type="video/mp2t"/>
+
   <mime-type type="video/mp4">
+    <magic priority="60">
+      <match value="ftypmp41" type="string" offset="4"/>
+      <match value="ftypmp42" type="string" offset="4"/>
+    </magic>
     <glob pattern="*.mp4"/>
     <glob pattern="*.mp4v"/>
     <glob pattern="*.mpg4"/>
+    <sub-class-of type="video/quicktime" />
   </mime-type>
   <mime-type type="video/mp4v-es"/>
 
@@ -4251,6 +4281,7 @@
     <magic priority="50">
       <match value="moov" type="string" offset="4"/>
       <match value="mdat" type="string" offset="4"/>
+      <!-- General match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
     </magic>
     <glob pattern="*.qt"/>
@@ -4321,7 +4352,13 @@
   </mime-type>
 
   <mime-type type="video/x-m4v">
+    <magic priority="60">
+      <match value="ftypM4V " type="string" offset="4"/>
+      <match value="ftypM4VH" type="string" offset="4"/>
+      <match value="ftypM4VP" type="string" offset="4"/>
+    </magic>
     <glob pattern="*.m4v"/>
+    <sub-class-of type="video/mp4" />
   </mime-type>
 
   <mime-type type="video/x-mng">
