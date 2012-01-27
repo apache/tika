@@ -24,6 +24,8 @@ package org.apache.tika.metadata;
  * IPTC Photo Metadata schema. This is a collection of
  * {@link Property property definition} constants for the Photo Metadata
  * properties defined in the IPTC standard.
+ * 
+ * Note - the Properties with the _DCPROPERTY are expected to change shortly
  *
  * @since Apache Tika 1.1
  * @see <a href="http://www.iptc.org/std/photometadata/specification/IPTC-PhotoMetadata-201007_1.pdf">IPTC Photo Metadata</a>
@@ -109,7 +111,7 @@ public interface IPTC {
 	 * <p>
 	 * Maps to this IIM property: 2:120 Caption/Abstract
 	 */
-	Property DESCRIPTION = Property.internalText(
+	Property DESCRIPTION_DCPROPERTY = Property.internalText(
 			PREFIX_DC + PREFIX_DELIMITER + "description");
 
 	/**
@@ -144,7 +146,7 @@ public interface IPTC {
 	 * <p>
 	 * Maps to this IIM property: 2:25 Keywords
 	 */
-	Property KEYWORDS = Property.internalTextBag(
+	Property KEYWORDS_DCPROPERTY = Property.internalTextBag(
 			PREFIX_DC + PREFIX_DELIMITER + "subject");
 
 	/**
@@ -278,7 +280,7 @@ public interface IPTC {
 	 * <p>
 	 * Maps to this IIM property: 2:05 Object Name
 	 */
-	Property TITLE = Property.internalText(
+	Property TITLE_DCPROPERTY = Property.internalText(
 			PREFIX_DC + PREFIX_DELIMITER + "title");
 
 	/**
@@ -316,7 +318,7 @@ public interface IPTC {
 	 * <p>
 	 * Maps to this IIM property: 2:80 By-line
 	 */
-	Property CREATOR = Property.internalText(
+	Property CREATOR_DCPROPERTY = Property.internalText(
 			PREFIX_DC + PREFIX_DELIMITER + "creator");
 
 	/**
@@ -490,12 +492,12 @@ public interface IPTC {
 	/**
 	 * As this metadata element pertains to distribution management, it was not
 	 * adopted. However, this data is still synchronised with the XMP property
-	 * �photoshop:Urgency�, and hence, available for future use, but outside the
+	 * [photoshop:Urgency], and hence, available for future use, but outside the
 	 * IPTC Core.
 	 *
 	 * @deprecated
 	 */
-	Property URGENCY = Property.internalText(
+	Property PHOTOSHOP_URGENCY = Property.internalText(
 			PREFIX_PHOTOSHOP + PREFIX_DELIMITER + "Urgency");
 
 	/**
@@ -508,7 +510,7 @@ public interface IPTC {
 	 *
 	 * @deprecated
 	 */
-	Property CATEGORY = Property.internalText(
+	Property PHOTOSHOP_CATEGORY = Property.internalText(
 			PREFIX_PHOTOSHOP + PREFIX_DELIMITER + "Category");
 
 	/**
@@ -519,7 +521,7 @@ public interface IPTC {
 	 *
 	 * @deprecated
 	 */
-	Property SUPPLEMENTAL_CATEGORIES = Property.internalTextBag(
+	Property PHOTOSHOP_SUPPLEMENTAL_CATEGORIES = Property.internalTextBag(
 			PREFIX_PHOTOSHOP + PREFIX_DELIMITER + "SupplementalCategories");
 
 	/**
@@ -1197,10 +1199,10 @@ public interface IPTC {
 		CITY,
 		COUNTRY,
 		COUNTRY_CODE,
-		DESCRIPTION,
+		DESCRIPTION_DCPROPERTY,
 		HEADLINE,
 		INTELLECTUAL_GENRE,
-		KEYWORDS,
+		KEYWORDS_DCPROPERTY,
 		PROVINCE_OR_STATE,
 		SCENE_CODE,
 		SUBJECT_CODE,
@@ -1209,9 +1211,9 @@ public interface IPTC {
 		DESCRIPTION_WRITER,
 		INSTRUCTIONS,
 		JOB_ID,
-		TITLE,
+		TITLE_DCPROPERTY,
 		COPYRIGHT_NOTICE,
-		CREATOR,
+		CREATOR_DCPROPERTY,
 		CREATORS_JOB_TITLE,
 		CREDIT_LINE,
 		RIGHTS_USAGE_TERMS,
