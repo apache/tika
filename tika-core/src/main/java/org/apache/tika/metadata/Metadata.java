@@ -33,7 +33,7 @@ import java.util.TimeZone;
  * A multi-valued metadata container.
  */
 public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHeaders,
-        Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys,
+        IPTC, Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys,
         Serializable {
 
     /** Serial version UID */
