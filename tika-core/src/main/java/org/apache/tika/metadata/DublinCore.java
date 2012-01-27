@@ -19,6 +19,8 @@ package org.apache.tika.metadata;
 /**
  * A collection of Dublin Core metadata names.
  * 
+ * TODO Prefix these keys with the dc: prefix
+ * 
  * @see <a href="http://dublincore.org">dublincore.org</a>
  */
 public interface DublinCore {
