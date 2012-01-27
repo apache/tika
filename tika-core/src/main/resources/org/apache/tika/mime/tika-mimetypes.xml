@@ -3052,6 +3052,7 @@
 
   <mime-type type="audio/mobile-xmf"/>
   <mime-type type="audio/mp4">
+    <alias type="audio/x-m4a"/>
     <alias type="audio/x-mp4a"/>
     <magic priority="60">
       <match value="ftypM4A " type="string" offset="4"/>
