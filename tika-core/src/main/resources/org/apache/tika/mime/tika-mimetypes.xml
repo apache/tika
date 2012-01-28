@@ -3062,6 +3062,7 @@
     </magic>
     <glob pattern="*.mp4a"/>
     <glob pattern="*.m4a"/>
+    <glob pattern="*.m4b"/>
   </mime-type>
   <mime-type type="audio/mp4a-latm"/>
   <mime-type type="audio/mpa"/>
