@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -106,16 +105,12 @@ public class MP4Parser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        IsoBufferWrapper isoBufferWrapper = null;
-        TikaInputStream tstream = TikaInputStream.cast(stream);
-
-        // Have MP4Parser process the stream / file
-        if (tstream != null && tstream.hasFile()) {
-           isoBufferWrapper = new IsoBufferWrapperImpl(tstream.getFile());
-        } else {
-           isoBufferWrapper = new IsoBufferWrapperImpl(
-                 IOUtils.toByteArray(stream));
-        }
+        // The MP4Parser library accepts either a File, or a byte array
+        // As MP4 video files are typically large, always use a file to
+        //  avoid OOMs that may occur with in-memory buffering
+        TikaInputStream tstream = TikaInputStream.get(stream);
+        IsoBufferWrapper isoBufferWrapper = 
+           new IsoBufferWrapperImpl(tstream.getFile());
         IsoFile isoFile = new IsoFile(isoBufferWrapper);
         isoFile.parse();
         
