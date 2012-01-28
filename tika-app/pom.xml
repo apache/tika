@@ -86,7 +86,7 @@
               org.apache.tika.cli,
               org.apache.tika.gui
             </Export-Package>
-            <Embed-Dependency>!netcdf;scope=provided;inline=net/**|javax/**|org/**|com/**|de/**|font_metrics.properties|repackage/**|schema*/**|META-INF/services/**|META-INF/maven/**</Embed-Dependency>
+            <Embed-Dependency>!netcdf;scope=provided;inline=net/**|javax/**|org/**|com/**|de/**|javassist/**|*.properties|repackage/**|schema*/**|META-INF/services/**|META-INF/maven/**</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Main-Class>org.apache.tika.cli.TikaCLI</Main-Class>
