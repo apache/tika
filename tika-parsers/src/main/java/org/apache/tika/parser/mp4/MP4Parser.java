@@ -41,12 +41,14 @@ import org.xml.sax.SAXException;
 import com.coremedia.iso.IsoBufferWrapper;
 import com.coremedia.iso.IsoBufferWrapperImpl;
 import com.coremedia.iso.IsoFile;
-import com.coremedia.iso.boxes.AbstractContainerBox;
 import com.coremedia.iso.boxes.Box;
+import com.coremedia.iso.boxes.ContainerBox;
 import com.coremedia.iso.boxes.FileTypeBox;
 import com.coremedia.iso.boxes.MetaBox;
 import com.coremedia.iso.boxes.MovieBox;
 import com.coremedia.iso.boxes.MovieHeaderBox;
+import com.coremedia.iso.boxes.SampleDescriptionBox;
+import com.coremedia.iso.boxes.SampleTableBox;
 import com.coremedia.iso.boxes.TrackBox;
 import com.coremedia.iso.boxes.TrackHeaderBox;
 import com.coremedia.iso.boxes.UserDataBox;
@@ -62,6 +64,7 @@ import com.coremedia.iso.boxes.apple.AppleStandardGenreBox;
 import com.coremedia.iso.boxes.apple.AppleTrackAuthorBox;
 import com.coremedia.iso.boxes.apple.AppleTrackNumberBox;
 import com.coremedia.iso.boxes.apple.AppleTrackTitleBox;
+import com.coremedia.iso.boxes.sampleentry.AudioSampleEntry;
 
 /**
  * Parser for the MP4 media container format, as well as the older
@@ -105,14 +108,20 @@ public class MP4Parser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        IsoFile isoFile;
+        
         // The MP4Parser library accepts either a File, or a byte array
         // As MP4 video files are typically large, always use a file to
         //  avoid OOMs that may occur with in-memory buffering
         TikaInputStream tstream = TikaInputStream.get(stream);
-        IsoBufferWrapper isoBufferWrapper = 
-           new IsoBufferWrapperImpl(tstream.getFile());
-        IsoFile isoFile = new IsoFile(isoBufferWrapper);
-        isoFile.parse();
+        try {
+           IsoBufferWrapper isoBufferWrapper = 
+              new IsoBufferWrapperImpl(tstream.getFile());
+           isoFile = new IsoFile(isoBufferWrapper);
+           isoFile.parse();
+        } finally {
+           tstream.close();
+        }
         
         
         // Grab the file type box
@@ -175,21 +184,36 @@ public class MP4Parser extends AbstractParser {
         // TODO Decide how to handle multiple tracks
         List<TrackBox> tb = moov.getBoxes(TrackBox.class);
         if (tb.size() > 0) {
-           TrackHeaderBox header = getOrNull(tb.get(0), TrackHeaderBox.class);
-           if (header != null) {
-              // Get the creation and modification dates
-              metadata.set(
-                    Metadata.CREATION_DATE, 
-                    MP4TimeToDate(header.getCreationTime())
-              );
-              metadata.set(
-                    Property.externalDate(Metadata.MODIFIED), // TODO Should be a real property
-                    MP4TimeToDate(header.getModificationTime())
-              );
-              
-              // Get the video with and height
-              metadata.set(Metadata.IMAGE_WIDTH,  (int)header.getWidth());
-              metadata.set(Metadata.IMAGE_LENGTH, (int)header.getHeight());
+           TrackBox track = tb.get(0);
+           
+           TrackHeaderBox header = track.getTrackHeaderBox();
+           // Get the creation and modification dates
+           metadata.set(
+                 Metadata.CREATION_DATE, 
+                 MP4TimeToDate(header.getCreationTime())
+           );
+           metadata.set(
+                 Property.externalDate(Metadata.MODIFIED), // TODO Should be a real property
+                 MP4TimeToDate(header.getModificationTime())
+           );
+           
+           // Get the video with and height
+           metadata.set(Metadata.IMAGE_WIDTH,  (int)header.getWidth());
+           metadata.set(Metadata.IMAGE_LENGTH, (int)header.getHeight());
+           
+           // Get the sample information
+           SampleTableBox samples = track.getSampleTableBox();
+           SampleDescriptionBox sampleDesc = samples.getSampleDescriptionBox();
+           if (sampleDesc != null) {
+              // Look for the first Audio Sample, if present
+              AudioSampleEntry sample = getOrNull(sampleDesc, AudioSampleEntry.class);
+              if (sample != null) {
+                 //metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, sample.getChannelCount()); // TODO Num -> Name mapping
+                 //metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, sample.getSampleSize());    // TODO Num -> Type mapping
+                 metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int)sample.getSampleRate());
+                 //metadata.set(XMPDM.AUDIO_, sample.getSamplesPerPacket());
+                 //metadata.set(XMPDM.AUDIO_, sample.getBytesPerSample());
+              }
            }
         }
         
@@ -282,7 +306,7 @@ public class MP4Parser extends AbstractParser {
     }
     private static final long EPOC_AS_MP4_TIME = 2082844800l;
     
-    private static <T extends Box> T getOrNull(AbstractContainerBox box, Class<T> clazz) {
+    private static <T extends Box> T getOrNull(ContainerBox box, Class<T> clazz) {
        List<T> boxes = box.getBoxes(clazz);
        if (boxes.size() == 0) {
           return null;
