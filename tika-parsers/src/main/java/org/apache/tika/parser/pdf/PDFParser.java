@@ -38,6 +38,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.PasswordProvider;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -72,6 +73,7 @@ public class PDFParser extends AbstractParser {
      * Metadata key for giving the document password to the parser.
      *
      * @since Apache Tika 0.5
+     * @deprecated Supply a {@link PasswordProvider} on the {@link ParseContext} instead
      */
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
 
@@ -90,11 +92,25 @@ public class PDFParser extends AbstractParser {
             PDDocument.load(new CloseShieldInputStream(stream), true);
         try {
             if (pdfDocument.isEncrypted()) {
+                String password = null;
+                
+                // Did they supply a new style Password Provider?
+                PasswordProvider passwordProvider = context.get(PasswordProvider.class);
+                if (passwordProvider != null) {
+                   password = passwordProvider.getPassword(metadata);
+                }
+                
+                // Fall back on the old style metadata if set
+                if (password == null && metadata.get(PASSWORD) != null) {
+                   password = metadata.get(PASSWORD);
+                }
+                
+                // If no password is given, use an empty string as the default
+                if (password == null) {
+                   password = "";
+                }
+               
                 try {
-                    String password = metadata.get(PASSWORD);
-                    if (password == null) {
-                        password = "";
-                    }
                     pdfDocument.decrypt(password);
                 } catch (Exception e) {
                     // Ignore
