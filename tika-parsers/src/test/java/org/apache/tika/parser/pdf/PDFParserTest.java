@@ -29,6 +29,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 /**
@@ -123,6 +124,35 @@ public class PDFParserTest extends TikaTest {
        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(Metadata.TITLE));
 
        String content = handler.toString();
+       assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
+       assertTrue(content.contains("On 16 November 2002"));
+       assertTrue(content.contains("In many important respects"));
+       
+       
+       // Try again with an explicit empty password
+       handler = new BodyContentHandler();
+       metadata = new Metadata();
+       
+       context = new ParseContext();
+       context.set(PasswordProvider.class, new PasswordProvider() {
+           public String getPassword(Metadata metadata) {
+              return "";
+          }
+       });
+       
+       stream = PDFParserTest.class.getResourceAsStream(
+                  "/test-documents/testPDF_protected.pdf");
+       try {
+          parser.parse(stream, handler, metadata, context);
+       } finally {
+          stream.close();
+       }
+
+       assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
+       assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(Metadata.TITLE));
+
        assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
        assertTrue(content.contains("On 16 November 2002"));
        assertTrue(content.contains("In many important respects"));
