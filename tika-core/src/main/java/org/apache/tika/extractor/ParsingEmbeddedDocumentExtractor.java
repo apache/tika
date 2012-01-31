@@ -95,14 +95,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             final TikaInputStream newStream = TikaInputStream.get(new CloseShieldInputStream(stream), tmp);
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
-
-                // TODO: we can't let ZipPackage through,
-                // becase of POI bug 51949.  This is less
-                // efficient because the inner parser will
-                // have to re-open the zip archive again.
-                // Once we upgrade to POI 3.8 beta 5 we can
-                // remove this:
-                if ((container != null && !(container.getClass().getSimpleName().equals("ZipPackage")))) {
+                if (container != null) {
                     newStream.setOpenContainer(container);
                 }
             }
