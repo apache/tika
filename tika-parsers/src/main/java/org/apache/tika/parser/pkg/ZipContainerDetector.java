@@ -18,6 +18,7 @@ package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -40,6 +41,7 @@ import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
  *  to figure out exactly what the file is
  */
 public class ZipContainerDetector implements Detector {
+    private static final Pattern MACRO_TEMPLATE_PATTERN = Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
 
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
@@ -161,6 +163,10 @@ public class ZipContainerDetector implements Detector {
         // The Macro Enabled formats are a little special
         if(docType.toLowerCase().endsWith("macroenabled")) {
             docType = docType.toLowerCase() + ".12";
+        }
+
+        if(docType.toLowerCase().endsWith("macroenabledtemplate")) {
+            docType = MACRO_TEMPLATE_PATTERN.matcher(docType).replaceAll("macroenabled.12");
         }
 
         // Build the MediaType object and return
