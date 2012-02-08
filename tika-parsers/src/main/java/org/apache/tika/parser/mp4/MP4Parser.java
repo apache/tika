@@ -307,6 +307,8 @@ public class MP4Parser extends AbstractParser {
     private static final long EPOC_AS_MP4_TIME = 2082844800l;
     
     private static <T extends Box> T getOrNull(ContainerBox box, Class<T> clazz) {
+       if (box == null) return null;
+
        List<T> boxes = box.getBoxes(clazz);
        if (boxes.size() == 0) {
           return null;
