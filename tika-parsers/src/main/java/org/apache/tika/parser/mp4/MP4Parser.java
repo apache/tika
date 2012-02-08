@@ -208,7 +208,7 @@ public class MP4Parser extends AbstractParser {
               // Look for the first Audio Sample, if present
               AudioSampleEntry sample = getOrNull(sampleDesc, AudioSampleEntry.class);
               if (sample != null) {
-                 //metadata.set(XMPDM.AUDIO_CHANNEL_TYPE, sample.getChannelCount()); // TODO Num -> Name mapping
+                 XMPDM.ChannelTypePropertyConverter.convertAndSet(metadata, sample.getChannelCount());
                  //metadata.set(XMPDM.AUDIO_SAMPLE_TYPE, sample.getSampleSize());    // TODO Num -> Type mapping
                  metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int)sample.getSampleRate());
                  //metadata.set(XMPDM.AUDIO_, sample.getSamplesPerPacket());

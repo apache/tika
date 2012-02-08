@@ -16,6 +16,8 @@
  */
 package org.apache.tika.metadata;
 
+import java.util.Date;
+
 /**
  * XMP Dynamic Media schema. This is a collection of
  * {@link Property property definition} constants for the dynamic media
@@ -80,6 +82,53 @@ public interface XMPDM {
      */
     Property AUDIO_CHANNEL_TYPE = Property.internalClosedChoise(
             "xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
+    /**
+     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE} 
+     * @deprecated Experimental method, will change shortly
+     */
+    static class ChannelTypePropertyConverter {
+       private static Property property = AUDIO_CHANNEL_TYPE;
+       
+       /**
+        * How a standalone converter might work
+        */
+       public static String convert(Object value) {
+          if (value instanceof String) {
+             // Assume already done
+             return (String)value;
+          }
+          if (value instanceof Integer) {
+             int channelCount = (Integer)value;
+             if(channelCount == 1) {
+                return "Mono";
+             } else if(channelCount == 2) {
+                return "Stereo";
+             } else if(channelCount == 5) {
+                return "5.1";
+             } else if(channelCount == 7) {
+                return "7.1";
+             }
+          }
+          return null;
+       }
+       /**
+        * How convert+set might work
+        */
+       public static void convertAndSet(Metadata metadata, Object value) {
+          if (value instanceof Integer || value instanceof Long) {
+             metadata.set(property, convert(value));
+          }
+          if (value instanceof Date) {
+             // Won't happen in this case, just an example of already
+             //  converted to a type metadata.set(property) handles
+             metadata.set(property, (Date)value);
+          }
+          if (value instanceof String) {
+             // Already converted, or so we hope!
+             metadata.set(property, (String)value);
+          }
+       }
+    }
 
     /**
      * "The audio compression used. For example, MP3."
