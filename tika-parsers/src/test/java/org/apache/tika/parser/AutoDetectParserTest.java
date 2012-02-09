@@ -16,23 +16,25 @@
  */
 package org.apache.tika.parser;
 
-import junit.framework.TestCase;
-
-import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.sax.BodyContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
+import junit.framework.TestCase;
+
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.sax.BodyContentHandler;
+import org.xml.sax.ContentHandler;
+
 public class AutoDetectParserTest extends TestCase {
+    private TikaConfig tika = TikaConfig.getDefaultConfig();
 
     // Easy to read constants for the MIME types:
     private static final String RAW        = "application/octet-stream";
@@ -52,6 +54,9 @@ public class AutoDetectParserTest extends TestCase {
     private static final String GIF        = "image/gif";
     private static final String JPEG       = "image/jpeg";
     private static final String PNG        = "image/png";
+    private static final String OGG_VORBIS = "audio/vorbis";
+    private static final String OGG_FLAC   = "audio/x-flac";
+    private static final String FLAC_NATIVE= "audio/x-flac";
     private static final String OPENOFFICE
             = "application/vnd.oasis.opendocument.text";
 
@@ -76,7 +81,7 @@ public class AutoDetectParserTest extends TestCase {
             metadata.set(Metadata.RESOURCE_NAME_KEY, tp.resourceStatedName);
             metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
             ContentHandler handler = new BodyContentHandler();
-            new AutoDetectParser().parse(input, handler, metadata);
+            new AutoDetectParser(tika).parse(input, handler, metadata);
 
             assertEquals("Bad content type: " + tp,
                     tp.realType, metadata.get(Metadata.CONTENT_TYPE));
@@ -221,7 +226,7 @@ public class AutoDetectParserTest extends TestCase {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
-            new AutoDetectParser().parse(tgz, handler, metadata);
+            new AutoDetectParser(tika).parse(tgz, handler, metadata);
             fail("Zip bomb was not detected");
         } catch (TikaException e) {
             // expected
@@ -229,6 +234,64 @@ public class AutoDetectParserTest extends TestCase {
             tgz.close();
         }
     
+    }
+    
+    /**
+     * Test to ensure that the Vorbis and FLAC parsers have been correctly
+     *  included, and are available
+     */
+    public void testVorbisFlac() throws Exception {
+       // The three test files should all have similar test data
+       String[] testFiles = new String[] {
+             "testVORBIS.ogg", "testFLAC.oga", "testFLAC.flac"
+       };
+       String[] mimetypes = new String[] {
+             OGG_VORBIS, OGG_FLAC, FLAC_NATIVE
+       };
+       
+       // Check we found the parser
+       CompositeParser parser = (CompositeParser)tika.getParser();
+       for (String type : mimetypes) {
+          MediaType mt = MediaType.parse(type);
+          assertNotNull("Parser not found for " + type, parser.getParsers().get(mt) );
+       }
+       
+       // Have each file parsed, and check
+       for (int i=0; i<testFiles.length; i++) {
+          String file = testFiles[i];
+          InputStream input = AutoDetectParserTest.class.getResourceAsStream(
+                "/test-documents/"+file);
+
+          if (input == null) {
+             fail("Could not find test file " + file);
+          }
+          
+          try {
+             Metadata metadata = new Metadata();
+             ContentHandler handler = new BodyContentHandler();
+             new AutoDetectParser(tika).parse(input, handler, metadata);
+
+             assertEquals("Incorrect content type for " + file,
+                   mimetypes[i], metadata.get(Metadata.CONTENT_TYPE));
+
+             // Check some of the common metadata
+             assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
+             assertEquals("Test Title", metadata.get(Metadata.TITLE));
+             
+             // Check some of the XMPDM metadata
+             assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
+             assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
+             assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
+             assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
+             
+             // Check some of the text
+             String content = handler.toString();
+             assertTrue(content.contains("Test Title"));
+             assertTrue(content.contains("Test Artist"));
+          } finally {
+             input.close();
+          }
+       }
     }
     
     /**
