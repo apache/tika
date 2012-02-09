@@ -38,6 +38,7 @@
     <poi.version>3.8-beta5</poi.version>
     <codec.version>1.5</codec.version> <!-- NOTE: sync with POI -->
     <mime4j.version>0.7</mime4j.version>
+    <vorbis.version>0.1</vorbis.version>
   </properties>
 
   <dependencies>
@@ -45,6 +46,13 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <!-- Externally Maintained Parsers -->
+    <dependency>
+      <groupId>org.gagravarr</groupId>
+      <artifactId>vorbis-java-tika</artifactId>
+      <version>${vorbis.version}</version>
     </dependency>
 
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
@@ -157,6 +165,11 @@
       <groupId>rome</groupId>
       <artifactId>rome</artifactId>
       <version>0.9</version>
+    </dependency>
+    <dependency>
+      <groupId>org.gagravarr</groupId>
+      <artifactId>vorbis-java-core</artifactId>
+      <version>${vorbis.version}</version>
     </dependency>
 
     <!-- Test dependencies -->

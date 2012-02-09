@@ -117,6 +117,7 @@
               xmlbeans, dom4j,
               tagsoup,
               asm, 
+              vorbis-java-core, vorbis-java-tika,
               isoparser, scannotation, javassist,
               metadata-extractor,
               boilerpipe, rome,
