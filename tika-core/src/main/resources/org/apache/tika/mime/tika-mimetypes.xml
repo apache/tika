@@ -171,6 +171,8 @@
   </mime-type>
 
   <mime-type type="application/javascript">
+    <alias type="application/x-javascript"/>
+    <alias type="text/javascript"/>
     <sub-class-of type="text/plain"/>
     <glob pattern="*.js"/>
   </mime-type>
@@ -3923,7 +3925,6 @@
     <glob pattern="*.htm"/>
   </mime-type>
 
-  <mime-type type="text/javascript"/>
   <mime-type type="text/parityfec"/>
 
   <mime-type type="text/plain">
