@@ -48,6 +48,16 @@ Release 1.1 - Current Development
  * Outlook: fixed NullPointerException in TikaGUI when messages with
    embedded RTF or HTML content were filtered (TIKA-801).
 
+ * Ogg Vorbis and FLAC: Parser added for Ogg Vorbis and FLAC audio
+   files, which extract audio metadata and tags (TIKA-747)
+
+ * MP4: Improved mime magic detection for MP4 based formats (including
+   QuickTime, MP4 Video and Audio, and 3GPP) (TIKA-851)
+
+ * MP4: Basic metadata extracting parser for MP4 files added, which includes
+   limited audio and video metadata, along with the iTunes media metadata
+   (such as Artist and Title) (TIKA-852)
+
 Release 1.0 - 11/4/2011
 ---------------------------------
 
