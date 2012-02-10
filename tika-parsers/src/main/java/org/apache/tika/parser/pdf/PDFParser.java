@@ -28,10 +28,14 @@ import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.io.RandomAccess;
+import org.apache.pdfbox.io.RandomAccessFile;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
@@ -88,9 +92,24 @@ public class PDFParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        PDDocument pdfDocument =
-            PDDocument.load(new CloseShieldInputStream(stream), true);
+       
+        PDDocument pdfDocument = null;
+        TemporaryResources tmp = new TemporaryResources();
+
         try {
+            // PDFBox can process entirely in memory, or can use a temp file
+            //  for unpacked / processed resources
+            // Decide which to do based on if we're reading from a file or not already
+            TikaInputStream tstream = TikaInputStream.cast(stream);
+            if (tstream != null && tstream.hasFile()) {
+               // File based, take that as a cue to use a temporary file
+               RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
+               pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), scratchFile, true);
+            } else {
+               // Go for the normal, stream based in-memory parsing
+               pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
+            }
+           
             if (pdfDocument.isEncrypted()) {
                 String password = null;
                 
@@ -122,7 +141,10 @@ public class PDFParser extends AbstractParser {
                               extractAnnotationText, enableAutoSpace,
                               suppressDuplicateOverlappingText, sortByPosition);
         } finally {
-            pdfDocument.close();
+            if (pdfDocument != null) {
+               pdfDocument.close();
+            }
+            tmp.dispose();
         }
     }
 
