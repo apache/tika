@@ -3071,6 +3071,7 @@
   <mime-type type="audio/mpa-robust"/>
 
   <mime-type type="audio/mpeg">
+    <alias type="audio/x-mpeg"/>
     <acronym>MP3</acronym>
     <_comment>MPEG-1 Audio Layer 3</_comment>
     <magic priority="20">
