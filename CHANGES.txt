@@ -58,6 +58,11 @@ Release 1.1 - Current Development
    limited audio and video metadata, along with the iTunes media metadata
    (such as Artist and Title) (TIKA-852)
 
+ * Document Passwords: A new ParseContext object, PasswordProvider,
+   has been added. This provides a way to supply the password for 
+   a document during processing. Currently, only password protected
+   PDFs and Microsoft OOXML Files are supported. (TIKA-850)
+
 Release 1.0 - 11/4/2011
 ---------------------------------
 
