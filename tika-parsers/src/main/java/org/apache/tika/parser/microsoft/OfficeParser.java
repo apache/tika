@@ -42,6 +42,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -212,8 +213,17 @@ public class OfficeParser extends AbstractParser {
            Decryptor d = Decryptor.getInstance(info);
 
            try {
-              // TODO Allow the user to specify the password via the ParseContext
-              if (!d.verifyPassword(Decryptor.DEFAULT_PASSWORD)) {
+              // By default, use the default Office Password
+              String password = Decryptor.DEFAULT_PASSWORD;
+              
+              // If they supplyed a Password Provider, ask that for the password
+              PasswordProvider passwordProvider = context.get(PasswordProvider.class);
+              if (passwordProvider != null) {
+                 password = passwordProvider.getPassword(metadata);
+              }
+              
+              // Check if we've the right password or not
+              if (!d.verifyPassword(password)) {
                  throw new EncryptedDocumentException();
               }
 
