@@ -16,32 +16,46 @@
  */
 package org.apache.tika.config;
 
-import java.io.InputStream;
+import java.net.URL;
 
 import junit.framework.TestCase;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
 
 public class TikaConfigTest extends TestCase {
 
     /**
-     * Make sure that a configuration file can't reference to composite
-     * parser classes like {@link DefaultParser} in the &lt;parser&gt;
-     * configuration elements.
+     * Make sure that a configuration file can't reference the
+     * {@link AutoDetectParser} class a &lt;parser&gt; configuration element.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-866">TIKA-866</a>
      */
     public void testInvalidParser() throws Exception {
-        InputStream xml = TikaConfigTest.class.getResourceAsStream(
-                "TIKA-866-invalid.xml");
+        URL url = TikaConfigTest.class.getResource("TIKA-866-invalid.xml");
+        System.setProperty("tika.config", url.toExternalForm());
         try {
-            new TikaConfig(xml);
-            fail("Composite parser class was allowed in <parser>");
+            new TikaConfig();
+            fail("AutoDetectParser allowed in a <parser> element");
         } catch (TikaException expected) {
-            // OK
-        } finally {
-            xml.close();
+        }
+    }
+
+    /**
+     * Make sure that a configuration file can reference also a composite
+     * parser class like {@link DefaultParser} in a &lt;parser&gt;
+     * configuration element.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-866">TIKA-866</a>
+     */
+    public void testCompositeParser() throws Exception {
+        URL url = TikaConfigTest.class.getResource("TIKA-866-composite.xml");
+        System.setProperty("tika.config", url.toExternalForm());
+        try {
+            new TikaConfig();
+        } catch (TikaException e) {
+            fail("Unexpected TikaException: " + e);
         }
     }
 
@@ -52,13 +66,12 @@ public class TikaConfigTest extends TestCase {
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-866">TIKA-866</a>
      */
     public void testValidParser() throws Exception {
-        InputStream xml = TikaConfigTest.class.getResourceAsStream(
-                "TIKA-866-valid.xml");
+        URL url = TikaConfigTest.class.getResource("TIKA-866-valid.xml");
+        System.setProperty("tika.config", url.toExternalForm());
         try {
-            new TikaConfig(xml);
-            // OK
-        } finally {
-            xml.close();
+            new TikaConfig();
+        } catch (TikaException e) {
+            fail("Unexpected TikaException: " + e);
         }
     }
 
