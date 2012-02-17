@@ -23,10 +23,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.Parser;
 
 /**
  * Creates instances of ExternalParser based on XML 
@@ -75,6 +79,11 @@ public class ExternalParsersFactory {
    }
    
    public static void attachExternalParsers(List<ExternalParser> parsers, TikaConfig config) {
+      Parser parser = config.getParser();
+      if (parser instanceof CompositeParser) {
+         CompositeParser cParser = (CompositeParser)parser;
+         Map<MediaType,Parser> parserMap = cParser.getParsers();
+      }
       // TODO
    }
 }

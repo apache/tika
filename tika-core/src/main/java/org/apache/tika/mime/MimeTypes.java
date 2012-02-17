@@ -269,7 +269,7 @@ public final class MimeTypes implements Detector, Serializable {
             MimeType mime = types.get(normalisedType);
             
             if (mime == null) {
-                synchronized (types) {
+                synchronized (this) {
                    // Double check it didn't already get added while 
                    //  we were waiting for the lock
                    mime = types.get(normalisedType);
