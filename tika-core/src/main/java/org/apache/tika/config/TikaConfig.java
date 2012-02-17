@@ -40,6 +40,7 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypesFactory;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
@@ -285,6 +286,13 @@ public class TikaConfig {
 
             try {
                 Class<?> parserClass = Class.forName(name, true, loader);
+                // https://issues.apache.org/jira/browse/TIKA-866
+                if (DefaultParser.class.isAssignableFrom(parserClass)
+                        || AutoDetectParser.class.isAssignableFrom(parserClass)) {
+                    throw new TikaException(
+                            "Composite parsers not supported in <parser>"
+                            + " configuration elements: " + name);
+                }
                 Object instance = parserClass.newInstance();
                 if (!(instance instanceof Parser)) {
                     throw new TikaException(
