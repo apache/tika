@@ -17,6 +17,6 @@
 -->
 <properties>
   <parsers>
-    <parser class="org.apache.tika.parser.AutoDetectParser"/>
+    <parser class="org.apache.tika.parser.DefaultParser"/>
   </parsers>
 </properties>

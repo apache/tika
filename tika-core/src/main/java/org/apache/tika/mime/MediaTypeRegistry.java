@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.tika.config.TikaConfig;
-
 /**
  * Registry of known Internet media types.
  */
@@ -39,7 +37,7 @@ public class MediaTypeRegistry implements Serializable {
      * @return default media type registry
      */
     public static MediaTypeRegistry getDefaultRegistry() {
-        return TikaConfig.getDefaultConfig().getMediaTypeRegistry();
+        return MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry();
     }
 
     /**
