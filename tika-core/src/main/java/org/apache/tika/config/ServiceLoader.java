@@ -123,6 +123,55 @@ public class ServiceLoader {
     }
 
     /**
+     * Returns an input stream for reading the specified resource from the
+     * configured class loader.
+     *
+     * @param name resource name
+     * @return input stream, or <code>null</code> if the resource was not found
+     * @see ClassLoader#getResourceAsStream(String)
+     * @since Apache Tika 1.1
+     */
+    public InputStream getResourceAsStream(String name) {
+        if (loader != null) {
+            return loader.getResourceAsStream(name);
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Loads and returns the named service class that's expected to implement
+     * the given interface.
+     *
+     * @param iface service interface
+     * @param name service class name
+     * @return service class
+     * @throws ClassNotFoundException if the service class can not be found
+     *                                or does not implement the given interface
+     * @see Class#forName(String, boolean, ClassLoader)
+     * @since Apache Tika 1.1
+     */
+    @SuppressWarnings("unchecked")
+    public <T> Class<? extends T> getServiceClass(Class<T> iface, String name)
+            throws ClassNotFoundException {
+        if (loader == null) {
+            throw new ClassNotFoundException(
+                    "Service class " + name + " is not available");
+        }
+        Class<?> klass = Class.forName(name, true, loader);
+        if (klass.isInterface()) {
+            throw new ClassNotFoundException(
+                    "Service class " + name + " is an interface");
+        } else if (!iface.isAssignableFrom(klass)) {
+            throw new ClassNotFoundException(
+                    "Service class " + name
+                    + " does not implement " + iface.getName());
+        } else {
+            return (Class<? extends T>) klass;
+        }
+    }
+
+    /**
      * Returns all the available service resources matching the
      *  given pattern, such as all instances of tika-mimetypes.xml 
      *  on the classpath, or all org.apache.tika.parser.Parser 

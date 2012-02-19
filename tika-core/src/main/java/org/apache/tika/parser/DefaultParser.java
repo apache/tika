@@ -64,8 +64,8 @@ public class DefaultParser extends CompositeParser {
         
         return parsers;
     }
-    
-    private DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
+
+    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
         super(registry, getDefaultParsers(loader));
     }
 
