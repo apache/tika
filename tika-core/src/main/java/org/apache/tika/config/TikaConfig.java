@@ -61,12 +61,12 @@ public class TikaConfig {
     }
 
     private static Detector getDefaultDetector(
-            MimeTypes types, ClassLoader loader) {
+            MimeTypes types, ServiceLoader loader) {
         return new DefaultDetector(types, loader);
     }
 
     private static CompositeParser getDefaultParser(
-            MimeTypes types, ClassLoader loader) {
+            MimeTypes types, ServiceLoader loader) {
         return new DefaultParser(types.getMediaTypeRegistry(), loader);
     }
 
@@ -105,10 +105,15 @@ public class TikaConfig {
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
-        this(element, ServiceLoader.getContextClassLoader());
+        this(element, new ServiceLoader());
     }
 
     public TikaConfig(Element element, ClassLoader loader)
+            throws TikaException, IOException {
+        this(element, new ServiceLoader(loader));
+    }
+
+    private TikaConfig(Element element, ServiceLoader loader)
             throws TikaException, IOException {
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorFromDomElement(element, mimeTypes, loader);
@@ -129,9 +134,10 @@ public class TikaConfig {
      */
     public TikaConfig(ClassLoader loader)
             throws MimeTypeException, IOException {
+        ServiceLoader serviceLoader = new ServiceLoader(loader);
         this.mimeTypes = getDefaultMimeTypes();
-        this.detector = getDefaultDetector(mimeTypes, loader);
-        this.parser = getDefaultParser(mimeTypes, loader);
+        this.detector = getDefaultDetector(mimeTypes, serviceLoader);
+        this.parser = getDefaultParser(mimeTypes, serviceLoader);
     }
 
     /**
@@ -152,7 +158,7 @@ public class TikaConfig {
      * @throws TikaException if problem with MimeTypes or parsing XML config
      */
     public TikaConfig() throws TikaException, IOException {
-        ClassLoader loader = ServiceLoader.getContextClassLoader();
+        ServiceLoader loader = new ServiceLoader();
 
         String config = System.getProperty("tika.config");
         if (config == null) {
@@ -300,7 +306,7 @@ public class TikaConfig {
     }
 
     private static CompositeParser parserFromDomElement(
-            Element element, MimeTypes mimeTypes, ClassLoader loader)
+            Element element, MimeTypes mimeTypes, ServiceLoader loader)
             throws TikaException, IOException {
         List<Parser> parsers = new ArrayList<Parser>();
         NodeList nodes = element.getElementsByTagName("parser");
@@ -309,20 +315,15 @@ public class TikaConfig {
             String name = node.getAttribute("class");
 
             try {
-                Class<?> parserClass = Class.forName(name, true, loader);
+                Class<? extends Parser> parserClass =
+                        loader.getServiceClass(Parser.class, name);
                 // https://issues.apache.org/jira/browse/TIKA-866
                 if (AutoDetectParser.class.isAssignableFrom(parserClass)) {
                     throw new TikaException(
                             "AutoDetectParser not supported in a <parser>"
                             + " configuration element: " + name);
                 }
-
-                Object instance = parserClass.newInstance();
-                if (!(instance instanceof Parser)) {
-                    throw new TikaException(
-                            "Configured class is not a Tika Parser: " + name);
-                }
-                Parser parser = (Parser) instance;
+                Parser parser = parserClass.newInstance();
 
                 NodeList mimes = node.getElementsByTagName("mime");
                 if (mimes.getLength() > 0) {
@@ -343,7 +344,7 @@ public class TikaConfig {
                 parsers.add(parser);
             } catch (ClassNotFoundException e) {
                 throw new TikaException(
-                        "Configured parser class not found: " + name, e);
+                        "Unable to find a parser class: " + name, e);
             } catch (IllegalAccessException e) {
                 throw new TikaException(
                         "Unable to access a parser class: " + name, e);
@@ -361,7 +362,7 @@ public class TikaConfig {
     }
 
     private static Detector detectorFromDomElement(
-          Element element, MimeTypes mimeTypes, ClassLoader loader)
+          Element element, MimeTypes mimeTypes, ServiceLoader loader)
           throws TikaException, IOException {
        List<Detector> detectors = new ArrayList<Detector>();
        NodeList nodes = element.getElementsByTagName("detector");
@@ -370,17 +371,12 @@ public class TikaConfig {
            String name = node.getAttribute("class");
 
            try {
-               Class<?> detectorClass = Class.forName(name, true, loader);
-               Object instance = detectorClass.newInstance();
-               if (!(instance instanceof Detector)) {
-                   throw new TikaException(
-                           "Configured class is not a Tika Detector: " + name);
-               }
-               Detector detector = (Detector) instance;
-               detectors.add(detector);
+               Class<? extends Detector> detectorClass =
+                       loader.getServiceClass(Detector.class, name);
+               detectors.add(detectorClass.newInstance());
            } catch (ClassNotFoundException e) {
                throw new TikaException(
-                       "Configured detector class not found: " + name, e);
+                       "Unable to find a detector class: " + name, e);
            } catch (IllegalAccessException e) {
                throw new TikaException(
                        "Unable to access a detector class: " + name, e);

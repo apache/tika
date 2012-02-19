@@ -77,7 +77,7 @@ public class DefaultDetector extends CompositeDetector {
         return detectors;
     }
 
-    private DefaultDetector(MimeTypes types, ServiceLoader loader) {
+    public DefaultDetector(MimeTypes types, ServiceLoader loader) {
         super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader));
     }
 
