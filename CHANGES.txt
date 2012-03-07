@@ -1,7 +1,7 @@
 Apache Tika Change Log
 ======================
 
-Release 1.1 - Current Development
+Release 1.1 - 3/7/2012
 ---------------------------------
 
  * Link Extraction: The rel attribute is now extracted from 
