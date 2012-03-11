@@ -146,6 +146,24 @@ public class WriteOutContentHandler extends ContentHandlerDecorator {
         }
     }
 
+    @Override
+    public void ignorableWhitespace(char[] ch, int start, int length)
+            throws SAXException {
+        if (writeLimit == -1 || writeCount + length <= writeLimit) {
+            super.ignorableWhitespace(ch, start, length);
+            writeCount += length;
+        } else {
+            super.ignorableWhitespace(ch, start, writeLimit - writeCount);
+            writeCount = writeLimit;
+            throw new WriteLimitReachedException(
+                    "Your document contained more than " + writeLimit
+                    + " characters, and so your requested limit has been"
+                    + " reached. To receive the full text of the document,"
+                    + " increase your limit. (Text up to the limit is"
+                    + " however available).", tag);
+        }
+    }
+
     /**
      * Checks whether the given exception (or any of it's root causes) was
      * thrown by this handler as a signal of reaching the write limit.
