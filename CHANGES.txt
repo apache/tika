@@ -1,6 +1,9 @@
 Apache Tika Change Log
 ======================
 
+ * Tika: parseToString now lets you specify the max string length
+   per-call, in addition to per-Tika-instance. (TIKA-870)
+
 Release 1.1 - 3/7/2012
 ---------------------------------
 

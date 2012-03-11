@@ -28,6 +28,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.WriteOutContentHandler;
@@ -163,6 +164,35 @@ public class RTFParserTest extends TikaTest {
        
         // 6 other characters
         assertContains("\u6771\u4eac\u90fd\u4e09\u9df9\u5e02", content);
+    }
+
+    public void testMaxLength() throws Exception {
+        File file = getResourceAsFile("/test-documents/testRTFJapanese.rtf");
+        Metadata metadata = new Metadata();
+        InputStream stream = TikaInputStream.get(file, metadata);
+
+        // Test w/ default limit:
+        Tika localTika = new Tika();
+        String content = localTika.parseToString(stream, metadata);
+        // parseToString closes for convenience:
+        //stream.close();
+        assertTrue(content.length() > 500);
+
+        // Test setting max length on the instance:
+        localTika.setMaxStringLength(200);
+        stream = TikaInputStream.get(file, metadata);
+        content = localTika.parseToString(stream, metadata);
+        
+        // parseToString closes for convenience:
+        //stream.close();
+        assertTrue(content.length() <= 200);
+        
+        // Test setting max length per-call:
+        stream = TikaInputStream.get(file, metadata);
+        content = localTika.parseToString(stream, metadata, 100);
+        // parseToString closes for convenience:
+        //stream.close();
+        assertTrue(content.length() <= 100);
     }
 
     public void testTextWithCurlyBraces() throws Exception {
