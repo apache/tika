@@ -287,6 +287,13 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/x-gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
        assertTypeByData("application/x-cpio", "test-documents.cpio");
     }
+    
+    public void testFitsDetection() throws Exception {
+        // FITS image created using imagemagick convert of testJPEG.jpg
+        assertType("application/fits", "testFITS.fits");
+        assertTypeByData("application/fits", "testFITS.fits");
+        assertTypeByName("application/fits", "testFITS.fits");
+    }
 
     public void testJpegDetection() throws Exception {
         assertType("image/jpeg", "testJPEG.jpg");

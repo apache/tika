@@ -138,7 +138,18 @@
   <mime-type type="application/example"/>
   <mime-type type="application/fastinfoset"/>
   <mime-type type="application/fastsoap"/>
-  <mime-type type="application/fits"/>
+  
+  <mime-type type="application/fits">
+    <acronym>FITS</acronym>
+    <_comment>Flexible Image Transport System</_comment>
+    <magic priority="50">
+      <match value="SIMPLE  =                    T" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.fits"/>
+    <glob pattern="*.fit"/>
+    <glob pattern="*.fts"/>
+  </mime-type>
+  
   <mime-type type="application/font-tdpfr">
     <glob pattern="*.pfr"/>
   </mime-type>
