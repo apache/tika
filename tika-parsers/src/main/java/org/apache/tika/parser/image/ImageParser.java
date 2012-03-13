@@ -28,6 +28,7 @@ import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.ImageInputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
@@ -81,17 +82,24 @@ public class ImageParser extends AbstractParser {
                     ImageIO.getImageReadersByMIMEType(type);
                 if (iterator.hasNext()) {
                     ImageReader reader = iterator.next();
-                    reader.setInput(ImageIO.createImageInputStream(
-                            new CloseShieldInputStream(stream)));
-                    
-                    metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
-                    metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
-                    metadata.set("height", Integer.toString(reader.getHeight(0)));
-                    metadata.set("width", Integer.toString(reader.getWidth(0)));
+                    try {
+                        ImageInputStream imageStream = ImageIO.createImageInputStream(
+                                new CloseShieldInputStream(stream));
+                        try {
+                            reader.setInput(imageStream);
+                            
+                            metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
+                            metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
+                            metadata.set("height", Integer.toString(reader.getHeight(0)));
+                            metadata.set("width", Integer.toString(reader.getWidth(0)));
 
-                    loadMetadata(reader.getImageMetadata(0), metadata);
-
-                    reader.dispose();
+                            loadMetadata(reader.getImageMetadata(0), metadata);
+                        } finally {
+                            imageStream.close();
+                        }
+                    } finally {
+                        reader.dispose();
+                    }
                 }
                 
                 // Translate certain Metadata tags from the ImageIO
