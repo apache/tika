@@ -62,6 +62,12 @@
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <artifactId>commons-io</artifactId>
+      <groupId>commons-io</groupId>
+      <version>2.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
