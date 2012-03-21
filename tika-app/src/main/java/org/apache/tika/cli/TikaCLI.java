@@ -16,16 +16,7 @@
  */
 package org.apache.tika.cli;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -53,6 +44,10 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.SimpleLayout;
 import org.apache.log4j.WriterAppender;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.filesystem.DocumentInputStream;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
@@ -89,6 +84,7 @@ import com.google.gson.Gson;
  * Simple command line interface for Apache Tika.
  */
 public class TikaCLI {
+    private File extractDir = new File(".");
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure(
@@ -353,6 +349,8 @@ public class TikaCLI {
             type = LANGUAGE;
         } else if (arg.equals("-d") || arg.equals("--detect")) {
             type = DETECT;
+        } else if (arg.startsWith("--extract-dir=")) {
+            extractDir = new File(arg.substring("--extract-dir=".length()));
         } else if (arg.equals("-z") || arg.equals("--extract")) {
             type = NO_OUTPUT;
             context.set(EmbeddedDocumentExtractor.class, new FileEmbeddedDocumentExtractor());
@@ -427,6 +425,7 @@ public class TikaCLI {
         out.println("    -d  or --detect        Detect document type");
         out.println("    -eX or --encoding=X    Use output encoding X");
         out.println("    -z  or --extract       Extract all attachements into current directory");        
+        out.println("    --extract-dir=<dir>    Specify target directory for -z");        
         out.println("    -r  or --pretty-print  For XML and XHTML outputs, adds newlines and");
         out.println("                           whitespace, for better readability");
         out.println();
@@ -685,7 +684,7 @@ public class TikaCLI {
                 }
             }
 
-            File outputFile = new File(name);
+            File outputFile = new File(extractDir, name);
             if (outputFile.exists()) {
                 System.err.println("File '"+name+"' already exists; skipping");
                 return;
@@ -695,9 +694,40 @@ public class TikaCLI {
 
             FileOutputStream os = new FileOutputStream(outputFile);
 
-            IOUtils.copy(inputStream, os);
+            if (inputStream instanceof TikaInputStream) {
+                TikaInputStream tin = (TikaInputStream) inputStream;
+
+                if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
+                    POIFSFileSystem fs = new POIFSFileSystem();
+                    copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
+                    fs.writeFilesystem(os);
+                } else {
+                    IOUtils.copy(inputStream, os);
+                }
+            } else {
+                IOUtils.copy(inputStream, os);
+            }
 
             os.close();
+        }
+
+        protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
+                throws IOException {
+            for (org.apache.poi.poifs.filesystem.Entry entry : sourceDir) {
+                if (entry instanceof DirectoryEntry) {
+                    // Need to recurse
+                    DirectoryEntry newDir = destDir.createDirectory(entry.getName());
+                    copy((DirectoryEntry) entry, newDir);
+                } else {
+                    // Copy entry
+                    InputStream contents = new DocumentInputStream((DocumentEntry) entry);
+                    try {
+                        destDir.createDocument(entry.getName(), contents);
+                    } finally {
+                        contents.close();
+                    }
+                }
+            }
         }
     }
 

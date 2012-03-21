@@ -23,6 +23,7 @@ import java.net.URI;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Tests the Tika's cli
@@ -173,4 +174,28 @@ public class TikaCLITest extends TestCase{
         System.setOut(stdout);
     }
 
+    public void testExtract() throws Exception {
+        File tempFile = File.createTempFile("tika-test-", "");
+        tempFile.delete();
+        tempFile.mkdir(); // not really good method for production usage, but ok for tests
+                          // google guava library has better solution
+
+        try {
+            String[] params = {"--extract-dir="+tempFile.getAbsolutePath(),"-z", resorcePrefix + "/coffee.xls"};
+            
+            TikaCLI.main(params);
+            
+            File expected1 = new File(tempFile, "MBD002B040A.wps");
+            File expected2 = new File(tempFile, "file5");
+            
+            assertTrue(expected1.exists());
+            assertTrue(expected2.exists());
+            
+            assertTrue(expected1.length()>0);
+            assertTrue(expected2.length()>0);
+        } finally {
+            FileUtils.deleteDirectory(tempFile);
+        }
+
+    }
 }
