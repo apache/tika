@@ -115,7 +115,13 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             for (PackagePart source : getMainDocumentParts()) {
                 for (PackageRelationship rel : source.getRelationships()) {
                     if (rel.getTargetMode() == TargetMode.INTERNAL) {
-                        PackagePart target = source.getRelatedPart(rel);
+                        PackagePart target;
+
+                        try {
+                            target = source.getRelatedPart(rel);
+                        } catch (IllegalArgumentException ex) {
+                            continue;
+                        }
 
                         String type = rel.getRelationshipType();
                         if (RELATION_OLE_OBJECT.equals(type)
