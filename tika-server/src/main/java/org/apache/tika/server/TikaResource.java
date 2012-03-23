@@ -40,9 +40,7 @@ import org.xml.sax.SAXException;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -130,7 +128,9 @@ public class TikaResource {
 
     return new StreamingOutput() {
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-        BodyContentHandler body = new BodyContentHandler(new WriteOutContentHandler(outputStream) {
+        Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
+
+        BodyContentHandler body = new BodyContentHandler(new WriteOutContentHandler(writer) {
           @Override
           public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             super.startElement(uri, localName, qName, attributes);
