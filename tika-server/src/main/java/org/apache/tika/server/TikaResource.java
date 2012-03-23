@@ -33,8 +33,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.WriteOutContentHandler;
-import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -130,24 +128,7 @@ public class TikaResource {
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {
         Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
 
-        BodyContentHandler body = new BodyContentHandler(new WriteOutContentHandler(writer) {
-          @Override
-          public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-            super.startElement(uri, localName, qName, attributes);
-
-            if ("img".equals(localName) && attributes.getValue("alt")!=null) {
-              String nfo = "[image: "+attributes.getValue("alt")+ ']';
-
-              characters(nfo.toCharArray(), 0, nfo.length());
-            }
-
-            if ("a".equals(localName) && attributes.getValue("name")!=null) {
-              String nfo = "[bookmark: "+attributes.getValue("name")+ ']';
-
-              characters(nfo.toCharArray(), 0, nfo.length());
-            }
-          }
-        });
+        BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
         TikaInputStream tis = TikaInputStream.get(is);
 
