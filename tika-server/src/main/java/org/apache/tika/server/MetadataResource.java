@@ -55,16 +55,22 @@ public class MetadataResource {
 
     return new StreamingOutput() {
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-        CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream));
-        for (String name : metadata.names()) {
-          String[] values = metadata.getValues(name);
-          ArrayList<String> list = new ArrayList<String>(values.length+1);
-          list.add(name);
-          list.addAll(Arrays.asList(values));
-          writer.writeNext(list.toArray(values));
-        }
-        writer.close();
+        metadataToCsv(metadata, outputStream);
       }
     };
+  }
+
+  public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
+    CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+
+    for (String name : metadata.names()) {
+      String[] values = metadata.getValues(name);
+      ArrayList<String> list = new ArrayList<String>(values.length+1);
+      list.add(name);
+      list.addAll(Arrays.asList(values));
+      writer.writeNext(list.toArray(values));
+    }
+
+    writer.close();
   }
 }
