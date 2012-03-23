@@ -134,8 +134,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        
        // With recursion, should get the images embedded in the office files too
        handler = process("testEXCEL_embeded.xls", extractor, true);
-       assertEquals(12, handler.filenames.size());
-       assertEquals(12, handler.mediaTypes.size());
+       assertEquals(17, handler.filenames.size());
+       assertEquals(17, handler.mediaTypes.size());
        
        assertEquals(null, handler.filenames.get(0));
        assertEquals(null, handler.filenames.get(1));
@@ -147,7 +147,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals("image1.png", handler.filenames.get(7));
        assertEquals("image2.jpg", handler.filenames.get(8));
        assertEquals("image3.png", handler.filenames.get(9));
-       assertEquals("image1.png", handler.filenames.get(11));
+       assertEquals("image1.png", handler.filenames.get(16));
 
        assertEquals(TYPE_EMF, handler.mediaTypes.get(0)); // Icon of embedded office doc
        assertEquals(TYPE_EMF, handler.mediaTypes.get(1)); // Icon of embedded office doc
@@ -159,8 +159,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(TYPE_PNG, handler.mediaTypes.get(7)); // Embedded image
        assertEquals(TYPE_JPG, handler.mediaTypes.get(8)); // Embedded image
        assertEquals(TYPE_PNG, handler.mediaTypes.get(9)); // Embedded image
-       assertEquals(TYPE_DOC, handler.mediaTypes.get(10)); // Embedded office doc
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(11)); // Embedded image
+       assertEquals(TYPE_DOC, handler.mediaTypes.get(15)); // Embedded office doc
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(16)); // Embedded image
 
        // Word with .docx, powerpoint and excel
        handler = process("testWORD_embeded.doc", extractor, false);
@@ -193,8 +193,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        
        // With recursion, should get their images too
        handler = process("testWORD_embeded.doc", extractor, true);
-       assertEquals(13, handler.filenames.size());
-       assertEquals(13, handler.mediaTypes.size());
+       assertEquals(16, handler.filenames.size());
+       assertEquals(16, handler.mediaTypes.size());
        
        // We don't know their filenames, except for doc images + docx
        assertEquals("image1.emf", handler.filenames.get(0));
@@ -207,7 +207,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals("image2.png", handler.filenames.get(7));
        assertEquals("image3.jpeg", handler.filenames.get(8));
        assertEquals("image4.png", handler.filenames.get(9));
-       for(int i=12; i<handler.filenames.size(); i++) {
+       for(int i=11; i<14; i++) {
           assertNull(handler.filenames.get(i));
        }
        // But we do know their types
@@ -222,8 +222,8 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(TYPE_JPG, handler.mediaTypes.get(8));  //    JPG inside .docx
        assertEquals(TYPE_PNG, handler.mediaTypes.get(9));  //    PNG inside .docx
        assertEquals(TYPE_PPT, handler.mediaTypes.get(10)); // Embedded office doc
-       assertEquals(TYPE_XLS, handler.mediaTypes.get(11)); // Embedded office doc
-       assertEquals(TYPE_PNG, handler.mediaTypes.get(12)); //    PNG inside .xls
+       assertEquals(TYPE_XLS, handler.mediaTypes.get(14)); // Embedded office doc
+       assertEquals(TYPE_PNG, handler.mediaTypes.get(15)); //    PNG inside .xls
        
        
        // PowerPoint with excel and word
@@ -261,5 +261,14 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         handler = process("EmbeddedDocument.docx", extractor, false);
         assertTrue(handler.filenames.contains("Microsoft_Office_Excel_97-2003_Worksheet1.bin"));
         assertEquals(2, handler.filenames.size());
+    }
+
+    public void testPowerpointImages() throws Exception {
+        ContainerExtractor extractor = new ParserContainerExtractor();
+        TrackingHandler handler;
+
+        handler = process("pictures.ppt", extractor, false);
+        assertTrue(handler.mediaTypes.contains(new MediaType("image", "jpeg")));
+        assertTrue(handler.mediaTypes.contains(new MediaType("image", "png")));
     }
 }
