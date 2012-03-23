@@ -19,10 +19,10 @@ package org.apache.tika.server;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -157,7 +157,19 @@ public class TikaResource {
           parser.parse(tis, body, metadata);
         } catch (SAXException e) {
           throw new WebApplicationException(e);
+        } catch (EncryptedDocumentException e) {
+          logger.warn(String.format(
+                  "%s: Encrypted document",
+                  info.getPath()
+          ), e);
+
+          throw new WebApplicationException(e, Response.status(422).build());
         } catch (TikaException e) {
+          logger.warn(String.format(
+            "%s: Text extraction failed",
+            info.getPath()
+          ), e);
+
           if (e.getCause()!=null && e.getCause() instanceof WebApplicationException) {
             throw (WebApplicationException) e.getCause();
           }
@@ -166,18 +178,9 @@ public class TikaResource {
             throw new WebApplicationException(Response.status(422).build());
           }
 
-          if (e.getCause()!=null && e.getCause() instanceof EncryptedDocumentException) {
-            throw new WebApplicationException(Response.status(422).build());
-          }
-
           if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException) {
             throw new WebApplicationException(Response.status(422).build());
           }
-
-          logger.warn(String.format(
-                  "%s: Text extraction failed",
-                  info.getPath()
-          ), e);
 
           throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         } finally {
