@@ -78,10 +78,6 @@ public class TikaResource {
       public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, ParseContext parseContext) {
         throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
       }
-
-      public void parse(InputStream inputStream, ContentHandler contentHandler, Metadata metadata) {
-        throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
-      }
     });
 
     return parser;
