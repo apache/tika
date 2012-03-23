@@ -16,18 +16,10 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.io.IOException;
-import java.util.HashSet;
-
 import org.apache.poi.hslf.HSLFSlideShow;
-import org.apache.poi.hslf.model.Comment;
-import org.apache.poi.hslf.model.HeadersFooters;
-import org.apache.poi.hslf.model.Notes;
-import org.apache.poi.hslf.model.OLEShape;
-import org.apache.poi.hslf.model.Shape;
-import org.apache.poi.hslf.model.Slide;
-import org.apache.poi.hslf.model.TextRun;
+import org.apache.poi.hslf.model.*;
 import org.apache.poi.hslf.usermodel.ObjectData;
+import org.apache.poi.hslf.usermodel.PictureData;
 import org.apache.poi.hslf.usermodel.SlideShow;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
@@ -36,6 +28,9 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.HashSet;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
    public HSLFExtractor(ParseContext context) {
@@ -164,6 +159,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          }
       }
 
+      handleSlideEmbeddedPictures(_show, xhtml);
+
       xhtml.endElement("div");
    }
 
@@ -181,7 +178,36 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
       }
    }
 
-   private void handleSlideEmbeddedResources(Slide slide, XHTMLContentHandler xhtml) 
+    private void handleSlideEmbeddedPictures(SlideShow slideshow, XHTMLContentHandler xhtml)
+            throws TikaException, SAXException, IOException {
+        for (PictureData pic : slideshow.getPictureData()) {
+            String mediaType = null;
+
+            switch (pic.getType()) {
+                case Picture.EMF:
+                    mediaType = "application/x-emf";
+                    break;
+                case Picture.JPEG:
+                    mediaType = "image/jpeg";
+                    break;
+                case Picture.PNG:
+                    mediaType = "image/png";
+                    break;
+                case Picture.WMF:
+                    mediaType = "application/x-msmetafile";
+                    break;
+                case Picture.DIB:
+                    mediaType = "image/bmp";
+                    break;
+            }
+
+            handleEmbeddedResource(
+                  TikaInputStream.get(pic.getData()), null,
+                  mediaType, xhtml, false);
+        }
+    }
+
+    private void handleSlideEmbeddedResources(Slide slide, XHTMLContentHandler xhtml)
                 throws TikaException, SAXException, IOException {
       Shape[] shapes;
       try {
