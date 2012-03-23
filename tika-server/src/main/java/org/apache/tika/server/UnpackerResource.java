@@ -20,19 +20,19 @@ package org.apache.tika.server;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.poi.poifs.filesystem.Ole10Native;
-import org.apache.poi.poifs.filesystem.Ole10NativeException;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.filesystem.*;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -41,17 +41,19 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.*;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.zip.ZipOutputStream;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
-@Path("/unpacker{id:(/.*)?}")
+@Path("/")
 public class UnpackerResource {
   private static final Log logger = LogFactory.getLog(UnpackerResource.class);
+  public static final String TEXT_FILENAME = "__TEXT__";
+  private static final String META_FILENAME = "__METADATA__";
 
   private final TikaConfig tikaConfig;
 
@@ -59,12 +61,33 @@ public class UnpackerResource {
     tikaConfig = TikaConfig.getDefaultConfig();
   }
 
+  @Path("unpacker{id:(/.*)?}")
   @PUT
-  @Produces("application/zip")
-  public StreamingOutput getText(
+  @Produces({"application/zip", "application/x-tar"})
+  public Map<String, byte[]> unpack(
           InputStream is,
           @Context HttpHeaders httpHeaders,
           @Context UriInfo info
+  ) throws Exception {
+    return process(is, httpHeaders, info, false);
+  }
+
+  @Path("all{id:(/.*)?}")
+  @PUT
+  @Produces({"application/zip", "application/x-tar"})
+  public Map<String, byte[]> unpackAll(
+          InputStream is,
+          @Context HttpHeaders httpHeaders,
+          @Context UriInfo info
+  ) throws Exception {
+    return process(is, httpHeaders, info, true);
+  }
+
+  private Map<String, byte[]> process(
+          InputStream is,
+          @Context HttpHeaders httpHeaders,
+          @Context UriInfo info,
+          boolean saveAll
   ) throws Exception {
     Metadata metadata = new Metadata();
 
@@ -73,14 +96,21 @@ public class UnpackerResource {
     TikaResource.fillMetadata(parser, metadata, httpHeaders);
     TikaResource.logRequest(logger, info, metadata);
 
-    ContentHandler ch = new DefaultHandler();
+    ContentHandler ch;
+    ByteArrayOutputStream text = new ByteArrayOutputStream();
+
+    if (saveAll) {
+      ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, "UTF-8")));
+    } else {
+      ch = new DefaultHandler();
+    }
 
     ParseContext pc = new ParseContext();
 
-    ZipOutput zout = new ZipOutput();
+    Map<String, byte[]> files = new HashMap<String, byte[]>();
     MutableInt count = new MutableInt();
 
-    pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, zout));
+    pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
 
     try {
       parser.parse(is, ch, metadata, pc);
@@ -89,20 +119,31 @@ public class UnpackerResource {
               "%s: Unpacker failed",
               info.getPath()
       ), ex);
+
+      throw ex;
     }
 
-    if (count.intValue() == 0) {
+    if (count.intValue() == 0 && !saveAll) {
       throw new WebApplicationException(Response.Status.NO_CONTENT);
     }
 
-    return zout;
+    if (saveAll) {
+      files.put(TEXT_FILENAME, text.toByteArray());
+
+      ByteArrayOutputStream metaStream = new ByteArrayOutputStream();
+      MetadataResource.metadataToCsv(metadata, metaStream);
+
+      files.put(META_FILENAME, metaStream.toByteArray());
+    }
+
+    return files;
   }
 
   private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
     private final MutableInt count;
-    private final ZipOutput zout;
+    private final Map<String, byte[]> zout;
 
-    MyEmbeddedDocumentExtractor(MutableInt count, ZipOutput zout) {
+    MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout) {
       this.count = count;
       this.zout = zout;
     }
@@ -123,7 +164,7 @@ public class UnpackerResource {
         name = Integer.toString(count.intValue());
       }
 
-      if (!name.contains(".")) {
+      if (!name.contains(".") && contentType!=null) {
         try {
           String ext = tikaConfig.getMimeRepository().forName(contentType).getExtension();
 
@@ -159,17 +200,48 @@ public class UnpackerResource {
         } else {
           name += '.' + type.getExtension();
         }
-      }      
+      }
 
       final String finalName = name;
 
-      zout.put(new PartExtractor<byte[]>() {
-        public void extract(byte[] part, ZipOutputStream output) throws IOException {
-          ZipUtils.zipStoreBuffer(output, finalName, part);
-        }
-      }, Collections.singletonList(data));
+      if (data.length > 0) {
+        zout.put(finalName, data);
 
-      count.increment();
+        count.increment();
+      } else {
+        if (inputStream instanceof TikaInputStream) {
+          TikaInputStream tin = (TikaInputStream)  inputStream;
+
+          if (tin.getOpenContainer()!=null && tin.getOpenContainer() instanceof DirectoryEntry) {
+            POIFSFileSystem fs = new POIFSFileSystem();
+            copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
+            ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
+            fs.writeFilesystem(bos2);
+            bos2.close();
+
+            zout.put(finalName, bos2.toByteArray());
+          }
+        }
+      }
+    }
+
+    protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
+            throws IOException {
+      for (Entry entry : sourceDir) {
+        if (entry instanceof DirectoryEntry) {
+          // Need to recurse
+          DirectoryEntry newDir = destDir.createDirectory(entry.getName());
+          copy((DirectoryEntry) entry, newDir);
+        } else {
+          // Copy entry
+          InputStream contents = new DocumentInputStream((DocumentEntry) entry);
+          try {
+            destDir.createDocument(entry.getName(), contents);
+          } finally {
+            contents.close();
+          }
+        }
+      }
     }
   }
 }

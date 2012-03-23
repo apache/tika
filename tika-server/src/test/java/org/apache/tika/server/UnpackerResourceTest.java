@@ -17,21 +17,27 @@
 
 package org.apache.tika.server;
 
+import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.test.framework.JerseyTest;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.tika.io.IOUtils;
 import org.junit.Test;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class UnpackerResourceTest extends JerseyTest {
   private static final String UNPACKER_PATH = "/unpacker";
+  private static final String ALL_PATH = "/all";
 
   private static final String TEST_DOC_WAV = "Doc1_ole.doc";
   private static final String WAV1_MD5 = "bdd0a78a54968e362445364f95d8dc96";
@@ -74,12 +80,32 @@ public class UnpackerResourceTest extends JerseyTest {
                     .type(APPLICATION_MSWORD)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
-    ZipInputStream zip = new ZipInputStream(is);
+    ArchiveInputStream zip = new ZipArchiveInputStream(is);
 
-    Map<String, String> data = readZip(zip);
+    Map<String, String> data = readArchive(zip);
 
     assertEquals(WAV1_MD5, data.get(WAV1_NAME));
     assertEquals(WAV2_MD5, data.get(WAV2_NAME));
+
+    assertFalse(data.containsKey(UnpackerResource.TEXT_FILENAME));
+  }
+
+  @Test
+  public void testDocWAVText() throws Exception {
+    InputStream is =
+            resource()
+                    .path(ALL_PATH)
+                    .type(APPLICATION_MSWORD)
+                    .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+    ArchiveInputStream zip = new ZipArchiveInputStream(is);
+
+    Map<String, String> data = readArchive(zip);
+
+    assertEquals(WAV1_MD5, data.get(WAV1_NAME));
+    assertEquals(WAV2_MD5, data.get(WAV2_NAME));
+
+    assertTrue(data.containsKey(UnpackerResource.TEXT_FILENAME));
   }
 
   @Test
@@ -90,9 +116,9 @@ public class UnpackerResourceTest extends JerseyTest {
                     .type(APPLICATION_MSWORD)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
-    ZipInputStream zip = new ZipInputStream(is);
+    ZipArchiveInputStream zip = new ZipArchiveInputStream(is);
 
-    Map<String, String> data = readZip(zip);
+    Map<String, String> data = readArchive(zip);
 
     assertEquals(JPG_MD5, data.get(JPG_NAME));
   }
@@ -105,9 +131,9 @@ public class UnpackerResourceTest extends JerseyTest {
                     .type(APPLICATION_MSWORD)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream("2pic.doc"));
 
-    ZipInputStream zip = new ZipInputStream(is);
+    ZipArchiveInputStream zip = new ZipArchiveInputStream(is);
 
-    Map<String, String> data = readZip(zip);
+    Map<String, String> data = readArchive(zip);
 
     assertEquals(JPG2_MD5, data.get(JPG2_NAME));
   }
@@ -119,12 +145,23 @@ public class UnpackerResourceTest extends JerseyTest {
                     .path(UNPACKER_PATH)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
 
-    ZipInputStream zip = new ZipInputStream(is);
+    ZipArchiveInputStream zip = new ZipArchiveInputStream(is);
 
-    Map<String, String> data = readZip(zip);
+    Map<String, String> data = readArchive(zip);
 
     assertEquals(DOCX_IMAGE1_MD5, data.get(DOCX_IMAGE1_NAME));
     assertEquals(DOCX_IMAGE2_MD5, data.get(DOCX_IMAGE2_NAME));
+  }
+
+  @Test
+  public void test415() throws Exception {
+    ClientResponse cr =
+            resource()
+                    .path(UNPACKER_PATH)
+                    .type("xxx/xxx")
+                    .put(ClientResponse.class, ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+    assertEquals(415, cr.getStatus());
   }
 
   @Test
@@ -135,29 +172,14 @@ public class UnpackerResourceTest extends JerseyTest {
                     .path(UNPACKER_PATH)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
 
-    ZipInputStream zip = new ZipInputStream(is);
+    ZipArchiveInputStream zip = new ZipArchiveInputStream(is);
 
-    Map<String, String> data = readZip(zip);
+    Map<String, String> data = readArchive(zip);
 
     assertEquals(DOCX_EXE1_MD5, data.get(DOCX_EXE1_NAME));
     assertEquals(DOCX_EXE2_MD5, data.get(DOCX_EXE2_NAME));
   }
-/*
-  @Test
-  public void testImageXSLX() throws Exception {
-    InputStream is =
-            webResource
-                    .path(UNPACKER_PATH)
-                    .put(InputStream.class, ClassLoader.getSystemResourceAsStream("pic.xlsx"));
 
-    ZipInputStream zip = new ZipInputStream(is);
-
-    Map<String, String> data = readZip(zip);
-
-    assertEquals(XSL_IMAGE1_MD5, data.get(XSLX_IMAGE1_NAME));
-    assertEquals(XSL_IMAGE2_MD5, data.get(XSLX_IMAGE2_NAME));
-  }
-*/
   @Test
   public void testImageXSL() throws Exception {
     InputStream is =
@@ -165,19 +187,19 @@ public class UnpackerResourceTest extends JerseyTest {
                     .path(UNPACKER_PATH)
                     .put(InputStream.class, ClassLoader.getSystemResourceAsStream("pic.xls"));
 
-    ZipInputStream zip = new ZipInputStream(is);
+    ZipArchiveInputStream zip = new ZipArchiveInputStream(is);
 
-    Map<String, String> data = readZip(zip);
+    Map<String, String> data = readArchive(zip);
 
     assertEquals(XSL_IMAGE1_MD5, data.get("0.jpg"));
     assertEquals(XSL_IMAGE2_MD5, data.get("1.jpg"));
   }
 
-  private static Map<String, String> readZip(ZipInputStream zip) throws IOException {
+  private static Map<String, String> readArchive(ArchiveInputStream zip) throws IOException {
     Map<String, String> data = new HashMap<String, String>();
 
     while (true) {
-      ZipEntry entry = zip.getNextEntry();
+      ArchiveEntry entry = zip.getNextEntry();
 
       if (entry==null) {
         break;
@@ -191,5 +213,56 @@ public class UnpackerResourceTest extends JerseyTest {
     }
 
     return data;
+  }
+
+  private static String readArchiveText(ArchiveInputStream zip) throws IOException {
+    while (true) {
+      ArchiveEntry entry = zip.getNextEntry();
+
+      if (entry==null) {
+        break;
+      }
+
+      if (!entry.getName().equals(UnpackerResource.TEXT_FILENAME)) {
+        continue;
+      }
+
+      ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+      IOUtils.copy(zip, bos);
+
+      return bos.toString("UTF-8");
+    }
+
+    return null;
+  }
+
+  @Test
+  public void testTarDocPicture() throws Exception {
+    InputStream is =
+            resource()
+                    .path(UNPACKER_PATH)
+                    .type(APPLICATION_MSWORD)
+                    .accept("application/x-tar")
+                    .put(InputStream.class, ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+    ArchiveInputStream zip = new TarArchiveInputStream(is);
+
+    Map<String, String> data = readArchive(zip);
+
+    assertEquals(JPG_MD5, data.get(JPG_NAME));
+  }
+
+  @Test
+  public void testText() throws IOException {
+    InputStream is
+            = resource()
+                    .path(ALL_PATH)
+                    .header(CONTENT_TYPE, APPLICATION_XML)
+                    .put(InputStream.class, ClassLoader.getSystemResourceAsStream("test.doc"));
+    String responseMsg = readArchiveText(new ZipArchiveInputStream(is));
+
+    assertNotNull(responseMsg);
+    assertTrue(responseMsg.contains("test"));
   }
 }
