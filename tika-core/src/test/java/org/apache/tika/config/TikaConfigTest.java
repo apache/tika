@@ -39,6 +39,8 @@ public class TikaConfigTest extends TestCase {
             new TikaConfig();
             fail("AutoDetectParser allowed in a <parser> element");
         } catch (TikaException expected) {
+        } finally {
+            System.clearProperty("tika.config");
         }
     }
 
@@ -56,6 +58,8 @@ public class TikaConfigTest extends TestCase {
             new TikaConfig();
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
+        } finally {
+            System.clearProperty("tika.config");
         }
     }
 
@@ -72,6 +76,8 @@ public class TikaConfigTest extends TestCase {
             new TikaConfig();
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
+        } finally {
+            System.clearProperty("tika.config");
         }
     }
 
