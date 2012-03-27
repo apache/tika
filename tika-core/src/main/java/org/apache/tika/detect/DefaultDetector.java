@@ -16,7 +16,6 @@
  */
 package org.apache.tika.detect;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -43,42 +42,44 @@ public class DefaultDetector extends CompositeDetector {
     /** Serial version UID */
     private static final long serialVersionUID = -8170114575326908027L;
 
+    /**
+     * Finds all statically loadable detectors and sort the list by name,
+     * rather than discovery order. Detectors are used in the given order,
+     * so put the Tika parsers last so that non-Tika (user supplied)
+     * parsers can take precedence.
+     *
+     * @param loader service loader
+     * @return ordered list of statically loadable detectors
+     */
     private static List<Detector> getDefaultDetectors(
             MimeTypes types, ServiceLoader loader) {
-        // Find all the detectors available as services
-        List<Detector> svcDetectors = loader.loadServiceProviders(Detector.class);
-        List<Detector> detectors = new ArrayList<Detector>(svcDetectors.size()+1);
-        
-        // Sort the list by classname, rather than discovery order 
-        Collections.sort(svcDetectors, new Comparator<Detector>() {
+        List<Detector> detectors =
+                loader.loadStaticServiceProviders(Detector.class);
+        Collections.sort(detectors, new Comparator<Detector>() {
             public int compare(Detector d1, Detector d2) {
-               return d1.getClass().getName().compareTo(
-                     d2.getClass().getName());
+                String n1 = d1.getClass().getName();
+                String n2 = d2.getClass().getName();
+                boolean t1 = n1.startsWith("org.apache.tika.");
+                boolean t2 = n2.startsWith("org.apache.tika.");
+                if (t1 == t2) {
+                    return n1.compareTo(n2);
+                } else if (t1) {
+                    return 1;
+                } else {
+                    return -1;
+                }
             }
         });
-        
-        // Add the non-Tika (user supplied) detectors First
-        for (Detector d : svcDetectors) {
-           if (! d.getClass().getName().startsWith("org.apache.tika")) {
-              detectors.add(d);
-           }
-        }
-        
-        // Add the Tika detectors next
-        for (Detector d : svcDetectors) {
-           if (d.getClass().getName().startsWith("org.apache.tika")) {
-              detectors.add(d);
-           }
-        }
-        
-        // Finally add the Tika MimeTypes as a fallback
+        // Finally the Tika MimeTypes as a fallback
         detectors.add(types);
-        
         return detectors;
     }
 
+    private transient final ServiceLoader loader;
+
     public DefaultDetector(MimeTypes types, ServiceLoader loader) {
         super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader));
+        this.loader = loader;
     }
 
     public DefaultDetector(MimeTypes types, ClassLoader loader) {
@@ -95,6 +96,18 @@ public class DefaultDetector extends CompositeDetector {
 
     public DefaultDetector() {
         this(MimeTypes.getDefaultMimeTypes());
+    }
+
+    @Override
+    public List<Detector> getDetectors() {
+        if (loader != null) {
+            List<Detector> detectors =
+                    loader.loadDynamicServiceProviders(Detector.class);
+            detectors.addAll(super.getDetectors());
+            return detectors;
+        } else {
+            return super.getDetectors();
+        }
     }
 
 }

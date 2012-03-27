@@ -16,57 +16,62 @@
  */
 package org.apache.tika.parser;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import javax.imageio.spi.ServiceRegistry;
+import java.util.Map;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 
 /**
  * A composite parser based on all the {@link Parser} implementations
- * available through the {@link ServiceRegistry service provider mechanism}.
+ * available through the
+ * {@link javax.imageio.spi.ServiceRegistry service provider mechanism}.
  *
  * @since Apache Tika 0.8
  */
 public class DefaultParser extends CompositeParser {
+
     /** Serial version UID */
     private static final long serialVersionUID = 3612324825403757520L;
 
+    /**
+     * Finds all statically loadable parsers and sort the list by name,
+     * rather than discovery order. CompositeParser takes the last
+     * parser for any given media type, so put the Tika parsers first
+     * so that non-Tika (user supplied) parsers can take precedence.
+     *
+     * @param loader service loader
+     * @return ordered list of statically loadable parsers
+     */
     private static List<Parser> getDefaultParsers(ServiceLoader loader) {
-        // Find all the Parsers available as services
-        List<Parser> svcParsers = loader.loadServiceProviders(Parser.class);
-        List<Parser> parsers = new ArrayList<Parser>(svcParsers.size());
-
-        // Sort the list by classname, rather than discovery order 
-        Collections.sort(svcParsers, new Comparator<Parser>() {
-           public int compare(Parser p1, Parser p2) {
-              return p1.getClass().getName().compareTo(
-                   p2.getClass().getName());
-           }
+        List<Parser> parsers =
+                loader.loadStaticServiceProviders(Parser.class);
+        Collections.sort(parsers, new Comparator<Parser>() {
+            public int compare(Parser p1, Parser p2) {
+                String n1 = p1.getClass().getName();
+                String n2 = p2.getClass().getName();
+                boolean t1 = n1.startsWith("org.apache.tika.");
+                boolean t2 = n2.startsWith("org.apache.tika.");
+                if (t1 == t2) {
+                    return n1.compareTo(n2);
+                } else if (t1) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
         });
-        
-        // CompositeParser takes the last parser for any given mime type, so put the 
-        // TikaParsers first so that non-Tika (user supplied) parsers can take presidence
-        for (Parser p : svcParsers) {
-           if (p.getClass().getName().startsWith("org.apache.tika")) {
-              parsers.add(p);
-           }
-        }
-        for (Parser p : svcParsers) {
-           if (!p.getClass().getName().startsWith("org.apache.tika")) {
-              parsers.add(p);
-           }
-        }
-        
         return parsers;
     }
 
+    private transient final ServiceLoader loader;
+
     public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
         super(registry, getDefaultParsers(loader));
+        this.loader = loader;
     }
 
     public DefaultParser(MediaTypeRegistry registry, ClassLoader loader) {
@@ -83,6 +88,24 @@ public class DefaultParser extends CompositeParser {
 
     public DefaultParser() {
         this(MediaTypeRegistry.getDefaultRegistry());
+    }
+
+    @Override
+    public Map<MediaType, Parser> getParsers(ParseContext context) {
+        Map<MediaType, Parser> map = super.getParsers(context);
+
+        if (loader != null) {
+            // Add dynamic parser service (they always override static ones)
+            MediaTypeRegistry registry = getMediaTypeRegistry();
+            for (Parser parser
+                    : loader.loadDynamicServiceProviders(Parser.class)) {
+                for (MediaType type : parser.getSupportedTypes(context)) {
+                    map.put(registry.normalize(type), parser);
+                }
+            }
+        }
+
+        return map;
     }
 
 }

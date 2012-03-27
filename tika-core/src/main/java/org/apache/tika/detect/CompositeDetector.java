@@ -57,7 +57,7 @@ public class CompositeDetector implements Detector {
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException { 
         MediaType type = MediaType.OCTET_STREAM;
-        for (Detector detector : detectors) {
+        for (Detector detector : getDetectors()) {
             MediaType detected = detector.detect(input, metadata);
             if (registry.isSpecializationOf(detected, type)) {
                 type = detected;
