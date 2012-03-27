@@ -17,16 +17,19 @@
 
 package org.apache.tika.server;
 
-import com.sun.jersey.api.core.PackagesResourceConfig;
-import com.sun.jersey.spi.container.servlet.ServletContainer;
 import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.endpoint.Server;
+import org.apache.cxf.jaxrs.JAXRSBindingFactory;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class TikaServerCli {
@@ -67,19 +70,26 @@ public class TikaServerCli {
         helpFormatter.printHelp("tikaserver", options);
         System.exit(-1);
       }
+      
+      JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
+      sf.setResourceClasses(MetadataResource.class, TikaResource.class, UnpackerResource.class);
 
-      Server server = new Server(port);
-      ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
-      context.setContextPath("/");
-      server.setHandler(context);
-
-      context.addServlet(new ServletHolder(new ServletContainer(new PackagesResourceConfig("org.apache.tika.server"))), "/*");
-
-      server.start();
-
+      List providers = new ArrayList();
+      providers.add(new TarWriter());
+	  providers.add(new ZipWriter());      
+      providers.add(new SingletonResourceProvider(new MetadataResource()));
+      providers.add(new SingletonResourceProvider(new TikaResource()));
+      providers.add(new SingletonResourceProvider(new UnpackerResource()));
+      sf.setProviders(providers);
+      sf.setAddress("http://localhost:" + TikaServerCli.DEFAULT_PORT + "/");
+      BindingFactoryManager manager = sf.getBus().getExtension(
+				BindingFactoryManager.class);
+      JAXRSBindingFactory factory = new JAXRSBindingFactory();
+      factory.setBus(sf.getBus());
+      manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
+				factory);
+      Server server = sf.create();
       logger.info("Started");
-
-      server.join();
     } catch (Exception ex) {
       logger.fatal("Can't start", ex);
       System.exit(-1);
