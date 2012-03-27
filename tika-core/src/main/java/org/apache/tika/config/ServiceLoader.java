@@ -194,8 +194,24 @@ public class ServiceLoader {
      * @param iface service provider interface
      * @return available service providers
      */
-    @SuppressWarnings("unchecked")
     public <T> List<T> loadServiceProviders(Class<T> iface) {
+        List<T> providers = new ArrayList<T>();
+        providers.addAll(loadDynamicServiceProviders(iface));
+        providers.addAll(loadStaticServiceProviders(iface));
+        return providers;
+    }
+
+    /**
+     * Returns the available dynamic service providers of the given type.
+     * The returned list is newly allocated and may be freely modified
+     * by the caller.
+     *
+     * @since Apache Tika 1.2
+     * @param iface service provider interface
+     * @return dynamic service providers
+     */
+    @SuppressWarnings("unchecked")
+    public <T> List<T> loadDynamicServiceProviders(Class<T> iface) {
         List<T> providers = new ArrayList<T>();
 
         if (dynamic) {
@@ -207,6 +223,23 @@ public class ServiceLoader {
                 }
             }
         }
+
+        return providers;
+    }
+
+    /**
+     * Returns the available static service providers of the given type.
+     * The providers are loaded using the service provider mechanism using
+     * the configured class loader (if any). The returned list is newly
+     * allocated and may be freely modified by the caller.
+     *
+     * @since Apache Tika 1.2
+     * @param iface service provider interface
+     * @return static service providers
+     */
+    @SuppressWarnings("unchecked")
+    public <T> List<T> loadStaticServiceProviders(Class<T> iface) {
+        List<T> providers = new ArrayList<T>();
 
         if (loader != null) {
             Set<String> names = new HashSet<String>();
