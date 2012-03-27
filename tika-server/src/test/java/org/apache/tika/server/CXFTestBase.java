@@ -25,6 +25,8 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ws.rs.core.HttpHeaders;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -91,11 +93,12 @@ public class CXFTestBase extends TestCase {
 		putAndCheckStatus(address, null, content, expectedStatus);
 	}
 	
-	protected void putAndCheckStatus(String address, String accept, InputStream content,
+	protected void putAndCheckStatus(String address, String contentType, InputStream content,
 			int expectedStatus) throws Exception {
 		PutMethod put = new PutMethod(address);
 		put.setRequestBody(content);
-		if(accept != null) put.setRequestHeader("Accept", accept);
+		if(contentType != null) 
+			put.setRequestHeader(HttpHeaders.CONTENT_TYPE, contentType);
 		HttpClient httpClient = new HttpClient();
 		try {
 			int result = httpClient.executeMethod(put);
@@ -139,7 +142,6 @@ public class CXFTestBase extends TestCase {
 			put.releaseConnection();
 		}
 
-		System.out.println("DATA: "+data);
 		return data;
 	}
 	
