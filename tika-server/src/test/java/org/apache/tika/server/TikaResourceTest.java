@@ -17,58 +17,87 @@
 
 package org.apache.tika.server;
 
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.core.header.MediaTypes;
-import com.sun.jersey.test.framework.JerseyTest;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import java.io.IOException;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.endpoint.Server;
+import org.apache.cxf.jaxrs.JAXRSBindingFactory;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
-public class TikaResourceTest extends JerseyTest {
-  private static final String TIKA_PATH = "tika";
-  public static final String TEST_DOC = "test.doc";
-  public static final String TEST_XLSX = "16637.xlsx";
-  private static final int UNPROCESSEABLE = 422;
+public class TikaResourceTest extends CXFTestBase {
+	private static final String TIKA_PATH = "tika";
+	public static final String TEST_DOC = "test.doc";
+	public static final String TEST_XLSX = "16637.xlsx";
+	private static final int UNPROCESSEABLE = 422;
+	private static final String service = "http://localhost:"
+			+ TikaServerCli.DEFAULT_PORT + "/";
+	private static final String endPoint = "http://localhost:"
+			+ TikaServerCli.DEFAULT_PORT + "/" + TIKA_PATH;
 
-  public TikaResourceTest() throws Exception {
-    super("org.apache.tika.server");
-  }
+	private Server server;
 
-  /**
-   * Test to see that the message "Hello World" is sent in the response.
-   */
-  @Test
-  public void testHelloWorld() {
-    String responseMsg = resource().path(TIKA_PATH).get(String.class);
-    assertEquals(TikaResource.GREETING, responseMsg);
-  }
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see junit.framework.TestCase#setUp()
+	 */
+	@Override
+	protected void setUp() throws Exception {
+		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
+		sf.setResourceClasses(TikaResource.class);
+		sf.setResourceProvider(TikaResource.class,
+				new SingletonResourceProvider(new TikaResource()));
+		sf.setAddress(service);
+		BindingFactoryManager manager = sf.getBus().getExtension(
+				BindingFactoryManager.class);
+		JAXRSBindingFactory factory = new JAXRSBindingFactory();
+		factory.setBus(sf.getBus());
+		manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
+				factory);
+		server = sf.create();
+	}
+	
 
-  @Test
-  public void testSimpleWord() {
-    String responseMsg =
-            resource().path(TIKA_PATH)
-            .type("application/msword")
-                    .put(String.class, ClassLoader.getSystemResourceAsStream(TEST_DOC));
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see junit.framework.TestCase#tearDown()
+	 */
+	@Override
+	protected void tearDown() throws Exception {
+		server.stop();
+		server.destroy();
+	}
+	
 
-    assertTrue(responseMsg.contains("test"));
-  }
+	@Test
+	public void testHelloWorld() throws Exception {
+		getAndCompare(endPoint, TikaResource.GREETING, "text/plain",
+				"text/plain", 200);
+	}
 
-  @Test
-  public void testApplicationWadl() {
-    String serviceWadl = resource().path("application.wadl").
-            accept(MediaTypes.WADL).get(String.class);
+	@Test
+	public void testSimpleWord() throws Exception {
+		String responseMsg = putAndGetString(endPoint,
+				ClassLoader
+						.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
-    assertTrue(serviceWadl.length() > 0);
-  }
+		assertTrue(responseMsg.contains("test"));
+	}
 
-  @Test
-  public void testPasswordXLS() throws Exception {
-    ClientResponse cr =
-            resource()
-                    .path(TIKA_PATH)
-                    .type("application/vnd.ms-excel")                    
-                    .put(ClientResponse.class, ClassLoader.getSystemResourceAsStream("password.xls"));
+	@Test
+	public void testApplicationWadl() throws HttpException, IOException {
+		String serviceWadl = endPoint + "/application.wadl";
+		String resp = getAndReturnResp(serviceWadl);
+		assertTrue(resp.length() > 0);
+	}
 
-    assertEquals(UNPROCESSEABLE, cr.getStatus());
-  }
+	@Test
+	public void testPasswordXLS() throws Exception {
+		putAndCheckStatus(endPoint,
+				ClassLoader.getSystemResourceAsStream("password.xls"),
+				UNPROCESSEABLE);
+	}
 }
