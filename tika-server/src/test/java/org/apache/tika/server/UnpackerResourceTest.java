@@ -173,10 +173,11 @@ public class UnpackerResourceTest extends CXFTestBase {
 		assertEquals(DOCX_IMAGE2_MD5, data.get(DOCX_IMAGE2_NAME));
 	}
 
-	//FIXME: Disabled until TIKA-593 is done @Test
-	public void Xtest415() throws Exception {
+	//FIXME: Disabled for now until TIKA-593 is done @Test
+	public void test415() throws Exception {
 		Response response = WebClient.create(endPoint + UNPACKER_PATH)
-				.type("xxx/xxx").accept("application/zip")
+				.type("xxx/xxx")
+				.accept("*/*")
 				.put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
 		assertEquals(415, response.getStatus());
