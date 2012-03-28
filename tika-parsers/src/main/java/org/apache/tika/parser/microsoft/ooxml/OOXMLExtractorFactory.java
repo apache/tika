@@ -26,6 +26,7 @@ import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
@@ -61,12 +62,13 @@ public class OOXMLExtractorFactory {
             OOXMLExtractor extractor;
             OPCPackage pkg;
 
-            // Open the OPCPackage for the file
+            // Locate or Open the OPCPackage for the file
             TikaInputStream tis = TikaInputStream.cast(stream);
             if (tis != null && tis.getOpenContainer() instanceof OPCPackage) {
                 pkg = (OPCPackage) tis.getOpenContainer();
             } else if (tis != null && tis.hasFile()) {
-                pkg = OPCPackage.open( tis.getFile().getPath() );
+                pkg = OPCPackage.open( tis.getFile().getPath(), PackageAccess.READ );
+                tis.setOpenContainer(pkg);
             } else {
                 InputStream shield = new CloseShieldInputStream(stream);
                 pkg = OPCPackage.open(shield); 
