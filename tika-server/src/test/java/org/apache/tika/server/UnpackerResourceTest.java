@@ -17,16 +17,22 @@
 
 package org.apache.tika.server;
 
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import javax.ws.rs.core.Response;
 
 public class UnpackerResourceTest extends CXFTestBase {
 	private static final String UNPACKER_PATH = "/unpacker";
@@ -55,7 +61,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 	private static final String DOCX_EXE2_MD5 = "2485435c7c22d35f2de9b4c98c0c2e1a";
 	private static final String DOCX_EXE2_NAME = "Setup.exe";
 	private static final String XSL_IMAGE2_MD5 = "8969288f4245120e7c3870287cce0ff3";
-
+	private static final String APPLICATION_MSWORD = "application/msword";
+	private static final String APPLICATION_XML = "application/xml";
+	private static final String CONTENT_TYPE = "Content-type";
 
 	private Server server;
 
@@ -74,7 +82,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 		sf.setResourceClasses(UnpackerResource.class);
 		sf.setResourceProvider(UnpackerResource.class,
 				new SingletonResourceProvider(new UnpackerResource()));
-		sf.setAddress(endPoint+"/");
+		sf.setAddress(endPoint + "/");
 		BindingFactoryManager manager = sf.getBus().getExtension(
 				BindingFactoryManager.class);
 		JAXRSBindingFactory factory = new JAXRSBindingFactory();
@@ -97,9 +105,14 @@ public class UnpackerResourceTest extends CXFTestBase {
 
 	@Test
 	public void testDocWAV() throws Exception {
-		Map<String, String> data = putAndGetMapData(endPoint + UNPACKER_PATH + 
-				"/" + TEST_DOC_WAV,
-				ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), true);
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+				.type(APPLICATION_MSWORD).accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+		ArchiveInputStream zip = new ZipArchiveInputStream(
+				(InputStream) response.getEntity());
+
+		Map<String, String> data = readArchive(zip);
 		assertEquals(WAV1_MD5, data.get(WAV1_NAME));
 		assertEquals(WAV2_MD5, data.get(WAV2_NAME));
 		assertFalse(data.containsKey(UnpackerResource.TEXT_FILENAME));
@@ -107,9 +120,14 @@ public class UnpackerResourceTest extends CXFTestBase {
 
 	@Test
 	public void testDocWAVText() throws Exception {
-		Map<String, String> data = putAndGetMapData(endPoint + ALL_PATH + 
-				"/" + TEST_DOC_WAV,
-				ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), true);
+		Response response = WebClient.create(endPoint + ALL_PATH)
+				.type(APPLICATION_MSWORD).accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+		ArchiveInputStream zip = new ZipArchiveInputStream(
+				(InputStream) response.getEntity());
+
+		Map<String, String> data = readArchive(zip);
 		assertEquals(WAV1_MD5, data.get(WAV1_NAME));
 		assertEquals(WAV2_MD5, data.get(WAV2_NAME));
 		assertTrue(data.containsKey(UnpackerResource.TEXT_FILENAME));
@@ -117,70 +135,106 @@ public class UnpackerResourceTest extends CXFTestBase {
 
 	@Test
 	public void testDocPicture() throws Exception {
-		Map<String, String> data = putAndGetMapData(endPoint + UNPACKER_PATH + 
-				"/" + TEST_DOC_WAV,
-				ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), true);
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+				.type(APPLICATION_MSWORD).accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+		ZipArchiveInputStream zip = new ZipArchiveInputStream(
+				(InputStream) response.getEntity());
+		Map<String, String> data = readArchive(zip);
+
 		assertEquals(JPG_MD5, data.get(JPG_NAME));
 	}
 
 	@Test
 	public void testDocPictureNoOle() throws Exception {
-		Map<String, String> data = putAndGetMapData(endPoint + UNPACKER_PATH + 
-				"/2pic.doc",
-				ClassLoader.getSystemResourceAsStream("2pic.doc"), true);
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+				.type(APPLICATION_MSWORD).accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream("2pic.doc"));
+
+		ZipArchiveInputStream zip = new ZipArchiveInputStream(
+				(InputStream) response.getEntity());
+
+		Map<String, String> data = readArchive(zip);
 		assertEquals(JPG2_MD5, data.get(JPG2_NAME));
 	}
 
 	@Test
 	public void testImageDOCX() throws Exception {
-		Map<String, String> data = putAndGetMapData(endPoint + UNPACKER_PATH + 
-				"/" + TEST_DOCX_IMAGE,
-				ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE), true);
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+		.accept("application/zip").put(
+				ClassLoader.getSystemResourceAsStream(TEST_DOCX_IMAGE));
+
+		ZipArchiveInputStream zip = new ZipArchiveInputStream(
+				(InputStream) response.getEntity());
+
+		Map<String, String> data = readArchive(zip);
 		assertEquals(DOCX_IMAGE1_MD5, data.get(DOCX_IMAGE1_NAME));
 		assertEquals(DOCX_IMAGE2_MD5, data.get(DOCX_IMAGE2_NAME));
 	}
 
-	//FIXME: Disabled for now, pending TIKA-593 @Test
+	//FIXME: Disabled until TIKA-593 is done @Test
 	public void Xtest415() throws Exception {
-		putAndCheckStatus(endPoint + UNPACKER_PATH + "/" + TEST_DOC_WAV,
-				"xxx/xxx", ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), 415);
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+				.type("xxx/xxx").accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+		assertEquals(415, response.getStatus());
 	}
 
 	@Test
 	public void testExeDOCX() throws Exception {
 		String TEST_DOCX_EXE = "2exe.docx";
-		Map<String, String> data = putAndGetMapData(endPoint + UNPACKER_PATH 
-				+ "/" + TEST_DOCX_EXE,
-				ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE), true);
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+				.accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream(TEST_DOCX_EXE));
+
+		ZipArchiveInputStream zip = new ZipArchiveInputStream(
+				(InputStream) response.getEntity());
+
+		Map<String, String> data = readArchive(zip);
+
 		assertEquals(DOCX_EXE1_MD5, data.get(DOCX_EXE1_NAME));
 		assertEquals(DOCX_EXE2_MD5, data.get(DOCX_EXE2_NAME));
 	}
 
 	@Test
 	public void testImageXSL() throws Exception {
-		Map<String, String> data = putAndGetMapData(endPoint + UNPACKER_PATH + "/" 
-				+ "pic.xls",
-				ClassLoader.getSystemResourceAsStream("pic.xls"), true);
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+				.accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream("pic.xls"));
+
+		ZipArchiveInputStream zip = new ZipArchiveInputStream(
+				(InputStream) response.getEntity());
+
+		Map<String, String> data = readArchive(zip);
 		assertEquals(XSL_IMAGE1_MD5, data.get("0.jpg"));
 		assertEquals(XSL_IMAGE2_MD5, data.get("1.jpg"));
 	}
 
-	//FIXME: Disabled for now @Test
-	public void XtestTarDocPicture() throws Exception {
-		Map<String, String> data = putAndGetMapData(endPoint + UNPACKER_PATH + "/" + 
-				TEST_DOC_WAV,
-				ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), false);
+	@Test
+	public void testTarDocPicture() throws Exception {
+		Response response = WebClient.create(endPoint + UNPACKER_PATH)
+				.type(APPLICATION_MSWORD).accept("application/x-tar")
+				.put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
+
+		Map<String, String> data = readArchive(new TarArchiveInputStream(
+				(InputStream) response.getEntity()));
+
 		assertEquals(JPG_MD5, data.get(JPG_NAME));
 	}
 
-	//FIXME: Disabled for now @Test
-	public void XtestText() throws Exception {
-		String responseMsg = putAndGetArchiveText(endPoint + UNPACKER_PATH + "/" + 
-				"test.doc",
-				ClassLoader.getSystemResourceAsStream("test.doc"), true);
+	@Test
+	public void testText() throws Exception {
+		Response response = WebClient.create(endPoint + ALL_PATH)
+				.header(CONTENT_TYPE, APPLICATION_XML)
+				.accept("application/zip")
+				.put(ClassLoader.getSystemResourceAsStream("test.doc"));
+
+		String responseMsg = readArchiveText(new ZipArchiveInputStream(
+				(InputStream) response.getEntity()));
 		assertNotNull(responseMsg);
 		assertTrue(responseMsg.contains("test"));
 	}
-
 
 }

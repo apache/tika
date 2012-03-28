@@ -17,17 +17,29 @@
 
 package org.apache.tika.server;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.util.HashMap;
 import java.util.Map;
+
+import javax.ws.rs.core.Response;
 
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
+import au.com.bytecode.opencsv.CSVReader;
+
 public class MetadataResourceTest extends CXFTestBase {
 	private static final String META_PATH = "/meta";
+
+	private static final String endPoint = "http://localhost:"
+			+ TikaServerCli.DEFAULT_PORT;
 
 	private Server server;
 
@@ -42,7 +54,7 @@ public class MetadataResourceTest extends CXFTestBase {
 		sf.setResourceClasses(MetadataResource.class);
 		sf.setResourceProvider(MetadataResource.class,
 				new SingletonResourceProvider(new MetadataResource()));
-		sf.setAddress("http://localhost:" + TikaServerCli.DEFAULT_PORT + "/");
+		sf.setAddress(endPoint + "/");
 		BindingFactoryManager manager = sf.getBus().getExtension(
 				BindingFactoryManager.class);
 		JAXRSBindingFactory factory = new JAXRSBindingFactory();
@@ -51,7 +63,6 @@ public class MetadataResourceTest extends CXFTestBase {
 				factory);
 		server = sf.create();
 	}
-	
 
 	/*
 	 * (non-Javadoc)
@@ -63,19 +74,30 @@ public class MetadataResourceTest extends CXFTestBase {
 		server.stop();
 		server.destroy();
 	}
-	
 
 	@Test
 	public void testSimpleWord() throws Exception {
-		Map<String, String> metadata = putAndGetMet("http://localhost:"
-				+ TikaServerCli.DEFAULT_PORT + META_PATH+ "/" + TikaResourceTest.TEST_DOC,
-				ClassLoader
+		Response response = WebClient
+				.create(endPoint + META_PATH)
+				.type("application/msword")
+				.accept("text/csv")
+				.put(ClassLoader
 						.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
-		System.out.println(metadata);
+
+		Reader reader = new InputStreamReader(
+				(InputStream) response.getEntity());
+
+		CSVReader csvReader = new CSVReader(reader);
+
+		Map<String, String> metadata = new HashMap<String, String>();
+
+		String[] nextLine;
+		while ((nextLine = csvReader.readNext()) != null) {
+			metadata.put(nextLine[0], nextLine[1]);
+		}
 
 		assertNotNull(metadata.get("Author"));
 		assertEquals("Maxim Valyanskiy", metadata.get("Author"));
 	}
-
 
 }
