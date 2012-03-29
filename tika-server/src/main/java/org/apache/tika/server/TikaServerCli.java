@@ -76,7 +76,8 @@ public class TikaServerCli {
 
       List providers = new ArrayList();
       providers.add(new TarWriter());
-	  providers.add(new ZipWriter());      
+      providers.add(new ZipWriter());
+      providers.add(new TikaExceptionMapper());
       providers.add(new SingletonResourceProvider(new MetadataResource()));
       providers.add(new SingletonResourceProvider(new TikaResource()));
       providers.add(new SingletonResourceProvider(new UnpackerResource()));
