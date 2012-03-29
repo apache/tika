@@ -117,12 +117,12 @@
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <extensions>true</extensions>
+        <version>2.3.5</version>
         <configuration>
           <instructions>
             <Export-Package>org.apache.tika.*</Export-Package>
             <Embed-Dependency>
-                inline=META-INF/services/**|au/**|javax/**|org/**|com/**|Resources/**|font_metrics.properties|repackage/**|schema*/**,
-                inline=com/** |META-INF/services/com.sun*|META-INF/services/javax.ws.rs.ext.RuntimeDelegate
+                *;scope=compile;inline=META-INF/services/**|au/**|javax/**|org/**|com/**|Resources/**|font_metrics.properties|repackage/**|schema*/**|META-INF/cxf/**|schemas/**
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
