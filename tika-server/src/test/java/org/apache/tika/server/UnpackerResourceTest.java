@@ -174,7 +174,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 		assertEquals(DOCX_IMAGE2_MD5, data.get(DOCX_IMAGE2_NAME));
 	}
 
-	//FIXME: Disabled for now until TIKA-593 is done @Test
+	@Test
 	public void test415() throws Exception {
 		Response response = WebClient.create(endPoint + UNPACKER_PATH)
 				.type("xxx/xxx")
