@@ -78,7 +78,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 		List providers = new ArrayList();
 		providers.add(new TarWriter());
 		providers.add(new ZipWriter());
-		sf.setProviders(providers);
+                providers.add(new TikaExceptionMapper());
+    		sf.setProviders(providers);
 		sf.setResourceClasses(UnpackerResource.class);
 		sf.setResourceProvider(UnpackerResource.class,
 				new SingletonResourceProvider(new UnpackerResource()));
@@ -174,7 +175,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 	}
 
 	//FIXME: Disabled for now until TIKA-593 is done @Test
-	public void Xtest415() throws Exception {
+	public void test415() throws Exception {
 		Response response = WebClient.create(endPoint + UNPACKER_PATH)
 				.type("xxx/xxx")
 				.accept("*/*")
