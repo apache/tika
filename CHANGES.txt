@@ -1,6 +1,11 @@
 Release 1.2 - Current Development
 ---------------------------------
 
+  * Tika's JAX-RS based Network server now is based on Apache CXF,
+    which is available in Maven Central and now allows the server
+    module to be packaged and included in our release
+    (TIKA-593).
+
   * Tika: parseToString now lets you specify the max string length
     per-call, in addition to per-Tika-instance. (TIKA-870)
 
