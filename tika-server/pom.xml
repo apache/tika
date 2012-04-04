@@ -121,10 +121,6 @@
         <configuration>
           <instructions>
             <Export-Package>org.apache.tika.*</Export-Package>
-            <Embed-Dependency>
-                *;scope=compile;inline=META-INF/services/**|au/**|javax/**|org/**|com/**|Resources/**|font_metrics.properties|repackage/**|schema*/**|META-INF/cxf/**|schemas/**
-            </Embed-Dependency>
-            <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
                     <Main-Class>org.apache.tika.server.TikaServerCli</Main-Class>
           </instructions>
@@ -145,6 +141,66 @@
                     </systemProperties>
                 </configuration>
             </plugin>
+
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>package</phase>
+                <goals>
+                  <goal>shade</goal>
+                </goals>
+                <configuration>
+                  <filters>
+                    <filter>
+                      <artifact>*:*</artifact>
+                      <excludes>
+                        <exclude>META-INF/*.SF</exclude>
+                        <exclude>META-INF/*.DSA</exclude>
+                        <exclude>META-INF/*.RSA</exclude>
+                      </excludes>
+                    </filter>
+                  </filters>
+                  <transformers>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                      <resource>META-INF/spring.handlers</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                      <resource>META-INF/services/com.sun.tools.xjc.Plugin</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                      <resource>META-INF/spring.schemas</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                      <resource>META-INF/cxf/cxf.extension</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                      <resource>META-INF/extensions.xml</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                      <resource>META-INF/cxf/extensions.xml</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                      <resource>META-INF/cxf/bus-extensions.txt</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                      <resource>META-INF/cxf/bus-extensions.xml</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                      <resource>META-INF/wsdl.plugin.xml</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                      <resource>META-INF/tools.service.validator.xml</resource>
+                    </transformer>
+                    <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                      <resource>META-INF/cxf/java2wsbeans.xml</resource>
+                    </transformer>
+                  </transformers>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
         </plugins>
     </build>
 </project>
