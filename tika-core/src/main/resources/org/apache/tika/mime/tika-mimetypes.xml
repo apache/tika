@@ -176,6 +176,18 @@
     <sub-class-of type="application/zip"/>
     <glob pattern="*.jar"/>
   </mime-type>
+  <mime-type type="application/vnd.android.package-archive">
+    <sub-class-of type="application/java-archive"/>
+    <glob pattern="*.apk"/>
+  </mime-type>
+  <mime-type type="application/x-tika-java-enterprise-archive">
+    <sub-class-of type="application/java-archive"/>
+    <glob pattern="*.ear"/>
+  </mime-type>
+  <mime-type type="application/x-tika-java-web-archive">
+    <sub-class-of type="application/java-archive"/>
+    <glob pattern="*.war"/>
+  </mime-type>
 
   <mime-type type="application/java-serialized-object">
     <glob pattern="*.ser"/>
@@ -597,9 +609,6 @@
   </mime-type>
   <mime-type type="application/vnd.amiga.ami">
     <glob pattern="*.ami"/>
-  </mime-type>
-  <mime-type type="application/vnd.android.package-archive">
-    <glob pattern="*.apk"/>
   </mime-type>
   <mime-type type="application/vnd.anser-web-certificate-issue-initiation">
     <glob pattern="*.cii"/>
