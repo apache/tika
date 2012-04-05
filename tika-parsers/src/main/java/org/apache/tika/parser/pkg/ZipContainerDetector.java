@@ -77,10 +77,11 @@ public class ZipContainerDetector implements Detector {
                     if (type == null) {
                         type = detectIWork(zip);
                     }
+                    if (type == null) {
+                        type = detectJar(zip); 
+                    }
                     if (type != null) {
                         return type;
-                    } else if (zip.getEntry("META-INF/MANIFEST.MF") != null) {
-                        return MediaType.application("java-archive");
                     }
                 } finally {
                     // TODO: shouldn't we record the open
@@ -190,5 +191,34 @@ public class ZipContainerDetector implements Detector {
         } else {
             return null;
         }
+    }
+    
+    private static MediaType detectJar(ZipFile zip) {
+       if (zip.getEntry("META-INF/MANIFEST.MF") != null) {
+          // It's a Jar file, or something based on Jar
+          
+          // Is it an Android APK?
+          if (zip.getEntry("AndroidManifest.xml") != null) {
+             return MediaType.application("vnd.android.package-archive");
+          }
+          
+          // Check for WAR and EAR
+          if (zip.getEntry("WEB-INF/") != null) {
+             return MediaType.application("x-tika-java-web-archive");
+          }
+          if (zip.getEntry("META-INF/application.xml") != null) {
+             return MediaType.application("x-tika-java-enterprise-archive");
+          }
+          
+          // Looks like a regular Jar Archive
+          return MediaType.application("java-archive");
+       } else {
+          // Some Android APKs miss the default Manifest
+          if (zip.getEntry("AndroidManifest.xml") != null) {
+             return MediaType.application("vnd.android.package-archive");
+          }
+          
+          return null;
+       }
     }
 }
