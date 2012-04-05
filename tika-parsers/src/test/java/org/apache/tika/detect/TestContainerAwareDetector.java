@@ -281,7 +281,12 @@ public class TestContainerAwareDetector extends TestCase {
     public void testDetectZip() throws Exception {
         assertTypeByData("test-documents.zip", "application/zip");
         assertTypeByData("test-zip-of-zip.zip", "application/zip");
+        
+        // JAR based formats
         assertTypeByData("testJAR.jar", "application/java-archive");
+        assertTypeByData("testWAR.war", "application/x-tika-java-web-archive");
+        assertTypeByData("testEAR.ear", "application/x-tika-java-enterprise-archive");
+        assertTypeByData("testAPK.apk", "application/vnd.android.package-archive");
     }
 
     private TikaInputStream getTruncatedFile(String name, int n)
