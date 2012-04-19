@@ -109,6 +109,9 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
+            <Bundle-Activator>
+              org.apache.tika.parser.internal.TikaActivator
+            </Bundle-Activator>
             <Embed-Dependency>
               tika-parsers;inline=true,
               commons-compress, commons-codec,
@@ -135,9 +138,6 @@
               !org.apache.tika.parser.external,
               org.apache.tika.parser.*
             </Export-Package>
-            <Service-Component>
-              OSGI-INF/serviceComponents.xml
-            </Service-Component>
           </instructions>
         </configuration>
       </plugin>
