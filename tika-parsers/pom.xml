@@ -211,7 +211,7 @@
           <instructions>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
             <Bundle-Activator>
-              org.apache.tika.parser.internal.TikaActivator
+              org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Import-Package>
                 org.w3c.dom,
