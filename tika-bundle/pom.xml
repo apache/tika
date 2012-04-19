@@ -110,7 +110,7 @@
         <configuration>
           <instructions>
             <Bundle-Activator>
-              org.apache.tika.parser.internal.TikaActivator
+              org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>
               tika-parsers;inline=true,
