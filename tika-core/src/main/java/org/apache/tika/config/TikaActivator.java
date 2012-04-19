@@ -16,11 +16,13 @@
  */
 package org.apache.tika.config;
 
+import org.apache.tika.detect.Detector;
+import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.ServiceEvent;
-import org.osgi.framework.ServiceListener;
 import org.osgi.framework.ServiceReference;
+import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 
 /**
  * Bundle activator that adjust the class loading mechanism of the
@@ -33,36 +35,42 @@ import org.osgi.framework.ServiceReference;
  *
  * @since Apache Tika 0.9
  */
-public class TikaActivator
-        implements BundleActivator, ServiceListener {
+public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer {
 
-    private BundleContext bundleContext;
+	private ServiceTracker detectorTracker;
 
+	private ServiceTracker parserTracker;
+
+	private BundleContext bundleContext;
     //-----------------------------------------------------< BundleActivator >
 
-    public void start(BundleContext context) throws Exception {
-        bundleContext = context;
-        bundleContext.addServiceListener(this,
-                "(|(objectClass=org.apache.tika.detect.Detector)"
-                + "(objectClass=org.apache.tika.parser.Parser))");
+    public void start(final BundleContext context) throws Exception {
+    	bundleContext = context;
+
+    	detectorTracker = new ServiceTracker(context, Detector.class.getName(), this);
+        parserTracker = new ServiceTracker(context, Parser.class.getName(), this);
+
+        detectorTracker.open();
+        parserTracker.open();
     }
 
     public void stop(BundleContext context) throws Exception {
-        bundleContext.removeServiceListener(this);
+    	parserTracker.close();
+    	detectorTracker.close();
     }
 
-    //-----------------------------------------------------< ServiceListener >
+	public Object addingService(ServiceReference reference) {
+        Object service = bundleContext.getService(reference);
+        ServiceLoader.addService(reference, service);
+		return service;
+	}
 
-    public synchronized void serviceChanged(ServiceEvent event) {
-        if (event.getType() == ServiceEvent.REGISTERED) {
-            ServiceReference reference = event.getServiceReference();
-            Object service = bundleContext.getService(reference);
-            ServiceLoader.addService(reference, service);
-        } else if (event.getType() == ServiceEvent.UNREGISTERING) {
-            ServiceReference reference = event.getServiceReference();
-            ServiceLoader.removeService(reference);
-            bundleContext.ungetService(reference);
-        }
-    }
+	public void modifiedService(ServiceReference reference, Object service) {
+	}
+
+	public void removedService(ServiceReference reference, Object service) {
+        ServiceLoader.removeService(reference);
+        bundleContext.ungetService(reference);
+	}
 
 }

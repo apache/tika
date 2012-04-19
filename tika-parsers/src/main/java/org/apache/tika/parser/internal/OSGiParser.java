@@ -16,12 +16,8 @@
  */
 package org.apache.tika.parser.internal;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.parser.DefaultParser;
-import org.apache.tika.parser.Parser;
 
-@Component @Service(Parser.class)
 public class OSGiParser extends DefaultParser {
 
     /** Serial version UID */

@@ -44,6 +44,13 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.compendium</artifactId>
+      <version>4.0.0</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>biz.aQute</groupId>
       <artifactId>bndlib</artifactId>
       <scope>provided</scope>
@@ -92,6 +99,7 @@
             </goals>
             <configuration>
               <excludes>
+                <exlude>org/apache/tika/config/TikaActivator</exlude>
                 <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
                 <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
                 <exlude>org/apache/tika/metadata/MSOffice</exlude>

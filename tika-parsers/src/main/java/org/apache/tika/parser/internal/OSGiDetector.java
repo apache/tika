@@ -16,12 +16,8 @@
  */
 package org.apache.tika.parser.internal;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Service;
 import org.apache.tika.detect.DefaultDetector;
-import org.apache.tika.detect.Detector;
 
-@Component @Service(Detector.class)
 public class OSGiDetector extends DefaultDetector {
 
     /** Serial version UID */

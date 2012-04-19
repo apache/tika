@@ -42,6 +42,15 @@
   </properties>
 
   <dependencies>
+    <!-- Optional OSGi dependency, used only when running within OSGi -->
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <version>4.0.0</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-core</artifactId>
@@ -201,6 +210,9 @@
         <configuration>
           <instructions>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
+            <Bundle-Activator>
+              org.apache.tika.parser.internal.TikaActivator
+            </Bundle-Activator>
             <Import-Package>
                 org.w3c.dom,
                 org.apache.tika.*,
@@ -218,19 +230,6 @@
             <exclude>src/test/resources/test-documents/**</exclude>
           </excludes>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-scr-plugin</artifactId>
-        <version>1.7.2</version>
-        <executions>
-          <execution>
-            <id>generate-scr-scrdescriptor</id>
-            <goals>
-              <goal>scr</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
     </plugins>
 

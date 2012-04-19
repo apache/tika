@@ -20,7 +20,6 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
-import static org.ops4j.pax.exam.CoreOptions.mavenBundle;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,7 +51,6 @@ public class BundleIT {
         File base = new File(TARGET, "test-bundles");
         return CoreOptions.options(
                 junitBundles(),
-                mavenBundle("org.apache.felix", "org.apache.felix.scr", "1.6.0"),
                 bundle(new File(base, "tika-core.jar").toURL().toURI().toString()),
                 bundle(new File(base, "tika-bundle.jar").toURL().toURI().toString()));
     }
