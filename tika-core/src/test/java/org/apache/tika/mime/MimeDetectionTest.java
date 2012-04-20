@@ -46,6 +46,7 @@ public class MimeDetectionTest extends TestCase {
         testFile("text/html", "test.html");
         testFile("application/xml", "test-iso-8859-1.xml");
         testFile("application/xml", "test-utf8.xml");
+        testFile("application/xml", "test-utf8-bom.xml");
         testFile("application/xml", "test-utf16le.xml");
         testFile("application/xml", "test-utf16be.xml");
         testFile("application/xml", "test-long-comment.xml");

@@ -2940,6 +2940,9 @@
       <match value="&lt;?xml" type="string" offset="0"/>
       <match value="&lt;?XML" type="string" offset="0"/>
       <match value="&lt;!--" type="string" offset="0"/>
+      <!-- UTF-8 BOM -->
+      <match value="0xEFBBBF3C3F786D6C" type="string" offset="0"/>
+      <!-- UTF-16 LE/BE -->
       <match value="0xFFFE3C003F0078006D006C00" type="string" offset="0"/>
       <match value="0xFEFF003C003F0078006D006C" type="string" offset="0"/>
       <!-- TODO: Add matches for the other possible XML encoding schemes -->
