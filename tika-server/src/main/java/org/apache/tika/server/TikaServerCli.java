@@ -17,20 +17,24 @@
 
 package org.apache.tika.server;
 
-import org.apache.commons.cli.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
-import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import org.apache.tika.Tika;
 
 public class TikaServerCli {
   private static final Log logger = LogFactory.getLog(TikaServerCli.class);
@@ -53,6 +57,7 @@ public class TikaServerCli {
     }
 
     logger.info("Starting Tikaserver "+properties.getProperty("tikaserver.version"));
+    logger.info("Starting Tika Server " + new Tika().toString());
 
     try {
       Options options = getOptions();
@@ -70,9 +75,9 @@ public class TikaServerCli {
         helpFormatter.printHelp("tikaserver", options);
         System.exit(-1);
       }
-      
+
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-      sf.setResourceClasses(MetadataResource.class, TikaResource.class, UnpackerResource.class);
+      sf.setResourceClasses(MetadataResource.class, TikaResource.class, UnpackerResource.class, TikaVersion.class);
 
       List providers = new ArrayList();
       providers.add(new TarWriter());
@@ -81,6 +86,7 @@ public class TikaServerCli {
       providers.add(new SingletonResourceProvider(new MetadataResource()));
       providers.add(new SingletonResourceProvider(new TikaResource()));
       providers.add(new SingletonResourceProvider(new UnpackerResource()));
+      providers.add(new SingletonResourceProvider(new TikaVersion()));
       sf.setProviders(providers);
       sf.setAddress("http://localhost:" + TikaServerCli.DEFAULT_PORT + "/");
       BindingFactoryManager manager = sf.getBus().getExtension(
