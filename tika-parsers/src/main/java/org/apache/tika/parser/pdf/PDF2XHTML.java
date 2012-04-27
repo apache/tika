@@ -22,7 +22,10 @@ import java.io.Writer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.util.PDFTextStripper;
+import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
+import org.apache.pdfbox.pdmodel.interactive.action.type.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationMarkup;
 import org.apache.pdfbox.util.TextPosition;
 import org.apache.tika.exception.TikaException;
@@ -140,6 +143,23 @@ class PDF2XHTML extends PDFTextStripper {
             // TODO: remove once PDFBOX-1143 is fixed:
             if (extractAnnotationText) {
                 for(Object o : page.getAnnotations()) {
+                    if( o instanceof PDAnnotationLink ) {
+                        PDAnnotationLink annotationlink = (PDAnnotationLink) o;
+                        if (annotationlink.getAction()  != null) {
+                            PDAction action = annotationlink.getAction();
+                            if( action instanceof PDActionURI ) {
+                                PDActionURI uri = (PDActionURI) action;
+                                String link = uri.getURI();
+                                if (link != null) {
+                                    handler.startElement("div", "class", "annotation");
+                                    handler.startElement("a", "href", link);
+                                    handler.endElement("a");
+                                    handler.endElement("div");
+                                }
+                             }
+                        }
+                    }
+                
                     if ((o instanceof PDAnnotation) && PDAnnotationMarkup.SUB_TYPE_FREETEXT.equals(((PDAnnotation) o).getSubtype())) {
                         // It's a text annotation:
                         PDAnnotationMarkup annot = (PDAnnotationMarkup) o;
