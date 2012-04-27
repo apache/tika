@@ -38,7 +38,7 @@ class PagesContentHandler extends DefaultHandler {
        METADATA, PARSABLE_TEXT, 
        HEADERS, HEADER_ODD, HEADER_EVEN, HEADER_FIRST,
        FOOTERS, FOOTER_ODD, FOOTER_EVEN, FOOTER_FIRST,
-       FOOTNOTES;
+       FOOTNOTES, ANNOTATIONS;
     }
     private DocumentPart inPart = null;
     
@@ -48,6 +48,7 @@ class PagesContentHandler extends DefaultHandler {
     private HeaderFooter headers = null;
     private HeaderFooter footers = null;
     private Footnotes footnotes = null; 
+    private Annotations annotations = null; 
     
     private Map<String, List<List<String>>> tableData =
         new HashMap<String, List<List<String>>>();
@@ -139,6 +140,20 @@ class PagesContentHandler extends DefaultHandler {
                  xhtml.endElement("div");
               }
            }
+        } else if ("sf:annotations".equals(qName)) {
+           annotations = new Annotations();
+           inPart = DocumentPart.ANNOTATIONS;
+        } else if ("sf:annotation".equals(qName) && inPart == DocumentPart.ANNOTATIONS) {
+           annotations.start(attributes.getValue("sf:target"));
+        } else if ("sf:annotation-field".equals(qName) && inPart == DocumentPart.PARSABLE_TEXT) {
+           xhtml.startElement("div", "style", "annotated");
+           
+           String annotationText = annotations.annotations.get(attributes.getValue("sfa:ID"));
+           if (annotationText != null) {
+              xhtml.startElement("div", "style", "annotation");
+              xhtml.characters(annotationText);
+              xhtml.endElement("div");
+           }
         }
 
         if (activeTableId != null) {
@@ -169,6 +184,10 @@ class PagesContentHandler extends DefaultHandler {
             xhtml.endElement("p");
         } else if ("sf:attachment".equals(qName)) {
             activeTableId = null;
+        } else if ("sf:annotation".equals(qName) && inPart == DocumentPart.ANNOTATIONS) {
+           annotations.end();
+        } else if ("sf:annotation-field".equals(qName) && inPart == DocumentPart.PARSABLE_TEXT) {
+           xhtml.endElement("div");
         }
     }
 
@@ -186,6 +205,7 @@ class PagesContentHandler extends DefaultHandler {
               if (inPart == DocumentPart.FOOTER_EVEN)  footers.defaultEven = str;
               if (inPart == DocumentPart.FOOTER_ODD)   footers.defaultOdd = str;
               if (inPart == DocumentPart.FOOTNOTES)    footnotes.text(str);
+              if (inPart == DocumentPart.ANNOTATIONS)  annotations.text(str);
           }
         }
     }
@@ -329,7 +349,8 @@ class PagesContentHandler extends DefaultHandler {
        }
     }
     /**
-     * Represents Footnotes in a document
+     * Represents Footnotes in a document. The way these work
+     *  in the file format isn't very clean...
      */
     private static class Footnotes {
        /** Mark -> Text */
@@ -348,6 +369,33 @@ class PagesContentHandler extends DefaultHandler {
                 text = footnotes.get(lastSeenMark) + text;
              }
              footnotes.put(lastSeenMark, text);
+          }
+       }
+    }
+    /**
+     * Represents Annotations in a document. We currently
+     *  just grab all the sf:p text in each one 
+     */
+    private class Annotations {
+       /** ID -> Text */
+       Map<String,String> annotations = new HashMap<String, String>();
+       String currentID = null;
+       StringBuffer currentText = null;
+       
+       private void start(String id) {
+          currentID = id;
+          currentText = new StringBuffer();
+       }
+       private void text(String text) {
+          if (text != null && text.length() > 0 && currentText != null) {
+             currentText.append(text);
+          }
+       }
+       private void end() {
+          if (currentText.length() > 0) {
+             annotations.put(currentID, currentText.toString());
+             currentID = null;
+             currentText = null;
           }
        }
     }
