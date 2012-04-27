@@ -308,6 +308,19 @@ public class PDFParserTest extends TikaTest {
         assertContains("<p>1</p>", content);
     }
 
+    /**
+     * Test to ensure that Links are extracted from the text
+     * 
+     * Note - the PDF contains the text "This is a hyperlink" which
+     *  a hyperlink annotation, linking to the tika site, on it. This
+     *  test will need updating when we're able to apply the annotation
+     *  to the text itself, rather than following on afterwards as now 
+     */
+    public void testLinks() throws Exception {
+        final XMLResult result = getXML("testPDFVarious.pdf");
+        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\"/></div>", result.xml);
+    }
+
     public void testDisableAutoSpace() throws Exception {
         PDFParser parser = new PDFParser();
         parser.setEnableAutoSpace(false);
