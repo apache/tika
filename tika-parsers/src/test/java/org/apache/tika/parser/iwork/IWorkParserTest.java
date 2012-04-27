@@ -161,7 +161,7 @@ public class IWorkParserTest extends TestCase {
     }
     
     /**
-     * Check we get headers, footers and footnotes from keynote
+     * Check we get headers, footers and footnotes from Pages
      */
     public void testParsePagesHeadersFootersFootnotes() throws Exception {
        String footnote = "Footnote: Do a lot of people really use iWork?!?!";
@@ -184,6 +184,31 @@ public class IWorkParserTest extends TestCase {
        assertContains(contents, header);
        assertContains(contents, footer);
        assertContains(contents, footnote);
+    }
+    
+    /**
+     * Check we get annotations (eg comments) from Pages
+     */
+    public void testParsePagesAnnotations() throws Exception {
+       String commentA = "comment about the APXL file";
+       String commentB = "comment about UIMA";
+       
+       
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesComments.pages");
+       Metadata metadata = new Metadata();
+       ContentHandler handler = new BodyContentHandler();
+
+       iWorkParser.parse(input, handler, metadata, parseContext);
+       String contents = handler.toString();
+
+       // Check regular text
+       assertContains(contents, "Both Pages 1.x"); // P1
+       assertContains(contents, "understanding the Pages document"); // P1
+       assertContains(contents, "should be page 2"); // P2
+       
+       // Check for comments
+       assertContains(contents, commentA);
+       assertContains(contents, commentB);
     }
     
     public void assertContains(String haystack, String needle) {
