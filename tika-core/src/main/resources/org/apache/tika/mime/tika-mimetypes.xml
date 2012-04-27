@@ -641,6 +641,10 @@
     <sub-class-of type="application/vnd.apple.iwork" />
     <glob pattern="*.numbers"/>
   </mime-type>
+  <mime-type type="application/x-tika-iworks-protected">
+    <sub-class-of type="application/vnd.apple.iwork" />
+    <_comment>Password Protected iWorks File</_comment>
+  </mime-type>
 
   <mime-type type="application/vnd.arastra.swi">
     <glob pattern="*.swi"/>

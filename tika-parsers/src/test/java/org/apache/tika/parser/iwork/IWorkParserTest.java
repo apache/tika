@@ -139,4 +139,24 @@ public class IWorkParserTest extends TestCase {
         assertTrue(content.contains("Try adding your own account transactions to this table."));
     }
 
+    /**
+     * We don't currently support password protected Pages files, as
+     *  we don't know how the encryption works (it's not regular Zip
+     *  Encryption). See TIKA-903 for details
+     */
+    public void testParsePagesPasswordProtected() throws Exception {
+       // Document password is "tika", but we can't use that yet...
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesPwdProtected.pages");
+       Metadata metadata = new Metadata();
+       ContentHandler handler = new BodyContentHandler();
+
+       iWorkParser.parse(input, handler, metadata, parseContext);
+
+       // Content will be empty
+       String content = handler.toString();
+       assertEquals("", content);
+       
+       // Will have been identified as encrypted
+       assertEquals("application/x-tika-iworks-protected", metadata.get(Metadata.CONTENT_TYPE));
+    }
 }
