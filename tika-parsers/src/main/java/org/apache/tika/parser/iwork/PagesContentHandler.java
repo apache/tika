@@ -33,11 +33,22 @@ class PagesContentHandler extends DefaultHandler {
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
 
-    private boolean inMetaDataPart = false;
+    /** The (interesting) part of the document we're in. Should be more structured... */
+    private enum DocumentPart {
+       METADATA, PARSABLE_TEXT, 
+       HEADERS, HEADER_ODD, HEADER_EVEN, HEADER_FIRST,
+       FOOTERS, FOOTER_ODD, FOOTER_EVEN, FOOTER_FIRST,
+       FOOTNOTES;
+    }
+    private DocumentPart inPart = null;
+    
     private boolean parseProperty = false;
-    private boolean inParsableText = false;
     private int pageCount = 0;
 
+    private HeaderFooter headers = null;
+    private HeaderFooter footers = null;
+    private Footnotes footnotes = null; 
+    
     private Map<String, List<List<String>>> tableData =
         new HashMap<String, List<List<String>>>();
     private String activeTableId;
@@ -56,6 +67,7 @@ class PagesContentHandler extends DefaultHandler {
     public void endDocument() throws SAXException {
         metadata.set(Metadata.PAGE_COUNT, String.valueOf(pageCount));
         if (pageCount > 0) {
+            doFooter();
             xhtml.endElement("div");
         }
     }
@@ -77,17 +89,19 @@ class PagesContentHandler extends DefaultHandler {
         }
 
         if ("sl:publication-info".equals(qName)) {
-            inMetaDataPart = true;
+            inPart = DocumentPart.METADATA;
         } else if ("sf:metadata".equals(qName)) {
-            inMetaDataPart = true;
+           inPart = DocumentPart.METADATA;
         } else if ("sf:page-start".equals(qName)) {
             if (pageCount > 0) {
+                doFooter();
                 xhtml.endElement("div");
             }
             xhtml.startElement("div");
             pageCount++;
+            doHeader();
         } else if ("sf:p".equals(qName) && pageCount > 0) {
-            inParsableText = true;
+            inPart = DocumentPart.PARSABLE_TEXT;
             xhtml.startElement("p");
         } else if ("sf:attachment".equals(qName)) {
             String kind = attributes.getValue("sf:kind");
@@ -98,13 +112,40 @@ class PagesContentHandler extends DefaultHandler {
         } else if ("sf:attachment-ref".equals(qName)) {
             String idRef = attributes.getValue("sfa:IDREF");
             outputTable(idRef);
+        } else if ("sf:headers".equals(qName)) {
+            headers = new HeaderFooter(qName);
+            inPart = DocumentPart.HEADERS;
+        } else if ("sf:footers".equals(qName)) {
+           footers = new HeaderFooter(qName);
+           inPart = DocumentPart.FOOTERS;
+        } else if ("sf:header".equals(qName)) {
+            inPart = headers.identifyPart(attributes.getValue("sf:name"));
+        } else if ("sf:footer".equals(qName)) {
+           inPart = footers.identifyPart(attributes.getValue("sf:name"));
+        } else if ("sf:footnotes".equals(qName)) {
+           footnotes = new Footnotes();
+           inPart = DocumentPart.FOOTNOTES;
+        } else if ("sf:footnote-mark".equals(qName)) {
+           footnotes.recordMark(attributes.getValue("sf:mark"));
+        } else if ("sf:footnote".equals(qName) && inPart == DocumentPart.PARSABLE_TEXT) {
+           // What about non auto-numbered?
+           String footnoteMark = attributes.getValue("sf:autonumber");
+           if (footnotes != null) {
+              String footnoteText = footnotes.footnotes.get(footnoteMark);
+              if (footnoteText != null) {
+                 xhtml.startElement("div", "style", "footnote");
+                 xhtml.characters("Footnote:" ); // As shown in Pages
+                 xhtml.characters(footnoteText);
+                 xhtml.endElement("div");
+              }
+           }
         }
 
         if (activeTableId != null) {
             parseTableData(qName, attributes);
         }
 
-        if (inMetaDataPart) {
+        if (inPart == DocumentPart.METADATA) {
             metaDataLocalName = localName;
             metaDataQName = qName;
             parseProperty = true;
@@ -120,11 +161,11 @@ class PagesContentHandler extends DefaultHandler {
         }
 
         if ("sl:publication-info".equals(qName)) {
-            inMetaDataPart = false;
+            inPart = null;
         } else if ("sf:metadata".equals(qName)) {
-            inMetaDataPart = false;
+            inPart = null;
         } else if ("sf:p".equals(qName) && pageCount > 0) {
-            inParsableText = false;
+            inPart = null;
             xhtml.endElement("p");
         } else if ("sf:attachment".equals(qName)) {
             activeTableId = null;
@@ -133,8 +174,19 @@ class PagesContentHandler extends DefaultHandler {
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
-        if (inParsableText && length > 0) {
-            xhtml.characters(ch, start, length);
+        if (length > 0) {
+           if (inPart == DocumentPart.PARSABLE_TEXT) {
+              xhtml.characters(ch, start, length);
+          } else if(inPart != null) {
+              String str = new String(ch, start, length);
+              if (inPart == DocumentPart.HEADER_FIRST) headers.defaultFirst = str;
+              if (inPart == DocumentPart.HEADER_EVEN)  headers.defaultEven = str;
+              if (inPart == DocumentPart.HEADER_ODD)   headers.defaultOdd = str;
+              if (inPart == DocumentPart.FOOTER_FIRST) footers.defaultFirst = str;
+              if (inPart == DocumentPart.FOOTER_EVEN)  footers.defaultEven = str;
+              if (inPart == DocumentPart.FOOTER_ODD)   footers.defaultOdd = str;
+              if (inPart == DocumentPart.FOOTNOTES)    footnotes.text(str);
+          }
         }
     }
 
@@ -217,5 +269,86 @@ class PagesContentHandler extends DefaultHandler {
 
         return null;
     }
+    
+    private void doHeader() throws SAXException {
+       if (headers != null) {
+          headers.output("header");
+       }
+    }
+    private void doFooter() throws SAXException {
+       if (footers != null) {
+          footers.output("footer");
+       }
+    }
 
+    /**
+     * Represents the Headers or Footers in a document
+     */
+    private class HeaderFooter {
+       private String type; // sf:headers or sf:footers
+       private String defaultOdd;
+       private String defaultEven;
+       private String defaultFirst;
+       // TODO Can there be custom ones?
+       
+       private HeaderFooter(String type) {
+          this.type = type; 
+       }
+       private DocumentPart identifyPart(String name) {
+          if("SFWPDefaultOddHeaderIdentifier".equals(name))
+             return DocumentPart.HEADER_ODD;
+          if("SFWPDefaultEvenHeaderIdentifier".equals(name))
+             return DocumentPart.HEADER_EVEN;
+          if("SFWPDefaultFirstHeaderIdentifier".equals(name))
+             return DocumentPart.HEADER_FIRST;
+          
+          if("SFWPDefaultOddFooterIdentifier".equals(name))
+             return DocumentPart.FOOTER_ODD;
+          if("SFWPDefaultEvenFooterIdentifier".equals(name))
+             return DocumentPart.FOOTER_EVEN;
+          if("SFWPDefaultFirstFooterIdentifier".equals(name))
+             return DocumentPart.FOOTER_FIRST;
+          
+          return null;
+       }
+       private void output(String what) throws SAXException {
+          String text = null;
+          if (pageCount == 1 && defaultFirst != null) {
+             text = defaultFirst;
+          } else if (pageCount % 2 == 0 && defaultEven != null) {
+             text = defaultEven;
+          } else {
+             text = defaultOdd;
+          }
+          
+          if (text != null) {
+             xhtml.startElement("div", "class", "header");
+             xhtml.characters(text);
+             xhtml.endElement("div");
+          }
+       }
+    }
+    /**
+     * Represents Footnotes in a document
+     */
+    private static class Footnotes {
+       /** Mark -> Text */
+       Map<String,String> footnotes = new HashMap<String, String>();
+       String lastSeenMark = null;
+       
+       /**
+        * Normally happens before the text of the mark
+        */
+       private void recordMark(String mark) {
+          lastSeenMark = mark;
+       }
+       private void text(String text) {
+          if (lastSeenMark != null) {
+             if (footnotes.containsKey(lastSeenMark)) {
+                text = footnotes.get(lastSeenMark) + text;
+             }
+             footnotes.put(lastSeenMark, text);
+          }
+       }
+    }
 }
