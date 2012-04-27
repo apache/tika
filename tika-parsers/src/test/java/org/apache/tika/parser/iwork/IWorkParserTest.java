@@ -159,4 +159,34 @@ public class IWorkParserTest extends TestCase {
        // Will have been identified as encrypted
        assertEquals("application/x-tika-iworks-protected", metadata.get(Metadata.CONTENT_TYPE));
     }
+    
+    /**
+     * Check we get headers, footers and footnotes from keynote
+     */
+    public void testParsePagesHeadersFootersFootnotes() throws Exception {
+       String footnote = "Footnote: Do a lot of people really use iWork?!?!";
+       String header = "THIS IS SOME HEADER TEXT";
+       String footer = "THIS IS SOME FOOTER TEXT";
+       
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersFootnotes.pages");
+       Metadata metadata = new Metadata();
+       ContentHandler handler = new BodyContentHandler();
+
+       iWorkParser.parse(input, handler, metadata, parseContext);
+       String contents = handler.toString();
+
+       // Check regular text
+       assertContains(contents, "Both Pages 1.x"); // P1
+       assertContains(contents, "understanding the Pages document"); // P1
+       assertContains(contents, "should be page 2"); // P2
+       
+       // Check for headers, footers and footnotes
+       assertContains(contents, header);
+       assertContains(contents, footer);
+       assertContains(contents, footnote);
+    }
+    
+    public void assertContains(String haystack, String needle) {
+       assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+    }
 }
