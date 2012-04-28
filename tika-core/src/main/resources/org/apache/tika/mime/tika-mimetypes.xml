@@ -4137,6 +4137,14 @@
   <mime-type type="text/vnd.in3d.spot">
     <glob pattern="*.spot"/>
   </mime-type>
+  <mime-type type="text/vnd.iptc.anpa">
+    <acronym>ANPA</acronym>
+    <_comment>American Newspaper Publishers Association Wire Feeds</_comment>
+    <glob pattern="*.anpa"/>
+    <magic priority="50">
+      <match value="\x16\x16\x01" type="string" offset="0"/>
+    </magic>
+  </mime-type>
   <mime-type type="text/vnd.iptc.newsml"/>
   <mime-type type="text/vnd.iptc.nitf"/>
   <mime-type type="text/vnd.latex-z"/>
