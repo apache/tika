@@ -18,23 +18,19 @@ package org.apache.tika.parser.iptc;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.Set;
-import java.util.HashMap;
-
-import java.util.Date;
-import java.util.TimeZone;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.nio.charset.Charset;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.TimeZone;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -46,6 +42,8 @@ import org.xml.sax.SAXException;
  * Parser for IPTC ANPA New Wire Feeds
  */
 public class IptcAnpaParser implements Parser {
+    /** Serial version UID */
+    private static final long serialVersionUID = -6062820170212879115L;
 
     private static final MediaType TYPE =
         MediaType.text("vnd.iptc.anpa");
@@ -410,7 +408,7 @@ public class IptcAnpaParser implements Parser {
          // pull apart the envelope, getting the date and time
          while (read < value.length) {
             byte val_next = value[read++];
-            if (hdr_date.isEmpty()) {
+            if (hdr_date.length() == 0) {
                while (((val_next >= (byte)0x30) && (val_next <= (byte)0x39))  // consume all numerics and hyphens
                   ||   (val_next == HY)) {
                   hdr_date += (char)(val_next & 0xff);  // convert the byte to an unsigned int
@@ -436,11 +434,10 @@ public class IptcAnpaParser implements Parser {
 
       // if we were saving any of these values, we would set the properties map here
 
-      added = (!env_serviceid.isEmpty() || !env_category.isEmpty() || !hdr_subject.isEmpty() || !hdr_date.isEmpty() || !hdr_time.isEmpty());
-
-      return (added);
+      added = (env_serviceid.length() + env_category.length() + hdr_subject.length() + 
+               hdr_date.length() + hdr_time.length()) > 0; 
+      return added;
    }
-
 
    private boolean parseBody(byte[] value, HashMap<String,String> properties) {
       boolean added = false;
