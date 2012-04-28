@@ -38,8 +38,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import com.coremedia.iso.IsoBufferWrapper;
-import com.coremedia.iso.IsoBufferWrapperImpl;
 import com.coremedia.iso.IsoFile;
 import com.coremedia.iso.boxes.Box;
 import com.coremedia.iso.boxes.ContainerBox;
@@ -115,10 +113,7 @@ public class MP4Parser extends AbstractParser {
         //  avoid OOMs that may occur with in-memory buffering
         TikaInputStream tstream = TikaInputStream.get(stream);
         try {
-           IsoBufferWrapper isoBufferWrapper = 
-              new IsoBufferWrapperImpl(tstream.getFile());
-           isoFile = new IsoFile(isoBufferWrapper);
-           isoFile.parse();
+           isoFile = new IsoFile(tstream.getFileChannel());
         } finally {
            tstream.close();
         }
