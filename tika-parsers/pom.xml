@@ -158,7 +158,7 @@
     <dependency>
       <groupId>com.googlecode.mp4parser</groupId> 
       <artifactId>isoparser</artifactId> 
-      <version>1.0-beta-5</version> 
+      <version>1.0-RC-1</version>
     </dependency> 
     <dependency>
        <groupId>com.drewnoakes</groupId>

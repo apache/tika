@@ -31,10 +31,8 @@ import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing mp4 files.
- * 
- * TODO Work out why this test passes in Eclipse, but fails from Maven
  */
-public abstract class MP4ParserTest extends TestCase {
+public class MP4ParserTest extends TestCase {
     /**
      * Test that we can extract information from
      *  a M4A MP4 Audio file
