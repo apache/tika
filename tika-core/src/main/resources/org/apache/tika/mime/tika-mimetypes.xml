@@ -393,6 +393,11 @@
   </mime-type>
   <mime-type type="application/pkcs7-signature">
     <glob pattern="*.p7s"/>
+    <magic priority="50">
+      <match value="-----BEGIN PKCS7" type="string" offset="0"/>
+      <match value="0x3082FFFF06092a864886f70d0107FFa0" type="string"
+              mask="0xFFFF0000FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/pkix-cert">
     <glob pattern="*.cer"/>
@@ -640,6 +645,10 @@
     <root-XML localName="document" namespaceURI="http://developer.apple.com/namespaces/ls" />
     <sub-class-of type="application/vnd.apple.iwork" />
     <glob pattern="*.numbers"/>
+  </mime-type>
+  <mime-type type="application/x-tika-iworks-protected">
+    <sub-class-of type="application/vnd.apple.iwork" />
+    <_comment>Password Protected iWorks File</_comment>
   </mime-type>
 
   <mime-type type="application/vnd.arastra.swi">
@@ -4127,6 +4136,14 @@
   </mime-type>
   <mime-type type="text/vnd.in3d.spot">
     <glob pattern="*.spot"/>
+  </mime-type>
+  <mime-type type="text/vnd.iptc.anpa">
+    <acronym>ANPA</acronym>
+    <_comment>American Newspaper Publishers Association Wire Feeds</_comment>
+    <glob pattern="*.anpa"/>
+    <magic priority="50">
+      <match value="\x16\x16\x01" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="text/vnd.iptc.newsml"/>
   <mime-type type="text/vnd.iptc.nitf"/>

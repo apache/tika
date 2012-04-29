@@ -114,14 +114,14 @@
             </Bundle-Activator>
             <Embed-Dependency>
               tika-parsers;inline=true,
-              commons-compress, commons-codec,
+              commons-compress, commons-codec, commons-io,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               xmlbeans, dom4j,
               tagsoup,
               asm, 
               vorbis-java-core, vorbis-java-tika,
-              isoparser, scannotation, javassist,
+              isoparser, aspectjrt,
               metadata-extractor,
               boilerpipe, rome,
               apache-mime4j-core, apache-mime4j-dom
