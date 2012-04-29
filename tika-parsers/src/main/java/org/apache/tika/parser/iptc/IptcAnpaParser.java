@@ -468,7 +468,7 @@ public class IptcAnpaParser implements Parser {
                   // hit the delimiter, carry on
                   val_next =  (read < value.length) ? value[read++] : 0x00;
                }
-               while (!bdy_heading.isEmpty() && ((val_next == CR) || (val_next == LF))) {
+               while (bdy_heading.length() > 0 && ((val_next == CR) || (val_next == LF))) {
                   val_next =  (read < value.length) ? value[read++] : 0x00;  // skip the new lines
                   if ((val_next != CR) && (val_next != LF)) {
                      --read;
@@ -519,7 +519,7 @@ public class IptcAnpaParser implements Parser {
                   val_next =  (read < value.length) ? value[read++] : 0x00;
                }
 
-               while (!bdy_title.isEmpty() && ((val_next == CR) || (val_next == LF))) {
+               while (bdy_title.length() > 0 && ((val_next == CR) || (val_next == LF))) {
                   val_next =  (read < value.length) ? value[read++] : 0x00;  // skip the new lines
                   if ((val_next != CR) && (val_next != LF)) {
                      --read;
@@ -687,9 +687,9 @@ public class IptcAnpaParser implements Parser {
       properties.put("author", bdy_author);
       properties.put("source", bdy_source);
 
-      added = (!bdy_body.isEmpty() || !bdy_title.isEmpty() || !bdy_heading.isEmpty() || !bdy_author.isEmpty() || !bdy_source.isEmpty());
-
-      return (added);
+      added = (bdy_body.length() + bdy_title.length() + bdy_heading.length() + bdy_author.length() +
+               bdy_source.length()) > 0;
+      return added;
    }
 
 
@@ -726,7 +726,7 @@ public class IptcAnpaParser implements Parser {
             val_next =  (read < value.length) ? value[read++] : 0x00;
          }
 
-         if (!ftr_datetime.isEmpty()) {
+         if (ftr_datetime.length() > 0) {
             // we want to pass this back in a more friendly format
             String format_out = "yyyy-MM-dd'T'HH:mm:ss'Z'";
             Date dateunix = new Date();
@@ -762,9 +762,8 @@ public class IptcAnpaParser implements Parser {
       properties.put("created", ftr_datetime);
       properties.put("modified", ftr_datetime);
 
-      added = (!ftr_source.isEmpty() || !ftr_datetime.isEmpty());
-
-      return (added);
+      added = (ftr_source.length() + ftr_datetime.length()) > 0; 
+      return added;
    }
 
 
@@ -782,19 +781,15 @@ public class IptcAnpaParser implements Parser {
 //      metadata.set(Metadata.PUBLISHER,     clean(properties.get("publisher")));
       metadata.set(Metadata.PUBLISHER,     clean(this.getFormatName()));
 
-
 /*
         metadata.set(DublinCore.DATE, font.getHeader().getCreated().getTime());
         metadata.set(
                 Property.internalDate(DublinCore.MODIFIED),
                 font.getHeader().getModified().getTime());
 */
-
    }
 
-
    private String clean(String value) {
-
       if (value == null) {
          value = "";
       }
@@ -814,5 +809,4 @@ public class IptcAnpaParser implements Parser {
 
       return (value);
    }
-   
 }
