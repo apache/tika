@@ -794,11 +794,6 @@ public class IptcAnpaParser implements Parser {
          value = "";
       }
 
-      try {
-         String tmpvalue = new String(value.getBytes(Charset.forName("UTF-8")),"UTF-8");
-         value = tmpvalue;
-      }
-      catch (UnsupportedEncodingException eue) {}
       value = value.replaceAll("``", "`");
       value = value.replaceAll("''", "'");
       value = value.replaceAll(new String(new char[] {SL}), "'");
