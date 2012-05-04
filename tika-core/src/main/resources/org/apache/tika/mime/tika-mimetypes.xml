@@ -593,6 +593,12 @@
   <mime-type type="application/vnd.adobe.air-application-installer-package+zip">
     <glob pattern="*.air"/>
   </mime-type>
+  <mime-type type="application/vnd.adobe.aftereffects.project">
+    <glob pattern="*.aep"/>
+  </mime-type>
+  <mime-type type="application/vnd.adobe.aftereffects.template">
+    <glob pattern="*.aet"/>
+  </mime-type>
   <mime-type type="application/vnd.adobe.xdp+xml">
     <glob pattern="*.xdp"/>
   </mime-type>
@@ -654,9 +660,7 @@
   <mime-type type="application/vnd.arastra.swi">
     <glob pattern="*.swi"/>
   </mime-type>
-  <mime-type type="application/vnd.audiograph">
-    <glob pattern="*.aep"/>
-  </mime-type>
+  <mime-type type="application/vnd.audiograph"/>
   <mime-type type="application/vnd.autopackage"/>
   <mime-type type="application/vnd.avistar+xml"/>
   <mime-type type="application/vnd.blueice.multipass">
@@ -3497,6 +3501,8 @@
 
   <mime-type type="image/vnd.adobe.premiere">
     <glob pattern="*.ppj"/>
+    <root-XML localName="PremiereData"/>
+    <sub-class-of type="application/xml"/>
   </mime-type>
 
   <mime-type type="image/vnd.cns.inf2"/>

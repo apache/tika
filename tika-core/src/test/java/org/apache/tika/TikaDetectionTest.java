@@ -158,7 +158,8 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("application/vnd.antix.game-component", tika.detect("x.atx"));
         assertEquals("application/vnd.apple.installer+xml", tika.detect("x.mpkg"));
         assertEquals("application/vnd.arastra.swi", tika.detect("x.swi"));
-        assertEquals("application/vnd.audiograph", tika.detect("x.aep"));
+        // Differ from httpd - Adobe After Effects is a much more common user of .AEP these days
+        //assertEquals("application/vnd.audiograph", tika.detect("x.aep"));
         assertEquals("application/vnd.blueice.multipass", tika.detect("x.mpm"));
         assertEquals("application/vnd.bmi", tika.detect("x.bmi"));
         assertEquals("application/vnd.businessobjects", tika.detect("x.rep"));
