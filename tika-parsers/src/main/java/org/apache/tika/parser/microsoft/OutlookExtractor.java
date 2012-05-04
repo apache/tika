@@ -191,7 +191,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                  data = ((StringChunk)htmlChunk).getRawValue();
               }
               if(data != null) {
-                  // nocommit same problem here?
                  HtmlParser htmlParser = new HtmlParser();
                  htmlParser.parse(
                        new ByteArrayInputStream(data),
