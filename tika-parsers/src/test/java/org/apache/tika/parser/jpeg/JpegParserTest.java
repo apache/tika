@@ -73,6 +73,9 @@ public class JpegParserTest extends TestCase {
         assertFalse(keywords.contains("canon-55-250 moscow-birds serbor"));
     }
 
+    /**
+     * Test for a file with Geographic information (lat, long etc) in it
+     */
     public void testJPEGGeo() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -111,6 +114,23 @@ public class JpegParserTest extends TestCase {
         assertEquals("Date/Time Original should be stored in EXIF field too",
                 "2009-08-11T09:09:45", metadata.get(TIFF.ORIGINAL_DATE));
         assertEquals("canon-55-250", metadata.getValues(Metadata.KEYWORDS)[0]);
+    }
+
+    /**
+     * Test for an image with the geographic information stored in a slightly
+     *  different way, see TIKA-915 for details
+     * Disabled for now, pending a fix to the underlying library
+     */
+    public void testJPEGGeo2() throws Exception {
+       Metadata metadata = new Metadata();
+       metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+       InputStream stream =
+          getClass().getResourceAsStream("/test-documents/testJPEG_GEO_2.jpg");
+       parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+
+       // Geo tags should be there with 5dp, and not rounded
+       assertEquals("51.57576", metadata.get(Metadata.LATITUDE));
+       assertEquals("-1.56788", metadata.get(Metadata.LONGITUDE));
     }
     
     public void testJPEGTitleAndDescription() throws Exception {
