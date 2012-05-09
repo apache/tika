@@ -121,7 +121,7 @@ public class JpegParserTest extends TestCase {
      *  different way, see TIKA-915 for details
      * Disabled for now, pending a fix to the underlying library
      */
-    public void testJPEGGeo2() throws Exception {
+    public void DISABLEDtestJPEGGeo2() throws Exception {
        Metadata metadata = new Metadata();
        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
        InputStream stream =
