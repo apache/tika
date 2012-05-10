@@ -2441,6 +2441,44 @@
     <glob pattern="*.elc"/>
   </mime-type>
 
+  <mime-type type="application/x-elf">
+    <magic priority="50">
+      <match value="\177ELF" type="string" offset="0" />
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-object">
+    <sub-class-of type="application/x-elf"/>
+    <magic priority="50">
+      <match value="\177ELF" type="string" offset="0">
+        <match value="0x01" type="string" offset="16"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-executable">
+    <sub-class-of type="application/x-elf"/>
+    <magic priority="50">
+      <match value="\177ELF" type="string" offset="0">
+        <match value="0x02" type="string" offset="16"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-sharedlib">
+    <sub-class-of type="application/x-elf"/>
+    <magic priority="50">
+      <match value="\177ELF" type="string" offset="0">
+        <match value="0x03" type="string" offset="16"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-coredump">
+    <sub-class-of type="application/x-elf"/>
+    <magic priority="50">
+      <match value="\177ELF" type="string" offset="0">
+        <match value="0x04" type="string" offset="16"/>
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-emf">
     <acronym>EMF</acronym>
     <_comment>Extended Metafile</_comment>
