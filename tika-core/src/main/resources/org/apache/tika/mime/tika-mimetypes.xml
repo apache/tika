@@ -2677,13 +2677,83 @@
   <mime-type type="application/x-msclip">
     <glob pattern="*.clp"/>
   </mime-type>
+
   <mime-type type="application/x-msdownload">
     <glob pattern="*.exe"/>
     <glob pattern="*.dll"/>
     <glob pattern="*.com"/>
     <glob pattern="*.bat"/>
     <glob pattern="*.msi"/>
+    <magic priority="50">
+      <match value="MZ" type="string" offset="0"/>
+    </magic>
   </mime-type>
+  <mime-type type="application/x-msdownload;format=pe">
+    <sub-class-of type="application/x-msdownload"/>
+    <magic priority="55">
+      <!-- Technically the header offset is stored at 0x3c, and isn't a -->
+      <!-- constant, but it's almost always set to start at 0x80 or 0xf0 -->
+      <match value="PE\000\000" type="string" offset="128"/>
+      <match value="PE\000\000" type="string" offset="240"/>
+    </magic>
+  </mime-type>
+  <!-- the PE header should be PEx00x00 then a two byte machine type -->
+  <mime-type type="application/x-msdownload;format=pe32">
+    <sub-class-of type="application/x-msdownload;format=pe"/>
+    <magic priority="60">
+      <match value="PE\000\000" type="string" offset="128">
+         <match value="0x014c" type="little16" offset="132"/>
+      </match>
+      <match value="PE\000\000" type="string" offset="240">
+         <match value="0x014c" type="little16" offset="244"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-msdownload;format=pe64">
+    <sub-class-of type="application/x-msdownload;format=pe"/>
+    <magic priority="60">
+      <match value="PE\000\000" type="string" offset="128">
+         <match value="0x8664" type="little16" offset="132"/>
+      </match>
+      <match value="PE\000\000" type="string" offset="240">
+         <match value="0x8664" type="little16" offset="244"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-msdownload;format=pe-itanium">
+    <sub-class-of type="application/x-msdownload;format=pe"/>
+    <magic priority="60">
+      <match value="PE\000\000" type="string" offset="128">
+         <match value="0x0200" type="little16" offset="132"/>
+      </match>
+      <match value="PE\000\000" type="string" offset="240">
+         <match value="0x0200" type="little16" offset="244"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-msdownload;format=pe-armLE">
+    <sub-class-of type="application/x-msdownload;format=pe"/>
+    <magic priority="60">
+      <match value="pe\000\000" type="string" offset="128">
+         <match value="0x01c0" type="little16" offset="132"/>
+      </match>
+      <match value="pe\000\000" type="string" offset="240">
+         <match value="0x01c0" type="little16" offset="244"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/x-msdownload;format=pe-arm7">
+    <sub-class-of type="application/x-msdownload;format=pe"/>
+    <magic priority="60">
+      <match value="pe\000\000" type="string" offset="128">
+         <match value="0x01c4" type="little16" offset="132"/>
+      </match>
+      <match value="pe\000\000" type="string" offset="240">
+         <match value="0x01c4" type="little16" offset="244"/>
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-msmediaview">
     <glob pattern="*.mvb"/>
     <glob pattern="*.m13"/>
