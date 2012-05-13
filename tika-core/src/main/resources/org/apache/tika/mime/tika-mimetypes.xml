@@ -2450,7 +2450,8 @@
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
       <match value="\177ELF" type="string" offset="0">
-        <match value="0x01" type="string" offset="16"/>
+        <match value="0x0100" type="string" offset="16"/>
+        <match value="0x0001" type="string" offset="16"/>
       </match>
     </magic>
   </mime-type>
@@ -2458,7 +2459,8 @@
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
       <match value="\177ELF" type="string" offset="0">
-        <match value="0x02" type="string" offset="16"/>
+        <match value="0x0200" type="string" offset="16"/>
+        <match value="0x0002" type="string" offset="16"/>
       </match>
     </magic>
   </mime-type>
@@ -2466,7 +2468,8 @@
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
       <match value="\177ELF" type="string" offset="0">
-        <match value="0x03" type="string" offset="16"/>
+        <match value="0x0300" type="string" offset="16"/>
+        <match value="0x0003" type="string" offset="16"/>
       </match>
     </magic>
   </mime-type>
@@ -2474,7 +2477,8 @@
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
       <match value="\177ELF" type="string" offset="0">
-        <match value="0x04" type="string" offset="16"/>
+        <match value="0x0400" type="string" offset="16"/>
+        <match value="0x0004" type="string" offset="16"/>
       </match>
     </magic>
   </mime-type>
