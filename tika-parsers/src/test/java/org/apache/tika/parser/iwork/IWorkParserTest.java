@@ -152,7 +152,6 @@ public class IWorkParserTest extends TestCase {
         for(int row=1;row<=3;row++) {
           assertTrue(content.contains("row" + row));
         }
-        System.out.println("MKM done");
     }
 
     /**
