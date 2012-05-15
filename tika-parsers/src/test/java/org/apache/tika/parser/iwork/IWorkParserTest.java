@@ -139,6 +139,22 @@ public class IWorkParserTest extends TestCase {
         assertTrue(content.contains("Try adding your own account transactions to this table."));
     }
 
+    public void testParseNumbersTableHeaders() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/tableHeaders.numbers");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        iWorkParser.parse(input, handler, metadata, parseContext);
+
+        String content = handler.toString();
+        for(int header=1;header<=5;header++) {
+          assertTrue(content.contains("header" + header));
+        }
+        for(int row=1;row<=3;row++) {
+          assertTrue(content.contains("row" + row));
+        }
+        System.out.println("MKM done");
+    }
+
     /**
      * We don't currently support password protected Pages files, as
      *  we don't know how the encryption works (it's not regular Zip
