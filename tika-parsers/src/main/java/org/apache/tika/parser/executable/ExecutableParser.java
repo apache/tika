@@ -88,6 +88,7 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata,
           InputStream stream, byte[] first4) throws TikaException, IOException {
        metadata.add(Metadata.CONTENT_TYPE, PE_EXE.toString());
+       metadata.set(PLATFORM, PLATFORM_WINDOWS);
        
        // Skip over the MS-DOS bit
        byte[] msdosSection = new byte[0x3c-4];
@@ -134,19 +135,91 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
             metadata.set(ENDIAN, Endian.LITTLE.getName());
             metadata.set(ARCHITECTURE_BITS, "32");
             break;
-
          case 0x8664:
             metadata.set(MACHINE_TYPE, MACHINE_x86_32);
             metadata.set(ENDIAN, Endian.LITTLE.getName());
             metadata.set(ARCHITECTURE_BITS, "64");
             break;
-
          case 0x200:
             metadata.set(MACHINE_TYPE, MACHINE_IA_64);
             metadata.set(ENDIAN, Endian.LITTLE.getName());
             metadata.set(ARCHITECTURE_BITS, "64");
             break;
             
+         case 0x184:
+            metadata.set(MACHINE_TYPE, MACHINE_ALPHA);
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+         case 0x284:
+            metadata.set(MACHINE_TYPE, MACHINE_ALPHA);
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "64");
+            break;
+            
+         case 0x1c0:
+         case 0x1c4:
+            metadata.set(MACHINE_TYPE, MACHINE_ARM);
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+
+         case 0x268:
+            metadata.set(MACHINE_TYPE, MACHINE_M68K);
+            metadata.set(ENDIAN, Endian.BIG.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+
+         case 0x266:
+         case 0x366:
+         case 0x466:
+            metadata.set(MACHINE_TYPE, MACHINE_MIPS);
+            metadata.set(ENDIAN, Endian.BIG.getName());
+            metadata.set(ARCHITECTURE_BITS, "16");
+            break;
+         case 0x162:
+         case 0x166:
+         case 0x168:
+         case 0x169:
+            metadata.set(MACHINE_TYPE, MACHINE_MIPS);
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "16");
+            break;
+            
+         case 0x1f0:
+         case 0x1f1:
+            metadata.set(MACHINE_TYPE, MACHINE_PPC);
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+            
+         case 0x1a2:
+         case 0x1a3:
+            metadata.set(MACHINE_TYPE, MACHINE_SH3);
+            metadata.set(ENDIAN, Endian.BIG.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+         case 0x1a6:
+            metadata.set(MACHINE_TYPE, MACHINE_SH4);
+            metadata.set(ENDIAN, Endian.BIG.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+         case 0x1a8:
+            metadata.set(MACHINE_TYPE, MACHINE_SH3);
+            metadata.set(ENDIAN, Endian.BIG.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+
+         case 0x9041:
+            metadata.set(MACHINE_TYPE, MACHINE_M32R);
+            metadata.set(ENDIAN, Endian.BIG.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
+            break;
+
+         case 0xebc:
+            metadata.set(MACHINE_TYPE, MACHINE_EFI);
+            break;
+
          default:
             metadata.set(MACHINE_TYPE, MACHINE_UNKNOWN);
             break;
@@ -181,6 +254,57 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
        // Byte 9 is the OS (specific) ABI version
        int os = stream.read();
        int osVer = stream.read();
+       // TODO Fix up, doesn't seem to be working
+//       switch (os) {
+//         case 0:
+//            metadata.set(PLATFORM, PLATFORM_SYSV);
+//            break;
+//            
+//         case 1:
+//            metadata.set(PLATFORM, PLATFORM_HPUX);
+//            break;
+//            
+//         case 2:
+//            metadata.set(PLATFORM, PLATFORM_NETBSD);
+//            break;
+//            
+//         case 3:
+//            metadata.set(PLATFORM, PLATFORM_LINUX);
+//            break;
+//            
+//         case 6:
+//            metadata.set(PLATFORM, PLATFORM_SOLARIS);
+//            break;
+//            
+//         case 7:
+//            metadata.set(PLATFORM, PLATFORM_AIX);
+//            break;
+//            
+//         case 8:
+//            metadata.set(PLATFORM, PLATFORM_IRIX);
+//            break;
+//            
+//         case 9:
+//            metadata.set(PLATFORM, PLATFORM_FREEBSD);
+//            break;
+//            
+//         case 10:
+//            metadata.set(PLATFORM, PLATFORM_TRU64);
+//            break;
+//            
+//         case 12:
+//            metadata.set(PLATFORM, PLATFORM_FREEBSD);
+//            break;
+//            
+//         case 64:
+//         case 97:
+//            metadata.set(PLATFORM, PLATFORM_ARM);
+//            break;
+//            
+//         case 255:
+//            metadata.set(PLATFORM, PLATFORM_EMBEDDED);
+//            break;
+//       }
        
        // Bytes 10-16 are padding and lengths
        byte[] padLength = new byte[7];
@@ -223,14 +347,52 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
           machine = EndianUtils.readUShortBE(stream);
        }
        switch(machine) {
+         case 2:
+         case 18:
+         case 43:
+            metadata.set(MACHINE_TYPE, MACHINE_SPARC);
+            break;
          case 3:
             metadata.set(MACHINE_TYPE, MACHINE_x86_32);
+            break;
+         case 4:
+            metadata.set(MACHINE_TYPE, MACHINE_M68K);
+            break;
+         case 5:
+            metadata.set(MACHINE_TYPE, MACHINE_M88K);
+            break;
+         case 8:
+         case 10:
+            metadata.set(MACHINE_TYPE, MACHINE_MIPS);
+            break;
+         case 7:
+            metadata.set(MACHINE_TYPE, MACHINE_S370);
+            break;
+         case 20:
+         case 21:
+            metadata.set(MACHINE_TYPE, MACHINE_PPC);
+            break;
+         case 22:
+            metadata.set(MACHINE_TYPE, MACHINE_S390);
+            break;
+         case 40:
+            metadata.set(MACHINE_TYPE, MACHINE_ARM);
+            break;
+         case 41:
+         case 0x9026:
+            metadata.set(MACHINE_TYPE, MACHINE_ALPHA);
             break;
          case 50:
             metadata.set(MACHINE_TYPE, MACHINE_IA_64);
             break;
          case 62:
             metadata.set(MACHINE_TYPE, MACHINE_x86_64);
+            break;
+         case 75:
+            metadata.set(MACHINE_TYPE, MACHINE_VAX);
+            break;
+         case 88:
+            metadata.set(MACHINE_TYPE, MACHINE_M32R);
             break;
        }
        
