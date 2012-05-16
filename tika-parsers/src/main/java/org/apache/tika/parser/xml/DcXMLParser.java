@@ -41,18 +41,18 @@ public class DcXMLParser extends XMLParser {
             ContentHandler handler, Metadata metadata, ParseContext context) {
         return new TeeContentHandler(
                 super.getContentHandler(handler, metadata, context),
-                getDublinCoreHandler(metadata, DublinCore.TITLE, "title"),
-                getDublinCoreHandler(metadata, DublinCore.SUBJECT, "subject"),
-                getDublinCoreHandler(metadata, DublinCore.CREATOR, "creator"),
-                getDublinCoreHandler(metadata, DublinCore.DESCRIPTION, "description"),
-                getDublinCoreHandler(metadata, DublinCore.PUBLISHER, "publisher"),
-                getDublinCoreHandler(metadata, DublinCore.CONTRIBUTOR, "contributor"),
-                getDublinCoreHandler(metadata, DublinCore.DATE.getName(), "date"),
-                getDublinCoreHandler(metadata, DublinCore.TYPE, "type"),
-                getDublinCoreHandler(metadata, DublinCore.FORMAT, "format"),
-                getDublinCoreHandler(metadata, DublinCore.IDENTIFIER, "identifier"),
-                getDublinCoreHandler(metadata, DublinCore.LANGUAGE, "language"),
-                getDublinCoreHandler(metadata, DublinCore.RIGHTS, "rights"));
+                getDublinCoreHandler(metadata, Metadata.TITLE, "title"),
+                getDublinCoreHandler(metadata, Metadata.SUBJECT, "subject"),
+                getDublinCoreHandler(metadata, Metadata.CREATOR, "creator"),
+                getDublinCoreHandler(metadata, Metadata.DESCRIPTION, "description"),
+                getDublinCoreHandler(metadata, Metadata.PUBLISHER, "publisher"),
+                getDublinCoreHandler(metadata, Metadata.CONTRIBUTOR, "contributor"),
+                getDublinCoreHandler(metadata, Metadata.DATE.getName(), "date"),
+                getDublinCoreHandler(metadata, Metadata.TYPE, "type"),
+                getDublinCoreHandler(metadata, Metadata.FORMAT, "format"),
+                getDublinCoreHandler(metadata, Metadata.IDENTIFIER, "identifier"),
+                getDublinCoreHandler(metadata, Metadata.LANGUAGE, "language"),
+                getDublinCoreHandler(metadata, Metadata.RIGHTS, "rights"));
     }
 
 }

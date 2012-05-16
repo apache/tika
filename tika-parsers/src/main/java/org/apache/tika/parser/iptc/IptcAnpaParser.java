@@ -777,14 +777,14 @@ public class IptcAnpaParser implements Parser {
       metadata.set(Metadata.AUTHOR,        clean(properties.get("author")));
       metadata.set(Metadata.CREATION_DATE, clean(properties.get("created")));
       metadata.set(Metadata.MODIFIED,      clean(properties.get("modified")));
-      metadata.set(DublinCore.SOURCE,      clean(properties.get("source")));
+      metadata.set(Metadata.SOURCE,      clean(properties.get("source")));
 //      metadata.set(Metadata.PUBLISHER,     clean(properties.get("publisher")));
       metadata.set(Metadata.PUBLISHER,     clean(this.getFormatName()));
 
 /*
-        metadata.set(DublinCore.DATE, font.getHeader().getCreated().getTime());
+        metadata.set(Metadata.DATE, font.getHeader().getCreated().getTime());
         metadata.set(
-                Property.internalDate(DublinCore.MODIFIED),
+                Property.internalDate(Metadata.MODIFIED),
                 font.getHeader().getModified().getTime());
 */
    }

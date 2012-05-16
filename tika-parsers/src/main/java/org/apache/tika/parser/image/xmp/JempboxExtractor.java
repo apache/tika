@@ -59,18 +59,18 @@ public class JempboxExtractor {
             XMPSchemaDublinCore dc = xmp.getDublinCoreSchema();
             if (dc != null) {
                 if (dc.getTitle() != null) {
-                    metadata.set(DublinCore.TITLE, dc.getTitle());
+                    metadata.set(Metadata.TITLE, dc.getTitle());
                 }
                 if (dc.getDescription() != null) {
-                    metadata.set(DublinCore.DESCRIPTION, dc.getDescription());
+                    metadata.set(Metadata.DESCRIPTION, dc.getDescription());
                 }
                 if (dc.getCreators() != null && dc.getCreators().size() > 0) {
-                    metadata.set(DublinCore.CREATOR, joinCreators(dc.getCreators()));
+                    metadata.set(Metadata.CREATOR, joinCreators(dc.getCreators()));
                 }
                 if (dc.getSubjects() != null && dc.getSubjects().size() > 0) {
                     Iterator<String> keywords = dc.getSubjects().iterator();
                     while (keywords.hasNext()) {
-                        metadata.add(DublinCore.SUBJECT, keywords.next());
+                        metadata.add(Metadata.SUBJECT, keywords.next());
                     }
                     // TODO should we set KEYWORDS too?
                     // All tested photo managers set the same in Iptc.Application2.Keywords and Xmp.dc.subject

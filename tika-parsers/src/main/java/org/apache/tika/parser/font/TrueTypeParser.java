@@ -67,9 +67,9 @@ public class TrueTypeParser extends AbstractParser {
         }
 
         metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-        metadata.set(DublinCore.DATE, font.getHeader().getCreated().getTime());
+        metadata.set(Metadata.DATE, font.getHeader().getCreated().getTime());
         metadata.set(
-                Property.internalDate(DublinCore.MODIFIED),
+                Property.internalDate(Metadata.MODIFIED),
                 font.getHeader().getModified().getTime());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);

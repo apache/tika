@@ -102,6 +102,8 @@
                 <exlude>org/apache/tika/config/TikaActivator</exlude>
                 <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
                 <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
+                <exlude>org/apache/tika/metadata/DublinCore</exlude>
+                <exlude>org/apache/tika/metadata/Metadata</exlude>
                 <exlude>org/apache/tika/metadata/MSOffice</exlude>
                 <exlude>org/apache/tika/parser/EmptyParser</exlude>
               </excludes>
