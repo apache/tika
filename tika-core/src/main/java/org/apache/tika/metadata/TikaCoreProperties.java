@@ -47,12 +47,6 @@ public interface TikaCoreProperties {
             new Property[] { Property.internalText(Metadata.IDENTIFIER) });
     
    /**
-    * @see DublinCore#MODIFIED
-    */
-    public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED, 
-            new Property[] { Property.internalText(Metadata.MODIFIED) });
-    
-   /**
     * @see DublinCore#CONTRIBUTOR
     */
     public static final Property CONTRIBUTOR = Property.composite(DublinCore.CONTRIBUTOR, 
@@ -69,18 +63,6 @@ public interface TikaCoreProperties {
     */
     public static final Property CREATOR = Property.composite(DublinCore.CREATOR, 
             new Property[] { Property.internalText(Metadata.CREATOR) });
-    
-   /**
-    * @see DublinCore#DATE
-    */
-    public static final Property DATE = Property.composite(DublinCore.DATE, 
-            new Property[] { Metadata.DATE });
-    
-   /**
-    * @see DublinCore#DESCRIPTION
-    */
-    public static final Property DESCRIPTION = Property.composite(DublinCore.DESCRIPTION, 
-            new Property[] { Property.internalText(Metadata.DESCRIPTION) });
     
    /**
     * @see DublinCore#LANGUAGE
@@ -113,20 +95,64 @@ public interface TikaCoreProperties {
             new Property[] { Property.internalText(Metadata.SOURCE) });
     
    /**
-    * @see DublinCore#SUBJECT
-    */
-    public static final Property SUBJECT = Property.composite(DublinCore.SUBJECT, 
-            new Property[] { Property.internalText(Metadata.SUBJECT) });
-    
-   /**
-    * @see DublinCore#TITLE
-    */
-    public static final Property TITLE = Property.composite(DublinCore.TITLE, 
-            new Property[] { Property.internalText(Metadata.TITLE) });
-    
-   /**
     * @see DublinCore#TYPE
     */
     public static final Property TYPE = Property.composite(DublinCore.TYPE, 
             new Property[] { Property.internalText(Metadata.TYPE) });
+
+    
+    // Descriptive properties
+    
+    /**
+     * @see DublinCore#TITLE
+     */
+    public static final Property TITLE = Property.composite(DublinCore.TITLE, 
+            new Property[] { Property.internalText(Metadata.TITLE) });
+     
+    /**
+     * @see DublinCore#DESCRIPTION
+     */
+    public static final Property DESCRIPTION = Property.composite(DublinCore.DESCRIPTION, 
+            new Property[] { Property.internalText(Metadata.DESCRIPTION) });
+     
+    /**
+     * @see DublinCore#SUBJECT
+     */
+    public static final Property SUBJECT = Property.composite(DublinCore.SUBJECT, 
+            new Property[] { Property.internalText(Metadata.SUBJECT) });
+      
+    
+    // Date related properties
+    
+    /**
+     * @see DublinCore#DATE
+     */
+     public static final Property DATE = Property.composite(DublinCore.DATE, 
+             new Property[] { Metadata.DATE });
+     
+    /**
+     * @see DublinCore#MODIFIED
+     */
+     public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED, 
+             new Property[] { Property.internalText(Metadata.MODIFIED) });
+     
+     // TODO Bring across additional date properties from MSOffice, once they're namespaced
+    
+     
+    // Geographic related properties
+     
+    /**
+     * @see Geographic#LATITUDE
+     */
+    public static final Property LATITUDE = Geographic.LATITUDE;
+    
+    /**
+     * @see Geographic#LONGITUDE
+     */
+    public static final Property LONGITUDE = Geographic.LONGITUDE;
+    
+    /**
+     * @see Geographic#ALTITUDE
+     */
+    public static final Property ALTITUDE = Geographic.ALTITUDE;
 }
