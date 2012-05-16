@@ -76,7 +76,7 @@ public class OOXMLExtractorFactory {
             
             // Get the type, and ensure it's one we handle
             MediaType type = ZipContainerDetector.detectOfficeOpenXML(pkg);
-            if (type != null && OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
+            if (type == null || OOXMLParser.UNSUPPORTED_OOXML_TYPES.contains(type)) {
                // Not a supported type, delegate to Empty Parser 
                EmptyParser.INSTANCE.parse(stream, baseHandler, metadata, context);
                return;
