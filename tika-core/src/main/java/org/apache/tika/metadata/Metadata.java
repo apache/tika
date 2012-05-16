@@ -146,9 +146,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     }
 
     /**
-     * Returns a ISO 8601 representation of the given date. This method is
-     * synchronized to prevent concurrent access to the thread-unsafe date
-     * formats.
+     * Returns a ISO 8601 representation of the given date. This method 
+     * is thread safe and non-blocking.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      * @param date given date
