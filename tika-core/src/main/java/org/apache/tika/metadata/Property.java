@@ -136,6 +136,20 @@ public final class Property implements Comparable<Property> {
     public boolean isExternal() {
         return !internal;
     }
+    
+    /**
+     * Is the PropertyType one which accepts multiple values?
+     */
+    public boolean isMultiValuePermitted() {
+        if (propertyType == PropertyType.BAG || propertyType == PropertyType.SEQ ||
+            propertyType == PropertyType.ALT) {
+           return true;
+        } else if (propertyType == PropertyType.COMPOSITE) {
+           // Base it on the primary property's behaviour
+           return primaryProperty.isMultiValuePermitted();
+        }
+        return false;
+    }
 
     public PropertyType getPropertyType() {
         return propertyType;
