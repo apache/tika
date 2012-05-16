@@ -29,7 +29,6 @@ import org.apache.poi.util.LittleEndian;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -40,37 +39,10 @@ import org.xml.sax.SAXException;
 /**
  * Parser for executable files. Currently supports ELF and PE
  */
-public class ExecutableParser extends AbstractParser {
-
+public class ExecutableParser extends AbstractParser implements MachineMetadata {
     /** Serial version UID */
     private static final long serialVersionUID = 32128791892482l;
 
-    // TODO Put these somewhere more general
-    public static final String MACHINE_x86_32 = "x86-32";
-    public static final String MACHINE_x86_64 = "x86-64";
-    public static final String MACHINE_IA_64 = "IA-64";
-    public static final String MACHINE_UNKNOWN = "Unknown";
-    // TODO The rest
-    public static Property MACHINE_TYPE = Property.internalClosedChoise("machine", 
-          new String[] { MACHINE_x86_32, MACHINE_x86_64, MACHINE_UNKNOWN });
-    
-    public static Property ARCHITECTURE = Property.internalClosedChoise("architecture", 
-          new String[] { "32", "64" });
-    
-    public static final class Endian {
-       private String name;
-       private boolean msb;
-       public String getName() { return name; }
-       public boolean isMSB() { return msb; }
-       public String getMSB() { if(msb) { return "MSB"; } else { return "LSB"; } }
-       private Endian(String name, boolean msb) { this.name = name; this.msb = msb; }
-       
-       public static final Endian LITTLE_ENDIAN = new Endian("Little", false);
-       public static final Endian BIG_ENDIAN = new Endian("Big", true);
-    }
-    public static Property ENDIAN = Property.internalClosedChoise("endian", 
-          new String[] { Endian.LITTLE_ENDIAN.name, Endian.BIG_ENDIAN.name });
-    
     private static final MediaType PE_EXE = MediaType.application("x-msdownload");
     private static final MediaType ELF_GENERAL = MediaType.application("x-elf");
     private static final MediaType ELF_OBJECT = MediaType.application("x-object");
@@ -159,20 +131,20 @@ public class ExecutableParser extends AbstractParser {
        switch(machine) {
          case 0x14c:
             metadata.set(MACHINE_TYPE, MACHINE_x86_32);
-            metadata.set(ENDIAN, Endian.LITTLE_ENDIAN.name);
-            metadata.set(ARCHITECTURE, "32");
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "32");
             break;
 
          case 0x8664:
             metadata.set(MACHINE_TYPE, MACHINE_x86_32);
-            metadata.set(ENDIAN, Endian.LITTLE_ENDIAN.name);
-            metadata.set(ARCHITECTURE, "64");
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "64");
             break;
 
          case 0x200:
             metadata.set(MACHINE_TYPE, MACHINE_IA_64);
-            metadata.set(ENDIAN, Endian.LITTLE_ENDIAN.name);
-            metadata.set(ARCHITECTURE, "64");
+            metadata.set(ENDIAN, Endian.LITTLE.getName());
+            metadata.set(ARCHITECTURE_BITS, "64");
             break;
             
          default:
@@ -189,17 +161,17 @@ public class ExecutableParser extends AbstractParser {
        // Byte 5 is the architecture
        int architecture = stream.read();
        if (architecture == 1) {
-          metadata.set(ARCHITECTURE, "32");
+          metadata.set(ARCHITECTURE_BITS, "32");
        } else if (architecture == 2) {
-          metadata.set(ARCHITECTURE, "64");          
+          metadata.set(ARCHITECTURE_BITS, "64");          
        }
        
        // Byte 6 is the endian-ness
        int endian = stream.read();
        if (endian == 1) {
-          metadata.set(ENDIAN, Endian.LITTLE_ENDIAN.name);
+          metadata.set(ENDIAN, Endian.LITTLE.getName());
        } else if (endian == 2) {
-          metadata.set(ENDIAN, Endian.BIG_ENDIAN.name);
+          metadata.set(ENDIAN, Endian.BIG.getName());
        }
        
        // Byte 7 is the elf version
