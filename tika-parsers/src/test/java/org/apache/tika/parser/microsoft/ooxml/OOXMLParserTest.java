@@ -151,11 +151,11 @@ public class OOXMLParserTest extends TikaTest {
      *  such as presentation, macro-enabled etc
      */
     public void testPowerPoint() throws Exception {
-	String[] extensions = new String[] {
-		"pptx", "pptm", "ppsm", "ppsx", "potm"
-		//"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2 
-		//"xps" // TIKA-418: Not yet supported by POI
-	};
+       String[] extensions = new String[] {
+             "pptx", "pptm", "ppsm", "ppsx", "potm"
+             //"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2 
+             //"xps" // TIKA-418: Not yet supported by POI
+       };
 
         String[] mimeTypes = new String[] {
                 "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -216,7 +216,46 @@ public class OOXMLParserTest extends TikaTest {
             } finally {
                 input.close();
             }
-	}
+        }
+    }
+    
+    /**
+     * For the PowerPoint formats we don't currently support, ensure that
+     *  we don't break either
+     */
+    public void testUnsupportedPowerPoint() throws Exception {
+       String[] extensions = new String[] { "xps", "thmx" };
+       String[] mimeTypes = new String[] {
+             "application/vnd.ms-xpsdocument",
+             "application/vnd.openxmlformats-officedocument" // Is this right?
+       };
+       
+       for (int i=0; i<extensions.length; i++) {
+          String extension = extensions[i];
+          String filename = "testPPT." + extension;
+          String mimetype = mimeTypes[i];
+
+          Parser parser = new AutoDetectParser();
+          Metadata metadata = new Metadata();
+          metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+          ContentHandler handler = new BodyContentHandler();
+          ParseContext context = new ParseContext();
+  
+          InputStream input = getTestDocument(filename);
+          try {
+              parser.parse(input, handler, metadata, context);
+
+              // Should get the metadata
+              assertEquals(
+                    "Mime-type checking for " + filename,
+                    mimeTypes[i],
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+              // But that's about it
+          } finally {
+             input.close();
+         }
+       }
     }
     
     /**
