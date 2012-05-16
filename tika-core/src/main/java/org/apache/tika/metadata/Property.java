@@ -37,12 +37,12 @@ import java.util.TreeSet;
 public final class Property implements Comparable<Property> {
 
     public static enum PropertyType {
-        SIMPLE, STRUCTURE, BAG, SEQ, ALT
+        SIMPLE, STRUCTURE, BAG, SEQ, ALT, COMPOSITE
     }
 
     public static enum ValueType {
         BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER, LOCALE,
-        MIME_TYPE, PROPER_NAME, RATIONAL, REAL, TEXT, URI, URL, XPATH
+        MIME_TYPE, PROPER_NAME, RATIONAL, REAL, TEXT, URI, URL, XPATH, PROPERTY
     }
 
     private static final Map<String, Property> properties =
@@ -55,6 +55,10 @@ public final class Property implements Comparable<Property> {
     private final PropertyType propertyType;
 
     private final ValueType valueType;
+    
+    private final Property primaryProperty;
+    
+    private final Property[] secondaryExtractProperties;
 
     /**
      * The available choices for the open and closed choice value types.
@@ -63,7 +67,7 @@ public final class Property implements Comparable<Property> {
 
     private Property(
             String name, boolean internal, PropertyType propertyType,
-            ValueType valueType, String[] choices) {
+            ValueType valueType, String[] choices, Property primaryProperty, Property[] secondaryExtractProperties) {
         this.name = name;
         this.internal = internal;
         this.propertyType = propertyType;
@@ -74,10 +78,25 @@ public final class Property implements Comparable<Property> {
         } else {
             this.choices = null;
         }
-
-        synchronized (properties) {
-            properties.put(name, this);
+        
+        if (primaryProperty != null) {
+            this.primaryProperty = primaryProperty;
+            this.secondaryExtractProperties = secondaryExtractProperties;
+        } else {
+            this.primaryProperty = this;
+            this.secondaryExtractProperties = null;
+            
+            // Only store primary properties for lookup, not composites
+            synchronized (properties) {
+               properties.put(name, this);
+           }
         }
+    }
+    
+    private Property(
+            String name, boolean internal, PropertyType propertyType,
+            ValueType valueType, String[] choices) {
+    	this(name, internal, propertyType, valueType, choices, null, null);
     }
 
     private Property(
@@ -95,7 +114,7 @@ public final class Property implements Comparable<Property> {
             PropertyType propertyType, ValueType valueType) {
         this(name, internal, propertyType, valueType, null);
     }
-
+    
     public String getName() {
         return name;
     }
@@ -126,7 +145,25 @@ public final class Property implements Comparable<Property> {
     public Set<String> getChoices() {
         return choices;
     }
+    
+    /**
+     * Gets the primary property for a composite property
+     * 
+     * @return the primary property
+     */
+    public Property getPrimaryProperty() {
+        return primaryProperty;
+    }
 
+    /**
+     * Gets the secondary properties for a composite property
+     * 
+     * @return the secondary properties
+     */
+    public Property[] getSecondaryExtractProperties() {
+		return secondaryExtractProperties;
+	}
+    
     public static SortedSet<Property> getProperties(String prefix) {
         SortedSet<Property> set = new TreeSet<Property>();
         String p = prefix + ":";
@@ -208,6 +245,41 @@ public final class Property implements Comparable<Property> {
 
     public static Property externalText(String name) {
         return new Property(name, false, ValueType.TEXT);
+    }
+    
+    /**
+     * Constructs a new composite property from the given primary and array of secondary properties.
+     * <p>
+     * Note that name of the composite property is taken from its primary property, 
+     * and primary and secondary properties must not be composite properties themselves.
+     * 
+     * @param primaryProperty
+     * @param secondaryExtractProperties
+     * @return the composite property
+     */
+    public static Property composite(Property primaryProperty, Property[] secondaryExtractProperties) {
+        if (primaryProperty == null) {
+            throw new NullPointerException("primaryProperty must not be null");
+        }
+        if (primaryProperty.getPropertyType() == PropertyType.COMPOSITE) {
+            throw new PropertyTypeException(primaryProperty.getPropertyType());
+        }
+        if (secondaryExtractProperties != null) {
+            for (Property secondaryExtractProperty : secondaryExtractProperties) {
+                if (secondaryExtractProperty.getPropertyType() == PropertyType.COMPOSITE) {
+                    throw new PropertyTypeException(secondaryExtractProperty.getPropertyType());
+                }
+            }
+        }
+        String[] choices = null;
+        if (primaryProperty.getChoices() != null) {
+            choices = primaryProperty.getChoices().toArray(
+                    new String[primaryProperty.getChoices().size()]);
+        }
+        return new Property(primaryProperty.getName(),
+                primaryProperty.isInternal(), PropertyType.COMPOSITE,
+                ValueType.PROPERTY, choices, primaryProperty,
+                secondaryExtractProperties);
     }
 
     //----------------------------------------------------------< Comparable >

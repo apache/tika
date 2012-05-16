@@ -330,4 +330,14 @@ public class TestMetadata extends TestCase {
         		"1970-01-01T00:00:01", meta.get(Metadata.DATE));
     }
     
+    public void testCompositeProperty() {
+    	Metadata meta = new Metadata();
+    	Property compositeProperty = Property.composite(
+            DublinCore.DESCRIPTION, new Property[] { Property.internalText(Metadata.DESCRIPTION)});
+    	String message = "composite description";
+    	meta.set(compositeProperty, message);
+    	assertEquals(message, meta.get(DublinCore.DESCRIPTION));
+    	assertEquals(message, meta.get(Metadata.DESCRIPTION));
+    }
+    
 }
