@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TimeZone;
 
+import org.apache.tika.metadata.Property.PropertyType;
+
 /**
  * A multi-valued metadata container.
  */
@@ -348,7 +350,19 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @param value    property value
      */
     public void set(Property property, String value) {
-        set(property.getName(), value);
+        if (property == null) {
+            throw new NullPointerException("property must not be null");
+        }
+        if (property.getPropertyType() == PropertyType.COMPOSITE) {
+            set(property.getPrimaryProperty(), value);
+            if (property.getSecondaryExtractProperties() != null) {
+                for (Property secondaryExtractProperty : property.getSecondaryExtractProperties()) {
+                    set(secondaryExtractProperty, value);
+                }
+            }
+        } else {
+            set(property.getName(), value);
+        }
     }
 
     /**

@@ -34,4 +34,9 @@ public final class PropertyTypeException extends IllegalArgumentException {
     public PropertyTypeException(ValueType expected, ValueType found) {
         super("Expected a property with a " + expected + " value, but received a " + found);
     }
+    public PropertyTypeException(PropertyType unsupportedPropertyType) {
+    	super((unsupportedPropertyType != PropertyType.COMPOSITE) ? 
+    			(unsupportedPropertyType + " is not supported") : 
+    			("Composite Properties must not include other Composite Properties as either Primary or Secondary"));
+    }
 }
