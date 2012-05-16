@@ -45,7 +45,7 @@ public class ExecutableParserTest extends TestCase {
             assertEquals("Little", 
                   metadata.get(ExecutableParser.ENDIAN));
             assertEquals("32", 
-                  metadata.get(ExecutableParser.ARCHITECTURE));
+                  metadata.get(ExecutableParser.ARCHITECTURE_BITS));
 
             String content = handler.toString();
             assertEquals("", content); // No text yet
@@ -70,7 +70,7 @@ public class ExecutableParserTest extends TestCase {
          assertEquals("Little", 
                metadata.get(ExecutableParser.ENDIAN));
          assertEquals("32", 
-               metadata.get(ExecutableParser.ARCHITECTURE));
+               metadata.get(ExecutableParser.ARCHITECTURE_BITS));
 
          String content = handler.toString();
          assertEquals("", content); // No text yet
