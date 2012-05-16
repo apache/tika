@@ -366,7 +366,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         if(property.getValueType() != Property.ValueType.INTEGER) {
             throw new PropertyTypeException(Property.ValueType.INTEGER, property.getValueType());
         }
-        set(property.getName(), Integer.toString(value));
+        set(property, Integer.toString(value));
     }
 
     /**
@@ -384,7 +384,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
               property.getValueType() != Property.ValueType.RATIONAL) {
             throw new PropertyTypeException(Property.ValueType.REAL, property.getValueType());
         }
-        set(property.getName(), Double.toString(value));
+        set(property, Double.toString(value));
     }
 
     /**
@@ -401,7 +401,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         if(property.getValueType() != Property.ValueType.DATE) {
             throw new PropertyTypeException(Property.ValueType.DATE, property.getValueType());
         }
-        set(property.getName(), formatDate(date));
+        set(property, formatDate(date));
     }
 
     /**
