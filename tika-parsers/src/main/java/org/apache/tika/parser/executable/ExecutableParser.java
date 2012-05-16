@@ -250,61 +250,63 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
        // Byte 7 is the elf version
        int elfVer = stream.read();
        
-       // Byte 8 is the OS
+       // Byte 8 is the OS, if set (lots of compilers don't)
        // Byte 9 is the OS (specific) ABI version
        int os = stream.read();
        int osVer = stream.read();
-       // TODO Fix up, doesn't seem to be working
-//       switch (os) {
-//         case 0:
-//            metadata.set(PLATFORM, PLATFORM_SYSV);
-//            break;
-//            
-//         case 1:
-//            metadata.set(PLATFORM, PLATFORM_HPUX);
-//            break;
-//            
-//         case 2:
-//            metadata.set(PLATFORM, PLATFORM_NETBSD);
-//            break;
-//            
-//         case 3:
-//            metadata.set(PLATFORM, PLATFORM_LINUX);
-//            break;
-//            
-//         case 6:
-//            metadata.set(PLATFORM, PLATFORM_SOLARIS);
-//            break;
-//            
-//         case 7:
-//            metadata.set(PLATFORM, PLATFORM_AIX);
-//            break;
-//            
-//         case 8:
-//            metadata.set(PLATFORM, PLATFORM_IRIX);
-//            break;
-//            
-//         case 9:
-//            metadata.set(PLATFORM, PLATFORM_FREEBSD);
-//            break;
-//            
-//         case 10:
-//            metadata.set(PLATFORM, PLATFORM_TRU64);
-//            break;
-//            
-//         case 12:
-//            metadata.set(PLATFORM, PLATFORM_FREEBSD);
-//            break;
-//            
-//         case 64:
-//         case 97:
-//            metadata.set(PLATFORM, PLATFORM_ARM);
-//            break;
-//            
-//         case 255:
-//            metadata.set(PLATFORM, PLATFORM_EMBEDDED);
-//            break;
-//       }
+       if (os > 0 || osVer > 0)
+       {
+          switch (os) {
+          case 0:
+             metadata.set(PLATFORM, PLATFORM_SYSV);
+             break;
+
+          case 1:
+             metadata.set(PLATFORM, PLATFORM_HPUX);
+             break;
+
+          case 2:
+             metadata.set(PLATFORM, PLATFORM_NETBSD);
+             break;
+
+          case 3:
+             metadata.set(PLATFORM, PLATFORM_LINUX);
+             break;
+
+          case 6:
+             metadata.set(PLATFORM, PLATFORM_SOLARIS);
+             break;
+
+          case 7:
+             metadata.set(PLATFORM, PLATFORM_AIX);
+             break;
+
+          case 8:
+             metadata.set(PLATFORM, PLATFORM_IRIX);
+             break;
+
+          case 9:
+             metadata.set(PLATFORM, PLATFORM_FREEBSD);
+             break;
+
+          case 10:
+             metadata.set(PLATFORM, PLATFORM_TRU64);
+             break;
+
+          case 12:
+             metadata.set(PLATFORM, PLATFORM_FREEBSD);
+             break;
+
+          case 64:
+          case 97:
+             metadata.set(PLATFORM, PLATFORM_ARM);
+             break;
+
+          case 255:
+             metadata.set(PLATFORM, PLATFORM_EMBEDDED);
+             break;
+          }
+       }
        
        // Bytes 10-16 are padding and lengths
        byte[] padLength = new byte[7];
@@ -395,6 +397,8 @@ public class ExecutableParser extends AbstractParser implements MachineMetadata 
             metadata.set(MACHINE_TYPE, MACHINE_M32R);
             break;
        }
+       
+       
        
        // Bytes 20-23 are the version
        // TODO
