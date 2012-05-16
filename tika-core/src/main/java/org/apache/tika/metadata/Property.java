@@ -37,7 +37,17 @@ import java.util.TreeSet;
 public final class Property implements Comparable<Property> {
 
     public static enum PropertyType {
-        SIMPLE, STRUCTURE, BAG, SEQ, ALT, COMPOSITE
+        /** A single value */
+        SIMPLE, 
+        STRUCTURE, 
+        /** An un-ordered array */
+        BAG, 
+        /** An ordered array */
+        SEQ, 
+        /** An ordered array with some sort of criteria */
+        ALT, 
+        /** Multiple child properties */
+        COMPOSITE
     }
 
     public static enum ValueType {
