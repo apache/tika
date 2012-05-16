@@ -46,6 +46,8 @@ public class ExecutableParserTest extends TestCase {
                   metadata.get(ExecutableParser.ENDIAN));
             assertEquals("32", 
                   metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+            assertEquals("Windows", 
+                  metadata.get(ExecutableParser.PLATFORM));
 
             String content = handler.toString();
             assertEquals("", content); // No text yet
@@ -71,6 +73,8 @@ public class ExecutableParserTest extends TestCase {
                metadata.get(ExecutableParser.ENDIAN));
          assertEquals("32", 
                metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+//         assertEquals("Linux", 
+//               metadata.get(ExecutableParser.PLATFORM));
 
          String content = handler.toString();
          assertEquals("", content); // No text yet
