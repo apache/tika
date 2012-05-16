@@ -72,6 +72,14 @@ public class TestMetadata extends TestCase {
         assertEquals("value1", values[0]);
         assertEquals("value2", values[1]);
         assertEquals("value1", values[2]);
+        
+        Property nonMultiValued = Property.internalText("nonMultiValued");
+        meta.add(nonMultiValued, "value1");
+        try {
+            meta.add(nonMultiValued, "value2");
+            fail("add should fail on the second call of a non-multi valued item");
+        } catch (PropertyTypeException e) {
+        }
     }
 
     /** Test for the <code>set(String, String)</code> method. */

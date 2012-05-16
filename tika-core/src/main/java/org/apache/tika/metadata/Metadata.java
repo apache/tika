@@ -290,6 +290,13 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         }
         return values;
     }
+    
+    private String[] appendedValues(String[] values, final String value) {
+        String[] newValues = new String[values.length + 1];
+        System.arraycopy(values, 0, newValues, 0, values.length);
+        newValues[newValues.length - 1] = value;
+        return newValues;
+    }
 
     /**
      * Add a metadata name/value mapping. Add the specified value to the list of
@@ -305,10 +312,29 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         if (values == null) {
             set(name, value);
         } else {
-            String[] newValues = new String[values.length + 1];
-            System.arraycopy(values, 0, newValues, 0, values.length);
-            newValues[newValues.length - 1] = value;
-            metadata.put(name, newValues);
+            metadata.put(name, appendedValues(values, value));
+        }
+    }
+    
+    /**
+     * Add a metadata property/value mapping. Add the specified value to the list of
+     * values associated to the specified metadata property.
+     * 
+     * @param property
+     *          the metadata property.
+     * @param value
+     *          the metadata value.
+     */
+    public void add(final Property property, final String value) {
+        String[] values = metadata.get(property.getName());
+        if (values == null) {
+            set(property.getName(), value);
+        } else {
+             if (property.isMultiValuePermitted()) {
+                 set(property, appendedValues(values, value));
+             } else {
+                 throw new PropertyTypeException(property.getPropertyType());
+             }
         }
     }
 
@@ -362,6 +388,29 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
             }
         } else {
             set(property.getName(), value);
+        }
+    }
+    
+    /**
+     * Sets the values of the identified metadata property.
+     *
+     * @since Apache Tika 1.2
+     * @param property property definition
+     * @param values    property values
+     */
+    public void set(Property property, String[] values) {
+        if (property == null) {
+            throw new NullPointerException("property must not be null");
+        }
+        if (property.getPropertyType() == PropertyType.COMPOSITE) {
+            set(property.getPrimaryProperty(), values);
+            if (property.getSecondaryExtractProperties() != null) {
+                for (Property secondaryExtractProperty : property.getSecondaryExtractProperties()) {
+                    set(secondaryExtractProperty, values);
+                }
+            }
+        } else {
+            metadata.put(property.getName(), values);
         }
     }
 
