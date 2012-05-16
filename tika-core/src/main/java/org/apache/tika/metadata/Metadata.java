@@ -34,7 +34,7 @@ import java.util.TimeZone;
 /**
  * A multi-valued metadata container.
  */
-public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHeaders,
+public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         IPTC, Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys,
         Serializable {
 
@@ -45,6 +45,29 @@ public class Metadata implements CreativeCommons, DublinCore, Geographic, HttpHe
      * A map of all metadata attributes.
      */
     private Map<String, String[]> metadata = null;
+
+    /**
+     * The common delimiter used between the namespace abbreviation and the property name
+     */
+    public static final String NAMESPACE_PREFIX_DELIMITER = ":";
+
+    // These properties are being moved to a new Tika core properties definition, javadocs will be added once it's available
+    @Deprecated public static final String FORMAT = "format";
+    @Deprecated public static final String IDENTIFIER = "identifier";
+    @Deprecated public static final String MODIFIED = "modified";
+    @Deprecated public static final String CONTRIBUTOR = "contributor";
+    @Deprecated public static final String COVERAGE = "coverage";
+    @Deprecated public static final String CREATOR = "creator";
+    @Deprecated public static final Property DATE = Property.internalDate("date");
+    @Deprecated public static final String DESCRIPTION = "description";
+    @Deprecated public static final String LANGUAGE = "language";
+    @Deprecated public static final String PUBLISHER = "publisher";
+    @Deprecated public static final String RELATION = "relation";
+    @Deprecated public static final String RIGHTS = "rights";
+    @Deprecated public static final String SOURCE = "source";
+    @Deprecated public static final String SUBJECT = "subject";
+    @Deprecated public static final String TITLE = "title";
+    @Deprecated public static final String TYPE = "type";
 
     /**
      * The UTC time zone. Not sure if {@link TimeZone#getTimeZone(String)}
