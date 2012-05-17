@@ -198,7 +198,7 @@ public class MboxParser extends AbstractParser {
         String headerContent = headerMatcher.group(2);
 
         if (headerTag.equalsIgnoreCase("From")) {
-            metadata.add(Metadata.AUTHOR, headerContent);
+            metadata.add(TikaCoreProperties.AUTHOR, headerContent);
             metadata.set(TikaCoreProperties.CREATOR, headerContent);
         } else if (headerTag.equalsIgnoreCase("To") ||
         	headerTag.equalsIgnoreCase("Cc") ||

@@ -64,9 +64,9 @@ public class ProjectParserTest extends TestCase {
        
        assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(TikaCoreProperties.SUBJECT));
-       assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
-       assertEquals("", metadata.get(Metadata.LAST_AUTHOR));
-       assertEquals("Pangram, fox, dog", metadata.get(Metadata.KEYWORDS));
+       assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.AUTHOR));
+       assertEquals("", metadata.get(TikaCoreProperties.LAST_AUTHOR));
+       assertEquals("Pangram, fox, dog", metadata.get(TikaCoreProperties.KEYWORDS));
        assertEquals("Comment Vulpes vulpes comment", metadata.get(Metadata.COMMENTS));
        
        assertEquals("Category1", metadata.get(Metadata.CATEGORY));

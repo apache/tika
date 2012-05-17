@@ -40,7 +40,7 @@ public class PublisherParserTest extends TestCase {
                     "application/x-mspublisher",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Nick Burch", metadata.get(Metadata.AUTHOR));
+            assertEquals("Nick Burch", metadata.get(TikaCoreProperties.AUTHOR));
             String content = handler.toString();
             assertTrue(content.contains("0123456789"));
             assertTrue(content.contains("abcdef"));

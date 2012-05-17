@@ -144,7 +144,7 @@ public class JpegParserTest extends TestCase {
         // embedded comments with non-ascii characters
         assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
-        assertEquals("Some Tourist", metadata.get(Metadata.AUTHOR));
+        assertEquals("Some Tourist", metadata.get(TikaCoreProperties.AUTHOR));
         assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR)); // Dublin Core
         // xmp handles spaces in keywords, returns "bird watching, nature reserve, coast, grazelands"
         // but we have to replace them with underscore

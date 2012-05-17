@@ -97,7 +97,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            String subject = msg.getSubject();
            String from = msg.getDisplayFrom();
    
-           metadata.set(Metadata.AUTHOR, from);
+           metadata.set(TikaCoreProperties.AUTHOR, from);
            metadata.set(Metadata.MESSAGE_FROM, from);
            metadata.set(Metadata.MESSAGE_TO, msg.getDisplayTo());
            metadata.set(Metadata.MESSAGE_CC, msg.getDisplayCC());

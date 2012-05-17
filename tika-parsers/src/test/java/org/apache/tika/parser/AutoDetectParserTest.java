@@ -28,6 +28,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.BodyContentHandler;
@@ -277,6 +278,8 @@ public class AutoDetectParserTest extends TestCase {
              // Check some of the common metadata
              assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
              assertEquals("Test Title", metadata.get(Metadata.TITLE));
+//             assertEquals("Test Artist", metadata.get(TikaCoreProperties.AUTHOR));
+//             assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
              
              // Check some of the XMPDM metadata
              assertEquals("Test Album", metadata.get(XMPDM.ALBUM));

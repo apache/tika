@@ -155,7 +155,7 @@ public class RTFParserTest extends TikaTest {
         // title info field:
         assertEquals("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f\u3000",
                      r.metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("VMazel", r.metadata.get(Metadata.AUTHOR));
+        assertEquals("VMazel", r.metadata.get(TikaCoreProperties.AUTHOR));
         assertEquals("StarWriter", r.metadata.get(Metadata.COMMENT));
         assertContains("1.", content);
         assertContains("4.", content);
@@ -264,7 +264,7 @@ public class RTFParserTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                     r.metadata.get(Metadata.KEYWORDS));
+                     r.metadata.get(TikaCoreProperties.KEYWORDS));
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",

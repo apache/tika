@@ -453,7 +453,7 @@ public class ImageMetadataExtractor {
                 metadata.set(TikaCoreProperties.TITLE, directory.getString(IptcDirectory.TAG_OBJECT_NAME));
             }
             if (directory.containsTag(IptcDirectory.TAG_BY_LINE)) {
-                metadata.set(Metadata.AUTHOR, directory.getString(IptcDirectory.TAG_BY_LINE));
+                metadata.set(TikaCoreProperties.AUTHOR, directory.getString(IptcDirectory.TAG_BY_LINE));
             }
             if (directory.containsTag(IptcDirectory.TAG_CAPTION)) {
                 metadata.set(TikaCoreProperties.DESCRIPTION,

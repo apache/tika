@@ -206,7 +206,7 @@ class NumbersContentHandler extends DefaultHandler {
 
     private Property resolveMetadataKey(String localName) {
         if ("authors".equals(localName)) {
-            return Property.internalText(Metadata.AUTHOR);
+            return TikaCoreProperties.AUTHOR;
         }
         if ("title".equals(localName)) {
             return TikaCoreProperties.TITLE;

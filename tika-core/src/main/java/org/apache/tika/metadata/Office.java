@@ -61,9 +61,9 @@ public interface Office {
          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "last-author");
 
    /**
-    * Name of the principal author of a document
+    * Name of the principal author(s) of a document
     */
-   Property AUTHOR = Property.internalText(
+   Property AUTHOR = Property.internalTextBag(
          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "author");
 
    

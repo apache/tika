@@ -72,7 +72,7 @@ public class MboxParserTest extends TestCase {
 
             assertEquals("subject", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("subject", metadata.get(TikaCoreProperties.SUBJECT));
-            assertEquals("<author@domain.com>", metadata.get(Metadata.AUTHOR));
+            assertEquals("<author@domain.com>", metadata.get(TikaCoreProperties.AUTHOR));
             assertEquals("<author@domain.com>", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals(null, metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
             assertEquals("<name@domain.com>", metadata.get("MboxParser-return-path"));
@@ -136,7 +136,7 @@ public class MboxParserTest extends TestCase {
 
             assertEquals("Re: question about when shuffle/sort start working", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Re: question about when shuffle/sort start working", metadata.get(TikaCoreProperties.SUBJECT));
-            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(Metadata.AUTHOR));
+            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(TikaCoreProperties.AUTHOR));
             assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("core-user@hadoop.apache.org", metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
             

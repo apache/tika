@@ -28,6 +28,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.AutoDetectParser;
@@ -59,7 +60,7 @@ public class OOXMLParserTest extends TikaTest {
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
+            assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.AUTHOR));
             String content = handler.toString();
             assertTrue(content.contains("Sample Excel Worksheet"));
             assertTrue(content.contains("Numbers and their Squares"));
@@ -186,7 +187,7 @@ public class OOXMLParserTest extends TikaTest {
                         mimeTypes[i],
                         metadata.get(Metadata.CONTENT_TYPE));
                 assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
-                assertEquals("Rajiv", metadata.get(Metadata.AUTHOR));
+                assertEquals("Rajiv", metadata.get(TikaCoreProperties.AUTHOR));
                 
                 String content = handler.toString();
                 // Theme files don't have the text in them
@@ -275,7 +276,7 @@ public class OOXMLParserTest extends TikaTest {
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
+            assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.AUTHOR));
             assertTrue(handler.toString().contains("Sample Word Document"));
         } finally {
             input.close();
@@ -346,7 +347,7 @@ public class OOXMLParserTest extends TikaTest {
                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                    metadata.get(Metadata.CONTENT_TYPE));
       assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
-      assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
+      assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.AUTHOR));
       assertTrue(xml.contains("Sample Word Document"));
             
       // Check that custom headings came through
@@ -728,8 +729,8 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals(
              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
              metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals(null,                   metadata.get(Metadata.AUTHOR));
-       assertEquals(null,                   metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals(null,                   metadata.get(TikaCoreProperties.AUTHOR));
+       assertEquals(null,                   metadata.get(TikaCoreProperties.LAST_AUTHOR));
        assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.DATE));
        assertEquals("2006-09-12T15:06:44Z", metadata.get(Metadata.CREATION_DATE));
        assertEquals("2011-08-22T14:24:38Z", metadata.get(Metadata.LAST_MODIFIED));
@@ -757,16 +758,16 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals(
              "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
              metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("EJ04325S",             metadata.get(Metadata.AUTHOR));
-       assertEquals("Etienne Jouvin",       metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.AUTHOR));
+       assertEquals("Etienne Jouvin",       metadata.get(TikaCoreProperties.LAST_AUTHOR));
        assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.DATE));
-       assertEquals("2011-07-29T16:52:00Z", metadata.get(Metadata.CREATION_DATE));
-       assertEquals("2012-01-03T22:14:00Z", metadata.get(Metadata.LAST_MODIFIED));
+       assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.CREATION_DATE));
+       assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
        assertEquals("Microsoft Office Word",metadata.get(Metadata.APPLICATION_NAME));
-       assertEquals("1",                    metadata.get(Metadata.PAGE_COUNT));
-       assertEquals("2",                    metadata.get(Metadata.WORD_COUNT));
+       assertEquals("1",                    metadata.get(Office.PAGE_COUNT));
+       assertEquals("2",                    metadata.get(Office.WORD_COUNT));
        assertEquals("My Title",             metadata.get(TikaCoreProperties.TITLE));
-       assertEquals("My Keyword",           metadata.get(Metadata.KEYWORDS));
+       assertEquals("My Keyword",           metadata.get(TikaCoreProperties.KEYWORDS));
        assertEquals("Normal.dotm",          metadata.get(Metadata.TEMPLATE));
        assertEquals("My subject",           metadata.get(TikaCoreProperties.SUBJECT));
        assertEquals("EDF-DIT",              metadata.get(TikaCoreProperties.PUBLISHER));
@@ -793,13 +794,13 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals(
              "application/vnd.openxmlformats-officedocument.presentationml.presentation", 
              metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("JOUVIN ETIENNE",       metadata.get(Metadata.AUTHOR));
-       assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
+       assertEquals("JOUVIN ETIENNE",       metadata.get(TikaCoreProperties.AUTHOR));
+       assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.LAST_AUTHOR));
        assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.DATE));
-       assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
-       assertEquals("2011-08-22T13:32:49Z", metadata.get(Metadata.LAST_MODIFIED));
-       assertEquals("1",                    metadata.get(Metadata.SLIDE_COUNT));
-       assertEquals("3",                    metadata.get(Metadata.WORD_COUNT));
+       assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATION_DATE));
+       assertEquals("2011-08-22T13:32:49Z", metadata.get(TikaCoreProperties.MODIFIED));
+       assertEquals("1",                    metadata.get(Office.SLIDE_COUNT));
+       assertEquals("3",                    metadata.get(Office.WORD_COUNT));
        assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
        assertEquals("3",                    metadata.get("custom:myCustomNumber"));
