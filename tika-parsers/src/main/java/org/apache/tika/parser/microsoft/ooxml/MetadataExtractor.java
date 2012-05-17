@@ -28,6 +28,7 @@ import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -68,26 +69,28 @@ public class MetadataExtractor {
                 .getContentStatusProperty());
         addProperty(metadata, TikaCoreProperties.DATE, propsHolder
                 .getCreatedProperty());
-        addProperty(metadata, Metadata.CREATION_DATE, propsHolder
+        addProperty(metadata, TikaCoreProperties.CREATION_DATE, propsHolder
                 .getCreatedProperty());
         addProperty(metadata, TikaCoreProperties.CREATOR, propsHolder
                 .getCreatorProperty());
-        addProperty(metadata, Metadata.AUTHOR, propsHolder
+        addProperty(metadata, TikaCoreProperties.AUTHOR, propsHolder
                 .getCreatorProperty());
         addProperty(metadata, TikaCoreProperties.DESCRIPTION, propsHolder
                 .getDescriptionProperty());
         addProperty(metadata, TikaCoreProperties.IDENTIFIER, propsHolder
                 .getIdentifierProperty());
-        addProperty(metadata, Metadata.KEYWORDS, propsHolder
+        addProperty(metadata, TikaCoreProperties.KEYWORDS, propsHolder
                 .getKeywordsProperty());
         addProperty(metadata, TikaCoreProperties.LANGUAGE, propsHolder
                 .getLanguageProperty());
-        addProperty(metadata, Metadata.LAST_AUTHOR, propsHolder
+        addProperty(metadata, TikaCoreProperties.LAST_AUTHOR, propsHolder
                 .getLastModifiedByProperty());
-        addProperty(metadata, Metadata.LAST_PRINTED, propsHolder
+        addProperty(metadata, TikaCoreProperties.PRINT_DATE, propsHolder
                 .getLastPrintedProperty());
         addProperty(metadata, Metadata.LAST_MODIFIED, propsHolder
                 .getModifiedProperty());
+        addProperty(metadata, TikaCoreProperties.MODIFIED, propsHolder
+              .getModifiedProperty());
         addProperty(metadata, Metadata.REVISION_NUMBER, propsHolder
                 .getRevisionProperty());
         addProperty(metadata, TikaCoreProperties.SUBJECT, propsHolder
@@ -104,27 +107,27 @@ public class MetadataExtractor {
                 .getApplication());
         addProperty(metadata, Metadata.APPLICATION_VERSION, propsHolder
                 .getAppVersion());
-        addProperty(metadata, Metadata.CHARACTER_COUNT, propsHolder
+        addProperty(metadata, Office.CHARACTER_COUNT, propsHolder
                 .getCharacters());
-        addProperty(metadata, Metadata.CHARACTER_COUNT_WITH_SPACES, propsHolder
+        addProperty(metadata, Office.CHARACTER_COUNT_WITH_SPACES, propsHolder
                 .getCharactersWithSpaces());
         addProperty(metadata, TikaCoreProperties.PUBLISHER, propsHolder.getCompany());
-        addProperty(metadata, Metadata.LINE_COUNT, propsHolder.getLines());
+        addProperty(metadata, Office.LINE_COUNT, propsHolder.getLines());
         addProperty(metadata, Metadata.MANAGER, propsHolder.getManager());
         addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
-        addProperty(metadata, Metadata.PAGE_COUNT, propsHolder.getPages());
+        addProperty(metadata, Office.PAGE_COUNT, propsHolder.getPages());
         if (propsHolder.getPages() > 0) {
             metadata.set(PagedText.N_PAGES, propsHolder.getPages());
         } else if (propsHolder.getSlides() > 0) {
             metadata.set(PagedText.N_PAGES, propsHolder.getSlides());
         }
-        addProperty(metadata, Metadata.PARAGRAPH_COUNT, propsHolder.getParagraphs());
+        addProperty(metadata, Office.PARAGRAPH_COUNT, propsHolder.getParagraphs());
         addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder
                 .getPresentationFormat());
-        addProperty(metadata, Metadata.SLIDE_COUNT, propsHolder.getSlides());
+        addProperty(metadata, Office.SLIDE_COUNT, propsHolder.getSlides());
         addProperty(metadata, Metadata.TEMPLATE, propsHolder.getTemplate());
         addProperty(metadata, Metadata.TOTAL_TIME, propsHolder.getTotalTime());
-        addProperty(metadata, Metadata.WORD_COUNT, propsHolder.getWords());
+        addProperty(metadata, Office.WORD_COUNT, propsHolder.getWords());
     }
 
     private void extractMetadata(CustomProperties properties,

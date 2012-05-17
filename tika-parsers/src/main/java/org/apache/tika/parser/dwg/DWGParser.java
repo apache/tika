@@ -56,7 +56,7 @@ public class DWGParser extends AbstractParser {
     private static final Property[] HEADER_PROPERTIES_ENTRIES = {
         TikaCoreProperties.TITLE, 
         TikaCoreProperties.SUBJECT,
-        Property.internalText(Metadata.AUTHOR),
+        TikaCoreProperties.AUTHOR,
         TikaCoreProperties.KEYWORDS,
         Property.internalText(Metadata.COMMENTS),
         TikaCoreProperties.LAST_AUTHOR,
@@ -70,7 +70,7 @@ public class DWGParser extends AbstractParser {
        TikaCoreProperties.RELATION, // 0x01
        TikaCoreProperties.TITLE,    // 0x02
        TikaCoreProperties.SUBJECT,  // 0x03
-       Property.internalText(Metadata.AUTHOR),  // 0x04
+       TikaCoreProperties.AUTHOR,   // 0x04
        null,
        Property.internalText(Metadata.COMMENTS),// 0x06 
        TikaCoreProperties.KEYWORDS,    // 0x07

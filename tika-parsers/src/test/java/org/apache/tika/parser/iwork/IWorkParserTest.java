@@ -23,6 +23,7 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -57,15 +58,16 @@ public class IWorkParserTest extends TestCase {
         List<String> metadataKeys = Arrays.asList(metadata.names());
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.CONTENT_TYPE));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.SLIDE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.AUTHOR));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.TITLE));
+//        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Office.SLIDE_COUNT.getName()));
+        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.AUTHOR.getName()));
+        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
         
         // Check the metadata values
         assertEquals("application/vnd.apple.keynote", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("3", metadata.get(Metadata.SLIDE_COUNT));
         assertEquals("1024", metadata.get(KeynoteContentHandler.PRESENTATION_WIDTH));
         assertEquals("768", metadata.get(KeynoteContentHandler.PRESENTATION_HEIGHT));
-        assertEquals("Tika user", metadata.get(Metadata.AUTHOR));
+        assertEquals("Tika user", metadata.get(TikaCoreProperties.AUTHOR));
         assertEquals("Apache tika", metadata.get(TikaCoreProperties.TITLE));
 
         String content = handler.toString();
@@ -100,14 +102,14 @@ public class IWorkParserTest extends TestCase {
         List<String> metadataKeys = Arrays.asList(metadata.names());
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.CONTENT_TYPE));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.PAGE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.AUTHOR));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.TITLE));
+        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.AUTHOR.getName()));
+        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.LAST_MODIFIED.getName()));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.LANGUAGE));
         
         // Check the metadata values
         assertEquals("application/vnd.apple.pages", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Tika user", metadata.get(Metadata.AUTHOR));
+        assertEquals("Tika user", metadata.get(TikaCoreProperties.AUTHOR));
         assertEquals("Apache tika", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("2010-05-09T21:34:38+0200", metadata.get(Metadata.CREATION_DATE));
         assertEquals("2010-05-09T23:50:36+0200", metadata.get(Metadata.LAST_MODIFIED));
@@ -148,14 +150,14 @@ public class IWorkParserTest extends TestCase {
         List<String> metadataKeys = Arrays.asList(metadata.names());
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.CONTENT_TYPE));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.PAGE_COUNT.getName()));
-        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.AUTHOR));
+        assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.AUTHOR.getName()));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.COMMENT));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(Metadata.TITLE));
         assertTrue("Metadata not found in " + metadataKeys, metadataKeys.contains(TikaCoreProperties.TITLE.getName()));
         
         // Check the metadata values
         assertEquals("2", metadata.get(Metadata.PAGE_COUNT));
-        assertEquals("Tika User", metadata.get(Metadata.AUTHOR));
+        assertEquals("Tika User", metadata.get(TikaCoreProperties.AUTHOR));
         assertEquals("Account checking", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("a comment", metadata.get(Metadata.COMMENT));
 

@@ -826,13 +826,13 @@ final class TextExtractor {
                 // \printim, \version, \nofpages, \nofwords,
                 // \nofchars, etc.
                 if (equals("author")) {
-                    nextMetaData = Metadata.AUTHOR;
+                    nextMetaData = TikaCoreProperties.AUTHOR.getName();
                 } else if (equals("title")) {
                     nextMetaData = TikaCoreProperties.TITLE.getName();
                 } else if (equals("subject")) {
                     nextMetaData = TikaCoreProperties.SUBJECT.getName();
                 } else if (equals("keywords")) {
-                    nextMetaData = Metadata.KEYWORDS;
+                    nextMetaData = TikaCoreProperties.KEYWORDS.getName();
                 } else if (equals("category")) {
                     nextMetaData = Metadata.CATEGORY;
                 } else if (equals("comment")) {

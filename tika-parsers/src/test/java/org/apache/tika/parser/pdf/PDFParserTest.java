@@ -53,7 +53,7 @@ public class PDFParserTest extends TikaTest {
         }
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(Metadata.AUTHOR));
+        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.AUTHOR));
         assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
         
         // Can't reliably test dates yet - see TIKA-451 
@@ -87,7 +87,7 @@ public class PDFParserTest extends TikaTest {
         }
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Document author", metadata.get(Metadata.AUTHOR));
+        assertEquals("Document author", metadata.get(TikaCoreProperties.AUTHOR));
         assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
         
         assertEquals("Custom Value", metadata.get("Custom Property"));
@@ -120,7 +120,7 @@ public class PDFParserTest extends TikaTest {
        }
 
        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
+       assertEquals("The Bank of England", metadata.get(TikaCoreProperties.AUTHOR));
        assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
@@ -150,7 +150,7 @@ public class PDFParserTest extends TikaTest {
        }
 
        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
+       assertEquals("The Bank of England", metadata.get(TikaCoreProperties.AUTHOR));
        assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 

@@ -74,7 +74,8 @@ public interface TikaCoreProperties {
     /**
      * @see Office#AUTHOR
      */
-    public static final Property AUTHOR = Office.AUTHOR;
+    public static final Property AUTHOR = Property.composite(Office.AUTHOR,
+          new Property[] { Property.internalText(MSOffice.AUTHOR) });
 
     /**
      * @see Office#LAST_AUTHOR
@@ -158,7 +159,7 @@ public interface TikaCoreProperties {
      * @see DublinCore#MODIFIED
      */
      public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED, 
-             new Property[] { Property.internalText(Metadata.MODIFIED) });
+             new Property[] { Property.internalText(Metadata.MODIFIED), Property.internalText("Last-Modified") });
      
      /** @see Office#CREATION_DATE */
      public static final Property CREATION_DATE = Property.composite(Office.CREATION_DATE,

@@ -33,6 +33,7 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -92,25 +93,25 @@ class SummaryExtractor {
 
     private void parse(SummaryInformation summary) {
         set(TikaCoreProperties.TITLE, summary.getTitle());
-        set(Metadata.AUTHOR, summary.getAuthor());
-        set(Metadata.KEYWORDS, summary.getKeywords());
+        set(TikaCoreProperties.AUTHOR, summary.getAuthor());
+        set(TikaCoreProperties.KEYWORDS, summary.getKeywords());
         set(TikaCoreProperties.SUBJECT, summary.getSubject());
-        set(Metadata.LAST_AUTHOR, summary.getLastAuthor());
+        set(TikaCoreProperties.LAST_AUTHOR, summary.getLastAuthor());
         set(Metadata.COMMENTS, summary.getComments());
         set(Metadata.TEMPLATE, summary.getTemplate());
         set(Metadata.APPLICATION_NAME, summary.getApplicationName());
         set(Metadata.REVISION_NUMBER, summary.getRevNumber());
-        set(Metadata.CREATION_DATE, summary.getCreateDateTime());
-        set(Metadata.CHARACTER_COUNT, summary.getCharCount());
+        set(TikaCoreProperties.CREATION_DATE, summary.getCreateDateTime());
+        set(TikaCoreProperties.SAVE_DATE, summary.getLastSaveDateTime());
+        set(TikaCoreProperties.PRINT_DATE, summary.getLastPrinted());
         set(Metadata.EDIT_TIME, summary.getEditTime());
-        set(Metadata.LAST_SAVED, summary.getLastSaveDateTime());
-        set(Metadata.PAGE_COUNT, summary.getPageCount());
+        set(Office.CHARACTER_COUNT, summary.getCharCount());
+        set(Office.PAGE_COUNT, summary.getPageCount());
         if (summary.getPageCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getPageCount());
         }
         set(Metadata.SECURITY, summary.getSecurity());
-        set(Metadata.WORD_COUNT, summary.getWordCount());
-        set(Metadata.LAST_PRINTED, summary.getLastPrinted());
+        set(Office.WORD_COUNT, summary.getWordCount());
     }
 
     private void parse(DocumentSummaryInformation summary) {
@@ -118,7 +119,7 @@ class SummaryExtractor {
         set(Metadata.MANAGER, summary.getManager());
         set(TikaCoreProperties.LANGUAGE, getLanguage(summary));
         set(Metadata.CATEGORY, summary.getCategory());
-        set(Metadata.SLIDE_COUNT, summary.getSlideCount());
+        set(Office.SLIDE_COUNT, summary.getSlideCount());
         if (summary.getSlideCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getSlideCount());
         }

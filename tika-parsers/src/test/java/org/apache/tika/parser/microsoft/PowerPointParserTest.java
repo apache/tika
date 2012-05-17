@@ -21,6 +21,7 @@ import java.util.Locale;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -40,7 +41,7 @@ public class PowerPointParserTest extends TikaTest {
                     "application/vnd.ms-powerpoint",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Sample Powerpoint Slide", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
+            assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.AUTHOR));
             String content = handler.toString();
             assertTrue(content.contains("Sample Powerpoint Slide"));
             assertTrue(content.contains("Powerpoint X for Mac"));
@@ -198,12 +199,12 @@ public class PowerPointParserTest extends TikaTest {
        }
        
        assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("JOUVIN ETIENNE",       metadata.get(Metadata.AUTHOR));
-       assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
-       assertEquals("2011-08-22T13:32:58Z", metadata.get(Metadata.LAST_SAVED));
-       assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
-       assertEquals("1",                    metadata.get(Metadata.SLIDE_COUNT));
-       assertEquals("3",                    metadata.get(Metadata.WORD_COUNT));
+       assertEquals("JOUVIN ETIENNE",       metadata.get(TikaCoreProperties.AUTHOR));
+       assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.LAST_AUTHOR));
+       assertEquals("2011-08-22T13:32:58Z", metadata.get(TikaCoreProperties.SAVE_DATE));
+       assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATION_DATE));
+       assertEquals("1",                    metadata.get(Office.SLIDE_COUNT));
+       assertEquals("3",                    metadata.get(Office.WORD_COUNT));
        assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
        assertEquals("3",                    metadata.get("custom:myCustomNumber"));

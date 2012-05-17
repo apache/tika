@@ -54,8 +54,8 @@ public class MP4ParserTest extends TestCase {
         // Check core properties
         assertEquals("audio/mp4", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
-        assertEquals("2012-01-28T18:39:18Z", metadata.get(Metadata.CREATION_DATE));
+        assertEquals("Test Artist", metadata.get(TikaCoreProperties.AUTHOR));
+        assertEquals("2012-01-28T18:39:18Z", metadata.get(TikaCoreProperties.CREATION_DATE));
         assertEquals("2012-01-28T18:40:25Z", metadata.get(TikaCoreProperties.MODIFIED));
 
         // Check the textual contents

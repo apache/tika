@@ -154,21 +154,22 @@ public class PDFParser extends AbstractParser {
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
         addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
-        addMetadata(metadata, Metadata.AUTHOR, info.getAuthor());
+        addMetadata(metadata, TikaCoreProperties.AUTHOR, info.getAuthor());
         addMetadata(metadata, TikaCoreProperties.CREATOR, info.getCreator());
-        addMetadata(metadata, Metadata.KEYWORDS, info.getKeywords());
+        addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
         addMetadata(metadata, "producer", info.getProducer());
         addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
         addMetadata(metadata, "trapped", info.getTrapped());
         try {
             addMetadata(metadata, "created", info.getCreationDate());
-            addMetadata(metadata, Metadata.CREATION_DATE, info.getCreationDate());
+            addMetadata(metadata, TikaCoreProperties.CREATION_DATE, info.getCreationDate());
         } catch (IOException e) {
             // Invalid date format, just ignore
         }
         try {
             Calendar modified = info.getModificationDate(); 
             addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
+            addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
         } catch (IOException e) {
             // Invalid date format, just ignore
         }

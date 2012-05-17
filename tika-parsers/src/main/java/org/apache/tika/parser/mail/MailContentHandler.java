@@ -147,7 +147,7 @@ class MailContentHandler implements ContentHandler {
                     for (int i = 0; i < mailboxList.size(); i++) {
                         String from = getDisplayString(mailboxList.get(i));
                         metadata.add(Metadata.MESSAGE_FROM, from);
-                        metadata.add(Metadata.AUTHOR, from);
+                        metadata.add(TikaCoreProperties.AUTHOR, from);
                     }
                 } else {
                     String from = stripOutFieldPrefix(field, "From:");
@@ -158,7 +158,7 @@ class MailContentHandler implements ContentHandler {
                         from = from.substring(0, from.length() - 1);
                     }
                     metadata.add(Metadata.MESSAGE_FROM, from);
-                    metadata.add(Metadata.AUTHOR, from);
+                    metadata.add(TikaCoreProperties.AUTHOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
                 metadata.add(TikaCoreProperties.SUBJECT,

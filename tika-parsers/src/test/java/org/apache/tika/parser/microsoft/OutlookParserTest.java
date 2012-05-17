@@ -65,7 +65,7 @@ public class OutlookParserTest extends TestCase {
                 metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
         assertEquals(
                 "L'\u00C9quipe Microsoft Outlook Express",
-                metadata.get(Metadata.AUTHOR));
+                metadata.get(TikaCoreProperties.AUTHOR));
         
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals(

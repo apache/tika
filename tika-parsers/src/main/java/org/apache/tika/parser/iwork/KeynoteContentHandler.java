@@ -93,7 +93,7 @@ class KeynoteContentHandler extends DefaultHandler {
         } else if (inMetaDataTitle && "key:string".equals(qName)) {
             metadata.set(TikaCoreProperties.TITLE, attributes.getValue("sfa:string"));
         } else if (inMetaDataAuthors && "key:string".equals(qName)) {
-            metadata.add(Metadata.AUTHOR, attributes.getValue("sfa:string"));
+            metadata.add(TikaCoreProperties.AUTHOR, attributes.getValue("sfa:string"));
         } else if (inSlide && "sf:tabular-model".equals(qName)) {
             tableId = attributes.getValue("sfa:ID");
             xhtml.startElement("table");

@@ -73,7 +73,7 @@ public class Mp3Parser extends AbstractParser {
            CompositeTagHandler tag = new CompositeTagHandler(audioAndTags.tags);
 
            metadata.set(TikaCoreProperties.TITLE, tag.getTitle());
-           metadata.set(Metadata.AUTHOR, tag.getArtist());
+           metadata.set(TikaCoreProperties.AUTHOR, tag.getArtist());
            metadata.set(XMPDM.ARTIST, tag.getArtist());
            metadata.set(XMPDM.COMPOSER, tag.getComposer());
            metadata.set(XMPDM.ALBUM, tag.getAlbum());
