@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -173,7 +174,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
             }
             
             super.startElement(XHTML, "title", "title", EMPTY_ATTRIBUTES);
-            String title = metadata.get(Metadata.TITLE);
+            String title = metadata.get(TikaCoreProperties.TITLE);
             if (title != null && title.length() > 0) {
                 char[] titleChars = title.toCharArray();
                 super.characters(titleChars, 0, titleChars.length);
