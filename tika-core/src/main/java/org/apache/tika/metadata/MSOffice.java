@@ -17,7 +17,10 @@
 package org.apache.tika.metadata;
 
 /**
- * A collection of Microsoft Office documents property names.
+ * A collection of Microsoft Office and Open Document property names.
+ * 
+ * This is being replaced with cleaner, better defined properties in
+ *  {@link Office}.
  */
 public interface MSOffice {
 
