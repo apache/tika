@@ -20,6 +20,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Test case for parsing Java class files.
@@ -32,7 +33,7 @@ public class ClassParserTest extends TestCase {
         String content = new Tika().parseToString(
                 ClassParserTest.class.getResourceAsStream(path), metadata);
 
-        assertEquals("AutoDetectParser", metadata.get(Metadata.TITLE));
+        assertEquals("AutoDetectParser", metadata.get(TikaCoreProperties.TITLE));
         assertEquals(
                 "AutoDetectParser.class",
                 metadata.get(Metadata.RESOURCE_NAME_KEY));

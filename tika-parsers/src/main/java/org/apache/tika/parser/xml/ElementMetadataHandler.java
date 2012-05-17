@@ -82,7 +82,7 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
 
     public ElementMetadataHandler(
             String uri, String localName, Metadata metadata, Property targetProperty) {
-    	super(metadata, targetProperty.getName());
+        super(metadata, targetProperty);
         this.uri = uri;
         this.localName = localName;
         this.metadata = metadata;
@@ -164,12 +164,11 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         if (logger.isTraceEnabled()) {
             logger.trace("adding " + name + "=" + value);
         }
-        if (targetProperty != null && targetProperty.getPropertyType() != null &&
-             targetProperty.getPropertyType() == Property.PropertyType.BAG) {
+        if (targetProperty != null && targetProperty.isMultiValuePermitted()) {
             if (value != null && value.length() > 0) {
                 String[] previous = metadata.getValues(name);
                 if (previous == null || !Arrays.asList(previous).contains(value)) {
-                    metadata.add(name, value);
+                    metadata.add(targetProperty, value);
                 }
             }
         } else {

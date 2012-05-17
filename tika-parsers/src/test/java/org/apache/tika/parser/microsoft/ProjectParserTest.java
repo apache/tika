@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -61,8 +62,8 @@ public class ProjectParserTest extends TestCase {
                "application/vnd.ms-project",
                metadata.get(Metadata.CONTENT_TYPE));
        
-       assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(Metadata.TITLE));
-       assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(Metadata.SUBJECT));
+       assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
+       assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(TikaCoreProperties.SUBJECT));
        assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
        assertEquals("", metadata.get(Metadata.LAST_AUTHOR));
        assertEquals("Pangram, fox, dog", metadata.get(Metadata.KEYWORDS));

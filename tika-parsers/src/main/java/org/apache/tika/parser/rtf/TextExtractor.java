@@ -32,6 +32,7 @@ import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.CharsetUtils;
 import org.xml.sax.SAXException;
@@ -827,9 +828,9 @@ final class TextExtractor {
                 if (equals("author")) {
                     nextMetaData = Metadata.AUTHOR;
                 } else if (equals("title")) {
-                    nextMetaData = Metadata.TITLE;
+                    nextMetaData = TikaCoreProperties.TITLE.getName();
                 } else if (equals("subject")) {
-                    nextMetaData = Metadata.SUBJECT;
+                    nextMetaData = TikaCoreProperties.SUBJECT.getName();
                 } else if (equals("keywords")) {
                     nextMetaData = Metadata.KEYWORDS;
                 } else if (equals("category")) {

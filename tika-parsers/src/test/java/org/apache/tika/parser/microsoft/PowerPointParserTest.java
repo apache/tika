@@ -21,6 +21,7 @@ import java.util.Locale;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -38,7 +39,7 @@ public class PowerPointParserTest extends TikaTest {
             assertEquals(
                     "application/vnd.ms-powerpoint",
                     metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Sample Powerpoint Slide", metadata.get(Metadata.TITLE));
+            assertEquals("Sample Powerpoint Slide", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
             String content = handler.toString();
             assertTrue(content.contains("Sample Powerpoint Slide"));
@@ -104,7 +105,7 @@ public class PowerPointParserTest extends TikaTest {
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
-                     metadata.get(Metadata.SUBJECT));
+                     metadata.get(TikaCoreProperties.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
@@ -203,7 +204,7 @@ public class PowerPointParserTest extends TikaTest {
        assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
        assertEquals("1",                    metadata.get(Metadata.SLIDE_COUNT));
        assertEquals("3",                    metadata.get(Metadata.WORD_COUNT));
-       assertEquals("Test extraction properties pptx", metadata.get(Metadata.TITLE));
+       assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
        assertEquals("3",                    metadata.get("custom:myCustomNumber"));
        assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));

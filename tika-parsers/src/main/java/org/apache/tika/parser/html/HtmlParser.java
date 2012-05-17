@@ -148,7 +148,7 @@ public class HtmlParser extends AbstractParser {
                 String language = match.getLanguage();
                 if (language != null) {
                     metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
-                    metadata.set(Metadata.LANGUAGE, match.getLanguage());
+                    metadata.set(TikaCoreProperties.LANGUAGE, match.getLanguage());
                 }
                 */
                 

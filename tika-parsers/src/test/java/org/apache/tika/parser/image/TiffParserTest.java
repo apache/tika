@@ -22,6 +22,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.InputStream;
@@ -41,7 +42,7 @@ public class TiffParserTest extends TestCase {
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or " +
         		"more contributor license agreements.  See the NOTICE file " +
         		"distributed with this work for additional information regarding " +
-        		"copyright ownership.", metadata.get(Metadata.DESCRIPTION));
+        		"copyright ownership.", metadata.get(TikaCoreProperties.DESCRIPTION));
         
         // All EXIF/TIFF tags
         assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
@@ -53,7 +54,7 @@ public class TiffParserTest extends TestCase {
         assertEquals("3", metadata.get(Metadata.SAMPLES_PER_PIXEL));
         
         // Embedded XMP
-        List<String> subject = Arrays.asList(metadata.getValues(Metadata.SUBJECT));
+        List<String> subject = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
         assertTrue("got " + subject, subject.contains("cat"));
         assertTrue("got " + subject, subject.contains("garden"));
     }

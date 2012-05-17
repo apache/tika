@@ -21,6 +21,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -41,8 +42,8 @@ public class FeedParserTest extends TestCase {
             assertFalse(content == null);
 
             assertEquals("Sample RSS File for Junit test",
-                    metadata.get(Metadata.DESCRIPTION));
-            assertEquals("TestChannel", metadata.get(Metadata.TITLE));
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("TestChannel", metadata.get(TikaCoreProperties.TITLE));
 
             // TODO find a way of testing the paragraphs and anchors
 

@@ -20,8 +20,8 @@ import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 
-import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
@@ -66,7 +66,7 @@ public class ImageMetadataExtractorTest extends TestCase {
         Metadata metadata = new Metadata();
         
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Should be ISO date without time zone", "2000-01-01T00:00:00", metadata.get(Metadata.DATE));
+        assertEquals("Should be ISO date without time zone", "2000-01-01T00:00:00", metadata.get(TikaCoreProperties.DATE));
     }
 
     public void testExifHandlerParseDateFallback() throws MetadataException {
@@ -77,7 +77,7 @@ public class ImageMetadataExtractorTest extends TestCase {
         Metadata metadata = new Metadata();
         
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Should try EXIF Date/Time if Original is not set", "1999-01-01T00:00:00", metadata.get(Metadata.DATE));
+        assertEquals("Should try EXIF Date/Time if Original is not set", "1999-01-01T00:00:00", metadata.get(TikaCoreProperties.DATE));
     }
     
     public void testExifHandlerParseDateError() throws MetadataException {
@@ -88,7 +88,7 @@ public class ImageMetadataExtractorTest extends TestCase {
         Metadata metadata = new Metadata();
         
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Parsing should proceed without date", null, metadata.get(Metadata.DATE));
+        assertEquals("Parsing should proceed without date", null, metadata.get(TikaCoreProperties.DATE));
     }
     
     public void testCopyUnknownFieldsHandler() throws MetadataException {
@@ -100,7 +100,7 @@ public class ImageMetadataExtractorTest extends TestCase {
         when(t2.getTagName()).thenReturn(Metadata.KEYWORDS);
         when(t2.getDescription()).thenReturn("known");
         Tag t3 = mock(Tag.class);
-        when(t3.getTagName()).thenReturn(Metadata.DESCRIPTION);
+        when(t3.getTagName()).thenReturn(TikaCoreProperties.DESCRIPTION.getName());
         when(t3.getDescription()).thenReturn("known");
         Iterator<Tag> tags = Arrays.asList(t1, t2, t3).iterator();
         when(d.getTagIterator()).thenReturn(tags);
@@ -109,7 +109,7 @@ public class ImageMetadataExtractorTest extends TestCase {
         assertEquals("t1", metadata.get("Image Description"));
         assertNull("keywords should be excluded from bulk copy because it is a defined field",
                 metadata.get(Metadata.KEYWORDS));
-        assertNull(metadata.get(Metadata.DESCRIPTION));
+        assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
     }
     
 }

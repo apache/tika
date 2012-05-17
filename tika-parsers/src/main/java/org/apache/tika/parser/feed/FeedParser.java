@@ -26,6 +26,7 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -72,8 +73,8 @@ public class FeedParser extends AbstractParser {
             String title = stripTags(feed.getTitleEx());
             String description = stripTags(feed.getDescriptionEx());
 
-            metadata.set(Metadata.TITLE, title);
-            metadata.set(Metadata.DESCRIPTION, description);
+            metadata.set(TikaCoreProperties.TITLE, title);
+            metadata.set(TikaCoreProperties.DESCRIPTION, description);
             // store the other fields in the metadata
 
             XHTMLContentHandler xhtml =

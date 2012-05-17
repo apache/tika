@@ -21,6 +21,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -38,34 +39,34 @@ public class DcXMLParserTest extends TestCase {
             assertEquals(
                     "application/xml",
                     metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Tika test document", metadata.get(Metadata.TITLE));
-            assertEquals("Rida Benjelloun", metadata.get(Metadata.CREATOR));
+            assertEquals("Tika test document", metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("Rida Benjelloun", metadata.get(TikaCoreProperties.CREATOR));
             
             // The file contains 5 dc:subject tags, which come through as
             //  a multi-valued Tika Metadata entry in file order
-            assertEquals(true, metadata.isMultiValued(Metadata.SUBJECT));
-            assertEquals(5,      metadata.getValues(Metadata.SUBJECT).length);
-            assertEquals("Java", metadata.getValues(Metadata.SUBJECT)[0]);
-            assertEquals("XML",  metadata.getValues(Metadata.SUBJECT)[1]);
-            assertEquals("XSLT", metadata.getValues(Metadata.SUBJECT)[2]);
-            assertEquals("JDOM", metadata.getValues(Metadata.SUBJECT)[3]);
-            assertEquals("Indexation", metadata.getValues(Metadata.SUBJECT)[4]);
+            assertEquals(true, metadata.isMultiValued(TikaCoreProperties.SUBJECT));
+            assertEquals(5,      metadata.getValues(TikaCoreProperties.SUBJECT).length);
+            assertEquals("Java", metadata.getValues(TikaCoreProperties.SUBJECT)[0]);
+            assertEquals("XML",  metadata.getValues(TikaCoreProperties.SUBJECT)[1]);
+            assertEquals("XSLT", metadata.getValues(TikaCoreProperties.SUBJECT)[2]);
+            assertEquals("JDOM", metadata.getValues(TikaCoreProperties.SUBJECT)[3]);
+            assertEquals("Indexation", metadata.getValues(TikaCoreProperties.SUBJECT)[4]);
 
             assertEquals(
                     "Framework d\'indexation des documents XML, HTML, PDF etc..",
-                    metadata.get(Metadata.DESCRIPTION));
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
             assertEquals(
                     "http://www.apache.org",
-                    metadata.get(Metadata.IDENTIFIER));
-            assertEquals("test", metadata.get(Metadata.TYPE));
-            assertEquals("application/msword", metadata.get(Metadata.FORMAT));
-            assertEquals("Fr", metadata.get(Metadata.LANGUAGE));
-            assertTrue(metadata.get(Metadata.RIGHTS).contains("testing chars"));
+                    metadata.get(TikaCoreProperties.IDENTIFIER));
+            assertEquals("test", metadata.get(TikaCoreProperties.TYPE));
+            assertEquals("application/msword", metadata.get(TikaCoreProperties.FORMAT));
+            assertEquals("Fr", metadata.get(TikaCoreProperties.LANGUAGE));
+            assertTrue(metadata.get(TikaCoreProperties.RIGHTS).contains("testing chars"));
 
             String content = handler.toString();
             assertTrue(content.contains("Tika test document"));
             
-            assertEquals("2000-12-01T00:00:00.000Z", metadata.get(Metadata.DATE));
+            assertEquals("2000-12-01T00:00:00.000Z", metadata.get(TikaCoreProperties.DATE));
         } finally {
             input.close();
         }
@@ -78,7 +79,7 @@ public class DcXMLParserTest extends TestCase {
             new DcXMLParser().parse(input, new DefaultHandler(), metadata);
             
             final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
-            assertEquals(expected,metadata.get(Metadata.RIGHTS));
+            assertEquals(expected,metadata.get(TikaCoreProperties.RIGHTS));
         } finally {
             input.close();
         }

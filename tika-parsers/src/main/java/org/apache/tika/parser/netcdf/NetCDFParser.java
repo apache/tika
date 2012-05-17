@@ -26,6 +26,8 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -86,12 +88,12 @@ public class NetCDFParser extends AbstractParser {
 
             // first parse out the set of global attributes
             for (Attribute attr : ncFile.getGlobalAttributes()) {
-                String attrName = attr.getName();
+                Property property = resolveMetadataKey(attr.getName());
                 if (attr.getDataType().isString()) {
-                    metadata.add(attrName, attr.getStringValue());
+                    metadata.add(property, attr.getStringValue());
                 } else if (attr.getDataType().isNumeric()) {
                     int value = attr.getNumericValue().intValue();
-                    metadata.add(attrName, String.valueOf(value));
+                    metadata.add(property, String.valueOf(value));
                 }
             }
         } catch (IOException e) {
@@ -101,6 +103,13 @@ public class NetCDFParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();
+    }
+    
+    private Property resolveMetadataKey(String localName) {
+        if ("title".equals(localName)) {
+            return TikaCoreProperties.TITLE;
+        }
+        return Property.internalText(localName);
     }
 
 }

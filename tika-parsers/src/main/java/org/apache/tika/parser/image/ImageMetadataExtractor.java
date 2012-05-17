@@ -33,6 +33,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.SAXException;
 
 import com.drew.imaging.jpeg.JpegProcessingException;
@@ -300,9 +301,9 @@ public class ImageMetadataExtractor {
          * Use IPTC for other annotation fields, and XMP for unicode support.
          */
         public void handleCommentTags(Directory directory, Metadata metadata) {
-            if (metadata.get(Metadata.DESCRIPTION) == null &&
+            if (metadata.get(TikaCoreProperties.DESCRIPTION) == null &&
                     directory.containsTag(ExifDirectory.TAG_IMAGE_DESCRIPTION)) {
-                metadata.set(Metadata.DESCRIPTION, directory.getString(ExifDirectory.TAG_IMAGE_DESCRIPTION));
+                metadata.set(TikaCoreProperties.DESCRIPTION, directory.getString(ExifDirectory.TAG_IMAGE_DESCRIPTION));
             }
         }
         /**
@@ -415,7 +416,7 @@ public class ImageMetadataExtractor {
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.format(original); // Same time zone as Metadata Extractor uses
-                metadata.set(Metadata.DATE, datetimeNoTimeZone);
+                metadata.set(TikaCoreProperties.DATE, datetimeNoTimeZone);
                 metadata.set(Metadata.ORIGINAL_DATE, datetimeNoTimeZone);
             }
             if (directory.containsTag(ExifDirectory.TAG_DATETIME)) {
@@ -424,7 +425,7 @@ public class ImageMetadataExtractor {
                 metadata.set(Metadata.LAST_MODIFIED, datetimeNoTimeZone);
                 // If Date/Time Original does not exist this might be creation date
                 if (original == null) {
-                    metadata.set(Metadata.DATE, datetimeNoTimeZone);
+                    metadata.set(TikaCoreProperties.DATE, datetimeNoTimeZone);
                 }
             }
         }
@@ -447,15 +448,15 @@ public class ImageMetadataExtractor {
                 }
             }
             if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {
-                metadata.set(Metadata.TITLE, directory.getString(IptcDirectory.TAG_HEADLINE));
+                metadata.set(TikaCoreProperties.TITLE, directory.getString(IptcDirectory.TAG_HEADLINE));
             } else if (directory.containsTag(IptcDirectory.TAG_OBJECT_NAME)) {
-                metadata.set(Metadata.TITLE, directory.getString(IptcDirectory.TAG_OBJECT_NAME));
+                metadata.set(TikaCoreProperties.TITLE, directory.getString(IptcDirectory.TAG_OBJECT_NAME));
             }
             if (directory.containsTag(IptcDirectory.TAG_BY_LINE)) {
                 metadata.set(Metadata.AUTHOR, directory.getString(IptcDirectory.TAG_BY_LINE));
             }
             if (directory.containsTag(IptcDirectory.TAG_CAPTION)) {
-                metadata.set(Metadata.DESCRIPTION,
+                metadata.set(TikaCoreProperties.DESCRIPTION,
                         // Looks like metadata extractor returns IPTC newlines as a single carriage return,
                         // but the exiv2 command does not so we change to line feed here because that is less surprising to users                        
                         directory.getString(IptcDirectory.TAG_CAPTION).replaceAll("\r\n?", "\n"));

@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -38,7 +39,7 @@ public class VisioParserTest extends TestCase {
             assertEquals(
                     "application/vnd.visio",
                     metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("", metadata.get(Metadata.TITLE));
+            assertEquals("", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Hogwarts", metadata.get(Metadata.AUTHOR));
             String content = handler.toString();
             assertTrue(content.contains("Some random text, on a page"));
