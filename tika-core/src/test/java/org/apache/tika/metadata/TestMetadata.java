@@ -333,9 +333,9 @@ public class TestMetadata extends TestCase {
     public void testGetSetDateUnspecifiedTimezone() {
         Metadata meta = new Metadata();    
         
-        meta.set(Metadata.DATE, "1970-01-01T00:00:01");
+        meta.set(TikaCoreProperties.DATE, "1970-01-01T00:00:01");
         assertEquals("should return string without time zone specifier because zone is not known",
-        		"1970-01-01T00:00:01", meta.get(Metadata.DATE));
+        		"1970-01-01T00:00:01", meta.get(TikaCoreProperties.DATE));
     }
     
     public void testCompositeProperty() {

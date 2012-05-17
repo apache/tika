@@ -37,7 +37,7 @@ import org.apache.tika.metadata.Property.PropertyType;
  * A multi-valued metadata container.
  */
 public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
-        IPTC, Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys,
+        Message, MSOffice, ClimateForcast, TIFF, TikaMetadataKeys, TikaMimeKeys,
         Serializable {
 
     /** Serial version UID */
@@ -178,6 +178,17 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     /**
      * Returns true if named value is multivalued.
      * 
+     * @param property
+     *          metadata property
+     * @return true is named value is multivalued, false if single value or null
+     */
+    public boolean isMultiValued(final Property property) {
+        return metadata.get(property.getName()) != null && metadata.get(property.getName()).length > 1;
+    }
+    
+    /**
+     * Returns true if named value is multivalued.
+     * 
      * @param name
      *          name of metadata
      * @return true is named value is multivalued, false if single value or null
@@ -270,6 +281,17 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         } else {
             return null;
         }
+    }
+    
+    /**
+     * Get the values associated to a metadata name.
+     * 
+     * @param property
+     *          of the metadata.
+     * @return the values associated to a metadata name.
+     */
+    public String[] getValues(final Property property) {
+        return _getValues(property.getName());
     }
 
     /**
@@ -422,11 +444,11 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @param value    property value
      */
     public void set(Property property, int value) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
+        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getValueType() != Property.ValueType.INTEGER) {
-            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getValueType());
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER, property.getPrimaryProperty().getValueType());
         }
         set(property, Integer.toString(value));
     }
@@ -439,12 +461,12 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @param value    property value
      */
     public void set(Property property, double value) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
+        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getValueType() != Property.ValueType.REAL &&
-              property.getValueType() != Property.ValueType.RATIONAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL, property.getValueType());
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.REAL &&
+              property.getPrimaryProperty().getValueType() != Property.ValueType.RATIONAL) {
+            throw new PropertyTypeException(Property.ValueType.REAL, property.getPrimaryProperty().getValueType());
         }
         set(property, Double.toString(value));
     }
@@ -457,11 +479,11 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @param date     property value
      */
     public void set(Property property, Date date) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
-            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPropertyType());
+        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
         }
-        if(property.getValueType() != Property.ValueType.DATE) {
-            throw new PropertyTypeException(Property.ValueType.DATE, property.getValueType());
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
+            throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
         }
         set(property, formatDate(date));
     }
