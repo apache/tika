@@ -242,10 +242,10 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @return property value as a Integer, or <code>null</code> if the property is not set, or not a valid Integer
      */
     public Integer getInt(Property property) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
+        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             return null;
         }
-        if(property.getValueType() != Property.ValueType.INTEGER) {
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER) {
             return null;
         }
         
@@ -268,10 +268,10 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @return property value as a Date, or <code>null</code> if the property is not set, or not a valid Date
      */
     public Date getDate(Property property) {
-        if(property.getPropertyType() != Property.PropertyType.SIMPLE) {
+        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             return null;
         }
-        if(property.getValueType() != Property.ValueType.DATE) {
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
             return null;
         }
         
