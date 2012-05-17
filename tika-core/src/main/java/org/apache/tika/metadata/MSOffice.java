@@ -24,11 +24,11 @@ package org.apache.tika.metadata;
  */
 public interface MSOffice {
 
-    String KEYWORDS = "Keywords";
+    @Deprecated String KEYWORDS = "Keywords";
 
     String COMMENTS = "Comments";
 
-    String LAST_AUTHOR = "Last-Author";
+    @Deprecated String LAST_AUTHOR = "Last-Author";
 
     String APPLICATION_NAME = "Application-Name";
 
@@ -108,15 +108,15 @@ public interface MSOffice {
     String EDIT_TIME = "Edit-Time"; 
 
     /** When was the document created? */
-    Property CREATION_DATE = 
+    @Deprecated Property CREATION_DATE = 
         Property.internalDate("Creation-Date");
 
     /** When was the document last saved? */
-    Property LAST_SAVED = 
+    @Deprecated Property LAST_SAVED = 
        Property.internalDate("Last-Save-Date");
     
     /** When was the document last printed? */
-    Property LAST_PRINTED = 
+    @Deprecated Property LAST_PRINTED = 
        Property.internalDate("Last-Printed");
     
     /** 

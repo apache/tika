@@ -58,6 +58,7 @@ public interface Office {
    Property LAST_AUTHOR = Property.internalText(
          PREFIX_DOC_META + Metadata.PREFIX_DELIMITER + "last-author");
 
+   
    /** When was the document created? */
    Property CREATION_DATE = Property.internalDate(
          PREFIX_DOC_META + Metadata.PREFIX_DELIMITER + "creation-date");
