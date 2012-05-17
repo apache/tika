@@ -31,6 +31,8 @@ package org.apache.tika.metadata;
  * For now, most of these properties are composite ones including the deprecated
  *  non-prefixed String properties from the Metadata class. In Tika 2.0, most
  *  of these will revert back to simple assignments.
+ * 
+ * @since Apache Tika 1.2
  */
 @SuppressWarnings("deprecation")
 public interface TikaCoreProperties {

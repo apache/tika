@@ -25,6 +25,8 @@ package org.apache.tika.metadata;
  * 
  * Note that some of the legacy properties from the {@link MSOffice}
  *  collection still need to be migrated over
+ *  
+ * @since Apache Tika 1.2
  */
 public interface Office {
    // These are taken from the OpenDocumentFormat specification
