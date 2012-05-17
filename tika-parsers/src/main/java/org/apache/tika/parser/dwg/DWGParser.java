@@ -26,6 +26,8 @@ import org.apache.poi.util.StringUtil;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -51,28 +53,28 @@ public class DWGParser extends AbstractParser {
     }
 
     /** The order of the fields in the header */
-    private static final String[] HEADER_PROPERTIES_ENTRIES = {
-        Metadata.TITLE, 
-        Metadata.SUBJECT,
-        Metadata.AUTHOR,
-        Metadata.KEYWORDS,
-        Metadata.COMMENTS,
-        Metadata.LAST_AUTHOR,
+    private static final Property[] HEADER_PROPERTIES_ENTRIES = {
+        TikaCoreProperties.TITLE, 
+        TikaCoreProperties.SUBJECT,
+        Property.internalText(Metadata.AUTHOR),
+        TikaCoreProperties.KEYWORDS,
+        Property.internalText(Metadata.COMMENTS),
+        TikaCoreProperties.LAST_AUTHOR,
         null, // Unknown?
-        Metadata.RELATION, // Hyperlink
+        TikaCoreProperties.RELATION, // Hyperlink
     };
 
     /** For the 2000 file, they're indexed */
-    private static final String[] HEADER_2000_PROPERTIES_ENTRIES = {
+    private static final Property[] HEADER_2000_PROPERTIES_ENTRIES = {
        null, 
-       Metadata.RELATION, // 0x01
-       Metadata.TITLE,    // 0x02
-       Metadata.SUBJECT,  // 0x03
-       Metadata.AUTHOR,   // 0x04
+       TikaCoreProperties.RELATION, // 0x01
+       TikaCoreProperties.TITLE,    // 0x02
+       TikaCoreProperties.SUBJECT,  // 0x03
+       Property.internalText(Metadata.AUTHOR),  // 0x04
        null,
-       Metadata.COMMENTS, // 0x06 
-       Metadata.KEYWORDS, // 0x07
-       Metadata.LAST_AUTHOR, // 0x08
+       Property.internalText(Metadata.COMMENTS),// 0x06 
+       TikaCoreProperties.KEYWORDS,    // 0x07
+       TikaCoreProperties.LAST_AUTHOR, // 0x08
    };
 
     private static final String HEADER_2000_PROPERTIES_MARKER_STR =
@@ -253,7 +255,7 @@ public class DWGParser extends AbstractParser {
             return;
         }
 
-        String headerProp = HEADER_PROPERTIES_ENTRIES[headerNumber];
+        Property headerProp = HEADER_PROPERTIES_ENTRIES[headerNumber];
         if(headerProp != null) {
             metadata.set(headerProp, value);
         }
