@@ -350,7 +350,7 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     public void add(final Property property, final String value) {
         String[] values = metadata.get(property.getName());
         if (values == null) {
-            set(property.getName(), value);
+            set(property, value);
         } else {
              if (property.isMultiValuePermitted()) {
                  set(property, appendedValues(values, value));
