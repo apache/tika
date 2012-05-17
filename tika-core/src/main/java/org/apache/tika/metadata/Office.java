@@ -60,6 +60,12 @@ public interface Office {
    Property LAST_AUTHOR = Property.internalText(
          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "last-author");
 
+   /**
+    * Name of the principal author of a document
+    */
+   Property AUTHOR = Property.internalText(
+         PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "author");
+
    
    /** When was the document created? */
    Property CREATION_DATE = Property.internalDate(

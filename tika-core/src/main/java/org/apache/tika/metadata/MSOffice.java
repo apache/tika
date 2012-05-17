@@ -30,13 +30,13 @@ public interface MSOffice {
 
     @Deprecated String LAST_AUTHOR = "Last-Author";
 
+    @Deprecated String AUTHOR = "Author";
+
     String APPLICATION_NAME = "Application-Name";
 
     String REVISION_NUMBER = "Revision-Number";
 
     String TEMPLATE = "Template";
-
-    String AUTHOR = "Author";
 
     String TOTAL_TIME = "Total-Time";
 
