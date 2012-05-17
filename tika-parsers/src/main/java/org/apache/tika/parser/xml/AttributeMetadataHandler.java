@@ -17,6 +17,7 @@
 package org.apache.tika.parser.xml;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -38,6 +39,12 @@ public class AttributeMetadataHandler extends AbstractMetadataHandler {
         this.uri = uri;
         this.localName = localName;
     }
+    public AttributeMetadataHandler(
+          String uri, String localName, Metadata metadata, Property property) {
+      super(metadata, property);
+      this.uri = uri;
+      this.localName = localName;
+  }
 
     @Override
     public void startElement(

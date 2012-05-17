@@ -17,6 +17,7 @@
 package org.apache.tika.parser.xml;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.xml.sax.Attributes;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -33,14 +34,21 @@ public class MetadataHandler extends DefaultHandler {
 
     private final Metadata metadata;
 
+    private final Property property;
     private final String name;
 
     private final StringBuilder buffer = new StringBuilder();
 
     public MetadataHandler(Metadata metadata, String name) {
         this.metadata = metadata;
+        this.property = null;
         this.name = name;
     }
+    public MetadataHandler(Metadata metadata, Property property) {
+       this.metadata = metadata;
+       this.property = property;
+       this.name = property.getName();
+   }
 
     public void addMetadata(String value) {
         if (value.length() > 0) {
@@ -48,7 +56,12 @@ public class MetadataHandler extends DefaultHandler {
             if (previous != null && previous.length() > 0) {
                 value = previous + ", " + value;
             }
-            metadata.set(name, value);
+            
+            if (this.property != null) {
+               metadata.set(property, value);
+            } else {
+               metadata.set(name, value);
+            }
         }
     }
 

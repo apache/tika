@@ -20,6 +20,7 @@ import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -85,6 +86,15 @@ public class ODFParserTest extends TikaTest {
                    metadata.get("generator"));
              
              // Check the document statistics
+             assertEquals("1", metadata.get(Office.PAGE_COUNT));
+             assertEquals("1", metadata.get(Office.PARAGRAPH_COUNT));
+             assertEquals("14", metadata.get(Office.WORD_COUNT));
+             assertEquals("78", metadata.get(Office.CHARACTER_COUNT));
+             assertEquals("0", metadata.get(Office.TABLE_COUNT));
+             assertEquals("0", metadata.get(Office.OBJECT_COUNT));
+             assertEquals("0", metadata.get(Office.IMAGE_COUNT));
+             
+             // Check the Tika-1.0 style document statistics
              assertEquals("1", metadata.get(Metadata.PAGE_COUNT));
              assertEquals("1", metadata.get(Metadata.PARAGRAPH_COUNT));
              assertEquals("14", metadata.get(Metadata.WORD_COUNT));
@@ -93,7 +103,7 @@ public class ODFParserTest extends TikaTest {
              assertEquals("0", metadata.get(Metadata.OBJECT_COUNT));
              assertEquals("0", metadata.get(Metadata.IMAGE_COUNT));
              
-             // Check the old style statistics (these will be removed shortly)
+             // Check the very old style statistics (these will be removed shortly)
              assertEquals("0", metadata.get("nbTab"));
              assertEquals("0", metadata.get("nbObject"));
              assertEquals("0", metadata.get("nbImg"));
@@ -209,6 +219,15 @@ public class ODFParserTest extends TikaTest {
            assertEquals(null, metadata.get("custom:Info 4"));
            
            // Check the document statistics
+           assertEquals("2", metadata.get(Office.PAGE_COUNT));
+           assertEquals("13", metadata.get(Office.PARAGRAPH_COUNT));
+           assertEquals("54", metadata.get(Office.WORD_COUNT));
+           assertEquals("351", metadata.get(Office.CHARACTER_COUNT));
+           assertEquals("0", metadata.get(Office.TABLE_COUNT));
+           assertEquals("2", metadata.get(Office.OBJECT_COUNT));
+           assertEquals("0", metadata.get(Office.IMAGE_COUNT));
+           
+           // Check the Tika-1.0 style document statistics
            assertEquals("2", metadata.get(Metadata.PAGE_COUNT));
            assertEquals("13", metadata.get(Metadata.PARAGRAPH_COUNT));
            assertEquals("54", metadata.get(Metadata.WORD_COUNT));
