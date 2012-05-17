@@ -17,6 +17,7 @@
 package org.apache.tika.parser.iwork;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -90,7 +91,7 @@ class KeynoteContentHandler extends DefaultHandler {
         } else if (inMetadata && "key:authors".equals(qName)) {
             inMetaDataAuthors = true;
         } else if (inMetaDataTitle && "key:string".equals(qName)) {
-            metadata.set(Metadata.TITLE, attributes.getValue("sfa:string"));
+            metadata.set(TikaCoreProperties.TITLE, attributes.getValue("sfa:string"));
         } else if (inMetaDataAuthors && "key:string".equals(qName)) {
             metadata.add(Metadata.AUTHOR, attributes.getValue("sfa:string"));
         } else if (inSlide && "sf:tabular-model".equals(qName)) {

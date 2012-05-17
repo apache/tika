@@ -30,6 +30,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -162,7 +163,7 @@ public class MP4Parser extends AbstractParser {
                  MP4TimeToDate(mHeader.getCreationTime())
            );
            metadata.set(
-                 Property.externalDate(Metadata.MODIFIED), // TODO Should be a real property
+                 TikaCoreProperties.MODIFIED,
                  MP4TimeToDate(mHeader.getModificationTime())
            );
            
@@ -188,7 +189,7 @@ public class MP4Parser extends AbstractParser {
                  MP4TimeToDate(header.getCreationTime())
            );
            metadata.set(
-                 Property.externalDate(Metadata.MODIFIED), // TODO Should be a real property
+                 TikaCoreProperties.MODIFIED,
                  MP4TimeToDate(header.getModificationTime())
            );
            
@@ -224,7 +225,7 @@ public class MP4Parser extends AbstractParser {
            if (apple != null) {
               // Title
               AppleTrackTitleBox title = getOrNull(apple, AppleTrackTitleBox.class);
-              addMetadata(Metadata.TITLE, metadata, title);
+              addMetadata(TikaCoreProperties.TITLE, metadata, title);
 
               // Artist
               AppleArtistBox artist = getOrNull(apple, AppleArtistBox.class);

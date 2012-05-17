@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -45,7 +46,7 @@ public class ExcelParserTest extends TestCase {
             assertEquals(
                     "application/vnd.ms-excel",
                     metadata.get(Metadata.CONTENT_TYPE));
-            assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));
+            assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
             
             // Mon Oct 01 17:13:56 BST 2007

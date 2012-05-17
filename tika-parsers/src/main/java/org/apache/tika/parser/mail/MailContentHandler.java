@@ -24,7 +24,6 @@ import org.apache.james.mime4j.codec.DecodeMonitor;
 import org.apache.james.mime4j.codec.DecoderUtil;
 import org.apache.james.mime4j.dom.address.Address;
 import org.apache.james.mime4j.dom.address.AddressList;
-import org.apache.james.mime4j.dom.address.Group;
 import org.apache.james.mime4j.dom.address.Mailbox;
 import org.apache.james.mime4j.dom.address.MailboxList;
 import org.apache.james.mime4j.dom.field.AddressListField;
@@ -38,6 +37,7 @@ import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -161,7 +161,7 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(Metadata.AUTHOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.add(Metadata.SUBJECT,
+                metadata.add(TikaCoreProperties.SUBJECT,
                         ((UnstructuredField) parsedField).getValue());
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
@@ -171,7 +171,7 @@ class MailContentHandler implements ContentHandler {
                 processAddressList(parsedField, "Bcc:", Metadata.MESSAGE_BCC);
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 DateTimeField dateField = (DateTimeField) parsedField;
-                metadata.set(Metadata.DATE, dateField.getDate());
+                metadata.set(TikaCoreProperties.DATE, dateField.getDate());
                 metadata.set(Metadata.CREATION_DATE, dateField.getDate());
             }
         } catch (RuntimeException me) {

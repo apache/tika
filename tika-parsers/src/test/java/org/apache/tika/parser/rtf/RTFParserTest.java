@@ -30,6 +30,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.WriteOutContentHandler;
 
@@ -132,7 +133,7 @@ public class RTFParserTest extends TikaTest {
 
         // Verify title, since it was also encoded with MS932:
         Result r = getResult("testRTF-ms932.rtf");
-        assertEquals("\u30bf\u30a4\u30c8\u30eb", r.metadata.get(Metadata.TITLE));
+        assertEquals("\u30bf\u30a4\u30c8\u30eb", r.metadata.get(TikaCoreProperties.TITLE));
     }
 
     public void testUmlautSpacesExtraction() throws Exception {
@@ -153,7 +154,7 @@ public class RTFParserTest extends TikaTest {
         // Verify title -- this title uses upr escape inside
         // title info field:
         assertEquals("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f\u3000",
-                     r.metadata.get(Metadata.TITLE));
+                     r.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("VMazel", r.metadata.get(Metadata.AUTHOR));
         assertEquals("StarWriter", r.metadata.get(Metadata.COMMENT));
         assertContains("1.", content);
@@ -267,7 +268,7 @@ public class RTFParserTest extends TikaTest {
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
-                     r.metadata.get(Metadata.SUBJECT));
+                     r.metadata.get(TikaCoreProperties.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)

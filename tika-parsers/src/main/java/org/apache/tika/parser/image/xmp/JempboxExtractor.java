@@ -28,8 +28,8 @@ import java.util.List;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.InputSource;
 
 public class JempboxExtractor {
@@ -59,18 +59,18 @@ public class JempboxExtractor {
             XMPSchemaDublinCore dc = xmp.getDublinCoreSchema();
             if (dc != null) {
                 if (dc.getTitle() != null) {
-                    metadata.set(Metadata.TITLE, dc.getTitle());
+                    metadata.set(TikaCoreProperties.TITLE, dc.getTitle());
                 }
                 if (dc.getDescription() != null) {
-                    metadata.set(Metadata.DESCRIPTION, dc.getDescription());
+                    metadata.set(TikaCoreProperties.DESCRIPTION, dc.getDescription());
                 }
                 if (dc.getCreators() != null && dc.getCreators().size() > 0) {
-                    metadata.set(Metadata.CREATOR, joinCreators(dc.getCreators()));
+                    metadata.set(TikaCoreProperties.CREATOR, joinCreators(dc.getCreators()));
                 }
                 if (dc.getSubjects() != null && dc.getSubjects().size() > 0) {
                     Iterator<String> keywords = dc.getSubjects().iterator();
                     while (keywords.hasNext()) {
-                        metadata.add(Metadata.SUBJECT, keywords.next());
+                        metadata.add(TikaCoreProperties.SUBJECT, keywords.next());
                     }
                     // TODO should we set KEYWORDS too?
                     // All tested photo managers set the same in Iptc.Application2.Keywords and Xmp.dc.subject

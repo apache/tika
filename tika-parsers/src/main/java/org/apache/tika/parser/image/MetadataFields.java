@@ -22,6 +22,7 @@ import java.util.HashSet;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Knowns about all declared {@link Metadata} fields.
@@ -32,9 +33,8 @@ public abstract class MetadataFields {
     
     private static HashSet<String> known;
     
-    static {
-        known = new HashSet<String>();
-        Field[] fields = Metadata.class.getFields();
+    private static void setKnownForClass(Class<?> clazz) {
+        Field[] fields = clazz.getFields();
         for (Field f : fields) {
             int mod = f.getModifiers();
             if (Modifier.isPublic(mod) && Modifier.isStatic(mod) && Modifier.isFinal(mod)) {
@@ -67,8 +67,18 @@ public abstract class MetadataFields {
         }
     }
     
+    static {
+        known = new HashSet<String>();
+        setKnownForClass(TikaCoreProperties.class);
+        setKnownForClass(Metadata.class);
+    }
+    
     public static boolean isMetadataField(String name) {
         return known.contains(name);
+    }
+    
+    public static boolean isMetadataField(Property property) {
+        return known.contains(property.getName());
     }
     
 }

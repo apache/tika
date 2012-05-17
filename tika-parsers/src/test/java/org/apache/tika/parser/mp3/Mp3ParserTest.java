@@ -22,6 +22,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -51,7 +52,7 @@ public class Mp3ParserTest extends TestCase {
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
@@ -86,7 +87,7 @@ public class Mp3ParserTest extends TestCase {
 
         // Check core properties
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         // Check the textual contents
@@ -135,7 +136,7 @@ public class Mp3ParserTest extends TestCase {
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
@@ -169,7 +170,7 @@ public class Mp3ParserTest extends TestCase {
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
@@ -203,7 +204,7 @@ public class Mp3ParserTest extends TestCase {
        }
 
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("Une chason en Fran\u00e7ais", metadata.get(Metadata.TITLE));
+       assertEquals("Une chason en Fran\u00e7ais", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("Test Artist \u2468\u2460", metadata.get(Metadata.AUTHOR));
        assertEquals("Test Artist \u2468\u2460", metadata.get(XMPDM.ARTIST));
        assertEquals("Test Album \u2460\u2468", metadata.get(XMPDM.ALBUM));
@@ -241,7 +242,7 @@ public class Mp3ParserTest extends TestCase {
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Test Title", metadata.get(Metadata.TITLE));
+        assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
@@ -306,7 +307,7 @@ public class Mp3ParserTest extends TestCase {
        }
 
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("Plus loin vers l'ouest", metadata.get(Metadata.TITLE));
+       assertEquals("Plus loin vers l'ouest", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("Merzhin", metadata.get(Metadata.AUTHOR));
 
        String content = handler.toString();
@@ -341,7 +342,7 @@ public class Mp3ParserTest extends TestCase {
 
        // Check we coud get the headers from the start
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("Girl you have no faith in medicine", metadata.get(Metadata.TITLE));
+       assertEquals("Girl you have no faith in medicine", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("The White Stripes", metadata.get(Metadata.AUTHOR));
 
        String content = handler.toString();

@@ -18,6 +18,7 @@ package org.apache.tika.parser.iwork;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -252,13 +253,13 @@ class PagesContentHandler extends DefaultHandler {
         if ("sf:authors".equals(metaDataQName)) {
             metaDataKey = Metadata.AUTHOR;
         } else if ("sf:title".equals(metaDataQName)) {
-            metaDataKey = Metadata.TITLE;
+            metaDataKey = TikaCoreProperties.TITLE;
         } else if ("sl:SLCreationDateProperty".equals(metaDataQName)) {
             metaDataKey = Metadata.CREATION_DATE;
         } else if ("sl:SLLastModifiedDateProperty".equals(metaDataQName)) {
             metaDataKey = Metadata.LAST_MODIFIED;
         } else if ("sl:language".equals(metaDataQName)) {
-            metaDataKey = Metadata.LANGUAGE;
+            metaDataKey = TikaCoreProperties.LANGUAGE;
         }
         return metaDataKey;
     }

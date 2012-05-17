@@ -36,6 +36,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -76,7 +77,7 @@ public class HtmlParserTest extends TestCase {
         }
 
         assertEquals(
-                "Title : Test Indexation Html", metadata.get(Metadata.TITLE));
+                "Title : Test Indexation Html", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Tika Developers", metadata.get("Author"));
         assertEquals("5", metadata.get("refresh"));
         
@@ -120,7 +121,7 @@ public class HtmlParserTest extends TestCase {
                 HtmlParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("application/xhtml+xml", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("XHTML test document", metadata.get(Metadata.TITLE));
+        assertEquals("XHTML test document", metadata.get(TikaCoreProperties.TITLE));
 
         assertEquals("Tika Developers", metadata.get("Author"));
         assertEquals("5", metadata.get("refresh"));
@@ -258,7 +259,7 @@ public class HtmlParserTest extends TestCase {
         new HtmlParser().parse (
                 new ByteArrayInputStream(test.getBytes("UTF-8")),
                 new BodyContentHandler(),  metadata, new ParseContext());
-        assertEquals("\u017d", metadata.get(Metadata.TITLE));
+        assertEquals("\u017d", metadata.get(TikaCoreProperties.TITLE));
     }
 
     /**

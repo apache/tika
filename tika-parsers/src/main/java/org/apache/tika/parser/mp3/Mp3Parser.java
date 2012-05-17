@@ -25,6 +25,7 @@ import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -71,7 +72,7 @@ public class Mp3Parser extends AbstractParser {
         if (audioAndTags.tags.length > 0) {
            CompositeTagHandler tag = new CompositeTagHandler(audioAndTags.tags);
 
-           metadata.set(Metadata.TITLE, tag.getTitle());
+           metadata.set(TikaCoreProperties.TITLE, tag.getTitle());
            metadata.set(Metadata.AUTHOR, tag.getArtist());
            metadata.set(XMPDM.ARTIST, tag.getArtist());
            metadata.set(XMPDM.COMPOSER, tag.getComposer());

@@ -30,6 +30,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
@@ -65,21 +66,21 @@ public class MetadataExtractor {
         addProperty(metadata, Metadata.CATEGORY, propsHolder.getCategoryProperty());
         addProperty(metadata, Metadata.CONTENT_STATUS, propsHolder
                 .getContentStatusProperty());
-        addProperty(metadata, Metadata.DATE, propsHolder
+        addProperty(metadata, TikaCoreProperties.DATE, propsHolder
                 .getCreatedProperty());
         addProperty(metadata, Metadata.CREATION_DATE, propsHolder
                 .getCreatedProperty());
-        addProperty(metadata, Metadata.CREATOR, propsHolder
+        addProperty(metadata, TikaCoreProperties.CREATOR, propsHolder
                 .getCreatorProperty());
         addProperty(metadata, Metadata.AUTHOR, propsHolder
                 .getCreatorProperty());
-        addProperty(metadata, Metadata.DESCRIPTION, propsHolder
+        addProperty(metadata, TikaCoreProperties.DESCRIPTION, propsHolder
                 .getDescriptionProperty());
-        addProperty(metadata, Metadata.IDENTIFIER, propsHolder
+        addProperty(metadata, TikaCoreProperties.IDENTIFIER, propsHolder
                 .getIdentifierProperty());
         addProperty(metadata, Metadata.KEYWORDS, propsHolder
                 .getKeywordsProperty());
-        addProperty(metadata, Metadata.LANGUAGE, propsHolder
+        addProperty(metadata, TikaCoreProperties.LANGUAGE, propsHolder
                 .getLanguageProperty());
         addProperty(metadata, Metadata.LAST_AUTHOR, propsHolder
                 .getLastModifiedByProperty());
@@ -89,9 +90,9 @@ public class MetadataExtractor {
                 .getModifiedProperty());
         addProperty(metadata, Metadata.REVISION_NUMBER, propsHolder
                 .getRevisionProperty());
-        addProperty(metadata, Metadata.SUBJECT, propsHolder
+        addProperty(metadata, TikaCoreProperties.SUBJECT, propsHolder
                 .getSubjectProperty());
-        addProperty(metadata, Metadata.TITLE, propsHolder.getTitleProperty());
+        addProperty(metadata, TikaCoreProperties.TITLE, propsHolder.getTitleProperty());
         addProperty(metadata, Metadata.VERSION, propsHolder.getVersionProperty());
     }
 
@@ -107,7 +108,7 @@ public class MetadataExtractor {
                 .getCharacters());
         addProperty(metadata, Metadata.CHARACTER_COUNT_WITH_SPACES, propsHolder
                 .getCharactersWithSpaces());
-        addProperty(metadata, Metadata.PUBLISHER, propsHolder.getCompany());
+        addProperty(metadata, TikaCoreProperties.PUBLISHER, propsHolder.getCompany());
         addProperty(metadata, Metadata.LINE_COUNT, propsHolder.getLines());
         addProperty(metadata, Metadata.MANAGER, propsHolder.getManager());
         addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
@@ -234,15 +235,30 @@ public class MetadataExtractor {
        }
     }
     
-    private void addProperty(Metadata metadata, Property property, Nullable<Date> value) {
-        if (value.getValue() != null) {
-            metadata.set(property, value.getValue());
+    private <T> void addProperty(Metadata metadata, Property property, Nullable<T> nullableValue) {
+        T value = nullableValue.getValue();
+        if (value != null) {
+            if (value instanceof Date) {
+                metadata.set(property, (Date) value);
+            } else if (value instanceof String) {
+                metadata.set(property, (String) value);
+            } else if (value instanceof Integer) {
+                metadata.set(property, (Integer) value);
+            } else if (value instanceof Double) {
+                metadata.set(property, (Double) value);
+            }
         }
     }
 
     private void addProperty(Metadata metadata, String name, Nullable<?> value) {
         if (value.getValue() != null) {
             addProperty(metadata, name, value.getValue().toString());
+        }
+    }
+    
+    private void addProperty(Metadata metadata, Property property, String value) {
+        if (value != null) {
+            metadata.set(property, value);
         }
     }
 

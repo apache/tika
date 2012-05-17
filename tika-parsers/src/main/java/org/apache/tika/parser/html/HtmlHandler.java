@@ -26,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.TextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -233,7 +234,7 @@ class HtmlHandler extends TextContentHandler {
         if (titleLevel > 0) {
             titleLevel--;
             if (titleLevel == 0) {
-                metadata.set(Metadata.TITLE, title.toString().trim());
+                metadata.set(TikaCoreProperties.TITLE, title.toString().trim());
             }
         }
         if (bodyLevel > 0) {

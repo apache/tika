@@ -27,6 +27,7 @@ import org.apache.fontbox.afm.FontMetric;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -67,7 +68,7 @@ public class AdobeFontMetricParser extends AbstractParser {
        extractCreationDate( metadata, comments );
 
        metadata.set( Metadata.CONTENT_TYPE, AFM_TYPE.toString() );
-       metadata.set( Metadata.TITLE, fontMetrics.getFullName() );
+       metadata.set( TikaCoreProperties.TITLE, fontMetrics.getFullName() );
 
        // Add metadata associated with the font type
        addMetadataByString( metadata, "AvgCharacterWidth", Float.toString( fontMetrics.getAverageCharacterWidth() ) );

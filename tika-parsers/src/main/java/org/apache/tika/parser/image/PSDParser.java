@@ -29,6 +29,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -114,7 +115,7 @@ public class PSDParser extends AbstractParser {
            
            // Is it one we can do something useful with?
            if(rb.id == ResourceBlock.ID_CAPTION) {
-              metadata.add(Metadata.DESCRIPTION, rb.getDataAsString()); 
+              metadata.add(TikaCoreProperties.DESCRIPTION, rb.getDataAsString()); 
            } else if(rb.id == ResourceBlock.ID_EXIF_1) {
               // TODO Parse the EXIF info
            } else if(rb.id == ResourceBlock.ID_EXIF_3) {

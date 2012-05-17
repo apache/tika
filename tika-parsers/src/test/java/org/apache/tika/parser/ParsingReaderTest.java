@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.Reader;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 import junit.framework.TestCase;
 
@@ -83,7 +84,7 @@ public class ParsingReaderTest extends TestCase {
                 new AutoDetectParser(), stream, metadata, new ParseContext());
         try {
             // Metadata should already be available
-            assertEquals("Simple Excel document", metadata.get(Metadata.TITLE));
+            assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
             // Check that the internal buffering isn't broken
             assertEquals('F', (char) reader.read());
             assertEquals('e', (char) reader.read());

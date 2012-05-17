@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -51,7 +52,7 @@ public class TXTParserTest extends TestCase {
         
         // TIKA-501: Remove language detection from TXTParser
         assertNull(metadata.get(Metadata.CONTENT_LANGUAGE));
-        assertNull(metadata.get(Metadata.LANGUAGE));
+        assertNull(metadata.get(TikaCoreProperties.LANGUAGE));
 
         assertTrue(content.contains("Hello"));
         assertTrue(content.contains("World"));
@@ -169,13 +170,13 @@ public class TXTParserTest extends TestCase {
         final String test = "Simple Content";
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.LANGUAGE, "en");
+        metadata.set(TikaCoreProperties.LANGUAGE, "en");
 
         parser.parse(
                 new ByteArrayInputStream(test.getBytes("UTF-8")),
                 new BodyContentHandler(),  metadata, new ParseContext());
 
-        assertEquals("en", metadata.get(Metadata.LANGUAGE));
+        assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
     }
 
     public void testCP866() throws Exception {

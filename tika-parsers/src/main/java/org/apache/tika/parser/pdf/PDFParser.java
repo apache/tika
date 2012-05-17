@@ -39,6 +39,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -152,12 +153,12 @@ public class PDFParser extends AbstractParser {
             throws TikaException {
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
-        addMetadata(metadata, Metadata.TITLE, info.getTitle());
+        addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
         addMetadata(metadata, Metadata.AUTHOR, info.getAuthor());
-        addMetadata(metadata, Metadata.CREATOR, info.getCreator());
+        addMetadata(metadata, TikaCoreProperties.CREATOR, info.getCreator());
         addMetadata(metadata, Metadata.KEYWORDS, info.getKeywords());
         addMetadata(metadata, "producer", info.getProducer());
-        addMetadata(metadata, Metadata.SUBJECT, info.getSubject());
+        addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
         addMetadata(metadata, "trapped", info.getTrapped());
         try {
             addMetadata(metadata, "created", info.getCreationDate());
@@ -186,6 +187,12 @@ public class PDFParser extends AbstractParser {
         }
     }
 
+    private void addMetadata(Metadata metadata, Property property, String value) {
+        if (value != null) {
+            metadata.add(property, value);
+        }
+    }
+    
     private void addMetadata(Metadata metadata, String name, String value) {
         if (value != null) {
             metadata.add(name, value);

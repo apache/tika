@@ -26,6 +26,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -53,7 +54,7 @@ public class PDFParserTest extends TikaTest {
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(Metadata.AUTHOR));
-        assertEquals("Apache Tika - Apache Tika", metadata.get(Metadata.TITLE));
+        assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
         
         // Can't reliably test dates yet - see TIKA-451 
 //        assertEquals("Sat Sep 15 10:02:31 BST 2007", metadata.get(Metadata.CREATION_DATE));
@@ -87,7 +88,7 @@ public class PDFParserTest extends TikaTest {
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Document author", metadata.get(Metadata.AUTHOR));
-        assertEquals("Document title", metadata.get(Metadata.TITLE));
+        assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
         
         assertEquals("Custom Value", metadata.get("Custom Property"));
         assertEquals("Array Entry 1", metadata.get("Custom Array"));
@@ -120,8 +121,8 @@ public class PDFParserTest extends TikaTest {
 
        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
-       assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
-       assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(Metadata.TITLE));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
+       assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
        String content = handler.toString();
        assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
@@ -150,8 +151,8 @@ public class PDFParserTest extends TikaTest {
 
        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
-       assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
-       assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(Metadata.TITLE));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
+       assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
        assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
        assertTrue(content.contains("On 16 November 2002"));
@@ -233,7 +234,7 @@ public class PDFParserTest extends TikaTest {
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
-                     metadata.get(Metadata.SUBJECT));
+                     metadata.get(TikaCoreProperties.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)

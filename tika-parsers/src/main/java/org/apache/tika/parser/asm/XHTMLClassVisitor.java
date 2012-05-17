@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Attribute;
@@ -78,7 +79,7 @@ class XHTMLClassVisitor implements ClassVisitor {
             className = className.substring(dot + 1);
         }
 
-        metadata.set(Metadata.TITLE, className);
+        metadata.set(TikaCoreProperties.TITLE, className);
         metadata.set(Metadata.RESOURCE_NAME_KEY, className + ".class");
 
         try {

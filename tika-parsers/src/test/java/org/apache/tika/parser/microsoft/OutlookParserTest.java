@@ -29,6 +29,7 @@ import javax.xml.transform.stream.StreamResult;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -58,7 +59,7 @@ public class OutlookParserTest extends TestCase {
                 metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(
                 "Microsoft Outlook Express 6",
-                metadata.get(Metadata.TITLE));
+                metadata.get(TikaCoreProperties.TITLE));
         assertEquals(
                 "Nouvel utilisateur de Outlook Express",
                 metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
@@ -69,7 +70,7 @@ public class OutlookParserTest extends TestCase {
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals(
                 "2007-04-05T16:26:06Z",
-                metadata.get(Metadata.DATE));
+                metadata.get(TikaCoreProperties.DATE));
 
         String content = handler.toString();
         assertTrue(content.contains(""));
@@ -131,7 +132,7 @@ public class OutlookParserTest extends TestCase {
                 metadata.get(Metadata.CONTENT_TYPE));
         assertEquals(
                 "Welcome to Microsoft Office Outlook 2003",
-                metadata.get(Metadata.TITLE));
+                metadata.get(TikaCoreProperties.TITLE));
 
         String content = handler.toString();
         assertTrue(content.contains("Outlook 2003"));

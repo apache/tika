@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 //TIKA imports
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -52,7 +53,7 @@ public class NetCDFParserTest extends TestCase {
             stream.close();
         }
 
-        assertEquals(metadata.get(Metadata.TITLE),
+        assertEquals(metadata.get(TikaCoreProperties.TITLE),
                 "model output prepared for IPCC AR4");
         assertEquals(metadata.get(Metadata.CONTACT), "ccsm@ucar.edu");
         assertEquals(metadata.get(Metadata.PROJECT_ID),

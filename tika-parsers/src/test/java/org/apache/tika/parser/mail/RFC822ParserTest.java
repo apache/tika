@@ -31,6 +31,7 @@ import junit.framework.TestCase;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -59,7 +60,7 @@ public class RFC822ParserTest extends TestCase {
             verify(handler).endDocument();
             //note no leading spaces, and no quotes
             assertEquals("Julien Nioche (JIRA) <jira@apache.org>", metadata.get(Metadata.AUTHOR));
-            assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed", metadata.get(Metadata.SUBJECT));
+            assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed", metadata.get(TikaCoreProperties.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -147,7 +148,7 @@ public class RFC822ParserTest extends TestCase {
             //tests correct decoding of internationalized headers, both
             //quoted-printable (Q) and Base64 (B).
             assertEquals("Keld J\u00F8rn Simonsen <keld@dkuug.dk>", metadata.get(Metadata.AUTHOR));
-            assertEquals("If you can read this you understand the example.", metadata.get(Metadata.SUBJECT));
+            assertEquals("If you can read this you understand the example.", metadata.get(TikaCoreProperties.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -165,7 +166,7 @@ public class RFC822ParserTest extends TestCase {
 
        parser.parse(stream, handler, metadata, new ParseContext());
        assertEquals("Saved by Windows Internet Explorer 7", metadata.get(Metadata.AUTHOR));
-       assertEquals("Air Permit Programs | Air & Radiation | US EPA", metadata.get(Metadata.SUBJECT));
+       assertEquals("Air Permit Programs | Air & Radiation | US EPA", metadata.get(TikaCoreProperties.SUBJECT));
     }
 
     /**
@@ -220,7 +221,7 @@ public class RFC822ParserTest extends TestCase {
        assertEquals(true, metadata.isMultiValued(Metadata.MESSAGE_TO));
        assertEquals("abc", metadata.getValues(Metadata.MESSAGE_TO)[0]);
        assertEquals("def", metadata.getValues(Metadata.MESSAGE_TO)[1]);
-       assertEquals("abcd", metadata.get(Metadata.SUBJECT));
+       assertEquals("abcd", metadata.get(TikaCoreProperties.SUBJECT));
        assertTrue(handler.toString().contains("bar biz bat"));
     }
 

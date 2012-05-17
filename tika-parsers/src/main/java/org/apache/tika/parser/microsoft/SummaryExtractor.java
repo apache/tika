@@ -35,6 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Outlook Message Parser.
@@ -90,10 +91,10 @@ class SummaryExtractor {
     }
 
     private void parse(SummaryInformation summary) {
-        set(Metadata.TITLE, summary.getTitle());
+        set(TikaCoreProperties.TITLE, summary.getTitle());
         set(Metadata.AUTHOR, summary.getAuthor());
         set(Metadata.KEYWORDS, summary.getKeywords());
-        set(Metadata.SUBJECT, summary.getSubject());
+        set(TikaCoreProperties.SUBJECT, summary.getSubject());
         set(Metadata.LAST_AUTHOR, summary.getLastAuthor());
         set(Metadata.COMMENTS, summary.getComments());
         set(Metadata.TEMPLATE, summary.getTemplate());
@@ -115,7 +116,7 @@ class SummaryExtractor {
     private void parse(DocumentSummaryInformation summary) {
         set(Metadata.COMPANY, summary.getCompany());
         set(Metadata.MANAGER, summary.getManager());
-        set(Metadata.LANGUAGE, getLanguage(summary));
+        set(TikaCoreProperties.LANGUAGE, getLanguage(summary));
         set(Metadata.CATEGORY, summary.getCategory());
         set(Metadata.SLIDE_COUNT, summary.getSlideCount());
         if (summary.getSlideCount() > 0) {
@@ -173,6 +174,12 @@ class SummaryExtractor {
     private void set(String name, String value) {
         if (value != null) {
             metadata.set(name, value);
+        }
+    }
+    
+    private void set(Property property, String value) {
+        if (value != null) {
+            metadata.set(property, value);
         }
     }
 
