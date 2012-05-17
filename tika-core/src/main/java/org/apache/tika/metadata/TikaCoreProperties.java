@@ -72,6 +72,11 @@ public interface TikaCoreProperties {
     public static final Property INITIAL_AUTHOR = Office.INITIAL_AUTHOR;
 
     /**
+     * @see Office#AUTHOR
+     */
+    public static final Property AUTHOR = Office.AUTHOR;
+
+    /**
      * @see Office#LAST_AUTHOR
      */
     public static final Property LAST_AUTHOR = Property.composite(Office.LAST_AUTHOR,
