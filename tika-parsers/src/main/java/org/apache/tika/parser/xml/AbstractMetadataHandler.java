@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -30,13 +31,19 @@ import org.xml.sax.helpers.DefaultHandler;
 class AbstractMetadataHandler extends DefaultHandler {
 
     private final Metadata metadata;
-
+    private final Property property;
     private final String name;
 
     protected AbstractMetadataHandler(Metadata metadata, String name) {
         this.metadata = metadata;
+        this.property = null;
         this.name = name;
     }
+    protected AbstractMetadataHandler(Metadata metadata, Property property) {
+       this.metadata = metadata;
+       this.property = property;
+       this.name = property.getName();
+   }
 
     /**
      * Adds the given metadata value. The value is ignored if it is
@@ -51,20 +58,31 @@ class AbstractMetadataHandler extends DefaultHandler {
                 // Add the value, assuming it's not already there
                 List<String> previous = Arrays.asList(metadata.getValues(name));
                 if (!previous.contains(value)) {
-                    metadata.add(name, value);
+                    if (property != null) {
+                       metadata.add(property, value);
+                    } else {
+                       metadata.add(name, value);
+                    }
                 }
             } else {
                 // Set the value, assuming it's not already there
                 String previous = metadata.get(name);
                 if (previous != null && previous.length() > 0) {
                     if (!previous.equals(value)) {
-                        metadata.add(name, value);
+                       if (property != null) {
+                          metadata.add(property, value);
+                       } else {
+                          metadata.add(name, value);
+                       }
                     }
                 } else {
-                    metadata.set(name, value);
+                   if (property != null) {
+                      metadata.set(property, value);
+                   } else {
+                      metadata.set(name, value);
+                   }
                 }
             }
         }
     }
-
 }

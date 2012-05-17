@@ -60,39 +60,39 @@ public interface MSOffice {
 
     
     /** The number of Slides are there in the (presentation) document */
-    Property SLIDE_COUNT = 
+    @Deprecated Property SLIDE_COUNT = 
        Property.internalInteger("Slide-Count");
     
     /** The number of Pages are there in the (paged) document */
-    Property PAGE_COUNT = 
+    @Deprecated Property PAGE_COUNT = 
        Property.internalInteger("Page-Count");
 
     /** The number of individual Paragraphs in the document */ 
-    Property PARAGRAPH_COUNT = 
+    @Deprecated Property PARAGRAPH_COUNT = 
        Property.internalInteger("Paragraph-Count");
     
     /** The number of lines in the document */
-    Property LINE_COUNT = 
+    @Deprecated Property LINE_COUNT = 
        Property.internalInteger("Line-Count");
 
     /** The number of Words in the document */
-    Property WORD_COUNT = 
+    @Deprecated Property WORD_COUNT = 
        Property.internalInteger("Word-Count");
 
     /** The number of Characters in the document */
-    Property CHARACTER_COUNT = 
+    @Deprecated Property CHARACTER_COUNT = 
        Property.internalInteger("Character Count");
     
     /** The number of Characters in the document, including spaces */
-    Property CHARACTER_COUNT_WITH_SPACES = 
+    @Deprecated Property CHARACTER_COUNT_WITH_SPACES = 
        Property.internalInteger("Character-Count-With-Spaces");
 
     /** The number of Tables in the document */
-    Property TABLE_COUNT = 
+    @Deprecated Property TABLE_COUNT = 
        Property.internalInteger("Table-Count");
     
     /** The number of Images in the document */
-    Property IMAGE_COUNT = 
+    @Deprecated Property IMAGE_COUNT = 
        Property.internalInteger("Image-Count");
     
     /** 
@@ -100,7 +100,7 @@ public interface MSOffice {
      * This is typically non-Image resources embedded in the
      *  document, such as other documents or non-Image media. 
      */
-    Property OBJECT_COUNT = 
+    @Deprecated Property OBJECT_COUNT = 
        Property.internalInteger("Object-Count");
 
     
