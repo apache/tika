@@ -64,6 +64,17 @@ public interface TikaCoreProperties {
     public static final Property CREATOR = Property.composite(DublinCore.CREATOR, 
             new Property[] { Property.internalText(Metadata.CREATOR) });
     
+    /**
+     * @see Office#INITIAL_AUTHOR
+     */
+    public static final Property INITIAL_AUTHOR = Office.INITIAL_AUTHOR;
+
+    /**
+     * @see Office#LAST_AUTHOR
+     */
+    public static final Property LAST_AUTHOR = Property.composite(Office.LAST_AUTHOR,
+            new Property[] { Property.internalText(MSOffice.LAST_AUTHOR) });
+    
    /**
     * @see DublinCore#LANGUAGE
     */
@@ -121,6 +132,12 @@ public interface TikaCoreProperties {
     public static final Property SUBJECT = Property.composite(DublinCore.SUBJECT, 
             new Property[] { Property.internalText(Metadata.SUBJECT) });
       
+    /**
+     * @see Office#KEYWORDS
+     */
+    public static final Property KEYWORDS = Property.composite(Office.KEYWORDS,
+            new Property[] { Property.internalTextBag(MSOffice.KEYWORDS) });
+
     
     // Date related properties
     
@@ -136,7 +153,17 @@ public interface TikaCoreProperties {
      public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED, 
              new Property[] { Property.internalText(Metadata.MODIFIED) });
      
-     // TODO Bring across additional date properties from MSOffice, once they're namespaced
+     /** @see Office#CREATION_DATE */
+     public static final Property CREATION_DATE = Property.composite(Office.CREATION_DATE,
+             new Property[] { MSOffice.CREATION_DATE });
+
+     /** @see Office#SAVE_DATE */
+     public static final Property SAVE_DATE = Property.composite(Office.SAVE_DATE,
+             new Property[] { MSOffice.LAST_SAVED });
+     
+     /** @see Office#PRINT_DATE */
+     public static final Property PRINT_DATE = Property.composite(Office.PRINT_DATE, 
+             new Property[] { MSOffice.LAST_PRINTED });
     
      
     // Geographic related properties
