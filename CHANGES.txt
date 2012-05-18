@@ -14,6 +14,12 @@ Release 1.2 - Current Development
 
   * Images: Fixed file handle leak in ImageParser. (TIKA-875)
 
+  * iWork: Comments in Pages files are now extracted (TIKA-907).
+    Headers, footers and footnotes in Pages files are now extracted
+    (TIKA-906).  Don't throw NullPointerException on passsword
+    protected iWork files, even though we can't parse their contents
+    yet (TIKA-903).
+
 Release 1.1 - 3/7/2012
 ---------------------------------
 
