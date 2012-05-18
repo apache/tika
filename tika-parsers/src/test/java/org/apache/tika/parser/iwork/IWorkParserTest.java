@@ -171,6 +171,22 @@ public class IWorkParserTest extends TestCase {
         assertTrue(content.contains("Extensible Markup Language")); // ...
     }
 
+    // TIKA-904
+    public void testPagesLayoutMode() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesLayout.pages");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+
+        iWorkParser.parse(input, handler, metadata, parseContext);
+
+        String content = handler.toString();
+        assertTrue(content.contains("text box 1 - here is some text"));
+        assertTrue(content.contains("created in a text box in layout mode"));
+        assertTrue(content.contains("text box 2 - more text!@!$@#"));
+        assertTrue(content.contains("this is text inside of a green box"));
+        assertTrue(content.contains("text inside of a green circle"));
+    }
+
     public void testParseNumbers() throws Exception {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testNumbers.numbers");
         Metadata metadata = new Metadata();
