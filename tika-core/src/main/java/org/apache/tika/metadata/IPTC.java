@@ -504,7 +504,7 @@ public interface IPTC {
     *
     * @deprecated
     */
-   Property PHOTOSHOP_URGENCY = Photoshop.URGENCY;
+   Property URGENCY = Photoshop.URGENCY;
 
    /**
     * As this metadata element was earmarked as deprecated already for IIM 4.1,
@@ -516,7 +516,7 @@ public interface IPTC {
     *
     * @deprecated
     */
-   Property PHOTOSHOP_CATEGORY = Photoshop.CATEGORY;
+   Property CATEGORY = Photoshop.CATEGORY;
 
    /**
     * As this metadata element was earmarked as deprecated already for IIM 4.1,
@@ -526,7 +526,7 @@ public interface IPTC {
     *
     * @deprecated
     */
-   Property PHOTOSHOP_SUPPLEMENTAL_CATEGORIES = Photoshop.SUPPLEMENTAL_CATEGORIES;
+   Property SUPPLEMENTAL_CATEGORIES = Photoshop.SUPPLEMENTAL_CATEGORIES;
 
    /**
     * Information about the ethnicity and other facets of the model(s) in a
