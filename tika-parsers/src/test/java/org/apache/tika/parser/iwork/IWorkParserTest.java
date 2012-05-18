@@ -90,6 +90,28 @@ public class IWorkParserTest extends TestCase {
         assertTrue(content.contains("5/5/1985"));
     }
 
+    // TIKA-910
+    public void testKeynoteTextBoxes() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testTextBoxes.key");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        iWorkParser.parse(input, handler, metadata, parseContext);
+
+        String content = handler.toString();
+        assertTrue(content.replaceAll("\\s+", " ").contains("text1 text2 text3"));
+    }
+
+    // TIKA-910
+    public void testKeynoteBulletPoints() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testBulletPoints.key");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        iWorkParser.parse(input, handler, metadata, parseContext);
+
+        String content = handler.toString();
+        assertTrue(content.replaceAll("\\s+", " ").contains("bullet point 1 bullet point 2 bullet point 3"));
+    }
+
     // TIKA-923
     public void testKeynoteTables() throws Exception {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testTables.key");

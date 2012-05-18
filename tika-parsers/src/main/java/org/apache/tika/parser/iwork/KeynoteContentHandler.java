@@ -104,6 +104,8 @@ class KeynoteContentHandler extends DefaultHandler {
             parseTableData(attributes.getValue("sfa:s"));
         } else if (tableId != null && "sf:n".equals(qName)) {
             parseTableData(attributes.getValue("sf:v"));
+        } else if ("sf:p".equals(qName)) {
+            xhtml.startElement("p");
         }
     }
 
@@ -138,6 +140,8 @@ class KeynoteContentHandler extends DefaultHandler {
             tableId = null;
             numberOfColumns = null;
             currentColumn = null;
+        } else if ("sf:p".equals(qName)) {
+            xhtml.endElement("p");
         }
     }
 
