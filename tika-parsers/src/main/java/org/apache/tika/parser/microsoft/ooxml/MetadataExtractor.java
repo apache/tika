@@ -27,6 +27,7 @@ import org.apache.poi.openxml4j.opc.internal.PackagePropertiesPart;
 import org.apache.poi.openxml4j.util.Nullable;
 import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.MSOffice;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PagedText;
@@ -103,31 +104,38 @@ public class MetadataExtractor {
             Metadata metadata) {
         CTProperties propsHolder = properties.getUnderlyingProperties();
 
-        addProperty(metadata, Metadata.APPLICATION_NAME, propsHolder
-                .getApplication());
-        addProperty(metadata, Metadata.APPLICATION_VERSION, propsHolder
-                .getAppVersion());
-        addProperty(metadata, Office.CHARACTER_COUNT, propsHolder
-                .getCharacters());
-        addProperty(metadata, Office.CHARACTER_COUNT_WITH_SPACES, propsHolder
-                .getCharactersWithSpaces());
+        addProperty(metadata, Metadata.APPLICATION_NAME, propsHolder.getApplication());
+        addProperty(metadata, Metadata.APPLICATION_VERSION, propsHolder.getAppVersion());
         addProperty(metadata, TikaCoreProperties.PUBLISHER, propsHolder.getCompany());
-        addProperty(metadata, Office.LINE_COUNT, propsHolder.getLines());
         addProperty(metadata, Metadata.MANAGER, propsHolder.getManager());
         addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
-        addProperty(metadata, Office.PAGE_COUNT, propsHolder.getPages());
-        if (propsHolder.getPages() > 0) {
-            metadata.set(PagedText.N_PAGES, propsHolder.getPages());
-        } else if (propsHolder.getSlides() > 0) {
-            metadata.set(PagedText.N_PAGES, propsHolder.getSlides());
-        }
-        addProperty(metadata, Office.PARAGRAPH_COUNT, propsHolder.getParagraphs());
-        addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder
-                .getPresentationFormat());
-        addProperty(metadata, Office.SLIDE_COUNT, propsHolder.getSlides());
+        addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
         addProperty(metadata, Metadata.TEMPLATE, propsHolder.getTemplate());
         addProperty(metadata, Metadata.TOTAL_TIME, propsHolder.getTotalTime());
+
+        if (propsHolder.getPages() > 0) {
+           metadata.set(PagedText.N_PAGES, propsHolder.getPages());
+        } else if (propsHolder.getSlides() > 0) {
+           metadata.set(PagedText.N_PAGES, propsHolder.getSlides());
+        }
+
+        // Process the document statistics
+        addProperty(metadata, Office.PAGE_COUNT, propsHolder.getPages());
+        addProperty(metadata, Office.SLIDE_COUNT, propsHolder.getSlides());
+        addProperty(metadata, Office.PARAGRAPH_COUNT, propsHolder.getParagraphs());
+        addProperty(metadata, Office.LINE_COUNT, propsHolder.getLines());
         addProperty(metadata, Office.WORD_COUNT, propsHolder.getWords());
+        addProperty(metadata, Office.CHARACTER_COUNT, propsHolder.getCharacters());
+        addProperty(metadata, Office.CHARACTER_COUNT_WITH_SPACES, propsHolder.getCharactersWithSpaces());
+        
+        // Legacy Tika-1.0 style stats
+        addProperty(metadata, MSOffice.PAGE_COUNT, propsHolder.getPages());
+        addProperty(metadata, MSOffice.SLIDE_COUNT, propsHolder.getSlides());
+        addProperty(metadata, MSOffice.PARAGRAPH_COUNT, propsHolder.getParagraphs());
+        addProperty(metadata, MSOffice.LINE_COUNT, propsHolder.getLines());
+        addProperty(metadata, MSOffice.WORD_COUNT, propsHolder.getWords());
+        addProperty(metadata, MSOffice.CHARACTER_COUNT, propsHolder.getCharacters());
+        addProperty(metadata, MSOffice.CHARACTER_COUNT_WITH_SPACES, propsHolder.getCharactersWithSpaces());
     }
 
     private void extractMetadata(CustomProperties properties,

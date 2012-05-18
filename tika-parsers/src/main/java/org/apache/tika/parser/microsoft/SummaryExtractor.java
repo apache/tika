@@ -32,6 +32,7 @@ import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.MSOffice;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PagedText;
@@ -105,13 +106,20 @@ class SummaryExtractor {
         set(TikaCoreProperties.SAVE_DATE, summary.getLastSaveDateTime());
         set(TikaCoreProperties.PRINT_DATE, summary.getLastPrinted());
         set(Metadata.EDIT_TIME, summary.getEditTime());
+        set(Metadata.SECURITY, summary.getSecurity());
+        
+        // New style counts
+        set(Office.WORD_COUNT, summary.getWordCount());
         set(Office.CHARACTER_COUNT, summary.getCharCount());
         set(Office.PAGE_COUNT, summary.getPageCount());
         if (summary.getPageCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getPageCount());
         }
-        set(Metadata.SECURITY, summary.getSecurity());
-        set(Office.WORD_COUNT, summary.getWordCount());
+        
+        // Old style, Tika 1.0 counts
+        set(MSOffice.WORD_COUNT, summary.getWordCount());
+        set(MSOffice.CHARACTER_COUNT, summary.getCharCount());
+        set(MSOffice.PAGE_COUNT, summary.getPageCount());
     }
 
     private void parse(DocumentSummaryInformation summary) {
@@ -119,10 +127,14 @@ class SummaryExtractor {
         set(Metadata.MANAGER, summary.getManager());
         set(TikaCoreProperties.LANGUAGE, getLanguage(summary));
         set(Metadata.CATEGORY, summary.getCategory());
+        
+        // New style counts
         set(Office.SLIDE_COUNT, summary.getSlideCount());
         if (summary.getSlideCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getSlideCount());
         }
+        // Old style, Tika 1.0 counts
+        set(MSOffice.SLIDE_COUNT, summary.getSlideCount());
         
         parse(summary.getCustomProperties());
     }
