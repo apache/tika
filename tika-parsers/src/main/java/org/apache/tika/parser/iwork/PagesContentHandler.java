@@ -42,9 +42,11 @@ class PagesContentHandler extends DefaultHandler {
        FOOTNOTES, ANNOTATIONS;
     }
     private DocumentPart inPart = null;
-    
+    private boolean ghostText;
+
     private boolean parseProperty = false;
     private int pageCount = 0;
+    private int slPageCount = 0;
 
     private HeaderFooter headers = null;
     private HeaderFooter footers = null;
@@ -94,17 +96,23 @@ class PagesContentHandler extends DefaultHandler {
             inPart = DocumentPart.METADATA;
         } else if ("sf:metadata".equals(qName)) {
            inPart = DocumentPart.METADATA;
-        } else if ("sf:page-start".equals(qName)) {
+        } else if ("sf:page-start".equals(qName) || "sl:page-group".equals(qName)) {
             if (pageCount > 0) {
                 doFooter();
                 xhtml.endElement("div");
             }
             xhtml.startElement("div");
-            pageCount++;
+            if ("sl:page-group".equals(qName)) {
+                slPageCount++;
+            } else {
+                pageCount++;
+            }
             doHeader();
-        } else if ("sf:p".equals(qName) && pageCount > 0) {
+        } else if ("sf:p".equals(qName)) {
+          if (pageCount+slPageCount > 0) {
             inPart = DocumentPart.PARSABLE_TEXT;
             xhtml.startElement("p");
+          }
         } else if ("sf:attachment".equals(qName)) {
             String kind = attributes.getValue("sf:kind");
             if ("tabular-attachment".equals(kind)) {
@@ -155,6 +163,8 @@ class PagesContentHandler extends DefaultHandler {
               xhtml.characters(annotationText);
               xhtml.endElement("div");
            }
+        } else if ("sf:ghost-text".equals(qName)) {
+            ghostText = true;
         }
 
         if (activeTableId != null) {
@@ -180,15 +190,17 @@ class PagesContentHandler extends DefaultHandler {
             inPart = null;
         } else if ("sf:metadata".equals(qName)) {
             inPart = null;
-        } else if ("sf:p".equals(qName) && pageCount > 0) {
+        } else if ("sf:p".equals(qName) && (pageCount+slPageCount) > 0) {
             inPart = null;
             xhtml.endElement("p");
         } else if ("sf:attachment".equals(qName)) {
             activeTableId = null;
         } else if ("sf:annotation".equals(qName) && inPart == DocumentPart.ANNOTATIONS) {
-           annotations.end();
+            annotations.end();
         } else if ("sf:annotation-field".equals(qName) && inPart == DocumentPart.PARSABLE_TEXT) {
-           xhtml.endElement("div");
+            xhtml.endElement("div");
+        } else if ("sf:ghost-text".equals(qName)) {
+            ghostText = false;
         }
     }
 
@@ -196,7 +208,9 @@ class PagesContentHandler extends DefaultHandler {
     public void characters(char[] ch, int start, int length) throws SAXException {
         if (length > 0) {
            if (inPart == DocumentPart.PARSABLE_TEXT) {
-              xhtml.characters(ch, start, length);
+               if (!ghostText) {
+                   xhtml.characters(ch, start, length);
+               }
           } else if(inPart != null) {
               String str = new String(ch, start, length);
               if (inPart == DocumentPart.HEADER_FIRST) headers.defaultFirst = str;
