@@ -225,6 +225,16 @@ public class IWorkParserTest extends TestCase {
         assertTrue(content.contains("Try adding your own account transactions to this table."));
     }
 
+    // TIKA- 924
+    public void testParseNumbersTableNames() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/tableNames.numbers");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        iWorkParser.parse(input, handler, metadata, parseContext);
+        String content = handler.toString();
+        assertTrue(content.contains("This is the main table"));
+    }
+        
     public void testParseNumbersTableHeaders() throws Exception {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/tableHeaders.numbers");
         Metadata metadata = new Metadata();

@@ -20,7 +20,8 @@ Release 1.2 - Current Development
     protected iWork files, even though we can't parse their contents
     yet (TIKA-903).  Text extracted from Keynote text boxes and bullet
     points no longer runs together (TIKA-910). Also extract text for
-    Pages documents created in layout mode (TIKA-904). 
+    Pages documents created in layout mode (TIKA-904).  Table names
+    are now extracted in Numbers documents (TIKA-924).
 
 Release 1.1 - 3/7/2012
 ---------------------------------
