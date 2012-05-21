@@ -97,11 +97,14 @@ class NumbersContentHandler extends DefaultHandler {
         }
 
         if ("sf:tabular-model".equals(qName)) {
+            String tableName = attributes.getValue("sf:name");
+            xhtml.startElement("div");
+            xhtml.characters(tableName);
+            xhtml.endElement("div");
             inTable = true;
             xhtml.startElement("table");
             xhtml.startElement("tr");
             currentColumn = 0;
-//            String tableName = attributes.getValue("sf:name");
         }
 
         if ("sf:menu-choices".equals(qName)) {
