@@ -288,6 +288,12 @@ public class PDFParserTest extends TikaTest {
                      substringCount("</p>", xml));
     }
 
+    public void testEmbeddedPDFs() throws Exception {
+        String xml = getXML("testPDFPackage.pdf").xml;
+        assertContains("PDF1", xml);
+        assertContains("PDF2", xml);
+    }
+
     private static int substringCount(String needle, String haystack) {
         int upto = -1;
         int count = 0;
@@ -441,10 +447,12 @@ public class PDFParserTest extends TikaTest {
         handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
         handler.setResult(new StreamResult(sw));
 
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
         // Try with a document containing various tables and formattings
         InputStream input = getResourceAsStream("/test-documents/" + filename);
         try {
-            parser.parse(input, handler, metadata, new ParseContext());
+            parser.parse(input, handler, metadata, context);
             return new XMLResult(sw.toString(), metadata);
         } finally {
             input.close();
