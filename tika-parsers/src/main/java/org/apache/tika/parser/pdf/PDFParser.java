@@ -177,25 +177,29 @@ public class PDFParser extends AbstractParser {
                     embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
                 }
 
-                for (Map.Entry<String,Object> ent : embeddedFiles.getNames().entrySet()) {
-                    PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
-                    PDEmbeddedFile file = spec.getEmbeddedFile();
+                Map<String,Object> embeddedFileNames = embeddedFiles.getNames();
 
-                    Metadata metadata = new Metadata();
-                    // TODO: other metadata?
-                    metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
-                    metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
-                    metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+                if (embeddedFileNames != null) {
+                    for (Map.Entry<String,Object> ent : embeddedFileNames.entrySet()) {
+                        PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
+                        PDEmbeddedFile file = spec.getEmbeddedFile();
 
-                    if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-                        TikaInputStream stream = TikaInputStream.get(file.createInputStream());
-                        try {
-                            embeddedExtractor.parseEmbedded(
-                                    stream,
-                                    new EmbeddedContentHandler(handler),
-                                    metadata, false);
-                        } finally {
-                            stream.close();
+                        Metadata metadata = new Metadata();
+                        // TODO: other metadata?
+                        metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
+                        metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
+                        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+
+                        if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+                            TikaInputStream stream = TikaInputStream.get(file.createInputStream());
+                            try {
+                                embeddedExtractor.parseEmbedded(
+                                                                stream,
+                                                                new EmbeddedContentHandler(handler),
+                                                                metadata, false);
+                            } finally {
+                                stream.close();
+                            }
                         }
                     }
                 }
