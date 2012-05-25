@@ -124,6 +124,20 @@ public class IWorkParserTest extends TestCase {
         assertTrue(content.contains("row 1 row 2 row 3"));
     }
 
+    // TIKA-923
+    public void testKeynoteMasterSlideTable() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testMasterSlideTable.key");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        iWorkParser.parse(input, handler, metadata, parseContext);
+
+        String content = handler.toString();
+        content = content.replaceAll("\\s+", " ");
+        assertTrue(content.contains("master row 1"));
+        assertTrue(content.contains("master row 2"));
+        assertTrue(content.contains("master row 3"));
+    }
+
     public void testParsePages() throws Exception {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPages.pages");
         Metadata metadata = new Metadata();
