@@ -67,6 +67,9 @@ class KeynoteContentHandler extends DefaultHandler {
             inSlide = true;
             numberOfSlides++;
             xhtml.startElement("div");
+        } else if ("key:master-slide".equals(qName)) {
+            inSlide = true;
+            xhtml.startElement("div");
         } else if ("key:title-placeholder".equals(qName) && inSlide) {
             inTitle = true;
             xhtml.startElement("h1");
@@ -115,6 +118,9 @@ class KeynoteContentHandler extends DefaultHandler {
         if ("key:theme".equals(qName)) {
             inTheme = false;
         } else if ("key:slide".equals(qName)) {
+            inSlide = false;
+            xhtml.endElement("div");
+        } else if ("key:master-slide".equals(qName)) {
             inSlide = false;
             xhtml.endElement("div");
         } else if ("key:title-placeholder".equals(qName) && inSlide) {
