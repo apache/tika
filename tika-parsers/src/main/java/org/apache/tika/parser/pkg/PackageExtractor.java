@@ -101,7 +101,7 @@ class PackageExtractor {
                 || (a == 0xc7 && b == 0x71)) {
             metadata.set(Metadata.CONTENT_TYPE, "application/x-cpio");
             unpack(new CpioArchiveInputStream(stream), xhtml);
-        } else if (a == '=' && (b == '<' || b == '!')) {
+        } else if ((a == '=' || a == '!') && (b == '<')) {
             metadata.set(Metadata.CONTENT_TYPE, "application/x-archive");
             unpack(new ArArchiveInputStream(stream), xhtml);
         } else {
