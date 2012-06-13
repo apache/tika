@@ -33,7 +33,7 @@ public class ArParserTest extends AbstractPkgTest {
 		Metadata metadata = new Metadata();
 
 		InputStream stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testAROfText.ar");
+				.getResourceAsStream("/test-documents/testARofText.ar");
 		try {
 			parser.parse(stream, handler, metadata, recursingContext);
 		} finally {
@@ -48,7 +48,7 @@ public class ArParserTest extends AbstractPkgTest {
 		assertTrue(content.contains("http://www.apache.org"));
 
 		stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testAROfSND.ar");
+				.getResourceAsStream("/test-documents/testARofSND.ar");
 		try {
 			parser.parse(stream, handler, metadata, recursingContext);
 		} finally {
@@ -71,7 +71,7 @@ public class ArParserTest extends AbstractPkgTest {
 		Metadata metadata = new Metadata();
 
 		InputStream stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testAROfText.ar");
+				.getResourceAsStream("/test-documents/testARofText.ar");
 		try {
 			parser.parse(stream, handler, metadata, trackingContext);
 		} finally {
@@ -89,7 +89,7 @@ public class ArParserTest extends AbstractPkgTest {
 
 		tracker.reset();
 		stream = ArParserTest.class
-				.getResourceAsStream("/test-documents/testAROfSND.ar");
+				.getResourceAsStream("/test-documents/testARofSND.ar");
 		try {
 			parser.parse(stream, handler, metadata, trackingContext);
 		} finally {
