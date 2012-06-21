@@ -27,9 +27,7 @@ import junit.framework.TestCase;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.microsoft.POIFSContainerDetector;
 
 /**
  * 
@@ -579,6 +577,12 @@ public class TestMimeTypes extends TestCase {
         assertType("application/x-font-ttf", "testTrueType.ttf");
     }
     
+    public void test7ZipDetection() throws Exception {
+       assertTypeByName("application/x-7z-compressed","test-documents.7z");
+       assertTypeByData("application/x-7z-compressed","test-documents.7z");
+       assertTypeByNameAndData("application/x-7z-compressed", "test-documents.7z");
+   }
+
     public void testWebArchiveDetection() throws Exception {
         assertTypeByName("application/x-webarchive","x.webarchive");
         assertTypeByData("application/x-bplist","testWEBARCHIVE.webarchive");

@@ -3117,6 +3117,18 @@
     <glob pattern="*.zip"/>
   </mime-type>
 
+  <mime-type type="application/x-7z-compressed">
+    <acronym>7zip</acronym>
+    <_comment>7-zip archive</_comment>
+    <magic priority="50">
+      <!-- Magic: '7', 'z', 0xBC, 0xAF, 0x27, 0x1C -->
+      <match value="7z" type="string" offset="0:1" >
+        <match value="0xBCAF271C" type="string" offset="2:5" />
+      </match>
+    </magic>
+    <glob pattern="*.7z" />
+  </mime-type>
+
   <mime-type type="audio/32kadpcm"/>
   <mime-type type="audio/3gpp"/>
   <mime-type type="audio/3gpp2"/>
