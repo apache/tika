@@ -19,8 +19,10 @@ package org.apache.tika.mime;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -92,6 +94,43 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
 
     public static MediaType video(String type) {
         return MediaType.parse("video/" + type);
+    }
+
+    /**
+     * Convenience method that returns an unmodifiable set that contains
+     * all the given media types.
+     *
+     * @since Apache Tika 1.2
+     * @param types media types
+     * @return unmodifiable set of the given types
+     */
+    public static Set<MediaType> set(MediaType... types) {
+        Set<MediaType> set = new HashSet<MediaType>();
+        for (MediaType type : types) {
+            if (type != null) {
+                set.add(type);
+            }
+        }
+        return Collections.unmodifiableSet(set);
+    }
+
+    /**
+     * Convenience method that parses the given media type strings and
+     * returns an unmodifiable set that contains all the parsed types.
+     *
+     * @since Apache Tika 1.2
+     * @param types media type strings
+     * @return unmodifiable set of the parsed types
+     */
+    public static Set<MediaType> set(String... types) {
+        Set<MediaType> set = new HashSet<MediaType>();
+        for (String type : types) {
+            MediaType mt = parse(type);
+            if (mt != null) {
+                set.add(mt);
+            }
+        }
+        return Collections.unmodifiableSet(set);
     }
 
     /**

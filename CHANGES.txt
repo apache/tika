@@ -24,6 +24,11 @@ Release 1.2 - Current Development
     are now extracted in Numbers documents (TIKA-924).  Content added
     to master slides is also extracted (TIKA-923).
 
+  * Archive and compression formats: The Commons Compress dependency was
+    upgraded from 1.3 to 1.4.1. With this change Tika can now parse also
+    Unix dump archives and documents compressed using the XZ and Pack200
+    compression formats.
+
 Release 1.1 - 3/7/2012
 ---------------------------------
 
