@@ -383,3 +383,11 @@ BZip classes inside the NetCDF library
     OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
     OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
     SUCH DAMAGE.
+
+XZ compression library (xz)
+
+    All the files in this package have been written by Lasse Collin
+    and/or Igor Pavlov. All these files have been put into the
+    public domain. You can do whatever you want with these files.
+
+    This software is provided "as is", without any warranty.
