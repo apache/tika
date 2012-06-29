@@ -176,6 +176,7 @@
     <sub-class-of type="application/zip"/>
     <glob pattern="*.jar"/>
   </mime-type>
+
   <mime-type type="application/vnd.android.package-archive">
     <sub-class-of type="application/java-archive"/>
     <glob pattern="*.apk"/>
@@ -188,6 +189,8 @@
     <sub-class-of type="application/java-archive"/>
     <glob pattern="*.war"/>
   </mime-type>
+
+  <mime-type type="application/x-tika-unix-dump"/>
 
   <mime-type type="application/java-serialized-object">
     <glob pattern="*.ser"/>
@@ -2651,6 +2654,10 @@
     <glob pattern="*.jnlp"/>
   </mime-type>
 
+  <mime-type type="application/x-java-pack200">
+    <glob pattern="*.pack"/>
+  </mime-type>
+
   <mime-type type="application/x-kdelnk">
     <magic priority="50">
       <match value="[KDE\ Desktop\ Entry]" type="string" offset="0"/>
@@ -3029,6 +3036,13 @@
   </mime-type>
   <mime-type type="application/x-xpinstall">
     <glob pattern="*.xpi"/>
+  </mime-type>
+
+  <mime-type type="application/x-xz">
+    <glob pattern="*.xz"/>
+    <magic priority="50">
+      <match value="\3757zXZ\000" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-zoo">

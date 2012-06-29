@@ -42,7 +42,7 @@ public class Bzip2ParserTest extends AbstractPkgTest {
             stream.close();
         }
 
-        assertEquals("application/x-bzip", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-bzip2", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
         assertTrue(content.contains("test-documents/testEXCEL.xls"));
         assertTrue(content.contains("Sample Excel Worksheet"));
