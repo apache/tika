@@ -68,6 +68,28 @@ public class PackageParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(ZIP, JAR, AR, CPIO, DUMP, TAR);
 
+    static MediaType getMediaType(ArchiveInputStream stream) {
+        if (stream instanceof JarArchiveInputStream) {
+            return JAR;
+        } else if (stream instanceof ZipArchiveInputStream) {
+            return ZIP;
+        } else if (stream instanceof ArArchiveInputStream) {
+            return AR;
+        } else if (stream instanceof CpioArchiveInputStream) {
+            return CPIO;
+        } else if (stream instanceof DumpArchiveInputStream) {
+            return DUMP;
+        } else if (stream instanceof TarArchiveInputStream) {
+            return TAR;
+        } else {
+            return MediaType.OCTET_STREAM;
+        }
+    }
+
+    static boolean isZipArchive(MediaType type) {
+        return type.equals(ZIP) || type.equals(JAR);
+    }
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -92,18 +114,9 @@ public class PackageParser extends AbstractParser {
             throw new TikaException("Unable to unpack document stream", e);
         }
 
-        if (ais instanceof JarArchiveInputStream) {
-            metadata.set(CONTENT_TYPE, JAR.toString());
-        } else if (ais instanceof ZipArchiveInputStream) {
-            metadata.set(CONTENT_TYPE, ZIP.toString());
-        } else if (ais instanceof ArArchiveInputStream) {
-            metadata.set(CONTENT_TYPE, AR.toString());
-        } else if (ais instanceof CpioArchiveInputStream) {
-            metadata.set(CONTENT_TYPE, CPIO.toString());
-        } else if (ais instanceof DumpArchiveInputStream) {
-            metadata.set(CONTENT_TYPE, DUMP.toString());
-        } else if (ais instanceof TarArchiveInputStream) {
-            metadata.set(CONTENT_TYPE, TAR.toString());
+        MediaType type = getMediaType(ais);
+        if (!type.equals(MediaType.OCTET_STREAM)) {
+            metadata.set(CONTENT_TYPE, type.toString());
         }
 
         // Use the delegate parser to parse the contained document

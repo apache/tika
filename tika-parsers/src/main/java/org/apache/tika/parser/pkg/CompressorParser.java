@@ -60,6 +60,20 @@ public class CompressorParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(BZIP, BZIP2, GZIP, XZ, PACK);
 
+    static MediaType getMediaType(CompressorInputStream stream) {
+        if (stream instanceof BZip2CompressorInputStream) {
+            return BZIP2;
+        } else if (stream instanceof GzipCompressorInputStream) {
+            return GZIP;
+        } else if (stream instanceof XZCompressorInputStream) {
+            return XZ;
+        } else if (stream instanceof Pack200CompressorInputStream) {
+            return PACK;
+        } else {
+            return MediaType.OCTET_STREAM;
+        }
+    }
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -84,14 +98,9 @@ public class CompressorParser extends AbstractParser {
             throw new TikaException("Unable to uncompress document stream", e);
         }
 
-        if (cis instanceof BZip2CompressorInputStream) {
-            metadata.set(CONTENT_TYPE, BZIP2.toString());
-        } else if (cis instanceof GzipCompressorInputStream) {
-            metadata.set(CONTENT_TYPE, GZIP.toString());
-        } else if (cis instanceof XZCompressorInputStream) {
-            metadata.set(CONTENT_TYPE, XZ.toString());
-        } else if (cis instanceof Pack200CompressorInputStream) {
-            metadata.set(CONTENT_TYPE, PACK.toString());
+        MediaType type = getMediaType(cis);
+        if (!type.equals(MediaType.OCTET_STREAM)) {
+            metadata.set(CONTENT_TYPE, type.toString());
         }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
