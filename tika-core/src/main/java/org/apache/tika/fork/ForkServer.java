@@ -44,6 +44,8 @@ class ForkServer implements Runnable, Checksum {
 
     public static final byte RESOURCE = 3;
 
+    public static final byte READY = 4;
+
     /**
      * Starts a forked server process using the standard input and output
      * streams for communication with the parent process. Any attempts by
@@ -104,6 +106,9 @@ class ForkServer implements Runnable, Checksum {
 
     public void processRequests() {
         try {
+            output.writeByte(READY);
+            output.flush();
+
             ClassLoader loader = (ClassLoader) readObject(
                     ForkServer.class.getClassLoader());
             Thread.currentThread().setContextClassLoader(loader);

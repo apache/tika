@@ -26,6 +26,8 @@ import java.util.Set;
 import junit.framework.TestCase;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.fork.ForkParser;
@@ -42,9 +44,9 @@ import org.xml.sax.SAXException;
  *  wired in to the regular Parsers and their test data
  */
 public class ForkParserIntegrationTest extends TestCase {
-//    private TikaConfig tika = TikaConfig.getDefaultConfig();
+
     private Tika tika = new Tika(); // TODO Use TikaConfig instead, when it works
-    
+
     /**
      * Simple text parsing
      */
@@ -203,6 +205,33 @@ public class ForkParserIntegrationTest extends TestCase {
        } finally {
           parser.close();
        }
+    }
+
+    /**
+     * TIKA-832
+     */
+    public void testAttachingADebuggerOnTheForkedParserShouldWork()
+            throws Exception {
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, tika.getParser());
+
+        ForkParser parser = new ForkParser(
+                ForkParserIntegrationTest.class.getClassLoader(),
+                tika.getParser());
+        parser.setJavaCommand(
+                "java -Xmx32m -Xdebug -Xrunjdwp:"
+                + "transport=dt_socket,address=54321,server=y,suspend=n");
+        try {
+            ContentHandler body = new BodyContentHandler();
+            InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(
+                    "/test-documents/testTXT.txt");
+            parser.parse(stream, body, new Metadata(), context);
+            String content = body.toString();
+            assertTrue(content.contains("Test d'indexation"));
+            assertTrue(content.contains("http://www.apache.org"));
+        } finally {
+            parser.close();
+        }
     }
 
     /**
