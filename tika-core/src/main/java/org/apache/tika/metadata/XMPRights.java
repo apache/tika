@@ -34,19 +34,37 @@ public interface XMPRights {
 
     String NAMESPACE_URI_XMP_RIGHTS = "http://ns.adobe.com/xap/1.0/rights/";
     String PREFIX_XMP_RIGHTS = "xmpRights";
-    
+
+    /**
+     * A Web URL for a rights management certificate.
+     */
     Property CERTIFICATE = Property.internalText(
             PREFIX_XMP_RIGHTS + Metadata.NAMESPACE_PREFIX_DELIMITER + "Certificate");
-    
+
+    /**
+     * When true, indicates that this is a rights-managed resource. When
+     * false, indicates that this is a public-domain resource. Omit if the
+     * state is unknown.
+     */
     Property MARKED = Property.internalBoolean(
             PREFIX_XMP_RIGHTS + Metadata.NAMESPACE_PREFIX_DELIMITER + "Marked");
-    
+
+    /**
+     * A list of legal owners of the resource.
+     */
     Property OWNER = Property.internalTextBag(
             PREFIX_XMP_RIGHTS + Metadata.NAMESPACE_PREFIX_DELIMITER + "Owner");
-    
+
+    /**
+     * A word or short phrase that identifies a resource as a member of a userdefined collection.
+     * TODO This is actually a language alternative property
+     */
     Property USAGE_TERMS = Property.internalText(
             PREFIX_XMP_RIGHTS + Metadata.NAMESPACE_PREFIX_DELIMITER + "UsageTerms");
-    
+
+    /**
+     * A Web URL for a statement of the ownership and usage rights for this resource.
+     */
     Property WEB_STATEMENT = Property.internalText(
             PREFIX_XMP_RIGHTS + Metadata.NAMESPACE_PREFIX_DELIMITER + "WebStatement");
 
