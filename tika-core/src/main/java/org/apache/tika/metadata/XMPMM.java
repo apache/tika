@@ -22,7 +22,8 @@ public interface XMPMM {
 
     String PREFIX = "xmpMM";
 
-    String PREFIX_DELIMITER = ":";
+    /** The xmpMM prefix followed by the colon delimiter */
+    String PREFIX_ = PREFIX + ":";
 
     /**
      * A reference to the resource from which this one is derived.
@@ -31,21 +32,18 @@ public interface XMPMM {
      * 
      * TODO This property is of type RessourceRef which is a struct
      */
-//    Property DERIVED_FROM = Property.externalText(
-//            PREFIX + PREFIX_DELIMITER + "DerivedFrom");
+//    Property DERIVED_FROM = Property.externalText(PREFIX_ + "DerivedFrom");
 
     /**
      * The common identifier for all versions and renditions of a resource.
      */
-    Property DOCUMENTID = Property.externalText(
-            PREFIX + PREFIX_DELIMITER + "DocumentID");
+    Property DOCUMENTID = Property.externalText(PREFIX_ + "DocumentID");
 
     /**
      * An identifier for a specific incarnation of a resource, updated
      * each time a file is saved.
      */
-    Property INSTANCEID = Property.externalText(
-            PREFIX + PREFIX_DELIMITER + "InstanceID");
+    Property INSTANCEID = Property.externalText(PREFIX_ + "InstanceID");
 
     /**
      * The common identifier for the original resource from which
@@ -56,7 +54,7 @@ public interface XMPMM {
      * that format, but should retain the ID of the source file here.
      */
     Property ORIGINAL_DOCUMENTID = Property.externalText(
-            PREFIX + PREFIX_DELIMITER + "OriginalDocumentID");
+            PREFIX_ + "OriginalDocumentID");
 
     /**
      * The rendition class name for this resource. This property
@@ -64,13 +62,14 @@ public interface XMPMM {
      * a derived rendition
      */
     Property RENDITION_CLASS = Property.externalOpenChoise(
-            PREFIX + PREFIX_DELIMITER + "RenditionClass", "default", "draft", "low-res", "proof", "screen", "thumbnail");
+            PREFIX_ + "RenditionClass",
+            "default", "draft", "low-res", "proof", "screen", "thumbnail");
 
     /**
      * Can be used to provide additional rendition parameters that
      * are too complex or verbose to encode in xmpMM:RenditionClass
      */
     Property RENDITION_PARAMS = Property.externalText(
-            PREFIX + PREFIX_DELIMITER + "RenditionParams");
+            PREFIX_ + "RenditionParams");
 
 }
