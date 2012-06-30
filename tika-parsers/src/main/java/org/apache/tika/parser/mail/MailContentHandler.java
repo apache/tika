@@ -35,10 +35,13 @@ import org.apache.james.mime4j.field.LenientFieldParser;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -54,21 +57,38 @@ class MailContentHandler implements ContentHandler {
     private boolean strictParsing = false;
 
     private XHTMLContentHandler handler;
+    private ParseContext context;
     private Metadata metadata;
+    private TikaConfig tikaConfig = null;
 
     private boolean inPart = false;
     
-    MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, boolean strictParsing) {
+    MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context, boolean strictParsing) {
         this.handler = xhtml;
+        this.context = context;
         this.metadata = metadata;
         this.strictParsing = strictParsing;
     }
 
     public void body(BodyDescriptor body, InputStream is) throws MimeException,
             IOException {
-        // call the underlying parser for the part
-        // TODO how to retrieve a non-default config?
-        AutoDetectParser parser = new AutoDetectParser();
+        // Work out the best underlying parser for the part
+        // Check first for a specified AutoDetectParser (which may have a
+        //  specific Config), then a recursing parser, and finally the default
+        Parser parser = context.get(AutoDetectParser.class);
+        if (parser == null) {
+           parser = context.get(Parser.class);
+        }
+        if (parser == null) {
+           if (tikaConfig == null) {
+              tikaConfig = context.get(TikaConfig.class);
+              if (tikaConfig == null) {
+                 tikaConfig = TikaConfig.getDefaultConfig();
+              }
+           }
+           parser = tikaConfig.getParser();
+        }
+
         // use a different metadata object
         // in order to specify the mime type of the
         // sub part without damaging the main metadata
@@ -79,7 +99,7 @@ class MailContentHandler implements ContentHandler {
 
         try {
             BodyContentHandler bch = new BodyContentHandler(handler);
-            parser.parse(is, new EmbeddedContentHandler(bch), submd);
+            parser.parse(is, new EmbeddedContentHandler(bch), submd, context);
         } catch (SAXException e) {
             throw new MimeException(e);
         } catch (TikaException e) {
