@@ -19,6 +19,11 @@ package org.apache.tika.detect;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -54,7 +59,8 @@ public class MagicDetector implements Detector {
         }
 
         return new MagicDetector(
-                mediaType, patternBytes, maskBytes, start, end);
+                mediaType, patternBytes, maskBytes,
+                type.equals("regex"), start, end);
     }
 
     private static byte[] decodeValue(String value, String type) {
@@ -76,7 +82,9 @@ public class MagicDetector implements Detector {
             radix = 8;
         }
 
-        if (type.equals("string") || type.equals("unicodeLE")
+        if (type.equals("string")
+                || type.equals("regex")
+                || type.equals("unicodeLE")
                 || type.equals("unicodeBE")) {
             decoded = decodeString(value, type);
         } else if (type.equals("byte")) {
@@ -179,7 +187,7 @@ public class MagicDetector implements Detector {
     private final MediaType type;
 
     /**
-     * Length of the comparison window. All the byte arrays here are this long.
+     * Length of the comparison window.
      */
     private final int length;
 
@@ -189,6 +197,17 @@ public class MagicDetector implements Detector {
      * detection succeeds and the configured {@link #type} is returned.
      */
     private final byte[] pattern;
+    
+    /**
+     * Length of the pattern, which in the case of regular expressions will
+     * not be the same as the comparison window length.
+     */
+    private final int patternLength;
+    
+    /**
+     * True if pattern is a regular expression, false otherwise.
+     */
+    private final boolean isRegex;
 
     /**
      * Bit mask that is applied to the source bytes before pattern matching.
@@ -234,6 +253,17 @@ public class MagicDetector implements Detector {
     public MagicDetector(MediaType type, byte[] pattern, int offset) {
         this(type, pattern, null, offset, offset);
     }
+    
+    /**
+     * Creates a detector for input documents that meet the specified magic
+     * match.  {@code pattern} must NOT be a regular expression.
+     * Constructor maintained for legacy reasons.
+     */
+    public MagicDetector(
+        MediaType type, byte[] pattern, byte[] mask,
+        int offsetRangeBegin, int offsetRangeEnd) {
+        this(type, pattern, mask, false, offsetRangeBegin, offsetRangeEnd);
+    }
 
     /**
      * Creates a detector for input documents that meet the specified
@@ -241,6 +271,7 @@ public class MagicDetector implements Detector {
      */
     public MagicDetector(
             MediaType type, byte[] pattern, byte[] mask,
+            boolean isRegex,
             int offsetRangeBegin, int offsetRangeEnd) {
         if (type == null) {
             throw new IllegalArgumentException("Matching media type is null");
@@ -255,12 +286,21 @@ public class MagicDetector implements Detector {
 
         this.type = type;
 
-        this.length = Math.max(pattern.length, mask != null ? mask.length : 0);
+        this.isRegex = isRegex;
 
-        this.mask = new byte[length];
-        this.pattern = new byte[length];
+        this.patternLength = Math.max(pattern.length, mask != null ? mask.length : 0);
 
-        for (int i = 0; i < length; i++) {
+        if (this.isRegex) {
+            // 8K buffer should cope with most regex patterns
+            this.length = 8 * 1024;
+        } else {
+            this.length = patternLength;
+        }
+
+        this.mask = new byte[this.patternLength];
+        this.pattern = new byte[this.patternLength];
+
+        for (int i = 0; i < this.patternLength; i++) {
             if (mask != null && i < mask.length) {
                 this.mask[i] = mask[i];
             } else {
@@ -316,19 +356,41 @@ public class MagicDetector implements Detector {
                 int bufferOffset = offset - offsetRangeBegin;
                 n = input.read(
                         buffer, bufferOffset, buffer.length - bufferOffset);
-            }
-            if (offset < offsetRangeBegin + length) {
-                return MediaType.OCTET_STREAM;
+                // increment offset - in case not all read (see testDetectStreamReadProblems)
+                if (n > 0) {
+                    offset += n;
+                }
             }
 
-            // Loop until we've covered the entire offset range
-            for (int i = 0; i <= offsetRangeEnd - offsetRangeBegin; i++) {
-                boolean match = true;
-                for (int j = 0; match && j < length; j++) {
-                    match = (buffer[i + j] & mask[j]) == pattern[j];
+            if (this.isRegex) {
+                Pattern p = Pattern.compile(new String(this.pattern));
+
+                ByteBuffer bb = ByteBuffer.wrap(buffer);
+                CharBuffer result = Charset.forName("ISO-8859-1").decode(bb);
+                Matcher m = p.matcher(result);
+
+                boolean match = false;
+                // Loop until we've covered the entire offset range
+                for (int i = 0; i <= offsetRangeEnd - offsetRangeBegin; i++) {
+                    m.region(i,  length+i);
+                    match = m.lookingAt(); // match regex from start of region
+                    if (match) {
+                        return type;
+                    }
                 }
-                if (match) {
-                    return type;
+            } else {
+                if (offset < offsetRangeBegin + length) {
+                    return MediaType.OCTET_STREAM;
+                }
+                // Loop until we've covered the entire offset range
+                for (int i = 0; i <= offsetRangeEnd - offsetRangeBegin; i++) {
+                    boolean match = true;
+                    for (int j = 0; match && j < length; j++) {
+                        match = (buffer[i + j] & mask[j]) == pattern[j];
+                    }
+                    if (match) {
+                        return type;
+                    }
                 }
             }
 
@@ -339,7 +401,7 @@ public class MagicDetector implements Detector {
     }
 
     public int getLength() {
-        return length;
+        return this.patternLength;
     }
 
     /**

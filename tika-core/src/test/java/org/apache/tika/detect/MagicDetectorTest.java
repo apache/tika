@@ -72,7 +72,7 @@ public class MagicDetectorTest extends TestCase {
                 + "12345<html");
 
         assertDetect(detector, MediaType.OCTET_STREAM, "");
-}
+    }
 
     public void testDetectMask() throws Exception {
         MediaType html = new MediaType("text", "html");
@@ -101,6 +101,84 @@ public class MagicDetectorTest extends TestCase {
         assertDetect(detector, MediaType.OCTET_STREAM, "");
     }
 
+    public void testDetectRegExPDF() throws Exception {
+        MediaType pdf = new MediaType("application", "pdf");
+        Detector detector = new MagicDetector(
+                pdf, "(?s)\\A.{0,144}%PDF-".getBytes("ASCII"), null, true, 0, 0);
+
+        assertDetect(detector, pdf, "%PDF-1.0");
+        assertDetect(
+                detector, pdf,
+                "0        10        20        30        40        50        6"
+                + "0        70        80        90        100       110       1"
+                + "20       130       140"
+                + "34%PDF-1.0");
+        assertDetect(
+                detector, MediaType.OCTET_STREAM,
+                "0        10        20        30        40        50        6"
+                + "0        70        80        90        100       110       1"
+                + "20       130       140"
+                + "345%PDF-1.0");
+        assertDetect(detector, MediaType.OCTET_STREAM, "");
+    }
+
+    public void testDetectRegExGreedy() throws Exception {
+        String pattern =
+                "(?s)\\x3chtml xmlns=\"http://www\\.w3\\.org/1999/xhtml"
+                + "\".*\\x3ctitle\\x3e.*\\x3c/title\\x3e";
+        MediaType xhtml = new MediaType("application", "xhtml+xml");
+        Detector detector = new MagicDetector(xhtml,
+                pattern.getBytes("ASCII"), null,
+                true, 0, 8192);
+
+        assertDetect(detector, xhtml,
+                "<html xmlns=\"http://www.w3.org/1999/xhtml\">"
+                + "<head><title>XHTML test document</title></head>");
+    }
+
+    public void testDetectRegExOptions() throws Exception {
+        String pattern =
+                "(?s)\\A.{0,1024}\\x3c\\!(?:DOCTYPE|doctype) (?:HTML|html) "
+                + "(?:PUBLIC|public) \"-//.{1,16}//(?:DTD|dtd) .{0,64}"
+                + "(?:HTML|html) 4\\.01";
+
+        String data =
+                "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\""
+                + "\"http://www.w3.org/TR/html4/strict.dtd\"><HTML>"
+                + "<HEAD><TITLE>HTML document</TITLE></HEAD>"
+                + "<BODY><P>Hello world!</BODY></HTML>";
+
+        String data1 =
+                "<!DOCTYPE html PUBLIC \"-//W3C//dtd html 4.01//EN\""
+                + "\"http://www.w3.org/TR/html4/strict.dtd\"><HTML>"
+                + "<HEAD><TITLE>HTML document</TITLE></HEAD>"
+                + "<BODY><P>Hello world!</BODY></HTML>";
+
+        String data2 =
+                "<!DoCtYpE hTmL pUbLiC \"-//W3C//dTd HtMl 4.01//EN\""
+                + "\"http://www.w3.org/TR/html4/strict.dtd\"><HTML>"
+                + "<HEAD><TITLE>HTML document</TITLE></HEAD>"
+                + "<BODY><P>Hello world!</BODY></HTML>";
+
+        MediaType html = new MediaType("text", "html");
+        Detector detector = new MagicDetector(
+                html, pattern.getBytes("ASCII"), null, true, 0, 0);
+
+        assertDetect(detector, html, data);
+        assertDetect(detector, html, data1);
+        assertDetect(detector, MediaType.OCTET_STREAM, data2);
+    }
+
+    public void testDetectStreamReadProblems() throws Exception {
+        byte[] data = "abcdefghijklmnopqrstuvwxyz0123456789".getBytes("ASCII");
+        MediaType testMT = new MediaType("application", "test");
+        Detector detector = new MagicDetector(testMT, data, null, false, 0, 0);
+        // Deliberately prevent InputStream.read(...) from reading the entire
+        // buffer in one go
+        InputStream stream = new RestrictiveInputStream(data);
+        assertEquals(testMT, detector.detect(stream, new Metadata()));
+    }
+
     private void assertDetect(Detector detector, MediaType type, String data) {
         try {
             byte[] bytes = data.getBytes("ASCII");
@@ -114,6 +192,28 @@ public class MagicDetectorTest extends TestCase {
             assertEquals(-1, stream.read());
         } catch (IOException e) {
             fail("Unexpected exception from MagicDetector");
+        }
+    }
+
+    /**
+     * InputStream class that does not read in all available bytes in
+     * one go.
+     */
+    private class RestrictiveInputStream extends ByteArrayInputStream {
+        public RestrictiveInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        /**
+         * Prevent reading the entire len of bytes if requesting more
+         * than 10 bytes.
+         */
+        public int read(byte[] b, int off, int len) {
+            if (len > 10) {
+                return super.read(b, off, len-10);
+            } else {
+                return super.read(b, off, len);
+            }
         }
     }
 
