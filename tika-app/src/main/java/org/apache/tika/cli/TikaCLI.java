@@ -117,14 +117,15 @@ public class TikaCLI {
 
     private class OutputType {
 
-        public void process(InputStream input, OutputStream output)
+        public void process(
+                InputStream input, OutputStream output, Metadata metadata)
                 throws Exception {
             Parser p = parser;
             if (fork) {
                 p = new ForkParser(TikaCLI.class.getClassLoader(), p);
             }
-            ContentHandler handler = getContentHandler(output);
-            p.parse(input, handler, metadata, context);   
+            ContentHandler handler = getContentHandler(output, metadata);
+            p.parse(input, handler, metadata, context);
             // fix for TIKA-596: if a parser doesn't generate
             // XHTML output, the lack of an output document prevents
             // metadata from being output: this fixes that
@@ -136,8 +137,8 @@ public class TikaCLI {
             }
         }
 
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             throw new UnsupportedOperationException();
         }
         
@@ -145,67 +146,68 @@ public class TikaCLI {
 
     private final OutputType XML = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             return getTransformerHandler(output, "xml", encoding, prettyPrint);
         }
     };
 
     private final OutputType HTML = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             return getTransformerHandler(output, "html", encoding, prettyPrint);
         }
     };
 
     private final OutputType TEXT = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             return new BodyContentHandler(getOutputWriter(output, encoding));
         }
     };
 
     private final OutputType NO_OUTPUT = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output) {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) {
             return new DefaultHandler();
         }
     };
 
     private final OutputType TEXT_MAIN = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             return new BoilerpipeContentHandler(getOutputWriter(output, encoding));
         }
     };
     
     private final OutputType METADATA = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             final PrintWriter writer =
                 new PrintWriter(getOutputWriter(output, encoding));
-            return new NoDocumentMetHandler(writer);
+            return new NoDocumentMetHandler(metadata, writer);
         }
     };
 
     private final OutputType JSON = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             final PrintWriter writer =
                     new PrintWriter(getOutputWriter(output, encoding));
-            return new NoDocumentJSONMetHandler(writer);
+            return new NoDocumentJSONMetHandler(metadata, writer);
         }
     };
 
     private final OutputType XMP = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, final Metadata metadata) throws Exception {
             final ContentHandler handler =
                     getTransformerHandler(output, "xml", encoding, prettyPrint);
             return new DefaultHandler() {
@@ -222,8 +224,8 @@ public class TikaCLI {
 
     private final OutputType LANGUAGE = new OutputType() {
         @Override
-        protected ContentHandler getContentHandler(OutputStream output)
-                throws Exception {
+        protected ContentHandler getContentHandler(
+                OutputStream output, Metadata metadata) throws Exception {
             final PrintWriter writer =
                 new PrintWriter(getOutputWriter(output, encoding));
             return new ProfilingHandler() {
@@ -237,7 +239,8 @@ public class TikaCLI {
 
     private final OutputType DETECT = new OutputType() {
         @Override
-        public void process(InputStream stream, OutputStream output)
+        public void process(
+                InputStream stream, OutputStream output, Metadata metadata)
                 throws Exception {
             PrintWriter writer =
                 new PrintWriter(getOutputWriter(output, encoding));
@@ -250,7 +253,8 @@ public class TikaCLI {
     /* Creates ngram profile */
     private final OutputType CREATE_PROFILE = new OutputType() {
         @Override
-        public void process(InputStream stream, OutputStream output)
+        public void process(
+                InputStream stream, OutputStream output, Metadata metadata)
                 throws Exception {
             ngp = LanguageProfilerBuilder.create(profileName, stream, encoding);
             FileOutputStream fos = new FileOutputStream(new File(profileName + ".ngp"));
@@ -267,8 +271,6 @@ public class TikaCLI {
     private Detector detector;
 
     private Parser parser;
-
-    private Metadata metadata;
 
     private OutputType type = XML;
     
@@ -386,14 +388,13 @@ public class TikaCLI {
             type = CREATE_PROFILE;
         } else {
             pipeMode = false;
-            metadata = new Metadata();
             if (serverMode) {
                 new TikaServer(Integer.parseInt(arg)).start();
             } else if (arg.equals("-")) {
                 InputStream stream =
                     TikaInputStream.get(new CloseShieldInputStream(System.in));
                 try {
-                    type.process(stream, System.out);
+                    type.process(stream, System.out, new Metadata());
                 } finally {
                     stream.close();
                 }
@@ -405,9 +406,10 @@ public class TikaCLI {
                 } else {
                     url = new URL(arg);
                 }
+                Metadata metadata = new Metadata();
                 InputStream input = TikaInputStream.get(url, metadata);
                 try {
-                    type.process(input, System.out);
+                    type.process(input, System.out, metadata);
                 } finally {
                     input.close();
                     System.out.flush();
@@ -777,8 +779,9 @@ public class TikaCLI {
                 public void run() {
                     try {
                         try {
+                            InputStream input = socket.getInputStream();
                             OutputStream output = socket.getOutputStream();
-                            type.process(socket.getInputStream(), output);
+                            type.process(input, output, new Metadata());
                             output.flush();
                         } finally {
                             socket.close();
@@ -794,13 +797,16 @@ public class TikaCLI {
 
     }
     
-    private class NoDocumentMetHandler extends DefaultHandler{
-        
+    private class NoDocumentMetHandler extends DefaultHandler {
+
+        protected final Metadata metadata;
+
         protected PrintWriter writer;
         
         private boolean metOutput;
-        
-        public NoDocumentMetHandler(PrintWriter writer){
+
+        public NoDocumentMetHandler(Metadata metadata, PrintWriter writer){
+            this.metadata = metadata;
             this.writer = writer;
             this.metOutput = false;
         }
@@ -834,8 +840,8 @@ public class TikaCLI {
         private NumberFormat formatter;
         private Gson gson;
        
-        public NoDocumentJSONMetHandler(PrintWriter writer){
-            super(writer);
+        public NoDocumentJSONMetHandler(Metadata metadata, PrintWriter writer){
+            super(metadata, writer);
             
             formatter = NumberFormat.getInstance();
             gson = new Gson();
