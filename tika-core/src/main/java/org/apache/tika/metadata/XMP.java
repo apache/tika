@@ -22,7 +22,8 @@ public interface XMP {
 
     String PREFIX = "xmp";
 
-    String PREFIX_DELIMITER = ":";
+    /** The xmp prefix followed by the colon delimiter */
+    String PREFIX_ = PREFIX + ":";
 
     /**
      * The date and time the resource was created. For a digital file, this need not
@@ -30,14 +31,12 @@ public interface XMP {
      * be close to that time, modulo the time taken to write the file. Later file
      * transfer, copying, and so on, can make the file-system time arbitrarily different.
      */
-    Property CREATE_DATE = Property.externalDate(
-            PREFIX + PREFIX_DELIMITER + "CreateDate");
+    Property CREATE_DATE = Property.externalDate(PREFIX_ + "CreateDate");
 
     /**
      * The name of the first known tool used to create the resource.
      */
-    Property CREATOR_TOOL = Property.externalText(
-            PREFIX + PREFIX_DELIMITER + "CreatorTool");
+    Property CREATOR_TOOL = Property.externalText(PREFIX_ + "CreatorTool");
 
     /**
      * An unordered array of text strings that unambiguously identify the resource
@@ -45,34 +44,29 @@ public interface XMP {
      * (see 8.7, “xmpidq namespace”) to denote the formal identification system to
      * which that identifier conforms.
      */
-    Property IDENTIFIER = Property.externalTextBag(
-            PREFIX + PREFIX_DELIMITER + "Identifier");
+    Property IDENTIFIER = Property.externalTextBag(PREFIX_ + "Identifier");
 
     /**
      * A word or short phrase that identifies a resource as a member of a userdefined collection.
      */
-    Property LABEL = Property.externalDate(
-            PREFIX + PREFIX_DELIMITER + "Label");
+    Property LABEL = Property.externalDate(PREFIX_ + "Label");
 
     /**
      * The date and time that any metadata for this resource was last changed. It
      * should be the same as or more recent than xmp:ModifyDate
      */
-    Property METADATA_DATE = Property.externalDate(
-            PREFIX + PREFIX_DELIMITER + "MetadataDate");
+    Property METADATA_DATE = Property.externalDate(PREFIX_ + "MetadataDate");
 
     /**
      * The date and time the resource was last modified.
      */
-    Property MODIFY_DATE = Property.externalDate(
-            PREFIX + PREFIX_DELIMITER + "ModifyDate");
+    Property MODIFY_DATE = Property.externalDate(PREFIX_ + "ModifyDate");
 
     /**
      * A user-assigned rating for this file. The value shall be -1 or in the range
      * [0..5], where -1 indicates “rejected” and 0 indicates “unrated”. If xmp:Rating
      * is not present, a value of 0 should be assumed.
      */
-    Property RATING = Property.externalReal(
-            PREFIX + PREFIX_DELIMITER + "Rating");
+    Property RATING = Property.externalReal(PREFIX_ + "Rating");
 
 }
