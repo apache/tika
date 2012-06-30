@@ -19,6 +19,7 @@ package org.apache.tika.parser.pkg;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -287,7 +288,23 @@ public class ZipContainerDetector implements Detector {
     }
 
     private static MediaType detectKmz(ZipFile zip) {
-        if (zip.getEntry("doc.kml") != null) {
+        boolean kmlFound = false;
+
+        Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+        while (entries.hasMoreElements()) {
+            ZipArchiveEntry entry = entries.nextElement();
+            String name = entry.getName();
+            if (!entry.isDirectory()
+                    && name.indexOf('/') == -1 && name.indexOf('\\') == -1) {
+                if (name.endsWith(".kml") && !kmlFound) {
+                    kmlFound = true;
+                } else {
+                    return null;
+                }
+            }
+        }
+
+        if (kmlFound) {
             return MediaType.application("vnd.google-earth.kmz");
         } else {
             return null;

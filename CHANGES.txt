@@ -27,7 +27,11 @@ Release 1.2 - Current Development
   * Archive and compression formats: The Commons Compress dependency was
     upgraded from 1.3 to 1.4.1. With this change Tika can now parse also
     Unix dump archives and documents compressed using the XZ and Pack200
-    compression formats.
+    compression formats. (TIKA-932)
+
+  * KML: Tika now has basic support for Keyhole Markup Language documents
+    (KML and KMZ) used by tools like Google Earth. See also
+    http://www.opengeospatial.org/standards/kml/. (TIKA-941)
 
 Release 1.1 - 3/7/2012
 ---------------------------------
