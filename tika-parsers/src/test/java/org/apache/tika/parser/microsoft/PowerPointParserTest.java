@@ -102,7 +102,7 @@ public class PowerPointParserTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                     metadata.get(Metadata.KEYWORDS));
+                     metadata.get(TikaCoreProperties.KEYWORDS));
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",

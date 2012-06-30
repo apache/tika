@@ -30,6 +30,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.MSOffice;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -65,8 +67,8 @@ public class MetadataExtractor {
         PackagePropertiesPart propsHolder = properties
                 .getUnderlyingProperties();
 
-        addProperty(metadata, Metadata.CATEGORY, propsHolder.getCategoryProperty());
-        addProperty(metadata, Metadata.CONTENT_STATUS, propsHolder
+        addProperty(metadata, OfficeOpenXMLCore.CATEGORY, propsHolder.getCategoryProperty());
+        addProperty(metadata, OfficeOpenXMLCore.CONTENT_STATUS, propsHolder
                 .getContentStatusProperty());
         addProperty(metadata, TikaCoreProperties.DATE, propsHolder
                 .getCreatedProperty());
@@ -92,11 +94,20 @@ public class MetadataExtractor {
                 .getModifiedProperty());
         addProperty(metadata, TikaCoreProperties.MODIFIED, propsHolder
               .getModifiedProperty());
-        addProperty(metadata, Metadata.REVISION_NUMBER, propsHolder
+        addProperty(metadata, OfficeOpenXMLCore.REVISION, propsHolder
                 .getRevisionProperty());
         addProperty(metadata, TikaCoreProperties.SUBJECT, propsHolder
                 .getSubjectProperty());
         addProperty(metadata, TikaCoreProperties.TITLE, propsHolder.getTitleProperty());
+        addProperty(metadata, OfficeOpenXMLCore.VERSION, propsHolder.getVersionProperty());
+        
+        // Legacy Tika-1.0 style stats
+        // TODO Remove these in Tika 2.0
+        addProperty(metadata, Metadata.CATEGORY, propsHolder.getCategoryProperty());
+        addProperty(metadata, Metadata.CONTENT_STATUS, propsHolder
+                .getContentStatusProperty());
+        addProperty(metadata, Metadata.REVISION_NUMBER, propsHolder
+                .getRevisionProperty());
         addProperty(metadata, Metadata.VERSION, propsHolder.getVersionProperty());
     }
 
@@ -104,14 +115,15 @@ public class MetadataExtractor {
             Metadata metadata) {
         CTProperties propsHolder = properties.getUnderlyingProperties();
 
-        addProperty(metadata, Metadata.APPLICATION_NAME, propsHolder.getApplication());
-        addProperty(metadata, Metadata.APPLICATION_VERSION, propsHolder.getAppVersion());
+        addProperty(metadata, OfficeOpenXMLExtended.APPLICATION, propsHolder.getApplication());
+        addProperty(metadata, OfficeOpenXMLExtended.APP_VERSION, propsHolder.getAppVersion());
         addProperty(metadata, TikaCoreProperties.PUBLISHER, propsHolder.getCompany());
-        addProperty(metadata, Metadata.MANAGER, propsHolder.getManager());
-        addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
-        addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
-        addProperty(metadata, Metadata.TEMPLATE, propsHolder.getTemplate());
-        addProperty(metadata, Metadata.TOTAL_TIME, propsHolder.getTotalTime());
+        addProperty(metadata, OfficeOpenXMLExtended.COMPANY, propsHolder.getCompany());
+        addProperty(metadata, OfficeOpenXMLExtended.MANAGER, propsHolder.getManager());
+        addProperty(metadata, OfficeOpenXMLExtended.NOTES, propsHolder.getNotes());
+        addProperty(metadata, OfficeOpenXMLExtended.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
+        addProperty(metadata, OfficeOpenXMLExtended.TEMPLATE, propsHolder.getTemplate());
+        addProperty(metadata, OfficeOpenXMLExtended.TOTAL_TIME, propsHolder.getTotalTime());
 
         if (propsHolder.getPages() > 0) {
            metadata.set(PagedText.N_PAGES, propsHolder.getPages());
@@ -129,6 +141,14 @@ public class MetadataExtractor {
         addProperty(metadata, Office.CHARACTER_COUNT_WITH_SPACES, propsHolder.getCharactersWithSpaces());
         
         // Legacy Tika-1.0 style stats
+        // TODO Remove these in Tika 2.0
+        addProperty(metadata, Metadata.APPLICATION_NAME, propsHolder.getApplication());
+        addProperty(metadata, Metadata.APPLICATION_VERSION, propsHolder.getAppVersion());
+        addProperty(metadata, Metadata.MANAGER, propsHolder.getManager());
+        addProperty(metadata, Metadata.NOTES, propsHolder.getNotes());
+        addProperty(metadata, Metadata.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
+        addProperty(metadata, Metadata.TEMPLATE, propsHolder.getTemplate());
+        addProperty(metadata, Metadata.TOTAL_TIME, propsHolder.getTotalTime());
         addProperty(metadata, MSOffice.PAGE_COUNT, propsHolder.getPages());
         addProperty(metadata, MSOffice.SLIDE_COUNT, propsHolder.getSlides());
         addProperty(metadata, MSOffice.PARAGRAPH_COUNT, propsHolder.getParagraphs());

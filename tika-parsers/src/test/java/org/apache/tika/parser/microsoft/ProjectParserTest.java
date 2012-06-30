@@ -19,6 +19,9 @@ package org.apache.tika.parser.microsoft;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -69,12 +72,12 @@ public class ProjectParserTest extends TestCase {
        assertEquals("Pangram, fox, dog", metadata.get(TikaCoreProperties.KEYWORDS));
        assertEquals("Comment Vulpes vulpes comment", metadata.get(Metadata.COMMENTS));
        
-       assertEquals("Category1", metadata.get(Metadata.CATEGORY));
-       assertEquals("Mr Burns", metadata.get(Metadata.MANAGER));
-       assertEquals("CompanyA", metadata.get(Metadata.COMPANY));
+       assertEquals("Category1", metadata.get(OfficeOpenXMLCore.CATEGORY));
+       assertEquals("Mr Burns", metadata.get(OfficeOpenXMLExtended.MANAGER));
+       assertEquals("CompanyA", metadata.get(OfficeOpenXMLExtended.COMPANY));
        
-       assertEquals("2011-11-24T10:58:00Z", metadata.get(Metadata.CREATION_DATE));
-       assertEquals("2011-11-24T11:31:00Z", metadata.get(Metadata.LAST_SAVED));
+       assertEquals("2011-11-24T10:58:00Z", metadata.get(TikaCoreProperties.CREATION_DATE));
+       assertEquals("2011-11-24T11:31:00Z", metadata.get(TikaCoreProperties.SAVE_DATE));
        
        // Custom Project metadata is present with prefix
        assertEquals("0%", metadata.get("custom:% Complete"));

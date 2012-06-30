@@ -28,6 +28,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParserTest;
@@ -239,7 +240,7 @@ public class WordParserTest extends TikaTest {
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                     metadata.get(Metadata.KEYWORDS));
+                     metadata.get(TikaCoreProperties.KEYWORDS));
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
@@ -277,15 +278,15 @@ public class WordParserTest extends TikaTest {
        assertEquals("Etienne Jouvin",       metadata.get(TikaCoreProperties.LAST_AUTHOR));
        assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.SAVE_DATE));
        assertEquals("2010-10-05T09:03:00Z", metadata.get(TikaCoreProperties.CREATION_DATE));
-       assertEquals("Microsoft Office Word",metadata.get(Metadata.APPLICATION_NAME));
+       assertEquals("Microsoft Office Word",metadata.get(OfficeOpenXMLExtended.APPLICATION));
        assertEquals("1",                    metadata.get(Office.PAGE_COUNT));
        assertEquals("2",                    metadata.get(Office.WORD_COUNT));
        assertEquals("My Title",             metadata.get(TikaCoreProperties.TITLE));
        assertEquals("My Keyword",           metadata.get(TikaCoreProperties.KEYWORDS));
-       assertEquals("Normal.dotm",          metadata.get(Metadata.TEMPLATE));
+       assertEquals("Normal.dotm",          metadata.get(OfficeOpenXMLExtended.TEMPLATE));
        assertEquals("My Comments",          metadata.get(Metadata.COMMENTS));
        assertEquals("My subject",           metadata.get(TikaCoreProperties.SUBJECT));
-       assertEquals("EDF-DIT",              metadata.get(Metadata.COMPANY));
+       assertEquals("EDF-DIT",              metadata.get(OfficeOpenXMLExtended.COMPANY));
        assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
        assertEquals("2010-12-30T23:00:00Z", metadata.get("custom:MyCustomDate"));
     }

@@ -32,31 +32,31 @@ public interface MSOffice {
 
     @Deprecated String AUTHOR = "Author";
 
-    String APPLICATION_NAME = "Application-Name";
+    @Deprecated String APPLICATION_NAME = "Application-Name";
 
-    String REVISION_NUMBER = "Revision-Number";
+    @Deprecated String REVISION_NUMBER = "Revision-Number";
 
-    String TEMPLATE = "Template";
+    @Deprecated String TEMPLATE = "Template";
 
-    String TOTAL_TIME = "Total-Time";
+    @Deprecated String TOTAL_TIME = "Total-Time";
 
-    String PRESENTATION_FORMAT = "Presentation-Format";
+    @Deprecated String PRESENTATION_FORMAT = "Presentation-Format";
 
-    String NOTES = "Notes";
+    @Deprecated String NOTES = "Notes";
 
-    String MANAGER = "Manager";
+    @Deprecated String MANAGER = "Manager";
 
-    String APPLICATION_VERSION = "Application-Version";
+    @Deprecated String APPLICATION_VERSION = "Application-Version";
 
-    String VERSION = "Version";
+    @Deprecated String VERSION = "Version";
 
-    String CONTENT_STATUS = "Content-Status";
+    @Deprecated String CONTENT_STATUS = "Content-Status";
 
-    String CATEGORY = "Category";
+    @Deprecated String CATEGORY = "Category";
 
-    String COMPANY = "Company";
+    @Deprecated String COMPANY = "Company";
 
-    String SECURITY = "Security";
+    @Deprecated String SECURITY = "Security";
 
     
     /** The number of Slides are there in the (presentation) document */
