@@ -70,6 +70,8 @@ class ForkClient {
             this.input = new DataInputStream(process.getInputStream());
             this.error = process.getErrorStream();
 
+            waitForStartBeacon();
+
             sendObject(loader, resources);
             sendObject(object, resources);
 
@@ -77,6 +79,17 @@ class ForkClient {
         } finally {
             if (!ok) {
                 close();
+            }
+        }
+    }
+
+    private void waitForStartBeacon() throws IOException {
+        while (true) {
+            consumeErrorStream();
+            int type = input.read();
+            if ((byte) type == ForkServer.READY) {
+                consumeErrorStream();
+                return;
             }
         }
     }
