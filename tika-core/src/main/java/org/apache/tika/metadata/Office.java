@@ -31,8 +31,7 @@ package org.apache.tika.metadata;
 public interface Office {
    // These are taken from the OpenDocumentFormat specification
    public static final String NAMESPACE_URI_DOC_META = "urn:oasis:names:tc:opendocument:xmlns:meta:1.0";
-   public static final String PREFIX_DOC_META = "doc-meta";
-   public static final String PREFIX_DOC_META_STATS = "doc-meta-stats";
+   public static final String PREFIX_DOC_META = "meta";
 
    /** 
     * For user defined metadata entries in the document,
@@ -83,44 +82,44 @@ public interface Office {
     
     /** The number of Slides are there in the (presentation) document */
     Property SLIDE_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "slide-count");
+    	  PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "slide-count");
     
     /** The number of Pages are there in the (paged) document */
     Property PAGE_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "page-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "page-count");
 
     /** The number of individual Paragraphs in the document */ 
     Property PARAGRAPH_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "paragraph-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "paragraph-count");
     
     /** The number of lines in the document */
     Property LINE_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "line-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "line-count");
 
     /** The number of Words in the document */
     Property WORD_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "word-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "word-count");
 
     /** The number of Characters in the document */
     Property CHARACTER_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "character-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "character-count");
     
     /** The number of Characters in the document, including spaces */
     Property CHARACTER_COUNT_WITH_SPACES = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "character-count-with-spaces");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "character-count-with-spaces");
 
     /** The number of Tables in the document */
     Property TABLE_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "table-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "table-count");
     
     /** The number of Images in the document */
     Property IMAGE_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "image-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "image-count");
     
     /** 
      * The number of Objects in the document. These are typically non-Image resources 
      * embedded in the document, such as other documents or non-Image media. 
      */
     Property OBJECT_COUNT = Property.internalInteger(
-          PREFIX_DOC_META_STATS + Metadata.NAMESPACE_PREFIX_DELIMITER + "object-count");
+          PREFIX_DOC_META + Metadata.NAMESPACE_PREFIX_DELIMITER + "object-count");
 }

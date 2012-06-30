@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -284,7 +285,7 @@ public class ExcelParserTest extends TestCase {
        assertEquals("",                     metadata.get(TikaCoreProperties.LAST_AUTHOR));
        assertEquals("2011-08-22T13:45:54Z", metadata.get(TikaCoreProperties.SAVE_DATE));
        assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.CREATION_DATE));
-       assertEquals("Microsoft Excel",      metadata.get(Metadata.APPLICATION_NAME));
+       assertEquals("Microsoft Excel",      metadata.get(OfficeOpenXMLExtended.APPLICATION));
        assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
        assertEquals("3",                    metadata.get("custom:myCustomNumber"));
        assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));

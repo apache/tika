@@ -32,6 +32,8 @@ import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.CharsetUtils;
@@ -834,15 +836,15 @@ final class TextExtractor {
                 } else if (equals("keywords")) {
                     nextMetaData = TikaCoreProperties.KEYWORDS.getName();
                 } else if (equals("category")) {
-                    nextMetaData = Metadata.CATEGORY;
+                    nextMetaData = OfficeOpenXMLCore.CATEGORY.getName();
                 } else if (equals("comment")) {
                     nextMetaData = Metadata.COMMENT;
                 } else if (equals("company")) {
-                    nextMetaData = Metadata.COMPANY;
+                    nextMetaData = OfficeOpenXMLExtended.COMPANY.getName();
                 } else if (equals("manager")) {
-                    nextMetaData = Metadata.MANAGER;
+                    nextMetaData = OfficeOpenXMLExtended.MANAGER.getName();
                 } else if (equals("template")) {
-                    nextMetaData = Metadata.TEMPLATE;
+                    nextMetaData = OfficeOpenXMLExtended.TEMPLATE.getName();
                 }
             }
 
