@@ -934,6 +934,7 @@
   </mime-type>
 
   <mime-type type="application/vnd.google-earth.kmz">
+    <sub-class-of type="application/zip"/>
     <glob pattern="*.kmz"/>
   </mime-type>
   <mime-type type="application/vnd.grafeq">
