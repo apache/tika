@@ -71,6 +71,7 @@ import org.apache.tika.parser.NetworkParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XMPContentHandler;
@@ -278,6 +279,11 @@ public class TikaCLI {
      */
     private String encoding = null;
 
+    /**
+     * Password for opening encrypted documents, or <code>null</code>.
+     */
+    private String password = System.getenv("TIKA_PASSWORD");
+
     private boolean pipeMode = true;
 
     private boolean serverMode = false;
@@ -293,6 +299,11 @@ public class TikaCLI {
         detector = new DefaultDetector();
         parser = new AutoDetectParser(detector);
         context.set(Parser.class, parser);
+        context.set(PasswordProvider.class, new PasswordProvider() {
+            public String getPassword(Metadata metadata) {
+                return password;
+            }
+        });
     }
 
     public void process(String arg) throws Exception {
@@ -331,6 +342,10 @@ public class TikaCLI {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
             encoding = arg.substring("--encoding=".length());
+        } else if (arg.startsWith("-p") && !arg.equals("-p")) {
+            password = arg.substring("-p".length());
+        } else if (arg.startsWith("--password=")) {
+            password = arg.substring("--password=".length());
         } else  if (arg.equals("-j") || arg.equals("--json")) {
             type = JSON;
         } else  if (arg.equals("-y") || arg.equals("--xmp")) {
@@ -424,8 +439,9 @@ public class TikaCLI {
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("    -eX or --encoding=X    Use output encoding X");
-        out.println("    -z  or --extract       Extract all attachements into current directory");        
-        out.println("    --extract-dir=<dir>    Specify target directory for -z");        
+        out.println("    -pX or --password=X    Use document password X");
+        out.println("    -z  or --extract       Extract all attachements into current directory");
+        out.println("    --extract-dir=<dir>    Specify target directory for -z");
         out.println("    -r  or --pretty-print  For XML and XHTML outputs, adds newlines and");
         out.println("                           whitespace, for better readability");
         out.println();

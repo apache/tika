@@ -33,6 +33,10 @@ Release 1.2 - Current Development
     (KML and KMZ) used by tools like Google Earth. See also
     http://www.opengeospatial.org/standards/kml/. (TIKA-941)
 
+  * CLI: You can now use the TIKA_PASSWORD environment variable or the
+    --password=X command line option to specify the password that Tika CLI
+    should use for opening encrypted documents (TIKA-943).
+
 Release 1.1 - 3/7/2012
 ---------------------------------
 
