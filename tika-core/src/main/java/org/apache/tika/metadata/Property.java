@@ -251,6 +251,11 @@ public final class Property implements Comparable<Property> {
         return new Property(name, false, ValueType.CLOSED_CHOICE, choices);
     }
 
+    public static Property externalOpenChoise(
+            String name, String... choices) {
+        return new Property(name, false, ValueType.OPEN_CHOICE, choices);
+    }
+
     public static Property externalDate(String name) {
         return new Property(name, false, ValueType.DATE);
     }
@@ -270,7 +275,11 @@ public final class Property implements Comparable<Property> {
     public static Property externalText(String name) {
         return new Property(name, false, ValueType.TEXT);
     }
-    
+
+    public static Property externalTextBag(String name) {
+        return new Property(name, false, PropertyType.BAG, ValueType.TEXT);
+    }
+
     /**
      * Constructs a new composite property from the given primary and array of secondary properties.
      * <p>
