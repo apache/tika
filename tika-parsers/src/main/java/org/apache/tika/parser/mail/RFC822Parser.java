@@ -68,7 +68,7 @@ public class RFC822Parser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
 
         MailContentHandler mch = new MailContentHandler(
-                xhtml, metadata, config.isStrictParsing());
+                xhtml, metadata, context, config.isStrictParsing());
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
         TaggedInputStream tagged = TaggedInputStream.get(stream);
