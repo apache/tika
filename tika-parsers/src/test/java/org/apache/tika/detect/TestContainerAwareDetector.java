@@ -278,6 +278,10 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testPages.pages", "application/vnd.apple.pages");
     }
 
+    public void testDetectKMZ() throws Exception {
+       assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
+    }
+    
     public void testDetectZip() throws Exception {
         assertTypeByData("test-documents.zip", "application/zip");
         assertTypeByData("test-zip-of-zip.zip", "application/zip");

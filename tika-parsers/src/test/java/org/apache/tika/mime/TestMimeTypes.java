@@ -589,6 +589,22 @@ public class TestMimeTypes extends TestCase {
         assertTypeByNameAndData("application/x-webarchive", "testWEBARCHIVE.webarchive");
     }
 
+    /**
+     * KML, and KMZ (zipped KML)
+     */
+    public void testKMLZDetection() throws Exception {
+       assertTypeByName("application/vnd.google-earth.kml+xml","testKML.kml");
+       assertTypeByData("application/vnd.google-earth.kml+xml","testKML.kml");
+       assertTypeByNameAndData("application/vnd.google-earth.kml+xml", "testKML.kml");
+       
+       assertTypeByName("application/vnd.google-earth.kmz","testKMZ.kmz");
+       assertTypeByNameAndData("application/vnd.google-earth.kmz", "testKMZ.kmz");
+       
+       // By data only, mimetype magic only gets us to a .zip
+       // We need to use the Zip Aware detector to get the full type
+       assertTypeByData("application/zip","testKMZ.kmz");
+   }
+
     private void assertType(String expected, String filename) throws Exception {
         InputStream stream = TestMimeTypes.class.getResourceAsStream(
                 "/test-documents/" + filename);
