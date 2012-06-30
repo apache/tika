@@ -355,7 +355,7 @@ public final class MimeTypes implements Detector, Serializable {
     public int getMinLength() {
         // This needs to be reasonably large to be able to correctly detect
         // things like XML root elements after initial comment and DTDs
-        return 8 * 1024;
+        return 64 * 1024;
     }
 
     /**

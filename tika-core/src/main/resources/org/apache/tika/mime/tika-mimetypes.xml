@@ -2654,10 +2654,12 @@
   </mime-type>
 
   <mime-type type="application/x-iso9660-image">
+    <acronym>ISO</acronym>
+    <_comment>ISO 9660 CD-ROM filesystem data</_comment>
     <magic priority="50">
-      <match value="CD001" type="string" offset="37633"/>
+      <match value="CD001" type="string" offset="32769"/>
     </magic>
-    <glob pattern="*.iso" />
+    <glob pattern="*.iso"/>
   </mime-type>
 
   <mime-type type="application/x-java-jnlp-file">
