@@ -80,7 +80,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>1.7</version>
+        <version>1.6</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -88,6 +88,9 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <createDependencyReducedPom>
+                false
+              </createDependencyReducedPom>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
