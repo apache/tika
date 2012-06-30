@@ -138,6 +138,9 @@ public class ZipContainerDetector implements Detector {
                 if (type == null) {
                     type = detectJar(zip);
                 }
+                if (type == null) {
+                    type = detectKmz(zip);
+                }
                 if (type != null) {
                     return type;
                 }
@@ -282,4 +285,13 @@ public class ZipContainerDetector implements Detector {
           return null;
        }
     }
+
+    private static MediaType detectKmz(ZipFile zip) {
+        if (zip.getEntry("doc.kml") != null) {
+            return MediaType.application("vnd.google-earth.kmz");
+        } else {
+            return null;
+        }
+    }
+
 }
