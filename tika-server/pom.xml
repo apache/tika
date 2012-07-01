@@ -25,7 +25,6 @@
   </parent>
 
   <artifactId>tika-server</artifactId>
-  <packaging>bundle</packaging>
   <name>Apache Tika server</name>
 
   <dependencies>
@@ -68,61 +67,19 @@
 
   <build>
     <plugins>
-      <!--  Maven Exec Plug-In: http://mojo.codehaus.org/exec-maven-plugin/  -->
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>java</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <mainClass>su.msk.jet.tikaserver.TikaServerCli</mainClass>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <inherited>true</inherited>
-        <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <version>2.3.6</version>
-        <configuration>
-          <instructions>
-            <Export-Package>org.apache.tika.*</Export-Package>
-            <Bundle-DocURL>${project.url}</Bundle-DocURL>
-              <Main-Class>org.apache.tika.server.TikaServerCli</Main-Class>
-          </instructions>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.12</version>
         <configuration>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
           <argLine>-da -XX:+HeapDumpOnOutOfMemoryError -Xmx512m</argLine>
-          <systemProperties>
-            <property>
-              <name>java.util.logging.config.file</name>
-              <value>${basedir}/src/main/resources/commons-logging.properties</value>
-            </property>
-          </systemProperties>
+          <systemPropertyVariables>
+            <java.util.logging.config.file>
+              ${basedir}/src/main/resources/commons-logging.properties
+            </java.util.logging.config.file>
+          </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
@@ -131,6 +88,9 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <createDependencyReducedPom>
+                false
+              </createDependencyReducedPom>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
@@ -138,15 +98,43 @@
                     <exclude>META-INF/*.SF</exclude>
                     <exclude>META-INF/*.DSA</exclude>
                     <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/*.txt</exclude>
+                    <exclude>META-INF/ASL2.0</exclude>
+                    <exclude>META-INF/DEPENDENCIES</exclude>
+                    <exclude>META-INF/LICENSE</exclude>
+                    <exclude>META-INF/NOTICE</exclude>
+                    <exclude>META-INF/README</exclude>
+                    <exclude>LICENSE.txt</exclude>
+                    <exclude>NOTICE.txt</exclude>
+                    <exclude>CHANGES</exclude>
+                    <exclude>README</exclude>
+                    <exclude>builddef.lst</exclude>
+                    <!-- TIKA-763: Workaround to avoid including LGPL classes -->
+                    <exclude>ucar/nc2/iosp/fysat/Fysat*.class</exclude>
+                    <exclude>ucar/nc2/dataset/transform/VOceanSG1*class</exclude>
+                    <exclude>ucar/unidata/geoloc/vertical/OceanSG*.class</exclude>
                   </excludes>
                 </filter>
               </filters>
               <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/spring.handlers</resource>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                  <resource>META-INF/LICENSE</resource>
+                  <file>target/classes/META-INF/LICENSE</file>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                  <resource>META-INF/NOTICE</resource>
+                  <file>target/classes/META-INF/NOTICE</file>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
+                  <resource>META-INF/DEPENDENCIES</resource>
+                  <file>target/classes/META-INF/DEPENDENCIES</file>
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/services/com.sun.tools.xjc.Plugin</resource>
+                  <resource>META-INF/spring.handlers</resource>
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
                   <resource>META-INF/spring.schemas</resource>

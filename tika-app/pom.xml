@@ -80,7 +80,6 @@
     <plugins>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>1.6</version>
         <executions>
           <execution>
             <phase>package</phase>
