@@ -195,6 +195,16 @@
       </roles>
       <timezone>+2</timezone>
     </developer>
+    <developer>
+      <name>Ray Gauss II</name>
+      <id>rgauss</id>
+      <organization>Alfresco</organization>
+      <organizationUrl>http://alfresco.com</organizationUrl>
+      <timezone>-5</timezone>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
   </developers>
   <contributors>
     <contributor>
