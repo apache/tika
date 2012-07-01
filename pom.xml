@@ -75,12 +75,12 @@
           <excludes>
             <exclude>.*/**</exclude>
             <exclude>CHANGES.txt</exclude>
-            <exclude>tika-dll/AssemblyInfo.cs</exclude>
-            <exclude>tika-dll/Tika.csproj</exclude>
-            <exclude>tika-dll/Tika.sln</exclude>
-            <exclude>tika-dll/Tika.sln.cache</exclude>
-            <exclude>tika-dll/obj/**</exclude>
-            <exclude>tika-dll/target/**</exclude>
+            <exclude>tika-dotnet/AssemblyInfo.cs</exclude>
+            <exclude>tika-dotnet/Tika.csproj</exclude>
+            <exclude>tika-dotnet/Tika.sln</exclude>
+            <exclude>tika-dotnet/Tika.sln.cache</exclude>
+            <exclude>tika-dotnet/obj/**</exclude>
+            <exclude>tika-dotnet/target/**</exclude>
           </excludes>
         </configuration>
       </plugin>
