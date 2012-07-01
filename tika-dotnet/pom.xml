@@ -32,20 +32,142 @@
   <artifactId>tika-dotnet</artifactId>
   <name>Apache Tika for .NET</name>
   <url>http://tika.apache.org/</url>
-  <packaging>netpack</packaging>
+
+  <properties>
+    <ikvm>C:\ikvm-7.0.4335.0</ikvm>
+    <mscorlib>${ikvm}\mscorlib</mscorlib>
+    <System>${ikvm}\System</System>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-app</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ikvm</groupId>
+      <artifactId>mscorlib</artifactId>
+      <version>2.0</version>
+      <scope>system</scope>
+      <systemPath>${mscorlib}.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>ikvm</groupId>
+      <artifactId>System</artifactId>
+      <version>2.0</version>
+      <scope>system</scope>
+      <systemPath>${System}.jar</systemPath>
+    </dependency>
+  </dependencies>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.codehaus.sonar-plugins.dotnet</groupId>
-        <artifactId>maven-dotnet-plugin</artifactId>
-        <version>1.1</version>
-        <configuration>
-          <solutionName>Tika.sln</solutionName>
-        </configuration>
-        <extensions>true</extensions>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <stripVersion>true</stripVersion>
+              <excludeTransitive>true</excludeTransitive>
+              <excludeScope>system</excludeScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <exec executable="${ikvm}/bin/ikvmc.exe">
+                  <arg value="-nowarn:0100" />
+                  <arg value="-nowarn:0105" />
+                  <arg value="-nowarn:0109" />
+                  <arg value="-nowarn:0111" />
+                  <arg value="-nowarn:0112" />
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Charsets.dll" />
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Core.dll" />
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Text.dll" />
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Util.dll" />
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.API.dll" />
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.Transform.dll" />
+                  <arg value="-r:${mscorlib}.dll" />
+                  <arg value="-r:${System}.dll" />
+                  <arg value="-target:library" />
+                  <arg value="-compressresources" />
+                  <arg value="-out:${project.build.directory}/${project.build.finalName}.dll" />
+                  <arg value="-recurse:${project.build.directory}\*.class" />
+                  <arg value="${project.build.directory}/dependency/tika-app.jar" />
+                </exec>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>attach-artifact</goal>
+            </goals>
+            <configuration>
+              <artifacts>
+                <artifacts>
+                  <file>${project.build.directory}/${project.build.finalName}.dll</file>
+                  <type>dll</type>
+                </artifacts>
+              </artifacts>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <!-- This plugin's configuration is used to store Eclipse m2e settings 
+            only. It has no influence on the Maven build itself. -->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <versionRange>[2.4,)</versionRange>
+                    <goals>
+                      <goal>copy-dependencies</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
 
 </project>
