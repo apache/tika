@@ -16,7 +16,16 @@
  */
 package org.apache.tika.cli;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.lang.reflect.Field;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -53,6 +62,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.gui.TikaGUI;
@@ -75,6 +85,7 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XMPContentHandler;
+import org.apache.tika.xmp.XMPMetadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -207,18 +218,11 @@ public class TikaCLI {
     private final OutputType XMP = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(
-                OutputStream output, final Metadata metadata) throws Exception {
-            final ContentHandler handler =
-                    getTransformerHandler(output, "xml", encoding, prettyPrint);
-            return new DefaultHandler() {
-                @Override
-                public void endDocument() throws SAXException {
-                    XMPContentHandler xmp = new XMPContentHandler(handler);
-                    xmp.startDocument();
-                    xmp.metadata(metadata);
-                    xmp.endDocument();
-                }
-            };
+                OutputStream output, final Metadata metadata) throws Exception 
+        {
+        	final PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
+        	
+        	return new NoDocumentXMPMetaHandler(metadata, writer);
         }
     };
 
@@ -832,6 +836,38 @@ public class TikaCLI {
         
     }
 
+    /**
+     * Outputs the Tika metadata as XMP using the Tika XMP module
+     */
+    private class NoDocumentXMPMetaHandler extends DefaultHandler
+    {
+    	protected final Metadata metadata;
+    	
+        protected PrintWriter writer;
+        
+        public NoDocumentXMPMetaHandler(Metadata metadata, PrintWriter writer){
+        	this.metadata = metadata;
+            this.writer = writer;
+        }
+        
+        @Override
+        public void endDocument() throws SAXException 
+        {
+        	try 
+        	{
+        		XMPMetadata xmp = new XMPMetadata(metadata);
+        		String result;
+        		result = xmp.toString();
+        		writer.write(result);
+        		writer.flush();
+        	} 
+        	catch (TikaException e) 
+        	{
+        		throw new SAXException(e);
+        	}
+        }
+    }
+    
     /**
      * Uses GSON to do the JSON escaping, but does
      *  the general JSON glueing ourselves.

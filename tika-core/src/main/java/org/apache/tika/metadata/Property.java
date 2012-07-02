@@ -151,6 +151,32 @@ public final class Property implements Comparable<Property> {
         return false;
     }
 
+    /**
+     * Get the type of a property
+     * @param key name of the property
+     * @return the type of the property
+     */
+    public static PropertyType getPropertyType(String key)
+    {
+    	PropertyType type = null;
+    	Property prop = properties.get(key);
+    	if( prop != null )
+    	{
+    		type = prop.getPropertyType();
+    	}
+    	return type;
+    }
+    
+    /**
+     * Retrieve the property object that corresponds to the given key
+     * @param key the property key or name
+     * @return the Property object
+     */
+    public static Property get(String key)
+    {
+    	return properties.get(key);
+    }
+    
     public PropertyType getPropertyType() {
         return propertyType;
     }
