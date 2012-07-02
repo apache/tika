@@ -70,7 +70,12 @@ class AbstractMetadataHandler extends DefaultHandler {
                 if (previous != null && previous.length() > 0) {
                     if (!previous.equals(value)) {
                        if (property != null) {
-                          metadata.add(property, value);
+                          if (property.isMultiValuePermitted()) {
+                              metadata.add(property, value);
+                          } else {
+                              // Replace the existing value if isMultiValuePermitted is false
+                              metadata.set(property, value);
+                          }
                        } else {
                           metadata.add(name, value);
                        }
