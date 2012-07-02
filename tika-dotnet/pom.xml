@@ -35,8 +35,8 @@
 
   <properties>
     <ikvm>C:\ikvm-7.0.4335.0</ikvm>
-    <mscorlib>${ikvm}\mscorlib</mscorlib>
-    <System>${ikvm}\System</System>
+    <mscorlib.jar>${ikvm}\mscorlib.jar</mscorlib.jar>
+    <System.jar>${ikvm}\System.jar</System.jar>
   </properties>
 
   <dependencies>
@@ -50,14 +50,14 @@
       <artifactId>mscorlib</artifactId>
       <version>2.0</version>
       <scope>system</scope>
-      <systemPath>${mscorlib}.jar</systemPath>
+      <systemPath>${mscorlib.jar}</systemPath>
     </dependency>
     <dependency>
       <groupId>ikvm</groupId>
       <artifactId>System</artifactId>
       <version>2.0</version>
       <scope>system</scope>
-      <systemPath>${System}.jar</systemPath>
+      <systemPath>${System.jar}</systemPath>
     </dependency>
   </dependencies>
 
@@ -103,8 +103,6 @@
                   <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Util.dll" />
                   <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.API.dll" />
                   <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.Transform.dll" />
-                  <arg value="-r:${mscorlib}.dll" />
-                  <arg value="-r:${System}.dll" />
                   <arg value="-target:library" />
                   <arg value="-compressresources" />
                   <arg value="-out:${project.build.directory}/${project.build.finalName}.dll" />
