@@ -28,18 +28,23 @@ import org.apache.tika.metadata.Property.ValueType;
  * @since Apache Tika 0.8
  */
 public final class PropertyTypeException extends IllegalArgumentException {
-	public PropertyTypeException(String msg) {
-		super(msg);
-	}
+
+    public PropertyTypeException(String msg) {
+        super(msg);
+    }
+
     public PropertyTypeException(PropertyType expected, PropertyType found) {
         super("Expected a property of type " + expected + ", but received " + found);
     }
+
     public PropertyTypeException(ValueType expected, ValueType found) {
         super("Expected a property with a " + expected + " value, but received a " + found);
     }
+
     public PropertyTypeException(PropertyType unsupportedPropertyType) {
-    	super((unsupportedPropertyType != PropertyType.COMPOSITE) ? 
-    			(unsupportedPropertyType + " is not supported") : 
-    			("Composite Properties must not include other Composite Properties as either Primary or Secondary"));
+        super((unsupportedPropertyType != PropertyType.COMPOSITE)
+                ? unsupportedPropertyType + " is not supported"
+                : "Composite Properties must not include other Composite"
+                   + " Properties as either Primary or Secondary");
     }
 }
