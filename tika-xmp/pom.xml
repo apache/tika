@@ -32,7 +32,7 @@
   <artifactId>tika-xmp</artifactId>
   <packaging>bundle</packaging>
 
-  <name>Tika to XMP converter</name>
+  <name>Apache Tika XMP</name>
   <description>Converts Tika metadata to XMP</description>
 
   <build>
