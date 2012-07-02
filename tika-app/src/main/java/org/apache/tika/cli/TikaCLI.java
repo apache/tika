@@ -84,7 +84,6 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.XMPContentHandler;
 import org.apache.tika.xmp.XMPMetadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -218,11 +217,10 @@ public class TikaCLI {
     private final OutputType XMP = new OutputType() {
         @Override
         protected ContentHandler getContentHandler(
-                OutputStream output, final Metadata metadata) throws Exception 
-        {
-        	final PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
-        	
-        	return new NoDocumentXMPMetaHandler(metadata, writer);
+                OutputStream output, final Metadata metadata) throws Exception {
+            final PrintWriter writer =
+                    new PrintWriter(getOutputWriter(output, encoding));
+            return new NoDocumentXMPMetaHandler(metadata, writer);
         }
     };
 

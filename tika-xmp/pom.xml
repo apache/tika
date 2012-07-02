@@ -20,68 +20,67 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	
-	<parent>
-		<groupId>org.apache.tika</groupId>
-		<artifactId>tika-parent</artifactId>
-		<version>1.2-SNAPSHOT</version>
-		<relativePath>../tika-parent/pom.xml</relativePath>
-	</parent>
-	  
-	<artifactId>tika-xmp</artifactId>
-	<packaging>bundle</packaging>
-	  
-	<name>Tika to XMP converter</name>
-	<description>Converts Tika metadata to XMP</description>
-  
-	<build>
-	  <plugins>
-			<plugin>
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-scr-plugin</artifactId>
-				<version>1.7.4</version>
-			</plugin>
-		  
-			<plugin><!-- builds the bundle -->
-				<groupId>org.apache.felix</groupId>
-				<artifactId>maven-bundle-plugin</artifactId>
-				<extensions>true</extensions>
-				<configuration>
-					<instructions>
-						<Export-Package>
-							org.apache.tika.xmp,
-							org.apache.tika.xmp.convert
-						</Export-Package>
-						<Private-Package/>
-					</instructions> 
-				</configuration>
-			</plugin>
-			
-		</plugins>
-    </build>
-	
-    <dependencies>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-            <artifactId>tika-core</artifactId>
-            <version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>${project.groupId}</groupId>
-            <artifactId>tika-parsers</artifactId>
-            <version>${project.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.adobe.xmp</groupId>
-			<artifactId>xmpcore</artifactId>
-			<version>5.1.1</version>
-		</dependency>
-		
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-    </dependencies>
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>1.2-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>tika-xmp</artifactId>
+  <packaging>bundle</packaging>
+
+  <name>Tika to XMP converter</name>
+  <description>Converts Tika metadata to XMP</description>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-scr-plugin</artifactId>
+        <version>1.7.4</version>
+      </plugin>
+      <plugin>
+        <!-- builds the bundle -->
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>
+              org.apache.tika.xmp,
+              org.apache.tika.xmp.convert
+            </Export-Package>
+            <Private-Package />
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parsers</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.adobe.xmp</groupId>
+      <artifactId>xmpcore</artifactId>
+      <version>5.1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
 </project>
