@@ -48,7 +48,6 @@
     <module>tika-parent</module>
     <module>tika-core</module>
     <module>tika-parsers</module>
-    <module>tika-xmp</module>
     <module>tika-app</module>
     <module>tika-bundle</module>
     <module>tika-server</module>
@@ -89,6 +88,15 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>java6</id>
+      <activation>
+        <jdk>[1.6,)</jdk>
+      </activation>
+      <modules>
+        <module>tika-xmp</module>
+      </modules>
+    </profile>
     <profile>
       <id>apache-release</id>
       <properties>
