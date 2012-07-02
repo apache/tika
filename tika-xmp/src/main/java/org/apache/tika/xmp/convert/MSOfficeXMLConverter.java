@@ -94,7 +94,7 @@ public class MSOfficeXMLConverter extends AbstractConverter
 			}
 		}
 		
-		if( ! creatorTool.isEmpty() ) 
+		if( creatorTool.length() > 0 )
 		{
 			meta.setProperty(XMPConst.NS_XMP, "CreatorTool", creatorTool);
 		}
