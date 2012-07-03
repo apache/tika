@@ -74,7 +74,7 @@
     <dependency>
       <groupId>com.adobe.xmp</groupId>
       <artifactId>xmpcore</artifactId>
-      <version>5.1.1</version>
+      <version>5.1.2</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
