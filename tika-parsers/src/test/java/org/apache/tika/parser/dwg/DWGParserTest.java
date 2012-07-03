@@ -79,13 +79,15 @@ public class DWGParserTest extends TestCase {
             assertEquals("The quick brown fox jumps over the lazy dog", 
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Gym class featuring a brown fox and lazy dog",
-                    metadata.get(TikaCoreProperties.SUBJECT));
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("Gym class featuring a brown fox and lazy dog",
+                    metadata.get(Metadata.SUBJECT));
             assertEquals("Nevin Nollop",
-                    metadata.get(TikaCoreProperties.AUTHOR));
+                    metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Pangram, fox, dog",
                     metadata.get(TikaCoreProperties.KEYWORDS));
             assertEquals("Lorem ipsum",
-                    metadata.get(Metadata.COMMENTS).substring(0,11));
+                    metadata.get(TikaCoreProperties.COMMENTS).substring(0,11));
             assertEquals("http://www.alfresco.com",
                     metadata.get(TikaCoreProperties.RELATION));
             
@@ -113,10 +115,11 @@ public class DWGParserTest extends TestCase {
             assertEquals("image/vnd.dwg", metadata.get(Metadata.CONTENT_TYPE));
             
             assertNull(metadata.get(TikaCoreProperties.TITLE));
-            assertNull(metadata.get(TikaCoreProperties.SUBJECT));
-            assertNull(metadata.get(TikaCoreProperties.AUTHOR));
+            assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertNull(metadata.get(Metadata.SUBJECT));
+            assertNull(metadata.get(TikaCoreProperties.CREATOR));
             assertNull(metadata.get(TikaCoreProperties.KEYWORDS));
-            assertNull(metadata.get(Metadata.COMMENTS));
+            assertNull(metadata.get(TikaCoreProperties.COMMENTS));
             assertNull(metadata.get(TikaCoreProperties.RELATION));
 
             String content = handler.toString();
@@ -137,15 +140,17 @@ public class DWGParserTest extends TestCase {
             assertEquals("Test Title", 
                     metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Test Subject",
-                    metadata.get(TikaCoreProperties.SUBJECT));
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("Test Subject",
+                    metadata.get(Metadata.SUBJECT));
             assertEquals("My Author",
-                    metadata.get(TikaCoreProperties.AUTHOR));
+                    metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("My keyword1, MyKeyword2",
                     metadata.get(TikaCoreProperties.KEYWORDS));
             assertEquals("This is a comment",
-                    metadata.get(Metadata.COMMENTS));
+                    metadata.get(TikaCoreProperties.COMMENTS));
             assertEquals("bejanpol",
-                    metadata.get(Metadata.LAST_AUTHOR));
+                    metadata.get(TikaCoreProperties.MODIFIER));
             assertEquals("http://mycompany/drawings",
                     metadata.get(TikaCoreProperties.RELATION));
             assertEquals("MyCustomPropertyValue",

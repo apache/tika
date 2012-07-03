@@ -55,11 +55,11 @@ public class DWGParser extends AbstractParser {
     /** The order of the fields in the header */
     private static final Property[] HEADER_PROPERTIES_ENTRIES = {
         TikaCoreProperties.TITLE, 
-        TikaCoreProperties.SUBJECT,
-        TikaCoreProperties.AUTHOR,
-        TikaCoreProperties.KEYWORDS,
-        Property.internalText(Metadata.COMMENTS),
-        TikaCoreProperties.LAST_AUTHOR,
+        TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_DESCRIPTION,
+        TikaCoreProperties.CREATOR,
+        TikaCoreProperties.TRANSITION_KEYWORDS_TO_DC_SUBJECT,
+        TikaCoreProperties.COMMENTS,
+        TikaCoreProperties.MODIFIER,
         null, // Unknown?
         TikaCoreProperties.RELATION, // Hyperlink
     };
@@ -69,12 +69,12 @@ public class DWGParser extends AbstractParser {
        null, 
        TikaCoreProperties.RELATION, // 0x01
        TikaCoreProperties.TITLE,    // 0x02
-       TikaCoreProperties.SUBJECT,  // 0x03
-       TikaCoreProperties.AUTHOR,   // 0x04
+       TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_DESCRIPTION,  // 0x03
+       TikaCoreProperties.CREATOR,   // 0x04
        null,
-       Property.internalText(Metadata.COMMENTS),// 0x06 
-       TikaCoreProperties.KEYWORDS,    // 0x07
-       TikaCoreProperties.LAST_AUTHOR, // 0x08
+       TikaCoreProperties.COMMENTS,// 0x06 
+       TikaCoreProperties.TRANSITION_KEYWORDS_TO_DC_SUBJECT,    // 0x07
+       TikaCoreProperties.MODIFIER, // 0x08
    };
 
     private static final String HEADER_2000_PROPERTIES_MARKER_STR =

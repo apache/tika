@@ -97,14 +97,16 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            String subject = msg.getSubject();
            String from = msg.getDisplayFrom();
    
-           metadata.set(TikaCoreProperties.AUTHOR, from);
+           metadata.set(TikaCoreProperties.CREATOR, from);
            metadata.set(Metadata.MESSAGE_FROM, from);
            metadata.set(Metadata.MESSAGE_TO, msg.getDisplayTo());
            metadata.set(Metadata.MESSAGE_CC, msg.getDisplayCC());
            metadata.set(Metadata.MESSAGE_BCC, msg.getDisplayBCC());
            
            metadata.set(TikaCoreProperties.TITLE, subject);
-           metadata.set(TikaCoreProperties.SUBJECT, msg.getConversationTopic());
+           // TODO: Move to description in Tika 2.0
+           metadata.set(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_DESCRIPTION, 
+                   msg.getConversationTopic());
            
            try {
            for(String recipientAddress : msg.getRecipientEmailAddressList()) {
@@ -116,9 +118,8 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            // Date - try two ways to find it
            // First try via the proper chunk
            if(msg.getMessageDate() != null) {
-              metadata.set(TikaCoreProperties.DATE, msg.getMessageDate().getTime());
-              metadata.set(Metadata.CREATION_DATE, msg.getMessageDate().getTime());
-              metadata.set(Metadata.LAST_SAVED, msg.getMessageDate().getTime());
+              metadata.set(TikaCoreProperties.CREATED, msg.getMessageDate().getTime());
+              metadata.set(TikaCoreProperties.MODIFIED, msg.getMessageDate().getTime());
            } else {
               try {
                  // Failing that try via the raw headers 
@@ -131,14 +132,12 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                             // See if we can parse it as a normal mail date
                             try {
                                Date d = MboxParser.parseDate(date);
-                               metadata.set(TikaCoreProperties.DATE, d);
-                               metadata.set(Metadata.CREATION_DATE, d);
-                               metadata.set(Metadata.LAST_SAVED, d);
+                               metadata.set(TikaCoreProperties.CREATED, d);
+                               metadata.set(TikaCoreProperties.MODIFIED, d);
                             } catch(ParseException e) {
                                // Store it as-is, and hope for the best...
-                               metadata.set(TikaCoreProperties.DATE, date);
-                               metadata.set(Metadata.CREATION_DATE, date);
-                               metadata.set(Metadata.LAST_SAVED, date);
+                               metadata.set(TikaCoreProperties.CREATED, date);
+                               metadata.set(TikaCoreProperties.MODIFIED, date);
                             }
                             break;
                         }

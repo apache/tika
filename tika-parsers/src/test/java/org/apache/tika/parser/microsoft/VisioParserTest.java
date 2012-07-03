@@ -40,7 +40,7 @@ public class VisioParserTest extends TestCase {
                     "application/vnd.visio",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Hogwarts", metadata.get(TikaCoreProperties.AUTHOR));
+            assertEquals("Hogwarts", metadata.get(TikaCoreProperties.CREATOR));
             String content = handler.toString();
             assertTrue(content.contains("Some random text, on a page"));
         } finally {

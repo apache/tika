@@ -55,7 +55,8 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
       TNEFParser tnef = new TNEFParser();
       tnef.parse(stream, handler, metadata, new ParseContext());
       
-      assertEquals("This is a test message", metadata.get(TikaCoreProperties.SUBJECT));
+      assertEquals("This is a test message", metadata.get(TikaCoreProperties.TITLE));
+      assertEquals("This is a test message", metadata.get(Metadata.SUBJECT));
    }
    
     /**

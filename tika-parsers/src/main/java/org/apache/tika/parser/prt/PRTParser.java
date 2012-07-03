@@ -85,8 +85,7 @@ public class PRTParser extends AbstractParser {
           String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4,6) +
              "-" + dateStr.substring(6,8) + "T" + dateStr.substring(8,10) + ":" +
              dateStr.substring(10, 12) + ":00";
-          metadata.set(Metadata.CREATION_DATE, formattedDate);
-          metadata.set(TikaCoreProperties.DATE, formattedDate);
+          metadata.set(TikaCoreProperties.CREATED, formattedDate);
        }
        metadata.set(Metadata.CONTENT_TYPE, PRT_MIME_TYPE);
        

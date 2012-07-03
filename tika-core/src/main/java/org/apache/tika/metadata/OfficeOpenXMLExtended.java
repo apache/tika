@@ -30,9 +30,11 @@ package org.apache.tika.metadata;
  */
 public interface OfficeOpenXMLExtended 
 {
-	String NAMESPACE_URI = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties/";
-	String PREFIX = "extended-properties";
-	
+    String NAMESPACE_URI = "http://schemas.openxmlformats.org/officeDocument/2006/extended-properties/";
+    String WORD_PROCESSING_NAMESPACE_URI = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+    String PREFIX = "extended-properties";
+    String WORD_PROCESSING_PREFIX = "w";
+
     Property TEMPLATE = Property.externalText(
     		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "Template");
     
@@ -62,4 +64,7 @@ public interface OfficeOpenXMLExtended
     
     Property DOC_SECURITY = Property.externalInteger(
     		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "DocSecurity");
+    
+    Property COMMENTS = Property.externalTextBag(
+            WORD_PROCESSING_PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "comments");
 }

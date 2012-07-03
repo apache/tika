@@ -34,6 +34,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -104,8 +105,8 @@ public class ImageParser extends AbstractParser {
                 
                 // Translate certain Metadata tags from the ImageIO
                 //  specific namespace into the general Tika one
-                setIfPresent(metadata, "CommentExtensions CommentExtension", Metadata.COMMENTS);
-                setIfPresent(metadata, "markerSequence com", Metadata.COMMENTS);
+                setIfPresent(metadata, "CommentExtensions CommentExtension", TikaCoreProperties.COMMENTS);
+                setIfPresent(metadata, "markerSequence com", TikaCoreProperties.COMMENTS);
                 setIfPresent(metadata, "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
             } catch (IIOException e) {
                 // TIKA-619: There is a known bug in the Sun API when dealing with GIF images

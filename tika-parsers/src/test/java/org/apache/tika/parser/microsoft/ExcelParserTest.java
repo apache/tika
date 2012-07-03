@@ -48,13 +48,14 @@ public class ExcelParserTest extends TestCase {
                     "application/vnd.ms-excel",
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.AUTHOR));
+            assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
+            assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
             
             // Mon Oct 01 17:13:56 BST 2007
-            assertEquals("2007-10-01T16:13:56Z", metadata.get(TikaCoreProperties.CREATION_DATE));
+            assertEquals("2007-10-01T16:13:56Z", metadata.get(TikaCoreProperties.CREATED));
             
             // Mon Oct 01 17:31:43 BST 2007
-            assertEquals("2007-10-01T16:31:43Z", metadata.get(TikaCoreProperties.SAVE_DATE));
+            assertEquals("2007-10-01T16:31:43Z", metadata.get(TikaCoreProperties.MODIFIED));
             
             String content = handler.toString();
             assertTrue(content.contains("Sample Excel Worksheet"));
@@ -281,10 +282,10 @@ public class ExcelParserTest extends TestCase {
        }
        
        assertEquals("application/vnd.ms-excel", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("",                     metadata.get(TikaCoreProperties.AUTHOR));
-       assertEquals("",                     metadata.get(TikaCoreProperties.LAST_AUTHOR));
-       assertEquals("2011-08-22T13:45:54Z", metadata.get(TikaCoreProperties.SAVE_DATE));
-       assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.CREATION_DATE));
+       assertEquals("",                     metadata.get(TikaCoreProperties.CREATOR));
+       assertEquals("",                     metadata.get(TikaCoreProperties.MODIFIER));
+       assertEquals("2011-08-22T13:45:54Z", metadata.get(TikaCoreProperties.MODIFIED));
+       assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.CREATED));
        assertEquals("Microsoft Excel",      metadata.get(OfficeOpenXMLExtended.APPLICATION));
        assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
        assertEquals("3",                    metadata.get("custom:myCustomNumber"));

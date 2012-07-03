@@ -209,10 +209,13 @@ class NumbersContentHandler extends DefaultHandler {
 
     private Property resolveMetadataKey(String localName) {
         if ("authors".equals(localName)) {
-            return TikaCoreProperties.AUTHOR;
+            return TikaCoreProperties.CREATOR;
         }
         if ("title".equals(localName)) {
             return TikaCoreProperties.TITLE;
+        }
+        if ("comment".equals(localName)) {
+            return TikaCoreProperties.COMMENTS;
         }
         return Property.internalText(localName);
     }

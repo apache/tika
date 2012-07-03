@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.xml;
 
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -34,7 +35,7 @@ public class DcXMLParser extends XMLParser {
     private static ContentHandler getDublinCoreHandler(
             Metadata metadata, Property property, String element) {
         return new ElementMetadataHandler(
-                "http://purl.org/dc/elements/1.1/", element,
+                DublinCore.NAMESPACE_URI_DC, element,
                 metadata, property);
     }
 
@@ -43,12 +44,12 @@ public class DcXMLParser extends XMLParser {
         return new TeeContentHandler(
                 super.getContentHandler(handler, metadata, context),
                 getDublinCoreHandler(metadata, TikaCoreProperties.TITLE, "title"),
-                getDublinCoreHandler(metadata, TikaCoreProperties.SUBJECT, "subject"),
+                getDublinCoreHandler(metadata, TikaCoreProperties.KEYWORDS, "subject"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.CREATOR, "creator"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.DESCRIPTION, "description"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.PUBLISHER, "publisher"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.CONTRIBUTOR, "contributor"),
-                getDublinCoreHandler(metadata, TikaCoreProperties.DATE, "date"),
+                getDublinCoreHandler(metadata, TikaCoreProperties.CREATED, "date"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.TYPE, "type"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.FORMAT, "format"),
                 getDublinCoreHandler(metadata, TikaCoreProperties.IDENTIFIER, "identifier"),

@@ -167,7 +167,7 @@ class MailContentHandler implements ContentHandler {
                     for (int i = 0; i < mailboxList.size(); i++) {
                         String from = getDisplayString(mailboxList.get(i));
                         metadata.add(Metadata.MESSAGE_FROM, from);
-                        metadata.add(TikaCoreProperties.AUTHOR, from);
+                        metadata.add(TikaCoreProperties.CREATOR, from);
                     }
                 } else {
                     String from = stripOutFieldPrefix(field, "From:");
@@ -178,10 +178,10 @@ class MailContentHandler implements ContentHandler {
                         from = from.substring(0, from.length() - 1);
                     }
                     metadata.add(Metadata.MESSAGE_FROM, from);
-                    metadata.add(TikaCoreProperties.AUTHOR, from);
+                    metadata.add(TikaCoreProperties.CREATOR, from);
                 }
             } else if (fieldname.equalsIgnoreCase("Subject")) {
-                metadata.add(TikaCoreProperties.SUBJECT,
+                metadata.add(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE,
                         ((UnstructuredField) parsedField).getValue());
             } else if (fieldname.equalsIgnoreCase("To")) {
                 processAddressList(parsedField, "To:", Metadata.MESSAGE_TO);
@@ -191,8 +191,7 @@ class MailContentHandler implements ContentHandler {
                 processAddressList(parsedField, "Bcc:", Metadata.MESSAGE_BCC);
             } else if (fieldname.equalsIgnoreCase("Date")) {
                 DateTimeField dateField = (DateTimeField) parsedField;
-                metadata.set(TikaCoreProperties.DATE, dateField.getDate());
-                metadata.set(Metadata.CREATION_DATE, dateField.getDate());
+                metadata.set(TikaCoreProperties.CREATED, dateField.getDate());
             }
         } catch (RuntimeException me) {
             if (strictParsing) {

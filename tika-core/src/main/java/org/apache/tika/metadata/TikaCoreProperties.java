@@ -64,24 +64,21 @@ public interface TikaCoreProperties {
     * @see DublinCore#CREATOR
     */
     public static final Property CREATOR = Property.composite(DublinCore.CREATOR, 
-            new Property[] { Property.internalText(Metadata.CREATOR) });
+            new Property[] { 
+                Office.AUTHOR,
+                Property.internalTextBag(Metadata.CREATOR),
+                Property.internalTextBag(Metadata.AUTHOR)
+            });
     
-    /**
-     * @see Office#INITIAL_AUTHOR
-     */
-    public static final Property INITIAL_AUTHOR = Office.INITIAL_AUTHOR;
-
-    /**
-     * @see Office#AUTHOR
-     */
-    public static final Property AUTHOR = Property.composite(Office.AUTHOR,
-          new Property[] { Property.internalText(MSOffice.AUTHOR) });
-
     /**
      * @see Office#LAST_AUTHOR
      */
-    public static final Property LAST_AUTHOR = Property.composite(Office.LAST_AUTHOR,
-            new Property[] { Property.internalText(MSOffice.LAST_AUTHOR) });
+     public static final Property MODIFIER = Office.LAST_AUTHOR;
+    
+    /**
+     * @see XMP#CREATOR_TOOL
+     */
+     public static final Property CREATOR_TOOL = XMP.CREATOR_TOOL;
     
    /**
     * @see DublinCore#LANGUAGE
@@ -136,42 +133,48 @@ public interface TikaCoreProperties {
      
     /**
      * @see DublinCore#SUBJECT
-     */
-    public static final Property SUBJECT = Property.composite(DublinCore.SUBJECT, 
-            new Property[] { Property.internalText(Metadata.SUBJECT) });
-      
-    /**
      * @see Office#KEYWORDS
      */
-    public static final Property KEYWORDS = Property.composite(Office.KEYWORDS,
-            new Property[] { Property.internalTextBag(MSOffice.KEYWORDS) });
-
+    public static final Property KEYWORDS = Property.composite(DublinCore.SUBJECT,
+            new Property[] { 
+                Office.KEYWORDS, 
+                Property.internalTextBag(MSOffice.KEYWORDS),
+                Property.internalTextBag(Metadata.SUBJECT)
+            });
     
     // Date related properties
     
-    /**
-     * @see DublinCore#DATE
-     */
-     public static final Property DATE = Property.composite(DublinCore.DATE, 
-             new Property[] { Metadata.DATE });
+     /** 
+      * @see DublinCore#DATE 
+      * @see Office#CREATION_DATE 
+      */
+     public static final Property CREATED = Property.composite(DublinCore.CREATED,
+             new Property[] { 
+                     Office.CREATION_DATE, 
+                     MSOffice.CREATION_DATE, 
+                     Metadata.DATE
+             });
      
-    /**
-     * @see DublinCore#MODIFIED
-     */
-     public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED, 
-             new Property[] { Property.internalText(Metadata.MODIFIED), Property.internalText("Last-Modified") });
-     
-     /** @see Office#CREATION_DATE */
-     public static final Property CREATION_DATE = Property.composite(Office.CREATION_DATE,
-             new Property[] { MSOffice.CREATION_DATE });
-
-     /** @see Office#SAVE_DATE */
-     public static final Property SAVE_DATE = Property.composite(Office.SAVE_DATE,
-             new Property[] { MSOffice.LAST_SAVED });
+     /** 
+      * @see DublinCore#MODIFIED
+      * @see Office#SAVE_DATE 
+      */
+     public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED,
+             new Property[] { 
+                     Office.SAVE_DATE, 
+                     MSOffice.LAST_SAVED, 
+                     Property.internalText(Metadata.MODIFIED),
+                     Property.internalText("Last-Modified")
+             });
      
      /** @see Office#PRINT_DATE */
      public static final Property PRINT_DATE = Property.composite(Office.PRINT_DATE, 
              new Property[] { MSOffice.LAST_PRINTED });
+     
+     /**
+      * @see XMP#METADATA_DATE
+      */
+     public static final Property METADATA_DATE = XMP.METADATA_DATE;
     
      
     // Geographic related properties
@@ -190,4 +193,56 @@ public interface TikaCoreProperties {
      * @see Geographic#ALTITUDE
      */
     public static final Property ALTITUDE = Geographic.ALTITUDE;
+    
+    
+    // Comment and rating properties
+    
+    /**
+     * @see XMP#RATING
+     */
+    public static final Property RATING = XMP.RATING;
+    
+    /** 
+     * @see OfficeOpenXMLExtended#COMMENTS 
+     */
+    public static final Property COMMENTS = Property.composite(OfficeOpenXMLExtended.COMMENTS, 
+            new Property[] { 
+                Property.internalTextBag(ClimateForcast.COMMENT),
+                Property.internalTextBag(MSOffice.COMMENTS)
+            });
+    
+    // TODO: Remove transition properties in Tika 2.0
+    
+    /** 
+     * @see DublinCore#SUBJECT 
+     * @deprecated use TikaCoreProperties#KEYWORDS
+     */
+    @Deprecated
+    public static final Property TRANSITION_KEYWORDS_TO_DC_SUBJECT = Property.composite(DublinCore.SUBJECT, 
+            new Property[] { Property.internalTextBag(MSOffice.KEYWORDS) });
+    
+    /** 
+     * @see OfficeOpenXMLExtended#COMMENTS 
+     * @deprecated use TikaCoreProperties#DESCRIPTION
+     */
+    @Deprecated
+    public static final Property TRANSITION_SUBJECT_TO_DC_DESCRIPTION = Property.composite(DublinCore.DESCRIPTION, 
+            new Property[] { Property.internalText(Metadata.SUBJECT) });
+    
+    /** 
+     * @see DublinCore#TITLE 
+     * @deprecated use TikaCoreProperties#TITLE
+     */
+    @Deprecated
+    public static final Property TRANSITION_SUBJECT_TO_DC_TITLE = Property.composite(DublinCore.TITLE, 
+            new Property[] { Property.internalText(Metadata.SUBJECT) });
+    
+    /** 
+     * @see OfficeOpenXMLCore#SUBJECT 
+     * @deprecated use OfficeOpenXMLCore#SUBJECT
+     */
+    @Deprecated
+    public static final Property TRANSITION_SUBJECT_TO_OO_SUBJECT = Property.composite(OfficeOpenXMLCore.SUBJECT, 
+            new Property[] { Property.internalText(Metadata.SUBJECT) });
+    
 }

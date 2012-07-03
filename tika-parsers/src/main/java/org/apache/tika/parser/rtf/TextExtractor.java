@@ -34,6 +34,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.CharsetUtils;
@@ -95,7 +96,7 @@ final class TextExtractor {
 
     // Non null if we are processing metadata (title,
     // keywords, etc.) inside the info group:
-    private String nextMetaData;
+    private Property nextMetaData;
     private boolean inParagraph;
 
     // Non-zero if we are processing inside a field destination:
@@ -828,23 +829,24 @@ final class TextExtractor {
                 // \printim, \version, \nofpages, \nofwords,
                 // \nofchars, etc.
                 if (equals("author")) {
-                    nextMetaData = TikaCoreProperties.AUTHOR.getName();
+                    nextMetaData = TikaCoreProperties.CREATOR;
                 } else if (equals("title")) {
-                    nextMetaData = TikaCoreProperties.TITLE.getName();
+                    nextMetaData = TikaCoreProperties.TITLE;
                 } else if (equals("subject")) {
-                    nextMetaData = TikaCoreProperties.SUBJECT.getName();
+                    // TODO: Move to OO subject in Tika 2.0
+                    nextMetaData = TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT;
                 } else if (equals("keywords")) {
-                    nextMetaData = TikaCoreProperties.KEYWORDS.getName();
+                    nextMetaData = TikaCoreProperties.TRANSITION_KEYWORDS_TO_DC_SUBJECT;
                 } else if (equals("category")) {
-                    nextMetaData = OfficeOpenXMLCore.CATEGORY.getName();
+                    nextMetaData = OfficeOpenXMLCore.CATEGORY;
                 } else if (equals("comment")) {
-                    nextMetaData = Metadata.COMMENT;
+                    nextMetaData = TikaCoreProperties.COMMENTS;
                 } else if (equals("company")) {
-                    nextMetaData = OfficeOpenXMLExtended.COMPANY.getName();
+                    nextMetaData = OfficeOpenXMLExtended.COMPANY;
                 } else if (equals("manager")) {
-                    nextMetaData = OfficeOpenXMLExtended.MANAGER.getName();
+                    nextMetaData = OfficeOpenXMLExtended.MANAGER;
                 } else if (equals("template")) {
-                    nextMetaData = OfficeOpenXMLExtended.TEMPLATE.getName();
+                    nextMetaData = OfficeOpenXMLExtended.TEMPLATE;
                 }
             }
 
@@ -1064,7 +1066,11 @@ final class TextExtractor {
 
         if (inHeader) {
             if (nextMetaData != null) {
-                metadata.add(nextMetaData, pendingBuffer.toString());
+                if (nextMetaData.isMultiValuePermitted()) {
+                    metadata.add(nextMetaData, pendingBuffer.toString());
+                } else {
+                    metadata.set(nextMetaData, pendingBuffer.toString());
+                }
                 nextMetaData = null;
             }
             pendingBuffer.setLength(0);

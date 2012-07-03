@@ -26,7 +26,7 @@ public interface MSOffice {
 
     @Deprecated String KEYWORDS = "Keywords";
 
-    String COMMENTS = "Comments";
+    @Deprecated String COMMENTS = "Comments";
 
     @Deprecated String LAST_AUTHOR = "Last-Author";
 

@@ -54,7 +54,10 @@ public class TiffParserTest extends TestCase {
         assertEquals("3", metadata.get(Metadata.SAMPLES_PER_PIXEL));
         
         // Embedded XMP
-        List<String> subject = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
+        List<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.KEYWORDS));
+        assertTrue("got " + keywords, keywords.contains("cat"));
+        assertTrue("got " + keywords, keywords.contains("garden"));
+        List<String> subject = Arrays.asList(metadata.getValues(Metadata.SUBJECT));
         assertTrue("got " + subject, subject.contains("cat"));
         assertTrue("got " + subject, subject.contains("garden"));
     }

@@ -198,7 +198,6 @@ public class MboxParser extends AbstractParser {
         String headerContent = headerMatcher.group(2);
 
         if (headerTag.equalsIgnoreCase("From")) {
-            metadata.add(TikaCoreProperties.AUTHOR, headerContent);
             metadata.set(TikaCoreProperties.CREATOR, headerContent);
         } else if (headerTag.equalsIgnoreCase("To") ||
         	headerTag.equalsIgnoreCase("Cc") ||
@@ -218,13 +217,13 @@ public class MboxParser extends AbstractParser {
             }
             metadata.add(property, headerContent);
         } else if (headerTag.equalsIgnoreCase("Subject")) {
-            metadata.add(TikaCoreProperties.SUBJECT, headerContent);
-            metadata.set(TikaCoreProperties.TITLE, headerContent);
+            // TODO Move to title in Tika 2.0
+            metadata.add(TikaCoreProperties.TRANSITION_SUBJECT_TO_DC_TITLE, 
+                    headerContent);
         } else if (headerTag.equalsIgnoreCase("Date")) {
             try {
                 Date date = parseDate(headerContent);
-                metadata.set(TikaCoreProperties.DATE, date);
-                metadata.set(Metadata.CREATION_DATE, date);
+                metadata.set(TikaCoreProperties.CREATED, date);
             } catch (ParseException e) {
                 // ignoring date because format was not understood
             }

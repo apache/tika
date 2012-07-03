@@ -70,13 +70,9 @@ public class MetadataExtractor {
         addProperty(metadata, OfficeOpenXMLCore.CATEGORY, propsHolder.getCategoryProperty());
         addProperty(metadata, OfficeOpenXMLCore.CONTENT_STATUS, propsHolder
                 .getContentStatusProperty());
-        addProperty(metadata, TikaCoreProperties.DATE, propsHolder
-                .getCreatedProperty());
-        addProperty(metadata, TikaCoreProperties.CREATION_DATE, propsHolder
+        addProperty(metadata, TikaCoreProperties.CREATED, propsHolder
                 .getCreatedProperty());
         addProperty(metadata, TikaCoreProperties.CREATOR, propsHolder
-                .getCreatorProperty());
-        addProperty(metadata, TikaCoreProperties.AUTHOR, propsHolder
                 .getCreatorProperty());
         addProperty(metadata, TikaCoreProperties.DESCRIPTION, propsHolder
                 .getDescriptionProperty());
@@ -86,7 +82,7 @@ public class MetadataExtractor {
                 .getKeywordsProperty());
         addProperty(metadata, TikaCoreProperties.LANGUAGE, propsHolder
                 .getLanguageProperty());
-        addProperty(metadata, TikaCoreProperties.LAST_AUTHOR, propsHolder
+        addProperty(metadata, TikaCoreProperties.MODIFIER, propsHolder
                 .getLastModifiedByProperty());
         addProperty(metadata, TikaCoreProperties.PRINT_DATE, propsHolder
                 .getLastPrintedProperty());
@@ -96,8 +92,9 @@ public class MetadataExtractor {
               .getModifiedProperty());
         addProperty(metadata, OfficeOpenXMLCore.REVISION, propsHolder
                 .getRevisionProperty());
-        addProperty(metadata, TikaCoreProperties.SUBJECT, propsHolder
-                .getSubjectProperty());
+        // TODO: Move to OO subject in Tika 2.0
+        addProperty(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, 
+                propsHolder.getSubjectProperty());
         addProperty(metadata, TikaCoreProperties.TITLE, propsHolder.getTitleProperty());
         addProperty(metadata, OfficeOpenXMLCore.VERSION, propsHolder.getVersionProperty());
         

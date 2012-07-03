@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
+import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -277,7 +278,7 @@ public class ImageMetadataExtractor {
         }
         public void handle(Directory directory, Metadata metadata) throws MetadataException {
             if (directory.containsTag(JpegCommentDirectory.TAG_JPEG_COMMENT)) {
-                metadata.add(Metadata.COMMENT, directory.getString(JpegCommentDirectory.TAG_JPEG_COMMENT));
+                metadata.add(TikaCoreProperties.COMMENTS, directory.getString(JpegCommentDirectory.TAG_JPEG_COMMENT));
             }
         }
     }
@@ -416,16 +417,16 @@ public class ImageMetadataExtractor {
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.format(original); // Same time zone as Metadata Extractor uses
-                metadata.set(TikaCoreProperties.DATE, datetimeNoTimeZone);
+                metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
                 metadata.set(Metadata.ORIGINAL_DATE, datetimeNoTimeZone);
             }
             if (directory.containsTag(ExifDirectory.TAG_DATETIME)) {
                 Date datetime = directory.getDate(ExifDirectory.TAG_DATETIME);
                 String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.format(datetime);
-                metadata.set(Metadata.LAST_MODIFIED, datetimeNoTimeZone);
+                metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
                 // If Date/Time Original does not exist this might be creation date
                 if (original == null) {
-                    metadata.set(TikaCoreProperties.DATE, datetimeNoTimeZone);
+                    metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
                 }
             }
         }
@@ -444,7 +445,7 @@ public class ImageMetadataExtractor {
             if (directory.containsTag(IptcDirectory.TAG_KEYWORDS)) {
                 String[] keywords = directory.getStringArray(IptcDirectory.TAG_KEYWORDS);
                 for (String k : keywords) {
-                    metadata.add(Metadata.KEYWORDS, k);
+                    metadata.add(TikaCoreProperties.KEYWORDS, k);
                 }
             }
             if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {
@@ -453,7 +454,8 @@ public class ImageMetadataExtractor {
                 metadata.set(TikaCoreProperties.TITLE, directory.getString(IptcDirectory.TAG_OBJECT_NAME));
             }
             if (directory.containsTag(IptcDirectory.TAG_BY_LINE)) {
-                metadata.set(TikaCoreProperties.AUTHOR, directory.getString(IptcDirectory.TAG_BY_LINE));
+                metadata.set(TikaCoreProperties.CREATOR, directory.getString(IptcDirectory.TAG_BY_LINE));
+                metadata.set(IPTC.CREATOR, directory.getString(IptcDirectory.TAG_BY_LINE));
             }
             if (directory.containsTag(IptcDirectory.TAG_CAPTION)) {
                 metadata.set(TikaCoreProperties.DESCRIPTION,
@@ -481,7 +483,7 @@ public class ImageMetadataExtractor {
                             latitude > 0) {
                         latitude *= -1;
                     }
-                    metadata.set(Metadata.LATITUDE, LAT_LONG_FORMAT.format(latitude)); 
+                    metadata.set(TikaCoreProperties.LATITUDE, LAT_LONG_FORMAT.format(latitude)); 
                 }
             }
 
@@ -494,7 +496,7 @@ public class ImageMetadataExtractor {
                             longitude > 0) {
                         longitude *= -1;
                     }
-                    metadata.set(Metadata.LONGITUDE, LAT_LONG_FORMAT.format(longitude));
+                    metadata.set(TikaCoreProperties.LONGITUDE, LAT_LONG_FORMAT.format(longitude));
                 }
             }
         }

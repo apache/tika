@@ -67,4 +67,10 @@ public interface OfficeOpenXMLCore
      */
     Property VERSION = Property.externalText(
     		PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "version");
+    
+    /**
+     * The document's subject.
+     */
+    Property SUBJECT = Property.externalText(
+                PREFIX + Metadata.NAMESPACE_PREFIX_DELIMITER + "subject");
 }
