@@ -66,7 +66,8 @@ public class ImageMetadataExtractorTest extends TestCase {
         Metadata metadata = new Metadata();
         
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Should be ISO date without time zone", "2000-01-01T00:00:00", metadata.get(TikaCoreProperties.DATE));
+        assertEquals("Should be ISO date without time zone", "2000-01-01T00:00:00", 
+                metadata.get(TikaCoreProperties.CREATED));
     }
 
     public void testExifHandlerParseDateFallback() throws MetadataException {
@@ -77,7 +78,8 @@ public class ImageMetadataExtractorTest extends TestCase {
         Metadata metadata = new Metadata();
         
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Should try EXIF Date/Time if Original is not set", "1999-01-01T00:00:00", metadata.get(TikaCoreProperties.DATE));
+        assertEquals("Should try EXIF Date/Time if Original is not set", "1999-01-01T00:00:00", 
+                metadata.get(TikaCoreProperties.CREATED));
     }
     
     public void testExifHandlerParseDateError() throws MetadataException {
@@ -88,7 +90,8 @@ public class ImageMetadataExtractorTest extends TestCase {
         Metadata metadata = new Metadata();
         
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
-        assertEquals("Parsing should proceed without date", null, metadata.get(TikaCoreProperties.DATE));
+        assertEquals("Parsing should proceed without date", null, 
+                metadata.get(TikaCoreProperties.CREATED));
     }
     
     public void testCopyUnknownFieldsHandler() throws MetadataException {

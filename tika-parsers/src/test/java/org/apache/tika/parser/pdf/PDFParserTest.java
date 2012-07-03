@@ -26,6 +26,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -53,7 +54,9 @@ public class PDFParserTest extends TikaTest {
         }
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.AUTHOR));
+        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(Metadata.AUTHOR));
+        assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
         assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
         
         // Can't reliably test dates yet - see TIKA-451 
@@ -87,7 +90,8 @@ public class PDFParserTest extends TikaTest {
         }
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Document author", metadata.get(TikaCoreProperties.AUTHOR));
+        assertEquals("Document author", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Document author", metadata.get(Metadata.AUTHOR));
         assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
         
         assertEquals("Custom Value", metadata.get("Custom Property"));
@@ -120,8 +124,10 @@ public class PDFParserTest extends TikaTest {
        }
 
        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("The Bank of England", metadata.get(TikaCoreProperties.AUTHOR));
-       assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
+       assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
+       assertEquals("The Bank of England", metadata.get(Metadata.AUTHOR));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(OfficeOpenXMLCore.SUBJECT));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
        String content = handler.toString();
@@ -150,8 +156,9 @@ public class PDFParserTest extends TikaTest {
        }
 
        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("The Bank of England", metadata.get(TikaCoreProperties.AUTHOR));
-       assertEquals("Speeches by Andrew G Haldane", metadata.get(TikaCoreProperties.SUBJECT));
+       assertEquals("The Bank of England", metadata.get(TikaCoreProperties.CREATOR));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(OfficeOpenXMLCore.SUBJECT));
+       assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
        assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
@@ -234,7 +241,9 @@ public class PDFParserTest extends TikaTest {
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
-                     metadata.get(TikaCoreProperties.SUBJECT));
+                     metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("Subject is here",
+                     metadata.get(Metadata.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)

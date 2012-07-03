@@ -212,15 +212,17 @@ public class PDFParser extends AbstractParser {
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
         addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
-        addMetadata(metadata, TikaCoreProperties.AUTHOR, info.getAuthor());
-        addMetadata(metadata, TikaCoreProperties.CREATOR, info.getCreator());
+        addMetadata(metadata, TikaCoreProperties.CREATOR, info.getAuthor());
+        addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
         addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
         addMetadata(metadata, "producer", info.getProducer());
-        addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
+        // TODO: Move to description in Tika 2.0
+        addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());
         addMetadata(metadata, "trapped", info.getTrapped());
         try {
+            // TODO Remove these in Tika 2.0
             addMetadata(metadata, "created", info.getCreationDate());
-            addMetadata(metadata, TikaCoreProperties.CREATION_DATE, info.getCreationDate());
+            addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
         } catch (IOException e) {
             // Invalid date format, just ignore
         }

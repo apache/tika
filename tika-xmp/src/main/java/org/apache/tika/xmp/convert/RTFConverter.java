@@ -60,13 +60,13 @@ public class RTFConverter extends AbstractConverter
 		
 		createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
 
-		createCommaSeparatedArray(TikaCoreProperties.AUTHOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
+		createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
 		createLangAltProperty(TikaCoreProperties.TITLE, XMPConst.NS_DC, "title");
-		createLangAltProperty(TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "description");
+		createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description");
 		createCommaSeparatedArray(TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject", PropertyOptions.ARRAY);
 		createProperty(OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre");
 		createProperty(OfficeOpenXMLExtended.TEMPLATE, OfficeOpenXMLExtended.NAMESPACE_URI, "Template");
-		createProperty(ClimateForcast.COMMENT, XMPConst.NS_PDFX, "Comments");
+		createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
 		createProperty(OfficeOpenXMLExtended.COMPANY, OfficeOpenXMLExtended.NAMESPACE_URI, "Company");
 		createProperty(OfficeOpenXMLExtended.MANAGER, OfficeOpenXMLExtended.NAMESPACE_URI, "Manager");
 				

@@ -71,13 +71,13 @@ public class MboxParserTest extends TestCase {
             verify(handler).endDocument();
 
             assertEquals("subject", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("subject", metadata.get(TikaCoreProperties.SUBJECT));
-            assertEquals("<author@domain.com>", metadata.get(TikaCoreProperties.AUTHOR));
+            assertEquals("subject", metadata.get(Metadata.SUBJECT));
+            assertEquals("<author@domain.com>", metadata.get(Metadata.AUTHOR));
             assertEquals("<author@domain.com>", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals(null, metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
             assertEquals("<name@domain.com>", metadata.get("MboxParser-return-path"));
             assertEquals("Should be ISO date in UTC, converted from 'Tue, 9 Jun 2009 23:58:45 -0400'", 
-                    "2009-06-10T03:58:45Z", metadata.get(TikaCoreProperties.DATE));
+                    "2009-06-10T03:58:45Z", metadata.get(TikaCoreProperties.CREATED));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -134,9 +134,10 @@ public class MboxParserTest extends TestCase {
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
 
+            // TODO: Remove subject and author in Tika 2.0
+            assertEquals("Re: question about when shuffle/sort start working", metadata.get(Metadata.SUBJECT));
             assertEquals("Re: question about when shuffle/sort start working", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Re: question about when shuffle/sort start working", metadata.get(TikaCoreProperties.SUBJECT));
-            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(TikaCoreProperties.AUTHOR));
+            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(Metadata.AUTHOR));
             assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("core-user@hadoop.apache.org", metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
             

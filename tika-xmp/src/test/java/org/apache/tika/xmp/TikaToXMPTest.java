@@ -69,7 +69,7 @@ public class TikaToXMPTest
 		// comma separated array
 		metadata.set(TikaCoreProperties.KEYWORDS, "keyword1,keyword2");
 		// OOXML specific simple prop
-		metadata.set(TikaCoreProperties.LAST_AUTHOR, "lastModifiedBy");
+		metadata.set(TikaCoreProperties.MODIFIER, "lastModifiedBy");
 	}
 	
 	private void checkOOXMLMetadata(XMPMeta xmp) throws XMPException
@@ -156,7 +156,7 @@ public class TikaToXMPTest
 		// language alternative
 		tikaMetadata.set(TikaCoreProperties.TITLE, "title");
 		// array
-		tikaMetadata.set(TikaCoreProperties.SUBJECT, new String[] {"keyword1", "keyword2"});
+		tikaMetadata.set(TikaCoreProperties.KEYWORDS, new String[] {"keyword1", "keyword2"});
 		
 		
 		XMPMeta xmp = TikaToXMP.convert(tikaMetadata, null);

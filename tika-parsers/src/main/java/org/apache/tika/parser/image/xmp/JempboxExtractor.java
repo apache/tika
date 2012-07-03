@@ -70,7 +70,7 @@ public class JempboxExtractor {
                 if (dc.getSubjects() != null && dc.getSubjects().size() > 0) {
                     Iterator<String> keywords = dc.getSubjects().iterator();
                     while (keywords.hasNext()) {
-                        metadata.add(TikaCoreProperties.SUBJECT, keywords.next());
+                        metadata.add(TikaCoreProperties.KEYWORDS, keywords.next());
                     }
                     // TODO should we set KEYWORDS too?
                     // All tested photo managers set the same in Iptc.Application2.Keywords and Xmp.dc.subject

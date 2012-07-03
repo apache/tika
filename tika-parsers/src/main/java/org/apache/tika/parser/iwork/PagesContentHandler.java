@@ -265,11 +265,11 @@ class PagesContentHandler extends DefaultHandler {
     private Object resolveMetaDataKey(String metaDataLocalName) {
         Object metaDataKey = metaDataLocalName;
         if ("sf:authors".equals(metaDataQName)) {
-            metaDataKey = TikaCoreProperties.AUTHOR;
+            metaDataKey = TikaCoreProperties.CREATOR;
         } else if ("sf:title".equals(metaDataQName)) {
             metaDataKey = TikaCoreProperties.TITLE;
         } else if ("sl:SLCreationDateProperty".equals(metaDataQName)) {
-            metaDataKey = TikaCoreProperties.CREATION_DATE;
+            metaDataKey = TikaCoreProperties.CREATED;
         } else if ("sl:SLLastModifiedDateProperty".equals(metaDataQName)) {
             metaDataKey = Metadata.LAST_MODIFIED;
         } else if ("sl:language".equals(metaDataQName)) {

@@ -21,6 +21,7 @@ import java.io.InputStream;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -85,9 +86,10 @@ public class ODFParserTest extends TikaTest {
                    metadata.get("generator"));
              
              // Check date metadata, both old-style and new-style
-             assertEquals("2007-09-14T11:07:10", metadata.get(TikaCoreProperties.DATE));
-             assertEquals("2007-09-14T11:06:08", metadata.get(TikaCoreProperties.CREATION_DATE));
-             assertEquals("2007-09-14T11:07:10", metadata.get(Metadata.DATE));
+             assertEquals("2007-09-14T11:07:10", metadata.get(TikaCoreProperties.MODIFIED));
+             assertEquals("2007-09-14T11:07:10", metadata.get(Metadata.MODIFIED));
+             assertEquals("2007-09-14T11:06:08", metadata.get(Metadata.DATE));
+             assertEquals("2007-09-14T11:06:08", metadata.get(TikaCoreProperties.CREATED));
              assertEquals("2007-09-14T11:06:08", metadata.get(Metadata.CREATION_DATE));
              
              // Check the document statistics
@@ -148,10 +150,16 @@ public class ODFParserTest extends TikaTest {
            assertEquals(
                    "application/vnd.oasis.opendocument.formula",
                    metadata.get(Metadata.CONTENT_TYPE));
-           assertEquals(null, metadata.get(TikaCoreProperties.DATE));
+           assertEquals(null, metadata.get(TikaCoreProperties.MODIFIED));
            assertEquals("2006-01-27T11:55:22", metadata.get(Metadata.CREATION_DATE));
-           assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
-           assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(TikaCoreProperties.SUBJECT));
+           assertEquals("The quick brown fox jumps over the lazy dog", 
+                   metadata.get(TikaCoreProperties.TITLE));
+           assertEquals("Gym class featuring a brown fox and lazy dog", 
+                   metadata.get(TikaCoreProperties.DESCRIPTION));
+           assertEquals("Gym class featuring a brown fox and lazy dog", 
+                   metadata.get(OfficeOpenXMLCore.SUBJECT));
+           assertEquals("Gym class featuring a brown fox and lazy dog", 
+                   metadata.get(Metadata.SUBJECT));
            assertEquals("PT0S", metadata.get(Metadata.EDIT_TIME));
            assertEquals("1", metadata.get("editing-cycles"));
            assertEquals(
@@ -203,10 +211,12 @@ public class ODFParserTest extends TikaTest {
            assertEquals(
                    "application/vnd.oasis.opendocument.text",
                    metadata.get(Metadata.CONTENT_TYPE));
-           assertEquals("2009-10-05T21:22:38", metadata.get(TikaCoreProperties.DATE));
+           assertEquals("2009-10-05T21:22:38", metadata.get(TikaCoreProperties.MODIFIED));
+           assertEquals("2009-10-05T19:04:01", metadata.get(TikaCoreProperties.CREATED));
            assertEquals("2009-10-05T19:04:01", metadata.get(Metadata.CREATION_DATE));
            assertEquals("Apache Tika", metadata.get(TikaCoreProperties.TITLE));
-           assertEquals("Test document", metadata.get(TikaCoreProperties.SUBJECT));
+           assertEquals("Test document", metadata.get(OfficeOpenXMLCore.SUBJECT));
+           assertEquals("Test document", metadata.get(Metadata.SUBJECT));
            assertEquals("A rather complex document", metadata.get(TikaCoreProperties.DESCRIPTION));
            assertEquals("Bart Hanssens", metadata.get(TikaCoreProperties.CREATOR));
            assertEquals("Bart Hanssens", metadata.get("initial-creator"));

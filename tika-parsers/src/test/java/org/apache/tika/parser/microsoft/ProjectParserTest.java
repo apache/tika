@@ -66,18 +66,19 @@ public class ProjectParserTest extends TestCase {
                metadata.get(Metadata.CONTENT_TYPE));
        
        assertEquals("The quick brown fox jumps over the lazy dog", metadata.get(TikaCoreProperties.TITLE));
-       assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(TikaCoreProperties.SUBJECT));
-       assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.AUTHOR));
-       assertEquals("", metadata.get(TikaCoreProperties.LAST_AUTHOR));
+       assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(OfficeOpenXMLCore.SUBJECT));
+       assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(Metadata.SUBJECT));
+       assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
+       assertEquals("", metadata.get(TikaCoreProperties.MODIFIER));
        assertEquals("Pangram, fox, dog", metadata.get(TikaCoreProperties.KEYWORDS));
-       assertEquals("Comment Vulpes vulpes comment", metadata.get(Metadata.COMMENTS));
+       assertEquals("Comment Vulpes vulpes comment", metadata.get(TikaCoreProperties.COMMENTS));
        
        assertEquals("Category1", metadata.get(OfficeOpenXMLCore.CATEGORY));
        assertEquals("Mr Burns", metadata.get(OfficeOpenXMLExtended.MANAGER));
        assertEquals("CompanyA", metadata.get(OfficeOpenXMLExtended.COMPANY));
        
-       assertEquals("2011-11-24T10:58:00Z", metadata.get(TikaCoreProperties.CREATION_DATE));
-       assertEquals("2011-11-24T11:31:00Z", metadata.get(TikaCoreProperties.SAVE_DATE));
+       assertEquals("2011-11-24T10:58:00Z", metadata.get(TikaCoreProperties.CREATED));
+       assertEquals("2011-11-24T11:31:00Z", metadata.get(TikaCoreProperties.MODIFIED));
        
        // Custom Project metadata is present with prefix
        assertEquals("0%", metadata.get("custom:% Complete"));

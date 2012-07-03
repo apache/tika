@@ -38,7 +38,7 @@ public class JempboxExtractorTest extends TestCase {
         metadata.set(TikaCoreProperties.DESCRIPTION, "old description");
         metadata.set(TikaCoreProperties.CREATOR, "previous author");
         // ... or kept in case the field is multi-value
-        metadata.add(TikaCoreProperties.SUBJECT, "oldkeyword");
+        metadata.add(TikaCoreProperties.KEYWORDS, "oldkeyword");
         
         JempboxExtractor extractor = new JempboxExtractor(metadata);
         extractor.parse(stream);
@@ -47,12 +47,18 @@ public class JempboxExtractorTest extends TestCase {
         assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
         assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR));
-        Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));  
+        Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.KEYWORDS));  
         assertTrue(keywords.contains("oldkeyword"));
         assertTrue(keywords.contains("grazelands"));
         assertTrue(keywords.contains("nature reserve"));
         assertTrue(keywords.contains("bird watching"));
         assertTrue(keywords.contains("coast"));
+        Collection<String> subject = Arrays.asList(metadata.getValues(Metadata.SUBJECT));  
+        assertTrue(subject.contains("oldkeyword"));
+        assertTrue(subject.contains("grazelands"));
+        assertTrue(subject.contains("nature reserve"));
+        assertTrue(subject.contains("bird watching"));
+        assertTrue(subject.contains("coast"));
     }
 
     public void testParseJpegPhotoshop() throws IOException, TikaException {
@@ -66,7 +72,7 @@ public class JempboxExtractorTest extends TestCase {
         assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
         assertEquals("Some Tourist", metadata.get(TikaCoreProperties.CREATOR));
-        Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));  
+        Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.KEYWORDS));  
         assertTrue(keywords.contains("bird watching"));
         assertTrue(keywords.contains("coast"));
     }
@@ -80,7 +86,7 @@ public class JempboxExtractorTest extends TestCase {
         
         // XnViewMp fields not understood by Jempbox
         assertEquals("Bird site in north eastern Sk\u00E5ne, Sweden.\n(new line)", metadata.get(TikaCoreProperties.DESCRIPTION));
-        Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.SUBJECT));
+        Collection<String> keywords = Arrays.asList(metadata.getValues(TikaCoreProperties.KEYWORDS));
         assertTrue(keywords.contains("coast"));
         assertTrue(keywords.contains("nature reserve"));
     }

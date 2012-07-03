@@ -30,6 +30,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.WriteOutContentHandler;
@@ -155,8 +156,9 @@ public class RTFParserTest extends TikaTest {
         // title info field:
         assertEquals("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f\u3000",
                      r.metadata.get(TikaCoreProperties.TITLE));
-        assertEquals("VMazel", r.metadata.get(TikaCoreProperties.AUTHOR));
-        assertEquals("StarWriter", r.metadata.get(Metadata.COMMENT));
+        assertEquals("VMazel", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("VMazel", r.metadata.get(Metadata.AUTHOR));
+        assertEquals("StarWriter", r.metadata.get(TikaCoreProperties.COMMENTS));
         assertContains("1.", content);
         assertContains("4.", content);
        
@@ -268,7 +270,9 @@ public class RTFParserTest extends TikaTest {
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
-                     r.metadata.get(TikaCoreProperties.SUBJECT));
+                     r.metadata.get(OfficeOpenXMLCore.SUBJECT));
+        assertEquals("Subject is here",
+                     r.metadata.get(Metadata.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)

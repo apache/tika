@@ -59,8 +59,11 @@ public class RFC822ParserTest extends TestCase {
             verify(handler, never()).endElement(XHTMLContentHandler.XHTML, "div", "div");
             verify(handler).endDocument();
             //note no leading spaces, and no quotes
-            assertEquals("Julien Nioche (JIRA) <jira@apache.org>", metadata.get(TikaCoreProperties.AUTHOR));
-            assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed", metadata.get(TikaCoreProperties.SUBJECT));
+            assertEquals("Julien Nioche (JIRA) <jira@apache.org>", metadata.get(TikaCoreProperties.CREATOR));
+            assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed", 
+                    metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("[jira] Commented: (TIKA-461) RFC822 messages not parsed", 
+                    metadata.get(Metadata.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -147,8 +150,12 @@ public class RFC822ParserTest extends TestCase {
             parser.parse(stream, handler, metadata, new ParseContext());
             //tests correct decoding of internationalized headers, both
             //quoted-printable (Q) and Base64 (B).
-            assertEquals("Keld J\u00F8rn Simonsen <keld@dkuug.dk>", metadata.get(TikaCoreProperties.AUTHOR));
-            assertEquals("If you can read this you understand the example.", metadata.get(TikaCoreProperties.SUBJECT));
+            assertEquals("Keld J\u00F8rn Simonsen <keld@dkuug.dk>", 
+                    metadata.get(TikaCoreProperties.CREATOR));
+            assertEquals("If you can read this you understand the example.", 
+                    metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("If you can read this you understand the example.", 
+                    metadata.get(Metadata.SUBJECT));
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -165,8 +172,12 @@ public class RFC822ParserTest extends TestCase {
        ContentHandler handler = mock(DefaultHandler.class);
 
        parser.parse(stream, handler, metadata, new ParseContext());
-       assertEquals("Saved by Windows Internet Explorer 7", metadata.get(TikaCoreProperties.AUTHOR));
-       assertEquals("Air Permit Programs | Air & Radiation | US EPA", metadata.get(TikaCoreProperties.SUBJECT));
+       assertEquals("Saved by Windows Internet Explorer 7", 
+               metadata.get(TikaCoreProperties.CREATOR));
+       assertEquals("Air Permit Programs | Air & Radiation | US EPA", 
+               metadata.get(TikaCoreProperties.TITLE));
+       assertEquals("Air Permit Programs | Air & Radiation | US EPA", 
+               metadata.get(Metadata.SUBJECT));
     }
 
     /**
@@ -199,7 +210,7 @@ public class RFC822ParserTest extends TestCase {
         context.set(MimeConfig.class, config);
         parser.parse(
                 new ByteArrayInputStream(data), handler, metadata, context);
-        assertEquals(name.trim(), metadata.get(TikaCoreProperties.AUTHOR));
+        assertEquals(name.trim(), metadata.get(TikaCoreProperties.CREATOR));
     }
     
     /**
@@ -212,16 +223,17 @@ public class RFC822ParserTest extends TestCase {
        ContentHandler handler = new BodyContentHandler();
 
        parser.parse(stream, handler, metadata, new ParseContext());
-       assertEquals(true, metadata.isMultiValued(TikaCoreProperties.AUTHOR));
-       assertEquals("xyz", metadata.getValues(TikaCoreProperties.AUTHOR)[0]);
-       assertEquals("abc", metadata.getValues(TikaCoreProperties.AUTHOR)[1]);
+       assertEquals(true, metadata.isMultiValued(TikaCoreProperties.CREATOR));
+       assertEquals("xyz", metadata.getValues(TikaCoreProperties.CREATOR)[0]);
+       assertEquals("abc", metadata.getValues(TikaCoreProperties.CREATOR)[1]);
        assertEquals(true, metadata.isMultiValued(Metadata.MESSAGE_FROM));
        assertEquals("xyz", metadata.getValues(Metadata.MESSAGE_FROM)[0]);
        assertEquals("abc", metadata.getValues(Metadata.MESSAGE_FROM)[1]);
        assertEquals(true, metadata.isMultiValued(Metadata.MESSAGE_TO));
        assertEquals("abc", metadata.getValues(Metadata.MESSAGE_TO)[0]);
        assertEquals("def", metadata.getValues(Metadata.MESSAGE_TO)[1]);
-       assertEquals("abcd", metadata.get(TikaCoreProperties.SUBJECT));
+       assertEquals("abcd", metadata.get(TikaCoreProperties.TITLE));
+       assertEquals("abcd", metadata.get(Metadata.SUBJECT));
        assertTrue(handler.toString().contains("bar biz bat"));
     }
 

@@ -23,8 +23,10 @@ package org.apache.tika.metadata;
  */
 public interface DublinCore {
 
-	public static final String NAMESPACE_URI_DC = "http://purl.org/dc/elements/1.1/";
-	public static final String PREFIX_DC = "dc";
+    public static final String NAMESPACE_URI_DC = "http://purl.org/dc/elements/1.1/";
+    public static final String NAMESPACE_URI_DC_TERMS = "http://purl.org/dc/terms/";
+    public static final String PREFIX_DC = "dc";
+    public static final String PREFIX_DC_TERMS = "dcterms";
 
     /**
      * Typically, Format may include the media-type or dimensions of the
@@ -52,7 +54,7 @@ public interface DublinCore {
      * Date on which the resource was changed.
      */
 	Property MODIFIED = Property.internalDate(
-			PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "modified");
+		PREFIX_DC_TERMS + Metadata.NAMESPACE_PREFIX_DELIMITER + "modified");
 
     /**
      * An entity responsible for making contributions to the content of the
@@ -60,7 +62,7 @@ public interface DublinCore {
      * or a service. Typically, the name of a Contributor should be used to
      * indicate the entity.
      */
-	Property CONTRIBUTOR = Property.internalText(
+	Property CONTRIBUTOR = Property.internalTextBag(
     		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "contributor");
 
     /**
@@ -81,8 +83,14 @@ public interface DublinCore {
      * Examples of a Creator include a person, an organisation, or a service.
      * Typically, the name of a Creator should be used to indicate the entity.
      */
-	Property CREATOR = Property.internalText(
+	Property CREATOR = Property.internalTextBag(
     		PREFIX_DC + Metadata.NAMESPACE_PREFIX_DELIMITER + "creator");
+
+    /**
+     * Date of creation of the resource.
+     */
+        Property CREATED = Property.internalDate(
+                PREFIX_DC_TERMS + Metadata.NAMESPACE_PREFIX_DELIMITER + "created");
 
     /**
      * A date associated with an event in the life cycle of the resource.

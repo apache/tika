@@ -19,6 +19,7 @@ package org.apache.tika.parser.image;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.xml.sax.helpers.DefaultHandler;
@@ -77,7 +78,7 @@ public class ImageParserTest extends TestCase {
         
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(Metadata.COMMENTS));
+        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(TikaCoreProperties.COMMENTS));
     }
 
     public void testJPEG() throws Exception {
@@ -112,7 +113,7 @@ public class ImageParserTest extends TestCase {
         
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
-        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(Metadata.COMMENTS));
+        assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(TikaCoreProperties.COMMENTS));
     }
 
     public void testPNG() throws Exception {

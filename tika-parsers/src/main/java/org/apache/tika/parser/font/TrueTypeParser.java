@@ -66,7 +66,7 @@ public class TrueTypeParser extends AbstractParser {
         }
 
         metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
-        metadata.set(TikaCoreProperties.DATE, font.getHeader().getCreated().getTime());
+        metadata.set(TikaCoreProperties.CREATED, font.getHeader().getCreated().getTime());
         metadata.set(
                 TikaCoreProperties.MODIFIED,
                 font.getHeader().getModified().getTime());

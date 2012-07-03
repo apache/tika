@@ -16,28 +16,36 @@
  */
 package org.apache.tika.parser.odf;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.MSOffice;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.xml.AttributeDependantMetadataHandler;
 import org.apache.tika.parser.xml.AttributeMetadataHandler;
-import org.apache.tika.parser.xml.DcXMLParser;
+import org.apache.tika.parser.xml.ElementMetadataHandler;
 import org.apache.tika.parser.xml.MetadataHandler;
+import org.apache.tika.parser.xml.XMLParser;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.xpath.CompositeMatcher;
 import org.apache.tika.sax.xpath.Matcher;
 import org.apache.tika.sax.xpath.MatchingContentHandler;
 import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parser for OpenDocument <code>meta.xml</code> files.
  */
-public class OpenDocumentMetaParser extends DcXMLParser {
+public class OpenDocumentMetaParser extends XMLParser {
     /**
      * Serial version UID
      */
@@ -45,7 +53,23 @@ public class OpenDocumentMetaParser extends DcXMLParser {
    
     private static final String META_NS = "urn:oasis:names:tc:opendocument:xmlns:meta:1.0"; 
     private static final XPathParser META_XPATH = new XPathParser("meta", META_NS);
-
+    
+    /** 
+     * @see OfficeOpenXMLCore#SUBJECT 
+     * @deprecated use OfficeOpenXMLCore#SUBJECT
+     */
+    @Deprecated
+    private static final Property TRANSITION_INITIAL_CREATOR_TO_INITIAL_AUTHOR = 
+        Property.composite(Office.INITIAL_AUTHOR, 
+            new Property[] { Property.externalText("initial-creator") });
+    
+    private static ContentHandler getDublinCoreHandler(
+            Metadata metadata, Property property, String element) {
+        return new ElementMetadataHandler(
+                DublinCore.NAMESPACE_URI_DC, element,
+                metadata, property);
+    }
+    
     private static ContentHandler getMeta(
             ContentHandler ch, Metadata md, Property property, String element) {
         Matcher matcher = new CompositeMatcher(
@@ -86,16 +110,36 @@ public class OpenDocumentMetaParser extends DcXMLParser {
   }
 
     protected ContentHandler getContentHandler(ContentHandler ch, Metadata md, ParseContext context) {
+        // We can no longer extend DcXMLParser due to the handling of dc:subject and dc:date
         // Process the Dublin Core Attributes 
-        ch = super.getContentHandler(ch, md, context);
+        ch = new TeeContentHandler(super.getContentHandler(ch, md, context),
+                getDublinCoreHandler(md, TikaCoreProperties.TITLE, "title"),
+                getDublinCoreHandler(md, TikaCoreProperties.CREATOR, "creator"),
+                getDublinCoreHandler(md, TikaCoreProperties.DESCRIPTION, "description"),
+                getDublinCoreHandler(md, TikaCoreProperties.PUBLISHER, "publisher"),
+                getDublinCoreHandler(md, TikaCoreProperties.CONTRIBUTOR, "contributor"),
+                getDublinCoreHandler(md, TikaCoreProperties.TYPE, "type"),
+                getDublinCoreHandler(md, TikaCoreProperties.FORMAT, "format"),
+                getDublinCoreHandler(md, TikaCoreProperties.IDENTIFIER, "identifier"),
+                getDublinCoreHandler(md, TikaCoreProperties.LANGUAGE, "language"),
+                getDublinCoreHandler(md, TikaCoreProperties.RIGHTS, "rights"));
         
         // Process the OO Meta Attributes
-        ch = getMeta(ch, md, TikaCoreProperties.CREATION_DATE, "creation-date");
-        ch = getMeta(ch, md, TikaCoreProperties.KEYWORDS, "keyword");
+        ch = getMeta(ch, md, TikaCoreProperties.CREATED, "creation-date");
+        // ODF uses dc:date for modified
+        ch = new TeeContentHandler(ch, new ElementMetadataHandler(
+                DublinCore.NAMESPACE_URI_DC, "date",
+                md, TikaCoreProperties.MODIFIED));
+        
+        // ODF uses dc:subject for description
+        ch = new TeeContentHandler(ch, new ElementMetadataHandler(
+                DublinCore.NAMESPACE_URI_DC, "subject",
+                md, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT));
+        ch = getMeta(ch, md, TikaCoreProperties.TRANSITION_KEYWORDS_TO_DC_SUBJECT, "keyword");
         
         ch = getMeta(ch, md, Property.externalText(MSOffice.EDIT_TIME), "editing-duration");        
         ch = getMeta(ch, md, Property.externalText("editing-cycles"), "editing-cycles");
-        ch = getMeta(ch, md, Property.externalText("initial-creator"), "initial-creator");
+        ch = getMeta(ch, md, TRANSITION_INITIAL_CREATOR_TO_INITIAL_AUTHOR, "initial-creator");
         ch = getMeta(ch, md, Property.externalText("generator"), "generator");
         
         // Process the user defined Meta Attributes
@@ -135,5 +179,19 @@ public class OpenDocumentMetaParser extends DcXMLParser {
         ch = new NSNormalizerContentHandler(ch);
         return ch;
     }
-
+    
+    @Override
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        super.parse(stream, handler, metadata, context);
+        // Copy subject to description for OO2
+        String odfSubject = metadata.get(OfficeOpenXMLCore.SUBJECT);
+        if (odfSubject != null && !odfSubject.equals("") && 
+                (metadata.get(TikaCoreProperties.DESCRIPTION) == null || metadata.get(TikaCoreProperties.DESCRIPTION).equals(""))) {
+            metadata.set(TikaCoreProperties.DESCRIPTION, odfSubject);
+        }
+    }
+    
 }

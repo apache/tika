@@ -185,7 +185,7 @@ public class MP4Parser extends AbstractParser {
            TrackHeaderBox header = track.getTrackHeaderBox();
            // Get the creation and modification dates
            metadata.set(
-                 TikaCoreProperties.CREATION_DATE, 
+                 TikaCoreProperties.CREATED, 
                  MP4TimeToDate(header.getCreationTime())
            );
            metadata.set(
@@ -229,7 +229,7 @@ public class MP4Parser extends AbstractParser {
 
               // Artist
               AppleArtistBox artist = getOrNull(apple, AppleArtistBox.class);
-              addMetadata(TikaCoreProperties.AUTHOR, metadata, artist);
+              addMetadata(TikaCoreProperties.CREATOR, metadata, artist);
               addMetadata(XMPDM.ARTIST, metadata, artist);
               
               // Album

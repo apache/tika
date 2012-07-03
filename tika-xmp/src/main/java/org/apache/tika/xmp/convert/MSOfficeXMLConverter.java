@@ -64,14 +64,14 @@ public class MSOfficeXMLConverter extends AbstractConverter
 		// Core Properties
 		createProperty(OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre");
 		createProperty(OfficeOpenXMLCore.CONTENT_STATUS, OfficeOpenXMLCore.NAMESPACE_URI, "contentStatus");
-		createProperty(TikaCoreProperties.CREATION_DATE, XMPConst.NS_XMP, "CreateDate");
+		createProperty(TikaCoreProperties.CREATED, XMPConst.NS_XMP, "CreateDate");
 		createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
-		createProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_PDFX, "Comments");
+		createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
 		createProperty(TikaCoreProperties.IDENTIFIER, XMPConst.NS_DC, "identifier");
 		createCommaSeparatedArray(TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject", PropertyOptions.ARRAY); 
-		createLangAltProperty(TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "description"); 
+		createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description"); 
 		createProperty(TikaCoreProperties.LANGUAGE, XMPConst.NS_DC, "language");
-		createProperty(TikaCoreProperties.LAST_AUTHOR, OfficeOpenXMLCore.NAMESPACE_URI, "lastModifiedBy");
+		createProperty(TikaCoreProperties.MODIFIER, OfficeOpenXMLCore.NAMESPACE_URI, "lastModifiedBy");
 		createProperty(TikaCoreProperties.PRINT_DATE, OfficeOpenXMLCore.NAMESPACE_URI, "lastPrinted");
 		createProperty(TikaCoreProperties.MODIFIED, XMPConst.NS_XMP, "ModifyDate");
 		createProperty(OfficeOpenXMLCore.REVISION, OfficeOpenXMLCore.NAMESPACE_URI, "revision");

@@ -66,17 +66,17 @@ public class MSOfficeBinaryConverter extends AbstractConverter
 		// For all formats, Tika uses the same keys 
 		createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
 		createProperty(OfficeOpenXMLExtended.APPLICATION, XMPConst.NS_XMP, "CreatorTool");
-		createCommaSeparatedArray(TikaCoreProperties.AUTHOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
+		createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
 		createProperty(OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre");
-		createProperty(TikaCoreProperties.CREATION_DATE, XMPConst.NS_XMP, "CreateDate");
+		createProperty(TikaCoreProperties.CREATED, XMPConst.NS_XMP, "CreateDate");
 		createProperty(Office.CHARACTER_COUNT, OfficeOpenXMLExtended.NAMESPACE_URI, "Characters");
-		createProperty(MSOffice.COMMENTS, XMPConst.NS_PDFX, "Comments");
+		createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
 		createProperty(OfficeOpenXMLExtended.COMPANY, OfficeOpenXMLExtended.NAMESPACE_URI, "Company");
 		createCommaSeparatedArray(TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject", PropertyOptions.ARRAY);
-		createLangAltProperty(TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "description");
+		createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description");
 		createProperty(TikaCoreProperties.LANGUAGE, OfficeOpenXMLCore.NAMESPACE_URI, "language");
 		createProperty(TikaCoreProperties.PRINT_DATE, OfficeOpenXMLCore.NAMESPACE_URI, "lastPrinted");
-		createProperty(TikaCoreProperties.SAVE_DATE, XMPConst.NS_XMP, "ModifyDate");
+		createProperty(TikaCoreProperties.MODIFIED, XMPConst.NS_XMP, "ModifyDate");
 		createProperty(Office.PAGE_COUNT, XMPConst.TYPE_PAGEDFILE, "NPages");
 		createProperty(OfficeOpenXMLCore.REVISION, OfficeOpenXMLCore.NAMESPACE_URI, "revision");
 		createProperty(Office.SLIDE_COUNT, OfficeOpenXMLExtended.NAMESPACE_URI, "Pages");

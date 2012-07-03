@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.Properties;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.DublinCore;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.PropertyTypeException;
@@ -51,6 +52,7 @@ public class XMPMetadataTest
 	@Before
 	public void setUp() throws Exception 
 	{
+	    XMPMetadata.registerNamespace(DublinCore.NAMESPACE_URI_DC_TERMS, DublinCore.PREFIX_DC_TERMS);
 		xmpMeta = new XMPMetadata();
 		tikaMetadata = new Metadata();
 		setupMetadata(tikaMetadata);
@@ -63,7 +65,7 @@ public class XMPMetadataTest
 		// language alternative
 		metadata.set(TikaCoreProperties.TITLE, "title");
 		// array
-		metadata.set(TikaCoreProperties.SUBJECT, new String[] {"keyword1", "keyword2"});
+		metadata.set(TikaCoreProperties.KEYWORDS, new String[] {"keyword1", "keyword2"});
 		// date
 		metadata.set(TikaCoreProperties.MODIFIED,"2001-01-01T01:01" );
 		// int simple property
@@ -114,7 +116,7 @@ public class XMPMetadataTest
 	{
 		xmpMeta.process(tikaMetadata);
 		
-		assertTrue(xmpMeta.isMultiValued(TikaCoreProperties.SUBJECT));
+		assertTrue(xmpMeta.isMultiValued(TikaCoreProperties.KEYWORDS));
 	}
 
 	@Test
@@ -138,7 +140,7 @@ public class XMPMetadataTest
 	{
 		xmpMeta.process(tikaMetadata);
 		
-		assertEquals("keyword1", xmpMeta.get(TikaCoreProperties.SUBJECT));
+		assertEquals("keyword1", xmpMeta.get(TikaCoreProperties.KEYWORDS));
 	}
 
 	@Test
@@ -188,7 +190,7 @@ public class XMPMetadataTest
 	{
 		xmpMeta.process(tikaMetadata);
 		
-		String[] values = xmpMeta.getValues(TikaCoreProperties.SUBJECT);
+		String[] values = xmpMeta.getValues(TikaCoreProperties.KEYWORDS);
 		assertEquals(2, values.length);
 		
 		checkArrayValues(values, "keyword");
@@ -199,13 +201,13 @@ public class XMPMetadataTest
 	{
 		Properties props = new Properties();
 		props.put(TikaCoreProperties.FORMAT.getName(), "format");
-		props.put(TikaCoreProperties.SUBJECT.getName(), "keyword");
+		props.put(TikaCoreProperties.KEYWORDS.getName(), "keyword");
 		
 		xmpMeta.setAll(props);
 		
 		assertEquals("format", xmpMeta.get(TikaCoreProperties.FORMAT));
 		
-		String[] values = xmpMeta.getValues(TikaCoreProperties.SUBJECT);
+		String[] values = xmpMeta.getValues(TikaCoreProperties.KEYWORDS);
 		assertEquals(1, values.length);
 		
 		assertEquals("keyword", values[0]);
@@ -241,9 +243,9 @@ public class XMPMetadataTest
 	@Test
 	public void set_arrayProperty_ok() 
 	{
-		xmpMeta.set(TikaCoreProperties.SUBJECT, new String[] {"keyword1", "keyword2"});
+		xmpMeta.set(TikaCoreProperties.KEYWORDS, new String[] {"keyword1", "keyword2"});
 
-		String[] values = xmpMeta.getValues(TikaCoreProperties.SUBJECT);
+		String[] values = xmpMeta.getValues(TikaCoreProperties.KEYWORDS);
 		assertEquals(2, values.length);
 		
 		checkArrayValues(values, "keyword");
@@ -273,11 +275,11 @@ public class XMPMetadataTest
 	{
 		xmpMeta.process(tikaMetadata);
 		
-		assertEquals(2, xmpMeta.size());
+		assertEquals(3, xmpMeta.size());
 		
 		xmpMeta.set(XMPRights.OWNER, "owner");
 		
-		assertEquals(3, xmpMeta.size());
+		assertEquals(4, xmpMeta.size());
 	}
 
 }

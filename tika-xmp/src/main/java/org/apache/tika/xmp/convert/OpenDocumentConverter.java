@@ -66,12 +66,12 @@ public class OpenDocumentConverter extends AbstractConverter
 		createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
 		
 		createProperty(Office.CHARACTER_COUNT, Office.NAMESPACE_URI_DOC_META, "character-count");
-		createProperty(TikaCoreProperties.CREATION_DATE, XMPConst.NS_XMP, "CreateDate");
+		createProperty(TikaCoreProperties.CREATED, XMPConst.NS_XMP, "CreateDate");
 		createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
-		createProperty(TikaCoreProperties.DATE, XMPConst.NS_XMP, "ModifyDate");
-		createProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_PDFX, "Comments");
+		createProperty(TikaCoreProperties.MODIFIED, XMPConst.NS_XMP, "ModifyDate");
+		createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
 		createCommaSeparatedArray(TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject", PropertyOptions.ARRAY);
-		createLangAltProperty(TikaCoreProperties.SUBJECT, XMPConst.NS_DC, "description");
+		createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description");
 		createProperty(MSOffice.EDIT_TIME, Office.NAMESPACE_URI_DOC_META, "editing-duration");
 		createProperty("editing-cycles", Office.NAMESPACE_URI_DOC_META, "editing-cycles");
 		createProperty("generator", XMPConst.NS_XMP, "CreatorTool");

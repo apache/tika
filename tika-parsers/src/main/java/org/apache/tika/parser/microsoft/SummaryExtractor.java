@@ -96,16 +96,17 @@ class SummaryExtractor {
 
     private void parse(SummaryInformation summary) {
         set(TikaCoreProperties.TITLE, summary.getTitle());
-        set(TikaCoreProperties.AUTHOR, summary.getAuthor());
+        set(TikaCoreProperties.CREATOR, summary.getAuthor());
         set(TikaCoreProperties.KEYWORDS, summary.getKeywords());
-        set(TikaCoreProperties.SUBJECT, summary.getSubject());
-        set(TikaCoreProperties.LAST_AUTHOR, summary.getLastAuthor());
-        set(Metadata.COMMENTS, summary.getComments());
+        // TODO Move to OO subject in Tika 2.0
+        set(TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, summary.getSubject());
+        set(TikaCoreProperties.MODIFIER, summary.getLastAuthor());
+        set(TikaCoreProperties.COMMENTS, summary.getComments());
         set(OfficeOpenXMLExtended.TEMPLATE, summary.getTemplate());
         set(OfficeOpenXMLExtended.APPLICATION, summary.getApplicationName());
         set(OfficeOpenXMLCore.REVISION, summary.getRevNumber());
-        set(TikaCoreProperties.CREATION_DATE, summary.getCreateDateTime());
-        set(TikaCoreProperties.SAVE_DATE, summary.getLastSaveDateTime());
+        set(TikaCoreProperties.CREATED, summary.getCreateDateTime());
+        set(TikaCoreProperties.MODIFIED, summary.getLastSaveDateTime());
         set(TikaCoreProperties.PRINT_DATE, summary.getLastPrinted());
         set(Metadata.EDIT_TIME, summary.getEditTime());
         set(OfficeOpenXMLExtended.DOC_SECURITY, summary.getSecurity());
