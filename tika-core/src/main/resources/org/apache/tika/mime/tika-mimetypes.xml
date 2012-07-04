@@ -46,6 +46,13 @@
   <mime-type type="application/auth-policy+xml"/>
   <mime-type type="application/batch-smtp"/>
   <mime-type type="application/beep+xml"/>
+
+  <mime-type type="application/bizagi-modeler">
+    <_comment>BizAgi Process Modeler</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.bpm"/>
+  </mime-type>
+
   <mime-type type="application/cals-1840"/>
   <mime-type type="application/ccxml+xml">
     <glob pattern="*.ccxml"/>
@@ -1203,6 +1210,17 @@
       <match value="\&lt;Maker" type="string" offset="0" />
     </magic>
     <glob pattern="*.mif"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.mindjet.mindmanager">
+    <_comment>MindManager</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.mmp"/>
+    <glob pattern="*.mmap"/>
+    <glob pattern="*.mmpt"/>
+    <glob pattern="*.mmat"/>
+    <glob pattern="*.mmmp"/>
+    <glob pattern="*.mmas"/>
   </mime-type>
 
   <mime-type type="application/vnd.minisoft-hp3000-save"/>
@@ -3049,6 +3067,14 @@
   </mime-type>
   <mime-type type="application/x-xpinstall">
     <glob pattern="*.xpi"/>
+  </mime-type>
+
+  <mime-type type="application/x-xmind">
+    <_comment>XMind Pro</_comment>
+    <sub-class-of type="application/zip"/>
+    <glob pattern="*.xmind"/>
+    <!-- .xmap is also used, but that extension is more common elsewhere -->
+<!-- <glob pattern="*.xmap"/> -->
   </mime-type>
 
   <mime-type type="application/x-xz">
