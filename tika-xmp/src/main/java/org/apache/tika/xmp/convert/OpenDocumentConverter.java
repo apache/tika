@@ -13,10 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010) 
- * standard. These parts Copyright 2010 International Press Telecommunications 
- * Council.
  */
 package org.apache.tika.xmp.convert;
 
@@ -39,65 +35,63 @@ import com.adobe.xmp.XMPMeta;
 import com.adobe.xmp.options.PropertyOptions;
 
 /**
- * Tika to XMP mapping for the Open Document formats:
- * Text (.odt), Spreatsheet (.ods), Graphics (.odg) and Presentation (.odp).
+ * Tika to XMP mapping for the Open Document formats: Text (.odt), Spreatsheet (.ods), Graphics
+ * (.odg) and Presentation (.odp).
  */
-public class OpenDocumentConverter extends AbstractConverter
-{
-	protected static final Set<Namespace> ADDITIONAL_NAMESPACES =
-	        Collections.unmodifiableSet(new HashSet<Namespace>(Arrays.asList(
-	        		new Namespace(Office.NAMESPACE_URI_DOC_META, Office.PREFIX_DOC_META)
-	        		)));
-	
-	public OpenDocumentConverter() throws TikaException 
-	{
-		super();
-	}
+public class OpenDocumentConverter extends AbstractConverter {
+    protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections
+            .unmodifiableSet( new HashSet<Namespace>( Arrays.asList( new Namespace(
+                    Office.NAMESPACE_URI_DOC_META, Office.PREFIX_DOC_META ) ) ) );
 
-	/**
-	 * @throws XMPException Forwards XMP errors
-	 * @see XMPFilesProcessor.onverter#process(Metadata)
-	 */
-	@Override
-	public XMPMeta process(Metadata metadata) throws XMPException
-	{
-		super.setMetadata(metadata);
+    public OpenDocumentConverter() throws TikaException {
+        super();
+    }
 
-		createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
-		
-		createProperty(Office.CHARACTER_COUNT, Office.NAMESPACE_URI_DOC_META, "character-count");
-		createProperty(TikaCoreProperties.CREATED, XMPConst.NS_XMP, "CreateDate");
-		createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
-		createProperty(TikaCoreProperties.MODIFIED, XMPConst.NS_XMP, "ModifyDate");
-		createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
-		createCommaSeparatedArray(TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject", PropertyOptions.ARRAY);
-		createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description");
-		createProperty(MSOffice.EDIT_TIME, Office.NAMESPACE_URI_DOC_META, "editing-duration");
-		createProperty("editing-cycles", Office.NAMESPACE_URI_DOC_META, "editing-cycles");
-		createProperty("generator", XMPConst.NS_XMP, "CreatorTool");
-		createProperty(Office.IMAGE_COUNT, Office.NAMESPACE_URI_DOC_META, "image-count");
-		createProperty("initial-creator", Office.NAMESPACE_URI_DOC_META, "initial-creator");
-		createProperty(Office.OBJECT_COUNT, Office.NAMESPACE_URI_DOC_META, "object-count");
-		createProperty(PagedText.N_PAGES, XMPConst.TYPE_PAGEDFILE, "NPages");
-		createProperty(Office.PARAGRAPH_COUNT, Office.NAMESPACE_URI_DOC_META, "paragraph-count");
-		createProperty(Office.TABLE_COUNT, Office.NAMESPACE_URI_DOC_META, "table-count");
-		createLangAltProperty(TikaCoreProperties.TITLE, XMPConst.NS_DC, "title");
-		createProperty(Office.WORD_COUNT, Office.NAMESPACE_URI_DOC_META, "word-count");
+    /**
+     * @throws XMPException
+     *             Forwards XMP errors
+     * @see XMPFilesProcessor.onverter#process(Metadata)
+     */
+    @Override
+    public XMPMeta process(Metadata metadata) throws XMPException {
+        super.setMetadata( metadata );
 
-		// duplicate properties not mapped:
-		//		nbImg | 0
-		//		nbObject | 0
-		//		nbPage | 1
-		//		nbPara | 3
-		//		nbTab | 0
-		//		nbWord | 5
-		
-		return super.getXMPMeta();
-	}
+        createProperty( HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format" );
 
-	@Override
-	protected Set<Namespace> getAdditionalNamespaces() 
-	{
-		return ADDITIONAL_NAMESPACES;
-	}
+        createProperty( Office.CHARACTER_COUNT, Office.NAMESPACE_URI_DOC_META, "character-count" );
+        createProperty( TikaCoreProperties.CREATED, XMPConst.NS_XMP, "CreateDate" );
+        createCommaSeparatedArray( TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator",
+                PropertyOptions.ARRAY_ORDERED );
+        createProperty( TikaCoreProperties.MODIFIED, XMPConst.NS_XMP, "ModifyDate" );
+        createProperty( TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments" );
+        createCommaSeparatedArray( TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject",
+                PropertyOptions.ARRAY );
+        createLangAltProperty( TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description" );
+        createProperty( MSOffice.EDIT_TIME, Office.NAMESPACE_URI_DOC_META, "editing-duration" );
+        createProperty( "editing-cycles", Office.NAMESPACE_URI_DOC_META, "editing-cycles" );
+        createProperty( "generator", XMPConst.NS_XMP, "CreatorTool" );
+        createProperty( Office.IMAGE_COUNT, Office.NAMESPACE_URI_DOC_META, "image-count" );
+        createProperty( "initial-creator", Office.NAMESPACE_URI_DOC_META, "initial-creator" );
+        createProperty( Office.OBJECT_COUNT, Office.NAMESPACE_URI_DOC_META, "object-count" );
+        createProperty( PagedText.N_PAGES, XMPConst.TYPE_PAGEDFILE, "NPages" );
+        createProperty( Office.PARAGRAPH_COUNT, Office.NAMESPACE_URI_DOC_META, "paragraph-count" );
+        createProperty( Office.TABLE_COUNT, Office.NAMESPACE_URI_DOC_META, "table-count" );
+        createLangAltProperty( TikaCoreProperties.TITLE, XMPConst.NS_DC, "title" );
+        createProperty( Office.WORD_COUNT, Office.NAMESPACE_URI_DOC_META, "word-count" );
+
+        // duplicate properties not mapped:
+        // nbImg | 0
+        // nbObject | 0
+        // nbPage | 1
+        // nbPara | 3
+        // nbTab | 0
+        // nbWord | 5
+
+        return super.getXMPMeta();
+    }
+
+    @Override
+    protected Set<Namespace> getAdditionalNamespaces() {
+        return ADDITIONAL_NAMESPACES;
+    }
 }

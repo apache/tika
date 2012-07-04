@@ -13,10 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010) 
- * standard. These parts Copyright 2010 International Press Telecommunications 
- * Council.
  */
 package org.apache.tika.xmp.convert;
 
@@ -26,7 +22,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.ClimateForcast;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -41,41 +36,41 @@ import com.adobe.xmp.options.PropertyOptions;
 /**
  * Tika to XMP mapping for the RTF format.
  */
-public class RTFConverter extends AbstractConverter
-{
-	protected static final Set<Namespace> ADDITIONAL_NAMESPACES =
-	        Collections.unmodifiableSet(new HashSet<Namespace>(Arrays.asList(
-	        		new Namespace(OfficeOpenXMLExtended.NAMESPACE_URI, OfficeOpenXMLExtended.PREFIX)
-	        		)));
-	
-	public RTFConverter() throws TikaException 
-	{
-		super();
-	}
+public class RTFConverter extends AbstractConverter {
+    protected static final Set<Namespace> ADDITIONAL_NAMESPACES = Collections
+            .unmodifiableSet( new HashSet<Namespace>( Arrays.asList( new Namespace(
+                    OfficeOpenXMLExtended.NAMESPACE_URI, OfficeOpenXMLExtended.PREFIX ) ) ) );
 
-	@Override
-	public XMPMeta process(Metadata metadata) throws XMPException
-	{
-		setMetadata(metadata);
-		
-		createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
+    public RTFConverter() throws TikaException {
+        super();
+    }
 
-		createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator", PropertyOptions.ARRAY_ORDERED);
-		createLangAltProperty(TikaCoreProperties.TITLE, XMPConst.NS_DC, "title");
-		createLangAltProperty(TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description");
-		createCommaSeparatedArray(TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject", PropertyOptions.ARRAY);
-		createProperty(OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre");
-		createProperty(OfficeOpenXMLExtended.TEMPLATE, OfficeOpenXMLExtended.NAMESPACE_URI, "Template");
-		createProperty(TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments");
-		createProperty(OfficeOpenXMLExtended.COMPANY, OfficeOpenXMLExtended.NAMESPACE_URI, "Company");
-		createProperty(OfficeOpenXMLExtended.MANAGER, OfficeOpenXMLExtended.NAMESPACE_URI, "Manager");
-				
-		return getXMPMeta();
-	}
+    @Override
+    public XMPMeta process(Metadata metadata) throws XMPException {
+        setMetadata( metadata );
 
-	@Override
-	protected Set<Namespace> getAdditionalNamespaces() 
-	{
-		return ADDITIONAL_NAMESPACES;
-	}
+        createProperty( HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format" );
+
+        createCommaSeparatedArray( TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator",
+                PropertyOptions.ARRAY_ORDERED );
+        createLangAltProperty( TikaCoreProperties.TITLE, XMPConst.NS_DC, "title" );
+        createLangAltProperty( TikaCoreProperties.DESCRIPTION, XMPConst.NS_DC, "description" );
+        createCommaSeparatedArray( TikaCoreProperties.KEYWORDS, XMPConst.NS_DC, "subject",
+                PropertyOptions.ARRAY );
+        createProperty( OfficeOpenXMLCore.CATEGORY, XMPConst.NS_IPTCCORE, "intellectualGenre" );
+        createProperty( OfficeOpenXMLExtended.TEMPLATE, OfficeOpenXMLExtended.NAMESPACE_URI,
+                "Template" );
+        createProperty( TikaCoreProperties.COMMENTS, XMPConst.NS_PDFX, "Comments" );
+        createProperty( OfficeOpenXMLExtended.COMPANY, OfficeOpenXMLExtended.NAMESPACE_URI,
+                "Company" );
+        createProperty( OfficeOpenXMLExtended.MANAGER, OfficeOpenXMLExtended.NAMESPACE_URI,
+                "Manager" );
+
+        return getXMPMeta();
+    }
+
+    @Override
+    protected Set<Namespace> getAdditionalNamespaces() {
+        return ADDITIONAL_NAMESPACES;
+    }
 }

@@ -13,10 +13,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- * IPTC Metadata Descriptions taken from the IPTC Photo Metadata (July 2010) 
- * standard. These parts Copyright 2010 International Press Telecommunications 
- * Council.
  */
 package org.apache.tika.xmp.convert;
 
@@ -35,165 +31,174 @@ import com.adobe.xmp.XMPUtils;
 import com.adobe.xmp.options.PropertyOptions;
 
 /**
- * Base class for Tika Metadata to XMP converter which provides some needed
- * common functionality.
+ * Base class for Tika Metadata to XMP converter which provides some needed common functionality.
  */
-public abstract class AbstractConverter implements ITikaToXMPConverter
-{
-	private Metadata metadata;
-	protected XMPMeta meta;
+public abstract class AbstractConverter implements ITikaToXMPConverter {
+    private Metadata metadata;
+    protected XMPMeta meta;
 
-	abstract public XMPMeta process(Metadata metadata) throws XMPException;
-	
-	/**
-	 * Every Converter has to provide information about namespaces
-	 * that are used additionally to the core set of XMP namespaces.
-	 * 
-	 * @return the additional namespace information
-	 */
-	abstract protected Set<Namespace> getAdditionalNamespaces();
-	
-	public AbstractConverter() throws TikaException
-	{
-		meta = XMPMetaFactory.create();
-		metadata = new Metadata();
-		registerNamespaces(getAdditionalNamespaces());
-	}
+    abstract public XMPMeta process(Metadata metadata) throws XMPException;
 
-	public void setMetadata(Metadata metadata)
-	{
-		this.metadata = metadata;
-	}
+    /**
+     * Every Converter has to provide information about namespaces that are used additionally to the
+     * core set of XMP namespaces.
+     *
+     * @return the additional namespace information
+     */
+    abstract protected Set<Namespace> getAdditionalNamespaces();
 
-	public XMPMeta getXMPMeta()
-	{
-		return meta;
-	}
+    public AbstractConverter() throws TikaException {
+        meta = XMPMetaFactory.create();
+        metadata = new Metadata();
+        registerNamespaces( getAdditionalNamespaces() );
+    }
 
-	// --- utility methods used by sub-classes ---
-	
-	/** 
-	 * Registers a number <code>Namespace</code> information with XMPCore.
-	 * Any already registered namespace is not registered again.
-	 * 
-	 * @param namespaces the list of namespaces to be registered
-	 * @throws TikaException in case a namespace oculd not be registered
-	 */
-	protected void registerNamespaces(Set<Namespace> namespaces) throws TikaException
-	{
-		XMPSchemaRegistry registry = XMPMetaFactory.getSchemaRegistry();
+    public void setMetadata(Metadata metadata) {
+        this.metadata = metadata;
+    }
 
-		for( Namespace namespace : namespaces)
-		{
-			// Any already registered namespace is not registered again
-			try 
-			{
-				registry.registerNamespace(namespace.uri, namespace.prefix);
-			} 
-			catch (XMPException e) 
-			{
-				throw new TikaException("Namespace needed by converter could not be registiered with XMPCore", e);
-			}
-		}
-	}
-	
-	/**
-	 * @see AbstractConverter#createProperty(String, String, String);
-	 */
-	protected void createProperty(Property metadataProperty, String ns, String propertyName) throws XMPException
-	{
-		createProperty(metadataProperty.getName(), ns, propertyName);
-	}
+    public XMPMeta getXMPMeta() {
+        return meta;
+    }
 
-	/**
-	 * Creates a simple property.
-	 * @param tikaKey Key in the Tika metadata map
-	 * @param ns namespace the property should be created in
-	 * @param propertyName name of the property
-	 * @throws XMPException if the property could not be created
-	 */
-	protected void createProperty(String tikaKey, String ns, String propertyName) throws XMPException
-	{
-		String value = metadata.get(tikaKey);
-		if (value != null  &&  value.length() > 0)
-		{
-			meta.setProperty(ns, propertyName, value);
-		}
-	}
+    // --- utility methods used by sub-classes ---
 
-	/**
-	 * @see AbstractConverter#createLangAltProperty(String, String, String);
-	 */
-	protected void createLangAltProperty(Property metadataProperty, String ns, String propertyName) throws XMPException
-	{
-		createLangAltProperty(metadataProperty.getName(), ns, propertyName);
-	}
-	
-	/**
-	 * Creates a language alternative property in the x-default language
-	 * @param tikaKey Key in the Tika metadata map
-	 * @param ns namespace the property should be created in
-	 * @param propertyName name of the property
-	 * @throws XMPException if the property could not be created
-	 */
-	protected void createLangAltProperty(String tikaKey, String ns, String propertyName) throws XMPException
-	{
-		String value = metadata.get(tikaKey);
-		if (value != null  &&  value.length() > 0)
-		{
-			meta.setLocalizedText(ns, propertyName, null, XMPConst.X_DEFAULT, value);
-		}
-	}
+    /**
+     * Registers a number <code>Namespace</code> information with XMPCore. Any already registered
+     * namespace is not registered again.
+     *
+     * @param namespaces
+     *            the list of namespaces to be registered
+     * @throws TikaException
+     *             in case a namespace oculd not be registered
+     */
+    protected void registerNamespaces(Set<Namespace> namespaces) throws TikaException {
+        XMPSchemaRegistry registry = XMPMetaFactory.getSchemaRegistry();
 
-	protected void createArrayProperty(Property metadataProperty, String nsDc, String arrayProperty, int arrayType) throws XMPException
-	{
-		createArrayProperty(metadataProperty.getName(), nsDc, arrayProperty, arrayType);
-	}
-	
-	/**
-	 * Creates an array property from a list of values.
-	 * @param tikaKey Key in the Tika metadata map
-	 * @param ns namespace the property should be created in
-	 * @param propertyName name of the property
-	 * @param arrayType depicts which kind of array shall be created
-	 * @throws XMPException if the property could not be created
-	 */
-	protected void createArrayProperty(String tikaKey, String ns, String propertyName, int arrayType) throws XMPException
-	{
-		String[] values = metadata.getValues(tikaKey);
-		if (values != null)
-		{
-			meta.setProperty(ns, propertyName, null, new PropertyOptions(arrayType));
-			for( String value : values )
-			{
-				meta.appendArrayItem( ns, propertyName, value );
-			}
-		}
-	}
-	
-	protected void createCommaSeparatedArray(Property metadataProperty, String nsDc, String arrayProperty, int arrayType) throws XMPException
-	{
-		createCommaSeparatedArray(metadataProperty.getName(), nsDc, arrayProperty, arrayType);
-	}
-	
-	/**
-	 * Creates an array property from a comma separated list.
-	 * @param tikaKey Key in the Tika metadata map
-	 * @param ns namespace the property should be created in
-	 * @param propertyName name of the property
-	 * @param arrayType depicts which kind of array shall be created
-	 * @throws XMPException if the property could not be created
-	 */
-	protected void createCommaSeparatedArray(String tikaKey, String ns, String propertyName, int arrayType) throws XMPException
-	{
-		String value = metadata.get(tikaKey);
-		if (value != null  &&  value.length() > 0)
-		{
-			XMPUtils.separateArrayItems(meta, ns, propertyName, value, new PropertyOptions(arrayType), false);
-		}
-	}
+        for (Namespace namespace : namespaces) {
+            // Any already registered namespace is not registered again
+            try {
+                registry.registerNamespace( namespace.uri, namespace.prefix );
+            }
+            catch (XMPException e) {
+                throw new TikaException(
+                        "Namespace needed by converter could not be registiered with XMPCore", e );
+            }
+        }
+    }
 
+    /**
+     * @see AbstractConverter#createProperty(String, String, String);
+     */
+    protected void createProperty(Property metadataProperty, String ns, String propertyName)
+            throws XMPException {
+        createProperty( metadataProperty.getName(), ns, propertyName );
+    }
 
+    /**
+     * Creates a simple property.
+     *
+     * @param tikaKey
+     *            Key in the Tika metadata map
+     * @param ns
+     *            namespace the property should be created in
+     * @param propertyName
+     *            name of the property
+     * @throws XMPException
+     *             if the property could not be created
+     */
+    protected void createProperty(String tikaKey, String ns, String propertyName)
+            throws XMPException {
+        String value = metadata.get( tikaKey );
+        if (value != null && value.length() > 0) {
+            meta.setProperty( ns, propertyName, value );
+        }
+    }
 
+    /**
+     * @see AbstractConverter#createLangAltProperty(String, String, String);
+     */
+    protected void createLangAltProperty(Property metadataProperty, String ns, String propertyName)
+            throws XMPException {
+        createLangAltProperty( metadataProperty.getName(), ns, propertyName );
+    }
+
+    /**
+     * Creates a language alternative property in the x-default language
+     *
+     * @param tikaKey
+     *            Key in the Tika metadata map
+     * @param ns
+     *            namespace the property should be created in
+     * @param propertyName
+     *            name of the property
+     * @throws XMPException
+     *             if the property could not be created
+     */
+    protected void createLangAltProperty(String tikaKey, String ns, String propertyName)
+            throws XMPException {
+        String value = metadata.get( tikaKey );
+        if (value != null && value.length() > 0) {
+            meta.setLocalizedText( ns, propertyName, null, XMPConst.X_DEFAULT, value );
+        }
+    }
+
+    protected void createArrayProperty(Property metadataProperty, String nsDc,
+            String arrayProperty, int arrayType) throws XMPException {
+        createArrayProperty( metadataProperty.getName(), nsDc, arrayProperty, arrayType );
+    }
+
+    /**
+     * Creates an array property from a list of values.
+     *
+     * @param tikaKey
+     *            Key in the Tika metadata map
+     * @param ns
+     *            namespace the property should be created in
+     * @param propertyName
+     *            name of the property
+     * @param arrayType
+     *            depicts which kind of array shall be created
+     * @throws XMPException
+     *             if the property could not be created
+     */
+    protected void createArrayProperty(String tikaKey, String ns, String propertyName, int arrayType)
+            throws XMPException {
+        String[] values = metadata.getValues( tikaKey );
+        if (values != null) {
+            meta.setProperty( ns, propertyName, null, new PropertyOptions( arrayType ) );
+            for (String value : values) {
+                meta.appendArrayItem( ns, propertyName, value );
+            }
+        }
+    }
+
+    protected void createCommaSeparatedArray(Property metadataProperty, String nsDc,
+            String arrayProperty, int arrayType) throws XMPException {
+        createCommaSeparatedArray( metadataProperty.getName(), nsDc, arrayProperty, arrayType );
+    }
+
+    /**
+     * Creates an array property from a comma separated list.
+     *
+     * @param tikaKey
+     *            Key in the Tika metadata map
+     * @param ns
+     *            namespace the property should be created in
+     * @param propertyName
+     *            name of the property
+     * @param arrayType
+     *            depicts which kind of array shall be created
+     * @throws XMPException
+     *             if the property could not be created
+     */
+    protected void createCommaSeparatedArray(String tikaKey, String ns, String propertyName,
+            int arrayType) throws XMPException {
+        String value = metadata.get( tikaKey );
+        if (value != null && value.length() > 0) {
+            XMPUtils.separateArrayItems( meta, ns, propertyName, value, new PropertyOptions(
+                    arrayType ), false );
+        }
+    }
 
 }
