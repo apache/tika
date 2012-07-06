@@ -185,14 +185,20 @@ public class TikaCLITest extends TestCase{
             
             TikaCLI.main(params);
             
-            File expected1 = new File(tempFile, "MBD002B040A.wps");
+            // ChemDraw file, currently doesn't have the correct extension
+            File expected1 = new File(tempFile, "MBD002B040A.ole");
+            // OLE10Native
             File expected2 = new File(tempFile, "file5");
+            // Image of one of the embedded resources
+            File expected3 = new File(tempFile, "file0.emf");
             
             assertTrue(expected1.exists());
             assertTrue(expected2.exists());
+            assertTrue(expected3.exists());
             
             assertTrue(expected1.length()>0);
             assertTrue(expected2.length()>0);
+            assertTrue(expected3.length()>0);
         } finally {
             FileUtils.deleteDirectory(tempFile);
         }
