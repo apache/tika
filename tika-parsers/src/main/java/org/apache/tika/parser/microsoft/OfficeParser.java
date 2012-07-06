@@ -76,7 +76,8 @@ public class OfficeParser extends AbstractParser {
 
     public enum POIFSDocumentType {
         WORKBOOK("xls", MediaType.application("vnd.ms-excel")),
-        OLE10_NATIVE("ole", MediaType.application("x-tika-msoffice-embedded")),
+        OLE10_NATIVE("ole", POIFSContainerDetector.OLE10_NATIVE),
+        COMP_OBJ("ole", POIFSContainerDetector.COMP_OBJ),
         WORDDOCUMENT("doc", MediaType.application("msword")),
         UNKNOWN("unknown", MediaType.application("x-tika-msoffice")),
         ENCRYPTED("ole", MediaType.application("x-tika-ooxml-protected")),
