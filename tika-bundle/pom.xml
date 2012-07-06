@@ -112,7 +112,6 @@
             <Bundle-Activator>
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
-            <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <Embed-Dependency>
               tika-parsers;inline=true,
               commons-compress, xz, commons-codec, commons-io,
