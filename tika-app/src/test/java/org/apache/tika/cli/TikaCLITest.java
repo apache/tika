@@ -186,7 +186,7 @@ public class TikaCLITest extends TestCase{
             TikaCLI.main(params);
             
             // ChemDraw file, currently doesn't have the correct extension
-            File expected1 = new File(tempFile, "MBD002B040A.ole");
+            File expected1 = new File(tempFile, "MBD002B040A.bin");
             // OLE10Native
             File expected2 = new File(tempFile, "file5");
             // Image of one of the embedded resources
