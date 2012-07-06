@@ -33,6 +33,9 @@ import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
@@ -42,6 +45,7 @@ import org.xml.sax.SAXException;
 abstract class AbstractPOIFSExtractor {
     private final EmbeddedDocumentExtractor extractor;
     private TikaConfig tikaConfig;
+    private MimeTypes mimeTypes;
     private Detector detector;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
@@ -54,18 +58,28 @@ abstract class AbstractPOIFSExtractor {
         }
         
         tikaConfig = context.get(TikaConfig.class);
+        mimeTypes = context.get(MimeTypes.class);
         detector = context.get(Detector.class);
     }
     
-    protected Detector getDetector() {
-       if (detector != null) return detector;
-       
+    // Note - these cache, but avoid creating the default TikaConfig if not needed
+    protected TikaConfig getTikaConfig() {
        if (tikaConfig == null) {
           tikaConfig = TikaConfig.getDefaultConfig();
        }
+       return tikaConfig;
+    }
+    protected Detector getDetector() {
+       if (detector != null) return detector;
        
-       detector = tikaConfig.getDetector();
+       detector = getTikaConfig().getDetector();
        return detector;
+    }
+    protected MimeTypes getMimeTypes() {
+       if (mimeTypes != null) return mimeTypes;
+       
+       mimeTypes = getTikaConfig().getMimeRepository();
+       return mimeTypes;
     }
     
     protected void handleEmbeddedResource(TikaInputStream resource, String filename,
@@ -144,8 +158,17 @@ abstract class AbstractPOIFSExtractor {
                    
                    // Try to work out what it is
                    MediaType mediaType = getDetector().detect(embedded, new Metadata());
+                   String extension = type.getExtension();
+                   try {
+                      MimeType mimeType = getMimeTypes().forName(mediaType.toString());
+                      extension = mimeType.getExtension();
+                   } catch(MimeTypeException mte) {
+                      // No details on this type are known
+                   }
+                   
+                   // Record what we can do about it
                    metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
-                   metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '.' + type.getExtension());
+                   metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + extension);
                 } catch(Exception e) {
                    throw new TikaException("Invalid embedded resource", e);
                 }

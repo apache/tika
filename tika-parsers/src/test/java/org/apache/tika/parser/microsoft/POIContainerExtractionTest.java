@@ -236,8 +236,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(2, handler.mediaTypes.size());
        
        assertEquals("image1.emf", handler.filenames.get(0));
-       //assertEquals("_1402837031.pdf", handler.filenames.get(1)); // TODO Fix, TIKA-48
-       assertEquals("_1402837031.ole", handler.filenames.get(1)); // TODO Fix, TIKA-48
+       assertEquals("_1402837031.pdf", handler.filenames.get(1));
 
        assertEquals(TYPE_EMF, handler.mediaTypes.get(0)); // Icon of embedded pdf
        assertEquals(TYPE_PDF, handler.mediaTypes.get(1)); // The embedded PDF itself
