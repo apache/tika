@@ -230,6 +230,20 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        // TODO
        
        
+       // Word, with a non-office file (PDF)
+       handler = process("testWORD_embedded_pdf.doc", extractor, true);
+       assertEquals(2, handler.filenames.size());
+       assertEquals(2, handler.mediaTypes.size());
+       
+       assertEquals("image1.emf", handler.filenames.get(0));
+       //assertEquals("_1402837031.pdf", handler.filenames.get(1)); // TODO Fix, TIKA-48
+       assertEquals("_1402837031.ole", handler.filenames.get(1)); // TODO Fix, TIKA-48
+
+       assertEquals(TYPE_EMF, handler.mediaTypes.get(0)); // Icon of embedded pdf
+       assertEquals(TYPE_PDF, handler.mediaTypes.get(1)); // The embedded PDF itself
+       
+       
+       
        // Outlook with a text file and a word document
        handler = process("testMSG_att_doc.msg", extractor, true);
        assertEquals(2, handler.filenames.size());

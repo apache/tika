@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -58,6 +60,11 @@ public class POIFSContainerDetector implements Detector {
     private static final byte [] STAR_DRAW = new byte [] {
         0x53, 0x74, 0x61, 0x72, 0x44, 0x72, 0x61, 0x77
     };
+    
+    /** An ASCII String "Quill96" for Works Files */
+    private static final byte [] WORKS_QUILL96 = new byte[] {
+        0x51, 0x75, 0x69, 0x6c, 0x6c, 0x39, 0x36
+    };
 
     /** The OLE base file format */
     public static final MediaType OLE = application("x-tika-msoffice");
@@ -65,8 +72,14 @@ public class POIFSContainerDetector implements Detector {
     /** The protected OOXML base file format */
     public static final MediaType OOXML_PROTECTED = application("x-tika-ooxml-protected");
     
+    /** General embedded document type within an OLE2 container */
+    public static final MediaType GENERAL_EMBEDDED = application("x-tika-msoffice-embedded");
+    
     /** An OLE10 Native embedded document within another OLE2 document */
-    public static final MediaType OLE10_NATIVE = application("x-tika-msoffice-embedded");
+    public static final MediaType OLE10_NATIVE = new MediaType(GENERAL_EMBEDDED, format("ole10_native")); 
+    
+    /** Some other kind of embedded document, in a CompObj container within another OLE2 document */
+    public static final MediaType COMP_OBJ = new MediaType(GENERAL_EMBEDDED, format("comp_obj"));
 
     /** Microsoft Excel */
     public static final MediaType XLS = application("vnd.ms-excel");
@@ -109,6 +122,12 @@ public class POIFSContainerDetector implements Detector {
 
     /** Regexp for matching the MPP Project Data stream */
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
+    
+    private static Map<String,String> format(String format) {
+       Map<String, String> params = new HashMap<String, String>();
+       params.put("format", format);
+       return params;
+    }
     
     public MediaType detect(InputStream input, Metadata metadata)
              throws IOException {
@@ -203,7 +222,7 @@ public class POIFSContainerDetector implements Detector {
                      */
                     return OLE;
                 } else {
-                    return processStarDrawOrImpress(root);
+                    return processCompObjFormatType(root);
                 }
             } else if (names.contains("WksSSWorkBook")) {
                 // This check has to be before names.contains("Workbook")
@@ -240,8 +259,20 @@ public class POIFSContainerDetector implements Detector {
                // Newer Works files
                return WPS;
             } else if (names.contains("CONTENTS") && names.contains("\u0001CompObj")) {
-               // Normally an older Works file
-               return WPS;
+               // CompObj is a general kind of OLE2 embedding, but this may be an old Works file
+               // If we have the Directory, check
+               if (root != null) {
+                  MediaType type = processCompObjFormatType(root);
+                  if (type == WPS) {
+                     return WPS;
+                  } else {
+                     // Assume it's a general CompObj embedded resource
+                     return COMP_OBJ;
+                  }
+               } else {
+                  // Assume it's a general CompObj embedded resource
+                  return COMP_OBJ;
+               }
             } else if (names.contains("CONTENTS")) {
                // CONTENTS without SPELLING nor CompObj normally means some sort
                //  of embedded non-office file inside an OLE2 document
@@ -276,7 +307,13 @@ public class POIFSContainerDetector implements Detector {
         return OLE;
     }
 
-    private static MediaType processStarDrawOrImpress(DirectoryEntry root) {
+    /**
+     * Is this one of the kinds of formats which uses CompObj to
+     *  store all of their data, eg Star Draw, Star Impress or
+     *  (older) Works?
+     * If not, it's likely an embedded resource
+     */
+    private static MediaType processCompObjFormatType(DirectoryEntry root) {
         try {
             Entry e = root.getEntry("\u0001CompObj");
             if (e != null && e.isDocumentEntry()) {
@@ -292,6 +329,8 @@ public class POIFSContainerDetector implements Detector {
                     return SDA;
                 } else if (arrayContains(bytes, STAR_IMPRESS)) {
                     return SDD;
+                } else if (arrayContains(bytes, WORKS_QUILL96)) {
+                   return WPS;
                 }
             } 
         } catch (Exception e) {
