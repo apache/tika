@@ -3014,7 +3014,14 @@
 
   <mime-type type="application/x-tika-msoffice-embedded">
     <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+  <mime-type type="application/x-tika-msoffice-embedded;format=ole10_native">
+    <sub-class-of type="application/x-tika-msoffice-embedded"/>
     <_comment>OLE10 Native Embedded Document</_comment>
+  </mime-type>
+  <mime-type type="application/x-tika-msoffice-embedded;format=comp_obj">
+    <sub-class-of type="application/x-tika-msoffice-embedded"/>
+    <_comment>CompObj OLE2 Embedded Document</_comment>
   </mime-type>
 
   <mime-type type="application/x-tika-msworks-spreadsheet">
