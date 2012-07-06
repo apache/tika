@@ -76,6 +76,7 @@
             <Bundle-Activator>
               org.apache.tika.config.TikaActivator
             </Bundle-Activator>
+            <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
           </instructions>
         </configuration>
       </plugin>
