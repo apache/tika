@@ -23,10 +23,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -70,39 +70,15 @@ public class TXTParser extends AbstractParser {
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
-    throws IOException, SAXException, TikaException {
+            throws IOException, SAXException, TikaException {
+        // We need mark support for detecting the character encoding
+        stream = new BufferedInputStream(stream);
 
-        // CharsetDetector expects a stream to support marks
-        if (!stream.markSupported()) {
-            stream = new BufferedInputStream(stream);
-        }
-
-        // Detect the content encoding (the stream is reset to the beginning)
-        CharsetDetector detector = new CharsetDetector();
-        String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
-        String incomingType = metadata.get(Metadata.CONTENT_TYPE);
-        if (incomingCharset == null && incomingType != null) {
-            // TIKA-341: Use charset in content-type
-            MediaType mt = MediaType.parse(incomingType);
-            if (mt != null) {
-                incomingCharset = mt.getParameters().get("charset");
-            }
-        }
-
-        if (incomingCharset != null) {
-            detector.setDeclaredEncoding(incomingCharset);
-        }
-
-        detector.setText(stream);
-        for (CharsetMatch match : detector.detectAll()) {
-            if (Charset.isSupported(match.getName())) {
-                metadata.set(Metadata.CONTENT_ENCODING, match.getName());
-                break;
-            }
-        }
-
-        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
-        if (encoding == null) {
+        MediaType type = detectEncoding(stream, metadata);
+        String encoding = type.getParameters().get("charset");
+        if (encoding != null) {
+            metadata.set(Metadata.CONTENT_ENCODING, encoding);
+        } else {
             throw new TikaException(
                     "Text encoding could not be detected and no encoding"
                     + " hint is available in document metadata");
@@ -114,7 +90,7 @@ public class TXTParser extends AbstractParser {
 
         try {
             Reader reader =
-                new BufferedReader(new InputStreamReader(stream, encoding));
+                    new BufferedReader(new InputStreamReader(stream, encoding));
 
             // TIKA-240: Drop the BOM when extracting plain text
             reader.mark(1);
@@ -141,6 +117,20 @@ public class TXTParser extends AbstractParser {
             throw new TikaException(
                     "Unsupported text encoding: " + encoding, e);
         }
+    }
+
+    private MediaType detectEncoding(InputStream stream, Metadata metadata)
+            throws IOException {
+        ServiceLoader loader =
+                new ServiceLoader(TXTParser.class.getClassLoader());
+        for (EncodingDetector detector
+                : loader.loadServiceProviders(EncodingDetector.class)) {
+            MediaType type = detector.detect(stream, metadata);
+            if (!MediaType.OCTET_STREAM.equals(type)) {
+                return type;
+            }
+        }
+        return MediaType.OCTET_STREAM;
     }
 
 }

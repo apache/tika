@@ -116,7 +116,7 @@ public class TXTParserTest extends TestCase {
 
         metadata.set(Metadata.CONTENT_ENCODING, "ISO-8859-1");
         parser.parse(
-                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new ByteArrayInputStream(test2.getBytes("ISO-8859-1")),
                 new BodyContentHandler(),  metadata, new ParseContext());
         
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
@@ -142,7 +142,7 @@ public class TXTParserTest extends TestCase {
         metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-1");
         parser.parse(
-                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new ByteArrayInputStream(test2.getBytes("ISO-8859-1")),
                 new BodyContentHandler(),  metadata, new ParseContext());
 
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
