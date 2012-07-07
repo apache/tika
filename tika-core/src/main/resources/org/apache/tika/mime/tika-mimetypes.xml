@@ -3542,6 +3542,9 @@
   </mime-type>
 
   <mime-type type="chemical/x-cdx">
+    <magic priority="50">
+      <match value="VjCD0100" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.cdx"/>
   </mime-type>
   <mime-type type="chemical/x-cif">
