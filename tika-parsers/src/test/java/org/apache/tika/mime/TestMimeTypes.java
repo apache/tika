@@ -605,6 +605,10 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/zip","testKMZ.kmz");
    }
 
+    public void testEmlx() throws IOException {
+        assertTypeDetection("testEMLX.emlx", "message/x-emlx");
+    }
+
     private void assertType(String expected, String filename) throws Exception {
         InputStream stream = TestMimeTypes.class.getResourceAsStream(
                 "/test-documents/" + filename);
@@ -647,18 +651,24 @@ public class TestMimeTypes extends TestCase {
           stream.close();
        }
     }
-    
+
+    private void assertTypeDetection(String filename, String type)
+            throws IOException {
+        assertTypeDetection(filename, type, type, type);
+    }
+
     private void assertTypeDetection(String filename, String byName, String byData, 
             String byNameAndData) throws IOException {
         assertTypeByName(byName, filename);
         assertTypeByData(byData, filename);
         assertTypeByNameAndData(byNameAndData, filename);
     }
-    
+
     private void assertTypeByNameAndData(String expected, String filename)
         throws IOException {
        assertEquals(expected, getTypeByNameAndData(filename).toString());
     }
+
     private MediaType getTypeByNameAndData(String filename) throws IOException {
        InputStream stream = TestMimeTypes.class.getResourceAsStream(
              "/test-documents/" + filename);

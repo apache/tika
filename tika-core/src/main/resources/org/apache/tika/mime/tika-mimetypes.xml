@@ -2480,6 +2480,23 @@
       <match value="\177ELF" type="string" offset="0" />
     </magic>
   </mime-type>
+
+  <mime-type type="message/x-emlx">
+    <magic priority="70">
+      <match value="\nRelay-Version:" type="string" offset="2:9"/>
+      <match value="\n#!\ rnews" type="string" offset="2:9"/>
+      <match value="\nN#!\ rnews" type="string" offset="2:9"/>
+      <match value="\nForward\ to" type="string" offset="2:9"/>
+      <match value="\nPipe\ to" type="string" offset="2:9"/>
+      <match value="\nReturn-Path:" type="string" offset="2:9"/>
+      <match value="\nFrom:" type="string" offset="2:9"/>
+      <match value="\nReceived:" type="string" offset="2:9"/>
+      <match value="\nMessage-ID:" type="string" offset="2:9"/>
+      <match value="\nDate:" type="string" offset="2:9"/>
+    </magic>
+    <glob pattern="*.emlx"/>
+  </mime-type>
+
   <mime-type type="application/x-object">
     <sub-class-of type="application/x-elf"/>
     <magic priority="50">
