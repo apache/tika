@@ -19,16 +19,20 @@ package org.apache.tika.parser.txt;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.Collections;
 
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 
 public class Icu4jEncodingDetector implements EncodingDetector {
 
-    public MediaType detect(InputStream input, Metadata metadata)
+    public Charset detect(InputStream input, Metadata metadata)
             throws IOException {
+        if (input == null) {
+            return null;
+        }
+
         CharsetDetector detector = new CharsetDetector();
 
         String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
@@ -52,14 +56,14 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         detector.setText(input);
 
         for (CharsetMatch match : detector.detectAll()) {
-            if (Charset.isSupported(match.getName())) {
-                return new MediaType(
-                        MediaType.TEXT_PLAIN,
-                        Collections.singletonMap("charset", match.getName()));
+            try {
+                return CharsetUtils.forName(match.getName());
+            } catch (IllegalArgumentException e) {
+                // ignore
             }
         }
 
-        return MediaType.OCTET_STREAM;
+        return null;
     }
 
 }

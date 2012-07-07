@@ -36,6 +36,8 @@ import org.apache.tika.mime.MediaType;
  */
 public class MagicDetector implements Detector {
 
+    private static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
+
     public static MagicDetector parse(
             MediaType mediaType,
             String type, String offset, String value, String mask) {
@@ -366,7 +368,7 @@ public class MagicDetector implements Detector {
                 Pattern p = Pattern.compile(new String(this.pattern));
 
                 ByteBuffer bb = ByteBuffer.wrap(buffer);
-                CharBuffer result = Charset.forName("ISO-8859-1").decode(bb);
+                CharBuffer result = ISO_8859_1.decode(bb);
                 Matcher m = p.matcher(result);
 
                 boolean match = false;

@@ -18,10 +18,11 @@ package org.apache.tika.parser.txt;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
+import java.nio.charset.Charset;
 
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
+import org.apache.tika.utils.CharsetUtils;
 import org.mozilla.universalchardet.CharsetListener;
 import org.mozilla.universalchardet.Constants;
 import org.mozilla.universalchardet.UniversalDetector;
@@ -32,54 +33,47 @@ public class UniversalEncodingDetector implements EncodingDetector {
 
     private static final int LOOKAHEAD = 16 * BUFSIZE;
 
-    public MediaType detect(InputStream input, Metadata metadata)
+    public Charset detect(InputStream input, Metadata metadata)
             throws IOException {
         if (input == null) {
-            return MediaType.OCTET_STREAM;
+            return null;
         }
 
         Result result = new Result();
         UniversalDetector detector = new UniversalDetector(result);
 
         input.mark(LOOKAHEAD);
-        try {
-            byte[] b = new byte[BUFSIZE];
-            int n = 0;
-            int m = input.read(b);
-            while (m != -1 && n < LOOKAHEAD && !detector.isDone()) {
-                n += m;
-                detector.handleData(b, 0, m);
-                m = input.read(b, 0, Math.min(b.length, LOOKAHEAD - n));
-            }
-        } finally {
-            input.reset();
+        byte[] b = new byte[BUFSIZE];
+        int n = 0;
+        int m = input.read(b);
+        while (m != -1 && n < LOOKAHEAD && !detector.isDone()) {
+            n += m;
+            detector.handleData(b, 0, m);
+            m = input.read(b, 0, Math.min(b.length, LOOKAHEAD - n));
         }
+        input.reset();
 
         detector.dataEnd();
-
-        return result.getType();
+        return result.getCharset();
     }
 
     private static class Result implements CharsetListener {
 
-        private String charset = null;
+        private Charset charset = null;
 
         public void report(String charset) {
             if (Constants.CHARSET_WINDOWS_1252.equals(charset)) {
-                this.charset = "ISO-8859-1";
-            } else {
-                this.charset = charset;
+                charset = "ISO-8859-1";
+            }
+            try {
+                this.charset = CharsetUtils.forName(charset);
+            } catch (IllegalArgumentException e) {
+                // ignore
             }
         }
 
-        public MediaType getType() {
-            if (charset != null) {
-                return new MediaType(
-                        MediaType.TEXT_PLAIN,
-                        Collections.singletonMap("charset", charset));
-            } else {
-                return MediaType.OCTET_STREAM;
-            }
+        public Charset getCharset() {
+            return charset;
         }
 
     }
