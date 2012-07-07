@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
@@ -73,11 +73,10 @@ public class TXTParser extends AbstractParser {
         // We need mark support for detecting the character encoding
         stream = new BufferedInputStream(stream);
 
-        MediaType type =
+        Charset charset =
                 DefaultEncodingDetector.INSTANCE.detect(stream, metadata);
-        String encoding = type.getParameters().get("charset");
-        if (encoding != null) {
-            metadata.set(Metadata.CONTENT_ENCODING, encoding);
+        if (charset != null) {
+            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
         } else {
             throw new TikaException(
                     "Text encoding could not be detected and no encoding"
@@ -88,35 +87,30 @@ public class TXTParser extends AbstractParser {
         // use it to guess at the charset.
         metadata.set(Metadata.CONTENT_TYPE, "text/plain");
 
-        try {
-            Reader reader =
-                    new BufferedReader(new InputStreamReader(stream, encoding));
+        Reader reader =
+                new BufferedReader(new InputStreamReader(stream, charset));
 
-            // TIKA-240: Drop the BOM when extracting plain text
-            reader.mark(1);
-            int bom = reader.read();
-            if (bom != '\ufeff') { // zero-width no-break space
-                reader.reset();
-            }
-
-            XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
-            xhtml.startDocument();
-
-            xhtml.startElement("p");
-            char[] buffer = new char[4096];
-            int n = reader.read(buffer);
-            while (n != -1) {
-                xhtml.characters(buffer, 0, n);
-                n = reader.read(buffer);
-            }
-            xhtml.endElement("p");
-
-            xhtml.endDocument();
-        } catch (UnsupportedEncodingException e) {
-            throw new TikaException(
-                    "Unsupported text encoding: " + encoding, e);
+        // TIKA-240: Drop the BOM when extracting plain text
+        reader.mark(1);
+        int bom = reader.read();
+        if (bom != '\ufeff') { // zero-width no-break space
+            reader.reset();
         }
+
+        XHTMLContentHandler xhtml =
+                new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+
+        xhtml.startElement("p");
+        char[] buffer = new char[4096];
+        int n = reader.read(buffer);
+        while (n != -1) {
+            xhtml.characters(buffer, 0, n);
+            n = reader.read(buffer);
+        }
+        xhtml.endElement("p");
+
+        xhtml.endDocument();
     }
 
 }

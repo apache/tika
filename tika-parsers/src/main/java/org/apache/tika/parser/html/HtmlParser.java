@@ -113,16 +113,15 @@ public class HtmlParser extends AbstractParser {
 
         // No (valid) charset in a meta http-equiv tag, use other heuristics
         // to figure out the encoding
-        MediaType type =
-                DefaultEncodingDetector.INSTANCE.detect(stream, metadata);
-        String encoding = type.getParameters().get("charset");
-        if (encoding == null) {
-            if (Charset.isSupported(DEFAULT_CHARSET)) {
-                encoding = DEFAULT_CHARSET;
-            } else {
-                encoding = Charset.defaultCharset().name();
+        Charset charset = DefaultEncodingDetector.INSTANCE.detect(stream, metadata);
+        if (charset == null) {
+            try {
+                charset = CharsetUtils.forName(DEFAULT_CHARSET);
+            } catch (IllegalArgumentException e) {
+                charset = Charset.defaultCharset();
             }
         }
+        String encoding = charset.name();
         metadata.set(Metadata.CONTENT_ENCODING, encoding);
 
         return encoding;

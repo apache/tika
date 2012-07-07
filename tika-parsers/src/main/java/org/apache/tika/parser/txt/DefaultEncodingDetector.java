@@ -18,10 +18,14 @@ package org.apache.tika.parser.txt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.util.List;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.utils.CharsetUtils;
 
 public class DefaultEncodingDetector implements EncodingDetector {
 
@@ -29,22 +33,37 @@ public class DefaultEncodingDetector implements EncodingDetector {
             new DefaultEncodingDetector(new ServiceLoader(
                     DefaultEncodingDetector.class.getClassLoader()));
 
-    private final ServiceLoader loader;
+    private final List<EncodingDetector> detectors;
 
     public DefaultEncodingDetector(ServiceLoader loader) {
-        this.loader = loader;
+        this.detectors =
+                loader.loadStaticServiceProviders(EncodingDetector.class);
     }
 
-    public MediaType detect(InputStream input, Metadata metadata)
+    public Charset detect(InputStream input, Metadata metadata)
             throws IOException {
-        for (EncodingDetector detector
-                : loader.loadServiceProviders(EncodingDetector.class)) {
-            MediaType type = detector.detect(input, metadata);
-            if (!MediaType.OCTET_STREAM.equals(type)) {
-                return type;
+        // Check all available detectors
+        for (EncodingDetector detector : detectors) {
+            Charset charset = detector.detect(input, metadata);
+            if (charset != null) {
+                return charset;
             }
         }
-        return MediaType.OCTET_STREAM;
+
+        // Try determining the charset based on document metadata
+        MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+        if (type != null) {
+            String charset = type.getParameters().get("charset");
+            if (charset != null) {
+                try {
+                    return CharsetUtils.forName(charset);
+                } catch (IllegalArgumentException e) {
+                    // ignore
+                }
+            }
+        }
+
+        return null;
     }
 
 }

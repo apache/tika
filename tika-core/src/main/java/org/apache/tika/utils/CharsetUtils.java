@@ -21,11 +21,11 @@ import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@SuppressWarnings("serial")
 public class CharsetUtils {
     private static final Pattern CHARSET_NAME_PATTERN = Pattern.compile("[ \\\"]*([^ >,;\\\"]+).*");
     private static final Pattern ISO_NAME_PATTERN = Pattern.compile("(?i).*8859-([\\d]+)");
@@ -34,17 +34,12 @@ public class CharsetUtils {
     
     // List of common invalid charset names that we can't fix using
     // pattern matching + heuristic
-    private static final Map<String, String> CHARSET_ALIASES = new HashMap<String, String>() {{
-        put("none", null);
-        put("no", null);
-        
-        put("iso-8851-1", "iso-8859-1");
-        
-        put("windows", "windows-1252");
-        
-        put("koi8r", "KOI8-R");
-    }};
-    
+    private static final Map<String, String> CHARSET_ALIASES =
+            new HashMap<String, String>();
+
+    private static final Map<String, Charset> STANDARD_CHARSETS =
+            new HashMap<String, Charset>();
+
     /**
      * Safely return whether <charsetName> is supported, without throwing exceptions
      * 
@@ -119,12 +114,24 @@ public class CharsetUtils {
     private static Method isSupportedICU;
 
     static {
+        CHARSET_ALIASES.put("none", null);
+        CHARSET_ALIASES.put("no", null);
+        CHARSET_ALIASES.put("iso-8851-1", "iso-8859-1");
+        CHARSET_ALIASES.put("windows", "windows-1252");
+        CHARSET_ALIASES.put("koi8r", "KOI8-R");
+
+        STANDARD_CHARSETS.put("US-ASCII", Charset.forName("US-ASCII"));
+        STANDARD_CHARSETS.put("ISO-8859-1", Charset.forName("ISO-8859-1"));
+        STANDARD_CHARSETS.put("UTF-8", Charset.forName("UTF-8"));
+        STANDARD_CHARSETS.put("UTF-16BE", Charset.forName("UTF-16BE"));
+        STANDARD_CHARSETS.put("UTF-16LE", Charset.forName("UTF-16LE"));
+        STANDARD_CHARSETS.put("UTF-16", Charset.forName("UTF-16"));
+
         // See if we can load the icu4j CharsetICU class
-        Class icuCharset = null;
+        Class<?> icuCharset = null;
         try  {
             icuCharset = CharsetUtils.class.getClassLoader().loadClass("com.ibm.icu.charset.CharsetICU");
-        } 
-        catch (ClassNotFoundException e)  {
+        }  catch (ClassNotFoundException e) {
         }
         if (icuCharset != null) {
             try {
@@ -146,6 +153,12 @@ public class CharsetUtils {
      *  if it is found on the classpath, else only uses
      *  JDK's builtin Charset.forName. */
     public static Charset forName(String name) {
+        Charset charset =
+                STANDARD_CHARSETS.get(name.toUpperCase(Locale.ENGLISH));
+        if (charset != null) {
+            return charset;
+        }
+
         if (getCharsetICU != null) {
             try {
                 Charset cs = (Charset) getCharsetICU.invoke(null, name);
@@ -156,6 +169,7 @@ public class CharsetUtils {
             } catch (IllegalAccessException iae) {
             }
         }
+
         return Charset.forName(name);
     }
 }
