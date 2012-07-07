@@ -34,8 +34,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.txt.CharsetDetector;
-import org.apache.tika.parser.txt.CharsetMatch;
+import org.apache.tika.parser.txt.DefaultEncodingDetector;
 import org.apache.tika.utils.CharsetUtils;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
@@ -102,70 +101,29 @@ public class HtmlParser extends AbstractParser {
                     String[] keyValue = attr.trim().split("=");
                     if ((keyValue.length == 2) && keyValue[0].equalsIgnoreCase("charset")) {
                         // TIKA-459: improve charset handling.
-                    	String charset = CharsetUtils.clean(keyValue[1]);
-                    	if (CharsetUtils.isSupported(charset)) {
-                    	    metadata.set(Metadata.CONTENT_ENCODING, charset);
-                    	    return charset;
-                    	}
+                        String charset = CharsetUtils.clean(keyValue[1]);
+                        if (CharsetUtils.isSupported(charset)) {
+                            metadata.set(Metadata.CONTENT_ENCODING, charset);
+                            return charset;
+                        }
                     }
                 }
             }
         }
 
-        // No (valid) charset in a meta http-equiv tag, see if it's in the passed content-encoding
-        // hint, or the passed content-type hint.
-        CharsetDetector detector = new CharsetDetector();
-        String incomingCharset = metadata.get(Metadata.CONTENT_ENCODING);
-        String incomingType = metadata.get(Metadata.CONTENT_TYPE);
-        if (incomingCharset == null && incomingType != null) {
-            // TIKA-341: Use charset in content-type
-            MediaType mt = MediaType.parse(incomingType);
-            if (mt != null) {
-                String charset = mt.getParameters().get("charset");
-                if ((charset != null) && Charset.isSupported(charset)) {
-                    incomingCharset = charset;
-                }
-            }
-        }
-
-        if (incomingCharset != null) {
-            detector.setDeclaredEncoding(incomingCharset);
-        }
-
-        // TIKA-341 without enabling input filtering (stripping of tags) the
-        // short HTML tests don't work well.
-        detector.enableInputFilter(true);
-        detector.setText(stream);
-        for (CharsetMatch match : detector.detectAll()) {
-            if (Charset.isSupported(match.getName())) {
-                metadata.set(Metadata.CONTENT_ENCODING, match.getName());
-
-                // TIKA-339: Don't set language, as it's typically not a very good
-                // guess, and it can create ambiguity if another (better) language
-                // value is specified by a meta tag in the HTML (or via HTTP response
-                // header).
-                /*
-                String language = match.getLanguage();
-                if (language != null) {
-                    metadata.set(Metadata.CONTENT_LANGUAGE, match.getLanguage());
-                    metadata.set(TikaCoreProperties.LANGUAGE, match.getLanguage());
-                }
-                */
-                
-                break;
-            }
-        }
-
-        String encoding = metadata.get(Metadata.CONTENT_ENCODING);
+        // No (valid) charset in a meta http-equiv tag, use other heuristics
+        // to figure out the encoding
+        MediaType type =
+                DefaultEncodingDetector.INSTANCE.detect(stream, metadata);
+        String encoding = type.getParameters().get("charset");
         if (encoding == null) {
             if (Charset.isSupported(DEFAULT_CHARSET)) {
                 encoding = DEFAULT_CHARSET;
             } else {
                 encoding = Charset.defaultCharset().name();
             }
-            
-            metadata.set(Metadata.CONTENT_ENCODING, encoding);
         }
+        metadata.set(Metadata.CONTENT_ENCODING, encoding);
 
         return encoding;
     }

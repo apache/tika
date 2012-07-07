@@ -23,6 +23,7 @@ import java.util.Collections;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.utils.CharsetUtils;
 
 public class Icu4jEncodingDetector implements EncodingDetector {
 
@@ -41,8 +42,12 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         }
 
         if (incomingCharset != null) {
-            detector.setDeclaredEncoding(incomingCharset);
+            detector.setDeclaredEncoding(CharsetUtils.clean(incomingCharset));
         }
+
+        // TIKA-341 without enabling input filtering (stripping of tags)
+        // short HTML tests don't work well
+        detector.enableInputFilter(true);
 
         detector.setText(input);
 

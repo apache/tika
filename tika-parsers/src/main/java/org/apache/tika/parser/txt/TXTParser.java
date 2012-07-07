@@ -26,7 +26,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -74,7 +73,8 @@ public class TXTParser extends AbstractParser {
         // We need mark support for detecting the character encoding
         stream = new BufferedInputStream(stream);
 
-        MediaType type = detectEncoding(stream, metadata);
+        MediaType type =
+                DefaultEncodingDetector.INSTANCE.detect(stream, metadata);
         String encoding = type.getParameters().get("charset");
         if (encoding != null) {
             metadata.set(Metadata.CONTENT_ENCODING, encoding);
@@ -117,20 +117,6 @@ public class TXTParser extends AbstractParser {
             throw new TikaException(
                     "Unsupported text encoding: " + encoding, e);
         }
-    }
-
-    private MediaType detectEncoding(InputStream stream, Metadata metadata)
-            throws IOException {
-        ServiceLoader loader =
-                new ServiceLoader(TXTParser.class.getClassLoader());
-        for (EncodingDetector detector
-                : loader.loadServiceProviders(EncodingDetector.class)) {
-            MediaType type = detector.detect(stream, metadata);
-            if (!MediaType.OCTET_STREAM.equals(type)) {
-                return type;
-            }
-        }
-        return MediaType.OCTET_STREAM;
     }
 
 }

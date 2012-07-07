@@ -280,7 +280,7 @@ public class HtmlParserTest extends TestCase {
         metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-1");
         new HtmlParser().parse (
-                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new ByteArrayInputStream(test.getBytes("ISO-8859-1")),
                 new BodyContentHandler(),  metadata, new ParseContext());
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
     }
@@ -366,7 +366,7 @@ public class HtmlParserTest extends TestCase {
         metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "charset=ISO-8859-1;text/html");
         new HtmlParser().parse (
-                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new ByteArrayInputStream(test.getBytes("ISO-8859-1")),
                 new BodyContentHandler(),  metadata, new ParseContext());
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
     }
