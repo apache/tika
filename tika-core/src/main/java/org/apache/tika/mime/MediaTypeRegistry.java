@@ -117,8 +117,21 @@ public class MediaTypeRegistry implements Serializable {
      *         <code>false</code> otherwise
      */
     public boolean isSpecializationOf(MediaType a, MediaType b) {
-        MediaType x = getSupertype(a);
-        return x != null && (x.equals(b) || isSpecializationOf(x, b));
+        return isInstanceOf(getSupertype(a), b);
+    }
+
+    /**
+     * Checks whether the given media type equals the given base type or
+     * is a specialization of it.
+     *
+     * @since Apache Tika 1.2
+     * @param a media type
+     * @param b base type
+     * @return <code>true</code> if b equals a or is a specialization of it,
+     *         <code>false</code> otherwise
+     */
+    public boolean isInstanceOf(MediaType a, MediaType b) {
+        return a != null && (a.equals(b) || isSpecializationOf(a, b));
     }
 
     /**
