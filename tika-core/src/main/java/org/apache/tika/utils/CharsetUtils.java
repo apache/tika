@@ -16,7 +16,6 @@
  */
 package org.apache.tika.utils;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -71,40 +70,8 @@ public class CharsetUtils {
      * @return potentially remapped/cleaned up version of charset name
      */
     public static String clean(String charsetName) {
-        if (charsetName == null) {
-            return null;
-        }
-        
-        // Get rid of cruft around names, like <>, trailing commas, etc.
-        Matcher m = CHARSET_NAME_PATTERN.matcher(charsetName);
-        if (!m.matches()) {
-            return null;
-        }
-
-        String result = m.group(1);
-        if (CHARSET_ALIASES.containsKey(result.toLowerCase())) {
-            // Handle common erroneous charset names.
-            result = CHARSET_ALIASES.get(result.toLowerCase());
-        } else if (ISO_NAME_PATTERN.matcher(result).matches()) {
-            // Handle "iso 8859-x" error
-            m = ISO_NAME_PATTERN.matcher(result);
-            m.matches();
-            result = "iso-8859-" + m.group(1);
-        } else if (CP_NAME_PATTERN.matcher(result).matches()) {
-            // Handle "cp-xxx" error
-            m = CP_NAME_PATTERN.matcher(result);
-            m.matches();
-            result = "cp" + m.group(1);
-        } else if (WIN_NAME_PATTERN.matcher(result).matches()) {
-            // Handle "winxxx" and "win-xxx" errors
-            m = WIN_NAME_PATTERN.matcher(result);
-            m.matches();
-            result = "windows-" + m.group(2);
-        }
-        
         try {
-            Charset cs = forName(result);
-            return cs.name();
+            return forName(charsetName).name();
         } catch (Exception e) {
             return null;
         }
@@ -153,23 +120,55 @@ public class CharsetUtils {
      *  if it is found on the classpath, else only uses
      *  JDK's builtin Charset.forName. */
     public static Charset forName(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException();
+        }
+
+        // Get rid of cruft around names, like <>, trailing commas, etc.
+        Matcher m = CHARSET_NAME_PATTERN.matcher(name);
+        if (!m.matches()) {
+            throw new IllegalArgumentException(name);
+        }
+
+        String result = m.group(1);
+        String alias = CHARSET_ALIASES.get(result.toLowerCase());
+        if (alias != null) {
+            // Handle common erroneous charset names.
+            result = alias;
+        } else if (ISO_NAME_PATTERN.matcher(result).matches()) {
+            // Handle "iso 8859-x" error
+            m = ISO_NAME_PATTERN.matcher(result);
+            m.matches();
+            result = "iso-8859-" + m.group(1);
+        } else if (CP_NAME_PATTERN.matcher(result).matches()) {
+            // Handle "cp-xxx" error
+            m = CP_NAME_PATTERN.matcher(result);
+            m.matches();
+            result = "cp" + m.group(1);
+        } else if (WIN_NAME_PATTERN.matcher(result).matches()) {
+            // Handle "winxxx" and "win-xxx" errors
+            m = WIN_NAME_PATTERN.matcher(result);
+            m.matches();
+            result = "windows-" + m.group(2);
+        }
+
         Charset charset =
-                STANDARD_CHARSETS.get(name.toUpperCase(Locale.ENGLISH));
+                STANDARD_CHARSETS.get(result.toUpperCase(Locale.ENGLISH));
         if (charset != null) {
             return charset;
         }
 
         if (getCharsetICU != null) {
             try {
-                Charset cs = (Charset) getCharsetICU.invoke(null, name);
+                Charset cs = (Charset) getCharsetICU.invoke(null, result);
                 if (cs != null) {
                     return cs;
                 }
-            } catch (InvocationTargetException ite) {
-            } catch (IllegalAccessException iae) {
+            } catch (Exception e) {
+                // ignore
             }
         }
 
-        return Charset.forName(name);
+        return Charset.forName(result);
     }
 }
