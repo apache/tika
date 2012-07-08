@@ -43,6 +43,9 @@ Release 1.2 - Current Development
     ICU4J algorithms are still used as a fallback thanks to their wider
     coverage of custom character encodings. (TIKA-322, TIKA-471)
 
+  * Extraction of embedded resources from OLE2 Office Documents, where
+    the resource isn't another office document, has been fixed (TIKA-948)
+
 Release 1.1 - 3/7/2012
 ---------------------------------
 
