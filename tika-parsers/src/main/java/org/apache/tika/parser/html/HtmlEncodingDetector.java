@@ -19,7 +19,6 @@ package org.apache.tika.parser.html;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -48,6 +47,9 @@ public class HtmlEncodingDetector implements EncodingDetector {
             + "Content-Type['\\\"]\\s+content\\s*=\\s*['\\\"]"
             + "([^'\\\"]+)['\\\"]");
 
+    private static final Pattern META_CHARSET_PATTERN = Pattern.compile(
+            "(?is)<meta\\s+charset\\s*=\\s*['\\\"]([^'\\\"]+)['\\\"]");
+
     private static final Charset ASCII = Charset.forName("US-ASCII");
 
     public Charset detect(InputStream input, Metadata metadata)
@@ -67,20 +69,31 @@ public class HtmlEncodingDetector implements EncodingDetector {
         }
         input.reset();
 
-        // Interpret the head as ASCII and try to spot a http-equiv setting
-        CharBuffer head = ASCII.decode(ByteBuffer.wrap(buffer, 0, n));
-        Matcher matcher = HTTP_EQUIV_PATTERN.matcher(head.toString());
-        if (matcher.find()) {
-            MediaType type = MediaType.parse(matcher.group(1));
+        // Interpret the head as ASCII and try to spot a meta tag with
+        // a possible character encoding hint
+        String charset = null;
+        String head = ASCII.decode(ByteBuffer.wrap(buffer, 0, n)).toString();
+
+        Matcher equiv = HTTP_EQUIV_PATTERN.matcher(head);
+        if (equiv.find()) {
+            MediaType type = MediaType.parse(equiv.group(1));
             if (type != null) {
-                String charset = type.getParameters().get("charset");
-                if (charset != null) {
-                    try {
-                        return CharsetUtils.forName(charset);
-                    } catch (Exception e) {
-                        // ignore
-                    }
-                }
+                charset = type.getParameters().get("charset");
+            }
+        }
+        if (charset == null) {
+            // TIKA-892: HTML5 meta charset tag
+            Matcher meta = META_CHARSET_PATTERN.matcher(head);
+            if (meta.find()) {
+                charset = meta.group(1);
+            }
+        }
+
+        if (charset != null) {
+            try {
+                return CharsetUtils.forName(charset);
+            } catch (Exception e) {
+                // ignore
             }
         }
 
