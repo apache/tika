@@ -96,6 +96,9 @@ public class MediaTypeRegistry implements Serializable {
     }
 
     public MediaType normalize(MediaType type) {
+        if (type == null) {
+            return null;
+        }
         MediaType canonical = registry.get(type.getBaseType());
         if (canonical == null) {
             return type;
@@ -108,11 +111,11 @@ public class MediaTypeRegistry implements Serializable {
 
     /**
      * Checks whether the given media type a is a specialization of a more
-     * generic type b.
+     * generic type b. Both types should be already normalised.
      *
      * @since Apache Tika 0.8
-     * @param a media type
-     * @param b suspected supertype
+     * @param a media type, normalised
+     * @param b suspected supertype, normalised
      * @return <code>true</code> if b is a supertype of a,
      *         <code>false</code> otherwise
      */
@@ -122,16 +125,31 @@ public class MediaTypeRegistry implements Serializable {
 
     /**
      * Checks whether the given media type equals the given base type or
-     * is a specialization of it.
+     * is a specialization of it. Both types should be already normalised.
      *
      * @since Apache Tika 1.2
-     * @param a media type
-     * @param b base type
+     * @param a media type, normalised
+     * @param b base type, normalised
      * @return <code>true</code> if b equals a or is a specialization of it,
      *         <code>false</code> otherwise
      */
     public boolean isInstanceOf(MediaType a, MediaType b) {
         return a != null && (a.equals(b) || isSpecializationOf(a, b));
+    }
+
+    /**
+     * Parses and normalises the given media type string and checks whether
+     * the result equals the given base type or is a specialization of it.
+     * The given base type should already be normalised.
+     *
+     * @since Apache Tika 1.2
+     * @param a media type
+     * @param b base type, normalised
+     * @return <code>true</code> if b equals a or is a specialization of it,
+     *         <code>false</code> otherwise
+     */
+    public boolean isInstanceOf(String a, MediaType b) {
+        return isInstanceOf(normalize(MediaType.parse(a)), b);
     }
 
     /**
@@ -149,7 +167,9 @@ public class MediaTypeRegistry implements Serializable {
      * @return supertype, or <code>null</code> for application/octet-stream
      */
     public MediaType getSupertype(MediaType type) {
-        if (type.hasParameters()) {
+        if (type == null) {
+            return null;
+        } else if (type.hasParameters()) {
             return type.getBaseType();
         } else if (inheritance.containsKey(type)) {
             return inheritance.get(type);
