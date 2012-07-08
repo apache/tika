@@ -23,7 +23,6 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -291,7 +290,8 @@ public class IWorkParserTest extends TestCase {
     public void testParsePagesHeadersFootersFootnotes() throws Exception {
        String footnote = "Footnote: Do a lot of people really use iWork?!?!";
        String header = "THIS IS SOME HEADER TEXT";
-       String footer = "THIS IS SOME FOOTER TEXT";
+       String footer = "THIS IS SOME FOOTER TEXT\t1";
+       String footer2 = "THIS IS SOME FOOTER TEXT\t2";
        
        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersFootnotes.pages");
        Metadata metadata = new Metadata();
@@ -308,7 +308,88 @@ public class IWorkParserTest extends TestCase {
        // Check for headers, footers and footnotes
        assertContains(contents, header);
        assertContains(contents, footer);
+       assertContains(contents, footer2);
        assertContains(contents, footnote);
+    }
+    
+    /**
+     * Check we get upper-case Roman numerals within the footer for AutoPageNumber.
+     */
+    public void testParsePagesHeadersFootersRomanUpper() throws Exception {
+       String header = "THIS IS SOME HEADER TEXT";
+       String footer = "THIS IS SOME FOOTER TEXT\tI";
+       String footer2 = "THIS IS SOME FOOTER TEXT\tII";
+       
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersRomanUpper.pages");
+       ContentHandler handler = new BodyContentHandler();
+
+       iWorkParser.parse(input, handler, new Metadata(), parseContext);
+       String contents = handler.toString();
+       
+       // Check for headers, footers and footnotes
+       assertContains(contents, header);
+       assertContains(contents, footer);
+       assertContains(contents, footer2);
+    }
+    
+    /**
+     * Check we get lower-case Roman numerals within the footer for AutoPageNumber.
+     */
+    public void testParsePagesHeadersFootersRomanLower() throws Exception {
+       String header = "THIS IS SOME HEADER TEXT";
+       String footer = "THIS IS SOME FOOTER TEXT\ti";
+       String footer2 = "THIS IS SOME FOOTER TEXT\tii";
+       
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersRomanLower.pages");
+       ContentHandler handler = new BodyContentHandler();
+
+       iWorkParser.parse(input, handler, new Metadata(), parseContext);
+       String contents = handler.toString();
+       
+       // Check for headers, footers and footnotes
+       assertContains(contents, header);
+       assertContains(contents, footer);
+       assertContains(contents, footer2);
+    }
+
+    /**
+     * Check we get upper-case alpha-numeric letters within the footer for AutoPageNumber.
+     */
+    public void testParsePagesHeadersAlphaUpper() throws Exception {
+       String header = "THIS IS SOME HEADER TEXT\tA";
+       String footer = "THIS IS SOME FOOTER TEXT\tA";
+       String footer2 = "THIS IS SOME FOOTER TEXT\tB";
+       
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersAlphaUpper.pages");
+       ContentHandler handler = new BodyContentHandler();
+
+       iWorkParser.parse(input, handler, new Metadata(), parseContext);
+       String contents = handler.toString();
+       
+       // Check for headers, footers and footnotes
+       assertContains(contents, header);
+       assertContains(contents, footer);
+       assertContains(contents, footer2);
+    }
+ 
+    /**
+     * Check we get lower-case alpha-numeric letters within the footer for AutoPageNumber.
+     */
+    public void testParsePagesHeadersAlphaLower() throws Exception {
+       String header = "THIS IS SOME HEADER TEXT";
+       String footer = "THIS IS SOME FOOTER TEXT\ta";
+       String footer2 = "THIS IS SOME FOOTER TEXT\tb";
+       
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesHeadersFootersAlphaLower.pages");
+       ContentHandler handler = new BodyContentHandler();
+
+       iWorkParser.parse(input, handler, new Metadata(), parseContext);
+       String contents = handler.toString();
+       
+       // Check for headers, footers and footnotes
+       assertContains(contents, header);
+       assertContains(contents, footer);
+       assertContains(contents, footer2);
     }
     
     /**
@@ -317,7 +398,6 @@ public class IWorkParserTest extends TestCase {
     public void testParsePagesAnnotations() throws Exception {
        String commentA = "comment about the APXL file";
        String commentB = "comment about UIMA";
-       
        
        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testPagesComments.pages");
        Metadata metadata = new Metadata();
