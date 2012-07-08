@@ -16,21 +16,20 @@
  */
 package org.apache.tika.parser.txt;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -62,6 +61,9 @@ public class TXTParser extends AbstractParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
         Collections.singleton(MediaType.TEXT_PLAIN);
 
+    private static final ServiceLoader LOADER =
+            new ServiceLoader(TXTParser.class.getClassLoader());
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -70,47 +72,30 @@ public class TXTParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        // We need mark support for detecting the character encoding
-        stream = new BufferedInputStream(stream);
+        // Automatically detect the character encoding
+        AutoDetectReader reader = new AutoDetectReader(
+                new CloseShieldInputStream(stream), metadata, LOADER);
+        try {
+            metadata.set(Metadata.CONTENT_TYPE, "text/plain"); // TODO: charset
+            metadata.set(Metadata.CONTENT_ENCODING, reader.getCharset().name());
 
-        Charset charset =
-                DefaultEncodingDetector.INSTANCE.detect(stream, metadata);
-        if (charset != null) {
-            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
-        } else {
-            throw new TikaException(
-                    "Text encoding could not be detected and no encoding"
-                    + " hint is available in document metadata");
+            XHTMLContentHandler xhtml =
+                    new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+
+            xhtml.startElement("p");
+            char[] buffer = new char[4096];
+            int n = reader.read(buffer);
+            while (n != -1) {
+                xhtml.characters(buffer, 0, n);
+                n = reader.read(buffer);
+            }
+            xhtml.endElement("p");
+
+            xhtml.endDocument();
+        } finally {
+            reader.close();
         }
-
-        // TIKA-341: Only stomp on content-type after we're done trying to
-        // use it to guess at the charset.
-        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
-
-        Reader reader =
-                new BufferedReader(new InputStreamReader(stream, charset));
-
-        // TIKA-240: Drop the BOM when extracting plain text
-        reader.mark(1);
-        int bom = reader.read();
-        if (bom != '\ufeff') { // zero-width no-break space
-            reader.reset();
-        }
-
-        XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-
-        xhtml.startElement("p");
-        char[] buffer = new char[4096];
-        int n = reader.read(buffer);
-        while (n != -1) {
-            xhtml.characters(buffer, 0, n);
-            n = reader.read(buffer);
-        }
-        xhtml.endElement("p");
-
-        xhtml.endDocument();
     }
 
 }

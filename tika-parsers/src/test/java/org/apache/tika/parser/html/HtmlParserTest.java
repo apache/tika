@@ -243,7 +243,7 @@ public class HtmlParserTest extends TestCase {
             + "</head><body></body></html>";
         Metadata metadata = new Metadata();
         new HtmlParser().parse (
-                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new ByteArrayInputStream(test.getBytes("ISO-8859-1")),
                 new BodyContentHandler(),  metadata, new ParseContext());
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
     }
@@ -326,26 +326,26 @@ public class HtmlParserTest extends TestCase {
     public void testHttpEquivCharsetFunkyAttributes() throws Exception {
         String test1 =
             "<html><head><meta http-equiv=\"content-type\""
-            + " content=\"text/html; charset=ISO-8859-1; charset=iso-8859-1\" />"
+            + " content=\"text/html; charset=ISO-8859-15; charset=iso-8859-15\" />"
             + "<title>the name is \u00e1ndre</title>"
             + "</head><body></body></html>";
         Metadata metadata = new Metadata();
         new HtmlParser().parse (
-                new ByteArrayInputStream(test1.getBytes("UTF-8")),
+                new ByteArrayInputStream(test1.getBytes("ISO-8859-1")),
                 new BodyContentHandler(),  metadata, new ParseContext());
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
 
         // Some HTML pages have errors like ';;' versus '; ' as separator
         String test2 =
             "<html><head><meta http-equiv=\"content-type\""
-            + " content=\"text/html;;charset=ISO-8859-1\" />"
+            + " content=\"text/html;;charset=ISO-8859-15\" />"
             + "<title>the name is \u00e1ndre</title>"
             + "</head><body></body></html>";
         metadata = new Metadata();
         new HtmlParser().parse (
-                new ByteArrayInputStream(test2.getBytes("UTF-8")),
+                new ByteArrayInputStream(test2.getBytes("ISO-8859-1")),
                 new BodyContentHandler(),  metadata, new ParseContext());
-        assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING));
+        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
     }
 
     /**
@@ -569,7 +569,7 @@ public class HtmlParserTest extends TestCase {
                 makeHtmlTransformer(sw), metadata, new ParseContext());
 
         String result = sw.toString();
-        
+
         // <meta> tag for Content-Type should exist, but nothing for Language
         assertTrue(Pattern.matches("(?s).*<meta name=\"Content-Type\" content=\"text/html; charset=utf-8\"/>.*$", result));
         assertFalse(Pattern.matches("(?s).*<meta name=\"Language\".*$", result));

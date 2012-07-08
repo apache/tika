@@ -229,15 +229,21 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
         }
         return parameters;
     }
-    
-    private static String unquote(String s) {
-        if( s.startsWith("\"") && s.endsWith("\"")) {
-            return s.substring(1, s.length() - 1);
-        }
-        if( s.startsWith("'") && s.endsWith("'")) {
-           return s.substring(1, s.length() - 1);
-       }
 
+    /**
+     * Fuzzy unquoting mechanism that works also with somewhat malformed
+     * quotes.
+     *
+     * @param s string to unquote
+     * @return unquoted string
+     */
+    private static String unquote(String s) {
+        while (s.startsWith("\"") || s.startsWith("'")) {
+            s = s.substring(1);
+        }
+        while (s.endsWith("\"") || s.endsWith("'")) {
+            s = s.substring(0, s.length() - 1);
+        }
         return s;
     }
 

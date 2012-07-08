@@ -180,5 +180,22 @@ public class MediaTypeTest extends TestCase {
         assertEquals(0, type.getParameters().keySet().size());
     }
 
-    
+    /**
+     * TIKA-349
+     */
+    public void testOddParameters() {
+        assertEquals(
+                "text/html; charset=UTF-8",
+                MediaType.parse("text/html;; charset=UTF-8").toString());
+        assertEquals(
+                "text/html; charset=UTF-8",
+                MediaType.parse("text/html;; charset=UTF-8").toString());
+        assertEquals(
+                "text/html; charset=UTF-8",
+                MediaType.parse("text/html;; charset=\"UTF-8\"").toString());
+        assertEquals(
+                "text/html; charset=UTF-8",
+                MediaType.parse("text/html;; charset=\"UTF-8").toString());
+    }
+
 }
