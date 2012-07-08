@@ -13,5 +13,6 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+org.apache.tika.parser.html.HtmlEncodingDetector
 org.apache.tika.parser.txt.UniversalEncodingDetector
 org.apache.tika.parser.txt.Icu4jEncodingDetector

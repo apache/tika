@@ -22,6 +22,7 @@ import java.nio.charset.Charset;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 import org.mozilla.universalchardet.CharsetListener;
 import org.mozilla.universalchardet.Constants;
@@ -39,7 +40,7 @@ public class UniversalEncodingDetector implements EncodingDetector {
             return null;
         }
 
-        Result result = new Result();
+        Result result = new Result(metadata);
         UniversalDetector detector = new UniversalDetector(result);
 
         input.mark(LOOKAHEAD);
@@ -59,16 +60,42 @@ public class UniversalEncodingDetector implements EncodingDetector {
 
     private static class Result implements CharsetListener {
 
+        private static final Charset DEFAULT_LATIN_ENCODING =
+                Charset.forName("ISO-8859-1");
+
+        private String hint = null;
+
         private Charset charset = null;
 
-        public void report(String charset) {
-            if (Constants.CHARSET_WINDOWS_1252.equals(charset)) {
-                charset = "ISO-8859-1";
+        public Result(Metadata metadata) {
+            MediaType type =
+                    MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+            if (type != null) {
+                hint = type.getParameters().get("charset");
             }
-            try {
-                this.charset = CharsetUtils.forName(charset);
-            } catch (IllegalArgumentException e) {
-                // ignore
+            if (hint == null) {
+                hint = metadata.get(Metadata.CONTENT_ENCODING);
+            }
+        }
+
+        public void report(String charset) {
+            if (!Constants.CHARSET_WINDOWS_1252.equals(charset)) {
+                try {
+                    this.charset = CharsetUtils.forName(charset);
+                } catch (IllegalArgumentException e) {
+                    // ignore
+                }
+            } else {
+                if (hint != null) {
+                    try {
+                        this.charset =
+                                CharsetUtils.forName(CharsetUtils.clean(hint));
+                    } catch (IllegalArgumentException e) {
+                        // ignore
+                    }
+                } else {
+                    this.charset = DEFAULT_LATIN_ENCODING;
+                }
             }
         }
 

@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -242,14 +243,14 @@ public class ServiceLoader {
         List<T> providers = new ArrayList<T>();
 
         if (loader != null) {
-            Set<String> names = new HashSet<String>();
+            List<String> names = new ArrayList<String>();
 
             String serviceName = iface.getName();
             Enumeration<URL> resources =
                     findServiceResources("META-INF/services/" + serviceName);
             for (URL resource : Collections.list(resources)) {
                 try {
-                    names.addAll(getServiceClassNames(resource));
+                    collectServiceClassNames(resource, names);
                 } catch (IOException e) {
                     handler.handleLoadError(serviceName, e);
                 }
@@ -274,9 +275,8 @@ public class ServiceLoader {
 
     private static final Pattern WHITESPACE = Pattern.compile("\\s+");
 
-    private Set<String> getServiceClassNames(URL resource)
+    private void collectServiceClassNames(URL resource, Collection<String> names)
             throws IOException {
-        Set<String> names = new HashSet<String>();
         InputStream stream = resource.openStream();
         try {
             BufferedReader reader =
@@ -293,7 +293,6 @@ public class ServiceLoader {
         } finally {
             stream.close();
         }
-        return names;
     }
 
 }
