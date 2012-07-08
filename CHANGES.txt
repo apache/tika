@@ -37,6 +37,12 @@ Release 1.2 - Current Development
     --password=X command line option to specify the password that Tika CLI
     should use for opening encrypted documents (TIKA-943).
 
+  * Character encodings: Tika's character encoding detection mechanism was
+    improved by adding integration to the juniversalchardet library that
+    implements Mozilla's universal charset detection algorithm. The slower
+    ICU4J algorithms are still used as a fallback thanks to their wider
+    coverage of custom character encodings. (TIKA-322, TIKA-471)
+
 Release 1.1 - 3/7/2012
 ---------------------------------
 

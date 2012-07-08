@@ -75,7 +75,11 @@ public class HtmlEncodingDetector implements EncodingDetector {
             if (type != null) {
                 String charset = type.getParameters().get("charset");
                 if (charset != null) {
-                    return CharsetUtils.forName(charset);
+                    try {
+                        return CharsetUtils.forName(charset);
+                    } catch (Exception e) {
+                        // ignore
+                    }
                 }
             }
         }
