@@ -105,7 +105,7 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("application/pkix-pkipath", tika.detect("x.pkipath"));
         assertEquals("application/pkixcmp", tika.detect("x.pki"));
         assertEquals("application/pls+xml", tika.detect("x.pls"));
-        assertEquals("application/postscript", tika.detect("x.ai"));
+        assertEquals("application/illustrator", tika.detect("x.ai"));
         assertEquals("application/postscript", tika.detect("x.eps"));
         assertEquals("application/postscript", tika.detect("x.ps"));
         assertEquals("application/prs.cww", tika.detect("x.cww"));
@@ -303,7 +303,7 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("application/vnd.lotus-freelance", tika.detect("x.pre"));
         assertEquals("application/vnd.lotus-notes", tika.detect("x.nsf"));
         assertEquals("application/vnd.lotus-organizer", tika.detect("x.org"));
-        assertEquals("application/vnd.lotus-screencam", tika.detect("x.scm"));
+        assertEquals("text/x-scheme", tika.detect("x.scm"));
         assertEquals("application/vnd.lotus-wordpro", tika.detect("x.lwp"));
         assertEquals("application/vnd.macports.portpkg", tika.detect("x.portpkg"));
         assertEquals("application/vnd.mcd", tika.detect("x.mcd"));
@@ -403,7 +403,7 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document", tika.detect("x.docx"));
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.template", tika.detect("x.dotx"));
         assertEquals("application/vnd.osgi.dp", tika.detect("x.dp"));
-        assertEquals("application/vnd.palm", tika.detect("x.pdb"));
+        assertEquals("chemical/x-pdb", tika.detect("x.pdb"));
         assertEquals("application/vnd.palm", tika.detect("x.pqa"));
         assertEquals("application/vnd.palm", tika.detect("x.oprc"));
         assertEquals("application/vnd.pg.format", tika.detect("x.str"));
@@ -574,7 +574,7 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("application/x-msbinder", tika.detect("x.obd"));
         assertEquals("application/x-mscardfile", tika.detect("x.crd"));
         assertEquals("application/x-msclip", tika.detect("x.clp"));
-        assertEquals("application/x-msdownload", tika.detect("x.exe"));
+        assertEquals("application/x-dosexec", tika.detect("x.exe"));
         assertEquals("application/x-msdownload", tika.detect("x.dll"));
         assertEquals("application/x-msdownload", tika.detect("x.com"));
         assertEquals("application/x-msdownload", tika.detect("x.bat"));
@@ -605,7 +605,7 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("application/x-sv4cpio", tika.detect("x.sv4cpio"));
         assertEquals("application/x-sv4crc", tika.detect("x.sv4crc"));
         assertEquals("application/x-tar", tika.detect("x.tar"));
-        assertEquals("application/x-tcl", tika.detect("x.tcl"));
+        assertEquals("text/x-tcl", tika.detect("x.tcl"));
         assertEquals("application/x-tex", tika.detect("x.tex"));
         assertEquals("application/x-tex-tfm", tika.detect("x.tfm"));
         assertEquals("application/x-texinfo", tika.detect("x.texinfo"));
@@ -744,7 +744,7 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("text/plain", tika.detect("x.conf"));
         assertEquals("text/plain", tika.detect("x.def"));
         assertEquals("text/plain", tika.detect("x.list"));
-        assertEquals("text/plain", tika.detect("x.log"));
+        assertEquals("text/x-log", tika.detect("x.log"));
         assertEquals("text/plain", tika.detect("x.in"));
         assertEquals("text/prs.lines.tag", tika.detect("x.dsc"));
         assertEquals("text/richtext", tika.detect("x.rtx"));
@@ -772,15 +772,14 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("text/vnd.sun.j2me.app-descriptor", tika.detect("x.jad"));
         assertEquals("text/vnd.wap.wml", tika.detect("x.wml"));
         assertEquals("text/vnd.wap.wmlscript", tika.detect("x.wmls"));
-        assertEquals("text/x-asm", tika.detect("x.s"));
-        assertEquals("text/x-asm", tika.detect("x.asm"));
-        assertEquals("text/x-c", tika.detect("x.c"));
-        assertEquals("text/x-c", tika.detect("x.cc"));
-        assertEquals("text/x-c", tika.detect("x.cxx"));
-        assertEquals("text/x-c", tika.detect("x.cpp"));
-        assertEquals("text/x-c", tika.detect("x.h"));
-        assertEquals("text/x-c", tika.detect("x.hh"));
-        assertEquals("text/x-c", tika.detect("x.dic"));
+        assertEquals("text/x-assembly", tika.detect("x.s"));
+        assertEquals("text/x-assembly", tika.detect("x.asm"));
+        assertEquals("text/x-csrc", tika.detect("x.c"));
+        assertEquals("text/x-c++src", tika.detect("x.cc"));
+        assertEquals("text/x-c++src", tika.detect("x.cxx"));
+        assertEquals("text/x-c++src", tika.detect("x.cpp"));
+        assertEquals("text/x-chdr", tika.detect("x.h"));
+        assertEquals("text/x-c++hdr", tika.detect("x.hh"));
         assertEquals("text/x-fortran", tika.detect("x.f"));
         assertEquals("text/x-fortran", tika.detect("x.for"));
         assertEquals("text/x-fortran", tika.detect("x.f77"));
