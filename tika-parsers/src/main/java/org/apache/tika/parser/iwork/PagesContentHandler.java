@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 class PagesContentHandler extends DefaultHandler {
 
@@ -43,6 +44,8 @@ class PagesContentHandler extends DefaultHandler {
     }
     private DocumentPart inPart = null;
     private boolean ghostText;
+    
+    private static String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     private boolean parseProperty = false;
     private int pageCount = 0;
@@ -132,6 +135,19 @@ class PagesContentHandler extends DefaultHandler {
             inPart = headers.identifyPart(attributes.getValue("sf:name"));
         } else if ("sf:footer".equals(qName)) {
            inPart = footers.identifyPart(attributes.getValue("sf:name"));
+        } else if ("sf:page-number".equals(qName)) {	
+        	if (inPart == DocumentPart.FOOTER_ODD
+        		|| inPart == DocumentPart.FOOTER_FIRST
+        		|| inPart == DocumentPart.FOOTER_EVEN) {
+        		// We are in a footer
+        		footers.hasAutoPageNumber = true;
+        		footers.autoPageNumberFormat = attributes.getValue("sf:format");   
+        	} else {
+        		headers.hasAutoPageNumber = true;
+        		headers.autoPageNumberFormat = attributes.getValue("sf:format");   
+        	}
+
+        	xhtml.characters(Integer.toString(this.pageCount));
         } else if ("sf:footnotes".equals(qName)) {
            footnotes = new Footnotes();
            inPart = DocumentPart.FOOTNOTES;
@@ -324,6 +340,8 @@ class PagesContentHandler extends DefaultHandler {
        private String defaultOdd;
        private String defaultEven;
        private String defaultFirst;
+       private boolean hasAutoPageNumber;
+       private String autoPageNumberFormat;
        // TODO Can there be custom ones?
        
        private HeaderFooter(String type) {
@@ -359,6 +377,19 @@ class PagesContentHandler extends DefaultHandler {
           if (text != null) {
              xhtml.startElement("div", "class", "header");
              xhtml.characters(text);
+             if (hasAutoPageNumber) {
+            	 if (autoPageNumberFormat == null) { // raw number
+            		 xhtml.characters("\t" + pageCount);
+            	 } else if (autoPageNumberFormat.equals("upper-roman")){
+            		 xhtml.characters("\t" + AutoPageNumberUtils.asRomanNumerals(pageCount));
+            	 } else if (autoPageNumberFormat.equals("lower-roman")){
+            		 xhtml.characters("\t" + AutoPageNumberUtils.asRomanNumeralsLower(pageCount));
+            	 } else if (autoPageNumberFormat.equals("upper-alpha")){
+            		 xhtml.characters("\t" + AutoPageNumberUtils.asAlphaNumeric(pageCount));
+            	 } else if (autoPageNumberFormat.equals("lower-alpha")){
+            		 xhtml.characters("\t" + AutoPageNumberUtils.asAlphaNumericLower(pageCount));
+            	 }
+             }
              xhtml.endElement("div");
           }
        }
@@ -414,4 +445,5 @@ class PagesContentHandler extends DefaultHandler {
           }
        }
     }
+
 }
