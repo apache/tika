@@ -28,7 +28,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.BodyContentHandler;
@@ -40,14 +39,14 @@ public class AutoDetectParserTest extends TestCase {
     // Easy to read constants for the MIME types:
     private static final String RAW        = "application/octet-stream";
     private static final String EXCEL      = "application/vnd.ms-excel";
-    private static final String HTML       = "text/html";
+    private static final String HTML       = "text/html; charset=ISO-8859-1";
     private static final String PDF        = "application/pdf";
     private static final String POWERPOINT = "application/vnd.ms-powerpoint";
     private static final String KEYNOTE    = "application/vnd.apple.keynote";
     private static final String PAGES      = "application/vnd.apple.pages";
     private static final String NUMBERS    = "application/vnd.apple.numbers";
     private static final String RTF        = "application/rtf";
-    private static final String PLAINTEXT  = "text/plain";
+    private static final String PLAINTEXT  = "text/plain; charset=ISO-8859-1";
     private static final String WORD       = "application/msword";
     private static final String XML        = "application/xml";
     private static final String RSS        = "application/rss+xml";
@@ -236,11 +235,12 @@ public class AutoDetectParserTest extends TestCase {
         }
     
     }
-    
+
     /**
      * Test to ensure that the Vorbis and FLAC parsers have been correctly
      *  included, and are available
      */
+    @SuppressWarnings("deprecation")
     public void testVorbisFlac() throws Exception {
        // The three test files should all have similar test data
        String[] testFiles = new String[] {

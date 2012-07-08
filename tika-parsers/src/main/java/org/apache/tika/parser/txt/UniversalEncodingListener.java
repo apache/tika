@@ -18,6 +18,7 @@ package org.apache.tika.parser.txt;
 
 import java.nio.charset.Charset;
 
+import org.apache.tika.detect.TextStatistics;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
@@ -33,13 +34,15 @@ class UniversalEncodingListener implements CharsetListener {
 
     private static final String CHARSET_ISO_8859_1 = "ISO-8859-1";
 
+    private static final String CHARSET_ISO_8859_15 = "ISO-8859-15";
+
+    private final TextStatistics statistics = new TextStatistics();
+
     private final UniversalDetector detector = new UniversalDetector(this);
 
     private String hint = null;
 
     private Charset charset = null;
-
-    private boolean hasCR = false;
 
     public UniversalEncodingListener(Metadata metadata) {
         MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
@@ -54,11 +57,20 @@ class UniversalEncodingListener implements CharsetListener {
     public void report(String name) {
         if (Constants.CHARSET_WINDOWS_1252.equals(name)) {
             if (hint != null) {
-                // Use the encoding hint to distinguish between latin charsets
+                // Use the encoding hint when available
                 name = hint;
-            } else if (!hasCR) {
-                // If there are no CRLFs, it's more likely to be ISO-8859-1
-                name = CHARSET_ISO_8859_1;
+            } else if (statistics.count('\r') == 0) {
+                // If there are no CR(LF)s, then the encoding is more
+                // likely to be ISO-8859-1(5) than windows-1252
+                if (statistics.count(0xa4) > 0) { // currency/euro sign
+                    // The general currency sign is hardly ever used in
+                    // ISO-8859-1, so it's more likely that we're dealing
+                    // with ISO-8859-15, where the character is used for
+                    // the euro symbol, which is more commonly used.
+                    name = CHARSET_ISO_8859_15;
+                } else {
+                    name = CHARSET_ISO_8859_1;
+                }
             }
         }
         try {
@@ -73,16 +85,15 @@ class UniversalEncodingListener implements CharsetListener {
     }
 
     public void handleData(byte[] buf, int offset, int length) {
-        for (int i = 0; !hasCR && i < length; i++) {
-            if (buf[offset + i] == '\r') {
-                hasCR = true;
-            }
-        }
+        statistics.addData(buf, offset, length);
         detector.handleData(buf, offset, length);
     }
 
     public Charset dataEnd() {
         detector.dataEnd();
+        if (charset == null && statistics.isMostlyAscii()) {
+            report(Constants.CHARSET_WINDOWS_1252);
+        }
         return charset;
     }
 

@@ -18,6 +18,7 @@ package org.apache.tika.parser.txt;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Set;
 
@@ -36,20 +37,14 @@ import org.xml.sax.SAXException;
 /**
  * Plain text parser. The text encoding of the document stream is
  * automatically detected based on the byte patterns found at the
- * beginning of the stream. The input metadata key
- * {@link org.apache.tika.metadata.HttpHeaders#CONTENT_ENCODING} is used
- * as an encoding hint if the automatic encoding detection fails.
+ * beginning of the stream and the given document metadata, most
+ * notably the <code>charset</code> parameter of a
+ * {@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE} value.
  * <p>
  * This parser sets the following output metadata entries:
  * <dl>
  *   <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE}</dt>
- *   <dd><code>text/plain</code></dd>
- *   <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_ENCODING}</dt>
- *   <dd>The detected text encoding of the document.</dd>
- *   <dt>
- *     {@link org.apache.tika.metadata.HttpHeaders#CONTENT_LANGUAGE} and
- *     {@link org.apache.tika.metadata.DublinCore#LANGUAGE}
- *   </dt>
+ *   <dd><code>text/plain; charset=...</code></dd>
  * </dl>
  */
 public class TXTParser extends AbstractParser {
@@ -75,8 +70,11 @@ public class TXTParser extends AbstractParser {
         AutoDetectReader reader = new AutoDetectReader(
                 new CloseShieldInputStream(stream), metadata, LOADER);
         try {
-            metadata.set(Metadata.CONTENT_TYPE, "text/plain"); // TODO: charset
-            metadata.set(Metadata.CONTENT_ENCODING, reader.getCharset().name());
+            Charset charset = reader.getCharset();
+            MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
+            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            // deprecated, see TIKA-431
+            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
             XHTMLContentHandler xhtml =
                     new XHTMLContentHandler(handler, metadata);

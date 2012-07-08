@@ -51,16 +51,16 @@ public class TextDetectorTest extends TestCase {
     public void testDetectText() throws Exception {
         assertText("Hello, World!".getBytes("UTF-8"));
         assertText(" \t\r\n".getBytes("UTF-8"));
-        assertText(new byte[] { -1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B });
+        assertNotText(new byte[] { -1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B });
         assertNotText(new byte[] { 0 });
         assertNotText(new byte[] { 'H', 'e', 'l', 'l', 'o', 0 });
 
         byte[] data = new byte[512];
         Arrays.fill(data, (byte) '.');
         assertText(data);
-        Arrays.fill(data, 100, 109, (byte) 0x1f);
-        assertText(data); // almost text
         Arrays.fill(data, 100, 110, (byte) 0x1f);
+        assertText(data); // almost text
+        Arrays.fill(data, 100, 111, (byte) 0x1f);
         assertNotText(data); // no longer almost text, too many control chars
         Arrays.fill(data, (byte) 0x1f);
         assertNotText(data);

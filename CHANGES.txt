@@ -43,6 +43,15 @@ Release 1.2 - Current Development
     ICU4J algorithms are still used as a fallback thanks to their wider
     coverage of custom character encodings. (TIKA-322, TIKA-471)
 
+  * Charset parameter: Related to the character encoding improvements
+    mentioned above, Tika now returns the detected character encoding as
+    a "charset" parameter of the content type metadata field for text/plain
+    and text/html documents. For example, instead of just "text/plain", the
+    returned content type will be something like "text/plain; charset=UTF-8"
+    for a UTF-8 encoded text document. Character encoding information is still
+    present also in the content encoding metadata field for backwards
+    compatibility, but that field should be considered deprecated. (TIKA-431)
+
   * Extraction of embedded resources from OLE2 Office Documents, where
     the resource isn't another office document, has been fixed (TIKA-948)
 
