@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
@@ -49,6 +50,85 @@ import org.xml.sax.SAXException;
 
 final class TextExtractor {
 
+    private static final Charset ASCII = Charset.forName("US-ASCII");
+
+    private static Charset getCharset(String name) {
+        try {
+            return CharsetUtils.forName(name);
+        } catch (Exception e) {
+            return ASCII;
+        }
+    }
+
+    private static final Charset WINDOWS_1252 = getCharset("WINDOWS-1252");
+    private static final Charset MAC_ROMAN = getCharset("MacRoman");
+    private static final Charset SHIFT_JIS = getCharset("Shift_JIS");
+    private static final Charset WINDOWS_57011 = getCharset("windows-57011");
+    private static final Charset WINDOWS_57010 = getCharset("windows-57010");
+    private static final Charset WINDOWS_57009 = getCharset("windows-57009");
+    private static final Charset WINDOWS_57008 = getCharset("windows-57008");
+    private static final Charset WINDOWS_57007 = getCharset("windows-57007");
+    private static final Charset WINDOWS_57006 = getCharset("windows-57006");
+    private static final Charset WINDOWS_57005 = getCharset("windows-57005");
+    private static final Charset WINDOWS_57004 = getCharset("windows-57004");
+    private static final Charset WINDOWS_57003 = getCharset("windows-57003");
+    private static final Charset X_ISCII91 = getCharset("x-ISCII91");
+    private static final Charset X_MAC_CENTRAL_EUROPE = getCharset("x-MacCentralEurope");
+    private static final Charset MAC_CYRILLIC = getCharset("MacCyrillic");
+    private static final Charset X_JOHAB = getCharset("x-Johab");
+    private static final Charset CP12582 = getCharset("CP1258");
+    private static final Charset CP12572 = getCharset("CP1257");
+    private static final Charset CP12562 = getCharset("CP1256");
+    private static final Charset CP12552 = getCharset("CP1255");
+    private static final Charset CP12542 = getCharset("CP1254");
+    private static final Charset CP12532 = getCharset("CP1253");
+    private static final Charset CP1252 = getCharset("CP1252");
+    private static final Charset CP12512 = getCharset("CP1251");
+    private static final Charset CP12502 = getCharset("CP1250");
+    private static final Charset CP950 = getCharset("CP950");
+    private static final Charset CP949 = getCharset("CP949");
+    private static final Charset MS9362 = getCharset("MS936");
+    private static final Charset MS8742 = getCharset("MS874");
+    private static final Charset CP866 = getCharset("CP866");
+    private static final Charset CP865 = getCharset("CP865");
+    private static final Charset CP864 = getCharset("CP864");
+    private static final Charset CP863 = getCharset("CP863");
+    private static final Charset CP862 = getCharset("CP862");
+    private static final Charset CP860 = getCharset("CP860");
+    private static final Charset CP852 = getCharset("CP852");
+    private static final Charset CP8502 = getCharset("CP850");
+    private static final Charset CP819 = getCharset("CP819");
+    private static final Charset WINDOWS_720 = getCharset("windows-720");
+    private static final Charset WINDOWS_711 = getCharset("windows-711");
+    private static final Charset WINDOWS_710 = getCharset("windows-710");
+    private static final Charset WINDOWS_709 = getCharset("windows-709");
+    private static final Charset ISO_8859_6 = getCharset("ISO-8859-6");
+    private static final Charset CP4372 = getCharset("CP437");
+    private static final Charset CP850 = getCharset("cp850");
+    private static final Charset CP437 = getCharset("cp437");
+    private static final Charset MS874 = getCharset("ms874");
+    private static final Charset CP1257 = getCharset("cp1257");
+    private static final Charset CP1256 = getCharset("cp1256");
+    private static final Charset CP1255 = getCharset("cp1255");
+    private static final Charset CP1258 = getCharset("cp1258");
+    private static final Charset CP1254 = getCharset("cp1254");
+    private static final Charset CP1253 = getCharset("cp1253");
+    private static final Charset MS950 = getCharset("ms950");
+    private static final Charset MS936 = getCharset("ms936");
+    private static final Charset MS1361 = getCharset("ms1361");
+    private static final Charset MS932 = getCharset("MS932");
+    private static final Charset CP1251 = getCharset("cp1251");
+    private static final Charset CP1250 = getCharset("cp1250");
+    private static final Charset MAC_THAI = getCharset("MacThai");
+    private static final Charset MAC_TURKISH = getCharset("MacTurkish");
+    private static final Charset MAC_GREEK = getCharset("MacGreek");
+    private static final Charset MAC_ARABIC = getCharset("MacArabic");
+    private static final Charset MAC_HEBREW = getCharset("MacHebrew");
+    private static final Charset JOHAB = getCharset("johab");
+    private static final Charset BIG5 = getCharset("Big5");
+    private static final Charset GB2312 = getCharset("GB2312");
+    private static final Charset MS949 = getCharset("ms949");
+
     // Hold pending bytes (encoded in the current charset)
     // for text output:
     private byte[] pendingBytes = new byte[16];
@@ -69,16 +149,17 @@ final class TextExtractor {
 
     // Reused when possible:
     private CharsetDecoder decoder;
-    private String lastCharset;
+    private Charset lastCharset;
 
-    private String globalCharset = "windows-1252";
+    private Charset globalCharset = WINDOWS_1252;
     private int globalDefaultFont = -1;
     private int curFontID = -1;
 
     // Holds the font table from this RTF doc, mapping
     // the font number (from \fN control word) to the
     // corresponding charset:
-    private final Map<Integer,String> fontToCharset = new HashMap<Integer,String>();
+    private final Map<Integer, Charset> fontToCharset =
+            new HashMap<Integer, Charset>();
 
     // Group stack: when we open a new group, we push
     // the previous group state onto the stack; when we
@@ -125,110 +206,112 @@ final class TextExtractor {
     // (f0, f1, f2, etc.) to fonts and charsets, using the
     // \fcharsetN control word.  This mapping maps from the
     // N to corresponding Java charset:
-    private static final Map<Integer, String> FCHARSET_MAP = new HashMap<Integer, String>();
+    private static final Map<Integer, Charset> FCHARSET_MAP =
+            new HashMap<Integer, Charset>();
+
     static {
-        FCHARSET_MAP.put(0, "windows-1252"); // ANSI
+        FCHARSET_MAP.put(0, WINDOWS_1252); // ANSI
         // charset 1 is Default
         // charset 2 is Symbol
 
-        FCHARSET_MAP.put(77, "MacRoman"); // Mac Roman
-        FCHARSET_MAP.put(78, "Shift_JIS"); // Mac Shift Jis
-        FCHARSET_MAP.put(79, "ms949"); // Mac Hangul
-        FCHARSET_MAP.put(80, "GB2312"); // Mac GB2312
-        FCHARSET_MAP.put(81, "Big5"); // Mac Big5
-        FCHARSET_MAP.put(82, "johab"); // Mac Johab (old)
-        FCHARSET_MAP.put(83, "MacHebrew"); // Mac Hebrew
-        FCHARSET_MAP.put(84, "MacArabic"); // Mac Arabic
-        FCHARSET_MAP.put(85, "MacGreek"); // Mac Greek
-        FCHARSET_MAP.put(86, "MacTurkish"); // Mac Turkish
-        FCHARSET_MAP.put(87, "MacThai"); // Mac Thai
-        FCHARSET_MAP.put(88, "cp1250"); // Mac East Europe
-        FCHARSET_MAP.put(89, "cp1251"); // Mac Russian
+        FCHARSET_MAP.put(77, MAC_ROMAN); // Mac Roman
+        FCHARSET_MAP.put(78, SHIFT_JIS); // Mac Shift Jis
+        FCHARSET_MAP.put(79, MS949); // Mac Hangul
+        FCHARSET_MAP.put(80, GB2312); // Mac GB2312
+        FCHARSET_MAP.put(81, BIG5); // Mac Big5
+        FCHARSET_MAP.put(82, JOHAB); // Mac Johab (old)
+        FCHARSET_MAP.put(83, MAC_HEBREW); // Mac Hebrew
+        FCHARSET_MAP.put(84, MAC_ARABIC); // Mac Arabic
+        FCHARSET_MAP.put(85, MAC_GREEK); // Mac Greek
+        FCHARSET_MAP.put(86, MAC_TURKISH); // Mac Turkish
+        FCHARSET_MAP.put(87, MAC_THAI); // Mac Thai
+        FCHARSET_MAP.put(88, CP1250); // Mac East Europe
+        FCHARSET_MAP.put(89, CP1251); // Mac Russian
 
-        FCHARSET_MAP.put(128, "MS932"); // Shift JIS
-        FCHARSET_MAP.put(129, "ms949"); // Hangul
-        FCHARSET_MAP.put(130, "ms1361"); // Johab
-        FCHARSET_MAP.put(134, "ms936"); // GB2312
-        FCHARSET_MAP.put(136, "ms950"); // Big5
-        FCHARSET_MAP.put(161, "cp1253"); // Greek
-        FCHARSET_MAP.put(162, "cp1254"); // Turkish
-        FCHARSET_MAP.put(163, "cp1258"); // Vietnamese
-        FCHARSET_MAP.put(177, "cp1255"); // Hebrew
-        FCHARSET_MAP.put(178, "cp1256"); // Arabic
+        FCHARSET_MAP.put(128, MS932); // Shift JIS
+        FCHARSET_MAP.put(129, MS949); // Hangul
+        FCHARSET_MAP.put(130, MS1361); // Johab
+        FCHARSET_MAP.put(134, MS936); // GB2312
+        FCHARSET_MAP.put(136, MS950); // Big5
+        FCHARSET_MAP.put(161, CP1253); // Greek
+        FCHARSET_MAP.put(162, CP1254); // Turkish
+        FCHARSET_MAP.put(163, CP1258); // Vietnamese
+        FCHARSET_MAP.put(177, CP1255); // Hebrew
+        FCHARSET_MAP.put(178, CP1256); // Arabic
         // FCHARSET_MAP.put( 179, "" ); // Arabic Traditional
         // FCHARSET_MAP.put( 180, "" ); // Arabic user
         // FCHARSET_MAP.put( 181, "" ); // Hebrew user
-        FCHARSET_MAP.put(186, "cp1257"); // Baltic
+        FCHARSET_MAP.put(186, CP1257); // Baltic
 
-        FCHARSET_MAP.put(204, "cp1251"); // Russian
-        FCHARSET_MAP.put(222, "ms874"); // Thai
-        FCHARSET_MAP.put(238, "cp1250"); // Eastern European
-        FCHARSET_MAP.put(254, "cp437"); // PC 437
-        FCHARSET_MAP.put(255, "cp850"); // OEM
+        FCHARSET_MAP.put(204, CP1251); // Russian
+        FCHARSET_MAP.put(222, MS874); // Thai
+        FCHARSET_MAP.put(238, CP1250); // Eastern European
+        FCHARSET_MAP.put(254, CP437); // PC 437
+        FCHARSET_MAP.put(255, CP850); // OEM
     }
 
     // The RTF may specify the \ansicpgN charset in the
     // header; this maps the N to the corresponding Java
     // character set:
-
-    private static final Map<Integer, String> ANSICPG_MAP = new HashMap<Integer, String>();
+    private static final Map<Integer, Charset> ANSICPG_MAP =
+            new HashMap<Integer, Charset>();
     static {
-        ANSICPG_MAP.put(437, "CP437");   // US IBM
-        ANSICPG_MAP.put(708, "ISO-8859-6");   // Arabic (ASMO 708)
+        ANSICPG_MAP.put(437, CP4372);   // US IBM
+        ANSICPG_MAP.put(708, ISO_8859_6);   // Arabic (ASMO 708)
       
-        ANSICPG_MAP.put(709, "windows-709");  // Arabic (ASMO 449+, BCON V4)
-        ANSICPG_MAP.put(710, "windows-710");  // Arabic (transparent Arabic)
-        ANSICPG_MAP.put(710, "windows-711");  // Arabic (Nafitha Enhanced)
-        ANSICPG_MAP.put(710, "windows-720");  // Arabic (transparent ASMO)
-        ANSICPG_MAP.put(819, "CP819");  // Windows 3.1 (US & Western Europe)
-        ANSICPG_MAP.put(819, "CP819");  // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(709, WINDOWS_709);  // Arabic (ASMO 449+, BCON V4)
+        ANSICPG_MAP.put(710, WINDOWS_710);  // Arabic (transparent Arabic)
+        ANSICPG_MAP.put(710, WINDOWS_711);  // Arabic (Nafitha Enhanced)
+        ANSICPG_MAP.put(710, WINDOWS_720);  // Arabic (transparent ASMO)
+        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
 
-        ANSICPG_MAP.put(819, "CP819");  // Windows 3.1 (US & Western Europe)
-        ANSICPG_MAP.put(850, "CP850");  // IBM Multilingual
-        ANSICPG_MAP.put(852, "CP852");  // Eastern European
-        ANSICPG_MAP.put(860, "CP860");  // Portuguese
-        ANSICPG_MAP.put(862, "CP862");  // Hebrew
-        ANSICPG_MAP.put(863, "CP863");  // French Canadian
-        ANSICPG_MAP.put(864, "CP864");  // Arabic
-        ANSICPG_MAP.put(865, "CP865");  // Norwegian
-        ANSICPG_MAP.put(866, "CP866");  // Soviet Union
-        ANSICPG_MAP.put(874, "MS874");  // Thai
-        ANSICPG_MAP.put(932, "MS932");  // Japanese
-        ANSICPG_MAP.put(936, "MS936");  // Simplified Chinese
-        ANSICPG_MAP.put(949, "CP949");  // Korean
-        ANSICPG_MAP.put(950, "CP950");  // Traditional Chinese
-        ANSICPG_MAP.put(1250, "CP1250");  // Eastern European
-        ANSICPG_MAP.put(1251, "CP1251");  // Cyrillic
-        ANSICPG_MAP.put(1252, "CP1252");  // Western European
-        ANSICPG_MAP.put(1253, "CP1253");  // Greek
-        ANSICPG_MAP.put(1254, "CP1254");  // Turkish
-        ANSICPG_MAP.put(1255, "CP1255");  // Hebrew
-        ANSICPG_MAP.put(1256, "CP1256");  // Arabic
-        ANSICPG_MAP.put(1257, "CP1257");  // Baltic
-        ANSICPG_MAP.put(1258, "CP1258");  // Vietnamese
-        ANSICPG_MAP.put(1361, "x-Johab");  // Johab
-        ANSICPG_MAP.put(10000, "MacRoman");  // Mac Roman
-        ANSICPG_MAP.put(10001, "Shift_JIS");  // Mac Japan
-        ANSICPG_MAP.put(10004, "MacArabic");  // Mac Arabic
-        ANSICPG_MAP.put(10005, "MacHebrew");  // Mac Hebrew
-        ANSICPG_MAP.put(10006, "MacGreek");  // Mac Hebrew
-        ANSICPG_MAP.put(10007, "MacCyrillic");  // Mac Cyrillic
-        ANSICPG_MAP.put(10029, "x-MacCentralEurope");  // MAC Latin2
-        ANSICPG_MAP.put(10081, "MacTurkish");  // Mac Turkish
-        ANSICPG_MAP.put(57002, "x-ISCII91");   // Devanagari
+        ANSICPG_MAP.put(819, CP819);  // Windows 3.1 (US & Western Europe)
+        ANSICPG_MAP.put(850, CP8502);  // IBM Multilingual
+        ANSICPG_MAP.put(852, CP852);  // Eastern European
+        ANSICPG_MAP.put(860, CP860);  // Portuguese
+        ANSICPG_MAP.put(862, CP862);  // Hebrew
+        ANSICPG_MAP.put(863, CP863);  // French Canadian
+        ANSICPG_MAP.put(864, CP864);  // Arabic
+        ANSICPG_MAP.put(865, CP865);  // Norwegian
+        ANSICPG_MAP.put(866, CP866);  // Soviet Union
+        ANSICPG_MAP.put(874, MS8742);  // Thai
+        ANSICPG_MAP.put(932, MS932);  // Japanese
+        ANSICPG_MAP.put(936, MS9362);  // Simplified Chinese
+        ANSICPG_MAP.put(949, CP949);  // Korean
+        ANSICPG_MAP.put(950, CP950);  // Traditional Chinese
+        ANSICPG_MAP.put(1250, CP12502);  // Eastern European
+        ANSICPG_MAP.put(1251, CP12512);  // Cyrillic
+        ANSICPG_MAP.put(1252, CP1252);  // Western European
+        ANSICPG_MAP.put(1253, CP12532);  // Greek
+        ANSICPG_MAP.put(1254, CP12542);  // Turkish
+        ANSICPG_MAP.put(1255, CP12552);  // Hebrew
+        ANSICPG_MAP.put(1256, CP12562);  // Arabic
+        ANSICPG_MAP.put(1257, CP12572);  // Baltic
+        ANSICPG_MAP.put(1258, CP12582);  // Vietnamese
+        ANSICPG_MAP.put(1361, X_JOHAB);  // Johab
+        ANSICPG_MAP.put(10000, MAC_ROMAN);  // Mac Roman
+        ANSICPG_MAP.put(10001, SHIFT_JIS);  // Mac Japan
+        ANSICPG_MAP.put(10004, MAC_ARABIC);  // Mac Arabic
+        ANSICPG_MAP.put(10005, MAC_HEBREW);  // Mac Hebrew
+        ANSICPG_MAP.put(10006, MAC_GREEK);  // Mac Hebrew
+        ANSICPG_MAP.put(10007, MAC_CYRILLIC);  // Mac Cyrillic
+        ANSICPG_MAP.put(10029, X_MAC_CENTRAL_EUROPE);  // MAC Latin2
+        ANSICPG_MAP.put(10081, MAC_TURKISH);  // Mac Turkish
+        ANSICPG_MAP.put(57002, X_ISCII91);   // Devanagari
 
         // TODO: in theory these other charsets are simple
         // shifts off of Devanagari, so we could impl that
         // here:
-        ANSICPG_MAP.put(57003, "windows-57003");   // Bengali
-        ANSICPG_MAP.put(57004, "windows-57004");   // Tamil
-        ANSICPG_MAP.put(57005, "windows-57005");   // Telugu
-        ANSICPG_MAP.put(57006, "windows-57006");   // Assamese
-        ANSICPG_MAP.put(57007, "windows-57007");   // Oriya
-        ANSICPG_MAP.put(57008, "windows-57008");   // Kannada
-        ANSICPG_MAP.put(57009, "windows-57009");   // Malayalam
-        ANSICPG_MAP.put(57010, "windows-57010");   // Gujariti
-        ANSICPG_MAP.put(57011, "windows-57011");   // Punjabi
+        ANSICPG_MAP.put(57003, WINDOWS_57003);   // Bengali
+        ANSICPG_MAP.put(57004, WINDOWS_57004);   // Tamil
+        ANSICPG_MAP.put(57005, WINDOWS_57005);   // Telugu
+        ANSICPG_MAP.put(57006, WINDOWS_57006);   // Assamese
+        ANSICPG_MAP.put(57007, WINDOWS_57007);   // Oriya
+        ANSICPG_MAP.put(57008, WINDOWS_57008);   // Kannada
+        ANSICPG_MAP.put(57009, WINDOWS_57009);   // Malayalam
+        ANSICPG_MAP.put(57010, WINDOWS_57010);   // Gujariti
+        ANSICPG_MAP.put(57011, WINDOWS_57011);   // Punjabi
     }
 
     public TextExtractor(XHTMLContentHandler out, Metadata metadata) {
@@ -625,15 +708,12 @@ final class TextExtractor {
     }
 
     private CharsetDecoder getDecoder() throws TikaException {
-        final String charset = getCharset();
-          
+        Charset charset = getCharset();
+
         // Common case: charset is same as last time, so
         // just reuse it:
         if (lastCharset == null || !charset.equals(lastCharset)) {
-            decoder = CharsetUtils.forName(charset).newDecoder();
-            if (decoder == null) {
-                throw new TikaException("cannot find decoder for charset=" + charset);
-            }
+            decoder = charset.newDecoder();
             decoder.onMalformedInput(CodingErrorAction.REPLACE);
             decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
             lastCharset = charset;
@@ -643,16 +723,15 @@ final class TextExtractor {
     }
 
     // Return current charset in-use
-    private String getCharset() throws TikaException {
+    private Charset getCharset() throws TikaException {
         // If a specific font (fN) was set, use its charset
         if (groupState.fontCharset != null) {
             return groupState.fontCharset;
         }
 
-        // Else, if global default font (defN) was set, use
-        // that
+        // Else, if global default font (defN) was set, use that one
         if (globalDefaultFont != -1 && !inHeader) {
-            final String cs = fontToCharset.get(globalDefaultFont);
+            Charset cs = fontToCharset.get(globalDefaultFont);
             if (cs != null) {
                 return cs;
             }
@@ -696,7 +775,7 @@ final class TextExtractor {
         if (inHeader) {
             if (equals("ansicpg")) {
                 // ANSI codepage
-                final String cs = ANSICPG_MAP.get(param);
+                Charset cs = ANSICPG_MAP.get(param);
                 if (cs != null) {
                     globalCharset = cs;
                 }
@@ -715,7 +794,7 @@ final class TextExtractor {
                         // Start new font definition
                         curFontID = param;
                     } else if (equals("fcharset")) {
-                        final String cs = FCHARSET_MAP.get(param);
+                        Charset cs = FCHARSET_MAP.get(param);
                         if (cs != null) {
                             fontToCharset.put(curFontID, cs);
                         }
@@ -748,7 +827,7 @@ final class TextExtractor {
                 }
             } else if (equals("f")) {
                 // Change current font
-                final String fontCharset = fontToCharset.get(param);
+                Charset fontCharset = fontToCharset.get(param);
 
                 // Push any buffered text before changing
                 // font:
@@ -811,13 +890,13 @@ final class TextExtractor {
     private void processControlWord() throws IOException, SAXException, TikaException {
         if (inHeader) {
             if (equals("ansi")) {
-                globalCharset = "cp1252";
+                globalCharset = WINDOWS_1252;
             } else if (equals("pca")) { 
-                globalCharset = "cp850";
+                globalCharset = CP850;
             } else if (equals("pc")) { 
-                globalCharset = "cp437";
+                globalCharset = CP437;
             } else if (equals("mac")) { 
-                globalCharset = "MacRoman";
+                globalCharset = MAC_ROMAN;
             }
 
             if (equals("colortbl") || equals("stylesheet") || equals("fonttbl")) {

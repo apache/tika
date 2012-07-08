@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.rtf;
 
+import java.nio.charset.Charset;
+
 /* Holds all state associated with current RTF group, ie {
  * ... }. */
 
@@ -28,7 +30,7 @@ class GroupState {
     public boolean ignore;
     // Default is 1 if no uc control has been seen yet:
     public int ucSkip = 1;
-    public String fontCharset;
+    public Charset fontCharset;
 
     // Create default (root) GroupState
     public GroupState() {
