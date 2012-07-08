@@ -22,9 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -76,10 +74,12 @@ public class POIFSContainerDetector implements Detector {
     public static final MediaType GENERAL_EMBEDDED = application("x-tika-msoffice-embedded");
     
     /** An OLE10 Native embedded document within another OLE2 document */
-    public static final MediaType OLE10_NATIVE = new MediaType(GENERAL_EMBEDDED, format("ole10_native")); 
+    public static final MediaType OLE10_NATIVE =
+            new MediaType(GENERAL_EMBEDDED, "format", "ole10_native");
     
     /** Some other kind of embedded document, in a CompObj container within another OLE2 document */
-    public static final MediaType COMP_OBJ = new MediaType(GENERAL_EMBEDDED, format("comp_obj"));
+    public static final MediaType COMP_OBJ =
+            new MediaType(GENERAL_EMBEDDED, "format", "comp_obj");
 
     /** Microsoft Excel */
     public static final MediaType XLS = application("vnd.ms-excel");
@@ -122,13 +122,7 @@ public class POIFSContainerDetector implements Detector {
 
     /** Regexp for matching the MPP Project Data stream */
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
-    
-    private static Map<String,String> format(String format) {
-       Map<String, String> params = new HashMap<String, String>();
-       params.put("format", format);
-       return params;
-    }
-    
+
     public MediaType detect(InputStream input, Metadata metadata)
              throws IOException {
         // Check if we have access to the document

@@ -17,6 +17,7 @@
 package org.apache.tika.mime;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,6 +72,8 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
             parse("application/octet-stream");
 
     public static final MediaType TEXT_PLAIN = parse("text/plain");
+
+    public static final MediaType TEXT_HTML = parse("text/html");
 
     public static final MediaType APPLICATION_XML = parse("application/xml");
 
@@ -345,6 +348,28 @@ public final class MediaType implements Comparable<MediaType>, Serializable {
                 union(type.parameters, parameters));
     }
 
+    /**
+     * Creates a media type by adding a parameter to a base type.
+     *
+     * @param type base type
+     * @param name parameter name
+     * @param value parameter value
+     * @since Apache Tika 1.2
+     */
+    public MediaType(MediaType type, String name, String value) {
+        this(type, Collections.singletonMap(name, value));
+    }
+
+    /**
+     * Creates a media type by adding the "charset" parameter to a base type.
+     *
+     * @param type base type
+     * @param charset charset value
+     * @since Apache Tika 1.2
+     */
+    public MediaType(MediaType type, Charset charset) {
+        this(type, "charset", charset.name());
+    }
     /**
      * Returns the base form of the MediaType, excluding
      *  any parameters, such as "text/plain" for

@@ -609,6 +609,32 @@ public class TestMimeTypes extends TestCase {
         assertTypeDetection("testEMLX.emlx", "message/x-emlx");
     }
 
+    /** Test getMimeType(byte[]) */
+    public void testGetMimeType_byteArray() throws IOException {
+        // Plain text detection
+        assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
+        assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
+        assertText(new byte[] { (byte) 0xEF, (byte) 0xBB, (byte) 0xBF });
+        assertText(new byte[] { 'a', 'b', 'c' });
+        assertText(new byte[] { '\t', '\r', '\n', 0x0C, 0x1B });
+        assertNotText(new byte[] { '\t', '\r', '\n', 0x0E, 0x1C });
+    }
+
+    private void assertText(byte[] prefix) throws IOException {
+        assertMagic("text/plain", prefix);
+    }
+
+    private void assertNotText(byte[] prefix) throws IOException {
+        assertMagic("application/octet-stream", prefix);
+    }
+
+    private void assertMagic(String expected, byte[] prefix) throws IOException {
+        MediaType type =
+                repo.detect(new ByteArrayInputStream(prefix), new Metadata());
+        assertNotNull(type);
+        assertEquals(expected, type.toString());
+    }
+
     private void assertType(String expected, String filename) throws Exception {
         InputStream stream = TestMimeTypes.class.getResourceAsStream(
                 "/test-documents/" + filename);

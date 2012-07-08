@@ -571,7 +571,7 @@ public class HtmlParserTest extends TestCase {
         String result = sw.toString();
 
         // <meta> tag for Content-Type should exist, but nothing for Language
-        assertTrue(Pattern.matches("(?s).*<meta name=\"Content-Type\" content=\"text/html; charset=utf-8\"/>.*$", result));
+        assertTrue(Pattern.matches("(?s).*<meta name=\"Content-Type\" content=\"text/html; charset=UTF-8\"/>.*$", result));
         assertFalse(Pattern.matches("(?s).*<meta name=\"Language\".*$", result));
     }
 

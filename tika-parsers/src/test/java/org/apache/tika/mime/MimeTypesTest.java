@@ -19,11 +19,6 @@ package org.apache.tika.mime;
 import static org.apache.tika.mime.MediaType.OCTET_STREAM;
 import static org.apache.tika.mime.MediaType.TEXT_PLAIN;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-
-import org.apache.tika.metadata.Metadata;
-
 import junit.framework.TestCase;
 
 public class MimeTypesTest extends TestCase {
@@ -93,33 +88,6 @@ public class MimeTypesTest extends TestCase {
         assertTrue(html.compareTo(binary) != 0);
         assertTrue(html.compareTo(text) != 0);
         assertTrue(html.compareTo(html) == 0);
-    }
-
-    /** Test getMimeType(byte[]) 
-     * @throws IOException */
-    public void testGetMimeType_byteArray() throws IOException {
-        // Plain text detection
-        assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
-        assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });
-        assertText(new byte[] { (byte) 0xEF, (byte) 0xFB, (byte) 0xBF });
-        assertText(new byte[] { 'a', 'b', 'c' });
-        assertText(new byte[] { '\t', '\r', '\n', 0x0C, 0x1B });
-        assertNotText(new byte[] { '\t', '\r', '\n', 0x0E, 0x1C });
-    }
-
-    private void assertText(byte[] prefix) throws IOException {
-        assertMagic("text/plain", prefix);
-    }
-
-    private void assertNotText(byte[] prefix) throws IOException {
-        assertMagic("application/octet-stream", prefix);
-    }
-
-    private void assertMagic(String expected, byte[] prefix) throws IOException {
-        MediaType type =
-                types.detect(new ByteArrayInputStream(prefix), new Metadata());
-        assertNotNull(type);
-        assertEquals(expected, type.toString());
     }
 
 }

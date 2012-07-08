@@ -18,6 +18,7 @@ package org.apache.tika.parser.html;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -57,7 +58,7 @@ public class HtmlParser extends AbstractParser {
             new ServiceLoader(HtmlParser.class.getClassLoader());
 
     /**
-     * HTML schema singleton used to amortize the heavy instantiation time.
+     * HTML schema singleton used to amortise the heavy instantiation time.
      */
     private static final Schema HTML_SCHEMA = new HTMLSchema();
 
@@ -73,11 +74,14 @@ public class HtmlParser extends AbstractParser {
         AutoDetectReader reader = new AutoDetectReader(
                 new CloseShieldInputStream(stream), metadata, LOADER);
         try {
-            if (metadata.get(Metadata.CONTENT_TYPE) == null) {
-                // TODO: Include charset
-                metadata.set(Metadata.CONTENT_TYPE, "text/html");
+            Charset charset = reader.getCharset();
+            String previous = metadata.get(Metadata.CONTENT_TYPE);
+            if (previous == null || previous.startsWith("text/html")) {
+                MediaType type = new MediaType(MediaType.TEXT_HTML, charset);
+                metadata.set(Metadata.CONTENT_TYPE, type.toString());
             }
-            metadata.set(Metadata.CONTENT_ENCODING, reader.getCharset().name());
+            // deprecated, see TIKA-431
+            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
             // Get the HTML mapper from the parse context
             HtmlMapper mapper =
