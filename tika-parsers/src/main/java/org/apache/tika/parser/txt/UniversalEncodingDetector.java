@@ -22,11 +22,6 @@ import java.nio.charset.Charset;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.utils.CharsetUtils;
-import org.mozilla.universalchardet.CharsetListener;
-import org.mozilla.universalchardet.Constants;
-import org.mozilla.universalchardet.UniversalDetector;
 
 public class UniversalEncodingDetector implements EncodingDetector {
 
@@ -40,69 +35,28 @@ public class UniversalEncodingDetector implements EncodingDetector {
             return null;
         }
 
-        Result result = new Result(metadata);
-        UniversalDetector detector = new UniversalDetector(result);
-
         input.mark(LOOKAHEAD);
-        byte[] b = new byte[BUFSIZE];
-        int n = 0;
-        int m = input.read(b);
-        while (m != -1 && n < LOOKAHEAD && !detector.isDone()) {
-            n += m;
-            detector.handleData(b, 0, m);
-            m = input.read(b, 0, Math.min(b.length, LOOKAHEAD - n));
-        }
-        input.reset();
+        try {
+            UniversalEncodingListener listener =
+                    new UniversalEncodingListener(metadata);
 
-        detector.dataEnd();
-        return result.getCharset();
-    }
-
-    private static class Result implements CharsetListener {
-
-        private static final Charset DEFAULT_LATIN_ENCODING =
-                Charset.forName("ISO-8859-1");
-
-        private String hint = null;
-
-        private Charset charset = null;
-
-        public Result(Metadata metadata) {
-            MediaType type =
-                    MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
-            if (type != null) {
-                hint = type.getParameters().get("charset");
+            byte[] b = new byte[BUFSIZE];
+            int n = 0;
+            int m = input.read(b);
+            while (m != -1 && n < LOOKAHEAD && !listener.isDone()) {
+                n += m;
+                listener.handleData(b, 0, m);
+                m = input.read(b, 0, Math.min(b.length, LOOKAHEAD - n));
             }
-            if (hint == null) {
-                hint = metadata.get(Metadata.CONTENT_ENCODING);
-            }
-        }
 
-        public void report(String charset) {
-            if (!Constants.CHARSET_WINDOWS_1252.equals(charset)) {
-                try {
-                    this.charset = CharsetUtils.forName(charset);
-                } catch (IllegalArgumentException e) {
-                    // ignore
-                }
-            } else {
-                if (hint != null) {
-                    try {
-                        this.charset =
-                                CharsetUtils.forName(CharsetUtils.clean(hint));
-                    } catch (IllegalArgumentException e) {
-                        // ignore
-                    }
-                } else {
-                    this.charset = DEFAULT_LATIN_ENCODING;
-                }
-            }
+            return listener.dataEnd();
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) { // if juniversalchardet is not available
+            return null;
+        } finally {
+            input.reset();
         }
-
-        public Charset getCharset() {
-            return charset;
-        }
-
     }
 
 }
