@@ -1,4 +1,4 @@
-Release 1.2 - Current Development
+Release 1.2 - 07/10/2012
 ---------------------------------
 
   * Tika's JAX-RS based Network server now is based on Apache CXF,
