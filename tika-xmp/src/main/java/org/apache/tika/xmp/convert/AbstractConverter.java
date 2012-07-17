@@ -88,7 +88,7 @@ public abstract class AbstractConverter implements ITikaToXMPConverter {
     }
 
     /**
-     * @see AbstractConverter#createProperty(String, String, String);
+     * @see AbstractConverter#createProperty(String, String, String)
      */
     protected void createProperty(Property metadataProperty, String ns, String propertyName)
             throws XMPException {
@@ -116,7 +116,7 @@ public abstract class AbstractConverter implements ITikaToXMPConverter {
     }
 
     /**
-     * @see AbstractConverter#createLangAltProperty(String, String, String);
+     * @see AbstractConverter#createLangAltProperty(String, String, String)
      */
     protected void createLangAltProperty(Property metadataProperty, String ns, String propertyName)
             throws XMPException {

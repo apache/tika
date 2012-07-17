@@ -48,7 +48,7 @@ public class TikaToXMP {
     }
 
     /**
-     * @see ITikaToXMP#convert(Metadata, String) But the mimetype is retrieved from the metadata
+     * @see TikaToXMP#convert(Metadata, String) But the mimetype is retrieved from the metadata
      *      map.
      */
     public static XMPMeta convert(Metadata tikaMetadata) throws TikaException {
