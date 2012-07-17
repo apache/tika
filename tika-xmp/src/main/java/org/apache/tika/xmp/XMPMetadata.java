@@ -69,7 +69,7 @@ public class XMPMetadata extends Metadata {
     }
 
     /**
-     * @see org.apache.tika.xmp.XMPMetadata(org.apache.tika.metadata.Metadata, java.lang.String)
+     * @see #XMPMetadata(Metadata, String)
      * But the mimetype is retrieved from the metadata map.
      */
     public XMPMetadata(Metadata meta) throws TikaException {
