@@ -50,7 +50,7 @@ public class MSOfficeBinaryConverter extends AbstractConverter {
     /**
      * @throws XMPException
      *             Forwards XMP errors
-     * @see XMPFilesProcessor.MSOfficeXMLConverter.onverter#process(Metadata)
+     * @see ITikaToXMPConverter#process(Metadata)
      */
     public XMPMeta process(Metadata metadata) throws XMPException {
         super.setMetadata( metadata );

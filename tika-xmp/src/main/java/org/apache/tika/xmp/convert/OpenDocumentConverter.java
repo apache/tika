@@ -50,7 +50,7 @@ public class OpenDocumentConverter extends AbstractConverter {
     /**
      * @throws XMPException
      *             Forwards XMP errors
-     * @see XMPFilesProcessor.onverter#process(Metadata)
+     * @see ITikaToXMPConverter#process(Metadata)
      */
     @Override
     public XMPMeta process(Metadata metadata) throws XMPException {
