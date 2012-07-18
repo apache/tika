@@ -3745,6 +3745,17 @@
   <mime-type type="image/jpx"/>
   <mime-type type="image/naplps"/>
 
+  <mime-type type="image/nitf">
+    <alias type="image/ntf"/>
+    <magic priority="50">
+      <match value="NITF01.10" type="string" offset="0"/>
+      <match value="NITF02.000" type="string" offset="0"/>
+      <match value="NITF02.100" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ntf"/>
+    <glob pattern="*.nitf"/>
+  </mime-type>
+
   <mime-type type="image/png">
     <acronym>PNG</acronym>
     <_comment>Portable Network Graphics</_comment>
