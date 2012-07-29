@@ -19,6 +19,7 @@ package org.apache.tika.parser.image;
 import java.util.Arrays;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -26,7 +27,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
-import com.drew.metadata.exif.ExifDirectory;
+import com.drew.metadata.exif.ExifIFD0Directory;
+import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 
 import junit.framework.TestCase;
@@ -53,15 +55,16 @@ public class ImageMetadataExtractorTest extends TestCase {
     }
     
     public void testExifHandlerSupports() {
-        assertTrue(new ImageMetadataExtractor.ExifHandler().supports(ExifDirectory.class));
+        assertTrue(new ImageMetadataExtractor.ExifHandler().supports(ExifIFD0Directory.class));
+        assertTrue(new ImageMetadataExtractor.ExifHandler().supports(ExifSubIFDDirectory.class));
         assertFalse(new ImageMetadataExtractor.ExifHandler().supports(Directory.class));
         assertFalse(new ImageMetadataExtractor.ExifHandler().supports(JpegCommentDirectory.class));
     }
     
     public void testExifHandlerParseDate() throws MetadataException {
-        ExifDirectory exif = mock(ExifDirectory.class);
-        when(exif.containsTag(ExifDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        when(exif.getDate(ExifDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(
+        ExifSubIFDDirectory exif = mock(ExifSubIFDDirectory.class);
+        when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
+        when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(
                 new GregorianCalendar(2000, 0, 1, 0, 0, 0).getTime()); // jvm default timezone as in Metadata Extractor
         Metadata metadata = new Metadata();
         
@@ -71,9 +74,9 @@ public class ImageMetadataExtractorTest extends TestCase {
     }
 
     public void testExifHandlerParseDateFallback() throws MetadataException {
-        ExifDirectory exif = mock(ExifDirectory.class);
-        when(exif.containsTag(ExifDirectory.TAG_DATETIME)).thenReturn(true);
-        when(exif.getDate(ExifDirectory.TAG_DATETIME)).thenReturn(
+        ExifIFD0Directory exif = mock(ExifIFD0Directory.class);
+        when(exif.containsTag(ExifIFD0Directory.TAG_DATETIME)).thenReturn(true);
+        when(exif.getDate(ExifIFD0Directory.TAG_DATETIME)).thenReturn(
                 new GregorianCalendar(1999, 0, 1, 0, 0, 0).getTime()); // jvm default timezone as in Metadata Extractor
         Metadata metadata = new Metadata();
         
@@ -83,10 +86,9 @@ public class ImageMetadataExtractorTest extends TestCase {
     }
     
     public void testExifHandlerParseDateError() throws MetadataException {
-        ExifDirectory exif = mock(ExifDirectory.class);
-        when(exif.containsTag(ExifDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        when(exif.getDate(ExifDirectory.TAG_DATETIME_ORIGINAL)).thenThrow(
-                new MetadataException("Tag 'X' cannot be cast to a java.util.Date."));
+        ExifIFD0Directory exif = mock(ExifIFD0Directory.class);
+        when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
+        when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(null);
         Metadata metadata = new Metadata();
         
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
@@ -105,8 +107,8 @@ public class ImageMetadataExtractorTest extends TestCase {
         Tag t3 = mock(Tag.class);
         when(t3.getTagName()).thenReturn(TikaCoreProperties.DESCRIPTION.getName());
         when(t3.getDescription()).thenReturn("known");
-        Iterator<Tag> tags = Arrays.asList(t1, t2, t3).iterator();
-        when(d.getTagIterator()).thenReturn(tags);
+        List<Tag> tags = Arrays.asList(t1, t2, t3);
+        when(d.getTags()).thenReturn(tags);
         Metadata metadata = new Metadata();
         new ImageMetadataExtractor.CopyUnknownFieldsHandler().handle(d, metadata);
         assertEquals("t1", metadata.get("Image Description"));
