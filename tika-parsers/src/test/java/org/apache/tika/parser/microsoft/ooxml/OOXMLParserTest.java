@@ -744,8 +744,10 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals(null,                   metadata.get(TikaCoreProperties.CREATOR));
        assertEquals(null,                   metadata.get(TikaCoreProperties.MODIFIER));
        assertEquals("2006-09-12T15:06:44Z", metadata.get(TikaCoreProperties.CREATED));
+       assertEquals("2006-09-12T15:06:44Z", metadata.get(Metadata.CREATION_DATE));
        assertEquals("2011-08-22T14:24:38Z", metadata.get(Metadata.LAST_MODIFIED));
        assertEquals("2011-08-22T14:24:38Z", metadata.get(TikaCoreProperties.MODIFIED));
+       assertEquals("2011-08-22T14:24:38Z", metadata.get(Metadata.DATE));
        assertEquals("Microsoft Excel",      metadata.get(Metadata.APPLICATION_NAME));
        assertEquals("Microsoft Excel",      metadata.get(OfficeOpenXMLExtended.APPLICATION));
        assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
@@ -775,7 +777,9 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals("Etienne Jouvin",       metadata.get(TikaCoreProperties.MODIFIER));
        assertEquals("Etienne Jouvin",       metadata.get(Metadata.LAST_AUTHOR));
        assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.CREATED));
+       assertEquals("2011-07-29T16:52:00Z", metadata.get(Metadata.CREATION_DATE));
        assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
+       assertEquals("2012-01-03T22:14:00Z", metadata.get(Metadata.DATE));
        assertEquals("Microsoft Office Word",metadata.get(Metadata.APPLICATION_NAME));
        assertEquals("Microsoft Office Word",metadata.get(OfficeOpenXMLExtended.APPLICATION));
        assertEquals("1",                    metadata.get(Office.PAGE_COUNT));
