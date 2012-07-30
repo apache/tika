@@ -208,7 +208,9 @@ public class PowerPointParserTest extends TikaTest {
        assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.MODIFIER));
        assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
        assertEquals("2011-08-22T13:32:58Z", metadata.get(TikaCoreProperties.MODIFIED));
+       assertEquals("2011-08-22T13:32:58Z", metadata.get(Metadata.DATE));
        assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
+       assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
        assertEquals("1",                    metadata.get(Office.SLIDE_COUNT));
        assertEquals("3",                    metadata.get(Office.WORD_COUNT));
        assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));

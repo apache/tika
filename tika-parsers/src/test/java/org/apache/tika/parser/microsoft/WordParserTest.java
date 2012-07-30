@@ -286,7 +286,9 @@ public class WordParserTest extends TikaTest {
        assertEquals("Etienne Jouvin",       metadata.get(TikaCoreProperties.MODIFIER));
        assertEquals("Etienne Jouvin",       metadata.get(Metadata.LAST_AUTHOR));
        assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
+       assertEquals("2012-01-03T22:14:00Z", metadata.get(Metadata.DATE));
        assertEquals("2010-10-05T09:03:00Z", metadata.get(TikaCoreProperties.CREATED));
+       assertEquals("2010-10-05T09:03:00Z", metadata.get(Metadata.CREATION_DATE));
        assertEquals("Microsoft Office Word",metadata.get(OfficeOpenXMLExtended.APPLICATION));
        assertEquals("1",                    metadata.get(Office.PAGE_COUNT));
        assertEquals("2",                    metadata.get(Office.WORD_COUNT));
