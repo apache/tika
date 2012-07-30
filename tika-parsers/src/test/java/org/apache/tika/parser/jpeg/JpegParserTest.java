@@ -17,7 +17,6 @@
 package org.apache.tika.parser.jpeg;
 
 import java.io.InputStream;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.List;
 
@@ -33,8 +32,6 @@ import org.xml.sax.helpers.DefaultHandler;
 public class JpegParserTest extends TestCase {
     private final Parser parser = new JpegParser();
     
-    private DecimalFormat geoDecimalFormatter = new DecimalFormat("#.#####");
-
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -93,8 +90,8 @@ public class JpegParserTest extends TestCase {
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         
         // Geo tags
-        assertEquals("12.54321", geoDecimalFormatter.format(new Double(metadata.get(Metadata.LATITUDE))));
-        assertEquals("-54.1234", geoDecimalFormatter.format(new Double(metadata.get(Metadata.LONGITUDE))));
+        assertEquals("12.54321", metadata.get(Metadata.LATITUDE));
+        assertEquals("-54.1234", metadata.get(Metadata.LONGITUDE));
         
         // Core EXIF/TIFF tags
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
@@ -139,8 +136,8 @@ public class JpegParserTest extends TestCase {
        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
        // Geo tags should be there with 5dp, and not rounded
-       assertEquals("51.57576", geoDecimalFormatter.format(new Double(metadata.get(Metadata.LATITUDE))));
-       assertEquals("-1.56789", geoDecimalFormatter.format(new Double(metadata.get(Metadata.LONGITUDE))));
+       assertEquals("51.575762", metadata.get(Metadata.LATITUDE));
+       assertEquals("-1.567886", metadata.get(Metadata.LONGITUDE));
     }
     
     public void testJPEGTitleAndDescription() throws Exception {

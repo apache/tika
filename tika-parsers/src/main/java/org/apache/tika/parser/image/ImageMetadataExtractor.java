@@ -18,6 +18,7 @@ package org.apache.tika.parser.image;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -57,6 +58,7 @@ public class ImageMetadataExtractor {
 
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
+    private static final DecimalFormat GEO_DECIMAL_FORMAT = new DecimalFormat("#.######"); // 6 dp seems to be reasonable
 
     /**
      * @param metadata to extract to, using default directory handlers
@@ -438,8 +440,8 @@ public class ImageMetadataExtractor {
         public void handle(Directory directory, Metadata metadata) throws MetadataException {
             GeoLocation geoLocation = ((GpsDirectory) directory).getGeoLocation();
             if (geoLocation != null) {
-                metadata.set(TikaCoreProperties.LATITUDE, geoLocation.getLatitude());
-                metadata.set(TikaCoreProperties.LONGITUDE, geoLocation.getLongitude());
+                metadata.set(TikaCoreProperties.LATITUDE, GEO_DECIMAL_FORMAT.format(new Double(geoLocation.getLatitude())));
+                metadata.set(TikaCoreProperties.LONGITUDE, GEO_DECIMAL_FORMAT.format(new Double(geoLocation.getLongitude())));
             }
         }
     }
