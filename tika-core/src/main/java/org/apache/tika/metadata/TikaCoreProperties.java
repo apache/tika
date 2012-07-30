@@ -152,16 +152,17 @@ public interface TikaCoreProperties {
      public static final Property CREATED = Property.composite(DublinCore.CREATED,
              new Property[] { 
                      Office.CREATION_DATE, 
-                     MSOffice.CREATION_DATE, 
-                     Metadata.DATE
+                     MSOffice.CREATION_DATE
              });
      
      /** 
       * @see DublinCore#MODIFIED
+      * @see Metadata#DATE
       * @see Office#SAVE_DATE 
       */
      public static final Property MODIFIED = Property.composite(DublinCore.MODIFIED,
              new Property[] { 
+                     Metadata.DATE,
                      Office.SAVE_DATE, 
                      MSOffice.LAST_SAVED, 
                      Property.internalText(Metadata.MODIFIED),

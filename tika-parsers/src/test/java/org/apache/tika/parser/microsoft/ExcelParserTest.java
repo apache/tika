@@ -53,9 +53,11 @@ public class ExcelParserTest extends TestCase {
             
             // Mon Oct 01 17:13:56 BST 2007
             assertEquals("2007-10-01T16:13:56Z", metadata.get(TikaCoreProperties.CREATED));
+            assertEquals("2007-10-01T16:13:56Z", metadata.get(Metadata.CREATION_DATE));
             
             // Mon Oct 01 17:31:43 BST 2007
             assertEquals("2007-10-01T16:31:43Z", metadata.get(TikaCoreProperties.MODIFIED));
+            assertEquals("2007-10-01T16:31:43Z", metadata.get(Metadata.DATE));
             
             String content = handler.toString();
             assertTrue(content.contains("Sample Excel Worksheet"));

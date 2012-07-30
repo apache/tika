@@ -57,7 +57,9 @@ public class MP4ParserTest extends TestCase {
         assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
         assertEquals("2012-01-28T18:39:18Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2012-01-28T18:39:18Z", metadata.get(Metadata.CREATION_DATE));
         assertEquals("2012-01-28T18:40:25Z", metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2012-01-28T18:40:25Z", metadata.get(Metadata.DATE));
 
         // Check the textual contents
         String content = handler.toString();

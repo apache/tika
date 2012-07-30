@@ -88,7 +88,7 @@ public class ODFParserTest extends TikaTest {
              // Check date metadata, both old-style and new-style
              assertEquals("2007-09-14T11:07:10", metadata.get(TikaCoreProperties.MODIFIED));
              assertEquals("2007-09-14T11:07:10", metadata.get(Metadata.MODIFIED));
-             assertEquals("2007-09-14T11:06:08", metadata.get(Metadata.DATE));
+             assertEquals("2007-09-14T11:07:10", metadata.get(Metadata.DATE));
              assertEquals("2007-09-14T11:06:08", metadata.get(TikaCoreProperties.CREATED));
              assertEquals("2007-09-14T11:06:08", metadata.get(Metadata.CREATION_DATE));
              

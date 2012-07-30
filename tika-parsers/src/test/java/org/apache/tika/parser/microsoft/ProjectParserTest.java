@@ -78,7 +78,9 @@ public class ProjectParserTest extends TestCase {
        assertEquals("CompanyA", metadata.get(OfficeOpenXMLExtended.COMPANY));
        
        assertEquals("2011-11-24T10:58:00Z", metadata.get(TikaCoreProperties.CREATED));
+       assertEquals("2011-11-24T10:58:00Z", metadata.get(Metadata.CREATION_DATE));
        assertEquals("2011-11-24T11:31:00Z", metadata.get(TikaCoreProperties.MODIFIED));
+       assertEquals("2011-11-24T11:31:00Z", metadata.get(Metadata.DATE));
        
        // Custom Project metadata is present with prefix
        assertEquals("0%", metadata.get("custom:% Complete"));
