@@ -73,7 +73,8 @@ public interface TikaCoreProperties {
     /**
      * @see Office#LAST_AUTHOR
      */
-     public static final Property MODIFIER = Office.LAST_AUTHOR;
+     public static final Property MODIFIER = Property.composite(Office.LAST_AUTHOR, 
+             new Property[] { Property.internalText(Metadata.LAST_AUTHOR) });
     
     /**
      * @see XMP#CREATOR_TOOL

@@ -151,6 +151,8 @@ public class DWGParserTest extends TestCase {
                     metadata.get(TikaCoreProperties.COMMENTS));
             assertEquals("bejanpol",
                     metadata.get(TikaCoreProperties.MODIFIER));
+            assertEquals("bejanpol",
+                    metadata.get(Metadata.LAST_AUTHOR));
             assertEquals("http://mycompany/drawings",
                     metadata.get(TikaCoreProperties.RELATION));
             assertEquals("MyCustomPropertyValue",
