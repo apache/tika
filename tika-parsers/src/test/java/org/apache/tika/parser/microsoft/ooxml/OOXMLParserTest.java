@@ -773,6 +773,7 @@ public class OOXMLParserTest extends TikaTest {
              metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.CREATOR));
        assertEquals("Etienne Jouvin",       metadata.get(TikaCoreProperties.MODIFIER));
+       assertEquals("Etienne Jouvin",       metadata.get(Metadata.LAST_AUTHOR));
        assertEquals("2011-07-29T16:52:00Z", metadata.get(TikaCoreProperties.CREATED));
        assertEquals("2012-01-03T22:14:00Z", metadata.get(TikaCoreProperties.MODIFIED));
        assertEquals("Microsoft Office Word",metadata.get(Metadata.APPLICATION_NAME));
@@ -812,6 +813,7 @@ public class OOXMLParserTest extends TikaTest {
              metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("JOUVIN ETIENNE",       metadata.get(TikaCoreProperties.CREATOR));
        assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.MODIFIER));
+       assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
        assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
        assertEquals("2011-08-22T13:32:49Z", metadata.get(TikaCoreProperties.MODIFIED));
        assertEquals("1",                    metadata.get(Office.SLIDE_COUNT));
