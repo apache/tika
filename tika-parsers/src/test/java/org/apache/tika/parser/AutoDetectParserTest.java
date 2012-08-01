@@ -47,6 +47,7 @@ public class AutoDetectParserTest extends TestCase {
     private static final String NUMBERS    = "application/vnd.apple.numbers";
     private static final String RTF        = "application/rtf";
     private static final String PLAINTEXT  = "text/plain; charset=ISO-8859-1";
+    private static final String UTF8TEXT   = "text/plain; charset=UTF-8";
     private static final String WORD       = "application/msword";
     private static final String XML        = "application/xml";
     private static final String RSS        = "application/rss+xml";
@@ -194,6 +195,10 @@ public class AutoDetectParserTest extends TestCase {
 
     public void testText() throws Exception {
         assertAutoDetect("testTXT.txt", PLAINTEXT, "indexation de Txt");
+    }
+    
+    public void testTextNonASCIIUTF8() throws Exception {
+        assertAutoDetect("testTXTNonASCIIUTF8.txt", UTF8TEXT, "The quick brown fox jumps over the lazy dog");
     }
 
     public void testWord() throws Exception {

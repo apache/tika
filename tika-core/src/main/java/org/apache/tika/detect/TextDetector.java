@@ -127,7 +127,7 @@ public class TextDetector implements Detector {
                 m = input.read(buffer, 0, Math.min(bytesToTest - n, buffer.length));
             }
 
-            if (stats.isMostlyAscii()) {
+            if (stats.isMostlyAscii() || stats.looksLikeUTF8()) {
                 return MediaType.TEXT_PLAIN;
             } else {
                 return MediaType.OCTET_STREAM;
