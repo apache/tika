@@ -53,6 +53,34 @@ public class TextStatistics {
     }
 
     /**
+     * Checks whether the observed byte stream looks like UTF-8 encoded text.
+     *
+     * @since Apache Tika 1.3
+     * @return <code>true</code> if the seen bytes look like UTF-8,
+     *         <code>false</code> otherwise
+     */
+    public boolean looksLikeUTF8() {
+        int control = count(0, 0x20);
+        int utf8 = count(0x20, 0x80);
+        int safe = countSafeControl();
+
+        int expectedContinuation = 0;
+        int[] leading = new int[] {
+                count(0xc0, 0xe0), count(0xe0, 0xf0), count(0xf0, 0xf8) };
+        for (int i = 0; i < leading.length; i++) {
+            utf8 += leading[i];
+            expectedContinuation += (i + 1) * leading[i];
+        }
+
+        int continuation = count(0x80, 0xc0);
+        return utf8 > 0
+                && continuation <= expectedContinuation
+                && continuation >= expectedContinuation - 3
+                && count(0xf80, 0x100) == 0
+                && (control - safe) * 100 < utf8 * 2;
+    }
+
+    /**
      * Returns the total number of bytes seen so far.
      *
      * @return count of all bytes
@@ -117,7 +145,7 @@ public class TextStatistics {
     }
 
     private int count(int from, int to) {
-        assert 0 <= from && to < counts.length;
+        assert 0 <= from && to <= counts.length;
         int count = 0;
         for (int i = from; i < to; i++) {
             count += counts[i];
