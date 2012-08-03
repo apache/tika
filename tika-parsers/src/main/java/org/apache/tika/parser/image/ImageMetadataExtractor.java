@@ -185,7 +185,7 @@ public class ImageMetadataExtractor {
                 while (tags.hasNext()) {
                     Tag tag = (Tag) tags.next();
                     String name = tag.getTagName();
-                    if (!MetadataFields.isMetadataField(name)) {
+                    if (!MetadataFields.isMetadataField(name) && tag.getDescription() != null) {
                           String value = tag.getDescription().trim();
                           if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
                               value = Boolean.TRUE.toString();
