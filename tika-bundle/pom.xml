@@ -129,16 +129,83 @@
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
-            <Import-Package>
-              org.w3c.dom,
-              org.apache.tika.*,
-              *;resolution:=optional
-            </Import-Package>
             <Export-Package>
               !org.apache.tika.parser,
               !org.apache.tika.parser.external,
               org.apache.tika.parser.*
             </Export-Package>
+            <Import-Package>
+              *,
+              com.adobe.xmp;resolution:=optional,
+              com.adobe.xmp.properties;resolution:=optional,
+              com.google.protobuf;resolution:=optional,
+              com.ibm.icu.text;resolution:=optional,
+              com.sleepycat.je;resolution:=optional,
+              com.sun.javadoc;resolution:=optional,
+              com.sun.msv.datatype;resolution:=optional,
+              com.sun.msv.datatype.xsd;resolution:=optional,
+              com.sun.tools.javadoc;resolution:=optional,
+              edu.wisc.ssec.mcidas;resolution:=optional,
+              edu.wisc.ssec.mcidas.adde;resolution:=optional,
+              javax.activation;resolution:=optional,
+              javax.mail;resolution:=optional,
+              javax.mail.internet;resolution:=optional,
+              javax.xml.bind;resolution:=optional,
+              javax.xml.stream;version="[1.0,2)";resolution:=optional,
+              javax.xml.stream.events;version="[1.0,2)";resolution:=optional,
+              javax.xml.stream.util;version="[1.0,2)";resolution:=optional,
+              junit.framework;resolution:=optional,
+              junit.textui;resolution:=optional,
+              net.sf.ehcache;resolution:=optional,
+              nu.xom;resolution:=optional,
+              opendap.dap;resolution:=optional,
+              opendap.dap.parser;resolution:=optional,
+              org.apache.commons.httpclient;resolution:=optional,
+              org.apache.commons.httpclient.auth;resolution:=optional,
+              org.apache.commons.httpclient.methods;resolution:=optional,
+              org.apache.commons.httpclient.params;resolution:=optional,
+              org.apache.commons.httpclient.protocol;resolution:=optional,
+              org.apache.crimson.jaxp;resolution:=optional,
+              org.apache.tools.ant;resolution:=optional,
+              org.apache.tools.ant.taskdefs;resolution:=optional,
+              org.apache.tools.ant.types;resolution:=optional,
+              org.apache.xerces.parsers;resolution:=optional,
+              org.apache.xerces.util;resolution:=optional,
+              org.apache.xerces.xni;resolution:=optional,
+              org.apache.xerces.xni.parser;resolution:=optional,
+              org.apache.xml.resolver;resolution:=optional,
+              org.apache.xml.resolver.tools;resolution:=optional,
+              org.apache.xmlbeans.impl.xpath.saxon;resolution:=optional,
+              org.apache.xmlbeans.impl.xquery.saxon;resolution:=optional,
+              org.cyberneko.html.xercesbridge;resolution:=optional,
+              org.gjt.xpp;resolution:=optional,
+              org.jaxen;resolution:=optional,
+              org.jaxen.dom4j;resolution:=optional,
+              org.jaxen.pattern;resolution:=optional,
+              org.jaxen.saxpath;resolution:=optional,
+              org.jdom;resolution:=optional,
+              org.jdom.input;resolution:=optional,
+              org.jdom.output;resolution:=optional,
+              org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
+              org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
+              org.osgi.framework;resolution:=optional,
+              org.relaxng.datatype;resolution:=optional,
+              org.xml.sax;resolution:=optional,
+              org.xml.sax.ext;resolution:=optional,
+              org.xml.sax.helpers;resolution:=optional,
+              org.xmlpull.v1;resolution:=optional,
+              schemasMicrosoftComOfficePowerpoint;resolution:=optional,
+              schemasMicrosoftComOfficeWord;resolution:=optional,
+              ucar.grib;resolution:=optional,
+              ucar.grib.grib1;resolution:=optional,
+              ucar.grib.grib2;resolution:=optional,
+              ucar.grid;resolution:=optional,
+              visad;resolution:=optional,
+              visad.data;resolution:=optional,
+              visad.data.vis5d;resolution:=optional,
+              visad.jmet;resolution:=optional,
+              visad.util;resolution:=optional
+            </Import-Package>
           </instructions>
         </configuration>
       </plugin>
@@ -173,7 +240,7 @@
     <profile>
       <id>java6</id>
       <activation>
-        <jdk>1.6</jdk>
+        <jdk>[1.6,)</jdk>
       </activation>
       <build>
         <plugins>
