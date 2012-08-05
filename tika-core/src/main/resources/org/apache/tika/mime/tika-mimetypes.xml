@@ -3723,7 +3723,18 @@
   <mime-type type="image/ief">
     <glob pattern="*.ief"/>
   </mime-type>
-  <mime-type type="image/jp2"/>
+
+  <mime-type type="image/jp2">
+    <sub-class-of type="image/x-jp2-container" />
+    <acronym>JP2</acronym>
+    <_comment>JPEG 2000 Part 1 (JP2)</_comment>
+    <magic priority="50">
+      <match value="0x0000000C6A5020200D0A870A" type="string" offset="0">
+        <match value="0x6a703220" type="string" offset="20"/>
+      </match>
+    </magic>
+    <glob pattern="*.jp2"/>
+  </mime-type>
 
   <mime-type type="image/jpeg">
     <acronym>JPEG</acronym>
@@ -3741,8 +3752,32 @@
     <glob pattern="*.jfi"/>
   </mime-type>
 
-  <mime-type type="image/jpm"/>
-  <mime-type type="image/jpx"/>
+  <mime-type type="image/jpm">
+    <alias type="video/jpm"/>
+    <sub-class-of type="image/x-jp2-container" />
+    <acronym>JP2</acronym>
+    <_comment>JPEG 2000 Part 6 (JPM)</_comment>
+    <magic priority="50">
+      <match value="0x0000000C6A5020200D0A870A" type="string" offset="0">
+        <match value="0x6a706d20" type="string" offset="20"/>
+      </match>
+    </magic>
+    <glob pattern="*.jpm"/>
+    <glob pattern="*.jpgm"/>
+  </mime-type>
+
+  <mime-type type="image/jpx">
+    <sub-class-of type="image/x-jp2-container" />
+    <acronym>JP2</acronym>
+    <_comment>JPEG 2000 Part 2 (JPX)</_comment>
+    <magic priority="50">
+      <match value="0x0000000C6A5020200D0A870A" type="string" offset="0">
+        <match value="0x6a707820" type="string" offset="20"/>
+      </match>
+    </magic>
+    <glob pattern="*.jpf"/>
+  </mime-type>
+
   <mime-type type="image/naplps"/>
 
   <mime-type type="image/nitf">
@@ -3908,6 +3943,21 @@
       <match value="\000\000\001\000" type="string" offset="0"/>
     </magic>
     <glob pattern="*.ico"/>
+  </mime-type>
+
+  <mime-type type="image/x-jp2-codestream">
+    <_comment>JPEG 2000 Codestream</_comment>
+    <magic priority="25">
+      <match value="0xff4fff51" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.j2c"/>
+  </mime-type>
+
+  <mime-type type="image/x-jp2-container">
+    <_comment>JPEG 2000 Container Format</_comment>
+    <magic priority="50">
+      <match value="0x0000000C6A5020200D0A870A" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="image/x-niff">
@@ -4973,14 +5023,20 @@
     <glob pattern="*.jpgv"/>
   </mime-type>
   <mime-type type="video/jpeg2000"/>
-  <mime-type type="video/jpm">
-    <glob pattern="*.jpm"/>
-    <glob pattern="*.jpgm"/>
-  </mime-type>
+
   <mime-type type="video/mj2">
+    <sub-class-of type="image/x-jp2-container" />
+    <acronym>MJ2</acronym>
+    <_comment>JPEG 2000 Part 3 (Motion JPEG, MJ2)</_comment>
+    <magic priority="50">
+      <match value="0x0000000C6A5020200D0A870A" type="string" offset="0">
+        <match value="0x6d6a7032" type="string" offset="20"/>
+      </match>
+    </magic>
     <glob pattern="*.mj2"/>
     <glob pattern="*.mjp2"/>
   </mime-type>
+
   <mime-type type="video/mp1s"/>
   <mime-type type="video/mp2p"/>
   <mime-type type="video/mp2t"/>
