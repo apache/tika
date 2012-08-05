@@ -680,6 +680,8 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("image/jpeg", tika.detect("x.jpeg"));
         assertEquals("image/jpeg", tika.detect("x.jpg"));
         assertEquals("image/jpeg", tika.detect("x.jpe"));
+        assertEquals("image/jpm", tika.detect("x.jpm"));
+        assertEquals("image/jpm", tika.detect("x.jpgm"));
         assertEquals("image/png", tika.detect("x.png"));
         assertEquals("image/prs.btif", tika.detect("x.btif"));
         assertEquals("image/svg+xml", tika.detect("x.svg"));
@@ -797,8 +799,6 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("video/h263", tika.detect("x.h263"));
         assertEquals("video/h264", tika.detect("x.h264"));
         assertEquals("video/jpeg", tika.detect("x.jpgv"));
-        assertEquals("video/jpm", tika.detect("x.jpm"));
-        assertEquals("video/jpm", tika.detect("x.jpgm"));
         assertEquals("video/mj2", tika.detect("x.mj2"));
         assertEquals("video/mj2", tika.detect("x.mjp2"));
         assertEquals("video/mp4", tika.detect("x.mp4"));
