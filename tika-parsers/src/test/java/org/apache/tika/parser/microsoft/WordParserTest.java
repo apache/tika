@@ -171,6 +171,22 @@ public class WordParserTest extends TikaTest {
         assertTrue("Bold text wasn't contiguous: "+xml, xml.contains("F<b>oob</b>a<b>r</b>"));
     }
 
+    public void testEmbeddedNames() throws Exception {
+        String result = getXML("/test-documents/testWORD_embedded_pdf.doc").xml;
+
+        // Make sure the embedded div comes out after "Here
+        // is the pdf file" and before "Bye Bye":
+        int i = result.indexOf("Here is the pdf file:");
+        assertTrue(i != -1);
+        int j = result.indexOf("<div class=\"embedded\" id=\"_1402837031\"/>");
+        assertTrue(j != -1);
+        int k = result.indexOf("Bye Bye");
+        assertTrue(k != -1);
+
+        assertTrue(i < j);
+        assertTrue(j < k);
+    }
+
     public void testWord6Parser() throws Exception {
         InputStream input = WordParserTest.class.getResourceAsStream(
                 "/test-documents/testWORD6.doc");

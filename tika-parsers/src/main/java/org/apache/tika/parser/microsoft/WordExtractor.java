@@ -29,9 +29,11 @@ import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.HWPFOldDocument;
 import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.poi.hwpf.extractor.Word6Extractor;
+import org.apache.poi.hwpf.model.FieldsDocumentPart;
 import org.apache.poi.hwpf.model.PicturesTable;
 import org.apache.poi.hwpf.model.StyleDescription;
 import org.apache.poi.hwpf.usermodel.CharacterRun;
+import org.apache.poi.hwpf.usermodel.Field;
 import org.apache.poi.hwpf.usermodel.Paragraph;
 import org.apache.poi.hwpf.usermodel.Picture;
 import org.apache.poi.hwpf.usermodel.Range;
@@ -188,6 +190,24 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
        for(int j=0; j<p.numCharacterRuns(); j++) {
           CharacterRun cr = p.getCharacterRun(j);
+
+          // FIELD_BEGIN_MARK:
+          if (cr.text().getBytes()[0] == 0x13) {
+             Field field = document.getFields().getFieldByStartOffset(FieldsDocumentPart.MAIN,
+                                                                      cr.getStartOffset());
+             if (field != null && field.getType() == 58) {
+                // Embedded Object: add a <div
+               // embedded="name"/> so consumer can see where
+               // in the main text each embedded document
+               // occurred:
+               String id = "_" + field.getMarkSeparatorCharacterRun(r).getPicOffset();
+               AttributesImpl attributes = new AttributesImpl();
+               attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+               attributes.addAttribute("", "id", "id", "CDATA", id);
+               xhtml.startElement("div", attributes);
+               xhtml.endElement("div");
+             }
+          }
           
           if(cr.text().equals("\u0013")) {
              j += handleSpecialCharacterRuns(p, j, tas.isHeading(), pictures, xhtml);
