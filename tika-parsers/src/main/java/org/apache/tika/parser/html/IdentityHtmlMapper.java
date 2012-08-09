@@ -37,7 +37,7 @@ public class IdentityHtmlMapper implements HtmlMapper {
     }
 
     public String mapSafeElement(String name) {
-        return name;
+        return name.toLowerCase(Locale.ENGLISH);
     }
 
 }
