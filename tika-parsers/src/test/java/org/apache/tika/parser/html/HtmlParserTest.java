@@ -762,4 +762,26 @@ public class HtmlParserTest extends TestCase {
         assertTrue(Pattern.matches("(?s).*<body/>.*$", result));
     }
     
+    /**
+     * Test case for TIKA-889
+     * XHTMLContentHandler wont emit newline when html element matches ENDLINE set.
+     * 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-889">TIKA-889</a>
+     */
+    public void testNewlineAndIndent() throws Exception {
+        final String html = "<html><head><title>Title</title></head>" +
+                "<body><ul><li>one</li></ul></body></html>";
+
+        BodyContentHandler handler = new BodyContentHandler();
+        new HtmlParser().parse(
+                new ByteArrayInputStream(html.getBytes("UTF-8")),
+                handler,  new Metadata(), new ParseContext());
+        
+        // Make sure we get <tab>, "one", newline, newline
+        String result = handler.toString();
+        
+        assertTrue(Pattern.matches("\tone\n\n", result));
+    }
+
+    
 }
