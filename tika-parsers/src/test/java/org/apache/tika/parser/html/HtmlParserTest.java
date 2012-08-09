@@ -738,4 +738,28 @@ public class HtmlParserTest extends TestCase {
         assertNotNull(content);
     }
 
+    /**
+     * Test case for TIKA-869
+     * IdentityHtmlMapper needs to lower-case tag names.
+     * 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-869">TIKA-869</a>
+     */
+    public void testIdentityMapper() throws Exception {
+        final String html = "<html><head><title>Title</title></head>" +
+                "<body></body></html>";
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
+
+        StringWriter sw = new StringWriter();
+
+        new HtmlParser().parse (
+                new ByteArrayInputStream(html.getBytes("UTF-8")),
+                makeHtmlTransformer(sw),  metadata, parseContext);
+        
+        String result = sw.toString();
+        // Make sure we don't get <body><BODY/></body>
+        assertTrue(Pattern.matches("(?s).*<body/>.*$", result));
+    }
+    
 }
