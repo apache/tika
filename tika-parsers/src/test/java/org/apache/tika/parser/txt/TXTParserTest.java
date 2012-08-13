@@ -252,5 +252,28 @@ public class TXTParserTest extends TestCase {
 
         assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
     }
+    
+    /**
+     * Test case for TIKA-771: "Hello, World!" in UTF-8/ASCII gets detected as IBM500
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-771">TIKA-771</a> 
+     */
+    public void testCharsetDetectionWithShortSnipet() throws Exception {
+        final String text = "Hello, World!";
+
+        Metadata metadata = new Metadata();
+        parser.parse(
+                new ByteArrayInputStream(text.getBytes("UTF-8")),
+                new BodyContentHandler(), metadata, new ParseContext());
+        assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+        
+        // Now verify that if we tell the parser the encoding is UTF-8, that's what
+        // we get back (see TIKA-868)
+        metadata.set(Metadata.CONTENT_TYPE, "application/binary; charset=UTF-8");
+        parser.parse(
+                new ByteArrayInputStream(text.getBytes("UTF-8")),
+                new BodyContentHandler(), metadata, new ParseContext());
+        assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
+    }
 
 }
