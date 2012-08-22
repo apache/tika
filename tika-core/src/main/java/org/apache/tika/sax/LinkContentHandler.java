@@ -42,6 +42,27 @@ public class LinkContentHandler extends DefaultHandler {
 
     /** Collected links */
     private final List<Link> links = new ArrayList<Link>();
+    
+    /** Whether to collapse whitespace in anchor text */
+    private boolean collapseWhitespaceInAnchor;
+    
+    /**
+     * Default constructor
+     */
+    public LinkContentHandler() { 
+        this(false);
+    }
+    
+    /**
+     * Default constructor
+     *
+     * @boolean collapseWhitespaceInAnchor
+     */
+    public LinkContentHandler(boolean collapseWhitespaceInAnchor) {
+      super();
+      
+      this.collapseWhitespaceInAnchor = collapseWhitespaceInAnchor;
+    }
 
     /**
      * Returns the list of collected links.
@@ -96,7 +117,7 @@ public class LinkContentHandler extends DefaultHandler {
     public void endElement(String uri, String local, String name) {
         if (XHTML.equals(uri)) {
             if ("a".equals(local) || "img".equals(local)) {
-                links.add(builderStack.removeFirst().getLink());
+                links.add(builderStack.removeFirst().getLink(collapseWhitespaceInAnchor));
             }
         }
     }

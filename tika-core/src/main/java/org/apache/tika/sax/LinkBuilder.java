@@ -61,7 +61,17 @@ class LinkBuilder {
     }
 
     public Link getLink() {
-        return new Link(type, uri, title, text.toString(), rel);
+        return getLink(false);
+    }
+    
+    public Link getLink(boolean collapseWhitespace) {
+        String anchor = text.toString();
+        
+        if (collapseWhitespace) {
+            anchor = anchor.replaceAll("\\s+", " ").trim();
+        }
+        
+        return new Link(type, uri, title, anchor, rel);
     }
 
 }
