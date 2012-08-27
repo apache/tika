@@ -783,5 +783,22 @@ public class HtmlParserTest extends TestCase {
         assertTrue(Pattern.matches("\tone\n\n", result));
     }
 
-    
+    /**
+     * Test case for TIKA-983:  HTML parser should add Open Graph meta tag data to Metadata returned by parser
+     * 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-983">TIKA-983</a>
+     */
+    public void testOpenGraphMetadata() throws Exception {
+        String test1 =
+            "<html><head><meta property=\"og:description\""
+            + " content=\"some description\" />"
+            + "<title>hello</title>"
+            + "</head><body></body></html>";
+        Metadata metadata = new Metadata();
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test1.getBytes("ISO-8859-1")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+        assertEquals("some description", metadata.get("og:description"));
+
+    }
 }

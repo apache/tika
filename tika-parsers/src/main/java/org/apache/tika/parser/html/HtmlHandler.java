@@ -110,6 +110,11 @@ class HtmlHandler extends TextContentHandler {
                     addHtmlMetadata(
                             atts.getValue("name"),
                             atts.getValue("content"));
+                } else if (atts.getValue("property") != null) {
+                    // TIKA-983: Handle <meta property="og:xxx" content="yyy" /> tags
+                    addHtmlMetadata(
+                            atts.getValue("property"),
+                            atts.getValue("content"));
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
                 startElementWithSafeAttributes("base", atts);
