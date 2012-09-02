@@ -60,7 +60,10 @@ public class Pkcs7Parser extends AbstractParser {
             CMSSignedDataParser parser =
                     new CMSSignedDataParser(new CloseShieldInputStream(stream));
             try {
-                CMSTypedStream content = parser.getSignedContent();
+                CMSTypedStream content = parser.getSignedContent();     
+                if (content == null) {
+                  throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
+                }
                 InputStream input = content.getContentStream();
                 try {
                     Parser delegate =
