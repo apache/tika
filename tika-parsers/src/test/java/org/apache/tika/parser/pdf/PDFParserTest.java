@@ -297,6 +297,23 @@ public class PDFParserTest extends TikaTest {
                      substringCount("</p>", xml));
     }
 
+    // TIKA-981
+    public void testPopupAnnotation() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getResourceAsStream("/test-documents/testPopupAnnotation.pdf");
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+        String content = handler.toString();
+        assertContains("this is the note", content);
+        assertContains("igalsh", content);
+    }
+
     public void testEmbeddedPDFs() throws Exception {
         String xml = getXML("testPDFPackage.pdf").xml;
         assertContains("PDF1", xml);

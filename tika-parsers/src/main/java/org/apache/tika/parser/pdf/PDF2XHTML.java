@@ -24,7 +24,6 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDActionURI;
-import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationMarkup;
 import org.apache.pdfbox.util.TextPosition;
@@ -159,12 +158,11 @@ class PDF2XHTML extends PDFTextStripper {
                              }
                         }
                     }
-                
-                    if ((o instanceof PDAnnotation) && PDAnnotationMarkup.SUB_TYPE_FREETEXT.equals(((PDAnnotation) o).getSubtype())) {
-                        // It's a text annotation:
+
+                    if (o instanceof PDAnnotationMarkup) {
                         PDAnnotationMarkup annot = (PDAnnotationMarkup) o;
                         String title = annot.getTitlePopup();
-                        String subject = annot.getTitlePopup();
+                        String subject = annot.getSubject();
                         String contents = annot.getContents();
                         // TODO: maybe also annot.getRichContents()?
                         if (title != null || subject != null || contents != null) {
