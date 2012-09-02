@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
@@ -150,7 +151,12 @@ abstract class AbstractPOIFSExtractor {
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {
                    // Grab the contents and process
-                   DocumentEntry contentsEntry = (DocumentEntry)dir.getEntry("CONTENTS");
+                   DocumentEntry contentsEntry;
+                   try {
+                     contentsEntry = (DocumentEntry)dir.getEntry("CONTENTS");
+                   } catch (FileNotFoundException ioe) {
+                     contentsEntry = (DocumentEntry)dir.getEntry("Contents");
+                   }
                    DocumentInputStream inp = new DocumentInputStream(contentsEntry);
                    byte[] contents = new byte[contentsEntry.getSize()];
                    inp.readFully(contents);
