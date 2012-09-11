@@ -126,12 +126,12 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         String type = rel.getRelationshipType();
                         if (RELATION_OLE_OBJECT.equals(type)
                                 && TYPE_OLE_OBJECT.equals(target.getContentType())) {
-                            handleEmbeddedOLE(target, handler);
+                            handleEmbeddedOLE(target, handler, rel.getId());
                         } else if (RELATION_AUDIO.equals(type)
                                 || RELATION_IMAGE.equals(type)
                                 || RELATION_PACKAGE.equals(type)
                                 || RELATION_OLE_OBJECT.equals(type)) {
-                            handleEmbeddedFile(target, handler);
+                            handleEmbeddedFile(target, handler, rel.getId());
                         }
                     }
                 }
@@ -144,12 +144,13 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     /**
      * Handles an embedded OLE object in the document
      */
-    private void handleEmbeddedOLE(PackagePart part, ContentHandler handler)
+    private void handleEmbeddedOLE(PackagePart part, ContentHandler handler, String rel)
             throws IOException, SAXException {
         POIFSFileSystem fs = new POIFSFileSystem(part.getInputStream());
         try {
             Metadata metadata = new Metadata();
             TikaInputStream stream = null;
+            metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, rel);
 
             DirectoryNode root = fs.getRoot();
             POIFSDocumentType type = POIFSDocumentType.detectType(root);
@@ -183,7 +184,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                             metadata, false);
                 }
             } else {
-                handleEmbeddedFile(part, handler);
+                handleEmbeddedFile(part, handler, rel);
             }
         } catch (FileNotFoundException e) {
             // There was no CONTENTS entry, so skip this part
@@ -195,9 +196,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     /**
      * Handles an embedded file in the document
      */
-    protected void handleEmbeddedFile(PackagePart part, ContentHandler handler)
+    protected void handleEmbeddedFile(PackagePart part, ContentHandler handler, String rel)
             throws SAXException, IOException {
         Metadata metadata = new Metadata();
+        metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, rel);
 
         // Get the name
         String name = part.getPartName().getName();

@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.namespace.QName;
 
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -41,11 +42,14 @@ import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.parser.microsoft.WordExtractor.TagAndStyle;
+import org.apache.tika.parser.microsoft.WordExtractor;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.xmlbeans.XmlCursor;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -131,6 +135,41 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           xhtml.startElement(tag);
        } else {
           xhtml.startElement(tag, "class", styleClass);
+       }
+
+       // Output placeholder for any embedded docs:
+
+       // TODO: replace w/ XPath/XQuery:
+       for(XWPFRun run : paragraph.getRuns()) {
+          XmlCursor c = run.getCTR().newCursor();
+          c.selectPath("./*");
+          while (c.toNextSelection()) {
+             XmlObject o = c.getObject();
+             if (o instanceof CTObject) {
+                XmlCursor c2 = o.newCursor();
+                c2.selectPath("./*");
+                while (c2.toNextSelection()) {
+                   XmlObject o2 = c2.getObject();
+
+                   XmlObject embedAtt = o2.selectAttribute(new QName("Type"));
+                   if (embedAtt != null && embedAtt.getDomNode().getNodeValue().equals("Embed")) {
+                      // Type is "Embed"
+                      XmlObject relIDAtt = o2.selectAttribute(new QName("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
+                      if (relIDAtt != null) {
+                         String relID = relIDAtt.getDomNode().getNodeValue();
+                         AttributesImpl attributes = new AttributesImpl();
+                         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                         attributes.addAttribute("", "id", "id", "CDATA", relID);
+                         xhtml.startElement("div", attributes);
+                         xhtml.endElement("div");
+                      }
+                   }
+                }
+                c2.dispose();
+             }
+          }
+
+          c.dispose();
        }
        
        // Attach bookmarks for the paragraph

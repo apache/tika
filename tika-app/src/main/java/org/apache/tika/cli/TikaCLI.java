@@ -704,6 +704,11 @@ public class TikaCLI {
                 }
             }
 
+            String relID = metadata.get(Metadata.EMBEDDED_RELATIONSHIP_ID);
+            if (relID != null) {
+              name = relID + "_" + name;
+            }
+
             File outputFile = new File(extractDir, name);
             if (outputFile.exists()) {
                 System.err.println("File '"+name+"' already exists; skipping");

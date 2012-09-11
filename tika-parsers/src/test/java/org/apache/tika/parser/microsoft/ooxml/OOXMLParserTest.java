@@ -239,7 +239,6 @@ public class OOXMLParserTest extends TikaTest {
        for (int i=0; i<extensions.length; i++) {
           String extension = extensions[i];
           String filename = "testPPT." + extension;
-          String mimetype = mimeTypes[i];
 
           Parser parser = new AutoDetectParser();
           Metadata metadata = new Metadata();
@@ -830,5 +829,40 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
        assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
+    }
+
+    // TIKA-989:
+    public void testEmbeddedPDF() throws Exception {
+       InputStream input = OOXMLParserTest.class.getResourceAsStream(
+             "/test-documents/testWORD_embedded_pdf.docx");
+       Metadata metadata = new Metadata();
+       StringWriter sw = new StringWriter();
+       SAXTransformerFactory factory = (SAXTransformerFactory)
+                SAXTransformerFactory.newInstance();
+       TransformerHandler handler = factory.newTransformerHandler();
+       handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+       handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+       handler.setResult(new StreamResult(sw));
+
+       try {
+          new OOXMLParser().parse(input, handler, metadata, new ParseContext());
+       } finally {
+          input.close();
+       }
+       String xml = sw.toString();
+       int i = xml.indexOf("Here is the pdf file:");
+       int j = xml.indexOf("<div class=\"embedded\" id=\"rId5\"/>");
+       int k = xml.indexOf("Bye Bye");
+       int l = xml.indexOf("<div class=\"embedded\" id=\"rId6\"/>");
+       int m = xml.indexOf("Bye for real.");
+       assertTrue(i != -1);
+       assertTrue(j != -1);
+       assertTrue(k != -1);
+       assertTrue(l != -1);
+       assertTrue(m != -1);
+       assertTrue(i < j);
+       assertTrue(j < k);
+       assertTrue(k < l);
+       assertTrue(l < m);
     }
 }
