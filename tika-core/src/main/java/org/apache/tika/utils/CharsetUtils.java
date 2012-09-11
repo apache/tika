@@ -57,7 +57,6 @@ public class CharsetUtils {
                     COMMON_CHARSETS.put(alias.toLowerCase(ENGLISH), charset);
                 }
             } catch (Exception e) {
-                System.out.println(name);
                 // ignore
             }
         }
