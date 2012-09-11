@@ -416,6 +416,18 @@ public class IWorkParserTest extends TestCase {
        assertContains(contents, commentB);
     }
     
+    // TIKA-918
+    public void testNumbersExtractChartNames() throws Exception {
+       InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testNumbersCharts.numbers");
+       Metadata metadata = new Metadata();
+       ContentHandler handler = new BodyContentHandler();
+       iWorkParser.parse(input, handler, metadata, parseContext);
+       String contents = handler.toString();
+       assertContains(contents, "Expenditure by Category");
+       assertContains(contents, "Currency Chart name");
+       assertContains(contents, "Chart 2");
+    }
+    
     public void assertContains(String haystack, String needle) {
        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
