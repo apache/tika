@@ -824,8 +824,10 @@ public class TikaCLI {
         
         public void outputMetadata(String[] names) {
            for (String name : names) {
-              writer.println(name + ": " + metadata.get(name));
-          }
+              for(String value : metadata.getValues(name)) {
+                 writer.println(name + ": " + value);
+              }
+           }
         }
         
         public boolean metOutput(){
