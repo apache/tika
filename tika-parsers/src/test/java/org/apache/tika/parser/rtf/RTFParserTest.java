@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
-
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
@@ -30,6 +29,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -318,6 +318,14 @@ public class RTFParserTest extends TikaTest {
     // TIKA-782
     public void testBinControlWord() throws Exception {
         assertTrue(getXML("testBinControlWord.rtf").xml.indexOf("\u00ff\u00ff\u00ff\u00ff") == -1);
+    }
+
+    // TIKA-999
+    public void testMetaDataCounts() throws Exception {
+      XMLResult xml = getXML("test_embedded_package.rtf");
+      assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
+      assertEquals("7", xml.metadata.get(Office.WORD_COUNT));
+      assertEquals("36", xml.metadata.get(Office.CHARACTER_COUNT));
     }
 
     private Result getResult(String filename) throws Exception {
