@@ -30,9 +30,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
@@ -782,6 +782,12 @@ final class TextExtractor {
             } else if (equals("deff")) {
                 // Default font
                 globalDefaultFont = param;
+            } else if (equals("nofpages")) {
+                metadata.add(Office.PAGE_COUNT, Integer.toString(param));
+            } else if (equals("nofwords")) {
+                metadata.add(Office.WORD_COUNT, Integer.toString(param));
+            } else if (equals("nofchars")) {
+                metadata.add(Office.CHARACTER_COUNT, Integer.toString(param));
             }
 
             if (fontTableState == 1) {
@@ -905,8 +911,7 @@ final class TextExtractor {
 
             if (uprState == -1) {
                 // TODO: we can also parse \creatim, \revtim,
-                // \printim, \version, \nofpages, \nofwords,
-                // \nofchars, etc.
+                // \printim, \version, etc.
                 if (equals("author")) {
                     nextMetaData = TikaCoreProperties.CREATOR;
                 } else if (equals("title")) {
