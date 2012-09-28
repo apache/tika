@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.namespace.QName;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -28,17 +29,15 @@ import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.xslf.XSLFSlideShow;
 import org.apache.poi.xslf.extractor.XSLFPowerPointExtractor;
-import org.apache.poi.xslf.usermodel.DrawingParagraph;
 import org.apache.poi.xslf.usermodel.Placeholder;
 import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFComments;
-import org.apache.poi.xslf.usermodel.XSLFCommonSlideData;
+import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
 import org.apache.poi.xslf.usermodel.XSLFGroupShape;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFSheet;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
-import org.apache.poi.xslf.usermodel.XSLFSlideMaster;
 import org.apache.poi.xslf.usermodel.XSLFTable;
 import org.apache.poi.xslf.usermodel.XSLFTableCell;
 import org.apache.poi.xslf.usermodel.XSLFTableRow;
@@ -47,11 +46,11 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
+import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTComment;
-import org.openxmlformats.schemas.presentationml.x2006.main.CTCommentList;
-import org.openxmlformats.schemas.presentationml.x2006.main.CTNotesSlide;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
 
 public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     public XSLFPowerPointExtractorDecorator(ParseContext context, XSLFPowerPointExtractor extractor) {
@@ -116,6 +115,23 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 for(XSLFTableRow row : tbl){
                     List<XSLFTableCell> cells = row.getCells();
                     extractContent(cells.toArray(new XSLFTableCell[cells.size()]), skipPlaceholders, xhtml);
+                }
+            } else if (sh instanceof XSLFGraphicFrame) {
+                XSLFGraphicFrame frame = (XSLFGraphicFrame) sh;
+                XmlObject[] sp = frame.getXmlObject().selectPath(
+                                   "declare namespace p='http://schemas.openxmlformats.org/presentationml/2006/main' .//*/p:oleObj");
+                if (sp != null) {
+                    for(XmlObject emb : sp) {
+                        XmlObject relIDAtt = emb.selectAttribute(new QName("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
+                        if (relIDAtt != null) {
+                            String relID = relIDAtt.getDomNode().getNodeValue();
+                            AttributesImpl attributes = new AttributesImpl();
+                            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                            attributes.addAttribute("", "id", "id", "CDATA", relID);
+                            xhtml.startElement("div", attributes);
+                            xhtml.endElement("div");
+                        }
+                    }
                 }
             }
         }
