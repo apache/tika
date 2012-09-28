@@ -28,6 +28,14 @@ Release 1.3 - Current Development
   * RTF: Page, word and character count metadata are now extracted for
     RTF documents (TIKA-999).
 
+  * MS PowerPoint (.pptx): When a PowerPoint (.pptx) document contains
+    embedded files, Tika now places a <div class="embedded" id="XXX"/> into the
+    XHTML so you can see where in the main text the embedded document
+    occurred.  The id (rId) is included in the Metadata of each
+    embedded document as the new Metadata.EMBEDDED_RELATIONSHIP_ID
+    key, and TikaCLI prepends the rId (if present) onto the filename
+    it extracts (TIKA-997).
+
 Release 1.2 - 07/10/2012
 ---------------------------------
 

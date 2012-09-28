@@ -865,4 +865,33 @@ public class OOXMLParserTest extends TikaTest {
        assertTrue(k < l);
        assertTrue(l < m);
     }
+
+    // TIKA-997:
+    public void testEmbeddedZipInPPTX() throws Exception {
+        InputStream input = OOXMLParserTest.class.getResourceAsStream(
+              "/test-documents/test_embedded_zip.pptx");
+        Metadata metadata = new Metadata();
+        StringWriter sw = new StringWriter();
+        SAXTransformerFactory factory = (SAXTransformerFactory)
+                 SAXTransformerFactory.newInstance();
+        TransformerHandler handler = factory.newTransformerHandler();
+        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
+        handler.setResult(new StreamResult(sw));
+
+        try {
+            new OOXMLParser().parse(input, handler, metadata, new ParseContext());
+        } finally {
+            input.close();
+        }
+        String xml = sw.toString();
+        int i = xml.indexOf("Send me a note");
+        int j = xml.indexOf("<div class=\"embedded\" id=\"rId4\"/>");
+        int k = xml.indexOf("<p>No title</p>");
+        assertTrue(i != -1);
+        assertTrue(j != -1);
+        assertTrue(k != -1);
+        assertTrue(i < j);
+        assertTrue(j < k);
+    }
 }
