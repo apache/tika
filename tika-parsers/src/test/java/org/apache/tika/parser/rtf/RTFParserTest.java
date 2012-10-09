@@ -326,7 +326,7 @@ public class RTFParserTest extends TikaTest {
       assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
       assertEquals("7", xml.metadata.get(Office.WORD_COUNT));
       assertEquals("36", xml.metadata.get(Office.CHARACTER_COUNT));
-      assertEquals("2012-09-02T17:01:00Z", xml.metadata.get(Office.CREATION_DATE));
+      assertTrue(xml.metadata.get(Office.CREATION_DATE).startsWith("2012-09-02T"));
     }
 
     private Result getResult(String filename) throws Exception {
