@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -195,6 +196,9 @@ final class TextExtractor {
 
     private final XHTMLContentHandler out;
     private final Metadata metadata;
+
+    // Used when extracting CREATION date:
+    private int year, month, day, hour, minute;
 
     // How many next ansi chars we should skip; this
     // is 0 except when we are still in the "ansi
@@ -788,6 +792,16 @@ final class TextExtractor {
                 metadata.add(Office.WORD_COUNT, Integer.toString(param));
             } else if (equals("nofchars")) {
                 metadata.add(Office.CHARACTER_COUNT, Integer.toString(param));
+            } else if (equals("yr")) {
+                year = param;
+            } else if (equals("mo")) {
+                month = param;
+            } else if (equals("dy")) {
+                day = param;
+            } else if (equals("hr")) {
+                hour = param;
+            } else if (equals("min")) {
+                minute = param;
             }
 
             if (fontTableState == 1) {
@@ -931,6 +945,8 @@ final class TextExtractor {
                     nextMetaData = OfficeOpenXMLExtended.MANAGER;
                 } else if (equals("template")) {
                     nextMetaData = OfficeOpenXMLExtended.TEMPLATE;
+                } else if (equals("creatim")) {
+                    nextMetaData = TikaCoreProperties.CREATED;
                 }
             }
 
@@ -1150,7 +1166,11 @@ final class TextExtractor {
 
         if (inHeader) {
             if (nextMetaData != null) {
-                if (nextMetaData.isMultiValuePermitted()) {
+                if (nextMetaData == TikaCoreProperties.CREATED) {
+                    Calendar cal = Calendar.getInstance();
+                    cal.set(year, month-1, day, hour, minute, 0);
+                    metadata.set(nextMetaData, cal.getTime());
+                } else if (nextMetaData.isMultiValuePermitted()) {
                     metadata.add(nextMetaData, pendingBuffer.toString());
                 } else {
                     metadata.set(nextMetaData, pendingBuffer.toString());

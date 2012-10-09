@@ -25,8 +25,8 @@ Release 1.3 - Current Development
     key, and TikaCLI prepends the rId (if present) onto the filename
     it extracts (TIKA-989).
 
-  * RTF: Page, word and character count metadata are now extracted for
-    RTF documents (TIKA-999).
+  * RTF: Page, word, character count and creation date metadata are
+    now extracted for RTF documents (TIKA-999).
 
   * MS PowerPoint (.pptx): When a PowerPoint (.pptx) document contains
     embedded files, Tika now places a <div class="embedded" id="XXX"/> into the
