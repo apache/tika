@@ -34,6 +34,7 @@ import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFComments;
 import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
 import org.apache.poi.xslf.usermodel.XSLFGroupShape;
+import org.apache.poi.xslf.usermodel.XSLFPictureShape;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFSheet;
@@ -48,6 +49,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTComment;
+import org.openxmlformats.schemas.presentationml.x2006.main.CTPicture;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -133,6 +135,20 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         }
                     }
                 }
+            } else if (sh instanceof XSLFPictureShape) {
+                if (!skipPlaceholders && (sh.getXmlObject() instanceof CTPicture)) {
+                    CTPicture ctPic = ((CTPicture) sh.getXmlObject());
+                    if (ctPic.getBlipFill() != null && ctPic.getBlipFill().getBlip() != null) {
+                        String relID = ctPic.getBlipFill().getBlip().getEmbed();
+                        if (relID != null) {
+                            AttributesImpl attributes = new AttributesImpl();
+                            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                            attributes.addAttribute("", "id", "id", "CDATA", relID);
+                            xhtml.startElement("div", attributes);
+                            xhtml.endElement("div");
+                        }
+                    }
+                }
             }
         }
     }
@@ -167,7 +183,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
           // If it has drawings, return those too
           try {
              for(PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
-                if(rel.getTargetMode() == TargetMode.INTERNAL) {
+               if(rel.getTargetMode() == TargetMode.INTERNAL) {
                    PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
                    parts.add( rel.getPackage().getPart(relName) );
                 }

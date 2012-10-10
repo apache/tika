@@ -885,12 +885,15 @@ public class OOXMLParserTest extends TikaTest {
             input.close();
         }
         String xml = sw.toString();
+        int h = xml.indexOf("<div class=\"embedded\" id=\"rId3\"/>");
         int i = xml.indexOf("Send me a note");
         int j = xml.indexOf("<div class=\"embedded\" id=\"rId4\"/>");
         int k = xml.indexOf("<p>No title</p>");
+        assertTrue(h != -1);
         assertTrue(i != -1);
         assertTrue(j != -1);
         assertTrue(k != -1);
+        assertTrue(h < i);
         assertTrue(i < j);
         assertTrue(j < k);
     }
