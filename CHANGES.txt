@@ -23,7 +23,8 @@ Release 1.3 - Current Development
     occurred.  The id (rId) is included in the Metadata of each
     embedded document as the new Metadata.EMBEDDED_RELATIONSHIP_ID
     key, and TikaCLI prepends the rId (if present) onto the filename
-    it extracts (TIKA-989).
+    it extracts (TIKA-989).  Fixed NullPointerException when style is
+    null (TIKA-1006).
 
   * RTF: Page, word, character count and creation date metadata are
     now extracted for RTF documents (TIKA-999).
