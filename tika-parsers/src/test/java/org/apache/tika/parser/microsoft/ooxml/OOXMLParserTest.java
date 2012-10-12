@@ -897,4 +897,10 @@ public class OOXMLParserTest extends TikaTest {
         assertTrue(i < j);
         assertTrue(j < k);
     }
+  
+    // TIKA-1006
+    public void testWordNullStyle() throws Exception {
+      String xml = getXML("testWORD_null_style.docx").xml;        
+      assertContains("Test av styrt dokument", xml);
+    }
 }

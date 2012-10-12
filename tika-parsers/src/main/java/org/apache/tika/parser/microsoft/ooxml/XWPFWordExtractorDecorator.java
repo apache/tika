@@ -123,12 +123,14 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           XWPFStyle style = styles.getStyle(
                 paragraph.getStyleID()
           );
-          
-          TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
-                style.getName(), paragraph.getPartType() == BodyType.TABLECELL
-          );
-          tag = tas.getTag();
-          styleClass = tas.getStyleClass();
+
+          if (style != null) {
+             TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
+                   style.getName(), paragraph.getPartType() == BodyType.TABLECELL
+             );
+             tag = tas.getTag();
+             styleClass = tas.getStyleClass();
+          }
        }
        
        if(styleClass == null) {
