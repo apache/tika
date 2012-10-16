@@ -903,4 +903,13 @@ public class OOXMLParserTest extends TikaTest {
       String xml = getXML("testWORD_null_style.docx").xml;        
       assertContains("Test av styrt dokument", xml);
     }
+
+    // TIKA-1005:
+    public void testTextInsideTextBox() throws Exception {
+        String xml = getXML("testWORD_text_box.docx").xml;
+        assertContains("This text is directly in the body of the document.", xml);
+        assertContains("This text is inside of a text box in the body of the document.", xml);
+        assertContains("This text is inside of a text box in the header of the document.", xml);
+        assertContains("This text is inside of a text box in the footer of the document.", xml);
+    }
 }
