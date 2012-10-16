@@ -51,6 +51,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTBookmark;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTObject;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSectPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTP;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -266,6 +267,11 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
        String footnameText = paragraph.getFootnoteText();
        if(footnameText != null && footnameText.length() > 0) {
           xhtml.characters(footnameText + "\n");
+       }
+
+       // Also extract any paragraphs embedded in text boxes:
+       for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent/w:p")) {
+           extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), xhtml);
        }
 
        // Finish this paragraph
