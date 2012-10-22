@@ -404,6 +404,23 @@ public class TestMimeTypes extends TestCase {
        assertTypeByName("application/x-prt", "x.prt");
        assertTypeByData("application/x-prt", "testCADKEY.prt");
    }
+    
+    /**
+     * Formats which are based on plain text
+     */
+    public void testTextBasedFormatsDetection() throws Exception {
+       assertTypeByName("text/plain", "testTXT.txt");
+       assertType(      "text/plain", "testTXT.txt");
+       
+       assertTypeByName("text/css", "testCSS.css");
+       assertType(      "text/css", "testCSS.css");
+       
+       assertTypeByName("text/html", "testHTML.html");
+       assertType(      "text/html", "testHTML.html");
+       
+       assertTypeByName("application/javascript", "testJS.js");
+       assertType(      "application/javascript", "testJS.js");
+    }
 
     public void testWmfDetection() throws Exception {
         assertTypeByName("application/x-msmetafile", "x.wmf");
