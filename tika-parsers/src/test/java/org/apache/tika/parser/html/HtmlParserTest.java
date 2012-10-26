@@ -801,4 +801,11 @@ public class HtmlParserTest extends TestCase {
         assertEquals("some description", metadata.get("og:description"));
 
     }
+
+    // TIKA-1011
+    public void testUserDefinedCharset() throws Exception {
+        String content = new Tika().parseToString(
+                HtmlParserTest.class.getResourceAsStream("/test-documents/testUserDefinedCharset.mhtml"), new Metadata());
+        assertNotNull(content);
+    }
 }

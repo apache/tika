@@ -46,7 +46,12 @@ public class Icu4jEncodingDetector implements EncodingDetector {
         }
 
         if (incomingCharset != null) {
-            detector.setDeclaredEncoding(CharsetUtils.clean(incomingCharset));
+            String cleaned = CharsetUtils.clean(incomingCharset);
+            if (cleaned != null) {
+                detector.setDeclaredEncoding(cleaned);
+            } else {
+                // TODO: log a warning?
+            }
         }
 
         // TIKA-341 without enabling input filtering (stripping of tags)
