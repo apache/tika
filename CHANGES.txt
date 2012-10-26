@@ -38,6 +38,9 @@ Release 1.3 - Current Development
     key, and TikaCLI prepends the rId (if present) onto the filename
     it extracts (TIKA-997).
 
+  * MHTML: fixed Null charset name exception when a mime part has an
+    unrecognized charset (TIKA-1011).
+
 Release 1.2 - 07/10/2012
 ---------------------------------
 
