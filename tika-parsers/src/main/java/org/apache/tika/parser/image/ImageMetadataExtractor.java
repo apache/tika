@@ -443,7 +443,7 @@ public class ImageMetadataExtractor {
             GeoLocation geoLocation = ((GpsDirectory) directory).getGeoLocation();
             if (geoLocation != null) {
                 DecimalFormat geoDecimalFormat = new DecimalFormat(GEO_DECIMAL_FORMAT_STRING,
-                        DecimalFormatSymbols.getInstance(Locale.ENGLISH));
+                        new DecimalFormatSymbols(Locale.ENGLISH));
                 metadata.set(TikaCoreProperties.LATITUDE, geoDecimalFormat.format(new Double(geoLocation.getLatitude())));
                 metadata.set(TikaCoreProperties.LONGITUDE, geoDecimalFormat.format(new Double(geoLocation.getLongitude())));
             }
