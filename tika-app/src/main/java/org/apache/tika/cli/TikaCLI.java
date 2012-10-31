@@ -705,7 +705,7 @@ public class TikaCLI {
             }
 
             String relID = metadata.get(Metadata.EMBEDDED_RELATIONSHIP_ID);
-            if (relID != null) {
+            if (relID != null && !name.startsWith(relID)) {
               name = relID + "_" + name;
             }
 

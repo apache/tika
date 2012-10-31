@@ -577,7 +577,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     
                     // Handle the embeded resource
                     extractor.handleEmbeddedResource(
-                          stream, null, mimeType,
+                          stream, null, null, mimeType,
                           handler, true
                     );
                  }

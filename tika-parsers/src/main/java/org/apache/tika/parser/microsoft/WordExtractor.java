@@ -196,8 +196,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              Field field = document.getFields().getFieldByStartOffset(FieldsDocumentPart.MAIN,
                                                                       cr.getStartOffset());
              if (field != null && field.getType() == 58) {
-                // Embedded Object: add a <div
-               // embedded="name"/> so consumer can see where
+               // Embedded Object: add a <div
+               // class="embedded" id="_X"/> so consumer can see where
                // in the main text each embedded document
                // occurred:
                String id = "_" + field.getMarkSeparatorCharacterRun(r).getPicOffset();
@@ -422,7 +422,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        // (Only expose each individual image once) 
        if(! pictures.hasOutput(picture)) {
           TikaInputStream stream = TikaInputStream.get(picture.getContent());
-          handleEmbeddedResource(stream, filename, mimeType, xhtml, false);
+          handleEmbeddedResource(stream, filename, null, mimeType, xhtml, false);
           pictures.recordOutput(picture);
        }
     }
