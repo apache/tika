@@ -202,7 +202,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
 
             handleEmbeddedResource(
-                  TikaInputStream.get(pic.getData()), null,
+                  TikaInputStream.get(pic.getData()), null, null,
                   mediaType, xhtml, false);
         }
     }
@@ -234,7 +234,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         mediaType = "application/vnd.ms-excel";
                      }
                      handleEmbeddedResource(
-                           stream, Integer.toString(oleShape.getObjectID()),
+                           stream, Integer.toString(oleShape.getObjectID()), null,
                            mediaType, xhtml, false);
                   } finally {
                      stream.close();

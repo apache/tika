@@ -188,7 +188,7 @@ public class TikaCLITest extends TestCase{
             // ChemDraw file
             File expected1 = new File(tempFile, "MBD002B040A.cdx");
             // OLE10Native
-            File expected2 = new File(tempFile, "file5");
+            File expected2 = new File(tempFile, "MBD002B0FA6_file5");
             // Image of one of the embedded resources
             File expected3 = new File(tempFile, "file0.emf");
             

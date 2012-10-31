@@ -84,13 +84,17 @@ abstract class AbstractPOIFSExtractor {
     }
     
     protected void handleEmbeddedResource(TikaInputStream resource, String filename,
-          String mediaType, XHTMLContentHandler xhtml, boolean outputHtml)
+                                          String relationshipID, String mediaType, XHTMLContentHandler xhtml,
+                                          boolean outputHtml)
           throws IOException, SAXException, TikaException {
        try {
            Metadata metadata = new Metadata();
            if(filename != null) {
                metadata.set(Metadata.TIKA_MIME_FILE, filename);
                metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+           }
+           if (relationshipID != null) {
+               metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, relationshipID);
            }
            if(mediaType != null) {
                metadata.set(Metadata.CONTENT_TYPE, mediaType);
@@ -122,7 +126,7 @@ abstract class AbstractPOIFSExtractor {
             try {
                 ZipContainerDetector detector = new ZipContainerDetector();
                 MediaType type = detector.detect(stream, new Metadata());
-                handleEmbeddedResource(stream, null, type.toString(), xhtml, true);
+                handleEmbeddedResource(stream, null, dir.getName(), type.toString(), xhtml, true);
                 return;
             } finally {
                 stream.close();
@@ -133,6 +137,7 @@ abstract class AbstractPOIFSExtractor {
 
         // What kind of document is it?
         Metadata metadata = new Metadata();
+        metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, dir.getName());
         POIFSDocumentType type = POIFSDocumentType.detectType(dir);
         TikaInputStream embedded = null;
 
