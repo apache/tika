@@ -29,6 +29,7 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.TeeContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -128,7 +129,9 @@ public class ForkParser extends AbstractParser {
         boolean alive = false;
         ForkClient client = acquireClient();
         try {
-            t = client.call("parse", stream, handler, metadata, context);
+            ContentHandler tee = new TeeContentHandler(
+                    handler, new MetadataContentHandler(metadata));
+            t = client.call("parse", stream, tee, metadata, context);
             alive = true;
         } catch (TikaException te) {
             // Problem occurred on our side
