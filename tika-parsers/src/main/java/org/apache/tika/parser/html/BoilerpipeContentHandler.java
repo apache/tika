@@ -40,7 +40,7 @@ import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
 /**
  * Uses the <a href="http://code.google.com/p/boilerpipe/">boilerpipe</a>
  * library to automatically extract the main content from a web page.
- * 
+ *
  * Use this as a {@link ContentHandler} object passed to
  * {@link HtmlParser#parse(java.io.InputStream, ContentHandler, Metadata, org.apache.tika.parser.ParseContext)}
  */
@@ -52,7 +52,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             END,
             CONTINUE
         }
-        
+
         private String uri;
         private String localName;
         private String qName;
@@ -63,15 +63,15 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         public RecordedElement(String uri, String localName, String qName, Attributes attrs) {
             this(uri, localName, qName, attrs, ElementType.START);
         }
-        
+
         public RecordedElement(String uri, String localName, String qName) {
             this(uri, localName, qName, null, ElementType.END);
         }
-        
+
         public RecordedElement() {
             this(null, null, null, null, ElementType.CONTINUE);
         }
-        
+
         protected RecordedElement(String uri, String localName, String qName, Attributes attrs, RecordedElement.ElementType elementType) {
             this.uri = uri;
             this.localName = localName;
@@ -85,7 +85,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         public String toString() {
             return String.format("<%s> of type %s", localName, elementType);
         };
-        
+
         public String getUri() {
             return uri;
         }
@@ -105,12 +105,12 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         public List<char[]> getCharacters() {
             return characters;
         }
-        
+
         public RecordedElement.ElementType getElementType() {
             return elementType;
         }
     }
-    
+
     /**
      * The newline character that gets inserted after block elements.
      */
@@ -118,17 +118,18 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
     private ContentHandler delegate;
     private BoilerpipeExtractor extractor;
-    
+
     private boolean includeMarkup;
     private boolean inHeader;
     private boolean inFooter;
     private int headerCharOffset;
     private List<RecordedElement> elements;
-    
+    private TextDocument td;
+
     /**
      * Creates a new boilerpipe-based content extractor, using the
      * {@link DefaultExtractor} extraction rules and "delegate" as the content handler.
-     * 
+     *
      * @param delegate
      *            The {@link ContentHandler} object
      */
@@ -150,13 +151,14 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
      * Creates a new boilerpipe-based content extractor, using the given
      * extraction rules. The extracted main content will be passed to the
      * <delegate> content handler.
-     * 
+     *
      * @param delegate
      *            The {@link ContentHandler} object
      * @param extractor
      *            Extraction rules to use, e.g. {@link ArticleExtractor}
      */
     public BoilerpipeContentHandler(ContentHandler delegate, BoilerpipeExtractor extractor) {
+        this.td = null;
         this.delegate = delegate;
         this.extractor = extractor;
     }
@@ -164,36 +166,45 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
     public void setIncludeMarkup(boolean includeMarkup) {
         this.includeMarkup = includeMarkup;
     }
-    
+
     public boolean isIncludeMarkup() {
         return includeMarkup;
     }
-    
+
+    /**
+     * Retrieves the built TextDocument
+     *
+     * @return TextDocument
+     */
+    public TextDocument getTextDocument() {
+        return td;
+    }
+
     @Override
     public void startDocument() throws SAXException {
         super.startDocument();
-        
+
         delegate.startDocument();
-        
+
         inHeader = true;
         inFooter = false;
         headerCharOffset = 0;
-        
+
         if (includeMarkup) {
             elements = new ArrayList<RecordedElement>();
         }
     };
-    
+
     @Override
     public void startPrefixMapping(String prefix, String uri) throws SAXException {
         super.startPrefixMapping(prefix, uri);
         delegate.startPrefixMapping(prefix, uri);
     };
-    
+
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
         super.startElement(uri, localName, qName, atts);
-        
+
         if (inHeader) {
             delegate.startElement(uri, localName, qName, atts);
         } else if (inFooter) {
@@ -205,11 +216,11 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             delegate.startElement(uri, localName, qName, atts);
         }
     };
-    
+
     @Override
     public void characters(char[] chars, int offset, int length) throws SAXException {
         super.characters(chars, offset, length);
-        
+
         if (inHeader) {
             delegate.characters(chars, offset, length);
             headerCharOffset++;
@@ -217,17 +228,17 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             // Do nothing
         } else if (includeMarkup) {
             RecordedElement element = elements.get(elements.size() - 1);
-            
+
             char[] characters = new char[length];
             System.arraycopy(chars, offset, characters, 0, length);
             element.getCharacters().add(characters);
         }
     };
-    
+
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
         super.endElement(uri, localName, qName);
-        
+
         if (inHeader) {
             delegate.endElement(uri, localName, qName);
             inHeader = !localName.equals("head");
@@ -241,18 +252,18 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             elements.add(new RecordedElement());
         }
     };
-    
+
     @Override
     public void endDocument() throws SAXException {
         super.endDocument();
 
-        TextDocument td = toTextDocument();
+        td = toTextDocument();
         try {
             extractor.process(td);
         } catch (BoilerpipeProcessingException e) {
             throw new SAXException(e);
         }
-        
+
         Attributes emptyAttrs = new AttributesImpl();
 
         // At this point we have all the information we need to either emit N paragraphs
@@ -268,7 +279,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                     }
                 }
             }
-            
+
             // Now have bits set for all valid character runs. Replay our recorded elements,
             // but only emit character runs flagged as valid.
             int curCharsIndex = headerCharOffset;
@@ -277,28 +288,28 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                     case START:
                         delegate.startElement(element.getUri(), element.getLocalName(), element.getQName(), element.getAttrs());
                         // Fall through
-                        
+
                     case CONTINUE:
                         // Now emit characters that are valid. Note that boilerpipe pre-increments the character index, so
                         // we have to follow suit.
                         for (char[] chars : element.getCharacters()) {
                             curCharsIndex++;
-                            
+
                             if (validCharacterRuns.get(curCharsIndex)) {
                                 delegate.characters(chars, 0, chars.length);
                             }
                         }
                         break;
-                        
+
                     case END:
                         delegate.endElement(element.getUri(), element.getLocalName(), element.getQName());
                         break;
-                        
+
                     default:
                         throw new RuntimeException("Unhandled element type: " + element.getElementType());
                 }
-                
-                
+
+
             }
         } else {
             for (TextBlock block : td.getTextBlocks()) {
@@ -311,10 +322,10 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
                 }
             }
         }
-        
+
         delegate.endElement(XHTMLContentHandler.XHTML, "body", "body");
         delegate.endElement(XHTMLContentHandler.XHTML, "html", "html");
-        
+
         // We defer ending any prefix mapping until here, which is why we don't pass this
         // through to the delegate in an overridden method.
         delegate.endPrefixMapping("");
