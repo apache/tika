@@ -38,11 +38,13 @@ public class ForkParserTest extends TestCase {
                 ForkParserTest.class.getClassLoader(),
                 new ForkTestParser());
         try {
+            Metadata metadata = new Metadata();
             ContentHandler output = new BodyContentHandler();
             InputStream stream = new ByteArrayInputStream(new byte[0]);
             ParseContext context = new ParseContext();
-            parser.parse(stream, output, new Metadata(), context);
+            parser.parse(stream, output, metadata, context);
             assertEquals("Hello, World!", output.toString().trim());
+            assertEquals("text/plain", metadata.get(Metadata.CONTENT_TYPE));
         } finally {
             parser.close();
         }

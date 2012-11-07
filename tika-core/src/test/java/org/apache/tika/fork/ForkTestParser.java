@@ -45,6 +45,8 @@ class ForkTestParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
         stream.read();
 
+        metadata.set(Metadata.CONTENT_TYPE, "text/plain");
+
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         char[] ch = "Hello, World!".toCharArray();
