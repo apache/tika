@@ -93,7 +93,12 @@ public class DWGParser extends AbstractParser {
      * How far to skip after the last standard property, before
      *  we find any custom properties that might be there.
      */
-    private static final int CUSTOM_PROPERTIES_SKIP = 20; 
+    private static final int CUSTOM_PROPERTIES_SKIP = 20;
+    
+    /** 
+     * The value of padding bytes other than 0 in some DWG files.
+     */
+    private static final int[] CUSTOM_PROPERTIES_ALT_PADDING_VALUES = new int[] {0x2, 0, 0, 0};
 
     public void parse(
             InputStream stream, ContentHandler handler,
@@ -317,11 +322,16 @@ public class DWGParser extends AbstractParser {
 
     private int skipToCustomProperties(InputStream stream) 
             throws IOException, TikaException {
-       // There should be 4 zero bytes next
+       // There should be 4 zero bytes or CUSTOM_PROPERTIES_ALT_PADDING_VALUES next
        byte[] padding = new byte[4];
        IOUtils.readFully(stream, padding);
-       if(padding[0] == 0 && padding[1] == 0 &&
-             padding[2] == 0 && padding[3] == 0) {
+       if((padding[0] == 0 && padding[1] == 0 &&
+             padding[2] == 0 && padding[3] == 0) ||
+             (padding[0] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[0] && 
+               padding[1] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[1] &&
+               padding[2] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[2] &&
+               padding[3] == CUSTOM_PROPERTIES_ALT_PADDING_VALUES[3])) {
+           
           // Looks hopeful, skip on
           padding = new byte[CUSTOM_PROPERTIES_SKIP];
           IOUtils.readFully(stream, padding);
