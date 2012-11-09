@@ -195,9 +195,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           if (cr.text().getBytes()[0] == 0x13) {
              Field field = document.getFields().getFieldByStartOffset(FieldsDocumentPart.MAIN,
                                                                       cr.getStartOffset());
-             // 58 is an embedded document
-             // 56 is a document link
-             if (field != null && (field.getType() == 58 || field.getType() == 56)) {
+             if (field != null && field.getType() == 58) {
                // Embedded Object: add a <div
                // class="embedded" id="_X"/> so consumer can see where
                // in the main text each embedded document
