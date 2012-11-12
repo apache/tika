@@ -194,6 +194,13 @@ public class WordParserTest extends TikaTest {
         assertTrue(result.indexOf("_1404039792.rtf") != -1);
     }
 
+    // TIKA-1019
+    public void testDocumentLink() throws Exception {
+        String result = getXML("/test-documents/testDocumentLink.doc").xml;
+        assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1327495610\"/>") != -1);
+        assertTrue(result.indexOf("_1327495610.unknown") != -1);
+    }
+
     public void testWord6Parser() throws Exception {
         InputStream input = WordParserTest.class.getResourceAsStream(
                 "/test-documents/testWORD6.doc");

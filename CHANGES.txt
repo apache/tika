@@ -1,9 +1,10 @@
 Release 1.3 - Current Development
 
-  * MS Word: When a Word (.doc) document contains embedded files, Tika
-    now places a <div class="embedded" id="_XXX"/> into the XHTML so
-    you can see where in the main text the embedded document
-    occurred (TIKA-956).  Embedded Wordpad/RTF documents are now
+  * MS Word: When a Word (.doc) document contains embedded files or
+    links to external documents, Tika now places a <div
+    class="embedded" id="_XXX"/> placeholder into the XHTML so you can
+    see where in the main text the embedded document occurred
+    (TIKA-956, TIKA-1019).  Embedded Wordpad/RTF documents are now
     recognized (TIKA-982).
 
   * PDF: Text from pop-up annotations is now extracted (TIKA-981)
