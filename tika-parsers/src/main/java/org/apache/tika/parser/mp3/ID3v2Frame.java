@@ -227,6 +227,16 @@ public class ID3v2Frame implements MP3Frame {
            return "";
         }
 
+        // TIKA-1024: If it's UTF-16 (with BOM) and all we
+        // have is a naked BOM then short-circuit here
+        // (return empty string), because new String(..)
+        // gives different results on different JVMs
+        if (encoding.encoding.equals("UTF-16") && actualLength == 2 &&
+            ((data[offset] == (byte) 0xff && data[offset+1] == (byte) 0xfe) ||
+             (data[offset] == (byte) 0xfe && data[offset+1] == (byte) 0xff))) {
+          return "";
+        }
+
         try {
             // Build the base string
             return new String(data, offset, actualLength, encoding.encoding);

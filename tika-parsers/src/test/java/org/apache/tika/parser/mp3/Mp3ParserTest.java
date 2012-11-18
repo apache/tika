@@ -347,7 +347,7 @@ public class Mp3ParserTest extends TestCase {
            stream.close();
        }
 
-       // Check we coud get the headers from the start
+       // Check we could get the headers from the start
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("Girl you have no faith in medicine", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("The White Stripes", metadata.get(TikaCoreProperties.CREATOR));
@@ -363,5 +363,23 @@ public class Mp3ParserTest extends TestCase {
        assertEquals(null, metadata.get("version"));
        assertEquals(null, metadata.get("samplerate"));
        assertEquals(null, metadata.get("channels"));
+    }
+
+    // TIKA-1024
+    public void testNakedUTF16BOM() throws Exception {
+       Parser parser = new AutoDetectParser(); // Should auto-detect!
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+
+       InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+               "/test-documents/testNakedUTF16BOM.mp3");
+       
+       try {
+           parser.parse(stream, handler, metadata, new ParseContext());
+       } finally {
+           stream.close();
+       }
+       assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
+       assertEquals("", metadata.get(XMPDM.GENRE));
     }
 }
