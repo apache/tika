@@ -343,37 +343,6 @@ public class RTFParserTest extends TikaTest {
         return new Result(content, metadata);
     }
 
-    private static class XMLResult {
-        public final String xml;
-        public final Metadata metadata;
-
-        public XMLResult(String xml, Metadata metadata) {
-            this.xml = xml;
-            this.metadata = metadata;
-      }
-    }
-
-    private XMLResult getXML(String filename) throws Exception {
-        Metadata metadata = new Metadata();
-        
-        StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.setResult(new StreamResult(sw));
-
-        // Try with a document containing various tables and formattings
-        InputStream input = getResourceAsStream("/test-documents/" + filename);
-        try {
-            tika.getParser().parse(input, handler, metadata, new ParseContext());
-            return new XMLResult(sw.toString(), metadata);
-        } finally {
-            input.close();
-        }
-    }
-
     private String getText(String filename) throws Exception {
         return getResult(filename).text;
     }

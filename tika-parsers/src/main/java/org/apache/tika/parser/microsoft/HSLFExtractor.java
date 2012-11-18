@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.io.IOException;
+import java.util.HashSet;
+
 import org.apache.poi.hslf.HSLFSlideShow;
 import org.apache.poi.hslf.model.*;
 import org.apache.poi.hslf.usermodel.ObjectData;
@@ -28,9 +31,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.util.HashSet;
+import org.xml.sax.helpers.AttributesImpl;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
    public HSLFExtractor(ParseContext context) {
@@ -221,27 +222,39 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
       for( Shape shape : shapes ) {
          if( shape instanceof OLEShape ) {
             OLEShape oleShape = (OLEShape)shape;
-            
+            ObjectData data = null;
             try {
-               ObjectData data = oleShape.getObjectData();
-
-               if(data != null) {
-                  TikaInputStream stream =
-                     TikaInputStream.get(data.getData());
-                  try {
-                     String mediaType = null;
-                     if ("Excel.Chart.8".equals(oleShape.getProgID())) {
-                        mediaType = "application/vnd.ms-excel";
-                     }
-                     handleEmbeddedResource(
-                           stream, Integer.toString(oleShape.getObjectID()), null,
-                           mediaType, xhtml, false);
-                  } finally {
-                     stream.close();
-                  }
-               }
+                data = oleShape.getObjectData();
             } catch( NullPointerException e ) { 
-               /* getObjectData throws NPE some times. */
+                /* getObjectData throws NPE some times. */
+            }
+ 
+            if (data != null) {
+               String objID = Integer.toString(oleShape.getObjectID());
+
+               // Embedded Object: add a <div
+               // class="embedded" id="X"/> so consumer can see where
+               // in the main text each embedded document
+               // occurred:
+               AttributesImpl attributes = new AttributesImpl();
+               attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+               attributes.addAttribute("", "id", "id", "CDATA", objID);
+               xhtml.startElement("div", attributes);
+               xhtml.endElement("div");
+
+               TikaInputStream stream =
+                    TikaInputStream.get(data.getData());
+               try {
+                  String mediaType = null;
+                  if ("Excel.Chart.8".equals(oleShape.getProgID())) {
+                     mediaType = "application/vnd.ms-excel";
+                  }
+                  handleEmbeddedResource(
+                        stream, objID, objID,
+                        mediaType, xhtml, false);
+               } finally {
+                  stream.close();
+               }
             }
          }
       }

@@ -308,36 +308,6 @@ public class OOXMLParserTest extends TikaTest {
         }
     }
 
-    private static class XMLResult {
-        public final String xml;
-        public final Metadata metadata;
-
-        public XMLResult(String xml, Metadata metadata) {
-            this.xml = xml;
-            this.metadata = metadata;
-      }
-    }
-
-    private XMLResult getXML(String name) throws Exception {
-        StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-        handler.setResult(new StreamResult(sw));
-
-        // Try with a document containing various tables and formattings
-        InputStream input = getTestDocument(name);
-        try {
-            Metadata metadata = new Metadata();
-            parser.parse(input, handler, metadata, new ParseContext());
-            return new XMLResult(sw.toString(), metadata);
-        } finally {
-            input.close();
-        }
-    }
-
     /**
      * Test that the word converter is able to generate the
      *  correct HTML for the document
