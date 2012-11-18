@@ -42,6 +42,10 @@ Release 1.3 - Current Development
   * MHTML: fixed Null charset name exception when a mime part has an
     unrecognized charset (TIKA-1011).
 
+  * MP3: if an ID3 tag was encoded in UTF-16 with only the BOM then on
+    certain JVMs this would incorrectly extract the BOM as the tag's
+    value (TIKA-1024).
+
 Release 1.2 - 07/10/2012
 ---------------------------------
 
