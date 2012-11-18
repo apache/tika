@@ -451,37 +451,4 @@ public class PDFParserTest extends TikaTest {
         // Column text is now interleaved:
         assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
     }
-
-    private static class XMLResult {
-        public final String xml;
-        public final Metadata metadata;
-
-        public XMLResult(String xml, Metadata metadata) {
-            this.xml = xml;
-            this.metadata = metadata;
-      }
-    }
-
-    private XMLResult getXML(String filename) throws Exception {
-        Metadata metadata = new Metadata();
-        Parser parser = new AutoDetectParser(); // Should auto-detect!        
-        StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.setResult(new StreamResult(sw));
-
-        ParseContext context = new ParseContext();
-        context.set(Parser.class, parser);
-        // Try with a document containing various tables and formattings
-        InputStream input = getResourceAsStream("/test-documents/" + filename);
-        try {
-            parser.parse(input, handler, metadata, context);
-            return new XMLResult(sw.toString(), metadata);
-        } finally {
-            input.close();
-        }
-    }
 }

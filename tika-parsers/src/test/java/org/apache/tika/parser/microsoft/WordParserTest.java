@@ -17,13 +17,7 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.util.Locale;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -32,7 +26,6 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.ooxml.OOXMLParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -72,38 +65,6 @@ public class WordParserTest extends TikaTest {
         }
     }
 
-    private static class XMLResult {
-        public final String xml;
-        public final Metadata metadata;
-
-        public XMLResult(String xml, Metadata metadata) {
-            this.xml = xml;
-            this.metadata = metadata;
-      }
-    }
-
-    private XMLResult getXML(String filePath) throws Exception {
-        InputStream input = null;
-        Metadata metadata = new Metadata();
-        
-        StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.setResult(new StreamResult(sw));
-
-        // Try with a document containing various tables and formattings
-        input = OOXMLParserTest.class.getResourceAsStream(filePath);
-        try {
-            new OfficeParser().parse(input, handler, metadata, new ParseContext());
-            return new XMLResult(sw.toString(), metadata);
-        } finally {
-            input.close();
-        }
-    }
-
     /**
      * Test that the word converter is able to generate the
      *  correct HTML for the document
@@ -112,7 +73,7 @@ public class WordParserTest extends TikaTest {
 
         // Try with a document containing various tables and
         // formattings
-        XMLResult result = getXML("/test-documents/testWORD.doc");
+        XMLResult result = getXML("testWORD.doc");
         String xml = result.xml;
         Metadata metadata = result.metadata;
 
@@ -142,7 +103,7 @@ public class WordParserTest extends TikaTest {
         assertTrue(xml.contains("<p class=\"signature\">This one"));
         
         // Try with a document that contains images
-        xml = getXML("/test-documents/testWORD_3imgs.doc").xml;
+        xml = getXML("testWORD_3imgs.doc").xml;
 
         // Images 1-3
         assertTrue("Image not found in:\n"+xml, xml.contains("src=\"embedded:image1.png\""));
@@ -154,7 +115,7 @@ public class WordParserTest extends TikaTest {
 
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
-        xml = getXML("/test-documents/testWORD_bold_character_runs.doc").xml;
+        xml = getXML("testWORD_bold_character_runs.doc").xml;
 
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
@@ -163,7 +124,7 @@ public class WordParserTest extends TikaTest {
 
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
-        xml = getXML("/test-documents/testWORD_bold_character_runs2.doc").xml;
+        xml = getXML("testWORD_bold_character_runs2.doc").xml;
             
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
@@ -172,7 +133,7 @@ public class WordParserTest extends TikaTest {
     }
 
     public void testEmbeddedNames() throws Exception {
-        String result = getXML("/test-documents/testWORD_embedded_pdf.doc").xml;
+        String result = getXML("testWORD_embedded_pdf.doc").xml;
 
         // Make sure the embedded div comes out after "Here
         // is the pdf file" and before "Bye Bye":
@@ -189,14 +150,14 @@ public class WordParserTest extends TikaTest {
 
     // TIKA-982
     public void testEmbeddedRTF() throws Exception {
-        String result = getXML("/test-documents/testWORD_embedded_rtf.doc").xml;
+        String result = getXML("testWORD_embedded_rtf.doc").xml;
         assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1404039792\"/>") != -1);
         assertTrue(result.indexOf("_1404039792.rtf") != -1);
     }
 
     // TIKA-1019
     public void testDocumentLink() throws Exception {
-        String result = getXML("/test-documents/testDocumentLink.doc").xml;
+        String result = getXML("testDocumentLink.doc").xml;
         assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1327495610\"/>") != -1);
         assertTrue(result.indexOf("_1327495610.unknown") != -1);
     }

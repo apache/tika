@@ -220,4 +220,11 @@ public class PowerPointParserTest extends TikaTest {
        assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
+
+    // TIKA-1025
+    public void testEmbeddedPlacedholder() throws Exception {
+       XMLResult result = getXML("testPPT_embedded2.ppt");
+       assertContains("<div class=\"embedded\" id=\"1\"/>", result.xml);
+       assertContains("<div class=\"embedded\" id=\"14\"/>", result.xml);
+    }
 }
