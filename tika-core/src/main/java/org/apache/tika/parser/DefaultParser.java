@@ -97,8 +97,10 @@ public class DefaultParser extends CompositeParser {
         if (loader != null) {
             // Add dynamic parser service (they always override static ones)
             MediaTypeRegistry registry = getMediaTypeRegistry();
-            for (Parser parser
-                    : loader.loadDynamicServiceProviders(Parser.class)) {
+            List<Parser> parsers =
+                    loader.loadDynamicServiceProviders(Parser.class);
+            Collections.reverse(parsers); // best parser last
+            for (Parser parser : parsers) {
                 for (MediaType type : parser.getSupportedTypes(context)) {
                     map.put(registry.normalize(type), parser);
                 }
