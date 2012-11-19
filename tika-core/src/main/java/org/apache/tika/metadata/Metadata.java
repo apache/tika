@@ -378,16 +378,19 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
 
     /**
      * Set metadata name/value. Associate the specified value to the specified
-     * metadata name. If some previous values were associated to this name, they
-     * are removed.
-     * 
-     * @param name
-     *          the metadata name.
-     * @param value
-     *          the metadata value.
+     * metadata name. If some previous values were associated to this name,
+     * they are removed. If the given value is <code>null</code>, then the
+     * metadata entry is removed.
+     *
+     * @param name the metadata name.
+     * @param value  the metadata value, or <code>null</code>
      */
     public void set(String name, String value) {
-        metadata.put(name, new String[] { value });
+        if (value != null) {
+            metadata.put(name, new String[] { value });
+        } else {
+            metadata.remove(name);
+        }
     }
 
     /**
@@ -485,7 +488,11 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
         if(property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
             throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
         }
-        set(property, formatDate(date));
+        String dateString = null;
+        if (date != null) {
+            dateString = formatDate(date);
+        }
+        set(property, dateString);
     }
 
     /**
