@@ -250,8 +250,11 @@ public class ExternalEmbedderTest extends TestCase {
         }
     }
 
-    public void testEmbed() {
-        embedInTempFile(getIsMetadataExpectedInOutput());
+    public void testEmbed() throws IOException {
+        String os = System.getProperty("os.name", "");
+        if (!os.contains("Windows")) {
+            embedInTempFile(getIsMetadataExpectedInOutput());
+        }
     }
 
 }
