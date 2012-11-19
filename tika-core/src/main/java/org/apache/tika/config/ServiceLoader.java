@@ -43,14 +43,33 @@ public class ServiceLoader {
      */
     private static volatile ClassLoader contextClassLoader = null;
 
+    private static class RankedService implements Comparable<RankedService> {
+        private Object service;
+        private int rank;
+
+        public RankedService(Object service, int rank) {
+            this.service = service;
+            this.rank = rank;
+        }
+
+        public boolean isInstanceOf(Class<?> iface) {
+            return iface.isAssignableFrom(service.getClass());
+        }
+
+        public int compareTo(RankedService that) {
+            return that.rank - rank; // highest number first
+        }
+
+    }
+
     /**
      * The dynamic set of services available in an OSGi environment.
      * Managed by the {@link TikaActivator} class and used as an additional
      * source of service instances in the {@link #loadServiceProviders(Class)}
      * method.
      */
-    private static final Map<Object, Object> services =
-            new HashMap<Object, Object>();
+    private static final Map<Object, RankedService> services =
+            new HashMap<Object, RankedService>();
 
     /**
      * Returns the context class loader of the current thread. If such
@@ -84,9 +103,9 @@ public class ServiceLoader {
         contextClassLoader = loader;
     }
 
-    static void addService(Object reference, Object service) {
+    static void addService(Object reference, Object service, int rank) {
         synchronized (services) {
-            services.put(reference, service);
+            services.put(reference, new RankedService(service, rank));
         }
     }
 
@@ -211,19 +230,23 @@ public class ServiceLoader {
      */
     @SuppressWarnings("unchecked")
     public <T> List<T> loadDynamicServiceProviders(Class<T> iface) {
-        List<T> providers = new ArrayList<T>();
-
         if (dynamic) {
             synchronized (services) {
-                for (Object service : services.values()) {
-                    if (iface.isAssignableFrom(service.getClass())) {
-                        providers.add((T) service);
+                List<RankedService> list =
+                        new ArrayList<RankedService>(services.values());
+                Collections.sort(list);
+
+                List<T> providers = new ArrayList<T>(list.size());
+                for (RankedService service : list) {
+                    if (service.isInstanceOf(iface)) {
+                        providers.add((T) service.service);
                     }
                 }
+                return providers;
             }
+        } else {
+            return new ArrayList<T>(0);
         }
-
-        return providers;
     }
 
     /**

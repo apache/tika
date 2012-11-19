@@ -20,6 +20,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.util.tracker.ServiceTracker;
 import org.osgi.util.tracker.ServiceTrackerCustomizer;
@@ -37,17 +38,17 @@ import org.osgi.util.tracker.ServiceTrackerCustomizer;
  */
 public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer {
 
-	private ServiceTracker detectorTracker;
+    private ServiceTracker detectorTracker;
 
-	private ServiceTracker parserTracker;
+    private ServiceTracker parserTracker;
 
-	private BundleContext bundleContext;
+    private BundleContext bundleContext;
     //-----------------------------------------------------< BundleActivator >
 
     public void start(final BundleContext context) throws Exception {
-    	bundleContext = context;
+        bundleContext = context;
 
-    	detectorTracker = new ServiceTracker(context, Detector.class.getName(), this);
+        detectorTracker = new ServiceTracker(context, Detector.class.getName(), this);
         parserTracker = new ServiceTracker(context, Parser.class.getName(), this);
 
         detectorTracker.open();
@@ -55,22 +56,28 @@ public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer 
     }
 
     public void stop(BundleContext context) throws Exception {
-    	parserTracker.close();
-    	detectorTracker.close();
+        parserTracker.close();
+        detectorTracker.close();
     }
 
-	public Object addingService(ServiceReference reference) {
+    public Object addingService(ServiceReference reference) {
+        int rank = 0;
+        Object property = reference.getProperty(Constants.SERVICE_RANKING);
+        if (property instanceof Integer) {
+            rank = (Integer) property;
+        }
+
         Object service = bundleContext.getService(reference);
-        ServiceLoader.addService(reference, service);
-		return service;
-	}
+        ServiceLoader.addService(reference, service, rank);
+        return service;
+    }
 
-	public void modifiedService(ServiceReference reference, Object service) {
-	}
+    public void modifiedService(ServiceReference reference, Object service) {
+    }
 
-	public void removedService(ServiceReference reference, Object service) {
+    public void removedService(ServiceReference reference, Object service) {
         ServiceLoader.removeService(reference);
         bundleContext.ungetService(reference);
-	}
+    }
 
 }
