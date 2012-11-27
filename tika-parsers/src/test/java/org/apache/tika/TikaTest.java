@@ -101,7 +101,6 @@ public abstract class TikaTest extends TestCase {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        // Try with a document containing various tables and formattings
         input = getResourceAsStream("/test-documents/" + filePath);
         try {
             parser.parse(input, handler, metadata, context);
