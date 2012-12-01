@@ -69,20 +69,18 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
          // Slide master, if present
          // TODO: re-enable this once we fix TIKA-712
-         /*
          MasterSheet master = slide.getMasterSheet();
          if(master != null) {
             xhtml.startElement("p", "class", "slide-master-content");
-            textRunsToText(xhtml, master.getTextRuns() );
+            textRunsToText(xhtml, master.getTextRuns(), true );
             xhtml.endElement("p");
          }
-         */
 
          // Slide text
          {
             xhtml.startElement("p", "class", "slide-content");
 
-            textRunsToText(xhtml, slide.getTextRuns() );
+            textRunsToText(xhtml, slide.getTextRuns(), false );
 
             xhtml.endElement("p");
          }
@@ -150,7 +148,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          }
 
          // Notes text
-         textRunsToText(xhtml, notes.getTextRuns());
+         textRunsToText(xhtml, notes.getTextRuns(), false);
 
          // Repeat the notes footer, if set
          if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
@@ -165,16 +163,20 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
       xhtml.endElement("div");
    }
 
-   private void textRunsToText(XHTMLContentHandler xhtml, TextRun[] runs) throws SAXException {
+   private void textRunsToText(XHTMLContentHandler xhtml, TextRun[] runs, boolean isMaster) throws SAXException {
       if (runs==null) {
          return;
       }
 
       for (TextRun run : runs) {
          if (run != null) {
-            xhtml.characters( run.getText() );
-            xhtml.startElement("br");
-            xhtml.endElement("br");
+           // Avoid boiler-plate text on the master slide (0
+           // = TextHeaderAtom.TITLE_TYPE, 1 = TextHeaderAtom.BODY_TYPE):
+           if (!isMaster || (run.getRunType() != 0 && run.getRunType() != 1)) {
+               xhtml.characters(run.getText());
+               xhtml.startElement("br");
+               xhtml.endElement("br");
+           }
          }
       }
    }

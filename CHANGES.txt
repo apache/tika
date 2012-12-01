@@ -42,7 +42,8 @@ Release 1.3 - Current Development
   * MS PowerPoint (.ppt): When a PowerPoint (.ppt) document contains
     embedded files, Tika now places a <div class="embedded" id="XXX"/> into the
     XHTML so you can see where in the main text the embedded document
-    occurred (TIKA-1025).
+    occurred (TIKA-1025).  Text from the master slide is now extracted
+    (TIKA-712).
 
   * MHTML: fixed Null charset name exception when a mime part has an
     unrecognized charset (TIKA-1011).
