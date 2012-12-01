@@ -22,8 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.TestCase;
-
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -37,7 +36,7 @@ import org.xml.sax.SAXException;
 /**
  * Parent class for all Package based Test cases
  */
-public abstract class AbstractPkgTest extends TestCase {
+public abstract class AbstractPkgTest extends TikaTest {
    protected ParseContext trackingContext;
    protected ParseContext recursingContext;
    

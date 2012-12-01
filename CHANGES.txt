@@ -53,9 +53,12 @@ Release 1.3 - Current Development
     certain JVMs this would incorrectly extract the BOM as the tag's
     value (TIKA-1024).
 
-  * ZIP: TikaCLI would hit FileNotFoundException when extracting files
-    that were under sub-directories from a ZIP archive, because it
-    failed to create the parent directories first (TIKA-1031).
+  * ZIP: placeholders (<div class="embedded" id="<entry name>"/>) are
+    now left in the XHTML so you can see where each archive member
+    appears (TIKA-1036). TikaCLI would hit FileNotFoundException when
+    extracting files that were under sub-directories from a ZIP
+    archive, because it failed to create the parent directories first
+    (TIKA-1031).
 
 Release 1.2 - 07/10/2012
 ---------------------------------

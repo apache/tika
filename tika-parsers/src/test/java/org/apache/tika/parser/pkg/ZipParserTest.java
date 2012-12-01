@@ -117,4 +117,10 @@ public class ZipParserTest extends AbstractPkgTest {
         assertTrue(content.contains("README"));
     }
 
+    // TIKA-1036
+    public void testPlaceholders() throws Exception {
+        String xml = getXML("testEmbedded.zip").xml;
+        assertContains("<div class=\"embedded\" id=\"test1.txt\"/>", xml);
+        assertContains("<div class=\"embedded\" id=\"test2.txt\"/>", xml);
+    }
 }
