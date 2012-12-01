@@ -143,7 +143,6 @@ public class PowerPointParserTest extends TikaTest {
     }
 
     // TODO: once we fix TIKA-712, re-enable this
-    /*
     public void testMasterText() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -162,10 +161,8 @@ public class PowerPointParserTest extends TikaTest {
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
     }
-    */
 
     // TODO: once we fix TIKA-712, re-enable this
-    /*
     public void testMasterText2() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -184,7 +181,6 @@ public class PowerPointParserTest extends TikaTest {
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
     }
-    */
 
     /**
      * Ensures that custom OLE2 (HPSF) properties are extracted
