@@ -17,12 +17,6 @@
 package org.apache.tika.parser.pdf;
 
 import java.io.InputStream;
-import java.io.StringWriter;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
@@ -450,5 +444,11 @@ public class PDFParserTest extends TikaTest {
         content = content.replaceAll("\\s+", " ");
         // Column text is now interleaved:
         assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
+    }
+
+    // TIKA-1035
+    public void testBookmarks() throws Exception {
+        String xml = getXML("testPDF_bookmarks.pdf").xml;
+        assertContains("Denmark bookmark is here", xml);
     }
 }

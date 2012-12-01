@@ -21,11 +21,14 @@ import java.io.Writer;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationMarkup;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode;
+import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.util.TextPosition;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOExceptionWithCause;
@@ -61,10 +64,12 @@ class PDF2XHTML extends PDFTextStripper {
             throws SAXException, TikaException {
         try {
             // Extract text using a dummy Writer as we override the
-            // key methods to output to the given content handler.
-            new PDF2XHTML(handler, metadata,
-                          extractAnnotationText, enableAutoSpace,
-                          suppressDuplicateOverlappingText, sortByPosition).writeText(document, new Writer() {
+            // key methods to output to the given content
+            // handler.
+            PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, metadata,
+                                                extractAnnotationText, enableAutoSpace,
+                                                suppressDuplicateOverlappingText, sortByPosition);
+            pdf2XHTML.writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {
                 }
@@ -75,6 +80,10 @@ class PDF2XHTML extends PDFTextStripper {
                 public void close() {
                 }
             });
+
+            // Also extract text for any bookmarks:
+            pdf2XHTML.extractBookmarkText();
+
         } catch (IOException e) {
             if (e.getCause() instanceof SAXException) {
                 throw (SAXException) e.getCause();
@@ -104,6 +113,26 @@ class PDF2XHTML extends PDFTextStripper {
         //setAverageCharTolerance(1.0f);
         //setSpacingTolerance(1.0f);
         setSuppressDuplicateOverlappingText(suppressDuplicateOverlappingText);
+    }
+
+    void extractBookmarkText() throws SAXException {
+        PDDocumentOutline outline = document.getDocumentCatalog().getDocumentOutline();
+        if (outline != null) {
+            handler.newline();
+            extractBookmarkText(outline, "");
+        }
+    }
+
+    void extractBookmarkText(PDOutlineNode bookmark, String indent) throws SAXException {
+        PDOutlineItem current = bookmark.getFirstChild();
+        while (current != null) {
+          handler.characters(indent);
+          handler.characters(current.getTitle());
+          handler.newline();
+          // Recurse:
+          extractBookmarkText(current, indent + "    ");
+          current = current.getNextSibling();
+        }
     }
 
     @Override
@@ -261,7 +290,7 @@ class PDF2XHTML extends PDFTextStripper {
     @Override
     protected void writeLineSeparator() throws IOException {
         try {
-            handler.characters("\n");
+            handler.newline();
         } catch (SAXException e) {
             throw new IOExceptionWithCause(
                     "Unable to write a newline character", e);
