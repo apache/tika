@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.pkg;
 
-import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
-
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +44,9 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 /**
  * Parser for various packaging formats. Package entries will be written to
@@ -151,6 +152,11 @@ public class PackageParser extends AbstractParser {
             Metadata entrydata = new Metadata();
             if (name != null && name.length() > 0) {
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
+                AttributesImpl attributes = new AttributesImpl();
+                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                attributes.addAttribute("", "id", "id", "CDATA", name);
+                xhtml.startElement("div", attributes);
+                xhtml.endElement("div");
             }
             if (extractor.shouldParseEmbedded(entrydata)) {
                 // For detectors to work, we need a mark/reset supporting
