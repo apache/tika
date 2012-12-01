@@ -706,16 +706,17 @@ public class TikaCLI {
 
             String relID = metadata.get(Metadata.EMBEDDED_RELATIONSHIP_ID);
             if (relID != null && !name.startsWith(relID)) {
-              name = relID + "_" + name;
+                name = relID + "_" + name;
             }
 
             File outputFile = new File(extractDir, name);
-            if (outputFile.exists()) {
-                System.err.println("File '"+name+"' already exists; skipping");
-                return;
+            File parent = outputFile.getParentFile();
+            if (!parent.exists()) {
+                if (!parent.mkdirs()) {
+                    throw new IOException("unable to create directory \"" + parent + "\"");
+                }
             }
-
-            System.out.println("Extracting '"+name+"' ("+contentType+")");
+            System.out.println("Extracting '"+name+"' ("+contentType+") to " + outputFile);
 
             FileOutputStream os = new FileOutputStream(outputFile);
 
