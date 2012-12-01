@@ -855,9 +855,9 @@ public class OOXMLParserTest extends TikaTest {
             input.close();
         }
         String xml = sw.toString();
-        int h = xml.indexOf("<div class=\"embedded\" id=\"rId3\"/>");
+        int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\"/>");
         int i = xml.indexOf("Send me a note");
-        int j = xml.indexOf("<div class=\"embedded\" id=\"rId4\"/>");
+        int j = xml.indexOf("<div class=\"embedded\" id=\"slide2_rId4\"/>");
         int k = xml.indexOf("<p>No title</p>");
         assertTrue(h != -1);
         assertTrue(i != -1);
@@ -882,4 +882,11 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("This text is inside of a text box in the header of the document.", xml);
         assertContains("This text is inside of a text box in the footer of the document.", xml);
     }
-}
+
+    // TIKA-1032:
+    public void testEmbeddedPPTXTwoSlides() throws Exception {
+        String xml = getXML("testPPT_embedded_two_slides.pptx").xml;
+        assertContains("<div class=\"embedded\" id=\"slide1_rId7\"/>" , xml);
+        assertContains("<div class=\"embedded\" id=\"slide2_rId7\"/>" , xml);
+    }
+  }

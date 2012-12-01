@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.util.List;
 
 import org.apache.poi.POIXMLDocument;
@@ -108,12 +109,38 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
         xhtml.endDocument();
     }
+  
+    protected String getJustFileName(String desc) {
+      int idx = desc.lastIndexOf('/');
+      if (idx != -1) {
+        desc = desc.substring(idx+1);
+      }
+      idx = desc.lastIndexOf('.');
+      if (idx != -1) {
+        desc = desc.substring(0, idx);
+      }
+
+      return desc;
+    }
 
     private void handleEmbeddedParts(ContentHandler handler)
             throws TikaException, IOException, SAXException {
         try {
             for (PackagePart source : getMainDocumentParts()) {
                 for (PackageRelationship rel : source.getRelationships()) {
+
+                    URI sourceURI = rel.getSourceURI();
+                    String sourceDesc;
+                    if (sourceURI != null) {
+                        sourceDesc = getJustFileName(sourceURI.getPath());
+                        if (sourceDesc.startsWith("slide")) {
+                          sourceDesc += "_";
+                        } else {
+                          sourceDesc = "";
+                        }
+                    } else {
+                        sourceDesc = "";
+                    }
                     if (rel.getTargetMode() == TargetMode.INTERNAL) {
                         PackagePart target;
 
@@ -126,12 +153,12 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                         String type = rel.getRelationshipType();
                         if (RELATION_OLE_OBJECT.equals(type)
                                 && TYPE_OLE_OBJECT.equals(target.getContentType())) {
-                            handleEmbeddedOLE(target, handler, rel.getId());
+                            handleEmbeddedOLE(target, handler, sourceDesc + rel.getId());
                         } else if (RELATION_AUDIO.equals(type)
                                 || RELATION_IMAGE.equals(type)
                                 || RELATION_PACKAGE.equals(type)
                                 || RELATION_OLE_OBJECT.equals(type)) {
-                            handleEmbeddedFile(target, handler, rel.getId());
+                            handleEmbeddedFile(target, handler, sourceDesc + rel.getId());
                         }
                     }
                 }

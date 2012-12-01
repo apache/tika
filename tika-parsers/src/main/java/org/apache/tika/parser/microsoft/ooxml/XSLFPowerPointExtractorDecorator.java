@@ -67,25 +67,33 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
 
         XSLFSlide[] slides = slideShow.getSlides();
         for (XSLFSlide slide : slides) {
+            String slideDesc;
+            if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
+              slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
+              slideDesc += "_";
+            } else {
+              slideDesc = null;
+            }
+
             // slide
-            extractContent(slide.getShapes(), false, xhtml);
+            extractContent(slide.getShapes(), false, xhtml, slideDesc);
 
             // slide layout which is the master sheet for this slide
             XSLFSheet slideLayout = slide.getMasterSheet();
-            extractContent(slideLayout.getShapes(), true, xhtml);
+            extractContent(slideLayout.getShapes(), true, xhtml, null);
 
             // slide master which is the master sheet for all text layouts
             XSLFSheet slideMaster = slideLayout.getMasterSheet();
-            extractContent(slideMaster.getShapes(), true, xhtml);
+            extractContent(slideMaster.getShapes(), true, xhtml, null);
 
             // notes (if present)
             XSLFSheet slideNotes = slide.getNotes();
             if (slideNotes != null) {
-                extractContent(slideNotes.getShapes(), false, xhtml);
+                extractContent(slideNotes.getShapes(), false, xhtml, slideDesc);
 
                 // master sheet for this notes
                 XSLFSheet notesMaster = slideNotes.getMasterSheet();
-                extractContent(notesMaster.getShapes(), true, xhtml);
+                extractContent(notesMaster.getShapes(), true, xhtml, null);
             }
 
             // comments (if present)
@@ -98,7 +106,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void extractContent(XSLFShape[] shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml)
+    private void extractContent(XSLFShape[] shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml, String slideDesc)
             throws SAXException {
         for (XSLFShape sh : shapes) {
             if (sh instanceof XSLFTextShape) {
@@ -111,12 +119,12 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             } else if (sh instanceof XSLFGroupShape){
                 // recurse into groups of shapes
                 XSLFGroupShape group = (XSLFGroupShape)sh;
-                extractContent(group.getShapes(), skipPlaceholders, xhtml);
+                extractContent(group.getShapes(), skipPlaceholders, xhtml, slideDesc);
             } else if (sh instanceof XSLFTable) {
                 XSLFTable tbl = (XSLFTable)sh;
                 for(XSLFTableRow row : tbl){
                     List<XSLFTableCell> cells = row.getCells();
-                    extractContent(cells.toArray(new XSLFTableCell[cells.size()]), skipPlaceholders, xhtml);
+                    extractContent(cells.toArray(new XSLFTableCell[cells.size()]), skipPlaceholders, xhtml, slideDesc);
                 }
             } else if (sh instanceof XSLFGraphicFrame) {
                 XSLFGraphicFrame frame = (XSLFGraphicFrame) sh;
@@ -127,6 +135,9 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         XmlObject relIDAtt = emb.selectAttribute(new QName("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
                         if (relIDAtt != null) {
                             String relID = relIDAtt.getDomNode().getNodeValue();
+                            if (slideDesc != null) {
+                              relID = slideDesc + relID;
+                            }
                             AttributesImpl attributes = new AttributesImpl();
                             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
                             attributes.addAttribute("", "id", "id", "CDATA", relID);
@@ -141,6 +152,9 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     if (ctPic.getBlipFill() != null && ctPic.getBlipFill().getBlip() != null) {
                         String relID = ctPic.getBlipFill().getBlip().getEmbed();
                         if (relID != null) {
+                            if (slideDesc != null) {
+                              relID = slideDesc + relID;
+                            }
                             AttributesImpl attributes = new AttributesImpl();
                             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
                             attributes.addAttribute("", "id", "id", "CDATA", relID);
