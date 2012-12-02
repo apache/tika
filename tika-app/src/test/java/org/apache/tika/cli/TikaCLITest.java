@@ -224,5 +224,8 @@ public class TikaCLITest extends TestCase{
         TikaCLI.main(params);
         String content = outContent.toString();
         assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
+        // clean up. TODO: These should be in target.
+        new File("subdir/foo.txt").delete();
+        new File("subdir").delete();
     }
 }
