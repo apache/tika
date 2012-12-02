@@ -218,14 +218,14 @@ public class TikaCLITest extends TestCase{
 
     // TIKA-1031
     public void testZipWithSubdirs() throws Exception {
-        String[] params = {"-z", resourcePrefix + "testWithSubdirs.zip"};
+        String[] params = {"-z", "--extract-dir=target", resourcePrefix + "testWithSubdirs.zip"};
         new File("subdir/foo.txt").delete();
         new File("subdir").delete();
         TikaCLI.main(params);
         String content = outContent.toString();
         assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
         // clean up. TODO: These should be in target.
-        new File("subdir/foo.txt").delete();
-        new File("subdir").delete();
+        new File("target/subdir/foo.txt").delete();
+        new File("target/subdir").delete();
     }
 }
