@@ -17,10 +17,14 @@
 package org.apache.tika.parser.pkg;
 
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.tika.Tika;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -117,10 +121,45 @@ public class ZipParserTest extends AbstractPkgTest {
         assertTrue(content.contains("README"));
     }
 
+    private class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {
+        public Set<String> allRelIDs = new HashSet<String>();
+        public boolean shouldParseEmbedded(Metadata metadata) {      
+            String relID = metadata.get(Metadata.EMBEDDED_RELATIONSHIP_ID);
+            if (relID != null) {
+                allRelIDs.add(relID);
+            }
+            return false;
+        }
+
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean outputHtml) {
+            throw new UnsupportedOperationException("should never be called");
+        }
+    }
+
     // TIKA-1036
     public void testPlaceholders() throws Exception {
         String xml = getXML("testEmbedded.zip").xml;
         assertContains("<div class=\"embedded\" id=\"test1.txt\"/>", xml);
         assertContains("<div class=\"embedded\" id=\"test2.txt\"/>", xml);
+
+        // Also make sure EMBEDDED_RELATIONSHIP_ID was
+        // passed when parsing the embedded docs:
+        Parser parser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, parser);
+        GatherRelIDsDocumentExtractor relIDs = new GatherRelIDsDocumentExtractor();
+        context.set(EmbeddedDocumentExtractor.class, relIDs);
+        InputStream input = getResourceAsStream("/test-documents/testEmbedded.zip");
+        try {
+          parser.parse(input,
+                       new BodyContentHandler(),
+                       new Metadata(),
+                       context);
+        } finally {
+            input.close();
+        }
+
+        assertTrue(relIDs.allRelIDs.contains("test1.txt"));
+        assertTrue(relIDs.allRelIDs.contains("test2.txt"));
     }
 }
