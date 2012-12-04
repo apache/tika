@@ -157,6 +157,8 @@ public class PackageParser extends AbstractParser {
                 attributes.addAttribute("", "id", "id", "CDATA", name);
                 xhtml.startElement("div", attributes);
                 xhtml.endElement("div");
+
+                entrydata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, name);
             }
             if (extractor.shouldParseEmbedded(entrydata)) {
                 // For detectors to work, we need a mark/reset supporting
