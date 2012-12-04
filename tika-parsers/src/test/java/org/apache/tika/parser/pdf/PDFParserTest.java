@@ -449,6 +449,10 @@ public class PDFParserTest extends TikaTest {
     // TIKA-1035
     public void testBookmarks() throws Exception {
         String xml = getXML("testPDF_bookmarks.pdf").xml;
-        assertContains("Denmark bookmark is here", xml);
+        int i = xml.indexOf("Denmark bookmark is here");
+        int j = xml.indexOf("</body>");
+        assertTrue(i != -1);
+        assertTrue(j != -1);
+        assertTrue(i < j);
     }
 }

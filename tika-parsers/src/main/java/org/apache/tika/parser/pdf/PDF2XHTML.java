@@ -81,9 +81,6 @@ class PDF2XHTML extends PDFTextStripper {
                 }
             });
 
-            // Also extract text for any bookmarks:
-            pdf2XHTML.extractBookmarkText();
-
         } catch (IOException e) {
             if (e.getCause() instanceof SAXException) {
                 throw (SAXException) e.getCause();
@@ -118,20 +115,23 @@ class PDF2XHTML extends PDFTextStripper {
     void extractBookmarkText() throws SAXException {
         PDDocumentOutline outline = document.getDocumentCatalog().getDocumentOutline();
         if (outline != null) {
-            handler.newline();
-            extractBookmarkText(outline, "");
+            extractBookmarkText(outline);
         }
     }
 
-    void extractBookmarkText(PDOutlineNode bookmark, String indent) throws SAXException {
+    void extractBookmarkText(PDOutlineNode bookmark) throws SAXException {
         PDOutlineItem current = bookmark.getFirstChild();
-        while (current != null) {
-          handler.characters(indent);
-          handler.characters(current.getTitle());
-          handler.newline();
-          // Recurse:
-          extractBookmarkText(current, indent + "    ");
-          current = current.getNextSibling();
+        if (current != null) {
+            handler.startElement("ul");
+            while (current != null) {
+                handler.startElement("li");
+                handler.characters(current.getTitle());
+                handler.endElement("li");
+                // Recurse:
+                extractBookmarkText(current);
+                current = current.getNextSibling();
+            }
+            handler.endElement("ul");
         }
     }
 
@@ -147,6 +147,8 @@ class PDF2XHTML extends PDFTextStripper {
     @Override
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
+            // Extract text for any bookmarks:
+            extractBookmarkText();
             handler.endDocument();
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
@@ -296,5 +298,4 @@ class PDF2XHTML extends PDFTextStripper {
                     "Unable to write a newline character", e);
         }
     }
-
 }
