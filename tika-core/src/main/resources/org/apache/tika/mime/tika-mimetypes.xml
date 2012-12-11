@@ -4198,8 +4198,11 @@
       <match value="Return-Path:" type="string" offset="0"/>
       <match value="From:" type="string" offset="0"/>
       <match value="Received:" type="string" offset="0"/>
-      <match type="string" value="Message-ID:" offset="0"/>
-      <match type="string" value="Date:" offset="0"/>
+      <match value="Message-ID:" type="string" offset="0"/>
+      <match value="Date:" type="string" offset="0"/>
+      <match value="X-Notes-Item:" type="string" offset="0">
+        <match value="Message-ID:" type="string" offset="0:8192"/>
+      </match>
     </magic>
     <glob pattern="*.eml"/>
     <glob pattern="*.mime"/>
