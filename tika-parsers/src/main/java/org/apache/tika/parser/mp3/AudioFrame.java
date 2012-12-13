@@ -122,7 +122,7 @@ public class AudioFrame implements MP3Frame {
                 sampleRate *= 4;
             }
 
-            int chans = h4 & 0x03;
+            int chans = h4 & 0x192;
             if (chans < 3) {
                 // Stereo, joint stereo, dual channel
                 channels = 2;
