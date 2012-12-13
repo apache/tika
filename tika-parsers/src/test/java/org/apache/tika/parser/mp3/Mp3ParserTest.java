@@ -66,7 +66,7 @@ public class Mp3ParserTest extends TestCase {
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
-        assertEquals("2", metadata.get("channels"));
+        assertEquals("1", metadata.get("channels"));
     }
 
     /**
@@ -104,7 +104,7 @@ public class Mp3ParserTest extends TestCase {
         // Check un-typed audio properties
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
-        assertEquals("2", metadata.get("channels"));
+        assertEquals("1", metadata.get("channels"));
         
         // Check XMPDM-typed audio properties
         assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
@@ -116,7 +116,7 @@ public class Mp3ParserTest extends TestCase {
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
         
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
-        assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
+        assertEquals("Mono", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("MP3", metadata.get(XMPDM.AUDIO_COMPRESSOR));
     }
 
@@ -152,7 +152,7 @@ public class Mp3ParserTest extends TestCase {
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
-        assertEquals("2", metadata.get("channels"));
+        assertEquals("1", metadata.get("channels"));
     }
 
     /**
@@ -187,7 +187,7 @@ public class Mp3ParserTest extends TestCase {
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
-        assertEquals("2", metadata.get("channels"));
+        assertEquals("1", metadata.get("channels"));
     }
     
     /**
@@ -221,7 +221,7 @@ public class Mp3ParserTest extends TestCase {
        
        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
        assertEquals("44100", metadata.get("samplerate"));
-       assertEquals("2", metadata.get("channels"));
+       assertEquals("1", metadata.get("channels"));
    }
     
     
