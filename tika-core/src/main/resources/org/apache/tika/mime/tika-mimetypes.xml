@@ -475,6 +475,7 @@
     <glob pattern="*.owl"/>
     <glob pattern="^rdf$" isregex="true"/>
     <glob pattern="^owl$" isregex="true"/>
+    <glob pattern="*.xmp"/>
   </mime-type>
 
   <mime-type type="application/reginfo+xml">
