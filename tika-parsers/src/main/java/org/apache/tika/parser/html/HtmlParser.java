@@ -72,7 +72,8 @@ public class HtmlParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
         // Automatically detect the character encoding
         AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, LOADER);
+                new CloseShieldInputStream(stream), metadata,
+                context.get(ServiceLoader.class, LOADER));
         try {
             Charset charset = reader.getCharset();
             String previous = metadata.get(Metadata.CONTENT_TYPE);

@@ -141,6 +141,16 @@ public class ServiceLoader {
     }
 
     /**
+     * Returns the load error handler used by this loader.
+     *
+     * @return load error handler
+     * @since Apache Tika 1.3
+     */
+    public LoadErrorHandler getLoadErrorHandler() {
+        return handler;
+    }
+
+    /**
      * Returns an input stream for reading the specified resource from the
      * configured class loader.
      *

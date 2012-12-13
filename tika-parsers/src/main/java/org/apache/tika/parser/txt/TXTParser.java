@@ -68,7 +68,8 @@ public class TXTParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
         // Automatically detect the character encoding
         AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata, LOADER);
+                new CloseShieldInputStream(stream), metadata,
+                context.get(ServiceLoader.class, LOADER));
         try {
             Charset charset = reader.getCharset();
             MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
