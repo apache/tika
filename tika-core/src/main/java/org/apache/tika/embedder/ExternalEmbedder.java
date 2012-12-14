@@ -240,17 +240,14 @@ public class ExternalEmbedder implements Embedder {
                     if (metadataCommandArguments != null) {
                         for (String metadataCommandArgument : metadataCommandArguments) {
                             if (metadata.isMultiValued(metadataName)) {
-                                for (String metadataValue : metadata
-                                        .getValues(metadataName)) {
+                                for (String metadataValue : metadata.getValues(metadataName)) {
                                     String assignmentValue = metadataValue;
                                     if (quoteAssignmentValues) {
-                                        assignmentValue = "'" + assignmentValue
-                                                + "'";
+                                        assignmentValue = "'" + assignmentValue + "'";
                                     }
-                                    commandMetadataSegments
-                                            .add(metadataCommandArgument
-                                                    + commandAppendOperator
-                                                    + assignmentValue);
+                                    commandMetadataSegments.add(metadataCommandArgument
+                                            + commandAppendOperator
+                                            + assignmentValue);
                                 }
                             } else {
                                 String assignmentValue = metadata.get(metadataName);
