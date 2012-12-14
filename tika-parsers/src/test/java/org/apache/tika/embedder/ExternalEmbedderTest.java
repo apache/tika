@@ -16,9 +16,6 @@
  */
 package org.apache.tika.embedder;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -54,9 +51,6 @@ import junit.framework.TestSuite;
  * Unit test for {@link ExternalEmbedder}s.
  */
 public class ExternalEmbedderTest extends TestCase {
-
-    private static final Log logger = LogFactory
-            .getLog(ExternalEmbedderTest.class);
 
     protected static final DateFormat EXPECTED_METADATA_DATE_FORMATTER =
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -191,7 +185,6 @@ public class ExternalEmbedderTest extends TestCase {
             String outputString = null;
             if (isResultExpectedInOutput) {
                 outputString = result.toString(DEFAULT_CHARSET);
-                logger.trace("outputString=" + outputString);
             } else {
                 assertTrue("no metadata found", embeddedMetadata.size() > 0);
             }
@@ -200,9 +193,6 @@ public class ExternalEmbedderTest extends TestCase {
             for (String metadataName : metadataToEmbed.names()) {
                 if (metadataToEmbed.get(metadataName) != null) {
                     String expectedValue = metadataToEmbed.get(metadataName);
-                    logger.trace("expecting value of '"
-                            + metadataName + "' = '"
-                            + expectedValue + "'");
                     boolean foundExpectedValue = false;
                     if (isResultExpectedInOutput) {
                         // just check that the entire output contains the expected string
@@ -210,9 +200,6 @@ public class ExternalEmbedderTest extends TestCase {
                     } else {
                         if (embeddedMetadata.isMultiValued(metadataName)) {
                             for (String embeddedValue : embeddedMetadata.getValues(metadataName)) {
-                                logger.debug("embedded values of '"
-                                        + metadataName + "' contains '"
-                                        + embeddedValue + "'");
                                 if (embeddedValue != null) {
                                     if (embeddedValue.contains(expectedValue)) {
                                         foundExpectedValue = true;
@@ -222,9 +209,6 @@ public class ExternalEmbedderTest extends TestCase {
                             }
                         } else {
                             String embeddedValue = embeddedMetadata.get(metadataName);
-                            logger.debug("embedded value of '"
-                                    + metadataName + "' = '"
-                                    + embeddedValue + "'");
                             assertNotNull("expected metadata for "
                                     + metadataName + " not found",
                                     embeddedValue);
@@ -239,13 +223,10 @@ public class ExternalEmbedderTest extends TestCase {
                 }
             }
         } catch (IOException e) {
-            logger.error(e.getMessage(), e);
             fail(e.getMessage());
         } catch (TikaException e) {
-            logger.error(e.getMessage(), e);
             fail(e.getMessage());
         } catch (SAXException e) {
-            logger.error(e.getMessage(), e);
             fail(e.getMessage());
         }
     }
