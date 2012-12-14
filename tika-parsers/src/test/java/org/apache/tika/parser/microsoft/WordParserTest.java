@@ -256,6 +256,26 @@ public class WordParserTest extends TikaTest {
     }
     
     /**
+     * TIKA-1044 - Handle documents where parts of the
+     *  text have no formatting or styles applied to them
+     */
+    public void testNoFormat() throws Exception {
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+
+       InputStream stream = WordParserTest.class.getResourceAsStream(
+               "/test-documents/testWORD_no_format.doc");
+       try {
+           new OfficeParser().parse(stream, handler, metadata, new ParseContext());
+       } finally {
+           stream.close();
+       }
+
+       String content = handler.toString();
+       assertContains("Will generate an exception", content);
+    }
+    
+    /**
      * Ensures that custom OLE2 (HPSF) properties are extracted
      */
     public void testCustomProperties() throws Exception {

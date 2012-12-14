@@ -36,6 +36,8 @@ import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.microsoft.OfficeParser;
+import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -874,6 +876,26 @@ public class OOXMLParserTest extends TikaTest {
       assertContains("Test av styrt dokument", xml);
     }
 
+    /**
+     * TIKA-1044 - Handle word documents where parts of the
+     *  text have no formatting or styles applied to them
+     */
+    public void testNoFormat() throws Exception {
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+
+       InputStream stream = WordParserTest.class.getResourceAsStream(
+               "/test-documents/testWORD_no_format.docx");
+       try {
+          new OOXMLParser().parse(stream, handler, metadata, new ParseContext());
+       } finally {
+           stream.close();
+       }
+
+       String content = handler.toString();
+       assertContains("This is a piece of text that causes an exception", content);
+    }
+    
     // TIKA-1005:
     public void testTextInsideTextBox() throws Exception {
         String xml = getXML("testWORD_text_box.docx").xml;
