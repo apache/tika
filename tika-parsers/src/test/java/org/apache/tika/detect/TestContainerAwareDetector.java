@@ -82,6 +82,8 @@ public class TestContainerAwareDetector extends TestCase {
         assertTypeByData("testWORKSSpreadsheet7.0.xlr", "application/x-tika-msworks-spreadsheet");
         assertTypeByData("testPROJECT2003.mpp", "application/vnd.ms-project");
         assertTypeByData("testPROJECT2007.mpp", "application/vnd.ms-project");
+        // Excel95 can be detected by not parsed
+        assertTypeByData("testEXCEL_95.xls", "application/vnd.ms-excel");
 
         // Try some ones that POI doesn't handle, that are still OLE2 based
         assertTypeByData("testCOREL.shw", "application/x-corelpresentations");
