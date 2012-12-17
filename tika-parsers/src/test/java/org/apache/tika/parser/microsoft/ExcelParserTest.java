@@ -265,6 +265,50 @@ public class ExcelParserTest extends TestCase {
           input.close();
        }
     }
+
+    /**
+     * We don't currently support the old Excel 95 .xls file format, 
+     *  but we shouldn't break on these files either (TIKA-976)  
+     */
+    public void testExcel95() throws Exception {
+       Detector detector = new DefaultDetector();
+       AutoDetectParser parser = new AutoDetectParser();
+       
+       InputStream input = ExcelParserTest.class.getResourceAsStream(
+             "/test-documents/testEXCEL_95.xls");
+       Metadata m = new Metadata();
+       m.add(Metadata.RESOURCE_NAME_KEY, "excel_95.xls");
+       
+       // Should be detected correctly
+       MediaType type = null;
+       try {
+          type = detector.detect(input, m);
+          assertEquals("application/vnd.ms-excel", type.toString());
+       } finally {
+          input.close();
+       }
+       
+       // OfficeParser will claim to handle it
+       assertEquals(true, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+       
+       // OOXMLParser won't handle it
+       assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
+       
+       // AutoDetectParser doesn't break on it
+       input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls");
+
+       try {
+          ContentHandler handler = new BodyContentHandler(-1);
+          ParseContext context = new ParseContext();
+          context.set(Locale.class, Locale.US);
+          parser.parse(input, handler, m, context);
+
+          String content = handler.toString();
+          assertEquals("", content);
+       } finally {
+          input.close();
+       }
+    }
     
     /**
      * Ensures that custom OLE2 (HPSF) properties are extracted

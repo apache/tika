@@ -223,8 +223,11 @@ public class POIFSContainerDetector implements Detector {
                 // Works 7.0 spreadsheet files contain both
                 // we want to avoid classifying this as Excel
                 return XLR; 
-            } else if (names.contains("Workbook")) {
+            } else if (names.contains("Workbook") || names.contains("WORKBOOK")) {
                 return XLS;
+            } else if (names.contains("Book")) {
+               // Excel 95 or older, we won't be able to parse this....
+               return XLS;
             } else if (names.contains("EncryptedPackage") && 
                     names.contains("EncryptionInfo") &&
                     names.contains("\u0006DataSpaces")) {

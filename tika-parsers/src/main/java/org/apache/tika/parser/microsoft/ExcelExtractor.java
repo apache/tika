@@ -94,6 +94,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
      * records.
      */
     private boolean listenForAllRecords = false;
+    
+    private static final String WORKBOOK_ENTRY = "Workbook";
 
     public ExcelExtractor(ParseContext context) {
         super(context);
@@ -140,6 +142,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     protected void parse(
             DirectoryNode root, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException, TikaException {
+        if (! root.hasEntry(WORKBOOK_ENTRY)) {
+           // Corrupt file / very old file, just skip
+           return;
+        }
+       
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();
@@ -286,7 +293,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             }
 
             // Create event factory and process Workbook (fire events)
-            DocumentInputStream documentInputStream = root.createDocumentInputStream("Workbook");
+            DocumentInputStream documentInputStream = root.createDocumentInputStream(WORKBOOK_ENTRY);
             HSSFEventFactory eventFactory = new HSSFEventFactory();
             try {
                 eventFactory.processEvents(hssfRequest, documentInputStream);
