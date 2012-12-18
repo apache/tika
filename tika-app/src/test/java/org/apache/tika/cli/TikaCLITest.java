@@ -98,6 +98,8 @@ public class TikaCLITest extends TestCase{
         String[] params = {"-h", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
         Assert.assertTrue(outContent.toString().contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
+        Assert.assertTrue("Expanded <title></title> element should be present",
+                outContent.toString().contains("<title></title>"));
     }
 
     /**

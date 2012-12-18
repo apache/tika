@@ -84,6 +84,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.apache.tika.xmp.XMPMetadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -166,7 +167,7 @@ public class TikaCLI {
         @Override
         protected ContentHandler getContentHandler(
                 OutputStream output, Metadata metadata) throws Exception {
-            return getTransformerHandler(output, "html", encoding, prettyPrint);
+            return new ExpandedTitleContentHandler(getTransformerHandler(output, "html", encoding, prettyPrint));
         }
     };
 
