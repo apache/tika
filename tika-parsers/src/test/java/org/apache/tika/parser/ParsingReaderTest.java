@@ -53,10 +53,12 @@ public class ParsingReaderTest extends TestCase {
         String data = "<p>test <span>content</span></p>";
         InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
         Reader reader = new ParsingReader(stream, "test.xml");
+        assertEquals(' ', (char) reader.read());
         assertEquals('t', (char) reader.read());
         assertEquals('e', (char) reader.read());
         assertEquals('s', (char) reader.read());
         assertEquals('t', (char) reader.read());
+        assertEquals(' ', (char) reader.read());
         assertEquals(' ', (char) reader.read());
         assertEquals('c', (char) reader.read());
         assertEquals('o', (char) reader.read());
