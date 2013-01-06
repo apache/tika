@@ -84,6 +84,6 @@ public class XMLParser extends AbstractParser {
 
     protected ContentHandler getContentHandler(
             ContentHandler handler, Metadata metadata, ParseContext context) {
-        return new TextContentHandler(handler);
+        return new TextContentHandler(handler, true);
     }
 }

@@ -60,6 +60,9 @@ Release 1.3 - Current Development
     archive, because it failed to create the parent directories first
     (TIKA-1031).
 
+  * XML: a space character is now added before each element
+    (TIKA-1048)
+
 Release 1.2 - 07/10/2012
 ---------------------------------
 
