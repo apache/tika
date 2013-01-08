@@ -55,6 +55,22 @@ public class MimeTypesTest extends TestCase {
         }
     }
 
+    public void testRegisteredMimes() throws MimeTypeException {
+        String dummy = "text/xxxxx";
+        assertEquals(text, types.getRegisteredMimeType("text/plain"));
+        assertNull(types.getRegisteredMimeType(dummy));
+        assertNotNull(types.forName(dummy));
+        assertEquals(dummy, types.forName("text/xxxxx").getType().toString());
+        assertEquals(dummy, types.getRegisteredMimeType("text/xxxxx").getType().toString());
+        
+        try {
+            types.forName("invalid");
+            fail("MimeTypeException not thrown on invalid type name");
+        } catch (MimeTypeException e) {
+            // expected
+        }
+    }
+
     public void testSuperType() throws MimeTypeException {
         assertNull(registry.getSupertype(OCTET_STREAM));
         assertEquals(OCTET_STREAM, registry.getSupertype(TEXT_PLAIN));

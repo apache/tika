@@ -286,6 +286,26 @@ public final class MimeTypes implements Detector, Serializable {
         }
     }
 
+    /**
+     * Returns the registered media type with the given name (or alias).
+     * 
+     * Unlike {@link #forName(String)}, this function will *not* create a new
+     * MimeType and register it
+     *
+     * @param name media type name (case-insensitive)
+     * @return the registered media type with the given name or alias
+     * @throws MimeTypeException if the given media type name is invalid
+     */
+    public MimeType getRegisteredMimeType(String name) throws MimeTypeException {
+        MediaType type = MediaType.parse(name);
+        if (type != null) {
+            MediaType normalisedType = registry.normalize(type);
+            return types.get(normalisedType);
+        } else {
+            throw new MimeTypeException("Invalid media type name: " + name);
+        }
+    }
+    
     public synchronized void setSuperType(MimeType type, MediaType parent) {
         registry.addSuperType(type.getType(), parent);
     }
