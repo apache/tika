@@ -4642,6 +4642,18 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="text/x-clojure">
+    <_comment>Clojure source code</_comment>
+    <glob pattern="*.clj"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-coffeescript">
+    <_comment>CoffeeScript source code</_comment>
+    <glob pattern="*.coffee"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="text/x-csrc">
     <alias type="text/x-c"/>
     <_comment>C source code</_comment>
@@ -4736,6 +4748,12 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="text/x-go">
+    <_comment>Go source code</_comment>
+    <glob pattern="*.go"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="text/x-groovy">
     <_comment>Groovy source code</_comment>
     <glob pattern="*.groovy"/>
@@ -4755,6 +4773,12 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="text/x-ini">
+    <_comment>Configuration file</_comment>
+    <glob pattern="*.ini"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="text/x-java-source">
     <_comment>Java source code</_comment>
     <alias type="text/x-java" />
@@ -4771,6 +4795,12 @@
       <match value="&lt;%--" type="string" offset="0"/>
     </magic>
     <glob pattern="*.jsp"/>
+  </mime-type>
+
+  <mime-type type="text/x-less">
+    <_comment>LESS source code</_comment>
+    <glob pattern="*.less"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
 
   <mime-type type="text/x-lex">
@@ -4818,6 +4848,13 @@
   <mime-type type="text/x-objcsrc">
     <_comment>Objective-C source code</_comment>
     <glob pattern="*.m"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-ocaml">
+    <_comment>Ocaml source code</_comment>
+    <glob pattern="*.ocaml"/>
+    <glob pattern="*.mli"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
@@ -4883,6 +4920,14 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="text/x-rst">
+    <_comment>reStructuredText source code</_comment>
+    <glob pattern="*.rest"/>
+    <glob pattern="*.rst"/>
+    <glob pattern="*.restx"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="text/x-rexx">
     <_comment>Rexx source code</_comment>
     <glob pattern="*.rexx"/>
@@ -4892,6 +4937,12 @@
   <mime-type type="text/x-ruby">
     <_comment>Ruby source code</_comment>
     <glob pattern="*.rb"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-scala">
+    <_comment>Scala source code</_comment>
+    <glob pattern="*.scala"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
@@ -4915,6 +4966,12 @@
 
   <mime-type type="text/x-setext">
     <glob pattern="*.etx"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-stsrc">
+    <_comment>Smalltalk source code</_comment>
+    <glob pattern="*.st"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
@@ -4977,9 +5034,24 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
+  <mime-type type="text/x-web-markdown">
+    <_comment>Markdown source code</_comment>
+    <glob pattern="*.md"/>
+    <glob pattern="*.mdtext"/>
+    <glob pattern="*.mkd"/>
+    <glob pattern="*.markdown"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="text/x-yacc">
     <_comment>Yacc/Bison source code</_comment>
     <glob pattern="*.y"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-yaml">
+    <_comment>YAML source code</_comment>
+    <glob pattern="*.yaml"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
