@@ -64,4 +64,29 @@ public class HDFParserTest extends TestCase {
         assertEquals("5", metadata.get("GranuleMonth"));
     }
 
+    public void testHDF4() throws Exception {
+       if(System.getProperty("java.version").startsWith("1.5")) {
+          return;
+      }
+      Parser parser = new HDFParser();
+      ContentHandler handler = new BodyContentHandler();
+      Metadata metadata = new Metadata();
+
+      /*
+       * this is a publicly available HDF4 file from the HD4 examples:
+       * 
+       * http://www.hdfgroup.org/training/hdf4_chunking/Chunkit/bin/input54kmdata.hdf
+       */
+      InputStream stream = HDFParser.class
+              .getResourceAsStream("/test-documents/test.hdf");
+      try {
+          parser.parse(stream, handler, metadata, new ParseContext());
+      } finally {
+          stream.close();
+      }
+
+      assertNotNull(metadata);
+      assertEquals("Direct read of HDF4 file through CDM library", metadata.get("_History"));
+      assertEquals("Ascending", metadata.get("Pass"));
+    }
 }
