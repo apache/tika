@@ -1350,11 +1350,6 @@
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-excel.template.macroenabled.12">
-    <glob pattern="*.xltm"/>
-    <sub-class-of type="application/x-tika-ooxml"/>
-  </mime-type>
-
   <mime-type type="application/vnd.ms-fontobject">
     <glob pattern="*.eot"/>
   </mime-type>
@@ -1794,11 +1789,6 @@
 
   <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.slide">
     <glob pattern="*.sldx"/>
-    <sub-class-of type="application/x-tika-ooxml"/>
-  </mime-type>
-
-  <mime-type type="application/vnd.openxmlformats-officedocument.presentationml.slideshow">
-    <glob pattern="*.ppsx"/>
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
 
@@ -5140,10 +5130,6 @@
     <glob pattern="*.mpe"/>
     <glob pattern="*.m1v"/>
     <glob pattern="*.m2v"/>
-  </mime-type>
-
-  <mime-type type="video/vnd.mpegurl">
-    <glob pattern="*.mxu"/>
   </mime-type>
 
   <mime-type type="video/mpeg4-generic"/>
