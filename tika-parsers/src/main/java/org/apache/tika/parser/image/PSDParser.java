@@ -165,7 +165,7 @@ public class PSDParser extends AbstractParser {
              nameLen++;
              
              if(v == 0) {
-                // Even size, may be padded
+                // The name length is padded to be even
                 if(nameLen % 2 == 1) {
                    stream.read();
                    nameLen++;
@@ -178,6 +178,10 @@ public class PSDParser extends AbstractParser {
           }
           
           int dataLen = EndianUtils.readIntBE(stream);
+          if(dataLen %2 == 1) {
+              // Data Length is even padded
+              dataLen = dataLen + 1;
+          }
           totalLength = 4 + 2 + nameLen + 4 + dataLen;
           
           data = new byte[dataLen];
