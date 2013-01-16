@@ -97,7 +97,7 @@ public class ImageMetadataExtractor {
         }
     }
 
-    protected void parseTiff(File file)
+    public void parseTiff(File file)
             throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata tiffMetadata = TiffMetadataReader.readMetadata(file);
