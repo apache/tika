@@ -1,4 +1,4 @@
-Release 1.3 - Current Development
+Release 1.3 - 01/19/2013
 
   * Mimetype definitions added for more common programming languages,
     including common extensions, but not magic patterns. (TIKA-1055)
