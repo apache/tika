@@ -183,7 +183,16 @@ final class TextExtractor {
 
     // Non-zero if we are processing inside a field destination:
     private int fieldState;
-    
+
+    // Non-zero list index
+    private int pendingListEnd;
+    private Map<Integer, ListDescriptor> listTable = new HashMap<Integer, ListDescriptor>();
+    private Map<Integer, ListDescriptor> listOverrideTable = new HashMap<Integer, ListDescriptor>();
+    private Map<Integer, ListDescriptor> currentListTable;
+    private ListDescriptor currentList;
+    private int listTableLevel = -1;
+    private boolean ignoreLists;
+
     // Non-null if we've seen the url for a HYPERLINK but not yet
     // its text:
     private String pendingURL;
@@ -321,6 +330,14 @@ final class TextExtractor {
     public TextExtractor(XHTMLContentHandler out, Metadata metadata) {
         this.metadata = metadata;
         this.out = out;
+    }
+
+    public boolean isIgnoringLists() {
+        return ignoreLists;
+    }
+
+    public void setIgnoreLists(boolean ignore) {
+        this.ignoreLists = ignore;
     }
 
     private static boolean isHexChar(int ch) {
@@ -563,7 +580,19 @@ final class TextExtractor {
             if (groupState.bold) {
                 end("b");
             }
-            out.startElement("p");
+            if (pendingListEnd != 0 && groupState.list != pendingListEnd) {
+                endList(pendingListEnd);
+                pendingListEnd = 0;
+            }
+            if (inList() && pendingListEnd != groupState.list) {
+                startList(groupState.list);
+            }            
+            if (inList()) {
+                out.startElement("li");
+            } else {
+                out.startElement("p");
+            }
+
             // Ensure <b><i> order
             if (groupState.bold) {
                 start("b");
@@ -586,7 +615,12 @@ final class TextExtractor {
                 end("b");
                 groupState.bold = preserveStyles;
             }
-            out.endElement("p");
+            if (inList()) {
+                out.endElement("li");
+            } else {
+                out.endElement("p");
+            }
+
             if (preserveStyles && (groupState.bold || groupState.italic)) {
                 start("p");
                 if (groupState.bold) {
@@ -599,6 +633,12 @@ final class TextExtractor {
             } else {
                 inParagraph = false;
             }
+        }
+
+        // Ensure closing the list at document end
+        if (!preserveStyles && pendingListEnd != 0) {
+            endList(pendingListEnd);
+            pendingListEnd = 0;
         }
     }
 
@@ -821,6 +861,17 @@ final class TextExtractor {
                     }
                 }
             }
+
+            if (currentList != null) {
+                if (equals("listid")) {
+                    currentList.id = param;
+                    currentListTable.put(currentList.id, currentList);
+                } else if (equals("listtemplateid")) {
+                    currentList.templateID = param;
+                } else if (equals("levelnfc") || equals("levelnfcn")) {
+                    currentList.numberType[listTableLevel] = param;
+                }
+            }
         } else {
             // In document
             if (equals("b")) {
@@ -861,6 +912,10 @@ final class TextExtractor {
                     // TODO: log a warning?  Throw an exc?
                     groupState.fontCharset = null;
                 }
+            } else if (equals("ls")) {
+                groupState.list = param;
+            } else if (equals("lslvl")) {
+                groupState.listLevel = param;
             }
         }
 
@@ -898,6 +953,56 @@ final class TextExtractor {
         }
     }
 
+    private boolean inList() {
+        return !ignoreLists && groupState.list != 0;
+    }
+
+    /**
+     * Marks the current list as pending to end. This is done to be able to merge list items of
+     * the same list within the same enclosing list tag (ie. either <code>"ul"</code>, or
+     * <code>"ol"</code>).
+     */
+    private void pendingListEnd() {
+        pendingListEnd = groupState.list;
+        groupState.list = 0;
+    }
+
+    /**
+     * Emits the end tag of a list. Uses {@link #isUnorderedList(int)} to determine the list
+     * type for the given <code>listID</code>.
+     * @param listID The ID of the list.
+     * @throws IOException
+     * @throws SAXException
+     * @throws TikaException
+     */
+    private void endList(int listID) throws IOException, SAXException, TikaException {
+        if (!ignoreLists) {
+            out.endElement(isUnorderedList(listID) ? "ul" : "ol");
+        }
+    }
+
+    /**
+     * Emits the start tag of a list. Uses {@link #isUnorderedList(int)} to determine the list
+     * type for the given <code>listID</code>.
+     * @param listID The ID of the list.
+     * @throws IOException
+     * @throws SAXException
+     * @throws TikaException
+     */
+    private void startList(int listID) throws IOException, SAXException, TikaException {
+        if (!ignoreLists) {
+            out.startElement(isUnorderedList(listID) ? "ul" : "ol");
+        }
+    }
+
+    private boolean isUnorderedList(int listID) {
+        ListDescriptor list = listTable.get(listID);
+        if (list != null) {
+            return list.isUnordered(groupState.listLevel);
+        }
+        return true;
+    }
+
     private void end(String tag) throws IOException, SAXException, TikaException {
         out.endElement(tag);
     }
@@ -921,6 +1026,10 @@ final class TextExtractor {
 
             if (equals("colortbl") || equals("stylesheet") || equals("fonttbl")) {
                 groupState.ignore = true;
+            } else if (equals("listtable")) {
+                currentListTable = listTable;
+            } else if (equals("listoverridetable")) {
+                currentListTable = listOverrideTable;
             }
 
             if (uprState == -1) {
@@ -960,6 +1069,20 @@ final class TextExtractor {
                 // Inside font table
                 if (groupState.depth < fontTableDepth) {
                     fontTableState = 2;
+                }
+            }
+
+            // List table handling
+            if (currentListTable != null) {
+                if (equals("list")) {
+                    currentList = new ListDescriptor();
+                    listTableLevel = -1;
+                } else if (currentList != null) {
+                    if (equals("liststylename")) {
+                        currentList.isStyle = true;
+                    } else if (equals("listlevel")) {
+                        listTableLevel++;
+                    }
                 }
             }
 
@@ -1004,6 +1127,9 @@ final class TextExtractor {
                 end("b");
                 groupState.bold = false;
             }
+            if (inList()) { // && (groupStates.size() == 1 || groupStates.peekLast().list < 0))
+                pendingListEnd();
+            }
         } else if (equals("par")) {
             if (!ignored) {
                 endParagraph(true);
@@ -1024,6 +1150,8 @@ final class TextExtractor {
             pushText();
             // Annotation
             groupState.ignore = false;
+        } else if (equals("listtext")) {
+            groupState.ignore = true;
         } else if (equals("cell")) {
             // TODO: we should produce a table output here?
             //addOutputChar(' ');
@@ -1163,7 +1291,6 @@ final class TextExtractor {
 
     // Pop current GroupState
     private void processGroupEnd() throws IOException, SAXException, TikaException {
-
         if (inHeader) {
             if (nextMetaData != null) {
                 if (nextMetaData == TikaCoreProperties.CREATED) {
