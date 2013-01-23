@@ -20,10 +20,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
@@ -159,8 +155,6 @@ public class RTFParserTest extends TikaTest {
         assertEquals("VMazel", r.metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("VMazel", r.metadata.get(Metadata.AUTHOR));
         assertEquals("StarWriter", r.metadata.get(TikaCoreProperties.COMMENTS));
-        assertContains("1.", content);
-        assertContains("4.", content);
        
         // Special version of (GHQ)
         assertContains("\uff08\uff27\uff28\uff31\uff09", content);
@@ -250,12 +244,11 @@ public class RTFParserTest extends TikaTest {
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
         for(int row=1;row<=3;row++) {
-            //assertContains("·\tBullet " + row, content);
-            assertContains("\u00b7\tBullet " + row, content);
+            assertContains("Bullet " + row, content);
         }
         assertContains("Here is a numbered list:", content);
         for(int row=1;row<=3;row++) {
-            assertContains(row + ")\tNumber bullet " + row, content);
+            assertContains("Number bullet " + row, content);
         }
 
         for(int row=1;row<=2;row++) {
@@ -313,6 +306,22 @@ public class RTFParserTest extends TikaTest {
     public void testFontAfterBufferedText() throws Exception {
         assertContains("\u0423\u0432\u0430\u0436\u0430\u0435\u043c\u044b\u0439 \u043a\u043b\u0438\u0435\u043d\u0442!",
                        getXML("testFontAfterBufferedText.rtf").xml);
+    }
+
+    public void testListMicrosoftWord() throws Exception {
+        String content = getXML("testRTFListMicrosoftWord.rtf").xml;
+        assertContains("<ol>\t<li>one</li>", content);
+        assertContains("</ol>", content);
+        assertContains("<ul>\t<li>first</li>", content);
+        assertContains("</ul>", content);
+    }
+
+    public void testListLibreOffice() throws Exception {
+        String content = getXML("testRTFListLibreOffice.rtf").xml;
+        assertContains("<ol>\t<li>one</li>", content);
+        assertContains("</ol>", content);
+        assertContains("<ul>\t<li>first</li>", content);
+        assertContains("</ul>", content);
     }
 
     // TIKA-782

@@ -30,6 +30,8 @@ class GroupState {
     public boolean ignore;
     // Default is 1 if no uc control has been seen yet:
     public int ucSkip = 1;
+    public int list;
+    public int listLevel;
     public Charset fontCharset;
 
     // Create default (root) GroupState
@@ -42,6 +44,8 @@ class GroupState {
         italic = other.italic;
         ignore = other.ignore;
         ucSkip = other.ucSkip;
+        list = other.list;
+        listLevel = other.listLevel;
         fontCharset = other.fontCharset;
         depth = 1+other.depth;
     }
