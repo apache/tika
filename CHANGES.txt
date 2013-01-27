@@ -1,5 +1,9 @@
 Release 1.4 Current Development
 
+  * Added a new end-point to Tika's JAX-RS REST server that only detects
+    the media-type based on a small portion of the document submitted
+   (TIKA-1047).
+
   * RTF: Ordered and unordered lists are now extracted (TIKA-1062).
 
 Release 1.3 - 01/19/2013
