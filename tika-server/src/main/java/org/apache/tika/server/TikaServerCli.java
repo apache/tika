@@ -17,16 +17,7 @@
 
 package org.apache.tika.server;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
+import org.apache.commons.cli.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.binding.BindingFactoryManager;
@@ -35,6 +26,11 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
 
 public class TikaServerCli {
   private static final Log logger = LogFactory.getLog(TikaServerCli.class);
@@ -77,11 +73,13 @@ public class TikaServerCli {
       }
 
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-      sf.setResourceClasses(MetadataResource.class, TikaResource.class, UnpackerResource.class, TikaVersion.class);
+      sf.setResourceClasses(MetadataEP.class,MetadataResource.class, TikaResource.class, UnpackerResource.class, TikaVersion.class);
 
       List providers = new ArrayList();
       providers.add(new TarWriter());
       providers.add(new ZipWriter());
+      providers.add(new CSVMessageBodyWriter());
+      providers.add(new JSONMessageBodyWriter());
       providers.add(new TikaExceptionMapper());
       providers.add(new SingletonResourceProvider(new MetadataResource()));
       providers.add(new SingletonResourceProvider(new TikaResource()));

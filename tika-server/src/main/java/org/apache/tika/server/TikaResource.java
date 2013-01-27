@@ -36,8 +36,11 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import javax.mail.internet.ContentDisposition;
+import javax.mail.internet.ParseException;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+
 import java.io.*;
 import java.util.List;
 import java.util.Map;
@@ -79,10 +82,37 @@ public class TikaResource {
     return parser;
   }
 
-  public static void fillMetadata(AutoDetectParser parser, Metadata metadata, HttpHeaders httpHeaders) {
+  public static String detectFilename(HttpHeaders httpHeaders) {
+
+    List<String> disposition = httpHeaders.getRequestHeader("Content-Disposition");
+    if (disposition != null && !disposition.isEmpty()) {
+      try {
+        ContentDisposition c = new ContentDisposition(disposition.get(0));
+
+        // only support "attachment" dispositions
+        if ("attachment".equals(c.getDisposition())) {
+          String fn = c.getParameter("filename");
+          if (fn != null) {
+            return fn;
+          }
+        }
+      } catch (ParseException e) {
+        // not a valid content-disposition field
+      }
+    }
+
+    // this really should not be used, since it's not an official field
     List<String> fileName = httpHeaders.getRequestHeader("File-Name");
-    if (fileName!=null && !fileName.isEmpty()) {
-      metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName.get(0));
+    if (fileName != null && !fileName.isEmpty()) {
+      return fileName.get(0);
+    }
+    return null;
+  }
+
+  public static void fillMetadata(AutoDetectParser parser, Metadata metadata, HttpHeaders httpHeaders) {
+    String fileName = detectFilename(httpHeaders);
+    if (fileName != null) {
+      metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName);
     }
 
     javax.ws.rs.core.MediaType mediaType = httpHeaders.getMediaType();
