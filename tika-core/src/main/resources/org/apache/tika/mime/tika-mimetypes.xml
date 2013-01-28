@@ -2990,6 +2990,7 @@
   <mime-type type="application/x-sas">
     <_comment>SAS Program</_comment>
     <glob pattern="*.sas"/>
+    <sub-class-of type="text/plain"/>
   </mime-type>
   <mime-type type="application/x-sas-program-data">
     <_comment>SAS Stored Program (DATA Step)</_comment>
@@ -3005,6 +3006,9 @@
     <_comment>SAS Data Set</_comment>
     <glob pattern="*.sd7"/>
     <glob pattern="*.sas7bdat"/>
+    <magic priority="40">
+      <match value="SAS FILE" type="string" offset="84" />
+    </magic>
   </mime-type>
   <mime-type type="application/x-sas-view">
     <_comment>SAS Data Set View</_comment>
