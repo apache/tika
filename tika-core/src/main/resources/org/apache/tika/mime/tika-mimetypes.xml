@@ -2987,6 +2987,84 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-sas">
+    <_comment>SAS Program</_comment>
+    <glob pattern="*.sas"/>
+  </mime-type>
+  <mime-type type="application/x-sas-program-data">
+    <_comment>SAS Stored Program (DATA Step)</_comment>
+    <glob pattern="*.ss7"/>
+    <glob pattern="*.sas7bpgm"/>
+  </mime-type>
+  <mime-type type="application/x-sas-audit">
+    <_comment>SAS Audit</_comment>
+    <glob pattern="*.st7"/>
+    <glob pattern="*.sas7baud"/>
+  </mime-type>
+  <mime-type type="application/x-sas-data">
+    <_comment>SAS Data Set</_comment>
+    <glob pattern="*.sd7"/>
+    <glob pattern="*.sas7bdat"/>
+  </mime-type>
+  <mime-type type="application/x-sas-view">
+    <_comment>SAS Data Set View</_comment>
+    <glob pattern="*.sv7"/>
+    <glob pattern="*.sas7bvew"/>
+  </mime-type>
+  <mime-type type="application/x-sas-data-index">
+    <_comment>SAS Data Set Index</_comment>
+    <glob pattern="*.si7"/>
+    <glob pattern="*.sas7bndx"/>
+  </mime-type>
+  <mime-type type="application/x-sas-catalog">
+    <_comment>SAS Catalog</_comment>
+    <glob pattern="*.sc7"/>
+    <glob pattern="*.sas7bcat"/>
+  </mime-type>
+  <mime-type type="application/x-sas-access">
+    <_comment>SAS Access Descriptor</_comment>
+    <glob pattern="*.sa7"/>
+    <glob pattern="*.sas7bacs"/>
+  </mime-type>
+  <mime-type type="application/x-sas-fdb">
+    <_comment>SAS FDB Consolidation Database File</_comment>
+    <glob pattern="*.sf7"/>
+    <glob pattern="*.sas7bfdb"/>
+  </mime-type>
+  <mime-type type="application/x-sas-mddb">
+    <_comment>SAS MDDB Multi-Dimensional Database File</_comment>
+    <glob pattern="*.sm7"/>
+    <glob pattern="*.sas7bmdb"/>
+  </mime-type>
+  <mime-type type="application/x-sas-dmdb">
+    <_comment>SAS DMDB Data Mining Database File</_comment>
+    <glob pattern="*.s7m"/>
+    <glob pattern="*.sas7bdmd"/>
+  </mime-type>
+  <mime-type type="application/x-sas-itemstor">
+    <_comment>SAS Item Store (ItemStor) File</_comment>
+    <glob pattern="*.sr7"/>
+    <glob pattern="*.sas7bitm"/>
+  </mime-type>
+  <mime-type type="application/x-sas-utility">
+    <_comment>SAS Utility</_comment>
+    <glob pattern="*.su7"/>
+    <glob pattern="*.sas7butl"/>
+  </mime-type>
+  <mime-type type="application/x-sas-putility">
+    <_comment>SAS Permanent Utility</_comment>
+    <glob pattern="*.sp7"/>
+    <glob pattern="*.sas7bput"/>
+  </mime-type>
+  <mime-type type="application/x-sas-transport">
+    <_comment>SAS Transport File</_comment>
+    <glob pattern="*.stx"/>
+  </mime-type>
+  <mime-type type="application/x-sas-backup">
+    <_comment>SAS Backup</_comment>
+    <glob pattern="*.sas7bbak"/>
+  </mime-type>
+
   <mime-type type="application/x-sc">
     <magic priority="50">
       <match value="Spreadsheet" type="string" offset="38"/>
@@ -4400,6 +4478,7 @@
     <glob pattern="*.txt"/>
     <glob pattern="*.text"/>
     <glob pattern="*.conf"/>
+    <glob pattern="*.cfg"/>
     <glob pattern="*.def"/>
     <glob pattern="*.list"/>
     <glob pattern="*.in"/>
