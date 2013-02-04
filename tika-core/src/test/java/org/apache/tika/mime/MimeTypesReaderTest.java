@@ -119,6 +119,17 @@ public class MimeTypesReaderTest extends TestCase {
     }
     
     /**
+     * @since TIKA-1012
+     */
+    public void testReadExtendedMetadata() throws Exception {
+        MimeType bmp = this.mimeTypes.forName("image/x-ms-bmp");
+        assertEquals("BMP", bmp.getAcronym());
+        assertEquals("com.microsoft.bmp", bmp.getUniformTypeIdentifier());
+        assertEquals("http://en.wikipedia.org/wiki/BMP_file_format", 
+            bmp.getLinks().get(0).toString());
+    }
+    
+    /**
      * TIKA-746 Ensures that the custom mimetype maps were also 
      *  loaded and used
      */

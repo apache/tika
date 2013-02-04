@@ -63,9 +63,30 @@ public class MimeTypeTest extends TestCase {
     }
 
     /** Test MimeType setDescription() */
-    public void testSetDescription() {
+    public void testSetEmptyValues() {
         try {
             text.setDescription(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+        
+        try {
+            text.setAcronym(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+        
+        try {
+            text.addLink(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected result
+        }
+
+        try {
+            text.setUniformTypeIdentifier(null);
             fail("Expected IllegalArgumentException");
         } catch (IllegalArgumentException e) {
             // expected result
