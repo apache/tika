@@ -2591,6 +2591,17 @@
     </magic>
   </mime-type>
 
+  <mime-type type="application/x-filemaker">
+    <acronym>FP7</acronym>
+    <_comment>FileMaker Pro 7</_comment>
+    <magic priority="50">
+      <match value="0xC04842414D37" type="string" offset="14" >
+      <match value="0x4842414D323130314F43543939C102480750726F20372E30C0C0" type="string" offset="525" />
+    </match>
+    </magic>
+    <glob pattern="*.fp7" />
+  </mime-type>
+
   <mime-type type="application/x-font-bdf">
     <glob pattern="*.bdf"/>
   </mime-type>
