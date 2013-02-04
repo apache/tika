@@ -169,7 +169,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            Chunk htmlChunk = null;
            Chunk rtfChunk = null;
            Chunk textChunk = null;
-           for(Chunk chunk : msg.getMainChunks().getAll()) {
+           for(Chunk chunk : msg.getMainChunks().getChunks()) {
               if(chunk.getChunkId() == MAPIProperty.BODY_HTML.id) {
                  htmlChunk = chunk;
               }
@@ -203,7 +203,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
            if(rtfChunk != null && !doneBody) {
               ByteChunk chunk = (ByteChunk)rtfChunk;
               MAPIRtfAttribute rtf = new MAPIRtfAttribute(
-                    MAPIProperty.RTF_COMPRESSED, Types.BINARY, chunk.getValue()
+                    MAPIProperty.RTF_COMPRESSED, Types.BINARY.getId(), chunk.getValue()
               );
               RTFParser rtfParser = new RTFParser();
               rtfParser.parse(
