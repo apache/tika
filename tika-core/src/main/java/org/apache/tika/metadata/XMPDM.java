@@ -83,12 +83,13 @@ public interface XMPDM {
     Property AUDIO_CHANNEL_TYPE = Property.internalClosedChoise(
             "xmpDM:audioChannelType", "Mono", "Stereo", "5.1", "7.1");
     /**
-     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE} 
+     * Converter for {@link XMPDM#AUDIO_CHANNEL_TYPE}
      * @deprecated Experimental method, will change shortly
      */
+    @Deprecated
     static class ChannelTypePropertyConverter {
        private static Property property = AUDIO_CHANNEL_TYPE;
-       
+
        /**
         * How a standalone converter might work
         */
@@ -155,10 +156,10 @@ public interface XMPDM {
      */
     Property COPYRIGHT = Property.externalText("xmpDM:copyright");
 
-//    /**
-//     * "The duration of the media file."
-//     */
-//    Property DURATION = "xmpDM:duration";
+    /**
+     * "The duration of the media file."
+     */
+    Property DURATION = Property.externalReal("xmpDM:duration");
 
     /**
      * "The engineer's name."
@@ -226,7 +227,7 @@ public interface XMPDM {
 //    /**
 //     * "A reference to the project that created this file."
 //     */
-//    Property PROJECT_REF = "xmpDM:projectRef"; 
+//    Property PROJECT_REF = "xmpDM:projectRef";
 
     /**
      * "The sampling phase of film to be converted to video (pull-down)."
