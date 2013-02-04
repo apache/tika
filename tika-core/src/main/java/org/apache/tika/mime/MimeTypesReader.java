@@ -19,9 +19,10 @@ package org.apache.tika.mime;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -89,6 +90,11 @@ import org.xml.sax.helpers.DefaultHandler;
  *         type CDATA #REQUIRED&gt;
  *  ]&gt;
  * </pre>
+ * 
+ * In addition to the standard fields, this will also read two Tika specific fields:
+ *  - link
+ *  - uti
+ * 
  *
  * @see http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec
  */
@@ -154,7 +160,10 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
         } else if (SUB_CLASS_OF_TAG.equals(qName)) {
             String parent = attributes.getValue(SUB_CLASS_TYPE_ATTR);
             types.setSuperType(type, MediaType.parse(parent));
-        } else if (COMMENT_TAG.equals(qName)) {
+        } else if (ACRONYM_TAG.equals(qName)||
+                   COMMENT_TAG.equals(qName)||
+                   TIKA_LINK_TAG.equals(qName)||
+                   TIKA_UTI_TAG.equals(qName)) {
             characters = new StringBuilder();
         } else if (GLOB_TAG.equals(qName)) {
             String pattern = attributes.getValue(PATTERN_ATTR);
@@ -198,6 +207,20 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
                 type = null;
             } else if (COMMENT_TAG.equals(qName)) {
                 type.setDescription(characters.toString().trim());
+                characters = null;
+            } else if (ACRONYM_TAG.equals(qName)) {
+                type.setAcronym(characters.toString().trim());
+                characters = null;
+            } else if (TIKA_UTI_TAG.equals(qName)) {
+                type.setUniformTypeIdentifier(characters.toString().trim());
+                characters = null;
+            } else if (TIKA_LINK_TAG.equals(qName)) {
+                try {
+                    type.addLink(new URI(characters.toString().trim()));
+                } 
+                catch (URISyntaxException e) {
+                    throw new IllegalArgumentException("unable to parse link: "+characters, e);
+                }
                 characters = null;
             } else if (MATCH_TAG.equals(qName)) {
                 current.stop();
