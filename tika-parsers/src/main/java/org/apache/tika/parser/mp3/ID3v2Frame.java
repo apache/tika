@@ -18,6 +18,7 @@ package org.apache.tika.parser.mp3;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Iterator;
 
@@ -61,10 +62,12 @@ public class ID3v2Frame implements MP3Frame {
     }
 
     /**
-     * Returns the next Frame (ID3v2 or Audio) in
+     * Returns the next ID3v2 Frame in
      *  the file, or null if the next batch of data
-     *  doesn't correspond to either an ID3v2 Frame
-     *  or an Audio Frame.
+     *  doesn't correspond to either an ID3v2 header.
+     * If no ID3v2 frame could be detected and the passed in input stream is a
+     * {@code PushbackInputStream}, the bytes read so far are pushed back so
+     * that they can be read again.
      * ID3v2 Frames should come before all Audio ones.
      */
     public static MP3Frame createFrameIfPresent(InputStream inp)
@@ -78,19 +81,37 @@ public class ID3v2Frame implements MP3Frame {
             int majorVersion = inp.read();
             int minorVersion = inp.read();
             if (majorVersion == -1 || minorVersion == -1) {
+                pushBack(inp, h1, h2, h3, majorVersion, minorVersion);
                 return null;
             }
             return new ID3v2Frame(majorVersion, minorVersion, inp);
         }
-        
-        // Is it an Audio Frame?
-        int h4 = inp.read();
-        if (AudioFrame.isAudioHeader(h1, h2, h3, h4)) {
-            return new AudioFrame(h1, h2, h3, h4, inp);
-        }
-        
+
         // Not a frame header
+        pushBack(inp, h1, h2, h3);
         return null;
+    }
+
+    /**
+     * Pushes bytes back into the stream if possible. This method is called if
+     * no ID3v2 header could be found at the current stream position.
+     * 
+     * @param inp the input stream
+     * @param bytes the bytes to be pushed back
+     * @throws IOException if an error occurs
+     */
+    private static void pushBack(InputStream inp, int... bytes)
+            throws IOException
+    {
+        if (inp instanceof PushbackInputStream)
+        {
+            byte[] buf = new byte[bytes.length];
+            for (int i = 0; i < bytes.length; i++)
+            {
+                buf[i] = (byte) bytes[i];
+            }
+            ((PushbackInputStream) inp).unread(buf);
+        }
     }
 
     private ID3v2Frame(int majorVersion, int minorVersion, InputStream inp)
