@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TailStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -79,7 +80,8 @@ public class Mp3Parser extends AbstractParser {
            metadata.set(XMPDM.ALBUM, tag.getAlbum());
            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
            metadata.set(XMPDM.GENRE, tag.getGenre());
-           
+           metadata.set(XMPDM.DURATION, audioAndTags.duration);
+
            List<String> comments = new ArrayList<String>();
            for (ID3Comment comment : tag.getComments()) {
               StringBuffer cmt = new StringBuffer();
@@ -113,6 +115,7 @@ public class Mp3Parser extends AbstractParser {
             }
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getGenre());
+            xhtml.element("p", String.valueOf(audioAndTags.duration));
             for (String comment : comments) {
                xhtml.element("p", comment);
             }
@@ -157,11 +160,14 @@ public class Mp3Parser extends AbstractParser {
        LyricsHandler lyrics = null;
        AudioFrame firstAudio = null;
 
+       TailStream tailStream = new TailStream(stream, 10240+128);
+       MpegStream mpegStream = new MpegStream(tailStream);
+
        // ID3v2 tags live at the start of the file
        // You can apparently have several different ID3 tag blocks
        // So, keep going until we don't find any more
        MP3Frame f;
-       while ((f = ID3v2Frame.createFrameIfPresent(stream)) != null && firstAudio == null) {
+       while ((f = ID3v2Frame.createFrameIfPresent(mpegStream)) != null) {
            if(f instanceof ID3v2Frame) {
                ID3v2Frame id3F = (ID3v2Frame)f;
                if (id3F.getMajorVersion() == 4) {
@@ -171,15 +177,27 @@ public class Mp3Parser extends AbstractParser {
                } else if(id3F.getMajorVersion() == 2) {
                    v22 = new ID3v22Handler(id3F);
                }
-           } else if(f instanceof AudioFrame) {
-               firstAudio = (AudioFrame)f;
            }
        }
+
+        // Now iterate over all audio frames in the file
+        AudioFrame frame = mpegStream.nextFrame();
+        float duration = 0;
+        while (frame != null)
+        {
+            duration += frame.getDuration();
+            if (firstAudio == null)
+            {
+                firstAudio = frame;
+            }
+            mpegStream.skipFrame();
+            frame = mpegStream.nextFrame();
+        }
 
        // ID3v1 tags live at the end of the file
        // Lyrics live just before ID3v1, at the end of the file
        // Search for both (handlers seek to the end for us)
-       lyrics = new LyricsHandler(stream, handler);
+       lyrics = new LyricsHandler(tailStream.getTail());
        v1 = lyrics.id3v1;
 
        // Go in order of preference
@@ -203,6 +221,7 @@ public class Mp3Parser extends AbstractParser {
        ret.audio = firstAudio;
        ret.lyrics = lyrics;
        ret.tags = tags.toArray(new ID3Tags[tags.size()]);
+       ret.duration = duration;
        return ret;
     }
 
@@ -210,6 +229,7 @@ public class Mp3Parser extends AbstractParser {
         private ID3Tags[] tags;
         private AudioFrame audio;
         private LyricsHandler lyrics;
+        private float duration;
     }
 
 }

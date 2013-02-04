@@ -36,6 +36,16 @@ import org.xml.sax.ContentHandler;
 public class Mp3ParserTest extends TestCase {
 
     /**
+     * Checks the duration of an MP3 file.
+     * @param metadata the metadata object
+     * @param expected the expected duration, rounded as seconds
+     */
+    private static void checkDuration(Metadata metadata, int expected) {
+        assertEquals("Wrong duration", expected,
+                Math.round(Float.valueOf(metadata.get(XMPDM.DURATION)) / 1000));
+    }
+
+    /**
      * Test that with only ID3v1 tags, we get some information out   
      */
     public void testMp3ParsingID3v1() throws Exception {
@@ -67,6 +77,7 @@ public class Mp3ParserTest extends TestCase {
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
         assertEquals("1", metadata.get("channels"));
+        checkDuration(metadata, 2);
     }
 
     /**
@@ -118,6 +129,7 @@ public class Mp3ParserTest extends TestCase {
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("Mono", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("MP3", metadata.get(XMPDM.AUDIO_COMPRESSOR));
+        checkDuration(metadata, 2);
     }
 
     /**
@@ -153,6 +165,7 @@ public class Mp3ParserTest extends TestCase {
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
         assertEquals("1", metadata.get("channels"));
+        checkDuration(metadata, 2);
     }
 
     /**
@@ -188,6 +201,7 @@ public class Mp3ParserTest extends TestCase {
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
         assertEquals("1", metadata.get("channels"));
+        checkDuration(metadata, 2);
     }
     
     /**
@@ -222,6 +236,7 @@ public class Mp3ParserTest extends TestCase {
        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
        assertEquals("44100", metadata.get("samplerate"));
        assertEquals("1", metadata.get("channels"));
+       checkDuration(metadata, 2);
    }
     
     
@@ -262,6 +277,7 @@ public class Mp3ParserTest extends TestCase {
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
         assertEquals("2", metadata.get("channels"));
+        checkDuration(metadata, 1);
     }
     
     public void testID3v2Frame() throws Exception {
