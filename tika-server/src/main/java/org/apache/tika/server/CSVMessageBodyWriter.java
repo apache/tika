@@ -48,7 +48,7 @@ public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
     return -1;
   }
 
-  @Override
+  // @Override -- not until Java 1.6
   public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
       MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
       WebApplicationException {
