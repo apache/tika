@@ -1,5 +1,8 @@
 Release 1.4 Current Development
 
+  * Addressed a typographic error that was preventing from detection of 
+    awk files (TIKA-1081).
+
   * Added a new end-point to Tika's JAX-RS REST server that only detects
     the media-type based on a small portion of the document submitted
    (TIKA-1047).
