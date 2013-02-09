@@ -4684,7 +4684,7 @@
       <match value="#!/usr/bin/awk" type="string" offset="0"/>
       <match value="#! /usr/bin/awk" type="string" offset="0"/>
     </magic>
-    <glob pattenr="*.awk"/>
+    <glob pattern="*.awk"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
