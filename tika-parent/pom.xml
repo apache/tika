@@ -249,8 +249,8 @@
   </dependencyManagement>
 
   <properties>
-    <maven.compile.source>1.5</maven.compile.source>
-    <maven.compile.target>1.5</maven.compile.target>
+    <maven.compile.source>1.6</maven.compile.source>
+    <maven.compile.target>1.6</maven.compile.target>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
   </properties>
 
