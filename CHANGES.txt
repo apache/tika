@@ -14,6 +14,9 @@ Release 1.4 Current Development
   * Java .class files: upgraded from ASM 3.1 to ASM 4.1 for parsing
     the Java bytecodes (TIKA-1053).
 
+  * Mime Types: Definitions extended to optionally include Link (URL) and
+    UTI, along with details for several common formats (TIKA-1012 / TIKA-1083)
+
 Release 1.3 - 01/19/2013
 
   * Mimetype definitions added for more common programming languages,
