@@ -709,7 +709,9 @@ public class TikaDetectionTest extends TestCase {
         assertEquals("image/x-freehand", tika.detect("x.fh4"));
         assertEquals("image/x-freehand", tika.detect("x.fh5"));
         assertEquals("image/x-freehand", tika.detect("x.fh7"));
-        assertEquals("image/x-icon", tika.detect("x.ico"));
+        // Differ from httpd - An official mimetype has subsequently been issued
+        //  favicon.ico +friends should now be image/vnd.microsoft.icon
+        //assertEquals("image/x-icon", tika.detect("x.ico"));
         assertEquals("image/x-pcx", tika.detect("x.pcx"));
         assertEquals("image/x-pict", tika.detect("x.pic"));
         assertEquals("image/x-pict", tika.detect("x.pct"));
