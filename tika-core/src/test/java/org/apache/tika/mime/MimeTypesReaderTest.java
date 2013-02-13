@@ -122,11 +122,17 @@ public class MimeTypesReaderTest extends TestCase {
      * @since TIKA-1012
      */
     public void testReadExtendedMetadata() throws Exception {
-        MimeType bmp = this.mimeTypes.forName("image/x-ms-bmp");
-        assertEquals("BMP", bmp.getAcronym());
-        assertEquals("com.microsoft.bmp", bmp.getUniformTypeIdentifier());
+        MimeType mime = this.mimeTypes.forName("image/x-ms-bmp");
+        assertEquals("BMP", mime.getAcronym());
+        assertEquals("com.microsoft.bmp", mime.getUniformTypeIdentifier());
         assertEquals("http://en.wikipedia.org/wiki/BMP_file_format", 
-            bmp.getLinks().get(0).toString());
+            mime.getLinks().get(0).toString());
+        
+        mime = this.mimeTypes.forName("application/xml");
+        assertEquals("XML", mime.getAcronym());
+        assertEquals("public.xml", mime.getUniformTypeIdentifier());
+        assertEquals("http://en.wikipedia.org/wiki/Xml", 
+            mime.getLinks().get(0).toString());
     }
     
     /**

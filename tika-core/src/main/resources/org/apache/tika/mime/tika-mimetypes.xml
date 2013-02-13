@@ -171,6 +171,9 @@
   <mime-type type="application/iges"/>
 
   <mime-type type="application/illustrator">
+    <acronym>AI</acronym>
+    <_comment>Adobe Illustrator Artwork</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/Adobe_Illustrator_Artwork</tika:link>
     <glob pattern="*.ai"/>]
     <sub-class-of type="application/postscript"/>
   </mime-type>
@@ -186,6 +189,9 @@
   <mime-type type="application/isup"/>
 
   <mime-type type="application/java-archive">
+    <_comment>Java Archive</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/.jar</tika:link>
+    <tika:uti>com.sun.java-archive</tika:uti>
     <sub-class-of type="application/zip"/>
     <glob pattern="*.jar"/>
   </mime-type>
@@ -296,6 +302,8 @@
     <!-- Use DefaultDetector / org.apache.tika.parser.microsoft.POIFSContainerDetector for more reliable detection of OLE2 documents -->
     <alias type="application/vnd.ms-word"/>
     <_comment>Microsoft Word Document</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/.doc</tika:link>
+    <tika:uti>com.microsoft.word.doc</tika:uti>
     <magic priority="50">
       <match value="Microsoft\ Word\ 6.0\ Document" type="string" offset="2080"/>
       <match value="Documento\ Microsoft\ Word\ 6" type="string" offset="2080"/>
@@ -383,6 +391,9 @@
     <alias type="application/x-pdf"/>
     <acronym>PDF</acronym>
     <_comment>Portable Document Format</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/PDF</tika:link>
+    <tika:link>http://www.adobe.com/devnet/pdf/pdf_reference_archive.html</tika:link>
+    <tika:uti>com.adobe.pdf</tika:uti>
     <magic priority="50">
       <match value="%PDF-" type="string" offset="0"/>
     </magic>
@@ -3291,6 +3302,10 @@
   <mime-type type="application/xhtml-voice+xml"/>
 
   <mime-type type="application/xml">
+    <acronym>XML</acronym>
+    <_comment>Extensible Markup Language</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/Xml</tika:link>
+    <tika:uti>public.xml</tika:uti>
     <alias type="text/xml"/>
     <magic priority="50">
       <match value="&lt;?xml" type="string" offset="0"/>
@@ -3346,6 +3361,8 @@
 
   <mime-type type="application/zip">
     <_comment>Compressed Archive File</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/ZIP_(file_format)</tika:link>
+    <tika:uti>com.pkware.zip-archive</tika:uti>
     <alias type="application/x-zip-compressed"/>
     <magic priority="40">
       <match value="PK\003\004" type="string" offset="0"/>
@@ -3801,6 +3818,8 @@
   <mime-type type="image/gif">
     <acronym>GIF</acronym>
     <_comment>Graphics Interchange Format</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/Gif</tika:link>
+    <tika:uti>com.compuserve.gif</tika:uti>
     <magic priority="50">
       <match value="GIF87a" type="string" offset="0"/>
       <match value="GIF89a" type="string" offset="0"/>
@@ -3827,6 +3846,8 @@
   <mime-type type="image/jpeg">
     <acronym>JPEG</acronym>
     <_comment>Joint Photographic Experts Group</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/Jpeg</tika:link>
+    <tika:uti>public.jpeg</tika:uti>
     <magic priority="50">
       <!-- FFD8 is the SOI (Start Of Image) marker.              -->
       <!-- It is followed by another marker that starts with FF. -->
@@ -3947,6 +3968,7 @@
   <mime-type type="image/vnd.dwg">
     <acronym>DWG</acronym>
     <_comment>AutoCad Drawing</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/.dwg</tika:link>
     <alias type="image/x-dwg"/>
     <alias type="application/acad"/>
     <alias type="application/x-acad"/>
@@ -3954,6 +3976,8 @@
     <alias type="application/dwg"/>
     <alias type="application/x-dwg"/>
     <alias type="application/x-autocad"/>
+    <alias type="image/vnd.dwg"/>
+    <alias type="drawing/dwg"/>
     <glob pattern="*.dwg"/>
     <magic priority="50">
       <match value="MC0.0" type="string" offset="0"/>
@@ -3970,6 +3994,9 @@
   </mime-type>
 
   <mime-type type="image/vnd.dxf">
+    <acronym>DXF</acronym>
+    <_comment>AutoCAD DXF</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/AutoCAD_DXF</tika:link>
     <glob pattern="*.dxf"/>
   </mime-type>
   <mime-type type="image/vnd.fastbidsheet">
@@ -4434,6 +4461,9 @@
   <mime-type type="text/example"/>
 
   <mime-type type="text/html">
+    <_comment>HyperText Markup Language</_comment>
+    <acronym>HTML</acronym>
+    <tika:uti>public.html</tika:uti>
      <!-- TIKA-327: if you encounter tags in the HTML
           with no declared namespace, it's not XHTML, it's just
           bad HTML, unfortunately.
