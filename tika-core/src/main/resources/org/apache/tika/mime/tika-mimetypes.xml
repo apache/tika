@@ -3988,7 +3988,20 @@
     <glob pattern="*.rlc"/>
   </mime-type>
   <mime-type type="image/vnd.globalgraphics.pgb"/>
-  <mime-type type="image/vnd.microsoft.icon"/>
+
+  <mime-type type="image/vnd.microsoft.icon">
+    <acronym>ICO</acronym>
+    <tika:link>http://en.wikipedia.org/wiki/.ico</tika:link>
+    <tika:uti>com.microsoft.ico</tika:uti>
+    <alias type="image/x-icon" />
+    <magic priority="50">
+      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000"
+             type="string" offset="0"/>
+      <match value="\000\000\001\000" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.ico"/>
+  </mime-type>
+
   <mime-type type="image/vnd.mix"/>
   <mime-type type="image/vnd.ms-modi">
     <glob pattern="*.mdi"/>
@@ -4022,15 +4035,6 @@
     <glob pattern="*.fh4"/>
     <glob pattern="*.fh5"/>
     <glob pattern="*.fh7"/>
-  </mime-type>
-
-  <mime-type type="image/x-icon">
-    <magic priority="50">
-      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000"
-             type="string" offset="0"/>
-      <match value="\000\000\001\000" type="string" offset="0"/>
-    </magic>
-    <glob pattern="*.ico"/>
   </mime-type>
 
   <mime-type type="image/x-jp2-codestream">
