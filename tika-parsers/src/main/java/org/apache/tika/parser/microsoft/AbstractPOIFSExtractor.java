@@ -19,6 +19,8 @@ package org.apache.tika.parser.microsoft;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
@@ -48,6 +50,7 @@ abstract class AbstractPOIFSExtractor {
     private TikaConfig tikaConfig;
     private MimeTypes mimeTypes;
     private Detector detector;
+    private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
 
     protected AbstractPOIFSExtractor(ParseContext context) {
         EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
@@ -152,6 +155,8 @@ abstract class AbstractPOIFSExtractor {
                     embedded = TikaInputStream.get(data);
                 } catch (Ole10NativeException ex) {
                     // Not a valid OLE10Native record, skip it
+                } catch (Throwable t) {
+                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + dir.getName(), t);
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {

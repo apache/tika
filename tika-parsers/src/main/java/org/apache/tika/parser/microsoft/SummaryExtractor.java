@@ -20,6 +20,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Date;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hpsf.MarkUnsupportedException;
@@ -45,6 +47,8 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * Outlook Message Parser.
  */
 class SummaryExtractor {
+
+    private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
 
     private static final String SUMMARY_INFORMATION =
         SummaryInformation.DEFAULT_STREAM_NAME;
@@ -91,6 +95,8 @@ class SummaryExtractor {
             throw new TikaException("Unexpected HPSF document", e);
         } catch (MarkUnsupportedException e) {
             throw new TikaException("Invalid DocumentInputStream", e);
+        } catch (Throwable t) {
+            logger.warn("Ignoring unexpected exception while parsing summary entry " + entryName, t);
         }
     }
 
