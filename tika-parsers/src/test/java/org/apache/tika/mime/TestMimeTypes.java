@@ -356,6 +356,13 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-portable-pixmap", "x.PPM");
     }
 
+    public void testPictDetection() throws Exception {
+        assertType("image/x-pict", "testPICT.pct");
+        assertTypeByData("image/x-pict", "testPICT.pct");
+        assertTypeByName("image/x-pict", "x.pic");
+        assertTypeByName("image/x-pict", "x.PCT");
+    }
+
     public void testCgmDetection() throws Exception {
         // TODO: Need a test image file
         assertTypeByName("image/cgm", "x.cgm");

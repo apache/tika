@@ -4090,8 +4090,13 @@
     <glob pattern="*.pcx"/>
   </mime-type>
   <mime-type type="image/x-pict">
+    <_comment>Apple Macintosh QuickDraw/PICT Format</_comment>
+    <magic priority="50">
+      <match value="0x001102FF0C00" type="string" offset="522"/>
+    </magic>
     <glob pattern="*.pic"/>
     <glob pattern="*.pct"/>
+    <glob pattern="*.pict"/>
   </mime-type>
 
   <mime-type type="image/x-portable-anymap">
