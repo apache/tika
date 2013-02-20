@@ -38,16 +38,17 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
-
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -89,7 +90,6 @@ import org.apache.tika.xmp.XMPMetadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
 import com.google.gson.Gson;
 
 /**
@@ -97,6 +97,8 @@ import com.google.gson.Gson;
  */
 public class TikaCLI {
     private File extractDir = new File(".");
+
+    private static final Log logger = LogFactory.getLog(TikaCLI.class);
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure(
@@ -719,23 +721,31 @@ public class TikaCLI {
             }
             System.out.println("Extracting '"+name+"' ("+contentType+") to " + outputFile);
 
-            FileOutputStream os = new FileOutputStream(outputFile);
+            FileOutputStream os = null;
 
-            if (inputStream instanceof TikaInputStream) {
-                TikaInputStream tin = (TikaInputStream) inputStream;
+            try {
+                os = new FileOutputStream(outputFile);
 
-                if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
-                    POIFSFileSystem fs = new POIFSFileSystem();
-                    copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-                    fs.writeFilesystem(os);
+                if (inputStream instanceof TikaInputStream) {
+                    TikaInputStream tin = (TikaInputStream) inputStream;
+
+                    if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
+                        POIFSFileSystem fs = new POIFSFileSystem();
+                        copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
+                        fs.writeFilesystem(os);
+                    } else {
+                        IOUtils.copy(inputStream, os);
+                    }
                 } else {
                     IOUtils.copy(inputStream, os);
                 }
-            } else {
-                IOUtils.copy(inputStream, os);
+            } catch (Throwable t) {
+                logger.warn("Ignoring unexpected exception trying to save embedded file " + name, t);
+            } finally {
+                if (os != null) {
+                    os.close();
+                }
             }
-
-            os.close();
         }
 
         protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)

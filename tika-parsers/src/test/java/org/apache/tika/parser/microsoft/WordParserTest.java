@@ -19,6 +19,8 @@ package org.apache.tika.parser.microsoft;
 import java.io.InputStream;
 import java.util.Locale;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -313,5 +315,19 @@ public class WordParserTest extends TikaTest {
        assertEquals("EDF-DIT",              metadata.get(OfficeOpenXMLExtended.COMPANY));
        assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
        assertEquals("2010-12-30T23:00:00Z", metadata.get("custom:MyCustomDate"));
+    }
+
+    public void testExceptions1() throws Exception {
+      XMLResult xml;
+      Level logLevelStart = Logger.getRootLogger().getLevel();
+      Logger.getRootLogger().setLevel(Level.ERROR);
+      try {
+        xml = getXML("testException1.doc");
+        assertContains("total population", xml.xml);
+        xml = getXML("testException2.doc");
+        assertContains("electric charge", xml.xml);
+      } finally {
+        Logger.getRootLogger().setLevel(logLevelStart);
+      }
     }
 }

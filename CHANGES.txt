@@ -17,6 +17,11 @@ Release 1.4 Current Development
   * Mime Types: Definitions extended to optionally include Link (URL) and
     UTI, along with details for several common formats (TIKA-1012 / TIKA-1083)
 
+  * Exceptions when parsing OLE10 embedded documents, when parsing
+    summary information from Office documents, and when saving
+    embedded documennts in TikaCLI are now logged instead
+    of aborting extraction (TIKA-1074)
+
 Release 1.3 - 01/19/2013
 
   * Mimetype definitions added for more common programming languages,
