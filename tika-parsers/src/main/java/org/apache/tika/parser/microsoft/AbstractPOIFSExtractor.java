@@ -155,8 +155,11 @@ abstract class AbstractPOIFSExtractor {
                     embedded = TikaInputStream.get(data);
                 } catch (Ole10NativeException ex) {
                     // Not a valid OLE10Native record, skip it
-                } catch (Throwable t) {
-                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + dir.getName(), t);
+                } catch (Exception e) {
+                    logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + dir.getName(), e);
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {
