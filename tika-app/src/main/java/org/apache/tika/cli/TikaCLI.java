@@ -739,8 +739,11 @@ public class TikaCLI {
                 } else {
                     IOUtils.copy(inputStream, os);
                 }
-            } catch (Throwable t) {
-                logger.warn("Ignoring unexpected exception trying to save embedded file " + name, t);
+            } catch (Exception e) {
+                logger.warn("Ignoring unexpected exception trying to save embedded file " + name, e);
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
             } finally {
                 if (os != null) {
                     os.close();
