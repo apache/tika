@@ -741,9 +741,6 @@ public class TikaCLI {
                 }
             } catch (Exception e) {
                 logger.warn("Ignoring unexpected exception trying to save embedded file " + name, e);
-                if (e instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
             } finally {
                 if (os != null) {
                     os.close();
