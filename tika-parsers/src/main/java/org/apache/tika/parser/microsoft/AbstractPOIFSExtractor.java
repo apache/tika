@@ -157,9 +157,6 @@ abstract class AbstractPOIFSExtractor {
                     // Not a valid OLE10Native record, skip it
                 } catch (Exception e) {
                     logger.warn("Ignoring unexpected exception while parsing possible OLE10_NATIVE embedded document " + dir.getName(), e);
-                    if (e instanceof InterruptedException) {
-                        Thread.currentThread().interrupt();
-                    }
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {

@@ -97,9 +97,6 @@ class SummaryExtractor {
             throw new TikaException("Invalid DocumentInputStream", e);
         } catch (Exception e) {
             logger.warn("Ignoring unexpected exception while parsing summary entry " + entryName, e);
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
         }
     }
 
