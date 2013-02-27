@@ -53,23 +53,38 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      */
     public static final String NAMESPACE_PREFIX_DELIMITER = ":";
 
-    // These properties are being moved to a new Tika core properties definition, javadocs will be added once it's available
-    @Deprecated public static final String FORMAT = "format";
-    @Deprecated public static final String IDENTIFIER = "identifier";
-    @Deprecated public static final String MODIFIED = "modified";
-    @Deprecated public static final String CONTRIBUTOR = "contributor";
-    @Deprecated public static final String COVERAGE = "coverage";
-    @Deprecated public static final String CREATOR = "creator";
-    @Deprecated public static final Property DATE = Property.internalDate("date");
-    @Deprecated public static final String DESCRIPTION = "description";
-    @Deprecated public static final String LANGUAGE = "language";
-    @Deprecated public static final String PUBLISHER = "publisher";
-    @Deprecated public static final String RELATION = "relation";
-    @Deprecated public static final String RIGHTS = "rights";
-    @Deprecated public static final String SOURCE = "source";
-    @Deprecated public static final String SUBJECT = "subject";
-    @Deprecated public static final String TITLE = "title";
-    @Deprecated public static final String TYPE = "type";
+    /** @deprecated use TikaCoreProperties#FORMAT */
+    public static final String FORMAT = "format";
+    /** @deprecated use TikaCoreProperties#IDENTIFIER */
+    public static final String IDENTIFIER = "identifier";
+    /** @deprecated use TikaCoreProperties#MODIFIED */
+    public static final String MODIFIED = "modified";
+    /** @deprecated use TikaCoreProperties#CONTRIBUTOR */
+    public static final String CONTRIBUTOR = "contributor";
+    /** @deprecated use TikaCoreProperties#COVERAGE */
+    public static final String COVERAGE = "coverage";
+    /** @deprecated use TikaCoreProperties#CREATOR */
+    public static final String CREATOR = "creator";
+    /** @deprecated use TikaCoreProperties#CREATED */
+    public static final Property DATE = Property.internalDate("date");
+    /** @deprecated use TikaCoreProperties#DESCRIPTION */
+    public static final String DESCRIPTION = "description";
+    /** @deprecated use TikaCoreProperties#LANGUAGE */
+    public static final String LANGUAGE = "language";
+    /** @deprecated use TikaCoreProperties#PUBLISHER */
+    public static final String PUBLISHER = "publisher";
+    /** @deprecated use TikaCoreProperties#RELATION */
+    public static final String RELATION = "relation";
+    /** @deprecated use TikaCoreProperties#RIGHTS */
+    public static final String RIGHTS = "rights";
+    /** @deprecated use TikaCoreProperties#SOURCE */
+    public static final String SOURCE = "source";
+    /** @deprecated use TikaCoreProperties#KEYWORDS */
+    public static final String SUBJECT = "subject";
+    /** @deprecated use TikaCoreProperties#TITLE */
+    public static final String TITLE = "title";
+    /** @deprecated use TikaCoreProperties#TYPE */
+    public static final String TYPE = "type";
 
     /**
      * The UTC time zone. Not sure if {@link TimeZone#getTimeZone(String)}
