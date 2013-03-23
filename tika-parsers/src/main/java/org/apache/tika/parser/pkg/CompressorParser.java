@@ -93,6 +93,13 @@ public class CompressorParser extends AbstractParser {
         CompressorInputStream cis;
         try {
             CompressorStreamFactory factory = new CompressorStreamFactory();
+            CompressorParserOptions options =
+                 context.get(CompressorParserOptions.class, new CompressorParserOptions() {
+                     public boolean decompressConcatenated(Metadata metadata) {
+                         return false;
+                     }
+                 });
+            factory.setDecompressConcatenated(options.decompressConcatenated(metadata));
             cis = factory.createCompressorInputStream(stream);
         } catch (CompressorException e) {
             throw new TikaException("Unable to uncompress document stream", e);
