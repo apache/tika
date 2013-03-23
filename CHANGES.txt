@@ -1,5 +1,8 @@
 Release 1.4 Current Development
 
+  * Improvements were made to the Compressor Parser to handle g'zipped files
+    that require the decompressConcatenated option set to true (TIKA-1096).
+
   * Addressed a typographic error that was preventing from detection of 
     awk files (TIKA-1081).
 
