@@ -2344,6 +2344,14 @@
     <glob pattern="*.a"/>
   </mime-type>
 
+  <mime-type type="application/x-arj">
+    <alias type="application/x-arj-compressed"/>
+    <magic priority="50">
+      <match value="0x60ea" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.arj"/>
+  </mime-type>
+
   <mime-type type="application/x-authorware-bin">
     <glob pattern="*.aab"/>
     <glob pattern="*.x32"/>
@@ -3251,6 +3259,12 @@
     <_comment>Password Protected OOXML File</_comment>
   </mime-type>
 
+  <mime-type type="application/x-uc2-compressed">
+    <magic priority="50">
+      <match value="UC2\x1a" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.uc2"/>
+  </mime-type>
   <mime-type type="application/x-ustar">
     <glob pattern="*.ustar"/>
   </mime-type>
