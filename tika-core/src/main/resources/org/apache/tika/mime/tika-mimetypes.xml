@@ -324,6 +324,22 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/msword2">
+    <!-- Pre-OLE2, not a subtype of application/x-tika-msoffice -->
+    <_comment>Microsoft Word 2 Document</_comment>
+    <magic priority="50">
+      <match value="0x9ba5" type="string" />
+      <match value="0xdba5" type="string" />
+    </magic>
+  </mime-type>
+  <mime-type type="application/msword5">
+    <!-- Pre-OLE2, not a subtype of application/x-tika-msoffice -->
+    <_comment>Microsoft Word 5 Document</_comment>
+    <magic priority="50">
+      <match value="0xfe37" type="string" />
+    </magic>
+  </mime-type>
+
   <mime-type type="application/mxf">
     <glob pattern="*.mxf"/>
   </mime-type>
