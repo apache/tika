@@ -36,6 +36,7 @@ import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
+import org.apache.pdfbox.pdmodel.common.COSObjectable;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.tika.exception.TikaException;
@@ -177,10 +178,10 @@ public class PDFParser extends AbstractParser {
                     embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
                 }
 
-                Map<String,Object> embeddedFileNames = embeddedFiles.getNames();
+                Map<String, COSObjectable> embeddedFileNames = embeddedFiles.getNames();
 
                 if (embeddedFileNames != null) {
-                    for (Map.Entry<String,Object> ent : embeddedFileNames.entrySet()) {
+                    for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
                         PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
                         PDEmbeddedFile file = spec.getEmbeddedFile();
 
@@ -278,8 +279,8 @@ public class PDFParser extends AbstractParser {
      */
     private void addMetadata(Metadata metadata, String name, COSBase value) {
         if(value instanceof COSArray) {
-            for(COSBase v : ((COSArray)value).toList()) {
-                addMetadata(metadata, name, v);
+            for(Object v : ((COSArray)value).toList()) {
+                addMetadata(metadata, name, ((COSBase) v));
             }
         } else if(value instanceof COSString) {
             addMetadata(metadata, name, ((COSString)value).getString());
