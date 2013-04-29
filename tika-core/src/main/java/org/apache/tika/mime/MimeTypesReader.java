@@ -98,22 +98,21 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @see http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec
  */
-class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
-
-    private final MimeTypes types;
+public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
+    protected final MimeTypes types;
 
     /** Current type */
-    private MimeType type = null;
+    protected MimeType type = null;
 
-    private int priority;
+    protected int priority;
 
-    private StringBuilder characters = null;
+    protected StringBuilder characters = null;
 
-    MimeTypesReader(MimeTypes types) {
+    protected MimeTypesReader(MimeTypes types) {
         this.types = types;
     }
 
-    void read(InputStream stream) throws IOException, MimeTypeException {
+    public void read(InputStream stream) throws IOException, MimeTypeException {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(false);
@@ -126,7 +125,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
         }
     }
 
-    void read(Document document) throws MimeTypeException {
+    public void read(Document document) throws MimeTypeException {
         try {
             TransformerFactory factory = TransformerFactory.newInstance();
             Transformer transformer = factory.newTransformer();
@@ -151,7 +150,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
                 try {
                     type = types.forName(name);
                 } catch (MimeTypeException e) {
-                    throw new SAXException(e);
+                    handleMimeError(name, e, qName, attributes);
                 }
             }
         } else if (ALIAS_TAG.equals(qName)) {
@@ -172,7 +171,7 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
                 try {
                     types.addPattern(type, pattern, Boolean.valueOf(isRegex));
                 } catch (MimeTypeException e) {
-                    throw new SAXException(e);
+                  handleGlobError(type, pattern, e, qName, attributes);
                 }
             }
         } else if (ROOT_XML_TAG.equals(qName)) {
@@ -238,6 +237,14 @@ class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
         if (characters != null) {
             characters.append(ch, start, length);
         }
+    }
+
+    protected void handleMimeError(String input, MimeTypeException ex, String qName, Attributes attributes) throws SAXException {
+      throw new SAXException(ex);
+    }
+    
+    protected void handleGlobError(MimeType type, String pattern, MimeTypeException ex, String qName, Attributes attributes) throws SAXException {
+      throw new SAXException(ex);
     }
 
     private ClauseRecord current = new ClauseRecord(null);

@@ -15,22 +15,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<!--
-  Description: This test XML file is used to load two extra "custom" 
-  mimetypes for unit testing
--->
 <mime-info>
-  <!-- A mimetype without any matching or globbing -->
-  <mime-type type="hello/world" />
-
-  <!-- A more complex mimetype, with a glob and a match -->
-  <mime-type type="hello/world-file">
-     <_comment>A "Hello World" file</_comment>
-     <hello>world</hello>
-     <glob pattern="*.hello.world" />
-     <magic priority="50">
-        <match value="Hello, World!" type="string" offset="0:13" />
-     </magic>
+  <mime-type type="another/world-file">
+     <hello>kittens</hello>
+     <glob pattern="*.hello.world" /> <!-- Will collide with 'hello/world-file'  -->
      <sub-class-of type="hello/world" />
   </mime-type>
 </mime-info>
