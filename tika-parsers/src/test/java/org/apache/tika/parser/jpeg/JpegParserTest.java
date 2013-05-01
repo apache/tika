@@ -225,4 +225,14 @@ public class JpegParserTest extends TestCase {
        assertEquals("251", metadata.get(Metadata.IMAGE_WIDTH));
        assertEquals("384", metadata.get(Metadata.IMAGE_LENGTH));
     }
+    
+    public void testJPEGEmptyEXIFDateTime() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+        InputStream stream =
+            getClass().getResourceAsStream("/test-documents/testJPEG_EXIF_emptyDateTime.jpg");
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+        assertEquals("300.0", metadata.get(TIFF.RESOLUTION_HORIZONTAL));
+        assertEquals("300.0", metadata.get(TIFF.RESOLUTION_VERTICAL));
+     }
 }

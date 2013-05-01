@@ -388,11 +388,13 @@ public class ImageMetadataExtractor {
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
                 Date datetime = directory.getDate(ExifIFD0Directory.TAG_DATETIME);
-                String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.format(datetime);
-                metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
-                // If Date/Time Original does not exist this might be creation date
-                if (metadata.get(TikaCoreProperties.CREATED) == null) {
-                    metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
+                if (datetime != null) {
+                    String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.format(datetime);
+                    metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
+                    // If Date/Time Original does not exist this might be creation date
+                    if (metadata.get(TikaCoreProperties.CREATED) == null) {
+                        metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
+                    }
                 }
             }
         }
