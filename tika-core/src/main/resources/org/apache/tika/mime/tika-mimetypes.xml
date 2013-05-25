@@ -5458,4 +5458,46 @@
       <root-XML namespaceURI="http://www.gribuser.ru/xml/fictionbook/2.0" localName="FictionBook"/>
       <glob pattern="*.fb2"/>
   </mime-type>
+
+    <mime-type type="text/x-asciidoc">
+    <_comment>Asciidoc source code</_comment>
+    <glob pattern="*.asciidoc"/>
+    <glob pattern="*.adoc"/>
+    <glob pattern="*.ad"/>
+    <glob pattern="*.ad.txt"/>
+    <glob pattern="*.adoc.txt"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-d">
+    <_comment>D source code</_comment>
+    <glob pattern="*.d"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-haml">
+    <_comment>HAML source code</_comment>
+    <glob pattern="*.haml"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-haxe">
+    <_comment>Haxe source code</_comment>
+    <glob pattern="*.hx"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-rsrc">
+    <_comment>R source code</_comment>
+    <glob pattern="*.r"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="application/xquery">
+    <_comment>XQuery source code</_comment>
+    <glob pattern="*.xq"/>
+    <glob pattern="*.xquery"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
 </mime-info>
