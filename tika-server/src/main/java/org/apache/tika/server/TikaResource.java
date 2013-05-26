@@ -33,6 +33,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -40,6 +41,11 @@ import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 
 import java.io.*;
 import java.util.List;
@@ -200,6 +206,77 @@ public class TikaResource {
       }
     };
   }
+
+
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/html")
+    public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        final AutoDetectParser parser = createParser();
+        final Metadata metadata = new Metadata();
+
+        fillMetadata(parser, metadata, httpHeaders);
+
+        logRequest(logger, info, metadata);
+
+        return new StreamingOutput() {
+            public void write(OutputStream outputStream)
+            throws IOException, WebApplicationException {
+                Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
+                ContentHandler content;
+
+                try {
+                    SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance( );
+                    TransformerHandler handler = factory.newTransformerHandler( );
+                    handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
+                    handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+                    handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+                    handler.setResult(new StreamResult(writer));
+                    content = new ExpandedTitleContentHandler( handler );
+                }
+                catch ( TransformerConfigurationException e ) {
+                    throw new WebApplicationException( e );
+                }
+
+                TikaInputStream tis = TikaInputStream.get(is);
+
+                try {
+                    tis.getFile();
+                    parser.parse(tis, content, metadata);
+                }
+                catch (SAXException e) {
+                    throw new WebApplicationException(e);
+                }
+                catch (EncryptedDocumentException e) {
+                    logger.warn(String.format(
+                            "%s: Encrypted document",
+                            info.getPath()
+                    ), e);
+                    throw new WebApplicationException(e, Response.status(422).build());
+                }
+                catch (TikaException e) {
+                    logger.warn(String.format(
+                            "%s: Text extraction failed",
+                            info.getPath()
+                    ), e);
+
+                    if (e.getCause()!=null && e.getCause() instanceof WebApplicationException)
+                        throw (WebApplicationException) e.getCause();
+
+                    if (e.getCause()!=null && e.getCause() instanceof IllegalStateException)
+                        throw new WebApplicationException(Response.status(422).build());
+
+                    if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException)
+                        throw new WebApplicationException(Response.status(422).build());
+
+                    throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+                }
+                finally {
+                    tis.close();
+                }
+            }
+        };
+    }
 
   public static void logRequest(Log logger, UriInfo info, Metadata metadata) {
     if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)==null) {
