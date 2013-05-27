@@ -110,24 +110,45 @@ public class TikaResourceTest extends CXFTestBase {
 		assertEquals(UNPROCESSEABLE, response.getStatus());
 	}
 
-    @Test
-    public void testSimpleWordHTML() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH)
-                .type("application/msword")
-                .accept("text/html")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
-        String responseMsg = getStringFromInputStream((InputStream) response
-                .getEntity());
-        assertTrue(responseMsg.contains("test"));
-    }
+  @Test
+  public void testSimpleWordHTML() throws Exception {
+      Response response = WebClient.create(endPoint + TIKA_PATH)
+              .type("application/msword")
+              .accept("text/html")
+              .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+      String responseMsg = getStringFromInputStream((InputStream) response
+              .getEntity());
+      assertTrue(responseMsg.contains("test"));
+  }
 
-    @Test
-    public void testPasswordXLSHTML() throws Exception {
-        Response response = WebClient.create(endPoint + TIKA_PATH)
-                .type("application/vnd.ms-excel")
-                .accept("text/html")
-                .put(ClassLoader.getSystemResourceAsStream("password.xls"));
+  @Test
+  public void testPasswordXLSHTML() throws Exception {
+      Response response = WebClient.create(endPoint + TIKA_PATH)
+              .type("application/vnd.ms-excel")
+              .accept("text/html")
+              .put(ClassLoader.getSystemResourceAsStream("password.xls"));
 
-        assertEquals(UNPROCESSEABLE, response.getStatus());
-    }
+      assertEquals(UNPROCESSEABLE, response.getStatus());
+  }
+
+  @Test
+  public void testSimpleWordXML() throws Exception {
+    Response response = WebClient.create(endPoint + TIKA_PATH)
+      .type("application/msword")
+      .accept("text/xml")
+      .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+    String responseMsg = getStringFromInputStream((InputStream) response
+      .getEntity());
+    assertTrue(responseMsg.contains("test"));
+  }
+
+  @Test
+  public void testPasswordXLSXML() throws Exception {
+    Response response = WebClient.create(endPoint + TIKA_PATH)
+      .type("application/vnd.ms-excel")
+      .accept("text/xml")
+      .put(ClassLoader.getSystemResourceAsStream("password.xls"));
+
+    assertEquals(UNPROCESSEABLE, response.getStatus());
+  }
 }
