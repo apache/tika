@@ -208,75 +208,145 @@ public class TikaResource {
   }
 
 
-    @PUT
-    @Consumes("*/*")
-    @Produces("text/html")
-    public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-        final AutoDetectParser parser = createParser();
-        final Metadata metadata = new Metadata();
+  @PUT
+  @Consumes("*/*")
+  @Produces("text/html")
+  public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+      final AutoDetectParser parser = createParser();
+      final Metadata metadata = new Metadata();
 
-        fillMetadata(parser, metadata, httpHeaders);
+      fillMetadata(parser, metadata, httpHeaders);
 
-        logRequest(logger, info, metadata);
+      logRequest(logger, info, metadata);
 
-        return new StreamingOutput() {
-            public void write(OutputStream outputStream)
-            throws IOException, WebApplicationException {
-                Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
-                ContentHandler content;
+      return new StreamingOutput() {
+          public void write(OutputStream outputStream)
+          throws IOException, WebApplicationException {
+              Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
+              ContentHandler content;
 
-                try {
-                    SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance( );
-                    TransformerHandler handler = factory.newTransformerHandler( );
-                    handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-                    handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-                    handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-                    handler.setResult(new StreamResult(writer));
-                    content = new ExpandedTitleContentHandler( handler );
-                }
-                catch ( TransformerConfigurationException e ) {
-                    throw new WebApplicationException( e );
-                }
+              try {
+                  SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance( );
+                  TransformerHandler handler = factory.newTransformerHandler( );
+                  handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
+                  handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+                  handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+                  handler.setResult(new StreamResult(writer));
+                  content = new ExpandedTitleContentHandler( handler );
+              }
+              catch ( TransformerConfigurationException e ) {
+                  throw new WebApplicationException( e );
+              }
 
-                TikaInputStream tis = TikaInputStream.get(is);
+              TikaInputStream tis = TikaInputStream.get(is);
 
-                try {
-                    tis.getFile();
-                    parser.parse(tis, content, metadata);
-                }
-                catch (SAXException e) {
-                    throw new WebApplicationException(e);
-                }
-                catch (EncryptedDocumentException e) {
-                    logger.warn(String.format(
-                            "%s: Encrypted document",
-                            info.getPath()
-                    ), e);
-                    throw new WebApplicationException(e, Response.status(422).build());
-                }
-                catch (TikaException e) {
-                    logger.warn(String.format(
-                            "%s: Text extraction failed",
-                            info.getPath()
-                    ), e);
+              try {
+                  tis.getFile();
+                  parser.parse(tis, content, metadata);
+              }
+              catch (SAXException e) {
+                  throw new WebApplicationException(e);
+              }
+              catch (EncryptedDocumentException e) {
+                  logger.warn(String.format(
+                          "%s: Encrypted document",
+                          info.getPath()
+                  ), e);
+                  throw new WebApplicationException(e, Response.status(422).build());
+              }
+              catch (TikaException e) {
+                  logger.warn(String.format(
+                          "%s: Text extraction failed",
+                          info.getPath()
+                  ), e);
 
-                    if (e.getCause()!=null && e.getCause() instanceof WebApplicationException)
-                        throw (WebApplicationException) e.getCause();
+                  if (e.getCause()!=null && e.getCause() instanceof WebApplicationException)
+                      throw (WebApplicationException) e.getCause();
 
-                    if (e.getCause()!=null && e.getCause() instanceof IllegalStateException)
-                        throw new WebApplicationException(Response.status(422).build());
+                  if (e.getCause()!=null && e.getCause() instanceof IllegalStateException)
+                      throw new WebApplicationException(Response.status(422).build());
 
-                    if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException)
-                        throw new WebApplicationException(Response.status(422).build());
+                  if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException)
+                      throw new WebApplicationException(Response.status(422).build());
 
-                    throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-                }
-                finally {
-                    tis.close();
-                }
-            }
-        };
-    }
+                  throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+              }
+              finally {
+                  tis.close();
+              }
+          }
+      };
+  }
+
+  @PUT
+  @Consumes("*/*")
+  @Produces("text/xml")
+  public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    final AutoDetectParser parser = createParser();
+    final Metadata metadata = new Metadata();
+
+    fillMetadata(parser, metadata, httpHeaders);
+
+    logRequest(logger, info, metadata);
+
+    return new StreamingOutput() {
+      public void write(OutputStream outputStream)
+        throws IOException, WebApplicationException {
+        Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
+        ContentHandler content;
+
+        try {
+          SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance( );
+          TransformerHandler handler = factory.newTransformerHandler( );
+          handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+          handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
+          handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+          handler.setResult(new StreamResult(writer));
+          content = new ExpandedTitleContentHandler( handler );
+        }
+        catch ( TransformerConfigurationException e ) {
+          throw new WebApplicationException( e );
+        }
+
+        TikaInputStream tis = TikaInputStream.get(is);
+
+        try {
+          tis.getFile();
+          parser.parse(tis, content, metadata);
+        }
+        catch (SAXException e) {
+          throw new WebApplicationException(e);
+        }
+        catch (EncryptedDocumentException e) {
+          logger.warn(String.format(
+            "%s: Encrypted document",
+            info.getPath()
+          ), e);
+          throw new WebApplicationException(e, Response.status(422).build());
+        }
+        catch (TikaException e) {
+          logger.warn(String.format(
+            "%s: Text extraction failed",
+            info.getPath()
+          ), e);
+
+          if (e.getCause()!=null && e.getCause() instanceof WebApplicationException)
+            throw (WebApplicationException) e.getCause();
+
+          if (e.getCause()!=null && e.getCause() instanceof IllegalStateException)
+            throw new WebApplicationException(Response.status(422).build());
+
+          if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException)
+            throw new WebApplicationException(Response.status(422).build());
+
+          throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+        }
+        finally {
+          tis.close();
+        }
+      }
+    };
+  }
 
   public static void logRequest(Log logger, UriInfo info, Metadata metadata) {
     if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)==null) {
