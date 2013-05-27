@@ -1,5 +1,8 @@
 Release 1.4 Current Development
 
+  * Improvements to tika-server to allow it to produce text/html and
+    text/xml content (TIKA-1126, TIKA-1127).
+
   * Improvements were made to the Compressor Parser to handle g'zipped files
     that require the decompressConcatenated option set to true (TIKA-1096).
 
