@@ -63,6 +63,8 @@ public class MimeDetectionTest extends TestCase {
         testFile("text/html", "evilhtml.html");
         // add another evil html test from TIKA-357
         testFile("text/html", "testlargerbuffer.html");
+        // test fragment of HTML with <div> (TIKA-1102)
+        testFile("text/html", "htmlfragment");
     }
 
     public void testByteOrderMark() throws Exception {
