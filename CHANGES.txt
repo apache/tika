@@ -31,6 +31,9 @@ Release 1.4 Current Development
   * MS Word: line tabular character is now replaced with newline
     (TIKA-1128)
 
+  * XML: ElementMetadataHandlers can now optionally accept duplicate
+    and empty values (TIKA-1133)
+
 Release 1.3 - 01/19/2013
 
   * Mimetype definitions added for more common programming languages,

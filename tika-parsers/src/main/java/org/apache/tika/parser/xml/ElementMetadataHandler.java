@@ -49,6 +49,9 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
 
     private final String name;
     private Property targetProperty;
+    
+    private final boolean allowDuplicateValues;
+    private final boolean allowEmptyValues;
 
     /**
      * The buffer used to capture characters when inside a bag li element.
@@ -68,6 +71,14 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
     private int matchLevel = 0;
     private int parentMatchLevel = 0;
 
+    /**
+     * Constructor for string metadata keys.
+     * 
+     * @param uri the uri of the namespace of the element
+     * @param localName the local name of the element
+     * @param metadata the Tika metadata object to populate
+     * @param name the Tika metadata field key
+     */
     public ElementMetadataHandler(
             String uri, String localName, Metadata metadata, String name) {
         super(metadata, name);
@@ -75,11 +86,46 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         this.localName = localName;
         this.metadata = metadata;
         this.name = name;
+        this.allowDuplicateValues = false;
+        this.allowEmptyValues = false;
         if (logger.isTraceEnabled()) {
     		logger.trace("created simple handler for " + this.name);
     	}
     }
+    
+    /**
+     * Constructor for string metadata keys which allows change of behavior
+     * for duplicate and empty entry values.
+     * 
+     * @param uri the uri of the namespace of the element
+     * @param localName the local name of the element
+     * @param metadata the Tika metadata object to populate
+     * @param name the Tika metadata field key
+     * @param allowDuplicateValues add duplicate values to the Tika metadata
+     * @param allowEmptyValues add empty values to the Tika metadata
+     */
+    public ElementMetadataHandler(
+            String uri, String localName, Metadata metadata, String name, boolean allowDuplicateValues, boolean allowEmptyValues) {
+        super(metadata, name);
+        this.uri = uri;
+        this.localName = localName;
+        this.metadata = metadata;
+        this.name = name;
+        this.allowDuplicateValues = allowDuplicateValues;
+        this.allowEmptyValues = allowEmptyValues;
+        if (logger.isTraceEnabled()) {
+                logger.trace("created simple handler for " + this.name);
+        }
+    }
 
+    /**
+     * Constructor for Property metadata keys.
+     * 
+     * @param uri the uri of the namespace of the element
+     * @param localName the local name of the element
+     * @param metadata the Tika metadata object to populate
+     * @param targetProperty the Tika metadata Property key
+     */
     public ElementMetadataHandler(
             String uri, String localName, Metadata metadata, Property targetProperty) {
         super(metadata, targetProperty);
@@ -88,9 +134,37 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
         this.metadata = metadata;
         this.targetProperty = targetProperty;
         this.name = targetProperty.getName();
+        this.allowDuplicateValues = false;
+        this.allowEmptyValues = false;
         if (logger.isTraceEnabled()) {
     		logger.trace("created property handler for " + this.name);
     	}
+    }
+    
+    /**
+     * Constructor for Property metadata keys which allows change of behavior
+     * for duplicate and empty entry values.
+     * 
+     * @param uri the uri of the namespace of the element
+     * @param localName the local name of the element
+     * @param metadata the Tika metadata object to populate
+     * @param targetProperty the Tika metadata Property key
+     * @param allowDuplicateValues add duplicate values to the Tika metadata
+     * @param allowEmptyValues add empty values to the Tika metadata
+     */
+    public ElementMetadataHandler(
+            String uri, String localName, Metadata metadata, Property targetProperty, boolean allowDuplicateValues, boolean allowEmptyValues) {
+        super(metadata, targetProperty);
+        this.uri = uri;
+        this.localName = localName;
+        this.metadata = metadata;
+        this.targetProperty = targetProperty;
+        this.name = targetProperty.getName();
+        this.allowDuplicateValues = allowDuplicateValues;
+        this.allowEmptyValues = allowEmptyValues;
+        if (logger.isTraceEnabled()) {
+                logger.trace("created property handler for " + this.name);
+        }
     }
 
     protected boolean isMatchingParentElement(String uri, String localName) {
@@ -165,9 +239,12 @@ public class ElementMetadataHandler extends AbstractMetadataHandler {
             logger.trace("adding " + name + "=" + value);
         }
         if (targetProperty != null && targetProperty.isMultiValuePermitted()) {
-            if (value != null && value.length() > 0) {
+            if ((value != null && value.length() > 0) || allowEmptyValues) {
+                if (value == null || value.length() == 0 && allowEmptyValues) {
+                    value = "";
+                }
                 String[] previous = metadata.getValues(name);
-                if (previous == null || !Arrays.asList(previous).contains(value)) {
+                if (previous == null || !Arrays.asList(previous).contains(value) || allowDuplicateValues) {
                     metadata.add(targetProperty, value);
                 }
             }
