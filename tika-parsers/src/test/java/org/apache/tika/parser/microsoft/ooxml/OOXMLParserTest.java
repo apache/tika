@@ -36,7 +36,6 @@ import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -910,5 +909,29 @@ public class OOXMLParserTest extends TikaTest {
         String xml = getXML("testPPT_embedded_two_slides.pptx").xml;
         assertContains("<div class=\"embedded\" id=\"slide1_rId7\"/>" , xml);
         assertContains("<div class=\"embedded\" id=\"slide2_rId7\"/>" , xml);
+    }
+    
+    /**
+     * Test for missing text described in 
+     * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.
+     * 
+     * @throws Exception
+     */
+    public void disabledTestMissingText() throws Exception { // TODO: Enable test once POI has been updated. 
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+
+        InputStream input = getTestDocument("testWORD_missing_text.docx");
+        try {
+            parser.parse(input, handler, metadata, context);
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertTrue(handler.toString().contains("BigCompany"));
+            assertTrue(handler.toString().contains("Seasoned"));
+        } finally {
+            input.close();
+        }
     }
   }
