@@ -332,6 +332,6 @@ public class WordParserTest extends TikaTest {
     }
 
     public void testTabularSymbol() throws Exception {
-        assertContains("one\ntwo", getXML("testWORD_tabular_symbol.doc").xml);
+        assertContains("one two", getXML("testWORD_tabular_symbol.doc").xml.replaceAll("\\s+", " "));
     }
 }
