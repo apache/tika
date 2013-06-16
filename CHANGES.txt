@@ -1,5 +1,7 @@
 Release 1.4 Current Development
 
+  * Removed a test HTML file with a poorly chosen GPL text in it (TIKA-1129).
+
   * Improvements to tika-server to allow it to produce text/html and
     text/xml content (TIKA-1126, TIKA-1127).
 

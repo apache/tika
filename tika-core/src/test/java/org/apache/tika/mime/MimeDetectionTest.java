@@ -19,6 +19,7 @@ package org.apache.tika.mime;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 import junit.framework.TestCase;
 
@@ -60,7 +61,7 @@ public class MimeDetectionTest extends TestCase {
                 "http://www.w3.org/2002/07/owl#",
                 "test-difficult-rdf2.xml");
         // add evil test from TIKA-327
-        testFile("text/html", "evilhtml.html");
+        testUrlOnly("text/html", "http://www.nheri.org");
         // add another evil html test from TIKA-357
         testFile("text/html", "testlargerbuffer.html");
         // test fragment of HTML with <div> (TIKA-1102)
@@ -111,6 +112,11 @@ public class MimeDetectionTest extends TestCase {
         assertTrue(registry.isSpecializationOf(
                 MediaType.parse("application/vnd.apple.iwork"),
                 MediaType.APPLICATION_ZIP));
+    }
+
+    private void testUrlOnly(String expected, String url) throws IOException{
+	InputStream in = new URL(url).openStream();
+        testStream(expected, url, in);
     }
 
     private void testUrl(String expected, String url, String file) throws IOException{
