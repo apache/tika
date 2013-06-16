@@ -214,4 +214,16 @@ public class TailStreamTest
                 new String(stream.getTail()));
         stream.close();
     }
+
+    /**
+     * Tests skip() if read reaches the end of the stream and returns -1.
+     */
+    @Test
+    public void testSkipReadEnd() throws IOException
+    {
+        final int count = 128;
+        TailStream stream = new TailStream(generateStream(0, count), 2 * count);
+        readStream(stream);
+        assertEquals("Wrong result", -1, stream.skip(1));
+    }
 }

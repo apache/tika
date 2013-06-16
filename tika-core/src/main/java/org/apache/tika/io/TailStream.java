@@ -143,8 +143,8 @@ public class TailStream extends FilterInputStream
                 bytesSkipped += bytesRead;
             }
         }
-        
-        return bytesSkipped;
+
+        return (bytesRead < 0 && bytesSkipped == 0) ? -1 : bytesSkipped;
     }
 
     /**
