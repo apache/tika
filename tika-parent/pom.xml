@@ -324,8 +324,8 @@
   </profiles>
 
   <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/1.4-rc2/tika-parent</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/1.4-rc2/tika-parent</developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/tags/1.4-rc2/tika-parent</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/1.4/tika-parent</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/1.4/tika-parent</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/1.4/tika-parent</url>
   </scm>
 </project>
