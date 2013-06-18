@@ -290,6 +290,11 @@ public class TestContainerAwareDetector extends TestCase {
        assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
     }
     
+    public void testDetectIPA() throws Exception {
+        assertTypeByNameAndData("testIPA.ipa", "application/x-itunes-ipa");
+        assertTypeByData("testIPA.ipa", "application/x-itunes-ipa");
+     }
+     
     public void testDetectZip() throws Exception {
         assertTypeByData("test-documents.zip", "application/zip");
         assertTypeByData("test-zip-of-zip.zip", "application/zip");

@@ -2798,6 +2798,12 @@
     <glob pattern="*.iso"/>
   </mime-type>
 
+  <mime-type type="application/x-itunes-ipa">
+    <sub-class-of type="application/zip"/>
+    <_comment>Apple iOS IPA AppStore file</_comment>
+    <glob pattern="*.ipa"/>
+  </mime-type>
+
   <mime-type type="application/x-java-jnlp-file">
     <glob pattern="*.jnlp"/>
   </mime-type>

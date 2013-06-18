@@ -20,6 +20,9 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -141,6 +144,9 @@ public class ZipContainerDetector implements Detector {
                 }
                 if (type == null) {
                     type = detectKmz(zip);
+                }
+                if (type == null) {
+                    type = detectIpa(zip);
                 }
                 if (type != null) {
                     return type;
@@ -311,4 +317,44 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
+    /**
+     * To be considered as an IPA file, it needs to match all of these
+     */
+    private static HashSet<Pattern> ipaEntryPatterns = new HashSet<Pattern>() {
+        private static final long serialVersionUID = 6545295886322115362L;
+        {
+           add(Pattern.compile("^Payload/$"));
+           add(Pattern.compile("^Payload/.*\\.app/$"));
+           add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/$"));
+           add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/CodeResources$"));
+           add(Pattern.compile("^Payload/.*\\.app/CodeResources$"));
+           add(Pattern.compile("^Payload/.*\\.app/Info\\.plist$"));
+           add(Pattern.compile("^Payload/.*\\.app/PkgInfo$"));
+           add(Pattern.compile("^Payload/.*\\.app/ResourceRules\\.plist$"));
+    }};
+    @SuppressWarnings("unchecked")
+    private static MediaType detectIpa(ZipFile zip) {
+        // Note - consider generalising this logic, if another format needs many regexp matching
+        Set<Pattern> tmpPatterns = (Set<Pattern>)ipaEntryPatterns.clone();
+        
+        Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+        while (entries.hasMoreElements()) {
+            ZipArchiveEntry entry = entries.nextElement();
+            String name = entry.getName();
+            
+            Iterator<Pattern> ip = tmpPatterns.iterator();
+            while (ip.hasNext()) {
+                if (ip.next().matcher(name).matches()) {
+                    ip.remove();
+                }
+            }
+            if (tmpPatterns.isEmpty()) {
+                // We've found everything we need to find
+                return MediaType.application("x-itunes-ipa");
+            }
+        }
+        
+        // If we get here, not all required entries were found
+        return null;
+    }
 }
