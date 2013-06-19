@@ -217,10 +217,14 @@ public class OfficeParser extends AbstractParser {
               // By default, use the default Office Password
               String password = Decryptor.DEFAULT_PASSWORD;
               
-              // If they supplyed a Password Provider, ask that for the password
+              // If they supplied a Password Provider, ask that for the password,
+              //  and use the provider given one if available (stick with default if not)
               PasswordProvider passwordProvider = context.get(PasswordProvider.class);
               if (passwordProvider != null) {
-                 password = passwordProvider.getPassword(metadata);
+                 String suppliedPassword = passwordProvider.getPassword(metadata);
+                 if (suppliedPassword != null) {
+                     password = suppliedPassword;
+                 }
               }
               
               // Check if we've the right password or not
