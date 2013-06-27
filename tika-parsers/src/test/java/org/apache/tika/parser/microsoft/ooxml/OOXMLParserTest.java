@@ -227,6 +227,62 @@ public class OOXMLParserTest extends TikaTest {
     }
     
     /**
+     * Test that the metadata is already extracted when the body is processed.
+     * See TIKA-1109
+     */
+    public void testPowerPointMetadataEarly() throws Exception {
+       String[] extensions = new String[] {
+             "pptx", "pptm", "ppsm", "ppsx", "potm"
+             //"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2 
+             //"xps" // TIKA-418: Not yet supported by POI
+       };
+
+       final String[] mimeTypes = new String[] {
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                "application/vnd.ms-powerpoint.template.macroenabled.12"
+        };
+
+        for (int i=0; i<extensions.length; i++) {
+            String extension = extensions[i];
+            final String filename = "testPPT." + extension;
+
+            Parser parser = new AutoDetectParser();
+            final Metadata metadata = new Metadata();
+            // TODO: should auto-detect without the resource name
+            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+
+	    // Allow the value to be access from the inner class
+	    final int currentI = i;
+            ContentHandler handler = new BodyContentHandler()
+		{
+		    public void startDocument ()
+		    {
+			assertEquals(
+				     "Mime-type checking for " + filename,
+				     mimeTypes[currentI],
+				     metadata.get(Metadata.CONTENT_TYPE));
+			assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
+			assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
+			assertEquals("Rajiv", metadata.get(Metadata.AUTHOR));
+
+		    }
+
+		};
+            ParseContext context = new ParseContext();
+    
+            InputStream input = getTestDocument(filename);
+            try {
+                parser.parse(input, handler, metadata, context);
+            } finally {
+                input.close();
+            }
+        }
+    }
+    
+    /**
      * For the PowerPoint formats we don't currently support, ensure that
      *  we don't break either
      */
