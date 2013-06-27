@@ -40,7 +40,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
-import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -105,17 +104,12 @@ public class OOXMLExtractorFactory {
                 extractor = new POIXMLTextExtractorDecorator(context, poiExtractor);
             }
             
-            // We need to get the content first, but not end 
-            //  the document just yet
-            EndDocumentShieldingContentHandler handler = 
-               new EndDocumentShieldingContentHandler(baseHandler);
-            extractor.getXHTML(handler, metadata, context);
-
-            // Now we can get the metadata
+            // Get the bulk of the metadata first, so that it's accessible during
+            //  parsing if desired by the client (see TIKA-1109)
             extractor.getMetadataExtractor().extract(metadata);
             
-            // Then finish up
-            handler.reallyEndDocument();
+            // Extract the text, along with any in-document metadata
+            extractor.getXHTML(baseHandler, metadata, context);
         } catch (IllegalArgumentException e) {
             if (e.getMessage().startsWith("No supported documents found")) {
                 throw new TikaException(
