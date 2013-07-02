@@ -970,10 +970,8 @@ public class OOXMLParserTest extends TikaTest {
     /**
      * Test for missing text described in 
      * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.
-     * 
-     * @throws Exception
      */
-    public void disabledTestMissingText() throws Exception { // TODO: Enable test once POI has been updated. 
+    public void testMissingText() throws Exception {
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         ParseContext context = new ParseContext();
@@ -990,4 +988,4 @@ public class OOXMLParserTest extends TikaTest {
             input.close();
         }
     }
-  }
+}
