@@ -28,6 +28,7 @@ import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.BodyType;
 import org.apache.poi.xwpf.usermodel.IBody;
 import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.xwpf.usermodel.IRunElement;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeaderFooter;
 import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
@@ -36,6 +37,8 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFPicture;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
+import org.apache.poi.xwpf.usermodel.XWPFSDT;
+import org.apache.poi.xwpf.usermodel.XWPFSDTContent;
 import org.apache.poi.xwpf.usermodel.XWPFStyle;
 import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -99,7 +102,20 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
              XWPFTable table = (XWPFTable)element;
              extractTable(table, xhtml);
           }
+          if (element instanceof XWPFSDT){
+             extractSDT((XWPFSDT) element, xhtml);
+          }
+
       }
+    }
+    
+    private void extractSDT(XWPFSDT element, XHTMLContentHandler xhtml) throws SAXException, 
+    XmlException, IOException {
+       XWPFSDTContent content = element.getContent();
+       String tag = "p";
+       xhtml.startElement(tag);
+       xhtml.characters(content.getText());
+       xhtml.endElement(tag);
     }
     
     private void extractParagraph(XWPFParagraph paragraph, XHTMLContentHandler xhtml)
@@ -183,79 +199,23 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           xhtml.endElement("a");
        }
        
-       // True if we are currently in the named style tag:
-       boolean curBold = false;
-       boolean curItalic = false;
-
-       // Do the text
-       for(XWPFRun run : paragraph.getRuns()) {
-          if (run.isBold() != curBold) {
-            if (curItalic) {
-              xhtml.endElement("i");
-              curItalic = false;
-            }
-            if (run.isBold()) {
-              xhtml.startElement("b");
-            } else {
-              xhtml.endElement("b");
-            }
-            curBold = run.isBold();
-          }
-
-          if (run.isItalic() != curItalic) {
-            if (run.isItalic()) {
-              xhtml.startElement("i");
-            } else {
-              xhtml.endElement("i");
-            }
-            curItalic = run.isItalic();
-          }
-
-          boolean addedHREF = false;
-          if(run instanceof XWPFHyperlinkRun) {
-             XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun)run;
-             XWPFHyperlink link = linkRun.getHyperlink(document);
-             if(link != null && link.getURL() != null) {
-                xhtml.startElement("a", "href", link.getURL());
-                addedHREF = true;
-             } else if(linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
-                xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
-                addedHREF = true;
-             }
-          }
-
-          xhtml.characters(run.toString());
-          
-          // If we have any pictures, output them
-          for(XWPFPicture picture : run.getEmbeddedPictures()) {
-             if(paragraph.getDocument() != null) {
-                XWPFPictureData data = picture.getPictureData();
-                if(data != null) {
-                   AttributesImpl attr = new AttributesImpl();
-
-                   attr.addAttribute("", "src", "src", "CDATA", "embedded:" + data.getFileName());
-                   attr.addAttribute("", "alt", "alt", "CDATA", picture.getDescription());
-
-                   xhtml.startElement("img", attr);
-                   xhtml.endElement("img");
-                }
-             }
-          }
-
-          if (addedHREF) {
-            xhtml.endElement("a");
-          }
-       }
+       TmpFormatting fmtg = new TmpFormatting(false, false);
        
-       // Close any still open style tags
-       if (curItalic) {
-         xhtml.endElement("i");
-         curItalic = false;
+       // Do the iruns
+       for(IRunElement run : paragraph.getIRuns()) {
+          if (run instanceof XWPFSDT){
+             fmtg = closeStyleTags(xhtml, fmtg);
+             processSDTRun((XWPFSDT)run, xhtml);
+             //for now, we're ignoring formatting in sdt
+             //if you hit an sdt reset to false
+             fmtg.setBold(false);
+             fmtg.setItalic(false);
+          } else {
+             fmtg = processRun((XWPFRun)run, paragraph, xhtml, fmtg);
+          }
        }
-       if (curBold) {
-         xhtml.endElement("b");
-         curBold = false;
-       }
+       closeStyleTags(xhtml, fmtg);
+       
        
        // Now do any comments for the paragraph
        XWPFCommentsDecorator comments = new XWPFCommentsDecorator(paragraph, null);
@@ -280,6 +240,89 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
        if (headerFooterPolicy != null) {
            extractFooters(xhtml, headerFooterPolicy);
        }
+    }
+
+    private TmpFormatting closeStyleTags(XHTMLContentHandler xhtml,
+          TmpFormatting fmtg) throws SAXException {
+       // Close any still open style tags
+       if (fmtg.isItalic()) {
+          xhtml.endElement("i");
+          fmtg.setItalic(false);
+       }
+       if (fmtg.isBold()) {
+          xhtml.endElement("b");
+          fmtg.setBold(false);
+       }
+       return fmtg;
+    }
+
+    private TmpFormatting processRun(XWPFRun run, XWPFParagraph paragraph, 
+          XHTMLContentHandler xhtml, TmpFormatting tfmtg) 
+          throws SAXException, XmlException, IOException{
+       // True if we are currently in the named style tag:
+       if (run.isBold() != tfmtg.isBold()) {
+          if (tfmtg.isItalic()) {
+             xhtml.endElement("i");
+             tfmtg.setItalic(false);
+          }
+          if (run.isBold()) {
+             xhtml.startElement("b");
+          } else {
+             xhtml.endElement("b");
+          }
+          tfmtg.setBold(run.isBold());
+       }
+
+       if (run.isItalic() != tfmtg.isItalic()) {
+          if (run.isItalic()) {
+             xhtml.startElement("i");
+          } else {
+             xhtml.endElement("i");
+          }
+          tfmtg.setItalic(run.isItalic());
+       }
+
+       boolean addedHREF = false;
+       if(run instanceof XWPFHyperlinkRun) {
+          XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun)run;
+          XWPFHyperlink link = linkRun.getHyperlink(document);
+          if(link != null && link.getURL() != null) {
+             xhtml.startElement("a", "href", link.getURL());
+             addedHREF = true;
+          } else if(linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
+             xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
+             addedHREF = true;
+          }
+       }
+
+       xhtml.characters(run.toString());
+
+       // If we have any pictures, output them
+       for(XWPFPicture picture : run.getEmbeddedPictures()) {
+          if(paragraph.getDocument() != null) {
+             XWPFPictureData data = picture.getPictureData();
+             if(data != null) {
+                AttributesImpl attr = new AttributesImpl();
+
+                attr.addAttribute("", "src", "src", "CDATA", "embedded:" + data.getFileName());
+                attr.addAttribute("", "alt", "alt", "CDATA", picture.getDescription());
+
+                xhtml.startElement("img", attr);
+                xhtml.endElement("img");
+             }
+          }
+       }
+
+       if (addedHREF) {
+          xhtml.endElement("a");
+       }
+
+       return tfmtg;
+    }
+
+    private void processSDTRun(XWPFSDT run, XHTMLContentHandler xhtml)
+          throws SAXException, XmlException, IOException{
+       xhtml.characters(run.getContent().getText());
     }
 
     private void extractTable(XWPFTable table, XHTMLContentHandler xhtml)
@@ -333,12 +376,15 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void extractHeaderText(XHTMLContentHandler xhtml, XWPFHeaderFooter header) throws SAXException, XmlException, IOException {
-        for(XWPFParagraph p : header.getParagraphs()) {
-            extractParagraph(p, xhtml);
-        }
 
-        for(XWPFTable table : header.getTables()) {
-            extractTable(table, xhtml);
+        for (IBodyElement e : header.getBodyElements()){
+           if (e instanceof XWPFParagraph){
+              extractParagraph((XWPFParagraph)e, xhtml);
+           } else if (e instanceof XWPFTable){
+              extractTable((XWPFTable)e, xhtml);
+           } else if (e instanceof XWPFSDT){
+              extractSDT((XWPFSDT)e, xhtml);
+           }
         }
     }
 
@@ -352,4 +398,27 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
        parts.add( document.getPackagePart() );
        return parts;
     }
+    
+    private class TmpFormatting{
+       private boolean bold = false;
+       private boolean italic = false;
+       private TmpFormatting(boolean bold, boolean italic){
+          this.bold = bold;
+          this.italic = italic;
+       }
+       public boolean isBold() {
+          return bold;
+       }
+       public void setBold(boolean bold) {
+          this.bold = bold;
+       }
+       public boolean isItalic() {
+          return italic;
+       }
+       public void setItalic(boolean italic) {
+          this.italic = italic;
+       }
+       
+    }
+
 }
