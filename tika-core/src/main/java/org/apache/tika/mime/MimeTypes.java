@@ -486,6 +486,8 @@ public final class MimeTypes implements Detector, Serializable {
     }
 
     private static MimeTypes DEFAULT_TYPES = null;
+    private static Map<ClassLoader,MimeTypes> CLASSLOADER_SPECIFIC_DEFAULT_TYPES =
+            new HashMap<ClassLoader, MimeTypes>();
 
     /**
      * Get the default MimeTypes. This includes all the build in
@@ -494,10 +496,25 @@ public final class MimeTypes implements Detector, Serializable {
      * @return MimeTypes default type registry
      */
     public static synchronized MimeTypes getDefaultMimeTypes() {
-        if (DEFAULT_TYPES == null) {
+        return getDefaultMimeTypes(null);
+    }
+    /**
+     * Get the default MimeTypes. This includes all the built-in
+     * media types, and any custom override ones present.
+     * 
+     * @param ClassLoader to use, if not the default
+     * @return MimeTypes default type registry
+     */
+    public static synchronized MimeTypes getDefaultMimeTypes(ClassLoader classLoader) {
+        MimeTypes types = DEFAULT_TYPES;
+        if (classLoader != null) {
+            types = CLASSLOADER_SPECIFIC_DEFAULT_TYPES.get(classLoader);
+        }
+            
+        if (types == null) {
             try {
-                DEFAULT_TYPES = MimeTypesFactory.create(
-                        "tika-mimetypes.xml", "custom-mimetypes.xml");
+                types = MimeTypesFactory.create(
+                      "tika-mimetypes.xml", "custom-mimetypes.xml", classLoader);
             } catch (MimeTypeException e) {
                 throw new RuntimeException(
                         "Unable to parse the default media type registry", e);
@@ -505,8 +522,13 @@ public final class MimeTypes implements Detector, Serializable {
                 throw new RuntimeException(
                         "Unable to read the default media type registry", e);
             }
+            
+            if (classLoader == null) {
+                DEFAULT_TYPES = types;
+            } else {
+                CLASSLOADER_SPECIFIC_DEFAULT_TYPES.put(classLoader, types);
+            }
         }
-        return DEFAULT_TYPES;
+        return types;
     }
-
 }

@@ -56,8 +56,8 @@ import org.xml.sax.SAXException;
  */
 public class TikaConfig {
 
-    private static MimeTypes getDefaultMimeTypes() {
-        return MimeTypes.getDefaultMimeTypes();
+    private static MimeTypes getDefaultMimeTypes(ClassLoader loader) {
+        return MimeTypes.getDefaultMimeTypes(loader);
     }
 
     private static Detector getDefaultDetector(
@@ -135,7 +135,7 @@ public class TikaConfig {
     public TikaConfig(ClassLoader loader)
             throws MimeTypeException, IOException {
         ServiceLoader serviceLoader = new ServiceLoader(loader);
-        this.mimeTypes = getDefaultMimeTypes();
+        this.mimeTypes = getDefaultMimeTypes(loader);
         this.detector = getDefaultDetector(mimeTypes, serviceLoader);
         this.parser = getDefaultParser(mimeTypes, serviceLoader);
     }
@@ -166,7 +166,7 @@ public class TikaConfig {
         }
 
         if (config == null) {
-            this.mimeTypes = getDefaultMimeTypes();
+            this.mimeTypes = getDefaultMimeTypes(ServiceLoader.getContextClassLoader());
             this.parser = getDefaultParser(mimeTypes, loader);
             this.detector = getDefaultDetector(mimeTypes, loader);
         } else {
@@ -301,7 +301,7 @@ public class TikaConfig {
         if (mtr != null && mtr.hasAttribute("resource")) {
             return MimeTypesFactory.create(mtr.getAttribute("resource"));
         } else {
-            return getDefaultMimeTypes();
+            return getDefaultMimeTypes(null);
         }
     }
 
