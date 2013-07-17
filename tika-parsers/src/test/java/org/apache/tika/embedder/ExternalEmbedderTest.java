@@ -19,10 +19,13 @@ package org.apache.tika.embedder;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,6 +36,7 @@ import org.apache.tika.embedder.Embedder;
 import org.apache.tika.embedder.ExternalEmbedder;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -116,12 +120,43 @@ public class ExternalEmbedderTest extends TestCase {
     }
 
     /**
-     * Gets the original input stream before metadata has been embedded.
+     * Gets the source input stream through standard Java resource loaders 
+     * before metadata has been embedded.
      *
      * @return a fresh input stream
      */
-    protected InputStream getOriginalInputStream() {
+    protected InputStream getSourceStandardInputStream() {
         return this.getClass().getResourceAsStream(TEST_TXT_PATH);
+    }
+
+    /**
+     * Gets the source input stream via {@link TikaInputStream}
+     * before metadata has been embedded.
+     *
+     * @return a fresh input stream
+     * @throws FileNotFoundException 
+     */
+    protected InputStream getSourceTikaInputStream() throws FileNotFoundException {
+        return TikaInputStream.get(getSourceInputFile());
+    }
+    
+    /**
+     * Gets the source input file through standard Java resource loaders
+     * before metadata has been embedded.
+     *
+     * @return a fresh input stream
+     * @throws FileNotFoundException 
+     */
+    protected File getSourceInputFile() throws FileNotFoundException {
+        URL origUrl = this.getClass().getResource(TEST_TXT_PATH);
+        if (origUrl == null) {
+            throw new FileNotFoundException("could not load " + TEST_TXT_PATH);
+        }
+        try {
+            return new File(origUrl.toURI());
+        } catch (URISyntaxException e) {
+            throw new FileNotFoundException(e.getMessage());
+        }
     }
 
     /**
@@ -148,19 +183,25 @@ public class ExternalEmbedderTest extends TestCase {
      *
      * @param isResultExpectedInOutput whether or not results are expected in command line output
      */
-    protected void embedInTempFile(boolean isResultExpectedInOutput) {
+    protected void embedInTempFile(InputStream sourceInputStream, boolean isResultExpectedInOutput) {
+        Embedder embedder = getEmbedder();
+        
+        // TODO Move this check to ExternalEmbedder
+        String os = System.getProperty("os.name", "");
+        if (os.contains("Windows")) {
+            // Skip test on Windows
+            return;
+        }
+        
         Date timestamp = new Date();
         Metadata metadataToEmbed = getMetadataToEmbed(timestamp);
-        Embedder embedder = getEmbedder();
 
         try {
-            // Get the input stream for the test document
-            InputStream origInputStream = getOriginalInputStream();
             File tempOutputFile = tmp.createTemporaryFile();
             FileOutputStream tempFileOutputStream = new FileOutputStream(tempOutputFile);
 
             // Embed the metadata into a copy of the original output stream
-            embedder.embed(metadataToEmbed, origInputStream, tempFileOutputStream, null);
+            embedder.embed(metadataToEmbed, sourceInputStream, tempFileOutputStream, null);
 
             ParseContext context = new ParseContext();
             Parser parser = getParser();
@@ -230,12 +271,36 @@ public class ExternalEmbedderTest extends TestCase {
             fail(e.getMessage());
         }
     }
-
-    public void testEmbed() throws IOException {
-        String os = System.getProperty("os.name", "");
-        if (!os.contains("Windows")) {
-            embedInTempFile(getIsMetadataExpectedInOutput());
+    
+    protected void checkSourceFileExists() {
+        String message = "the original input file was deleted";
+        try {
+            File origInputFile = getSourceInputFile();
+            assertNotNull(message, origInputFile);
+            assertTrue(message, origInputFile.exists());
+        } catch (FileNotFoundException e) {
+            fail(message + ": " + e.getMessage());
         }
+    }
+
+    /**
+     * Tests embedding using an input stream obtained via {@link ExternalEmbedderTest#getSourceStandardInputStream()}
+     * 
+     * @throws IOException
+     */
+    public void testEmbedStandardInputStream() throws IOException {
+        embedInTempFile(getSourceStandardInputStream(), getIsMetadataExpectedInOutput());
+        checkSourceFileExists();
+    }
+    
+    /**
+     * Tests embedding using an input stream obtained via {@link ExternalEmbedderTest#getSourceTikaInputStream()}
+     * 
+     * @throws IOException
+     */
+    public void testEmbedTikaInputStream() throws IOException {
+        embedInTempFile(getSourceTikaInputStream(), getIsMetadataExpectedInOutput());
+        checkSourceFileExists();
     }
 
 }

@@ -405,8 +405,8 @@ public class ExternalEmbedder implements Embedder {
                 }
             }
             if (!inputToStdIn) {
-                // Clean up temp input files
-                tikaInputStream.getFile().delete();
+                // Close input file (and delete if created by up TemporaryResources.createTemporaryFile) 
+                IOUtils.closeQuietly(tikaInputStream);
             }
             IOUtils.closeQuietly(outputStream);
             IOUtils.closeQuietly(stdErrOutputStream);
