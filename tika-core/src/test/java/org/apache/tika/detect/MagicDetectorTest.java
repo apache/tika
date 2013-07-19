@@ -178,10 +178,39 @@ public class MagicDetectorTest extends TestCase {
         InputStream stream = new RestrictiveInputStream(data);
         assertEquals(testMT, detector.detect(stream, new Metadata()));
     }
+    
+    public void testDetectString() throws Exception {
+        String data = "abcdEFGhijklmnoPQRstuvwxyz0123456789";
+        MediaType testMT = new MediaType("application", "test");
+        Detector detector;
+        
+        // Check regular String matching
+        detector = MagicDetector.parse(testMT, "string", "0:20", "abcd", null); 
+        assertDetect(detector, testMT, data.getBytes("ASCII"));
+        detector = MagicDetector.parse(testMT, "string", "0:20", "cdEFGh", null); 
+        assertDetect(detector, testMT, data.getBytes("ASCII"));
+        
+        // Check Little Endian and Big Endian utf-16 strings
+        detector = MagicDetector.parse(testMT, "unicodeLE", "0:20", "cdEFGh", null); 
+        assertDetect(detector, testMT, data.getBytes("UTF-16LE"));
+        detector = MagicDetector.parse(testMT, "unicodeBE", "0:20", "cdEFGh", null); 
+        assertDetect(detector, testMT, data.getBytes("UTF-16BE"));
+        
+        // Check case ignoring String matching
+        detector = MagicDetector.parse(testMT, "stringignorecase", "0:20", "BcDeFgHiJKlm", null); 
+        assertDetect(detector, testMT, data.getBytes("ASCII"));
+    }
 
     private void assertDetect(Detector detector, MediaType type, String data) {
         try {
             byte[] bytes = data.getBytes("ASCII");
+            assertDetect(detector, type, bytes);
+        } catch (IOException e) {
+            fail("Unexpected exception from MagicDetector");
+        }
+    }
+    private void assertDetect(Detector detector, MediaType type, byte[] bytes) {
+        try {
             InputStream stream = new ByteArrayInputStream(bytes);
             assertEquals(type, detector.detect(stream, new Metadata()));
 

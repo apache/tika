@@ -32,6 +32,10 @@ import org.apache.tika.mime.MediaType;
  * Content type detection based on magic bytes, i.e. type-specific patterns
  * near the beginning of the document input stream.
  *
+ * Because this works on bytes, not characters, by default any string
+ *  matching is done as ISO_8859_1. To use an explicit different
+ *  encoding, supply a type other than "string" / "stringignorecase"
+ *
  * @since Apache Tika 0.3
  */
 public class MagicDetector implements Detector {
@@ -62,7 +66,8 @@ public class MagicDetector implements Detector {
 
         return new MagicDetector(
                 mediaType, patternBytes, maskBytes,
-                type.equals("regex"), start, end);
+                type.equals("regex"), type.equals("stringignorecase"),
+                start, end);
     }
 
     private static byte[] decodeValue(String value, String type) {
@@ -89,6 +94,8 @@ public class MagicDetector implements Detector {
                 || type.equals("unicodeLE")
                 || type.equals("unicodeBE")) {
             decoded = decodeString(value, type);
+        } else if (type.equals("stringignorecase")) {
+            decoded = decodeString(value.toLowerCase(), type);
         } else if (type.equals("byte")) {
             decoded = tmpVal.getBytes();
         } else if (type.equals("host16") || type.equals("little16")) {
@@ -212,6 +219,11 @@ public class MagicDetector implements Detector {
     private final boolean isRegex;
 
     /**
+     * True if we're doing a case-insensitive string match, false otherwise.
+     */
+    private final boolean isStringIgnoreCase;
+
+    /**
      * Bit mask that is applied to the source bytes before pattern matching.
      */
     private final byte[] mask;
@@ -275,6 +287,16 @@ public class MagicDetector implements Detector {
             MediaType type, byte[] pattern, byte[] mask,
             boolean isRegex,
             int offsetRangeBegin, int offsetRangeEnd) {
+        this(type, pattern, mask, isRegex, false, offsetRangeBegin, offsetRangeEnd);
+    }
+    /**
+     * Creates a detector for input documents that meet the specified
+     * magic match.
+     */
+    public MagicDetector(
+            MediaType type, byte[] pattern, byte[] mask,
+            boolean isRegex, boolean isStringIgnoreCase,
+            int offsetRangeBegin, int offsetRangeEnd) {
         if (type == null) {
             throw new IllegalArgumentException("Matching media type is null");
         } else if (pattern == null) {
@@ -289,6 +311,7 @@ public class MagicDetector implements Detector {
         this.type = type;
 
         this.isRegex = isRegex;
+        this.isStringIgnoreCase = isStringIgnoreCase;
 
         this.patternLength = Math.max(pattern.length, mask != null ? mask.length : 0);
 
@@ -365,7 +388,12 @@ public class MagicDetector implements Detector {
             }
 
             if (this.isRegex) {
-                Pattern p = Pattern.compile(new String(this.pattern));
+                int flags = 0;
+                if (this.isStringIgnoreCase) {
+                    flags = Pattern.CASE_INSENSITIVE;
+                }
+                
+                Pattern p = Pattern.compile(new String(this.pattern), flags);
 
                 ByteBuffer bb = ByteBuffer.wrap(buffer);
                 CharBuffer result = ISO_8859_1.decode(bb);
@@ -387,8 +415,13 @@ public class MagicDetector implements Detector {
                 // Loop until we've covered the entire offset range
                 for (int i = 0; i <= offsetRangeEnd - offsetRangeBegin; i++) {
                     boolean match = true;
+                    int masked;
                     for (int j = 0; match && j < length; j++) {
-                        match = (buffer[i + j] & mask[j]) == pattern[j];
+                        masked = (buffer[i + j] & mask[j]);
+                        if (this.isStringIgnoreCase) {
+                            masked = Character.toLowerCase(masked);
+                        }
+                        match = (masked == pattern[j]);
                     }
                     if (match) {
                         return type;
