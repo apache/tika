@@ -632,6 +632,10 @@ public class TestMimeTypes extends TestCase {
     public void testEmlx() throws IOException {
         assertTypeDetection("testEMLX.emlx", "message/x-emlx");
     }
+    
+    public void testGroupWiseEml() throws Exception {
+        assertTypeDetection("testGroupWiseEml.eml", "message/rfc822");
+    }
 
     /** Test getMimeType(byte[]) */
     public void testGetMimeType_byteArray() throws IOException {
