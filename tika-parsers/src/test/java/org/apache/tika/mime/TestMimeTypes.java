@@ -629,6 +629,10 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/zip","testKMZ.kmz");
    }
 
+    public void testAMR() throws IOException {
+        assertTypeDetection("testAMR.amr", "audio/amr");
+    }
+    
     public void testEmlx() throws IOException {
         assertTypeDetection("testEMLX.emlx", "message/x-emlx");
     }
