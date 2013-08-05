@@ -3428,15 +3428,22 @@
 
   <mime-type type="audio/amr">
     <glob pattern="*.amr"/>
-    <magic priority="60">
+    <magic priority="40">
+      <!-- Specific match for the original AMR format -->
+      <match value="#!AMR\n" type="string" offset="0"/>
+      <!-- General match for AMR subtypes we don't have entries for -->
       <match value="#!AMR" type="string" offset="0"/>
     </magic>
   </mime-type>
   <mime-type type="audio/amr-wb">
     <sub-class-of type="audio/amr"/>
+    <magic priority="50">
+      <match value="#!AMR-WB\n" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="audio/amr-wb+">
     <sub-class-of type="audio/amr"/>
+    <!-- TIKA-1156 sample needed - might be "#!AMR-WB+\n" ? -->
   </mime-type>
 
   <mime-type type="audio/asc"/>
