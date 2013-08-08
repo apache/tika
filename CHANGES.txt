@@ -1,5 +1,6 @@
 Release 1.5 - Current Development
 
+  * Added sanitized test HTML file for local file test (Tika-1139).
 
 Release 1.4 - 06/15/2013
 

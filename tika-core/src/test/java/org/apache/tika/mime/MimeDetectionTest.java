@@ -61,7 +61,7 @@ public class MimeDetectionTest extends TestCase {
                 "http://www.w3.org/2002/07/owl#",
                 "test-difficult-rdf2.xml");
         // add evil test from TIKA-327
-        testUrlOnly("text/html", "http://www.nheri.org");
+        testFile("text/html", "test-tika-327.html");
         // add another evil html test from TIKA-357
         testFile("text/html", "testlargerbuffer.html");
         // test fragment of HTML with <div> (TIKA-1102)
