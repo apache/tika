@@ -466,7 +466,7 @@ public class PDFParserTest extends TikaTest {
         assertTrue(i < j);
     }
     
-    //TIKA-1142
+    //TIKA-1124
     public void testEmbeddedPDFEmbeddingAnotherDocument() throws Exception {
        /* format of test doc:
          docx/
