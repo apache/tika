@@ -2322,6 +2322,9 @@
     <acronym>INDD</acronym>
     <_comment>Adobe InDesign document</_comment>
     <glob pattern="*.indd"/>
+    <magic priority="50">
+      <match value="0x0606edf5d81d46e5bd31efe7fe74b71d" type="string" offset="0" />
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-adobe-indesign-interchange">

@@ -629,6 +629,11 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/zip","testKMZ.kmz");
    }
 
+    public void testCreativeSuite() throws IOException {
+        assertTypeDetection("testINDD.indd", "application/x-adobe-indesign");
+        assertTypeDetection("testPSD.psd", "image/vnd.adobe.photoshop");
+    }
+    
     public void testAMR() throws IOException {
         // AMR matches on name, data or both
         assertTypeDetection("testAMR.amr", "audio/amr");
