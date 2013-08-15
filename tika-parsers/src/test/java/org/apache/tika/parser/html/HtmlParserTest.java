@@ -809,4 +809,17 @@ public class HtmlParserTest extends TestCase {
                 HtmlParserTest.class.getResourceAsStream("/test-documents/testUserDefinedCharset.mhtml"), new Metadata());
         assertNotNull(content);
     }
+    
+    //TIKA-1001
+    public void testNoisyMetaCharsetHeaders() throws Exception {
+       Tika tika = new Tika();
+       String hit = "\u0623\u0639\u0631\u0628";
+
+       for (int i = 1; i <=4; i++){
+          String fileName = "/test-documents/testHTMLNoisyMetaEncoding_"+i+".html";
+          String content = tika.parseToString(
+                HtmlParserTest.class.getResourceAsStream(fileName));
+          assertTrue("testing: " +fileName, content.contains(hit));
+       }
+    }
 }

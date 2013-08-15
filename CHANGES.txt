@@ -1,6 +1,8 @@
 Release 1.5 - Current Development
+  * Made HtmlEncodingDetector more flexible in finding meta 
+    header charset (TIKA-1001).
 
-  * Added sanitized test HTML file for local file test (Tika-1139).
+  * Added sanitized test HTML file for local file test (TIKA-1139).
 
   * Fixed bug that prevented attachments within a PDF from being processed
     if the PDF itself was an attachment (TIKA-1124).
