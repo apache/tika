@@ -1,4 +1,7 @@
 Release 1.5 - Current Development
+
+  * Upgraded PDFBox to 1.8.2 (TIKA-1153)
+
   * Made HtmlEncodingDetector more flexible in finding meta 
     header charset (TIKA-1001).
 
