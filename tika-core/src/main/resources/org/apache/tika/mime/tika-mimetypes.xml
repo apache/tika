@@ -595,6 +595,15 @@
 
   <mime-type type="application/soap+fastinfoset"/>
   <mime-type type="application/soap+xml"/>
+
+  <mime-type type="application/sldworks">
+    <_comment>SolidWorks CAD program</_comment>
+    <glob pattern="*.sldprt" />
+    <glob pattern="*.sldasm" />
+    <glob pattern="*.slddrw" />
+    <sub-class-of type="application/x-tika-msoffice" />
+  </mime-type>
+
   <mime-type type="application/sparql-query">
     <glob pattern="*.rq"/>
   </mime-type>
