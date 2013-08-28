@@ -283,6 +283,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             // Now have bits set for all valid character runs. Replay our recorded elements,
             // but only emit character runs flagged as valid.
             int curCharsIndex = headerCharOffset;
+
             for (RecordedElement element : elements) {
                 switch (element.getElementType()) {
                     case START:
@@ -297,6 +298,14 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
                             if (validCharacterRuns.get(curCharsIndex)) {
                                 delegate.characters(chars, 0, chars.length);
+
+                                // https://issues.apache.org/jira/browse/TIKA-961
+                                if (!Character.isWhitespace(chars[chars.length - 1])) {
+                                    // Only add whitespace for certain elements
+                                    if (XHTMLContentHandler.ENDLINE.contains(element.getLocalName())) {
+                                        delegate.ignorableWhitespace(NL, 0, NL.length);
+                                    }
+                                }
                             }
                         }
                         break;
