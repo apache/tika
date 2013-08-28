@@ -103,15 +103,15 @@ public class HtmlParserTest extends TestCase {
                 HtmlParserTest.class.getResourceAsStream(path), metadata);
 
         assertTrue("Did not contain expected text:"
-                + "Title : Tilte with UTF-8 chars öäå", content
-                .contains("Title : Tilte with UTF-8 chars öäå"));
+                + "Title : Tilte with UTF-8 chars √∂√§√•", content
+                .contains("Title : Tilte with UTF-8 chars √∂√§√•"));
 
         assertTrue("Did not contain expected text:"
                 + "Content with UTF-8 chars", content
                 .contains("Content with UTF-8 chars"));
 
-        assertTrue("Did not contain expected text:" + "åäö", content
-                .contains("åäö"));
+        assertTrue("Did not contain expected text:" + "√•√§√∂", content
+                .contains("√•√§√∂"));
     }
 
     public void testXhtmlParsing() throws Exception {
@@ -780,6 +780,35 @@ public class HtmlParserTest extends TestCase {
         String result = handler.toString();
 
         assertTrue(Pattern.matches("\tone\n\n", result));
+    }
+
+    /**
+     * Test case for TIKA-961
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-961">TIKA-961</a>
+     */
+    public void testBoilerplateWhitespace() throws Exception {
+        String path = "/test-documents/boilerplate-whitespace.html";
+        
+        Metadata metadata = new Metadata();
+        BodyContentHandler handler = new BodyContentHandler();
+        
+        BoilerpipeContentHandler bpHandler = new BoilerpipeContentHandler(handler);
+        bpHandler.setIncludeMarkup(true);
+        
+        new HtmlParser().parse(
+                HtmlParserTest.class.getResourceAsStream(path),
+                bpHandler,  metadata, new ParseContext());
+        
+        String content = handler.toString();
+
+        // Should not contain item_aitem_b
+        assertFalse(content.contains("item_aitem_b"));
+
+        // Should contain the two list items with a newline in between.
+        assertTrue(content.contains("item_a\nitem_b"));
+
+        // Should contain 有什么需要我帮你的 (can i help you) without whitespace
+        assertTrue(content.contains("有什么需要我帮你的"));
     }
 
     /**
