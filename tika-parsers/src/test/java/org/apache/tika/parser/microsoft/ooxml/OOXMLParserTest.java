@@ -36,7 +36,6 @@ import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
@@ -221,6 +220,62 @@ public class OOXMLParserTest extends TikaTest {
                     	content.contains("Mystery")
                     );
                 }
+            } finally {
+                input.close();
+            }
+        }
+    }
+    
+    /**
+     * Test that the metadata is already extracted when the body is processed.
+     * See TIKA-1109
+     */
+    public void testPowerPointMetadataEarly() throws Exception {
+       String[] extensions = new String[] {
+             "pptx", "pptm", "ppsm", "ppsx", "potm"
+             //"thmx", // TIKA-418: Will be supported in POI 3.7 beta 2 
+             //"xps" // TIKA-418: Not yet supported by POI
+       };
+
+       final String[] mimeTypes = new String[] {
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+                "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+                "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+                "application/vnd.ms-powerpoint.template.macroenabled.12"
+        };
+
+        for (int i=0; i<extensions.length; i++) {
+            String extension = extensions[i];
+            final String filename = "testPPT." + extension;
+
+            Parser parser = new AutoDetectParser();
+            final Metadata metadata = new Metadata();
+            // TODO: should auto-detect without the resource name
+            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+
+	    // Allow the value to be access from the inner class
+	    final int currentI = i;
+            ContentHandler handler = new BodyContentHandler()
+		{
+		    public void startDocument ()
+		    {
+			assertEquals(
+				     "Mime-type checking for " + filename,
+				     mimeTypes[currentI],
+				     metadata.get(Metadata.CONTENT_TYPE));
+			assertEquals("Attachment Test", metadata.get(TikaCoreProperties.TITLE));
+			assertEquals("Rajiv", metadata.get(TikaCoreProperties.CREATOR));
+			assertEquals("Rajiv", metadata.get(Metadata.AUTHOR));
+
+		    }
+
+		};
+            ParseContext context = new ParseContext();
+    
+            InputStream input = getTestDocument(filename);
+            try {
+                parser.parse(input, handler, metadata, context);
             } finally {
                 input.close();
             }
@@ -911,4 +966,26 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<div class=\"embedded\" id=\"slide1_rId7\"/>" , xml);
         assertContains("<div class=\"embedded\" id=\"slide2_rId7\"/>" , xml);
     }
-  }
+    
+    /**
+     * Test for missing text described in 
+     * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.
+     */
+    public void testMissingText() throws Exception {
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+
+        InputStream input = getTestDocument("testWORD_missing_text.docx");
+        try {
+            parser.parse(input, handler, metadata, context);
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertTrue(handler.toString().contains("BigCompany"));
+            assertTrue(handler.toString().contains("Seasoned"));
+        } finally {
+            input.close();
+        }
+    }
+}

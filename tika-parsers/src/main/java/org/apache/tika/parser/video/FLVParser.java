@@ -239,6 +239,9 @@ public class FLVParser extends AbstractParser {
                     // separate AMF blocks, we currently loose previous values)
                     Map<String, Object> extractedMetadata = (Map<String, Object>) data;
                     for (Entry<String, Object> entry : extractedMetadata.entrySet()) {
+                        if (entry.getValue() == null) {
+                            continue;
+                        }
                         metadata.set(entry.getKey(), entry.getValue().toString());
                     }
                 }

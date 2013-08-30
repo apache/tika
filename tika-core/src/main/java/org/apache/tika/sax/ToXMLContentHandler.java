@@ -182,6 +182,10 @@ public class ToXMLContentHandler extends ToTextContentHandler {
         }
 
         namespaces.clear();
+        
+        // Reset the position in the tree, to avoid endless stack overflow
+        // chains (see TIKA-1070)
+        currentElement = currentElement.parent;
     }
 
     @Override

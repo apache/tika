@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.4-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -35,7 +35,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.9</poi.version>
+    <poi.version>3.10-beta1</poi.version>
     <codec.version>1.5</codec.version> <!-- NOTE: sync with POI -->
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.1</vorbis.version>
@@ -100,7 +100,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
-      <version>1.8.1</version>
+      <version>1.8.2</version>
     </dependency>
     <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
          as optional, but we prefer to have them always to avoid

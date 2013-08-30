@@ -330,4 +330,8 @@ public class WordParserTest extends TikaTest {
         Logger.getRootLogger().setLevel(logLevelStart);
       }
     }
+
+    public void testTabularSymbol() throws Exception {
+        assertContains("one two", getXML("testWORD_tabular_symbol.doc").xml.replaceAll("\\s+", " "));
+    }
 }

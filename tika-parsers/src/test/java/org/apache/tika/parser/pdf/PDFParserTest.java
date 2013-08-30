@@ -19,19 +19,29 @@ package org.apache.tika.parser.pdf;
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest.TrackingHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 /**
  * Test case for parsing pdf files.
  */
 public class PDFParserTest extends TikaTest {
+
+    public static final MediaType TYPE_EMF = MediaType.application("x-emf");
+    public static final MediaType TYPE_PDF = MediaType.application("pdf");
+    public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
+    
 
     public void testPdfParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
@@ -455,4 +465,55 @@ public class PDFParserTest extends TikaTest {
         assertTrue(j != -1);
         assertTrue(i < j);
     }
+    
+    //TIKA-1124
+    public void testEmbeddedPDFEmbeddingAnotherDocument() throws Exception {
+       /* format of test doc:
+         docx/
+            pdf/
+               docx
+       */ 
+       Parser parser = new AutoDetectParser(); // Should auto-detect!
+       ContentHandler handler = new BodyContentHandler();
+       Metadata metadata = new Metadata();
+       ParseContext context = new ParseContext();
+       String content = "";
+       InputStream stream = null;
+       try{
+          context.set(org.apache.tika.parser.Parser.class, parser);
+          stream = getResourceAsStream("/test-documents/testPDFEmbeddingAndEmbedded.docx");
+          parser.parse(stream, handler, metadata, context);
+          content = handler.toString();
+       } finally {
+          stream.close();
+       }
+       int outerHaystack = content.indexOf("Outer_haystack");
+       int pdfHaystack = content.indexOf("pdf_haystack");
+       int needle = content.indexOf("Needle");
+       assertTrue(outerHaystack > -1);
+       assertTrue(pdfHaystack > -1);
+       assertTrue(needle > -1);
+       assertTrue(needle > pdfHaystack && pdfHaystack > outerHaystack);
+       
+       //plagiarized from POIContainerExtractionTest.  Thank you!
+       TrackingHandler tracker = new TrackingHandler();
+       TikaInputStream tis;
+       ContainerExtractor ex = new ParserContainerExtractor();
+       try{
+          tis= TikaInputStream.get(getResourceAsStream("/test-documents/testPDFEmbeddingAndEmbedded.docx"));
+          ex.extract(tis, ex, tracker);
+       } finally {
+          stream.close();
+       }
+       assertEquals(true, ex.isSupported(tis));
+       assertEquals(3, tracker.filenames.size());
+       assertEquals(3, tracker.mediaTypes.size());
+       assertEquals("image1.emf", tracker.filenames.get(0));
+       assertNull(tracker.filenames.get(1));
+       assertEquals("My first attachment", tracker.filenames.get(2));
+       assertEquals(TYPE_EMF, tracker.mediaTypes.get(0));
+       assertEquals(TYPE_PDF, tracker.mediaTypes.get(1));
+       assertEquals(TYPE_DOCX, tracker.mediaTypes.get(2));
+   }
+
 }

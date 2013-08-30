@@ -629,8 +629,28 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/zip","testKMZ.kmz");
    }
 
+    public void testCreativeSuite() throws IOException {
+        assertTypeDetection("testINDD.indd", "application/x-adobe-indesign");
+        assertTypeDetection("testPSD.psd", "image/vnd.adobe.photoshop");
+    }
+    
+    public void testAMR() throws IOException {
+        // AMR matches on name, data or both
+        assertTypeDetection("testAMR.amr", "audio/amr");
+        
+        // AMR-WB subtype shares extension, so needs data to identify
+        assertTypeDetection("testAMR-WB.amr", "audio/amr", "audio/amr-wb", "audio/amr-wb");
+        
+        // Ditto for the AMR-WB+ subtype, which we don't have a sample file of yet
+        //assertTypeDetection("testAMR-WB+.amr", "audio/amr", "audio/amr-wb+", "audio/amr-wb+");
+    }
+    
     public void testEmlx() throws IOException {
         assertTypeDetection("testEMLX.emlx", "message/x-emlx");
+    }
+    
+    public void testGroupWiseEml() throws Exception {
+        assertTypeDetection("testGroupWiseEml.eml", "message/rfc822");
     }
 
     /** Test getMimeType(byte[]) */

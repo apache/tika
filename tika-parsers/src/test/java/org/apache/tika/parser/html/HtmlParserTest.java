@@ -103,15 +103,15 @@ public class HtmlParserTest extends TestCase {
                 HtmlParserTest.class.getResourceAsStream(path), metadata);
 
         assertTrue("Did not contain expected text:"
-                + "Title : Tilte with UTF-8 chars öäå", content
-                .contains("Title : Tilte with UTF-8 chars öäå"));
+                + "Title : Tilte with UTF-8 chars √∂√§√•", content
+                .contains("Title : Tilte with UTF-8 chars √∂√§√•"));
 
         assertTrue("Did not contain expected text:"
                 + "Content with UTF-8 chars", content
                 .contains("Content with UTF-8 chars"));
 
-        assertTrue("Did not contain expected text:" + "åäö", content
-                .contains("åäö"));
+        assertTrue("Did not contain expected text:" + "√•√§√∂", content
+                .contains("√•√§√∂"));
     }
 
     public void testXhtmlParsing() throws Exception {
@@ -783,6 +783,35 @@ public class HtmlParserTest extends TestCase {
     }
 
     /**
+     * Test case for TIKA-961
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-961">TIKA-961</a>
+     */
+    public void testBoilerplateWhitespace() throws Exception {
+        String path = "/test-documents/boilerplate-whitespace.html";
+        
+        Metadata metadata = new Metadata();
+        BodyContentHandler handler = new BodyContentHandler();
+        
+        BoilerpipeContentHandler bpHandler = new BoilerpipeContentHandler(handler);
+        bpHandler.setIncludeMarkup(true);
+        
+        new HtmlParser().parse(
+                HtmlParserTest.class.getResourceAsStream(path),
+                bpHandler,  metadata, new ParseContext());
+        
+        String content = handler.toString();
+
+        // Should not contain item_aitem_b
+        assertFalse(content.contains("item_aitem_b"));
+
+        // Should contain the two list items with a newline in between.
+        assertTrue(content.contains("item_a\nitem_b"));
+
+        // Should contain 有什么需要我帮你的 (can i help you) without whitespace
+        assertTrue(content.contains("有什么需要我帮你的"));
+    }
+
+    /**
      * Test case for TIKA-983:  HTML parser should add Open Graph meta tag data to Metadata returned by parser
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-983">TIKA-983</a>
@@ -808,5 +837,18 @@ public class HtmlParserTest extends TestCase {
         String content = new Tika().parseToString(
                 HtmlParserTest.class.getResourceAsStream("/test-documents/testUserDefinedCharset.mhtml"), new Metadata());
         assertNotNull(content);
+    }
+    
+    //TIKA-1001
+    public void testNoisyMetaCharsetHeaders() throws Exception {
+       Tika tika = new Tika();
+       String hit = "\u0623\u0639\u0631\u0628";
+
+       for (int i = 1; i <=4; i++){
+          String fileName = "/test-documents/testHTMLNoisyMetaEncoding_"+i+".html";
+          String content = tika.parseToString(
+                HtmlParserTest.class.getResourceAsStream(fileName));
+          assertTrue("testing: " +fileName, content.contains(hit));
+       }
     }
 }

@@ -309,6 +309,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
        // Copied from POI's org/apache/poi/hwpf/converter/AbstractWordConverter.processCharacters:
 
+       // line tabulator as break line
+       text = text.replace((char)0x000b,'\n');
+
        // Non-breaking hyphens are returned as char 30
        text = text.replace((char) 30, UNICODECHAR_NONBREAKING_HYPHEN);
 

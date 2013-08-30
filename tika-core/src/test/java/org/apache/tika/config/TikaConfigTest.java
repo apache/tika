@@ -17,9 +17,12 @@
 package org.apache.tika.config;
 
 import java.net.URL;
+import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
+import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
@@ -81,4 +84,42 @@ public class TikaConfigTest extends TestCase {
         }
     }
 
+    /**
+     * TIKA-1145 If the TikaConfig has a ClassLoader set on it,
+     * that should be used when loading the mimetypes and when
+     * discovering services
+     */
+    public void testClassLoaderUsedEverywhere() throws Exception {
+        ResourceLoggingClassLoader customLoader = 
+                new ResourceLoggingClassLoader(getClass().getClassLoader());
+        TikaConfig config;
+        
+        // Without a classloader set, normal one will be used
+        config = new TikaConfig();
+        config.getMediaTypeRegistry();
+        config.getParser();
+        assertEquals(0, customLoader.getLoadedResources().size());
+        
+        // With a classloader set, resources will come through it
+        config = new TikaConfig(customLoader);
+        config.getMediaTypeRegistry();
+        config.getParser();
+        
+        Map<String,List<URL>> resources = customLoader.getLoadedResources();
+        int resourcesCount = resources.size();
+        assertTrue(
+                "Not enough things used the classloader, found only " + resourcesCount,
+                resourcesCount > 3
+        );
+        
+        // Ensure everything that should do, did use it
+        // - Parsers
+        assertNotNull(resources.get("META-INF/services/org.apache.tika.parser.Parser"));
+        // - Detectors
+        assertNotNull(resources.get("META-INF/services/org.apache.tika.detect.Detector"));
+        // - Built-In Mimetypes
+        assertNotNull(resources.get("org/apache/tika/mime/tika-mimetypes.xml"));
+        // - Custom Mimetypes
+        assertNotNull(resources.get("org/apache/tika/mime/custom-mimetypes.xml"));
+    }
 }

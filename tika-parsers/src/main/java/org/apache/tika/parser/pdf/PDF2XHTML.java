@@ -18,9 +18,16 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Map;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
+import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
+import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.COSObjectable;
+import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
+import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
@@ -31,8 +38,13 @@ import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlin
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.util.TextPosition;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.IOExceptionWithCause;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -58,7 +70,7 @@ class PDF2XHTML extends PDFTextStripper {
      * @throws TikaException if the PDF document can not be processed
      */
     public static void process(
-            PDDocument document, ContentHandler handler, Metadata metadata,
+            PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
             boolean extractAnnotationText, boolean enableAutoSpace,
             boolean suppressDuplicateOverlappingText, boolean sortByPosition)
             throws SAXException, TikaException {
@@ -66,7 +78,7 @@ class PDF2XHTML extends PDFTextStripper {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content
             // handler.
-            PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, metadata,
+            PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, context, metadata,
                                                 extractAnnotationText, enableAutoSpace,
                                                 suppressDuplicateOverlappingText, sortByPosition);
             pdf2XHTML.writeText(document, new Writer() {
@@ -89,14 +101,18 @@ class PDF2XHTML extends PDFTextStripper {
             }
         }
     }
-
+    
+    private final ContentHandler originalHandler;
+    private final ParseContext context;
     private final XHTMLContentHandler handler;
     private final boolean extractAnnotationText;
 
-    private PDF2XHTML(ContentHandler handler, Metadata metadata,
+    private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata,
                       boolean extractAnnotationText, boolean enableAutoSpace,
                       boolean suppressDuplicateOverlappingText, boolean sortByPosition)
             throws IOException {
+        this.originalHandler = handler;
+        this.context = context;
         this.handler = new XHTMLContentHandler(handler, metadata);
         this.extractAnnotationText = extractAnnotationText;
         setForceParsing(true);
@@ -149,7 +165,10 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             // Extract text for any bookmarks:
             extractBookmarkText();
+            extractEmbeddedDocuments(pdf, originalHandler);
             handler.endDocument();
+        } catch (TikaException e){
+           throw new IOExceptionWithCause("Unable to end a document", e);
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
         }
@@ -298,4 +317,48 @@ class PDF2XHTML extends PDFTextStripper {
                     "Unable to write a newline character", e);
         }
     }
+    
+    private void extractEmbeddedDocuments(PDDocument document, ContentHandler handler)
+          throws IOException, SAXException, TikaException {
+      PDDocumentCatalog catalog = document.getDocumentCatalog();
+      PDDocumentNameDictionary names = catalog.getNames();
+      if (names != null) {
+
+          PDEmbeddedFilesNameTreeNode embeddedFiles = names.getEmbeddedFiles();
+          if (embeddedFiles != null) {
+
+              EmbeddedDocumentExtractor embeddedExtractor = context.get(EmbeddedDocumentExtractor.class);
+              if (embeddedExtractor == null) {
+                  embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
+              }
+
+              Map<String, COSObjectable> embeddedFileNames = embeddedFiles.getNames();
+
+              if (embeddedFileNames != null) {
+                  for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
+                      PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
+                      PDEmbeddedFile file = spec.getEmbeddedFile();
+
+                      Metadata metadata = new Metadata();
+                      // TODO: other metadata?
+                      metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
+                      metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
+                      metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+
+                      if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+                          TikaInputStream stream = TikaInputStream.get(file.createInputStream());
+                          try {
+                              embeddedExtractor.parseEmbedded(
+                                                              stream,
+                                                              new EmbeddedContentHandler(handler),
+                                                              metadata, false);
+                          } finally {
+                              stream.close();
+                          }
+                      }
+                  }
+              }
+          }
+      }
+  }
 }

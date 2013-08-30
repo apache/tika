@@ -595,6 +595,15 @@
 
   <mime-type type="application/soap+fastinfoset"/>
   <mime-type type="application/soap+xml"/>
+
+  <mime-type type="application/sldworks">
+    <_comment>SolidWorks CAD program</_comment>
+    <glob pattern="*.sldprt" />
+    <glob pattern="*.sldasm" />
+    <glob pattern="*.slddrw" />
+    <sub-class-of type="application/x-tika-msoffice" />
+  </mime-type>
+
   <mime-type type="application/sparql-query">
     <glob pattern="*.rq"/>
   </mime-type>
@@ -2322,6 +2331,9 @@
     <acronym>INDD</acronym>
     <_comment>Adobe InDesign document</_comment>
     <glob pattern="*.indd"/>
+    <magic priority="50">
+      <match value="0x0606edf5d81d46e5bd31efe7fe74b71d" type="string" offset="0" />
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-adobe-indesign-interchange">
@@ -2796,6 +2808,12 @@
       <match value="CD001" type="string" offset="32769"/>
     </magic>
     <glob pattern="*.iso"/>
+  </mime-type>
+
+  <mime-type type="application/x-itunes-ipa">
+    <sub-class-of type="application/zip"/>
+    <_comment>Apple iOS IPA AppStore file</_comment>
+    <glob pattern="*.ipa"/>
   </mime-type>
 
   <mime-type type="application/x-java-jnlp-file">
@@ -3419,9 +3437,27 @@
   <mime-type type="audio/adpcm">
     <glob pattern="*.adp"/>
   </mime-type>
-  <mime-type type="audio/amr"/>
-  <mime-type type="audio/amr-wb"/>
-  <mime-type type="audio/amr-wb+"/>
+
+  <mime-type type="audio/amr">
+    <glob pattern="*.amr"/>
+    <magic priority="40">
+      <!-- Specific match for the original AMR format -->
+      <match value="#!AMR\n" type="string" offset="0"/>
+      <!-- General match for AMR subtypes we don't have entries for -->
+      <match value="#!AMR" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="audio/amr-wb">
+    <sub-class-of type="audio/amr"/>
+    <magic priority="50">
+      <match value="#!AMR-WB\n" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="audio/amr-wb+">
+    <sub-class-of type="audio/amr"/>
+    <!-- TIKA-1156 sample needed - might be "#!AMR-WB+\n" ? -->
+  </mime-type>
+
   <mime-type type="audio/asc"/>
 
   <mime-type type="audio/basic">
@@ -4344,17 +4380,17 @@
 
   <mime-type type="message/rfc822">
     <magic priority="50">
-      <match value="Relay-Version:" type="string" offset="0"/>
+      <match value="Relay-Version:" type="stringignorecase" offset="0"/>
       <match value="#!\ rnews" type="string" offset="0"/>
       <match value="N#!\ rnews" type="string" offset="0"/>
       <match value="Forward\ to" type="string" offset="0"/>
       <match value="Pipe\ to" type="string" offset="0"/>
-      <match value="Return-Path:" type="string" offset="0"/>
-      <match value="From:" type="string" offset="0"/>
-      <match value="Received:" type="string" offset="0"/>
-      <match value="Message-ID:" type="string" offset="0"/>
+      <match value="Return-Path:" type="stringignorecase" offset="0"/>
+      <match value="From:" type="stringignorecase" offset="0"/>
+      <match value="Received:" type="stringignorecase" offset="0"/>
+      <match value="Message-ID:" type="stringignorecase" offset="0"/>
       <match value="Date:" type="string" offset="0"/>
-      <match value="MIME-Version:" type="string" offset="0"/>
+      <match value="MIME-Version:" type="stringignorecase" offset="0"/>
       <match value="X-Notes-Item:" type="string" offset="0">
         <match value="Message-ID:" type="string" offset="0:8192"/>
       </match>
@@ -4533,6 +4569,8 @@
       <match value="&lt;HTML" type="string" offset="0:64"/>
       <match value="&lt;BODY" type="string" offset="0"/>
       <match value="&lt;body" type="string" offset="0"/>
+      <match value="&lt;DIV" type="string" offset="0"/>
+      <match value="&lt;div" type="string" offset="0"/>
       <match value="&lt;TITLE" type="string" offset="0"/>
       <match value="&lt;title" type="string" offset="0"/>
       <match value="&lt;h1" type="string" offset="0"/>

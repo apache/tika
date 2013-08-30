@@ -64,8 +64,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private final XSSFEventBasedExcelExtractor extractor;
     private final DataFormatter formatter;
     private final List<PackagePart> sheetParts = new ArrayList<PackagePart>();
-    private final List<Boolean> sheetProtected = new ArrayList<Boolean>();
-    
+    private Metadata metadata;
+
     public XSSFExcelExtractorDecorator(
             ParseContext context, XSSFEventBasedExcelExtractor extractor, Locale locale) {
         super(context, extractor);
@@ -79,6 +79,17 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         } else  {
            formatter = new DataFormatter(locale);
         }
+    }
+
+    @Override
+    public void getXHTML(
+            ContentHandler handler, Metadata metadata, ParseContext context)
+            throws SAXException, XmlException, IOException, TikaException {
+
+	this.metadata = metadata;
+	metadata.set(TikaMetadataKeys.PROTECTED, "false");
+
+	super.getXHTML(handler, metadata, context);
     }
 
     /**
@@ -164,7 +175,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
          sheetParser.parse(sheetSource);
          sheetInputStream.close();
          
-         sheetProtected.add(handler.hasProtection);
+         if (handler.hasProtection) {
+	     metadata.set(TikaMetadataKeys.PROTECTED, "true");
+	 }
       } catch(ParserConfigurationException e) {
          throw new RuntimeException("SAX parser appears to be broken - " + e.getMessage());
       }
@@ -343,22 +356,5 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
        }
 
        return parts;
-    }
-
-    @Override
-    public MetadataExtractor getMetadataExtractor() {
-        return new MetadataExtractor(extractor) {
-            @Override
-            public void extract(Metadata metadata) throws TikaException {
-                super.extract(metadata);
-
-                metadata.set(TikaMetadataKeys.PROTECTED, "false");
-                for(boolean prot : sheetProtected) {
-                   if(prot) {
-                      metadata.set(TikaMetadataKeys.PROTECTED, "true");
-                   }
-                }
-            }
-        };
     }
 }

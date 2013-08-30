@@ -186,5 +186,4 @@ public class MimeTypesReaderTest extends TestCase {
         assertEquals(".ppt",ext);
         assertEquals(".ppt",mt.getExtensions().get(0));
     }
-
 }
