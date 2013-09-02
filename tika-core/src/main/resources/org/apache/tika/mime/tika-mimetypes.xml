@@ -229,11 +229,23 @@
   </mime-type>
 
   <mime-type type="application/java-vm">
+    <_comment>Java Class File</_comment>
+    <alias type="application/x-java-vm"/>
     <alias type="application/x-java"/>
     <magic priority="40">
       <match value="0xcafebabe" type="string" offset="0" />
     </magic>
     <glob pattern="*.class"/>
+  </mime-type>
+
+  <mime-type type="application/x-java-jnilib">
+    <_comment>Java Native Library for OSX</_comment>
+    <magic priority="50">
+      <match value="0xcafebabe" type="string" offset="0">
+         <match value="0xfeedface" type="string" offset="4096"/>
+      </match>
+    </magic>
+    <glob pattern="*.jnilib"/>
   </mime-type>
 
   <mime-type type="application/kpml-request+xml"/>

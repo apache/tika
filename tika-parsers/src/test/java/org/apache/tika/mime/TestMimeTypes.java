@@ -428,6 +428,14 @@ public class TestMimeTypes extends TestCase {
        assertTypeByName("application/javascript", "testJS.js");
        assertType(      "application/javascript", "testJS.js");
     }
+    
+    public void testJavaDetection() throws Exception {
+        // TODO Classloader doesn't seem to find the .class file in test-documents
+        //assertTypeDetection("AutoDetectParser.class", "application/java-vm");
+        
+        // OSX Native Extension
+        assertTypeDetection("testJNILIB.jnilib", "application/x-java-jnilib");
+    }
 
     public void testWmfDetection() throws Exception {
         assertTypeByName("application/x-msmetafile", "x.wmf");
