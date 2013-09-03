@@ -3883,6 +3883,12 @@
     <magic priority="50">
       <match value="BEGMF" type="string" offset="0"/>
       <match value="0x0020" mask="0xffe0" type="string" offset="0"/>
+      <match value="0x0020" mask="0xffe0" type="string" offset="0">
+        <match value="0x10220001" type="string" offset="2:64"/>
+        <match value="0x10220002" type="string" offset="2:64"/>
+        <match value="0x10220003" type="string" offset="2:64"/>
+        <match value="0x10220004" type="string" offset="2:64"/>
+      </match>
     </magic>
     <glob pattern="*.cgm"/>
   </mime-type>
