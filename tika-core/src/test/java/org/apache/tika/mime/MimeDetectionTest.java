@@ -66,6 +66,8 @@ public class MimeDetectionTest extends TestCase {
         testFile("text/html", "testlargerbuffer.html");
         // test fragment of HTML with <div> (TIKA-1102)
         testFile("text/html", "htmlfragment");
+        // test binary CGM detection (TIKA-1170)
+        testFile("image/cgm", "plotutils-bin-cgm-v3.cgm");
     }
 
     public void testByteOrderMark() throws Exception {
