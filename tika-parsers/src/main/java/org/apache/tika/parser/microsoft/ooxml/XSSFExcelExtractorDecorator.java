@@ -46,6 +46,8 @@ import org.apache.poi.xssf.model.CommentsTable;
 import org.apache.poi.xssf.model.StylesTable;
 import org.apache.poi.xssf.usermodel.XSSFComment;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
+import org.apache.poi.xssf.usermodel.XSSFShape;
+import org.apache.poi.xssf.usermodel.XSSFSimpleShape;
 import org.apache.poi.xssf.usermodel.helpers.HeaderFooterHelper;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -118,6 +120,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
        while (iter.hasNext()) {
            InputStream stream = iter.next();
            sheetParts.add(iter.getSheetPart());
+           
            SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml, iter.getSheetComments());
 
            // Start, and output the sheet name
@@ -142,7 +145,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
            for(String footer : sheetExtractor.footers) {
               extractHeaderFooter(footer, xhtml);
            }
-           
+           processShapes(iter.getShapes(), xhtml);
            // All done with this sheet
            xhtml.endElement("div");
        }
@@ -156,6 +159,20 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             xhtml.element("p", content);
         }
     }
+    
+    private void processShapes(List<XSSFShape> shapes, XHTMLContentHandler xhtml) throws SAXException {
+       if (shapes == null){
+           return;
+       }
+       for (XSSFShape shape : shapes){
+           if (shape instanceof XSSFSimpleShape){
+               String sText = ((XSSFSimpleShape)shape).getText();
+               if (sText != null && sText.length() > 0){
+                   xhtml.element("p", sText);
+               }
+           }
+       }
+   }
     
     public void processSheet(
           SheetContentsHandler sheetContentsExtractor,
