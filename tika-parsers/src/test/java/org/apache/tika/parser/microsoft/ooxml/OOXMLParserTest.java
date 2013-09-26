@@ -988,4 +988,16 @@ public class OOXMLParserTest extends TikaTest {
             input.close();
         }
     }
+
+    //TIKA-1100:
+    public void testExcelTextBox() throws Exception {
+        Metadata metadata = new Metadata(); 
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        InputStream input = getTestDocument("testEXCEL_textbox.xlsx");
+        parser.parse(input, handler, metadata, context);
+        String content = handler.toString();
+        assertContains("some autoshape", content);    
+    }    
+
 }
