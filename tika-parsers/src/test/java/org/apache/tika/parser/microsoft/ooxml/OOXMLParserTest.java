@@ -16,7 +16,9 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.io.StringWriter;
 import java.util.Locale;
 
@@ -1000,4 +1002,26 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("some autoshape", content);    
     }    
 
+    //TIKA-792; with room for future missing bean tests
+    public void testWordMissingOOXMLBeans() throws Exception{
+        //If a bean is missing, POI prints stack trace to stderr 
+        String[] fileNames = new String[]{
+            "testWORD_missing_ooxml_bean1.docx",//TIKA-792
+        };
+        PrintStream origErr = System.err;
+        for (String fileName : fileNames){
+            ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(errContent));
+            Metadata metadata = new Metadata(); 
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            InputStream input = getTestDocument(fileName);
+            parser.parse(input, handler, metadata, context);
+    
+            String err = errContent.toString();
+            assertTrue(err.length() == 0);
+            input.close();
+        }
+        System.setErr(origErr);
+    }
 }
