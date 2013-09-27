@@ -1028,4 +1028,15 @@ public class OOXMLParserTest extends TikaTest {
             input.close();
         }
     }
+
+    //TIKA-817
+    public void testPPTXAutodate() throws Exception {
+        //Following POI-52368, the stored date is extracted,
+        //not the auto-generated date.
+
+        XMLResult result = getXML("testPPT_autodate.pptx");
+        assertContains("<p>Now</p>\n"+
+          "<p>2011-12-19 10:20:04 AM</p>\n", result.xml);
+     
+    }
 }

@@ -224,4 +224,14 @@ public class PowerPointParserTest extends TikaTest {
        assertContains("<div class=\"embedded\" id=\"1\"/>", result.xml);
        assertContains("<div class=\"embedded\" id=\"14\"/>", result.xml);
     }
+
+    // TIKA-817
+    public void testAutoDatePPT() throws Exception {
+       //decision was made in POI-52367 not to generate
+       //autodate automatically.  For pptx, where value is stored,
+       //value is extracted.  For ppt, however, no date is extracted.
+       XMLResult result = getXML("testPPT_autodate.ppt");
+       assertContains("<p class=\"slide-content\">Now<br/>\n"+
+          "*<br/>\n*<br/>", result.xml);
+    }
 }
