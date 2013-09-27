@@ -1,6 +1,20 @@
 Release 1.5 - Current Development
 
-  * Upgraded PDFBox to 1.8.2 (TIKA-1153)
+  * Fixed invalid asterisks from master slide in PPT (TIKA-1171).
+
+  * Added test cases to confirm handling of auto-date in PPT and PPTX (TIKA-817).
+ 
+  * Text from tables in PPT files is once again extracted correctly (TIKA-1076).
+  
+  * Text is extracted from text boxes in XLSX (TIKA-1100).
+
+  * Tika no longer hangs when processing Excel files with custom fraction format (TIKA-1132).
+
+  * Disconcerting stacktrace from missing beans no longer printed for some DOCX files (TIKA-792).
+
+  * Upgraded POI to 3.10-beta2 (TIKA-1173).
+
+  * Upgraded PDFBox to 1.8.2 (TIKA-1153).
 
   * Made HtmlEncodingDetector more flexible in finding meta 
     header charset (TIKA-1001).
