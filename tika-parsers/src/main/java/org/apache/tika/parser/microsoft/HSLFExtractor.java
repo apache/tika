@@ -85,6 +85,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             xhtml.endElement("p");
          }
 
+         // Table text
+         for (Shape shape: slide.getShapes()){
+            if (shape instanceof Table){
+               extractTableText(xhtml, (Table)shape);
+            }
+         }
+
          // Slide footer, if present
          if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
             xhtml.startElement("p", "class", "slide-footer");
@@ -161,6 +168,24 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
       handleSlideEmbeddedPictures(_show, xhtml);
 
       xhtml.endElement("div");
+   }
+
+   private void extractTableText(XHTMLContentHandler xhtml, Table shape) throws SAXException {
+      xhtml.startElement("table");
+      for (int row = 0; row < shape.getNumberOfRows(); row++){
+         xhtml.startElement("tr");
+         for (int col = 0; col < shape.getNumberOfColumns(); col++){
+            TableCell cell = shape.getCell(row, col);
+            //insert empty string for empty cell if cell is null
+            String txt = "";
+            if (cell != null){
+               txt = cell.getText();
+            }
+            xhtml.element("td", txt);
+         }
+         xhtml.endElement("tr");
+      }
+      xhtml.endElement("table");   
    }
 
    private void textRunsToText(XHTMLContentHandler xhtml, TextRun[] runs, boolean isMaster) throws SAXException {
