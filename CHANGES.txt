@@ -24,6 +24,8 @@ Release 1.5 - Current Development
   * Fixed bug that prevented attachments within a PDF from being processed
     if the PDF itself was an attachment (TIKA-1124).
 
+  * Text from paragraph-level structured document tags is now extracted (TIKA-1130).
+
 Release 1.4 - 06/15/2013
 
   * Removed a test HTML file with a poorly chosen GPL text in it (TIKA-1129).
