@@ -68,19 +68,13 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          }
 
          // Slide master, if present
-         // TODO: re-enable this once we fix TIKA-712
-         MasterSheet master = slide.getMasterSheet();
-         if(master != null) {
-            xhtml.startElement("p", "class", "slide-master-content");
-            textRunsToText(xhtml, master.getTextRuns(), true );
-            xhtml.endElement("p");
-         }
+         extractMaster(xhtml, slide.getMasterSheet());
 
          // Slide text
          {
             xhtml.startElement("p", "class", "slide-content");
 
-            textRunsToText(xhtml, slide.getTextRuns(), false );
+            textRunsToText(xhtml, slide.getTextRuns());
 
             xhtml.endElement("p");
          }
@@ -155,7 +149,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          }
 
          // Notes text
-         textRunsToText(xhtml, notes.getTextRuns(), false);
+         textRunsToText(xhtml, notes.getTextRuns());
 
          // Repeat the notes footer, if set
          if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
@@ -167,6 +161,31 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
       handleSlideEmbeddedPictures(_show, xhtml);
 
+      xhtml.endElement("div");
+   }
+
+   private void extractMaster(XHTMLContentHandler xhtml, MasterSheet master) throws SAXException {
+      if (master == null){
+         return;
+      }
+      Shape[] shapes = master.getShapes();
+      if (shapes == null || shapes.length == 0){
+         return;
+      }
+
+      xhtml.startElement("div", "class", "slide-master-content");
+      for (int i = 0; i < shapes.length; i++){
+         Shape sh = shapes[i];
+         if (sh != null && ! MasterSheet.isPlaceholder(sh)){
+            if (sh instanceof TextShape){
+               TextShape tsh = (TextShape)sh;
+               String text = tsh.getText();
+               if (text != null){
+                  xhtml.element("p", text);
+               }
+            }
+         }
+      }
       xhtml.endElement("div");
    }
 
@@ -188,17 +207,20 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
       xhtml.endElement("table");   
    }
 
-   private void textRunsToText(XHTMLContentHandler xhtml, TextRun[] runs, boolean isMaster) throws SAXException {
+   private void textRunsToText(XHTMLContentHandler xhtml, TextRun[] runs) throws SAXException {
       if (runs==null) {
          return;
       }
 
       for (TextRun run : runs) {
          if (run != null) {
+           // Leaving in wisdom from TIKA-712 for easy revert.
            // Avoid boiler-plate text on the master slide (0
            // = TextHeaderAtom.TITLE_TYPE, 1 = TextHeaderAtom.BODY_TYPE):
-           if (!isMaster || (run.getRunType() != 0 && run.getRunType() != 1)) {
-               xhtml.characters(run.getText());
+           //if (!isMaster || (run.getRunType() != 0 && run.getRunType() != 1)) {
+           String txt = run.getText();
+           if (txt != null){
+               xhtml.characters(txt);
                xhtml.startElement("br");
                xhtml.endElement("br");
            }
