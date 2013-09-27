@@ -1001,10 +1001,7 @@ public class OOXMLParserTest extends TikaTest {
         String content = handler.toString();
         assertContains("some autoshape", content);    
     }    
-/*
-    Jenkins failed to build after adding this.
-    Need to determine if this is the cause, and, if so, how to test for
-    missing beans.
+
     //TIKA-792; with room for future missing bean tests
     public void testWordMissingOOXMLBeans() throws Exception{
         //If a bean is missing, POI prints stack trace to stderr 
@@ -1013,18 +1010,22 @@ public class OOXMLParserTest extends TikaTest {
         };
         PrintStream origErr = System.err;
         for (String fileName : fileNames){
-            ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(errContent));
             Metadata metadata = new Metadata(); 
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
             InputStream input = getTestDocument(fileName);
+            
+            //grab stderr
+            ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+            System.setErr(new PrintStream(errContent));
             parser.parse(input, handler, metadata, context);
-    
+            
+            //return stderr
+            System.setErr(origErr);
+            
             String err = errContent.toString();
             assertTrue(err.length() == 0);
             input.close();
         }
-        System.setErr(origErr);
-    }*/
+    }
 }
