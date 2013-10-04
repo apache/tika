@@ -5501,6 +5501,27 @@
     </magic>
     <glob pattern="*.movie"/>
   </mime-type>
+  
+  <mime-type type="video/x-matroska">
+    <glob pattern="*.mkv" />
+    <!-- TODO: The magic value below isn't present in all MKV files, 0x1A45DFA3 is but also applies to WebM
+    <magic priority="40">
+      <match value="0x1A45DFA3934282886D6174726F736B61" type="string" offset="0" />
+    </magic>
+    -->
+  </mime-type>
+  <mime-type type="audio/x-matroska">
+    <glob pattern="*.mka" />
+  </mime-type>
+  
+  <mime-type type="video/webm">
+    <glob pattern="*.webm" />
+    <!-- TODO: The magic value below would match MKV as well
+    <magic priority="40">
+      <match value="0x1A45DFA3" type="string" offset="0" />
+    </magic>
+    -->
+  </mime-type>
 
   <mime-type type="x-conference/x-cooltalk">
     <_comment>Cooltalk Audio</_comment>
