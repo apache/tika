@@ -660,6 +660,24 @@ public class TestMimeTypes extends TestCase {
     public void testGroupWiseEml() throws Exception {
         assertTypeDetection("testGroupWiseEml.eml", "message/rfc822");
     }
+    
+    public void testMatroskaDetection() throws Exception {
+        assertType("video/x-matroska", "testMKV.mkv");
+        // TODO: need better magic value for data detection
+        // assertTypeByData("video/x-matroska", "testMKV.mkv");
+        assertTypeByName("video/x-matroska", "x.mkv");
+        assertTypeByName("video/x-matroska", "x.MKV");
+        assertTypeByName("audio/x-matroska", "x.mka");
+        assertTypeByName("audio/x-matroska", "x.MKA");
+    }
+    
+    public void testWebMDetection() throws Exception {
+        assertType("video/webm", "testWEBM.webm");
+        // TODO: need better magic value for data detection
+        // assertTypeByData("video/x-matroska", "testMKV.mkv");
+        assertTypeByName("video/webm", "x.webm");
+        assertTypeByName("video/webm", "x.WEBM");
+    }
 
     /** Test getMimeType(byte[]) */
     public void testGetMimeType_byteArray() throws IOException {
