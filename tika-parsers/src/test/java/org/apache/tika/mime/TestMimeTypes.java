@@ -663,8 +663,9 @@ public class TestMimeTypes extends TestCase {
     
     public void testMatroskaDetection() throws Exception {
         assertType("video/x-matroska", "testMKV.mkv");
-        // TODO: need better magic value for data detection
-        // assertTypeByData("video/x-matroska", "testMKV.mkv");
+        // TODO: Need custom detector data detection, see TIKA-1180
+        assertTypeByData("application/x-matroska", "testMKV.mkv");
+        assertTypeByNameAndData("video/x-matroska", "testMKV.mkv");
         assertTypeByName("video/x-matroska", "x.mkv");
         assertTypeByName("video/x-matroska", "x.MKV");
         assertTypeByName("audio/x-matroska", "x.mka");
@@ -673,8 +674,9 @@ public class TestMimeTypes extends TestCase {
     
     public void testWebMDetection() throws Exception {
         assertType("video/webm", "testWEBM.webm");
-        // TODO: need better magic value for data detection
-        // assertTypeByData("video/x-matroska", "testMKV.mkv");
+        // TODO: Need custom detector data detection, see TIKA-1180
+        assertTypeByData("application/x-matroska", "testWEBM.webm");
+        assertTypeByNameAndData("video/webm", "testWEBM.webm");
         assertTypeByName("video/webm", "x.webm");
         assertTypeByName("video/webm", "x.WEBM");
     }
