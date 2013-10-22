@@ -798,8 +798,9 @@ public class TikaCLI {
                 public void run() {
                     try {
                         try {
-                            InputStream input = socket.getInputStream();
+                            InputStream rawInput = socket.getInputStream();
                             OutputStream output = socket.getOutputStream();
+                            InputStream input = TikaInputStream.get(rawInput);
                             type.process(input, output, new Metadata());
                             output.flush();
                         } finally {
