@@ -44,10 +44,9 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
- * Outlook Message Parser.
+ * Extractor for Common OLE2 (HPSF) metadata
  */
-class SummaryExtractor {
-
+public class SummaryExtractor {
     private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
 
     private static final String SUMMARY_INFORMATION =
@@ -126,7 +125,7 @@ class SummaryExtractor {
         }
         
         // Old style, Tika 1.0 properties
-     // TODO Remove these in Tika 2.0
+        // TODO Remove these in Tika 2.0
         set(Metadata.TEMPLATE, summary.getTemplate());
         set(Metadata.APPLICATION_NAME, summary.getApplicationName());
         set(Metadata.REVISION_NUMBER, summary.getRevNumber());
@@ -148,7 +147,7 @@ class SummaryExtractor {
             metadata.set(PagedText.N_PAGES, summary.getSlideCount());
         }
         // Old style, Tika 1.0 counts
-     // TODO Remove these in Tika 2.0
+        // TODO Remove these in Tika 2.0
         set(Metadata.COMPANY, summary.getCompany());
         set(Metadata.MANAGER, summary.getManager());
         set(MSOffice.SLIDE_COUNT, summary.getSlideCount());
@@ -231,5 +230,4 @@ class SummaryExtractor {
             metadata.set(name, Long.toString(value));
         }
     }
-
 }
