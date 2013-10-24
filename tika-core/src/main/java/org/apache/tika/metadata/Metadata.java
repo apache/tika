@@ -16,15 +16,17 @@
  */
 package org.apache.tika.metadata;
 
+import static org.apache.tika.utils.DateUtils.MIDDAY;
+import static org.apache.tika.utils.DateUtils.UTC;
+import static org.apache.tika.utils.DateUtils.formatDate;
+
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -87,24 +89,6 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
     public static final String TYPE = "type";
 
     /**
-     * The UTC time zone. Not sure if {@link TimeZone#getTimeZone(String)}
-     * understands "UTC" in all environments, but it'll fall back to GMT
-     * in such cases, which is in practice equivalent to UTC.
-     */
-    private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-
-    /**
-     * Custom time zone used to interpret date values without a time
-     * component in a way that most likely falls within the same day
-     * regardless of in which time zone it is later interpreted. For
-     * example, the "2012-02-17" date would map to "2012-02-17T12:00:00Z"
-     * (instead of the default "2012-02-17T00:00:00Z"), which would still
-     * map to "2012-02-17" if interpreted in say Pacific time (while the
-     * default mapping would result in "2012-02-16" for UTC-8).
-     */
-    private static final TimeZone MIDDAY = TimeZone.getTimeZone("GMT-12:00");
-
-    /**
      * Some parsers will have the date as a ISO-8601 string
      *  already, and will set that into the Metadata object.
      * So we can return Date objects for these, this is the
@@ -160,27 +144,6 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
             }
         }
         return null;
-    }
-
-    /**
-     * Returns a ISO 8601 representation of the given date. This method 
-     * is thread safe and non-blocking.
-     *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
-     * @param date given date
-     * @return ISO 8601 date string
-     */
-    private static String formatDate(Date date) {
-        Calendar calendar = GregorianCalendar.getInstance(UTC, Locale.US);
-        calendar.setTime(date);
-        return String.format(
-                "%04d-%02d-%02dT%02d:%02d:%02dZ",
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH) + 1,
-                calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.HOUR_OF_DAY),
-                calendar.get(Calendar.MINUTE),
-                calendar.get(Calendar.SECOND));
     }
 
     /**
