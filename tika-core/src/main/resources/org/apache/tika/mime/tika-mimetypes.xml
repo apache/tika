@@ -1477,6 +1477,14 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/x-project">
+    <glob pattern="*.mpx"/>
+    <magic priority="50">
+      <match value="MPX,Microsoft Project for Windows," type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="application/vnd.ms-tnef">
     <alias type="application/ms-tnef" />
     <magic priority="50">
