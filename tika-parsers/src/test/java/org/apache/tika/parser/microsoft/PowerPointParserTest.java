@@ -229,8 +229,8 @@ public class PowerPointParserTest extends TikaTest {
     // TIKA-1025
     public void testEmbeddedPlacedholder() throws Exception {
        XMLResult result = getXML("testPPT_embedded2.ppt");
-       assertContains("<div class=\"embedded\" id=\"1\"/>", result.xml);
-       assertContains("<div class=\"embedded\" id=\"14\"/>", result.xml);
+       assertContains("<div class=\"embedded\" id=\"1\" />", result.xml);
+       assertContains("<div class=\"embedded\" id=\"14\" />", result.xml);
     }
 
     // TIKA-817
@@ -239,7 +239,8 @@ public class PowerPointParserTest extends TikaTest {
        //autodate automatically.  For pptx, where value is stored,
        //value is extracted.  For ppt, however, no date is extracted.
        XMLResult result = getXML("testPPT_autodate.ppt");
-       assertContains("<p class=\"slide-content\">Now<br/>\n"+
-          "*<br/>\n*<br/>", result.xml);
+       assertContains(
+               "<p class=\"slide-content\">Now<br />\n*<br />\n*<br />",
+               result.xml);
     }
 }

@@ -141,7 +141,7 @@ public class WordParserTest extends TikaTest {
         // is the pdf file" and before "Bye Bye":
         int i = result.indexOf("Here is the pdf file:");
         assertTrue(i != -1);
-        int j = result.indexOf("<div class=\"embedded\" id=\"_1402837031\"/>");
+        int j = result.indexOf("<div class=\"embedded\" id=\"_1402837031\" />");
         assertTrue(j != -1);
         int k = result.indexOf("Bye Bye");
         assertTrue(k != -1);
@@ -153,14 +153,14 @@ public class WordParserTest extends TikaTest {
     // TIKA-982
     public void testEmbeddedRTF() throws Exception {
         String result = getXML("testWORD_embedded_rtf.doc").xml;
-        assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1404039792\"/>") != -1);
+        assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1404039792\" />") != -1);
         assertTrue(result.indexOf("_1404039792.rtf") != -1);
     }
 
     // TIKA-1019
     public void testDocumentLink() throws Exception {
         String result = getXML("testDocumentLink.doc").xml;
-        assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1327495610\"/>") != -1);
+        assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1327495610\" />") != -1);
         assertTrue(result.indexOf("_1327495610.unknown") != -1);
     }
 

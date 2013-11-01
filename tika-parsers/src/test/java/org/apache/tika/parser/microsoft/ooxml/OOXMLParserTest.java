@@ -390,7 +390,7 @@ public class OOXMLParserTest extends TikaTest {
       assertTrue(xml.contains("<h1>Heading Level 1</h1>"));
       assertTrue(xml.contains("<h2>Heading Level 2</h2>"));
       // Headings with anchor tags in them
-      assertTrue(xml.replaceAll("\r?\n", "").contains("<h3><a name=\"OnLevel3\"/>Heading Level 3</h3>"));
+      assertTrue(xml.contains("<h3><a name=\"OnLevel3\" />Heading Level 3</h3>"));
       // Bold and italic
       assertTrue(xml.contains("<b>BOLD</b>"));
       assertTrue(xml.contains("<i>ITALIC</i>"));
@@ -408,9 +408,9 @@ public class OOXMLParserTest extends TikaTest {
       xml = result.xml;
 
       // Images 2-4 (there is no 1!)
-      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\"/>"));
-      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\"/>"));
-      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\"/>"));
+      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image2.png\" alt=\"A description...\" />"));
+      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image3.jpeg\" alt=\"A description...\" />"));
+      assertTrue("Image not found in:\n"+xml, xml.contains("<img src=\"embedded:image4.png\" alt=\"A description...\" />"));
             
       // Text too
       assertTrue(xml.contains("<p>The end!</p>"));
@@ -897,26 +897,10 @@ public class OOXMLParserTest extends TikaTest {
 
     // TIKA-997:
     public void testEmbeddedZipInPPTX() throws Exception {
-        InputStream input = OOXMLParserTest.class.getResourceAsStream(
-              "/test-documents/test_embedded_zip.pptx");
-        Metadata metadata = new Metadata();
-        StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.setResult(new StreamResult(sw));
-
-        try {
-            new OOXMLParser().parse(input, handler, metadata, new ParseContext());
-        } finally {
-            input.close();
-        }
-        String xml = sw.toString();
-        int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\"/>");
+        String xml = getXML("test_embedded_zip.pptx").xml;
+        int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\" />");
         int i = xml.indexOf("Send me a note");
-        int j = xml.indexOf("<div class=\"embedded\" id=\"slide2_rId4\"/>");
+        int j = xml.indexOf("<div class=\"embedded\" id=\"slide2_rId4\" />");
         int k = xml.indexOf("<p>No title</p>");
         assertTrue(h != -1);
         assertTrue(i != -1);
@@ -965,8 +949,8 @@ public class OOXMLParserTest extends TikaTest {
     // TIKA-1032:
     public void testEmbeddedPPTXTwoSlides() throws Exception {
         String xml = getXML("testPPT_embedded_two_slides.pptx").xml;
-        assertContains("<div class=\"embedded\" id=\"slide1_rId7\"/>" , xml);
-        assertContains("<div class=\"embedded\" id=\"slide2_rId7\"/>" , xml);
+        assertContains("<div class=\"embedded\" id=\"slide1_rId7\" />" , xml);
+        assertContains("<div class=\"embedded\" id=\"slide2_rId7\" />" , xml);
     }
     
     /**
