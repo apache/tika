@@ -18,13 +18,8 @@ package org.apache.tika;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URISyntaxException;
 import java.net.URL;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 
 import junit.framework.TestCase;
 
@@ -32,6 +27,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.xml.sax.ContentHandler;
 
 /**
  * Parent class of Tika tests
@@ -89,22 +86,15 @@ public abstract class TikaTest extends TestCase {
         InputStream input = null;
         Metadata metadata = new Metadata();
         Parser parser = new AutoDetectParser();
-        
-        StringWriter sw = new StringWriter();
-        SAXTransformerFactory factory = (SAXTransformerFactory)
-                 SAXTransformerFactory.newInstance();
-        TransformerHandler handler = factory.newTransformerHandler();
-        handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
-        handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");
-        handler.setResult(new StreamResult(sw));
 
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
         input = getResourceAsStream("/test-documents/" + filePath);
         try {
+            ContentHandler handler = new ToXMLContentHandler();
             parser.parse(input, handler, metadata, context);
-            return new XMLResult(sw.toString(), metadata);
+            return new XMLResult(handler.toString(), metadata);
         } finally {
             input.close();
         }
