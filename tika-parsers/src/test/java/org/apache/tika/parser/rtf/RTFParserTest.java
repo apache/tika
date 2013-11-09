@@ -338,6 +338,13 @@ public class RTFParserTest extends TikaTest {
       assertTrue(xml.metadata.get(Office.CREATION_DATE).startsWith("2012-09-02T"));
     }
 
+    // TIKA-1192
+    public void testListOverride() throws Exception {
+        Result r = getResult("testRTFListOverride.rtf");
+        String content = r.text;
+        assertContains("Body", content);
+    }
+
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
        

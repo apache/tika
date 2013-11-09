@@ -1074,7 +1074,7 @@ final class TextExtractor {
 
             // List table handling
             if (currentListTable != null) {
-                if (equals("list")) {
+                if (equals("list") || equals("listoverride")) {
                     currentList = new ListDescriptor();
                     listTableLevel = -1;
                 } else if (currentList != null) {
