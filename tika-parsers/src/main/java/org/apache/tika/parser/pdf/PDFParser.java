@@ -78,6 +78,8 @@ public class PDFParser extends AbstractParser {
     // (necessary for some PDFs, but messes up other PDFs):
     private boolean sortByPosition = false;
 
+    //True if we should use PDFBox's NonSequentialParser
+    private boolean useNonSequentialParser = false;
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -106,14 +108,18 @@ public class PDFParser extends AbstractParser {
             //  for unpacked / processed resources
             // Decide which to do based on if we're reading from a file or not already
             TikaInputStream tstream = TikaInputStream.cast(stream);
-            if (tstream != null && tstream.hasFile()) {
-               // File based, take that as a cue to use a temporary file
-               RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
-               pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), scratchFile, true);
+            if (useNonSequentialParser == true) {
+                  RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
+                  pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), scratchFile);
+            } else if (tstream != null && tstream.hasFile()) {
+                  // File based, take that as a cue to use a temporary file
+                  RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
+                  pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), scratchFile, true);
             } else {
-               // Go for the normal, stream based in-memory parsing
-               pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
+                  // Go for the normal, stream based in-memory parsing
+                 pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
             }
+            
            
             if (pdfDocument.isEncrypted()) {
                 String password = null;
@@ -233,11 +239,25 @@ public class PDFParser extends AbstractParser {
             }
         } else if(value instanceof COSString) {
             addMetadata(metadata, name, ((COSString)value).getString());
-        } else {
+        } else if (value != null){
             addMetadata(metadata, name, value.toString());
         }
     }
 
+    /**
+     * If true, the parser will use the NonSequentialParser.  This may
+     * be faster than the full doc parser.
+     * If false (default), this will use the full doc parser.
+     */
+    public void setUseNonSequentialParser(boolean v){
+        useNonSequentialParser = v;
+    }
+    
+    /** @see #setUseNonSequentialParser(boolean) */
+    public boolean getUseNonSequentialParser(){
+        return useNonSequentialParser;
+    }
+    
     /**
      *  If true (the default), the parser should estimate
      *  where spaces should be inserted between words.  For
