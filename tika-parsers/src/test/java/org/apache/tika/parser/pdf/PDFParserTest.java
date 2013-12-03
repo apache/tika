@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pdf;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
@@ -515,5 +517,53 @@ public class PDFParserTest extends TikaTest {
        assertEquals(TYPE_PDF, tracker.mediaTypes.get(1));
        assertEquals(TYPE_DOCX, tracker.mediaTypes.get(2));
    }
+
+    /**
+     * tests for equality between traditional sequential parser
+     * and newer nonsequential parser.
+     * 
+     * TODO: more testing
+     */
+    public void testSequentialParser() throws Exception{
+        PDFParser defaultParser = new PDFParser();
+        PDFParser sequentialParser = new PDFParser();
+        sequentialParser.setUseNonSequentialParser(true);
+        File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
+        int pdfs = 0;
+        for (File f : testDocs.listFiles()){
+            if (! f.getName().toLowerCase().endsWith(".pdf")){
+                continue;
+            }
+            pdfs++;
+            Metadata defaultMetadata = new Metadata();
+            String defaultContent = getText(f, defaultParser, defaultMetadata);
+
+            Metadata sequentialMetadata = new Metadata();
+            String sequentialContent = getText(f, sequentialParser, sequentialMetadata);
+            
+            assertEquals(f.getName(), defaultContent, sequentialContent);
+            //TODO: until PDFBox fixes metadata extraction for this file,
+            //skip this one file.
+            if (f.getName().equals("testAnnotations.pdf")){
+                continue;
+            }
+
+            assertEquals(f.getName(), defaultMetadata, sequentialMetadata);
+        }
+        assertEquals("Number of pdf files tested", 14, pdfs);
+    }
+
+    private String getText(File f, PDFParser parser, Metadata metadata) throws Exception{
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        FileInputStream is = null;
+        try {
+            is = new FileInputStream(f);
+            parser.parse(is, handler, metadata, context);
+        } finally {
+            is.close();
+        }
+        return handler.toString();
+    }
 
 }
