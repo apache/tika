@@ -26,6 +26,7 @@ import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
@@ -151,4 +152,20 @@ public class TikaResourceTest extends CXFTestBase {
 
     assertEquals(UNPROCESSEABLE, response.getStatus());
   }
+  
+  @Test
+  public void testSimpleWordMultipartXML() throws Exception {
+    ClassLoader.getSystemResourceAsStream(TEST_DOC);  
+	Attachment attachmentPart = 
+        new Attachment("myworddoc", "application/msword", ClassLoader.getSystemResourceAsStream(TEST_DOC));
+	WebClient webClient = WebClient.create(endPoint + TIKA_PATH);
+	WebClient.getConfig(webClient).getHttpConduit().getClient().setReceiveTimeout(1000000L);
+    Response response = webClient.type("multipart/form-data")
+      .accept("text/xml")
+      .put(attachmentPart);
+    String responseMsg = getStringFromInputStream((InputStream) response
+      .getEntity());
+    assertTrue(responseMsg.contains("test"));
+  }
+  
 }

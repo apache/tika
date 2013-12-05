@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -36,6 +35,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriInfo;
@@ -47,6 +47,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.tika.detect.Detector;
@@ -101,12 +102,12 @@ public class TikaResource {
     return parser;
   }
 
-  public static String detectFilename(HttpHeaders httpHeaders) {
+  public static String detectFilename(MultivaluedMap<String, String> httpHeaders) {
 
-    List<String> disposition = httpHeaders.getRequestHeader("Content-Disposition");
-    if (disposition != null && !disposition.isEmpty()) {
+    String disposition = httpHeaders.getFirst("Content-Disposition");
+    if (disposition != null) {
       try {
-        ContentDisposition c = new ContentDisposition(disposition.get(0));
+        ContentDisposition c = new ContentDisposition(disposition);
 
         // only support "attachment" dispositions
         if ("attachment".equals(c.getDisposition())) {
@@ -121,21 +122,19 @@ public class TikaResource {
     }
 
     // this really should not be used, since it's not an official field
-    List<String> fileName = httpHeaders.getRequestHeader("File-Name");
-    if (fileName != null && !fileName.isEmpty()) {
-      return fileName.get(0);
-    }
-    return null;
+    return httpHeaders.getFirst("File-Name");
   }
 
   @SuppressWarnings("serial")
-public static void fillMetadata(AutoDetectParser parser, Metadata metadata, HttpHeaders httpHeaders) {
+public static void fillMetadata(AutoDetectParser parser, Metadata metadata, MultivaluedMap<String, String> httpHeaders) {
     String fileName = detectFilename(httpHeaders);
     if (fileName != null) {
       metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName);
     }
 
-    javax.ws.rs.core.MediaType mediaType = httpHeaders.getMediaType();
+    String contentTypeHeader = httpHeaders.getFirst(HttpHeaders.CONTENT_TYPE);
+    javax.ws.rs.core.MediaType mediaType = contentTypeHeader == null ? null 
+        : javax.ws.rs.core.MediaType.valueOf(contentTypeHeader);
     if (mediaType!=null && "xml".equals(mediaType.getSubtype()) ) {
       mediaType = null;
     }
@@ -164,9 +163,19 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Http
   }
 
   @PUT
+  @Consumes("multipart/form-data")
+  @Produces("text/plain")
+  public StreamingOutput getTextFromMultipart(Attachment att, @Context final UriInfo info) {
+	  return produceText(att.getObject(InputStream.class), att.getHeaders(), info);
+  }
+  
+  @PUT
   @Consumes("*/*")
   @Produces("text/plain")
   public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+	  return produceText(is, httpHeaders.getRequestHeaders(), info);
+  }
+  public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {	  
     final AutoDetectParser parser = createParser();
     final Metadata metadata = new Metadata();
 
@@ -183,9 +192,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Http
         TikaInputStream tis = TikaInputStream.get(is);
 
         try {
-          tis.getFile();
-
-          parser.parse(tis, body, metadata);
+            parser.parse(tis, body, metadata);
         } catch (SAXException e) {
           throw new WebApplicationException(e);
         } catch (EncryptedDocumentException e) {
@@ -221,81 +228,36 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Http
     };
   }
 
+  @PUT
+  @Consumes("multipart/form-data")
+  @Produces("text/html")
+  public StreamingOutput getHTMLFromMultipart(Attachment att, @Context final UriInfo info) {
+	  return produceOutput(att.getObject(InputStream.class), att.getHeaders(), info, "html");
+  }
 
   @PUT
   @Consumes("*/*")
   @Produces("text/html")
   public StreamingOutput getHTML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
-      final AutoDetectParser parser = createParser();
-      final Metadata metadata = new Metadata();
-
-      fillMetadata(parser, metadata, httpHeaders);
-
-      logRequest(logger, info, metadata);
-
-      return new StreamingOutput() {
-          public void write(OutputStream outputStream)
-          throws IOException, WebApplicationException {
-              Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
-              ContentHandler content;
-
-              try {
-                  SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance( );
-                  TransformerHandler handler = factory.newTransformerHandler( );
-                  handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "html");
-                  handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-                  handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-                  handler.setResult(new StreamResult(writer));
-                  content = new ExpandedTitleContentHandler( handler );
-              }
-              catch ( TransformerConfigurationException e ) {
-                  throw new WebApplicationException( e );
-              }
-
-              TikaInputStream tis = TikaInputStream.get(is);
-
-              try {
-                  tis.getFile();
-                  parser.parse(tis, content, metadata);
-              }
-              catch (SAXException e) {
-                  throw new WebApplicationException(e);
-              }
-              catch (EncryptedDocumentException e) {
-                  logger.warn(String.format(
-                          "%s: Encrypted document",
-                          info.getPath()
-                  ), e);
-                  throw new WebApplicationException(e, Response.status(422).build());
-              }
-              catch (TikaException e) {
-                  logger.warn(String.format(
-                          "%s: Text extraction failed",
-                          info.getPath()
-                  ), e);
-
-                  if (e.getCause()!=null && e.getCause() instanceof WebApplicationException)
-                      throw (WebApplicationException) e.getCause();
-
-                  if (e.getCause()!=null && e.getCause() instanceof IllegalStateException)
-                      throw new WebApplicationException(Response.status(422).build());
-
-                  if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException)
-                      throw new WebApplicationException(Response.status(422).build());
-
-                  throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-              }
-              finally {
-                  tis.close();
-              }
-          }
-      };
+	  return produceOutput(is, httpHeaders.getRequestHeaders(), info, "html");
   }
 
+  @PUT
+  @Consumes("multipart/form-data")
+  @Produces("text/xml")
+  public StreamingOutput getXMLFromMultipart(Attachment att, @Context final UriInfo info) {
+	  return produceOutput(att.getObject(InputStream.class), att.getHeaders(), info, "xml");
+  }
+  
   @PUT
   @Consumes("*/*")
   @Produces("text/xml")
   public StreamingOutput getXML(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+    return produceOutput(is, httpHeaders.getRequestHeaders(), info, "xml");
+  }
+  
+  private StreamingOutput produceOutput(final InputStream is, final MultivaluedMap<String, String> httpHeaders, 
+        final UriInfo info, final String format) {
     final AutoDetectParser parser = createParser();
     final Metadata metadata = new Metadata();
 
@@ -312,7 +274,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Http
         try {
           SAXTransformerFactory factory = (SAXTransformerFactory)SAXTransformerFactory.newInstance( );
           TransformerHandler handler = factory.newTransformerHandler( );
-          handler.getTransformer().setOutputProperty(OutputKeys.METHOD, "xml");
+          handler.getTransformer().setOutputProperty(OutputKeys.METHOD, format);
           handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
           handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
           handler.setResult(new StreamResult(writer));
@@ -325,7 +287,6 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Http
         TikaInputStream tis = TikaInputStream.get(is);
 
         try {
-          tis.getFile();
           parser.parse(tis, content, metadata);
         }
         catch (SAXException e) {

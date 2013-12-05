@@ -17,21 +17,6 @@
 
 package org.apache.tika.server;
 
-import au.com.bytecode.opencsv.CSVWriter;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.xml.sax.helpers.DefaultHandler;
-
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,13 +24,44 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import javax.ws.rs.Consumes;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.xml.sax.helpers.DefaultHandler;
+
+import au.com.bytecode.opencsv.CSVWriter;
+
 @Path("/meta{id:(/.*)?}")
 public class MetadataResource {
   private static final Log logger = LogFactory.getLog(MetadataResource.class);
 
   @PUT
+  @Consumes("multipart/form-data")
+  @Produces("text/csv")
+  public StreamingOutput getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
+	  return produceMetadata(att.getObject(InputStream.class), att.getHeaders(), info);
+  }
+  
+  @PUT
   @Produces("text/csv")
   public StreamingOutput getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+	  return produceMetadata(is, httpHeaders.getRequestHeaders(), info);
+  }
+  
+  private StreamingOutput produceMetadata(InputStream is, MultivaluedMap<String, String> httpHeaders, UriInfo info) throws Exception {
     final Metadata metadata = new Metadata();
     AutoDetectParser parser = TikaResource.createParser();
     TikaResource.fillMetadata(parser, metadata, httpHeaders);
