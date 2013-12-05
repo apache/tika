@@ -17,28 +17,33 @@
 
 package org.apache.tika.server;
 
-import org.apache.commons.cli.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.cxf.binding.BindingFactoryManager;
-import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.jaxrs.JAXRSBindingFactory;
-import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
-import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.Tika;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.binding.BindingFactoryManager;
+import org.apache.cxf.jaxrs.JAXRSBindingFactory;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.Tika;
+
 public class TikaServerCli {
   private static final Log logger = LogFactory.getLog(TikaServerCli.class);
   public static final int DEFAULT_PORT = 9998;
+  public static final String DEFAULT_HOST = "localhost";
 
   private static Options getOptions() {
     Options options = new Options();
-    options.addOption("p", "port", true, "listen port (default = "+DEFAULT_PORT+ ')');
+    options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
+    options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
     options.addOption("h", "help", false, "this help message");
 
     return options;
@@ -61,21 +66,29 @@ public class TikaServerCli {
       CommandLineParser cliParser = new GnuParser();
       CommandLine line = cliParser.parse(options, args);
 
+      if (line.hasOption("help")) {
+          HelpFormatter helpFormatter = new HelpFormatter();
+          helpFormatter.printHelp("tikaserver", options);
+          System.exit(-1);
+      }
+      
+      String host = DEFAULT_HOST;
+
+      if (line.hasOption("host")) {
+        host = line.getOptionValue("host");
+      }
+      
       int port = DEFAULT_PORT;
 
       if (line.hasOption("port")) {
         port = Integer.valueOf(line.getOptionValue("port"));
       }
-      if (line.hasOption("help")) {
-        HelpFormatter helpFormatter = new HelpFormatter();
-        helpFormatter.printHelp("tikaserver", options);
-        System.exit(-1);
-      }
+      
 
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
       sf.setResourceClasses(MetadataEP.class,MetadataResource.class, TikaResource.class, UnpackerResource.class, TikaVersion.class);
 
-      List providers = new ArrayList();
+      List<Object> providers = new ArrayList<Object>();
       providers.add(new TarWriter());
       providers.add(new ZipWriter());
       providers.add(new CSVMessageBodyWriter());
@@ -86,14 +99,14 @@ public class TikaServerCli {
       providers.add(new SingletonResourceProvider(new UnpackerResource()));
       providers.add(new SingletonResourceProvider(new TikaVersion()));
       sf.setProviders(providers);
-      sf.setAddress("http://localhost:" + TikaServerCli.DEFAULT_PORT + "/");
+      sf.setAddress("http://" + host + ":" + port + "/");
       BindingFactoryManager manager = sf.getBus().getExtension(
 				BindingFactoryManager.class);
       JAXRSBindingFactory factory = new JAXRSBindingFactory();
       factory.setBus(sf.getBus());
       manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
 				factory);
-      Server server = sf.create();
+      sf.create();
       logger.info("Started");
     } catch (Exception ex) {
       logger.fatal("Can't start", ex);
