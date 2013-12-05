@@ -17,6 +17,34 @@
 
 package org.apache.tika.server;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.mail.internet.ContentDisposition;
+import javax.mail.internet.ParseException;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.poi.extractor.ExtractorFactory;
@@ -37,21 +65,6 @@ import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import javax.mail.internet.ContentDisposition;
-import javax.mail.internet.ParseException;
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
-
-import java.io.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 @Path("/tika{id:(/.*)?}")
 public class TikaResource {
   public static final String GREETING = "This is Tika Server. Please PUT\n";
@@ -61,13 +74,13 @@ public class TikaResource {
     ExtractorFactory.setAllThreadsPreferEventExtractors(true);
   }
 
-  @SuppressWarnings({"SameReturnValue"})
   @GET
   @Produces("text/plain")
   public String getMessage() {
     return GREETING;
   }
 
+  @SuppressWarnings("serial")
   public static AutoDetectParser createParser() {
     final AutoDetectParser parser = new AutoDetectParser();
 
@@ -115,7 +128,8 @@ public class TikaResource {
     return null;
   }
 
-  public static void fillMetadata(AutoDetectParser parser, Metadata metadata, HttpHeaders httpHeaders) {
+  @SuppressWarnings("serial")
+public static void fillMetadata(AutoDetectParser parser, Metadata metadata, HttpHeaders httpHeaders) {
     String fileName = detectFilename(httpHeaders);
     if (fileName != null) {
       metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName);

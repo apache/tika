@@ -20,6 +20,7 @@ package org.apache.tika.server;
 import java.io.InputStream;
 
 import javax.ws.rs.core.Response;
+
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
@@ -35,8 +36,7 @@ public class TikaResourceTest extends CXFTestBase {
 	private static final int UNPROCESSEABLE = 422;
 	private static final String endPoint = "http://localhost:"
 			+ TikaServerCli.DEFAULT_PORT;
-	private static final String WADL_MEDIA_TYPE = "application/vnd.sun.wadl+xml";
-
+	
 	private Server server;
 
 	/*

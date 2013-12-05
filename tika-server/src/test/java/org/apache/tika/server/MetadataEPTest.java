@@ -17,6 +17,22 @@ package org.apache.tika.server;
  * limitations under the License.
  */
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
+
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
@@ -26,16 +42,6 @@ import org.apache.tika.io.IOUtils;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Assert;
 import org.junit.Test;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import au.com.bytecode.opencsv.CSVReader;
 
@@ -69,7 +75,7 @@ public class MetadataEPTest extends CXFTestBase {
   protected void setUp() throws Exception {
     JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
     sf.setResourceClasses(MetadataEP.class);
-    List providers = new ArrayList();
+    List<Object> providers = new ArrayList<Object>();
     providers.add(new CSVMessageBodyWriter());
     providers.add(new JSONMessageBodyWriter());
     sf.setProviders(providers);
@@ -121,7 +127,7 @@ public class MetadataEPTest extends CXFTestBase {
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
     Reader reader = new InputStreamReader((InputStream) response.getEntity());
-    Map metadata = (Map) JSON.parse(reader);
+    Map<?, ?> metadata = (Map<?, ?>) JSON.parse(reader);
 
     assertNotNull(metadata.get("Author"));
     assertEquals("Maxim Valyanskiy", metadata.get("Author"));
@@ -145,7 +151,7 @@ public class MetadataEPTest extends CXFTestBase {
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
     Reader reader = new InputStreamReader((InputStream) response.getEntity());
-    Map metadata = (Map) JSON.parse(reader);
+    Map<?, ?> metadata = (Map<?, ?>) JSON.parse(reader);
 
     assertNotNull(metadata.get("Author"));
     assertEquals("Maxim Valyanskiy", metadata.get("Author"));
