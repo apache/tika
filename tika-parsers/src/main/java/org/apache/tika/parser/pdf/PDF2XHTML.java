@@ -71,16 +71,14 @@ class PDF2XHTML extends PDFTextStripper {
      */
     public static void process(
             PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
-            boolean extractAnnotationText, boolean enableAutoSpace,
-            boolean suppressDuplicateOverlappingText, boolean sortByPosition)
+            PDFParserConfig config)
             throws SAXException, TikaException {
         try {
             // Extract text using a dummy Writer as we override the
             // key methods to output to the given content
             // handler.
-            PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, context, metadata,
-                                                extractAnnotationText, enableAutoSpace,
-                                                suppressDuplicateOverlappingText, sortByPosition);
+            PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, context, metadata, config);
+
             pdf2XHTML.writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {
@@ -105,19 +103,19 @@ class PDF2XHTML extends PDFTextStripper {
     private final ContentHandler originalHandler;
     private final ParseContext context;
     private final XHTMLContentHandler handler;
-    private final boolean extractAnnotationText;
-
-    private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata,
-                      boolean extractAnnotationText, boolean enableAutoSpace,
-                      boolean suppressDuplicateOverlappingText, boolean sortByPosition)
+    private final PDFParserConfig config;
+    
+    private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata, 
+            PDFParserConfig defaultConfig)
             throws IOException {
+        
+        this.config = context.get(PDFParserConfig.class, defaultConfig);
         this.originalHandler = handler;
         this.context = context;
         this.handler = new XHTMLContentHandler(handler, metadata);
-        this.extractAnnotationText = extractAnnotationText;
         setForceParsing(true);
-        setSortByPosition(sortByPosition);
-        if (enableAutoSpace) {
+        setSortByPosition(config.getSortByPosition());
+        if (config.getEnableAutoSpace()) {
             setWordSeparator(" ");
         } else {
             setWordSeparator("");
@@ -125,7 +123,7 @@ class PDF2XHTML extends PDFTextStripper {
         // TODO: maybe expose setting these too:
         //setAverageCharTolerance(1.0f);
         //setSpacingTolerance(1.0f);
-        setSuppressDuplicateOverlappingText(suppressDuplicateOverlappingText);
+        setSuppressDuplicateOverlappingText(config.getSuppressDuplicateOverlappingText());
     }
 
     void extractBookmarkText() throws SAXException {
@@ -190,7 +188,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             writeParagraphEnd();
             // TODO: remove once PDFBOX-1143 is fixed:
-            if (extractAnnotationText) {
+            if (config.getExtractAnnotationText()) {
                 for(Object o : page.getAnnotations()) {
                     if( o instanceof PDAnnotationLink ) {
                         PDAnnotationLink annotationlink = (PDAnnotationLink) o;

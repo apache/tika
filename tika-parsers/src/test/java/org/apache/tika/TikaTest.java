@@ -27,6 +27,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.xml.sax.ContentHandler;
 
@@ -99,5 +100,33 @@ public abstract class TikaTest extends TestCase {
             input.close();
         }
     }
+
+    /**
+     * Basic text extraction.
+     * <p>
+     * Tries to close input stream after processing.
+     */
+    public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata) throws Exception{
+        ContentHandler handler = new BodyContentHandler();
+        try {
+            parser.parse(is, handler, metadata, context);
+        } finally {
+            is.close();
+        }
+        return handler.toString();
+    }
+    
+    public String getText(InputStream is, Parser parser, Metadata metadata) throws Exception{
+        return getText(is, parser, new ParseContext(), metadata);
+    }
+
+    public String getText(InputStream is, Parser parser, ParseContext context) throws Exception{
+        return getText(is, parser, context, new Metadata());
+    }
+
+    public String getText(InputStream is, Parser parser) throws Exception{
+        return getText(is, parser, new ParseContext(), new Metadata());
+    }
+
 
 }
