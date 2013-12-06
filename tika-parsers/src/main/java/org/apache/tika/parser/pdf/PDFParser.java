@@ -64,22 +64,7 @@ public class PDFParser extends AbstractParser {
     /** Serial version UID */
     private static final long serialVersionUID = -752276948656079347L;
 
-    // True if we let PDFBox "guess" where spaces should go:
-    private boolean enableAutoSpace = true;
-
-    // True if we let PDFBox remove duplicate overlapping text:
-    private boolean suppressDuplicateOverlappingText;
-
-    // True if we extract annotation text ourselves
-    // (workaround for PDFBOX-1143):
-    private boolean extractAnnotationText = true;
-
-    // True if we should sort text tokens by position
-    // (necessary for some PDFs, but messes up other PDFs):
-    private boolean sortByPosition = false;
-
-    //True if we should use PDFBox's NonSequentialParser
-    private boolean useNonSequentialParser = false;
+    private PDFParserConfig config = new PDFParserConfig();
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -108,7 +93,7 @@ public class PDFParser extends AbstractParser {
             //  for unpacked / processed resources
             // Decide which to do based on if we're reading from a file or not already
             TikaInputStream tstream = TikaInputStream.cast(stream);
-            if (useNonSequentialParser == true) {
+            if (config.getUseNonSequentialParser() == true) {
                   RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
                   pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), scratchFile);
             } else if (tstream != null && tstream.hasFile()) {
@@ -148,9 +133,7 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
-            PDF2XHTML.process(pdfDocument, handler, context, metadata,
-                              extractAnnotationText, enableAutoSpace,
-                              suppressDuplicateOverlappingText, sortByPosition);
+            PDF2XHTML.process(pdfDocument, handler, context, metadata, config);
             
         } finally {
             if (pdfDocument != null) {
@@ -244,18 +227,31 @@ public class PDFParser extends AbstractParser {
         }
     }
 
+    public void setPDFParserConfig(PDFParserConfig config){
+        this.config = config;
+    }
+    
+    public PDFParserConfig getPDFParserConfig(){
+        return config;
+    }
+    
     /**
      * If true, the parser will use the NonSequentialParser.  This may
      * be faster than the full doc parser.
      * If false (default), this will use the full doc parser.
+     * 
+     * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setUseNonSequentialParser(boolean v){
-        useNonSequentialParser = v;
+        config.setUseNonSequentialParser(v);
     }
     
-    /** @see #setUseNonSequentialParser(boolean) */
+    /** 
+     * @see #setUseNonSequentialParser(boolean) 
+     * @deprecated use {@link #getPDFParserConfig()}
+     */
     public boolean getUseNonSequentialParser(){
-        return useNonSequentialParser;
+        return config.getUseNonSequentialParser();
     }
     
     /**
@@ -263,29 +259,37 @@ public class PDFParser extends AbstractParser {
      *  where spaces should be inserted between words.  For
      *  many PDFs this is necessary as they do not include
      *  explicit whitespace characters.
+     *
+     *  @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setEnableAutoSpace(boolean v) {
-        enableAutoSpace = v;
+        config.setEnableAutoSpace(v);
     }
 
-    /** @see #setEnableAutoSpace. */
+    /** 
+     * @see #setEnableAutoSpace. 
+     * @deprecated use {@link #getPDFParserConfig()}
+     */
     public boolean getEnableAutoSpace() {
-        return enableAutoSpace;
+        return config.getEnableAutoSpace();
     }
 
     /**
      * If true (the default), text in annotations will be
      * extracted.
+     * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setExtractAnnotationText(boolean v) {
-        extractAnnotationText = v;
+        config.setExtractAnnotationText(v);
     }
 
     /**
      * If true, text in annotations will be extracted.
+     * 
+     * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getExtractAnnotationText() {
-        return extractAnnotationText;
+        return config.getExtractAnnotationText();
     }
 
     /**
@@ -296,14 +300,20 @@ public class PDFParser extends AbstractParser {
      *  slow down extraction substantially (PDFBOX-956) and
      *  sometimes remove characters that were not in fact
      *  duplicated (PDFBOX-1155).  By default this is disabled.
+     *  
+     *  @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setSuppressDuplicateOverlappingText(boolean v) {
-        suppressDuplicateOverlappingText = v;
+        config.setSuppressDuplicateOverlappingText(v);
     }
 
-    /** @see #setSuppressDuplicateOverlappingText. */
+    /** 
+     * @see #setSuppressDuplicateOverlappingText. 
+     * 
+     * @deprecated use {@link #getPDFParserConfig()}
+     */
     public boolean getSuppressDuplicateOverlappingText() {
-        return suppressDuplicateOverlappingText;
+        return config.getSuppressDuplicateOverlappingText();
     }
 
     /**
@@ -313,14 +323,20 @@ public class PDFParser extends AbstractParser {
      *  order"), while for other PDFs it can produce the
      *  wrong result (for example if there are 2 columns,
      *  the text will be interleaved).  Default is false.
+     *  
+     *  @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setSortByPosition(boolean v) {
-        sortByPosition = v;
+        config.setSortByPosition(v);
     }
 
-    /** @see #setSortByPosition. */
+    /** 
+     * @see #setSortByPosition. 
+     * 
+     * @deprecated use {@link #getPDFParserConfig()}
+     */
     public boolean getSortByPosition() {
-        return sortByPosition;
+        return config.getSortByPosition();
     }
 
 }

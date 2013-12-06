@@ -47,17 +47,12 @@ public class PDFParserTest extends TikaTest {
 
     public void testPdfParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
 
         InputStream stream = PDFParserTest.class.getResourceAsStream(
                 "/test-documents/testPDF.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
+
+        String content = getText(stream, parser, metadata);
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
@@ -69,7 +64,6 @@ public class PDFParserTest extends TikaTest {
 //        assertEquals("Sat Sep 15 10:02:31 BST 2007", metadata.get(Metadata.CREATION_DATE));
 //        assertEquals("Sat Sep 15 10:02:31 BST 2007", metadata.get(Metadata.LAST_MODIFIED));
 
-        String content = handler.toString();
         assertTrue(content.contains("Apache Tika"));
         assertTrue(content.contains("Tika - Content Analysis Toolkit"));
         assertTrue(content.contains("incubator"));
@@ -83,17 +77,12 @@ public class PDFParserTest extends TikaTest {
 
     public void testCustomMetadata() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
 
         InputStream stream = PDFParserTest.class.getResourceAsStream(
                 "/test-documents/testPDF-custommetadata.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
+
+        String content = getText(stream, parser, metadata);
 
         assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Document author", metadata.get(TikaCoreProperties.CREATOR));
@@ -106,7 +95,6 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Array Entry 1", metadata.getValues("Custom Array")[0]);
         assertEquals("Array Entry 2", metadata.getValues("Custom Array")[1]);
         
-        String content = handler.toString();
         assertTrue(content.contains("Hello World!"));
     }
     
@@ -174,38 +162,20 @@ public class PDFParserTest extends TikaTest {
 
     public void testTwoTextBoxes() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-
         InputStream stream = PDFParserTest.class.getResourceAsStream(
                 "/test-documents/testPDFTwoTextBoxes.pdf");
-        try {
-          parser.parse(stream, handler, metadata, context);
-        } finally {
-          stream.close();
-        }
-
-        String content = handler.toString();
+        String content = getText(stream, parser);
         content = content.replaceAll("\\s+"," ");
         assertTrue(content.contains("Left column line 1 Left column line 2 Right column line 1 Right column line 2"));
     }
 
     public void testVarious() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
-
         InputStream stream = PDFParserTest.class.getResourceAsStream(
                 "/test-documents/testPDFVarious.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
 
-        String content = handler.toString();
+        String content = getText(stream, parser, metadata);
         //content = content.replaceAll("\\s+"," ");
         assertContains("Footnote appears here", content);
         assertContains("This is a footnote.", content);
@@ -266,37 +236,33 @@ public class PDFParserTest extends TikaTest {
 
     public void testAnnotations() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
         InputStream stream = getResourceAsStream("/test-documents/testAnnotations.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        String content = handler.toString();
+        String content = getText(stream, parser);
         content = content.replaceAll("[\\s\u00a0]+"," ");
         assertContains("Here is some text", content);
         assertContains("Here is a comment", content);
 
         // Test w/ annotation text disabled:
         PDFParser pdfParser = new PDFParser();
-        pdfParser.setExtractAnnotationText(false);
-        handler = new BodyContentHandler();
-        metadata = new Metadata();
-        context = new ParseContext();
+        pdfParser.getPDFParserConfig().setExtractAnnotationText(false);
         stream = getResourceAsStream("/test-documents/testAnnotations.pdf");
-        try {
-            pdfParser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        content = handler.toString();
+        content = getText(stream, pdfParser);
         content = content.replaceAll("[\\s\u00a0]+"," ");
         assertContains("Here is some text", content);
         assertEquals(-1, content.indexOf("Here is a comment"));
 
+        // annotation text disabled through parsecontext
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractAnnotationText(false);
+        context.set(PDFParserConfig.class, config);
+        stream = getResourceAsStream("/test-documents/testAnnotations.pdf");
+        content = getText(stream, parser, context);
+        content = content.replaceAll("[\\s\u00a0]+"," ");
+        assertContains("Here is some text", content);
+        assertEquals(-1, content.indexOf("Here is a comment"));
+        
+        
         // TIKA-738: make sure no extra </p> tags
         String xml = getXML("testAnnotations.pdf").xml;
         assertEquals(substringCount("<p>", xml),
@@ -306,16 +272,8 @@ public class PDFParserTest extends TikaTest {
     // TIKA-981
     public void testPopupAnnotation() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
         InputStream stream = getResourceAsStream("/test-documents/testPopupAnnotation.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        String content = handler.toString();
+        String content = getText(stream, parser);
         assertContains("this is the note", content);
         assertContains("igalsh", content);
     }
@@ -362,100 +320,110 @@ public class PDFParserTest extends TikaTest {
 
     public void testDisableAutoSpace() throws Exception {
         PDFParser parser = new PDFParser();
-        parser.setEnableAutoSpace(false);
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
+        parser.getPDFParserConfig().setEnableAutoSpace(false);
         InputStream stream = getResourceAsStream("/test-documents/testExtraSpaces.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        String content = handler.toString();
+        String content = getText(stream, parser);
         content = content.replaceAll("[\\s\u00a0]+"," ");
         // Text is correct when autoSpace is off:
         assertContains("Here is some formatted text", content);
 
-        parser.setEnableAutoSpace(true);
-        handler = new BodyContentHandler();
-        metadata = new Metadata();
-        context = new ParseContext();
+        parser.getPDFParserConfig().setEnableAutoSpace(true);
         stream = getResourceAsStream("/test-documents/testExtraSpaces.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        content = handler.toString();
+        content = getText(stream, parser);
         content = content.replaceAll("[\\s\u00a0]+"," ");
         // Text is correct when autoSpace is off:
 
         // Text has extra spaces when autoSpace is on
         assertEquals(-1, content.indexOf("Here is some formatted text"));
+        
+        //now try with autodetect
+        Parser autoParser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        context.set(PDFParserConfig.class, config);
+        //default is true
+        stream = getResourceAsStream("/test-documents/testExtraSpaces.pdf");
+        content = getText(stream, autoParser, context);
+        content = content.replaceAll("[\\s\u00a0]+"," ");
+        // Text has extra spaces when autoSpace is on
+        assertEquals(-1, content.indexOf("Here is some formatted text"));
+
+        config.setEnableAutoSpace(false);
+        
+        stream = getResourceAsStream("/test-documents/testExtraSpaces.pdf");
+        content = getText(stream, parser, context);
+        content = content.replaceAll("[\\s\u00a0]+"," ");
+        // Text is correct when autoSpace is off:
+        assertContains("Here is some formatted text", content);
+        
     }
 
     public void testDuplicateOverlappingText() throws Exception {
         PDFParser parser = new PDFParser();
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
         InputStream stream = getResourceAsStream("/test-documents/testOverlappingText.pdf");
         // Default is false (keep overlapping text):
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        String content = handler.toString();
+        String content = getText(stream, parser);
         assertContains("Text the first timeText the second time", content);
 
-        parser.setSuppressDuplicateOverlappingText(true);
-        handler = new BodyContentHandler();
-        metadata = new Metadata();
-        context = new ParseContext();
+        parser.getPDFParserConfig().setSuppressDuplicateOverlappingText(true);
         stream = getResourceAsStream("/test-documents/testOverlappingText.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        content = handler.toString();
+        content = getText(stream, parser);
         // "Text the first" was dedup'd:
         assertContains("Text the first timesecond time", content);
+        
+        //now try with autodetect
+        Parser autoParser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        context.set(PDFParserConfig.class, config);
+        stream = getResourceAsStream("/test-documents/testOverlappingText.pdf");
+        // Default is false (keep overlapping text):
+        content = getText(stream, autoParser, context);
+        assertContains("Text the first timeText the second time", content);
+
+        config.setSuppressDuplicateOverlappingText(true);
+        stream = getResourceAsStream("/test-documents/testOverlappingText.pdf");
+        content = getText(stream, autoParser, context);
+        // "Text the first" was dedup'd:
+        assertContains("Text the first timesecond time", content);
+
     }
 
     public void testSortByPosition() throws Exception {
         PDFParser parser = new PDFParser();
-        parser.setEnableAutoSpace(false);
-        ContentHandler handler = new BodyContentHandler();
-        Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
+        parser.getPDFParserConfig().setEnableAutoSpace(false);
         InputStream stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         // Default is false (do not sort):
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        String content = handler.toString();
+        String content = getText(stream, parser);
         content = content.replaceAll("\\s+", " ");
         assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
 
-        parser.setSortByPosition(true);
-        handler = new BodyContentHandler();
-        metadata = new Metadata();
-        context = new ParseContext();
+        parser.getPDFParserConfig().setSortByPosition(true);
         stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
-        try {
-            parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
-        }
-        content = handler.toString();
+        content = getText(stream, parser);
         content = content.replaceAll("\\s+", " ");
         // Column text is now interleaved:
         assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
+        
+        //now try setting autodetect via parsecontext        
+        AutoDetectParser autoParser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        context.set(PDFParserConfig.class, config);
+        stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
+        // Default is false (do not sort):
+        content = getText(stream, autoParser, context);
+        content = content.replaceAll("\\s+", " ");
+        assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
+        
+        config.setSortByPosition(true);
+        context.set(PDFParserConfig.class, config);
+        stream = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
+        content = getText(stream, parser);
+        content = content.replaceAll("\\s+", " ");
+        // Column text is now interleaved:
+        assertContains("Left column line 1 Right column line 1 Left colu mn line 2 Right column line 2", content);
+        
     }
 
     // TIKA-1035
@@ -527,7 +495,7 @@ public class PDFParserTest extends TikaTest {
     public void testSequentialParser() throws Exception{
         PDFParser defaultParser = new PDFParser();
         PDFParser sequentialParser = new PDFParser();
-        sequentialParser.setUseNonSequentialParser(true);
+        sequentialParser.getPDFParserConfig().setUseNonSequentialParser(true);
         File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
         int pdfs = 0;
         for (File f : testDocs.listFiles()){
@@ -536,10 +504,10 @@ public class PDFParserTest extends TikaTest {
             }
             pdfs++;
             Metadata defaultMetadata = new Metadata();
-            String defaultContent = getText(f, defaultParser, defaultMetadata);
+            String defaultContent = getText(new FileInputStream(f), defaultParser, defaultMetadata);
 
             Metadata sequentialMetadata = new Metadata();
-            String sequentialContent = getText(f, sequentialParser, sequentialMetadata);
+            String sequentialContent = getText(new FileInputStream(f), sequentialParser, sequentialMetadata);
             
             assertEquals(f.getName(), defaultContent, sequentialContent);
             //TODO: until PDFBox fixes metadata extraction for this file,
@@ -553,17 +521,5 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Number of pdf files tested", 14, pdfs);
     }
 
-    private String getText(File f, PDFParser parser, Metadata metadata) throws Exception{
-        ContentHandler handler = new BodyContentHandler();
-        ParseContext context = new ParseContext();
-        FileInputStream is = null;
-        try {
-            is = new FileInputStream(f);
-            parser.parse(is, handler, metadata, context);
-        } finally {
-            is.close();
-        }
-        return handler.toString();
-    }
 
 }
