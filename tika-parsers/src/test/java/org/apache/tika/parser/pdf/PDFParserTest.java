@@ -19,6 +19,8 @@ package org.apache.tika.parser.pdf;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -90,6 +92,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Document title", metadata.get(TikaCoreProperties.TITLE));
         
         assertEquals("Custom Value", metadata.get("Custom Property"));
+        
         assertEquals("Array Entry 1", metadata.get("Custom Array"));
         assertEquals(2, metadata.getValues("Custom Array").length);
         assertEquals("Array Entry 1", metadata.getValues("Custom Array")[0]);
@@ -493,11 +496,22 @@ public class PDFParserTest extends TikaTest {
      * TODO: more testing
      */
     public void testSequentialParser() throws Exception{
-        PDFParser defaultParser = new PDFParser();
-        PDFParser sequentialParser = new PDFParser();
-        sequentialParser.getPDFParserConfig().setUseNonSequentialParser(true);
+        Parser defaultParser = new AutoDetectParser();
+        Parser sequentialParser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setUseNonSequentialParser(true);
+        context.set(PDFParserConfig.class, config);
+        
         File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
         int pdfs = 0;
+        Set<String> knownMetadataDiffs = new HashSet<String>();
+        //PDFBox-1792/Tika-1203
+        knownMetadataDiffs.add("testAnnotations.pdf");
+        
+        //empty for now
+        Set<String> knownContentDiffs = new HashSet<String>();
+        
         for (File f : testDocs.listFiles()){
             if (! f.getName().toLowerCase().endsWith(".pdf")){
                 continue;
@@ -507,17 +521,22 @@ public class PDFParserTest extends TikaTest {
             String defaultContent = getText(new FileInputStream(f), defaultParser, defaultMetadata);
 
             Metadata sequentialMetadata = new Metadata();
-            String sequentialContent = getText(new FileInputStream(f), sequentialParser, sequentialMetadata);
+            String sequentialContent = getText(new FileInputStream(f), sequentialParser, context, sequentialMetadata);
             
-            assertEquals(f.getName(), defaultContent, sequentialContent);
-            //TODO: until PDFBox fixes metadata extraction for this file,
-            //skip this one file.
-            if (f.getName().equals("testAnnotations.pdf")){
-                continue;
+            if (knownContentDiffs.contains(f.getName())){
+                assertFalse(f.getName(), defaultContent.equals(sequentialContent));
+            } else {
+                assertEquals(f.getName(), defaultContent, sequentialContent);
             }
-
-            assertEquals(f.getName(), defaultMetadata, sequentialMetadata);
+           
+            //skip this one file.
+            if (knownMetadataDiffs.contains(f.getName())){
+                assertFalse(f.getName(), defaultMetadata.equals(sequentialMetadata));
+            } else {
+                assertEquals(f.getName(), defaultMetadata, sequentialMetadata);
+            }
         }
+        //make sure nothing went wrong with getting the resource to test-documents
         assertEquals("Number of pdf files tested", 14, pdfs);
     }
 
