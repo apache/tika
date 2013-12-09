@@ -106,10 +106,11 @@ class PDF2XHTML extends PDFTextStripper {
     private final PDFParserConfig config;
     
     private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata, 
-            PDFParserConfig defaultConfig)
+            PDFParserConfig config)
             throws IOException {
-        
-        this.config = context.get(PDFParserConfig.class, defaultConfig);
+        //source of config (derives from context or PDFParser?) is
+        //already determined in PDFParser.  No need to check context here.
+        this.config = config;
         this.originalHandler = handler;
         this.context = context;
         this.handler = new XHTMLContentHandler(handler, metadata);

@@ -29,6 +29,7 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.RandomAccess;
+import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -64,7 +65,7 @@ public class PDFParser extends AbstractParser {
     /** Serial version UID */
     private static final long serialVersionUID = -752276948656079347L;
 
-    private PDFParserConfig config = new PDFParserConfig();
+    private PDFParserConfig defaultConfig = new PDFParserConfig();
     /**
      * Metadata key for giving the document password to the parser.
      *
@@ -87,22 +88,28 @@ public class PDFParser extends AbstractParser {
        
         PDDocument pdfDocument = null;
         TemporaryResources tmp = new TemporaryResources();
-
+        //config from context, or default if not set via context
+        PDFParserConfig localConfig = context.get(PDFParserConfig.class, defaultConfig);
         try {
             // PDFBox can process entirely in memory, or can use a temp file
             //  for unpacked / processed resources
             // Decide which to do based on if we're reading from a file or not already
             TikaInputStream tstream = TikaInputStream.cast(stream);
-            if (config.getUseNonSequentialParser() == true) {
-                  RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
-                  pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), scratchFile);
-            } else if (tstream != null && tstream.hasFile()) {
-                  // File based, take that as a cue to use a temporary file
-                  RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
-                  pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), scratchFile, true);
+            if (tstream != null && tstream.hasFile()) {
+                // File based, take that as a cue to use a temporary file
+                RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
+                if (localConfig.getUseNonSequentialParser() == true){
+                    pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), scratchFile);
+                } else {
+                    pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), scratchFile, true);
+                }
             } else {
-                  // Go for the normal, stream based in-memory parsing
-                 pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
+                // Go for the normal, stream based in-memory parsing
+                if (localConfig.getUseNonSequentialParser() == true){
+                    pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), new RandomAccessBuffer()); 
+                } else {
+                    pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
+                }
             }
             
            
@@ -133,7 +140,7 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
-            PDF2XHTML.process(pdfDocument, handler, context, metadata, config);
+            PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
             
         } finally {
             if (pdfDocument != null) {
@@ -228,11 +235,11 @@ public class PDFParser extends AbstractParser {
     }
 
     public void setPDFParserConfig(PDFParserConfig config){
-        this.config = config;
+        this.defaultConfig = config;
     }
     
     public PDFParserConfig getPDFParserConfig(){
-        return config;
+        return defaultConfig;
     }
     
     /**
@@ -243,7 +250,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setUseNonSequentialParser(boolean v){
-        config.setUseNonSequentialParser(v);
+        defaultConfig.setUseNonSequentialParser(v);
     }
     
     /** 
@@ -251,7 +258,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getUseNonSequentialParser(){
-        return config.getUseNonSequentialParser();
+        return defaultConfig.getUseNonSequentialParser();
     }
     
     /**
@@ -263,7 +270,7 @@ public class PDFParser extends AbstractParser {
      *  @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setEnableAutoSpace(boolean v) {
-        config.setEnableAutoSpace(v);
+        defaultConfig.setEnableAutoSpace(v);
     }
 
     /** 
@@ -271,7 +278,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getEnableAutoSpace() {
-        return config.getEnableAutoSpace();
+        return defaultConfig.getEnableAutoSpace();
     }
 
     /**
@@ -280,7 +287,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setExtractAnnotationText(boolean v) {
-        config.setExtractAnnotationText(v);
+        defaultConfig.setExtractAnnotationText(v);
     }
 
     /**
@@ -289,7 +296,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getExtractAnnotationText() {
-        return config.getExtractAnnotationText();
+        return defaultConfig.getExtractAnnotationText();
     }
 
     /**
@@ -304,7 +311,7 @@ public class PDFParser extends AbstractParser {
      *  @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setSuppressDuplicateOverlappingText(boolean v) {
-        config.setSuppressDuplicateOverlappingText(v);
+        defaultConfig.setSuppressDuplicateOverlappingText(v);
     }
 
     /** 
@@ -313,7 +320,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getSuppressDuplicateOverlappingText() {
-        return config.getSuppressDuplicateOverlappingText();
+        return defaultConfig.getSuppressDuplicateOverlappingText();
     }
 
     /**
@@ -327,7 +334,7 @@ public class PDFParser extends AbstractParser {
      *  @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
     public void setSortByPosition(boolean v) {
-        config.setSortByPosition(v);
+        defaultConfig.setSortByPosition(v);
     }
 
     /** 
@@ -336,7 +343,7 @@ public class PDFParser extends AbstractParser {
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getSortByPosition() {
-        return config.getSortByPosition();
+        return defaultConfig.getSortByPosition();
     }
 
 }
