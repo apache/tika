@@ -59,6 +59,9 @@ public class PDFParserConfig implements Serializable{
 
     //True if we should use PDFBox's NonSequentialParser
     private boolean useNonSequentialParser = false;
+    
+    //True if acroform content should be extracted
+    private boolean extractAcroFormContent = true;
 
     public PDFParserConfig(){
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
@@ -108,6 +111,26 @@ public class PDFParserConfig implements Serializable{
         setUseNonSequentialParser(
                 getProp(props.getProperty("useNonSequentialParser"), 
                         getUseNonSequentialParser()));
+        setExtractAcroFormContent(
+                getProp(props.getProperty("extractAcroFormContent"),
+                getExtractAcroFormContent()));
+    }
+
+    
+    /**
+     * If true (the default), extract content from AcroForms
+     * at the end of the document.
+     * 
+     * @param b
+     */
+    public void setExtractAcroFormContent(boolean extractAcroFormContent) {
+        this.extractAcroFormContent = extractAcroFormContent;
+        
+    }
+
+    /** @see #setExtractAcroFormContent(boolean) */
+    public boolean getExtractAcroFormContent() {
+        return extractAcroFormContent;
     }
 
     /** @see #setEnableAutoSpace. */
@@ -210,6 +233,7 @@ public class PDFParserConfig implements Serializable{
         final int prime = 31;
         int result = 1;
         result = prime * result + (enableAutoSpace ? 1231 : 1237);
+        result = prime * result + (extractAcroFormContent ? 1231 : 1237);
         result = prime * result + (extractAnnotationText ? 1231 : 1237);
         result = prime * result + (sortByPosition ? 1231 : 1237);
         result = prime * result
@@ -229,6 +253,8 @@ public class PDFParserConfig implements Serializable{
         PDFParserConfig other = (PDFParserConfig) obj;
         if (enableAutoSpace != other.enableAutoSpace)
             return false;
+        if (extractAcroFormContent != other.extractAcroFormContent)
+            return false;
         if (extractAnnotationText != other.extractAnnotationText)
             return false;
         if (sortByPosition != other.sortByPosition)
@@ -246,7 +272,10 @@ public class PDFParserConfig implements Serializable{
                 + ", suppressDuplicateOverlappingText="
                 + suppressDuplicateOverlappingText + ", extractAnnotationText="
                 + extractAnnotationText + ", sortByPosition=" + sortByPosition
-                + ", useNonSequentialParser=" + useNonSequentialParser + "]";
+                + ", useNonSequentialParser=" + useNonSequentialParser
+                + ", extractAcroFormContent=" + extractAcroFormContent + "]";
     }
+
+
 
 }
