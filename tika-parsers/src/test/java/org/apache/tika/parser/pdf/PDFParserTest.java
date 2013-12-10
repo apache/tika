@@ -502,33 +502,36 @@ public class PDFParserTest extends TikaTest {
         PDFParserConfig config = new PDFParserConfig();
         config.setUseNonSequentialParser(true);
         context.set(PDFParserConfig.class, config);
-        
+
         File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
         int pdfs = 0;
         Set<String> knownMetadataDiffs = new HashSet<String>();
         //PDFBox-1792/Tika-1203
         knownMetadataDiffs.add("testAnnotations.pdf");
-        
+        //PDFBox-1806
+        knownMetadataDiffs.add("test_acroForm2.pdf");
+
         //empty for now
         Set<String> knownContentDiffs = new HashSet<String>();
-        
+
         for (File f : testDocs.listFiles()){
             if (! f.getName().toLowerCase().endsWith(".pdf")){
                 continue;
             }
+
             pdfs++;
             Metadata defaultMetadata = new Metadata();
             String defaultContent = getText(new FileInputStream(f), defaultParser, defaultMetadata);
 
             Metadata sequentialMetadata = new Metadata();
             String sequentialContent = getText(new FileInputStream(f), sequentialParser, context, sequentialMetadata);
-            
+
             if (knownContentDiffs.contains(f.getName())){
                 assertFalse(f.getName(), defaultContent.equals(sequentialContent));
             } else {
                 assertEquals(f.getName(), defaultContent, sequentialContent);
             }
-           
+
             //skip this one file.
             if (knownMetadataDiffs.contains(f.getName())){
                 assertFalse(f.getName(), defaultMetadata.equals(sequentialMetadata));
@@ -537,8 +540,53 @@ public class PDFParserTest extends TikaTest {
             }
         }
         //make sure nothing went wrong with getting the resource to test-documents
-        assertEquals("Number of pdf files tested", 14, pdfs);
+        assertEquals("Number of pdf files tested", 16, pdfs);
     }
 
 
+    // TIKA-973
+    public void testAcroForm() throws Exception{
+       Parser p = new AutoDetectParser();
+       ParseContext context = new ParseContext();
+       InputStream stream = getResourceAsStream("/test-documents/testPDF_acroForm1.pdf");
+       String txt = getText(stream, p, context);
+       stream.close();
+
+       //simple first level form contents
+       assertContains("to: John Doe", txt);
+       //checkbox
+       assertContains("xpackaging: Yes", txt);
+       
+       //this guarantees that the form processor
+       //worked recursively at least once...i.e. it didn't just
+       //take the first form
+       stream = getResourceAsStream("/test-documents/testPDF_acroForm2.pdf");
+       txt = getText(stream, p, context);
+       stream.close();
+       assertContains("123 Main St.", txt);
+       
+       
+       //now test with nonsequential parser
+       PDFParserConfig config = new PDFParserConfig();
+       config.setUseNonSequentialParser(true);
+       context.set(PDFParserConfig.class, config);
+       stream = getResourceAsStream("/test-documents/testPDF_acroForm1.pdf");
+       txt = getText(stream, p, context);
+       stream.close();
+       
+       //simple first level form contents
+       assertContains("to: John Doe", txt);
+       //checkbox
+       assertContains("xpackaging: Yes", txt);
+       
+       //this guarantees that the form processor
+       //worked recursively at least once...i.e. it didn't just
+       //take the first form
+       stream = getResourceAsStream("/test-documents/testPDF_acroForm2.pdf");
+       txt = getText(stream, p, context);
+       assertContains("123 Main St.", txt);
+       stream.close();
+
+       
+    }
 }
