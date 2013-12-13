@@ -32,7 +32,7 @@ import java.util.Properties;
  * </ol>
  * 
  * Parameters can also be set by modifying the PDFParserConfig.properties file,
- * which lives here in trunk:
+ * which lives in the expected places, in trunk:
  * tika-parsers/src/main/resources/org/apache/tika/parser/pdf
  * 
  * Or, in tika-app-x.x.jar or tika-parsers-x.x.jar:

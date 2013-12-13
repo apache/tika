@@ -540,12 +540,18 @@ public class PDFParserTest extends TikaTest {
             }
         }
         //make sure nothing went wrong with getting the resource to test-documents
-        assertEquals("Number of pdf files tested", 16, pdfs);
+        //This will require modification with each new pdf test.
+        //If this is too annoying, we can turn it off.
+        assertEquals("Number of pdf files tested", 14, pdfs);
     }
 
 
     // TIKA-973
-    public void testAcroForm() throws Exception{
+    //commented out until test documents that are unambiguously
+    //consistent with Apache License v2.0 are contributed.
+    //TODO: add back test for AcroForm extraction; test document should include
+    //recursive forms
+/*    public void testAcroForm() throws Exception{
        Parser p = new AutoDetectParser();
        ParseContext context = new ParseContext();
        InputStream stream = getResourceAsStream("/test-documents/testPDF_acroForm1.pdf");
@@ -585,8 +591,7 @@ public class PDFParserTest extends TikaTest {
        stream = getResourceAsStream("/test-documents/testPDF_acroForm2.pdf");
        txt = getText(stream, p, context);
        assertContains("123 Main St.", txt);
-       stream.close();
-
-       
+       stream.close();     
     }
+*/
 }
