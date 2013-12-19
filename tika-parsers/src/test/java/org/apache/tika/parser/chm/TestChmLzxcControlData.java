@@ -16,8 +16,9 @@
  */
 package org.apache.tika.parser.chm;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
@@ -25,13 +26,16 @@ import org.apache.tika.parser.chm.accessor.ChmItspHeader;
 import org.apache.tika.parser.chm.accessor.ChmLzxcControlData;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests all public methods of ChmLzxcControlData block
  */
-public class TestChmLzxcControlData extends TestCase {
+public class TestChmLzxcControlData {
     private ChmLzxcControlData chmLzxcControlData = null;
 
+    @Before
     public void setUp() throws Exception {
         byte[] data = TestParameters.chmData;
         /* Creates and parses itsf header */
@@ -75,58 +79,65 @@ public class TestChmLzxcControlData extends TestCase {
 
     }
 
+    @Test
     public void testConstructorNotNull() {
-        Assert.assertNotNull(chmLzxcControlData);
+        assertNotNull(chmLzxcControlData);
     }
 
+    @Test
     public void testGetResetInterval() {
-        Assert.assertEquals(TestParameters.VP_RESET_INTERVAL,
+        assertEquals(TestParameters.VP_RESET_INTERVAL,
                 chmLzxcControlData.getResetInterval());
     }
 
+    @Test
     public void testGetSize() {
-        Assert.assertEquals(TestParameters.VP_CONTROL_DATA_SIZE,
+        assertEquals(TestParameters.VP_CONTROL_DATA_SIZE,
                 chmLzxcControlData.getSize());
     }
 
+    @Test
     public void testGetUnknown_18() {
-        Assert.assertEquals(TestParameters.VP_UNKNOWN_18,
+        assertEquals(TestParameters.VP_UNKNOWN_18,
                 chmLzxcControlData.getUnknown_18());
     }
 
+    @Test
     public void testGetVersion() {
-        Assert.assertEquals(TestParameters.VP_CONTROL_DATA_VERSION,
+        assertEquals(TestParameters.VP_CONTROL_DATA_VERSION,
                 chmLzxcControlData.getVersion());
     }
 
+    @Test
     public void testGetWindowSize() {
-        Assert.assertEquals(TestParameters.VP_WINDOW_SIZE,
+        assertEquals(TestParameters.VP_WINDOW_SIZE,
                 chmLzxcControlData.getWindowSize());
     }
 
+    @Test
     public void testGetWindowsPerReset() {
-        Assert.assertEquals(TestParameters.VP_WINDOWS_PER_RESET,
+        assertEquals(TestParameters.VP_WINDOWS_PER_RESET,
                 chmLzxcControlData.getWindowsPerReset());
     }
 
+    @Test
     public void testGetToString() {
-        Assert.assertTrue(chmLzxcControlData.toString().contains(
+        assertTrue(chmLzxcControlData.toString().contains(
                 TestParameters.VP_CONTROL_DATA_SIGNATURE));
     }
 
+    @Test
     public void testGetSignature() {
-        Assert.assertEquals(
+        assertEquals(
                 TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes().length,
                 chmLzxcControlData.getSignature().length);
     }
 
+    @Test
     public void testGetSignaure() {
-        Assert.assertEquals(
+        assertEquals(
                 TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes().length,
                 chmLzxcControlData.getSignature().length);
-    }
-
-    public void tearDown() throws Exception {
     }
 
 }

@@ -19,12 +19,16 @@ package org.apache.tika.mime;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import static java.util.Collections.singletonMap;
 
-public class MediaTypeTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
+public class MediaTypeTest {
+
+    @Test
     public void testBasics() {
         assertEquals(
                 "application/octet-stream",
@@ -50,6 +54,7 @@ public class MediaTypeTest extends TestCase {
                 new MediaType("text", "plain", parameters).toString());
     }
 
+    @Test
     public void testLowerCase() {
         assertEquals(
                 "text/plain",
@@ -74,6 +79,7 @@ public class MediaTypeTest extends TestCase {
                 new MediaType("TeXt", "PlAiN", parameters).toString());
     }
 
+    @Test
     public void testTrim() {
         assertEquals(
                 "text/plain",
@@ -98,6 +104,7 @@ public class MediaTypeTest extends TestCase {
             new MediaType("    text", "\tplain ", parameters).toString());
     }
 
+    @Test
     public void testQuote() {
         Map<String, String> parameters = new HashMap<String, String>();
         parameters.put("a", " value with spaces ");
@@ -112,6 +119,7 @@ public class MediaTypeTest extends TestCase {
     /**
      * @since TIKA-121
      */
+    @Test
     public void testParseWithParams() {
         String mimeStringWithParams = "text/html;charset=UTF-8;foo=bar;foo2=bar2";
 
@@ -136,6 +144,7 @@ public class MediaTypeTest extends TestCase {
     /**
      * Per http://tools.ietf.org/html/rfc2045#section-5.1, charset can be in quotes
      */
+    @Test
     public void testParseWithParamsAndQuotedCharset() {
         // Typical case, with a quoted charset
         String mimeStringWithParams = "text/html;charset=\"UTF-8\"";
@@ -158,6 +167,7 @@ public class MediaTypeTest extends TestCase {
     /**
      * @since TIKA-121
      */
+    @Test
     public void testParseNoParams() {
         String mimeStringNoParams = "text/html";
 
@@ -171,6 +181,7 @@ public class MediaTypeTest extends TestCase {
     /**
      * @since TIKA-121
      */
+    @Test
     public void testParseNoParamsWithSemi() {
         String mimeStringNoParamsWithSemi = "text/html;";
         MediaType type = MediaType.parse(mimeStringNoParamsWithSemi);
@@ -183,6 +194,7 @@ public class MediaTypeTest extends TestCase {
     /**
      * TIKA-349
      */
+    @Test
     public void testOddParameters() {
         assertEquals(
                 "text/html; charset=UTF-8",

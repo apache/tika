@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.regex.Matcher;
@@ -26,21 +30,21 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing Outlook files.
  */
-public class OutlookParserTest extends TestCase {
+public class OutlookParserTest {
 
+    @Test
     public void testOutlookParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
@@ -88,6 +92,7 @@ public class OutlookParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-197">TIKA-197</a>
      */
+    @Test
     public void testMultipleCopies() throws Exception {
         Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
@@ -117,6 +122,7 @@ public class OutlookParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-395">TIKA-395</a>
      */
+    @Test
     public void testOutlookNew() throws Exception {
         Parser parser = new AutoDetectParser();
         ContentHandler handler = new BodyContentHandler();
@@ -143,6 +149,7 @@ public class OutlookParserTest extends TestCase {
         assertTrue(content.contains("Navigation Pane"));
     }
      
+    @Test
     public void testOutlookHTMLVersion() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
@@ -177,6 +184,7 @@ public class OutlookParserTest extends TestCase {
         assertEquals(2, content.split("<\\/body>").length);
     }
 
+    @Test
     public void testOutlookForwarded() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
@@ -204,6 +212,7 @@ public class OutlookParserTest extends TestCase {
         assertEquals(2, content.split("<\\/body>").length);
     }
     
+    @Test
     public void testOutlookHTMLfromRTF() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();

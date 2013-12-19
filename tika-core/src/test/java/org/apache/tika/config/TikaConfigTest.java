@@ -20,14 +20,18 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
+import org.junit.Test;
 
-public class TikaConfigTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+public class TikaConfigTest {
 
     /**
      * Make sure that a configuration file can't reference the
@@ -35,6 +39,7 @@ public class TikaConfigTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-866">TIKA-866</a>
      */
+    @Test
     public void testInvalidParser() throws Exception {
         URL url = TikaConfigTest.class.getResource("TIKA-866-invalid.xml");
         System.setProperty("tika.config", url.toExternalForm());

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -26,6 +28,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -34,6 +37,7 @@ import org.xml.sax.ContentHandler;
 public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
    private static final String file = "testWINMAIL.dat";
    
+   @Test
    public void testBasics() throws Exception {
       TikaInputStream stream = getTestFile(file);
       Detector detector = new DefaultDetector();
@@ -46,6 +50,7 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
      }
    }
    
+   @Test
    public void testMetadata() throws Exception {
       TikaInputStream stream = getTestFile(file);
       
@@ -63,6 +68,7 @@ public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
      * Check the Rtf and Attachments are returned
      *  as expected
      */
+   @Test
     public void testBodyAndAttachments() throws Exception {
        ContainerExtractor extractor = new ParserContainerExtractor();
        

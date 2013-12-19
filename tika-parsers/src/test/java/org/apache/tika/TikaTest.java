@@ -16,12 +16,13 @@
  */
 package org.apache.tika;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-
-import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -34,7 +35,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Parent class of Tika tests
  */
-public abstract class TikaTest extends TestCase {
+public abstract class TikaTest {
    /**
     * This method will give you back the filename incl. the absolute path name
     * to the resource. If the resource does not exist it will give you back the

@@ -17,6 +17,11 @@
 
 package org.apache.tika.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
@@ -26,12 +31,15 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
 import javax.ws.rs.core.Response;
 
 public class UnpackerResourceTest extends CXFTestBase {
@@ -67,13 +75,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 
 	private Server server;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#setUp()
-	 */
-	@Override
-	protected void setUp() throws Exception {
+    @Before
+	public void setUp() {
 		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 		List<Object> providers = new ArrayList<Object>();
 		providers.add(new TarWriter());
@@ -93,13 +96,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 		server = sf.create();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#tearDown()
-	 */
-	@Override
-	protected void tearDown() throws Exception {
+    @After
+	public void tearDown() {
 		server.stop();
 		server.destroy();
 	}

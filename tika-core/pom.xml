@@ -61,6 +61,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+      <version>4.11</version>
     </dependency>
   </dependencies>
 
@@ -142,4 +143,22 @@
     </plugins>
   </build>
 
+  <description>This is the core Apache Tika™ toolkit library from which all other modules inherit functionality.  It also includes the core facades for the Tika API. </description>
+  <organization>
+  	<name>The Apache Software Foundation</name>
+  	<url>http://www.apache.org</url>
+  </organization>
+  <scm>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/core</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/core</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/core</developerConnection>
+  </scm>
+  <issueManagement>
+  	<system>JIRA</system>
+  	<url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+  <ciManagement>
+  	<system>Jenkins</system>
+  	<url>https://builds.apache.org/job/Tika-trunk/</url>
+  </ciManagement>
 </project>

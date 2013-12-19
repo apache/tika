@@ -17,6 +17,9 @@
 
 package org.apache.tika.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 
 import javax.ws.rs.core.Response;
@@ -28,6 +31,8 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 public class TikaResourceTest extends CXFTestBase {
@@ -40,13 +45,8 @@ public class TikaResourceTest extends CXFTestBase {
 	
 	private Server server;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#setUp()
-	 */
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() {
 		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 		sf.setResourceClasses(TikaResource.class);
 		sf.setResourceProvider(TikaResource.class,
@@ -61,13 +61,8 @@ public class TikaResourceTest extends CXFTestBase {
 		server = sf.create();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#tearDown()
-	 */
-	@Override
-	protected void tearDown() throws Exception {
+    @After
+	public void tearDown() throws Exception {
 		server.stop();
 		server.destroy();
 	}

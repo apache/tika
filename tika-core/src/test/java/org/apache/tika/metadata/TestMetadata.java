@@ -20,32 +20,26 @@ package org.apache.tika.metadata;
 import java.util.Date;
 import java.util.Properties;
 
+
+import org.junit.Test;
+
 //Junit imports
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import junit.textui.TestRunner;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * JUnit based tests of class {@link org.apache.tika.metadata.Metadata}.
  */
-public class TestMetadata extends TestCase {
+public class TestMetadata {
 
     private static final String CONTENTTYPE = "contenttype";
 
-    public TestMetadata(String testName) {
-        super(testName);
-    }
-
-    public static Test suite() {
-        return new TestSuite(TestMetadata.class);
-    }
-
-    public static void main(String[] args) {
-        TestRunner.run(suite());
-    }
-
     /** Test for the <code>add(String, String)</code> method. */
+    @Test
     public void testAdd() {
         String[] values = null;
         Metadata meta = new Metadata();
@@ -83,6 +77,7 @@ public class TestMetadata extends TestCase {
     }
 
     /** Test for the <code>set(String, String)</code> method. */
+    @Test
     public void testSet() {
         String[] values = null;
         Metadata meta = new Metadata();
@@ -109,6 +104,7 @@ public class TestMetadata extends TestCase {
     }
 
     /** Test for <code>setAll(Properties)</code> method. */
+    @Test
     public void testSetProperties() {
         String[] values = null;
         Metadata meta = new Metadata();
@@ -136,6 +132,7 @@ public class TestMetadata extends TestCase {
     }
 
     /** Test for <code>get(String)</code> method. */
+    @Test
     public void testGet() {
         Metadata meta = new Metadata();
         assertNull(meta.get("a-name"));
@@ -146,6 +143,7 @@ public class TestMetadata extends TestCase {
     }
 
     /** Test for <code>isMultiValued()</code> method. */
+    @Test
     public void testIsMultiValued() {
         Metadata meta = new Metadata();
         assertFalse(meta.isMultiValued("key"));
@@ -156,6 +154,7 @@ public class TestMetadata extends TestCase {
     }
 
     /** Test for <code>names</code> method. */
+    @Test
     public void testNames() {
         String[] names = null;
         Metadata meta = new Metadata();
@@ -172,6 +171,7 @@ public class TestMetadata extends TestCase {
     }
 
     /** Test for <code>remove(String)</code> method. */
+    @Test
     public void testRemove() {
         Metadata meta = new Metadata();
         meta.remove("name-one");
@@ -193,6 +193,7 @@ public class TestMetadata extends TestCase {
     }
 
     /** Test for <code>equals(Object)</code> method. */
+    @Test
     public void testObject() {
         Metadata meta1 = new Metadata();
         Metadata meta2 = new Metadata();
@@ -221,6 +222,7 @@ public class TestMetadata extends TestCase {
      * Tests for getting and setting integer
      *  based properties
      */
+    @Test
     public void testGetSetInt() {
         Metadata meta = new Metadata();
         
@@ -259,6 +261,7 @@ public class TestMetadata extends TestCase {
      * Tests for getting and setting date
      *  based properties
      */
+    @Test
     public void testGetSetDate() {
         Metadata meta = new Metadata();
         long hour = 60 * 60 * 1000; 
@@ -330,6 +333,7 @@ public class TestMetadata extends TestCase {
      * Some documents, like jpegs, might have date in unspecified time zone
      * which should be handled like strings but verified to have parseable ISO 8601 format
      */
+    @Test
     public void testGetSetDateUnspecifiedTimezone() {
         Metadata meta = new Metadata();    
         
@@ -343,6 +347,7 @@ public class TestMetadata extends TestCase {
      *  composite the value can be retrieved with the property or the aliases
      */
     @SuppressWarnings("deprecation")
+    @Test
     public void testCompositeProperty() {
        Metadata meta = new Metadata();
        Property compositeProperty = Property.composite(

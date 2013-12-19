@@ -16,9 +16,10 @@
  */
 package org.apache.tika.parser.mp4;
 
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -28,16 +29,18 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing mp4 files.
  */
-public class MP4ParserTest extends TestCase {
+public class MP4ParserTest {
     /**
      * Test that we can extract information from
      *  a M4A MP4 Audio file
      */
+    @Test
     public void testMP4ParsingAudio() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();

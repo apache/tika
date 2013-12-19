@@ -16,18 +16,22 @@
  */
 package org.apache.tika.parser.prt;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class PRTParserTest extends TikaTest {
     /**
      * Try with a simple file
      */
+    @Test
     public void testPRTParserBasics() throws Exception {
        InputStream input = getResourceAsStream("/test-documents/testCADKEY.prt");
        try  {
@@ -66,6 +70,7 @@ public class PRTParserTest extends TikaTest {
     /**
      * Now a more complex one
      */
+    @Test
     public void testPRTParserComplex() throws Exception {
        InputStream input = getResourceAsStream("/test-documents/testCADKEY2.prt");
        try  {

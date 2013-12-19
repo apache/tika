@@ -21,19 +21,19 @@ import java.io.InputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
-
-import junit.framework.TestCase;
 
 import static junit.framework.Assert.assertEquals;
 
-public class PSDParserTest extends TestCase {
+public class PSDParserTest {
 
     private final Parser parser = new PSDParser();
 
     /**
      * Tests a very basic file, without much metadata
      */
+    @Test
     public void testPSD() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");
@@ -50,6 +50,7 @@ public class PSDParserTest extends TestCase {
      * Tests a very basic file, without much metadata,
      *  where some of the data lengths are padded to be even
      */
+    @Test
     public void testOddPSD() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-psd");

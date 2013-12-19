@@ -17,24 +17,28 @@
 package org.apache.tika.mime;
 
 // Junit imports
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * 
  * Test Suite for the {@link MimeTypes} repository.
  * 
  */
-public class TestMimeTypes extends TestCase {
+public class TestMimeTypes {
 
     private Tika tika;
 
@@ -44,13 +48,15 @@ public class TestMimeTypes extends TestCase {
 
     private static final File f = new File("/a/b/c/x.pdf");
 
-    protected void setUp() throws Exception{
+    @Before
+    public void setUp() throws Exception{
         TikaConfig config = TikaConfig.getDefaultConfig();
         repo = config.getMimeRepository();
         tika = new Tika(config);
         u = new URL("http://mydomain.com/x.pdf?x=y");
     }
 
+    @Test
     public void testCaseSensitivity() {
         String type = tika.detect("test.PDF");
         assertNotNull(type);
@@ -59,6 +65,7 @@ public class TestMimeTypes extends TestCase {
         assertEquals(type, tika.detect("test.pdF"));
     }
 
+    @Test
     public void testLoadMimeTypes() throws MimeTypeException {
         assertNotNull(repo.forName("application/octet-stream"));
         assertNotNull(repo.forName("text/x-tex"));
@@ -67,6 +74,7 @@ public class TestMimeTypes extends TestCase {
     /**
      * Tests MIME type determination based solely on the URL's extension.
      */
+    @Test
     public void testGuessMimeTypes() throws Exception {
         assertTypeByName("application/pdf", "x.pdf");
         assertEquals("application/pdf", tika.detect(u.toExternalForm()));
@@ -115,6 +123,7 @@ public class TestMimeTypes extends TestCase {
      *  iffy, as we can't be sure where things will end up.
      * People really ought to use the container aware detection...
      */
+    @Test
     public void testOLE2Detection() throws Exception {
         // These have the properties block near the start, so our mime
         //  magic will spot them
@@ -146,6 +155,7 @@ public class TestMimeTypes extends TestCase {
      * 
      * @throws Exception
      */
+    @Test
     public void testWorksSpreadsheetDetection() throws Exception {
         assertTypeDetection("testWORKSSpreadsheet7.0.xlr",
                 // with name-only, everything should be all right 
@@ -159,6 +169,7 @@ public class TestMimeTypes extends TestCase {
                 "application/x-tika-msworks-spreadsheet");
     }
     
+    @Test
     public void testStarOfficeDetection() throws Exception {
         assertTypeDetection("testVORCalcTemplate.vor",
                 "application/x-staroffice-template",
@@ -201,6 +212,7 @@ public class TestMimeTypes extends TestCase {
      * 
      * @throws Exception
      */
+    @Test
     public void testOldWorksWordProcessorDetection() throws Exception {
         assertTypeDetection(
                 "testWORKSWordProcessor3.0.wps",
@@ -224,6 +236,7 @@ public class TestMimeTypes extends TestCase {
      *  iffy, as we can't be sure where things will end up.
      * People really ought to use the container aware detection...
      */
+    @Test
     public void testOoxmlDetection() throws Exception {
         // These two do luckily have [Content_Types].xml near the start,
         //  so our mime magic will spot them
@@ -253,6 +266,7 @@ public class TestMimeTypes extends TestCase {
      *  iffy, as we can't be sure where things will end up.
      * People really ought to use the container aware detection...
      */
+    @Test
     public void testIWorkDetection() throws Exception {
         // By name is easy
        assertTypeByName("application/vnd.apple.keynote", "testKeynote.key");
@@ -268,6 +282,7 @@ public class TestMimeTypes extends TestCase {
        assertTypeByNameAndData("application/vnd.apple.pages", "testPages.pages");
     }
     
+    @Test
     public void testArchiveDetection() throws Exception {
        assertTypeByName("application/x-archive", "test.ar");
        assertTypeByName("application/zip",    "test.zip");
@@ -286,6 +301,7 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/x-cpio", "test-documents.cpio");
     }
     
+    @Test
     public void testFitsDetection() throws Exception {
         // FITS image created using imagemagick convert of testJPEG.jpg
         assertType("application/fits", "testFITS.fits");
@@ -293,6 +309,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/fits", "testFITS.fits");
     }
 
+    @Test
     public void testJpegDetection() throws Exception {
         assertType("image/jpeg", "testJPEG.jpg");
         assertTypeByData("image/jpeg", "testJPEG.jpg");
@@ -306,6 +323,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/jpeg", "x.jfi");
     }
 
+    @Test
     public void testTiffDetection() throws Exception {
         assertType("image/tiff", "testTIFF.tif");
         assertTypeByData("image/tiff", "testTIFF.tif");
@@ -314,6 +332,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/tiff", "x.TIF");
     }
 
+    @Test
     public void testGifDetection() throws Exception {
         assertType("image/gif", "testGIF.gif");
         assertTypeByData("image/gif", "testGIF.gif");
@@ -321,6 +340,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/gif", "x.GIF");
     }
 
+    @Test
     public void testPngDetection() throws Exception {
         assertType("image/png", "testPNG.png");
         assertTypeByData("image/png", "testPNG.png");
@@ -328,6 +348,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/png", "x.PNG");
     }
 
+    @Test
     public void testBmpDetection() throws Exception {
         assertType("image/x-ms-bmp", "testBMP.bmp");
         assertTypeByData("image/x-ms-bmp", "testBMP.bmp");
@@ -339,6 +360,7 @@ public class TestMimeTypes extends TestCase {
         assertType("text/plain", "testBMPfp.txt");
     }
 
+    @Test
     public void testPnmDetection() throws Exception {
         assertType("image/x-portable-bitmap", "testPBM.pbm");
         assertType("image/x-portable-graymap", "testPGM.pgm");
@@ -356,6 +378,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-portable-pixmap", "x.PPM");
     }
 
+    @Test
     public void testPictDetection() throws Exception {
         assertType("image/x-pict", "testPICT.pct");
         assertTypeByData("image/x-pict", "testPICT.pct");
@@ -363,17 +386,20 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/x-pict", "x.PCT");
     }
 
+    @Test
     public void testCgmDetection() throws Exception {
         // TODO: Need a test image file
         assertTypeByName("image/cgm", "x.cgm");
         assertTypeByName("image/cgm", "x.CGM");
     }
 
+    @Test
     public void testRdfXmlDetection() throws Exception {
         assertTypeByName("application/rdf+xml", "x.rdf");
         assertTypeByName("application/rdf+xml", "x.owl");
     }
 
+    @Test
     public void testSvgDetection() throws Exception {
         assertType("image/svg+xml", "testSVG.svg");
         assertTypeByData("image/svg+xml", "testSVG.svg");
@@ -387,6 +413,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("image/svg+xml", "x.SVGZ");
     }
 
+    @Test
     public void testPdfDetection() throws Exception {
         assertType("application/pdf", "testPDF.pdf");
         assertTypeByData("application/pdf", "testPDF.pdf");
@@ -394,12 +421,14 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/pdf", "x.PDF");
     }
 
+    @Test
     public void testSwfDetection() throws Exception {
         // TODO: Need a test flash file
         assertTypeByName("application/x-shockwave-flash", "x.swf");
         assertTypeByName("application/x-shockwave-flash", "x.SWF");
     }
 
+    @Test
     public void testDwgDetection() throws Exception {
         assertTypeByName("image/vnd.dwg", "x.dwg");
         assertTypeByData("image/vnd.dwg", "testDWG2004.dwg");
@@ -407,6 +436,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByData("image/vnd.dwg", "testDWG2010.dwg");
     }
 
+    @Test
     public void testprtDetection() throws Exception {
        assertTypeByName("application/x-prt", "x.prt");
        assertTypeByData("application/x-prt", "testCADKEY.prt");
@@ -415,6 +445,7 @@ public class TestMimeTypes extends TestCase {
     /**
      * Formats which are based on plain text
      */
+    @Test
     public void testTextBasedFormatsDetection() throws Exception {
        assertTypeByName("text/plain", "testTXT.txt");
        assertType(      "text/plain", "testTXT.txt");
@@ -429,6 +460,7 @@ public class TestMimeTypes extends TestCase {
        assertType(      "application/javascript", "testJS.js");
     }
     
+    @Test
     public void testJavaDetection() throws Exception {
         // TODO Classloader doesn't seem to find the .class file in test-documents
         //assertTypeDetection("AutoDetectParser.class", "application/java-vm");
@@ -437,6 +469,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeDetection("testJNILIB.jnilib", "application/x-java-jnilib");
     }
 
+    @Test
     public void testWmfDetection() throws Exception {
         assertTypeByName("application/x-msmetafile", "x.wmf");
         assertTypeByData("application/x-msmetafile", "testWMF.wmf");
@@ -453,6 +486,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/x-gzip", "x.EMZ");
     }
 
+    @Test
     public void testPsDetection() throws Exception {
         // TODO: Need a test postscript file
         assertTypeByName("application/postscript", "x.ps");
@@ -462,6 +496,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("application/postscript", "x.epsi");
     }
     
+    @Test
     public void testMicrosoftMultiMediaDetection() throws Exception {
        assertTypeByName("video/x-ms-asf", "x.asf");
        assertTypeByName("video/x-ms-wmv", "x.wmv");
@@ -476,6 +511,7 @@ public class TestMimeTypes extends TestCase {
      * All 3 DITA types are in theory handled by the same mimetype,
      *  but we specialise them 
      */
+    @Test
     public void testDITADetection() throws Exception {
        assertTypeByName("application/dita+xml; format=topic", "test.dita");
        assertTypeByName("application/dita+xml; format=map", "test.ditamap");
@@ -501,6 +537,7 @@ public class TestMimeTypes extends TestCase {
     /**
      * @since TIKA-194
      */
+    @Test
     public void testJavaRegex() throws Exception{
         MimeType testType = new MimeType(MediaType.parse("foo/bar"));
         this.repo.add(testType);
@@ -517,6 +554,7 @@ public class TestMimeTypes extends TestCase {
         assertNotSame("foo/bar2", tika.detect(testFileName));
     }
     
+    @Test
     public void testRawDetection() throws Exception {
         assertTypeByName("image/x-raw-adobe", "x.dng");
         assertTypeByName("image/x-raw-adobe", "x.DNG");
@@ -554,6 +592,7 @@ public class TestMimeTypes extends TestCase {
     /**
      * Tests that we correctly detect the font types
      */
+    @Test
     public void testFontDetection() throws Exception {
        assertTypeByName("application/x-font-adobe-metric", "x.afm");
        assertTypeByData("application/x-font-adobe-metric", "testAFM.afm");
@@ -589,6 +628,7 @@ public class TestMimeTypes extends TestCase {
      * Tests MimeTypes.getMimeType(URL), which examines both the byte header
      * and, if necessary, the URL's extension.
      */
+    @Test
     public void testMimeDeterminationForTestDocuments() throws Exception {
         assertType("text/html", "testHTML.html");
         assertType("application/zip", "test-documents.zip");
@@ -609,12 +649,14 @@ public class TestMimeTypes extends TestCase {
         assertType("application/x-font-ttf", "testTrueType.ttf");
     }
     
+    @Test
     public void test7ZipDetection() throws Exception {
        assertTypeByName("application/x-7z-compressed","test-documents.7z");
        assertTypeByData("application/x-7z-compressed","test-documents.7z");
        assertTypeByNameAndData("application/x-7z-compressed", "test-documents.7z");
    }
 
+    @Test
     public void testWebArchiveDetection() throws Exception {
         assertTypeByName("application/x-webarchive","x.webarchive");
         assertTypeByData("application/x-bplist","testWEBARCHIVE.webarchive");
@@ -624,6 +666,7 @@ public class TestMimeTypes extends TestCase {
     /**
      * KML, and KMZ (zipped KML)
      */
+    @Test
     public void testKMLZDetection() throws Exception {
        assertTypeByName("application/vnd.google-earth.kml+xml","testKML.kml");
        assertTypeByData("application/vnd.google-earth.kml+xml","testKML.kml");
@@ -637,11 +680,13 @@ public class TestMimeTypes extends TestCase {
        assertTypeByData("application/zip","testKMZ.kmz");
    }
 
+    @Test
     public void testCreativeSuite() throws IOException {
         assertTypeDetection("testINDD.indd", "application/x-adobe-indesign");
         assertTypeDetection("testPSD.psd", "image/vnd.adobe.photoshop");
     }
     
+    @Test
     public void testAMR() throws IOException {
         // AMR matches on name, data or both
         assertTypeDetection("testAMR.amr", "audio/amr");
@@ -653,14 +698,17 @@ public class TestMimeTypes extends TestCase {
         //assertTypeDetection("testAMR-WB+.amr", "audio/amr", "audio/amr-wb+", "audio/amr-wb+");
     }
     
+    @Test
     public void testEmlx() throws IOException {
         assertTypeDetection("testEMLX.emlx", "message/x-emlx");
     }
     
+    @Test
     public void testGroupWiseEml() throws Exception {
         assertTypeDetection("testGroupWiseEml.eml", "message/rfc822");
     }
     
+    @Test
     public void testMatroskaDetection() throws Exception {
         assertType("video/x-matroska", "testMKV.mkv");
         // TODO: Need custom detector data detection, see TIKA-1180
@@ -672,6 +720,7 @@ public class TestMimeTypes extends TestCase {
         assertTypeByName("audio/x-matroska", "x.MKA");
     }
     
+    @Test
     public void testWebMDetection() throws Exception {
         assertType("video/webm", "testWEBM.webm");
         // TODO: Need custom detector data detection, see TIKA-1180
@@ -682,6 +731,7 @@ public class TestMimeTypes extends TestCase {
     }
 
     /** Test getMimeType(byte[]) */
+    @Test
     public void testGetMimeType_byteArray() throws IOException {
         // Plain text detection
         assertText(new byte[] { (byte) 0xFF, (byte) 0xFE });

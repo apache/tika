@@ -16,10 +16,9 @@
  */
 package org.apache.tika.parser.chm;
 
-import java.util.Iterator;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import java.util.Iterator;
 
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
@@ -30,18 +29,22 @@ import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.lzx.ChmBlockInfo;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests major functionality of ChmBlockInfo
  * 
  */
-public class TestChmBlockInfo extends TestCase {
+public class TestChmBlockInfo {
     private byte[] data;
     private ChmBlockInfo chmBlockInfo;
     private ChmDirectoryListingSet chmDirListCont = null;
     private ChmLzxcResetTable clrt = null;
     private ChmLzxcControlData chmLzxcControlData = null;
 
+    @Before
     public void setUp() throws Exception {
         data = TestParameters.chmData;
         /* Creates and parses itsf header */
@@ -95,12 +98,14 @@ public class TestChmBlockInfo extends TestCase {
         clrt.parse(dir_chunk, clrt);
     }
 
+    @Test
     public void testToString() {
         if (chmBlockInfo == null)
             testGetChmBlockInfo();
-        Assert.assertTrue(chmBlockInfo.toString().length() > 0);
+        assertTrue(chmBlockInfo.toString().length() > 0);
     }
 
+    @Test
     public void testGetChmBlockInfo() {
         for (Iterator<DirectoryListingEntry> it = chmDirListCont
                 .getDirectoryListingEntryList().iterator(); it.hasNext();) {
@@ -110,11 +115,12 @@ public class TestChmBlockInfo extends TestCase {
                     chmLzxcControlData);
             // Assert.assertTrue(!directoryListingEntry.getName().isEmpty() &&
             // chmBlockInfo.toString() != null);
-            Assert.assertTrue(!ChmCommons.isEmpty(directoryListingEntry
+            assertTrue(!ChmCommons.isEmpty(directoryListingEntry
                     .getName()) && chmBlockInfo.toString() != null);
         }
     }
 
+    @After
     public void tearDown() throws Exception {
         data = null;
         chmBlockInfo = null;

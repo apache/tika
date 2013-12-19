@@ -62,6 +62,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+      <version>4.11</version>
     </dependency>
     <dependency>
       <artifactId>commons-io</artifactId>
@@ -208,4 +209,21 @@
     </profile>
   </profiles>
 
+  <organization>
+  	<name>The Apache Software Foundation</name>
+  	<url>http://www.apache.org</url>
+  </organization>
+  <scm>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-app</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-app</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-app</developerConnection>
+  </scm>
+  <issueManagement>
+  	<system>JIRA</system>
+  	<url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+  <ciManagement>
+  	<system>Jenkins</system>
+  	<url>https://builds.apache.org/job/Tika-trunk/</url>
+  </ciManagement>
 </project>

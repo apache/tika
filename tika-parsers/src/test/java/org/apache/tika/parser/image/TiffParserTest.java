@@ -16,22 +16,25 @@
  */
 package org.apache.tika.parser.image;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.image.TiffParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
-public class TiffParserTest extends TestCase {
+public class TiffParserTest {
     private final Parser parser = new TiffParser();
 
+    @Test
     public void testTIFF() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
@@ -40,9 +43,9 @@ public class TiffParserTest extends TestCase {
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or " +
-        		"more contributor license agreements.  See the NOTICE file " +
-        		"distributed with this work for additional information regarding " +
-        		"copyright ownership.", metadata.get(TikaCoreProperties.DESCRIPTION));
+            "more contributor license agreements.  See the NOTICE file " +
+            "distributed with this work for additional information regarding " +
+            "copyright ownership.", metadata.get(TikaCoreProperties.DESCRIPTION));
         
         // All EXIF/TIFF tags
         assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));

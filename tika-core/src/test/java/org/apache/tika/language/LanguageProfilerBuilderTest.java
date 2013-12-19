@@ -26,11 +26,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
 import org.apache.tika.exception.TikaException;
+import org.junit.After;
+import org.junit.Test;
 
-public class LanguageProfilerBuilderTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+public class LanguageProfilerBuilderTest {
     /* Test members */
     private LanguageProfilerBuilder ngramProfile = null;
     private LanguageProfile langProfile = null;
@@ -42,6 +45,7 @@ public class LanguageProfilerBuilderTest extends TestCase {
     private final String LANGUAGE = "welsh";
     private final int maxlen = 1000;
 
+    @Test
     public void testCreateProfile() throws TikaException, IOException, URISyntaxException {
         InputStream is =
                 LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName);
@@ -55,15 +59,16 @@ public class LanguageProfilerBuilderTest extends TestCase {
         FileOutputStream fos = new FileOutputStream(f);
         ngramProfile.save(fos);
         fos.close();
-        Assert.assertEquals(maxlen, ngramProfile.getSorted().size());
+        assertEquals(maxlen, ngramProfile.getSorted().size());
     }
 
+    @Test
     public void testNGramProfile() throws IOException, TikaException, URISyntaxException {
         createLanguageProfile();
         LanguageIdentifier.addProfile(LANGUAGE, langProfile);
         LanguageIdentifier identifier = new LanguageIdentifier(langProfile);
-        Assert.assertEquals(LANGUAGE, identifier.getLanguage());
-        Assert.assertTrue(identifier.isReasonablyCertain());
+        assertEquals(LANGUAGE, identifier.getLanguage());
+        assertTrue(identifier.isReasonablyCertain());
     }
 
     private void createLanguageProfile() throws IOException, TikaException, URISyntaxException {
@@ -94,6 +99,7 @@ public class LanguageProfilerBuilderTest extends TestCase {
         }
     }
 
+    @After
     public void tearDown() throws Exception {
         File profile = new File(profileName + "." + FILE_EXTENSION);
         if (profile.exists())

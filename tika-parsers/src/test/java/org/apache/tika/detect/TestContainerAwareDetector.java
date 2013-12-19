@@ -16,22 +16,25 @@
  */
 package org.apache.tika.detect;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.junit.Test;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
  */
-public class TestContainerAwareDetector extends TestCase {
+public class TestContainerAwareDetector {
 
     private final Detector detector = new DefaultDetector();
 
@@ -62,6 +65,7 @@ public class TestContainerAwareDetector extends TestCase {
        }
     }
 
+    @Test
     public void testDetectOLE2() throws Exception {
         // Microsoft office types known by POI
         assertTypeByData("testEXCEL.xls", "application/vnd.ms-excel");
@@ -114,6 +118,7 @@ public class TestContainerAwareDetector extends TestCase {
      * 
      * @throws Exception
      */
+    @Test
     public void testDetectStarOfficeFiles() throws Exception {
         assertType("testStarOffice-5.2-calc.sdc",
                 "application/vnd.stardivision.calc",
@@ -142,6 +147,7 @@ public class TestContainerAwareDetector extends TestCase {
 
     }
 
+    @Test
     public void testOpenContainer() throws Exception {
         TikaInputStream stream = TikaInputStream.get(
                 TestContainerAwareDetector.class.getResource(
@@ -161,22 +167,26 @@ public class TestContainerAwareDetector extends TestCase {
      * EPub uses a similar mimetype entry to OpenDocument for storing
      *  the mimetype within the parent zip file
      */
+    @Test
     public void testDetectEPub() throws Exception {
        assertTypeByData("testEPUB.epub", "application/epub+zip");
        assertTypeByData("testiBooks.ibooks", "application/x-ibooks+zip");
     }
     
+    @Test
     public void testDetectLotusNotesEml() throws Exception {
         // Lotus .eml files aren't guaranteed to have any of the magic 
         // matches as the first line, but should have X-Notes-Item and Message-ID
         assertTypeByData("testLotusEml.eml", "message/rfc822");
      }
 
+    @Test
     public void testDetectODF() throws Exception {
         assertTypeByData("testODFwithOOo3.odt", "application/vnd.oasis.opendocument.text");
         assertTypeByData("testOpenOffice2.odf", "application/vnd.oasis.opendocument.formula");
     }
 
+    @Test
     public void testDetectOOXML() throws Exception {
         assertTypeByData("testEXCEL.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         assertTypeByData("testWORD.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
@@ -211,6 +221,7 @@ public class TestContainerAwareDetector extends TestCase {
      *  have the same structure as regular OLE2 files. (Core streams may be encrypted
      *  however)
      */
+    @Test
     public void testDetectProtectedOLE2() throws Exception {
         assertTypeByData("testEXCEL_protected_passtika.xls", "application/vnd.ms-excel");
         assertTypeByData("testWORD_protected_passtika.doc", "application/msword");
@@ -227,6 +238,7 @@ public class TestContainerAwareDetector extends TestCase {
      *  OOXML structure within an encrypted stream.
      * This makes detecting them much harder...
      */
+    @Test
     public void testDetectProtectedOOXML() throws Exception {
         // Encrypted Microsoft Office OOXML files have OLE magic but
         //  special streams, so we can tell they're Protected OOXML
@@ -251,6 +263,7 @@ public class TestContainerAwareDetector extends TestCase {
      * Check that temporary files created by Tika are removed after
      * closing TikaInputStream.
      */
+    @Test
     public void testRemovalTempfiles() throws Exception {
         assertRemovalTempfiles("testWORD.docx");
         assertRemovalTempfiles("test-documents.zip");
@@ -280,21 +293,25 @@ public class TestContainerAwareDetector extends TestCase {
         assertEquals(numberOfTempFiles, countTemporaryFiles());
     }
 
+    @Test
     public void testDetectIWork() throws Exception {
         assertTypeByData("testKeynote.key", "application/vnd.apple.keynote");
         assertTypeByData("testNumbers.numbers", "application/vnd.apple.numbers");
         assertTypeByData("testPages.pages", "application/vnd.apple.pages");
     }
 
+    @Test
     public void testDetectKMZ() throws Exception {
        assertTypeByData("testKMZ.kmz", "application/vnd.google-earth.kmz");
     }
     
+    @Test
     public void testDetectIPA() throws Exception {
         assertTypeByNameAndData("testIPA.ipa", "application/x-itunes-ipa");
         assertTypeByData("testIPA.ipa", "application/x-itunes-ipa");
      }
      
+    @Test
     public void testDetectZip() throws Exception {
         assertTypeByData("test-documents.zip", "application/zip");
         assertTypeByData("test-zip-of-zip.zip", "application/zip");
@@ -328,6 +345,7 @@ public class TestContainerAwareDetector extends TestCase {
         }
     }
 
+    @Test
     public void testTruncatedFiles() throws Exception {
         // First up a truncated OOXML (zip) file
        

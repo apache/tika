@@ -16,22 +16,27 @@
  */
 package org.apache.tika.parser.jpeg;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class JpegParserTest extends TestCase {
+public class JpegParserTest {
+  
     private final Parser parser = new JpegParser();
     
+    @Test
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -82,6 +87,7 @@ public class JpegParserTest extends TestCase {
     /**
      * Test for a file with Geographic information (lat, long etc) in it
      */
+    @Test
     public void testJPEGGeo() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -128,6 +134,7 @@ public class JpegParserTest extends TestCase {
      *  different way, see TIKA-915 for details
      * Disabled for now, pending a fix to the underlying library
      */
+    @Test
     public void testJPEGGeo2() throws Exception {
        Metadata metadata = new Metadata();
        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -140,6 +147,7 @@ public class JpegParserTest extends TestCase {
        assertEquals("-1.567886", metadata.get(Metadata.LONGITUDE));
     }
     
+    @Test
     public void testJPEGTitleAndDescription() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -178,6 +186,7 @@ public class JpegParserTest extends TestCase {
         assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));          
     }
     
+    @Test
     public void testJPEGTitleAndDescriptionPhotoshop() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -195,6 +204,7 @@ public class JpegParserTest extends TestCase {
         assertTrue("got " + subject, subject.contains("bird watching")); 
     }
     
+    @Test
     public void testJPEGTitleAndDescriptionXnviewmp() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -213,6 +223,7 @@ public class JpegParserTest extends TestCase {
         assertTrue("'nature reserve'" + " not in " + keywords, keywords.contains("nature reserve"));     
     }
     
+    @Test
     public void testJPEGoddTagComponent() throws Exception {
        Metadata metadata = new Metadata();
        metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -226,6 +237,7 @@ public class JpegParserTest extends TestCase {
        assertEquals("384", metadata.get(Metadata.IMAGE_LENGTH));
     }
     
+    @Test
     public void testJPEGEmptyEXIFDateTime() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");

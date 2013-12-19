@@ -22,9 +22,13 @@ import java.io.InputStreamReader;
 import java.io.Writer;
 import java.util.HashMap;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.io.IOUtils;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * JUnit based test of class {@link LanguageIdentifier}.
@@ -32,7 +36,7 @@ import org.apache.tika.io.IOUtils;
  * @author Sami Siren
  * @author Jerome Charron - http://frutch.free.fr/
  */
-public class LanguageIdentifierTest extends TestCase {
+public class LanguageIdentifierTest {
 
     private static final String[] languages = new String[] {
         // TODO - currently Estonian and Greek fail these tests.
@@ -41,10 +45,12 @@ public class LanguageIdentifierTest extends TestCase {
         "lt", "nl", "pt", "sv"
     };
 
+    @Before
     public void setUp() {
         LanguageIdentifier.initProfiles();
     }
     
+    @Test
     public void testLanguageDetection() throws IOException {
         for (String language : languages) {
             ProfilingWriter writer = new ProfilingWriter();
@@ -59,6 +65,7 @@ public class LanguageIdentifierTest extends TestCase {
         }
     }
 
+    @Test
     public void testClearAddAndInitProfiles() throws IOException {
         // Prepare english and german language profiles
         ProfilingWriter enWriter = new ProfilingWriter();
@@ -98,6 +105,7 @@ public class LanguageIdentifierTest extends TestCase {
         assertTrue(identifier.isReasonablyCertain());
   }
 
+  @Test
   public void testMixedLanguages() throws IOException {
         for (String language : languages) {
             for (String other : languages) {
@@ -117,6 +125,7 @@ public class LanguageIdentifierTest extends TestCase {
     }
 
     // TIKA-453: Fix up language identifier used for Estonian
+    @Test
     public void testEstonia() throws Exception {
         final String estonian = "et";
         ProfilingWriter writer = new ProfilingWriter();

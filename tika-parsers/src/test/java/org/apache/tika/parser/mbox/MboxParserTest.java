@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.mbox;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -24,19 +26,19 @@ import static org.mockito.Mockito.verify;
 
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.junit.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class MboxParserTest extends TestCase {
+public class MboxParserTest {
 
+    @Test
     public void testSimple() {
         Parser parser = new MboxParser();
         Metadata metadata = new Metadata();
@@ -56,6 +58,7 @@ public class MboxParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testHeaders() {
         Parser parser = new MboxParser();
         Metadata metadata = new Metadata();
@@ -83,6 +86,7 @@ public class MboxParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testMultilineHeader() {
         Parser parser = new MboxParser();
         Metadata metadata = new Metadata();
@@ -103,6 +107,7 @@ public class MboxParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testQuoted() {
         Parser parser = new MboxParser();
         Metadata metadata = new Metadata();
@@ -125,6 +130,7 @@ public class MboxParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testComplex() {
         Parser parser = new MboxParser();
         Metadata metadata = new Metadata();

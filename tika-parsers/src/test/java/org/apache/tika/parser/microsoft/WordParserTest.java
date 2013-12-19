@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 import java.util.Locale;
 
@@ -29,10 +32,12 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class WordParserTest extends TikaTest {
 
+    @Test
     public void testWordParser() throws Exception {
         InputStream input = WordParserTest.class.getResourceAsStream(
                 "/test-documents/testWORD.doc");
@@ -53,6 +58,7 @@ public class WordParserTest extends TikaTest {
         }
     }
 
+    @Test
     public void testWordWithWAV() throws Exception {
         InputStream input = WordParserTest.class.getResourceAsStream(
                 "/test-documents/Doc1_ole.doc");
@@ -71,6 +77,7 @@ public class WordParserTest extends TikaTest {
      * Test that the word converter is able to generate the
      *  correct HTML for the document
      */
+    @Test
     public void testWordHTML() throws Exception {
 
         // Try with a document containing various tables and
@@ -134,6 +141,7 @@ public class WordParserTest extends TikaTest {
         assertTrue("Bold text wasn't contiguous: "+xml, xml.contains("F<b>oob</b>a<b>r</b>"));
     }
 
+    @Test
     public void testEmbeddedNames() throws Exception {
         String result = getXML("testWORD_embedded_pdf.doc").xml;
 
@@ -151,6 +159,7 @@ public class WordParserTest extends TikaTest {
     }
 
     // TIKA-982
+    @Test
     public void testEmbeddedRTF() throws Exception {
         String result = getXML("testWORD_embedded_rtf.doc").xml;
         assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1404039792\" />") != -1);
@@ -158,12 +167,14 @@ public class WordParserTest extends TikaTest {
     }
 
     // TIKA-1019
+    @Test
     public void testDocumentLink() throws Exception {
         String result = getXML("testDocumentLink.doc").xml;
         assertTrue(result.indexOf("<div class=\"embedded\" id=\"_1327495610\" />") != -1);
         assertTrue(result.indexOf("_1327495610.unknown") != -1);
     }
 
+    @Test
     public void testWord6Parser() throws Exception {
         InputStream input = WordParserTest.class.getResourceAsStream(
                 "/test-documents/testWORD6.doc");
@@ -186,6 +197,7 @@ public class WordParserTest extends TikaTest {
         }
     }
 
+    @Test
     public void testVarious() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -261,6 +273,7 @@ public class WordParserTest extends TikaTest {
      * TIKA-1044 - Handle documents where parts of the
      *  text have no formatting or styles applied to them
      */
+    @Test
     public void testNoFormat() throws Exception {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
@@ -280,6 +293,7 @@ public class WordParserTest extends TikaTest {
     /**
      * Ensures that custom OLE2 (HPSF) properties are extracted
      */
+    @Test
     public void testCustomProperties() throws Exception {
        InputStream input = WordParserTest.class.getResourceAsStream(
              "/test-documents/testWORD_custom_props.doc");
@@ -317,6 +331,7 @@ public class WordParserTest extends TikaTest {
        assertEquals("2010-12-30T23:00:00Z", metadata.get("custom:MyCustomDate"));
     }
 
+    @Test
     public void testExceptions1() throws Exception {
       XMLResult xml;
       Level logLevelStart = Logger.getRootLogger().getLevel();
@@ -331,6 +346,7 @@ public class WordParserTest extends TikaTest {
       }
     }
 
+    @Test
     public void testTabularSymbol() throws Exception {
         assertContains("one two", getXML("testWORD_tabular_symbol.doc").xml.replaceAll("\\s+", " "));
     }

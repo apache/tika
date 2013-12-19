@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class CharsetDetectorTest {
+  
   @Test
   public void testTagDropper() throws IOException {
     InputStream in = CharsetDetectorTest.class.getResourceAsStream( "/test-documents/resume.html" );

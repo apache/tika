@@ -16,39 +16,46 @@
  */
 package org.apache.tika.parser.chm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
+import org.junit.Before;
+import org.junit.Test;
 
-public class TestChmExtractor extends TestCase {
+public class TestChmExtractor {
     private ChmExtractor chmExtractor = null;
 
+    @Before
     public void setUp() throws Exception {
         chmExtractor = new ChmExtractor(
                 new ByteArrayInputStream(TestParameters.chmData));
     }
 
+    @Test
     public void testEnumerateChm() {
         List<String> chmEntries = chmExtractor.enumerateChm();
-        Assert.assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER,
+        assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER,
                 chmEntries.size());
     }
 
+    @Test
     public void testGetChmDirList() {
-        Assert.assertNotNull(chmExtractor.getChmDirList());
+        assertNotNull(chmExtractor.getChmDirList());
     }
 
+    @Test
     public void testExtractChmEntry() throws TikaException{
         ChmDirectoryListingSet entries = chmExtractor.getChmDirList();
         byte[][] localFile;
@@ -60,9 +67,10 @@ public class TestChmExtractor extends TestCase {
                 ++count;
             }
         }
-        Assert.assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER, count);
+        assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER, count);
     }
 
+    @Test
     public void testChmParser() throws Exception{
         List<String> files = new ArrayList<String>();
         files.add("/test-documents/testChm.chm");
@@ -82,9 +90,6 @@ public class TestChmExtractor extends TestCase {
                 stream.close();
             }
         }
-    }
-
-    public void tearDown() throws Exception {
     }
 
 }

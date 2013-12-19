@@ -21,13 +21,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 
-public class CustomReaderTest extends TestCase {
+public class CustomReaderTest {
   
   static class CustomMimeTypesReader extends MimeTypesReader {
     public Map<String, String> values = new HashMap<String, String>();
@@ -66,6 +67,7 @@ public class CustomReaderTest extends TestCase {
     }
   }
   
+  @Test
   public void testCustomReader() throws Exception {
     MimeTypes mimeTypes = new MimeTypes();
     CustomMimeTypesReader reader = new CustomMimeTypesReader(mimeTypes);

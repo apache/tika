@@ -18,10 +18,13 @@ package org.apache.tika.language;
 
 import java.io.IOException;
 
-import junit.framework.TestCase;
+import org.junit.Test;
 
-public class ProfilingWriterTest extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class ProfilingWriterTest {
+
+    @Test
     public void testProfilingWriter() throws IOException {
         ProfilingWriter writer = new ProfilingWriter();
         writer.write(" foo+BAR FooBar\n");

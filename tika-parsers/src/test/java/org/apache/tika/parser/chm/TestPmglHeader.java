@@ -16,16 +16,19 @@
  */
 package org.apache.tika.parser.chm;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.parser.chm.accessor.ChmPmglHeader;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
+import org.junit.Before;
+import org.junit.Test;
 
-public class TestPmglHeader extends TestCase {
+public class TestPmglHeader {
     ChmPmglHeader chmPmglHeader = null;
 
+    @Before
     public void setUp() throws Exception {
         byte[] data = TestParameters.chmData;
         chmPmglHeader = new ChmPmglHeader();
@@ -34,36 +37,39 @@ public class TestPmglHeader extends TestCase {
                         + ChmConstants.CHM_PMGL_LEN + 10), chmPmglHeader);
     }
 
+    @Test
     public void testToString() {
-        Assert.assertTrue((chmPmglHeader != null)
+        assertTrue((chmPmglHeader != null)
                 && chmPmglHeader.toString().length() > 0);
     }
 
+    @Test
     public void testChmPmglHeaderGet() {
-        Assert.assertEquals(TestParameters.VP_PMGL_SIGNATURE, new String(
+        assertEquals(TestParameters.VP_PMGL_SIGNATURE, new String(
                 chmPmglHeader.getSignature()));
     }
 
+    @Test
     public void testGetBlockNext() {
-        Assert.assertEquals(TestParameters.VP_PMGL_BLOCK_NEXT,
+        assertEquals(TestParameters.VP_PMGL_BLOCK_NEXT,
                 chmPmglHeader.getBlockNext());
     }
 
+    @Test
     public void testGetBlockPrev() {
-        Assert.assertEquals(TestParameters.VP_PMGL_BLOCK_PREV,
+        assertEquals(TestParameters.VP_PMGL_BLOCK_PREV,
                 chmPmglHeader.getBlockPrev());
     }
 
+    @Test
     public void testGetFreeSpace() {
-        Assert.assertEquals(TestParameters.VP_PMGL_FREE_SPACE,
+        assertEquals(TestParameters.VP_PMGL_FREE_SPACE,
                 chmPmglHeader.getFreeSpace());
     }
 
+    @Test
     public void testGetUnknown0008() {
-        Assert.assertEquals(TestParameters.VP_PMGL_UNKNOWN_008,
+        assertEquals(TestParameters.VP_PMGL_UNKNOWN_008,
                 chmPmglHeader.getUnknown0008());
-    }
-
-    public void tearDown() throws Exception {
     }
 }

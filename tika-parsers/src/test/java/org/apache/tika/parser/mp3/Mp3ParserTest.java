@@ -16,10 +16,11 @@
  */
 package org.apache.tika.parser.mp3;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.TestCase;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream; 
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -28,12 +29,13 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing mp3 files.
  */
-public class Mp3ParserTest extends TestCase {
+public class Mp3ParserTest {
 
     /**
      * Checks the duration of an MP3 file.
@@ -48,6 +50,7 @@ public class Mp3ParserTest extends TestCase {
     /**
      * Test that with only ID3v1 tags, we get some information out   
      */
+    @Test
     public void testMp3ParsingID3v1() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
@@ -84,6 +87,7 @@ public class Mp3ParserTest extends TestCase {
      * Test that with only ID3v2 tags, we get the full
      *  set of information out.
      */
+    @Test
     public void testMp3ParsingID3v2() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
@@ -136,6 +140,7 @@ public class Mp3ParserTest extends TestCase {
      * Test that with both id3v2 and id3v1, we prefer the
      *  details from id3v2
      */
+    @Test
     public void testMp3ParsingID3v1v2() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
@@ -172,6 +177,7 @@ public class Mp3ParserTest extends TestCase {
      * Test that with only ID3v2 tags, of version 2.4, we get the full
      *  set of information out.
      */
+    @Test
     public void testMp3ParsingID3v24() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
@@ -208,6 +214,7 @@ public class Mp3ParserTest extends TestCase {
      * Tests that a file with characters not in the ISO 8859-1
      *  range is correctly handled
      */
+    @Test
     public void testMp3ParsingID3i18n() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
@@ -244,6 +251,7 @@ public class Mp3ParserTest extends TestCase {
      * Tests that a file with both lyrics and
      *  ID3v2 tags gets both extracted correctly
      */
+    @Test
     public void testMp3ParsingLyrics() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
@@ -280,6 +288,7 @@ public class Mp3ParserTest extends TestCase {
         checkDuration(metadata, 1);
     }
     
+    @Test
     public void testID3v2Frame() throws Exception {
        byte[] empty = new byte[] {
              0x49, 0x44, 0x33, 3, 1, 0,
@@ -309,6 +318,7 @@ public class Mp3ParserTest extends TestCase {
      * This test will check for the complicated set of ID3v2.4
      *  tags.
      */
+    @Test
     public void testTIKA424() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
@@ -348,6 +358,7 @@ public class Mp3ParserTest extends TestCase {
      * In this case, it is a file with JPEG data in the ID3, which
      *  is trunacted before the end of the JPEG bit of the ID3 frame.
      */
+    @Test
     public void testTIKA474() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
@@ -382,6 +393,7 @@ public class Mp3ParserTest extends TestCase {
     }
 
     // TIKA-1024
+    @Test
     public void testNakedUTF16BOM() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();
