@@ -16,9 +16,11 @@
  */
 package org.apache.tika;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
 
-public class TikaDetectionTest extends TestCase {
+import org.junit.Test;
+
+public class TikaDetectionTest {
 
     private final Tika tika = new Tika();
 
@@ -35,6 +37,7 @@ public class TikaDetectionTest extends TestCase {
      * }'
      * </pre>
      */
+    @Test
     public void testHttpServerFileExtensions() {
         assertEquals("application/andrew-inset", tika.detect("x.ez"));
         assertEquals("application/applixware", tika.detect("x.aw"));

@@ -23,16 +23,18 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.util.concurrent.Semaphore;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class ForkParserTest extends TestCase {
+import static org.junit.Assert.assertEquals;
 
+public class ForkParserTest {
+
+    @Test
     public void testHelloWorld() throws Exception {
         ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
@@ -50,6 +52,7 @@ public class ForkParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testSerialParsing() throws Exception {
         ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
@@ -67,6 +70,7 @@ public class ForkParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testParallelParsing() throws Exception {
         final ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),
@@ -102,6 +106,7 @@ public class ForkParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testPoolSizeReached() throws Exception {
         final ForkParser parser = new ForkParser(
                 ForkParserTest.class.getClassLoader(),

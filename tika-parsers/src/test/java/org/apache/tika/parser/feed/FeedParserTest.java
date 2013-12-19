@@ -16,18 +16,21 @@
  */
 package org.apache.tika.parser.feed;
 
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class FeedParserTest extends TestCase {
+public class FeedParserTest {
 
+    @Test
     public void testXMLParser() throws Exception {
         InputStream input = FeedParserTest.class
                 .getResourceAsStream("/test-documents/rsstest.rss");

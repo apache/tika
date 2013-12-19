@@ -16,30 +16,34 @@
  */
 package org.apache.tika.mime;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 
-public class MimeDetectionTest extends TestCase {
+import org.junit.Before;
+import org.junit.Test;
+
+public class MimeDetectionTest {
 
     private MimeTypes mimeTypes;
 
     private MediaTypeRegistry registry;
 
     /** @inheritDoc */
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() {
         this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
         this.registry = mimeTypes.getMediaTypeRegistry();
     }
 
+    @Test
     public void testDetection() throws Exception {
         testFile("image/svg+xml", "circles.svg");
         testFile("image/svg+xml", "circles-with-prefix.svg");
@@ -72,6 +76,7 @@ public class MimeDetectionTest extends TestCase {
         testFile("text/html", "test-malformed-header.html.bin");
     }
 
+    @Test
     public void testByteOrderMark() throws Exception {
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
                 new ByteArrayInputStream("\ufefftest".getBytes("UTF-16LE")),
@@ -84,6 +89,7 @@ public class MimeDetectionTest extends TestCase {
                 new Metadata()));
     }
 
+    @Test
     public void testSuperTypes() {
         assertTrue(registry.isSpecializationOf(
                 MediaType.parse("text/something; charset=UTF-8"),
@@ -118,6 +124,7 @@ public class MimeDetectionTest extends TestCase {
                 MediaType.APPLICATION_ZIP));
     }
 
+    @SuppressWarnings("unused")
     private void testUrlOnly(String expected, String url) throws IOException{
 	InputStream in = new URL(url).openStream();
         testStream(expected, url, in);
@@ -152,11 +159,17 @@ public class MimeDetectionTest extends TestCase {
         }        
     }
 
+    private void assertNotNull(String string, InputStream in) {
+      // TODO Auto-generated method stub
+      
+    }
+
     /**
      * Test for type detection of empty documents.
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-483">TIKA-483</a>
      */
+    @Test
     public void testEmptyDocument() throws IOException {
         assertEquals(MediaType.OCTET_STREAM, mimeTypes.detect(
                 new ByteArrayInputStream(new byte[0]), new Metadata()));
@@ -179,6 +192,7 @@ public class MimeDetectionTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-426">TIKA-426</a>
      */
+    @Test
     public void testNotXML() throws IOException {
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
                 new ByteArrayInputStream("<!-- test -->".getBytes("UTF-8")),
@@ -190,6 +204,7 @@ public class MimeDetectionTest extends TestCase {
      *  that can be detected with Mime Magic, that we consistently
      *  detect it correctly. See TIKA-391 for more details.
      */
+    @Test
     public void testMimeMagicStability() throws IOException {
        for(int i=0; i<100; i++) {
           testFile("application/vnd.ms-excel", "test.xls");

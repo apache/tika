@@ -16,12 +16,13 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
@@ -32,7 +33,7 @@ import org.apache.tika.mime.MediaType;
  * Parent class of tests that the various POI powered parsers are
  *  able to extract their embedded contents.
  */
-public abstract class AbstractPOIContainerExtractionTest extends TestCase {
+public abstract class AbstractPOIContainerExtractionTest {
     public static final MediaType TYPE_DOC = MediaType.application("msword");
     public static final MediaType TYPE_PPT = MediaType.application("vnd.ms-powerpoint");
     public static final MediaType TYPE_XLS = MediaType.application("vnd.ms-excel");

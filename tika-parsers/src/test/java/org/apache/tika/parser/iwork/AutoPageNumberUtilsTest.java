@@ -16,17 +16,20 @@
  */
 package org.apache.tika.parser.iwork;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 /**
  * Test class for the <code>AutoPageNumberUtils</code> helper class.
  */
-public class AutoPageNumberUtilsTest extends TestCase {
+public class AutoPageNumberUtilsTest {
 
 	/**
 	 * Check upper-case alpha-numeric numbers are generated based on the 
 	 * input page number.
 	 */
+    @Test
 	public void testAlphaUpper() {
 		assertEquals("A", AutoPageNumberUtils.asAlphaNumeric(1));
 		assertEquals("Z", AutoPageNumberUtils.asAlphaNumeric(26));
@@ -40,6 +43,7 @@ public class AutoPageNumberUtilsTest extends TestCase {
 	 * Check lower-case alpha-numeric numbers are generated based on the 
 	 * input page number.
 	 */
+    @Test
 	public void testAlphaLower() {
 		assertEquals("a", AutoPageNumberUtils.asAlphaNumericLower(1));
 		assertEquals("z", AutoPageNumberUtils.asAlphaNumericLower(26));
@@ -53,6 +57,7 @@ public class AutoPageNumberUtilsTest extends TestCase {
 	 * Check upper-case Roman numerals numbers are generated based on the 
 	 * input page number.
 	 */
+    @Test
 	public void testRomanUpper() {
 		assertEquals("I", AutoPageNumberUtils.asRomanNumerals(1));
 		assertEquals("XXVI", AutoPageNumberUtils.asRomanNumerals(26));
@@ -63,6 +68,7 @@ public class AutoPageNumberUtilsTest extends TestCase {
 	 * Check lower-case Roman numerals numbers are generated based on the 
 	 * input page number.
 	 */
+    @Test
 	public void testRomanLower() {
 		assertEquals("i", AutoPageNumberUtils.asRomanNumeralsLower(1));
 		assertEquals("xxvi", AutoPageNumberUtils.asRomanNumeralsLower(26));

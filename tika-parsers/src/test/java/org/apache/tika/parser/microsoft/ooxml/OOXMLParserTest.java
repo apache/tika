@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -40,6 +44,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class OOXMLParserTest extends TikaTest {
@@ -51,6 +56,7 @@ public class OOXMLParserTest extends TikaTest {
                 "/test-documents/" + name));
     }
 
+    @Test
     public void testExcel() throws Exception {
         Metadata metadata = new Metadata(); 
         ContentHandler handler = new BodyContentHandler();
@@ -80,6 +86,7 @@ public class OOXMLParserTest extends TikaTest {
         }
     }
 
+    @Test
     public void testExcelFormats() throws Exception {
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
@@ -158,6 +165,7 @@ public class OOXMLParserTest extends TikaTest {
      * We have a number of different powerpoint files,
      *  such as presentation, macro-enabled etc
      */
+    @Test
     public void testPowerPoint() throws Exception {
        String[] extensions = new String[] {
              "pptx", "pptm", "ppsm", "ppsx", "potm"
@@ -232,6 +240,7 @@ public class OOXMLParserTest extends TikaTest {
      * Test that the metadata is already extracted when the body is processed.
      * See TIKA-1109
      */
+    @Test
     public void testPowerPointMetadataEarly() throws Exception {
        String[] extensions = new String[] {
              "pptx", "pptm", "ppsm", "ppsx", "potm"
@@ -288,6 +297,7 @@ public class OOXMLParserTest extends TikaTest {
      * For the PowerPoint formats we don't currently support, ensure that
      *  we don't break either
      */
+    @Test
     public void testUnsupportedPowerPoint() throws Exception {
        String[] extensions = new String[] { "xps", "thmx" };
        String[] mimeTypes = new String[] {
@@ -326,6 +336,7 @@ public class OOXMLParserTest extends TikaTest {
      * Test the plain text output of the Word converter
      * @throws Exception
      */
+    @Test
     public void testWord() throws Exception {
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
@@ -350,6 +361,7 @@ public class OOXMLParserTest extends TikaTest {
      * Test the plain text output of the Word converter
      * @throws Exception
      */
+    @Test
     public void testWordFootnote() throws Exception {
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
@@ -371,6 +383,7 @@ public class OOXMLParserTest extends TikaTest {
      * Test that the word converter is able to generate the
      *  correct HTML for the document
      */
+    @Test
     public void testWordHTML() throws Exception {
 
       XMLResult result = getXML("testWORD.docx");
@@ -437,6 +450,7 @@ public class OOXMLParserTest extends TikaTest {
     /**
      * Test that we can extract image from docx header
      */
+    @Test
     public void testWordPicturesInHeader() throws Exception {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
@@ -468,6 +482,7 @@ public class OOXMLParserTest extends TikaTest {
      * Documents with some sheets are protected, but not all. 
      * See TIKA-364.
      */
+    @Test
     public void testProtectedExcelSheets() throws Exception {
         InputStream input = OOXMLParserTest.class
                 .getResourceAsStream("/test-documents/protectedSheets.xlsx");
@@ -494,6 +509,7 @@ public class OOXMLParserTest extends TikaTest {
      * An excel document which is password protected. 
      * See TIKA-437.
      */
+    @Test
     public void testProtectedExcelFile() throws Exception {
 
         Parser parser = new AutoDetectParser();
@@ -522,6 +538,7 @@ public class OOXMLParserTest extends TikaTest {
      * Test docx without headers
      * TIKA-633
      */
+    @Test
     public void testNullHeaders() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
@@ -537,6 +554,7 @@ public class OOXMLParserTest extends TikaTest {
         }
     }
 
+    @Test
     public void testVarious() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -608,6 +626,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
+    @Test
     public void testVariousPPTX() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -679,7 +698,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
-
+    @Test
     public void testMasterFooter() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -734,6 +753,7 @@ public class OOXMLParserTest extends TikaTest {
     }
     */
 
+    @Test
     public void testWordArt() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -752,6 +772,7 @@ public class OOXMLParserTest extends TikaTest {
     /**
      * Ensures that custom OOXML properties are extracted
      */
+    @Test
     public void testExcelCustomProperties() throws Exception {
        InputStream input = OOXMLParserTest.class.getResourceAsStream(
              "/test-documents/testEXCEL_custom_props.xlsx");
@@ -784,6 +805,8 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
+    
+    @Test
     public void testWordCustomProperties() throws Exception {
        InputStream input = OOXMLParserTest.class.getResourceAsStream(
              "/test-documents/testWORD_custom_props.docx");
@@ -826,6 +849,8 @@ public class OOXMLParserTest extends TikaTest {
        assertEquals("2010-12-30T23:00:00Z", metadata.get("custom:MyCustomDate"));
        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
+    
+    @Test
     public void testPowerPointCustomProperties() throws Exception {
        InputStream input = OOXMLParserTest.class.getResourceAsStream(
              "/test-documents/testPPT_custom_props.pptx");
@@ -861,6 +886,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     // TIKA-989:
+    @Test
     public void testEmbeddedPDF() throws Exception {
        InputStream input = OOXMLParserTest.class.getResourceAsStream(
              "/test-documents/testWORD_embedded_pdf.docx");
@@ -896,6 +922,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     // TIKA-997:
+    @Test
     public void testEmbeddedZipInPPTX() throws Exception {
         String xml = getXML("test_embedded_zip.pptx").xml;
         int h = xml.indexOf("<div class=\"embedded\" id=\"slide1_rId3\" />");
@@ -912,6 +939,7 @@ public class OOXMLParserTest extends TikaTest {
     }
   
     // TIKA-1006
+    @Test
     public void testWordNullStyle() throws Exception {
       String xml = getXML("testWORD_null_style.docx").xml;        
       assertContains("Test av styrt dokument", xml);
@@ -921,6 +949,7 @@ public class OOXMLParserTest extends TikaTest {
      * TIKA-1044 - Handle word documents where parts of the
      *  text have no formatting or styles applied to them
      */
+    @Test
     public void testNoFormat() throws Exception {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
@@ -938,6 +967,7 @@ public class OOXMLParserTest extends TikaTest {
     }
     
     // TIKA-1005:
+    @Test
     public void testTextInsideTextBox() throws Exception {
         String xml = getXML("testWORD_text_box.docx").xml;
         assertContains("This text is directly in the body of the document.", xml);
@@ -947,6 +977,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     // TIKA-1032:
+    @Test
     public void testEmbeddedPPTXTwoSlides() throws Exception {
         String xml = getXML("testPPT_embedded_two_slides.pptx").xml;
         assertContains("<div class=\"embedded\" id=\"slide1_rId7\" />" , xml);
@@ -957,6 +988,7 @@ public class OOXMLParserTest extends TikaTest {
      * Test for missing text described in 
      * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.
      */
+    @Test
     public void testMissingText() throws Exception {
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
@@ -976,6 +1008,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     //TIKA-1100:
+    @Test
     public void testExcelTextBox() throws Exception {
         Metadata metadata = new Metadata(); 
         ContentHandler handler = new BodyContentHandler();
@@ -987,6 +1020,7 @@ public class OOXMLParserTest extends TikaTest {
     }    
 
     //TIKA-792; with room for future missing bean tests
+    @Test
     public void testWordMissingOOXMLBeans() throws Exception{
         //If a bean is missing, POI prints stack trace to stderr 
         String[] fileNames = new String[]{
@@ -1014,6 +1048,7 @@ public class OOXMLParserTest extends TikaTest {
     }
 
     //TIKA-817
+    @Test
     public void testPPTXAutodate() throws Exception {
         //Following POI-52368, the stored date is extracted,
         //not the auto-generated date.

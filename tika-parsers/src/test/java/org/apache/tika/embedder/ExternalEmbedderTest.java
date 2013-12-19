@@ -16,6 +16,10 @@
  */
 package org.apache.tika.embedder;
 
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,17 +48,14 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  * Unit test for {@link ExternalEmbedder}s.
  */
-public class ExternalEmbedderTest extends TestCase {
+public class ExternalEmbedderTest {
 
     protected static final DateFormat EXPECTED_METADATA_DATE_FORMATTER =
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
@@ -63,23 +64,6 @@ public class ExternalEmbedderTest extends TestCase {
     private static final String TEST_TXT_PATH = "/test-documents/testTXT.txt";
 
     private TemporaryResources tmp = new TemporaryResources();
-
-    /**
-     * Create the test case
-     *
-     * @param testName
-     *            name of the test case
-     */
-    public ExternalEmbedderTest(String testName) {
-        super(testName);
-    }
-
-    /**
-     * @return the suite of tests being tested
-     */
-    public static Test suite() {
-        return new TestSuite(ExternalEmbedderTest.class);
-    }
 
     /**
      * Gets the expected returned metadata value for the given field
@@ -288,6 +272,7 @@ public class ExternalEmbedderTest extends TestCase {
      * 
      * @throws IOException
      */
+    @Test
     public void testEmbedStandardInputStream() throws IOException {
         embedInTempFile(getSourceStandardInputStream(), getIsMetadataExpectedInOutput());
         checkSourceFileExists();
@@ -298,6 +283,7 @@ public class ExternalEmbedderTest extends TestCase {
      * 
      * @throws IOException
      */
+    @Test
     public void testEmbedTikaInputStream() throws IOException {
         embedInTempFile(getSourceTikaInputStream(), getIsMetadataExpectedInOutput());
         checkSourceFileExists();

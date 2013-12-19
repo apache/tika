@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.mail;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -26,8 +30,6 @@ import static org.mockito.Mockito.verify;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -36,12 +38,14 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.junit.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class RFC822ParserTest extends TestCase {
+public class RFC822ParserTest {
 
+    @Test
     public void testSimple() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
@@ -69,6 +73,7 @@ public class RFC822ParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testMultipart() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
@@ -106,6 +111,7 @@ public class RFC822ParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testQuotedPrintable() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
@@ -125,6 +131,7 @@ public class RFC822ParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testBase64() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
@@ -140,6 +147,7 @@ public class RFC822ParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testI18NHeaders() {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
@@ -165,6 +173,7 @@ public class RFC822ParserTest extends TestCase {
      * The from isn't in the usual form.
      * See TIKA-618
      */
+    @Test
     public void testUnusualFromAddress() throws Exception {
        Parser parser = new RFC822Parser();
        Metadata metadata = new Metadata();
@@ -183,6 +192,7 @@ public class RFC822ParserTest extends TestCase {
     /**
      * Test for TIKA-640, increase header max beyond 10k bytes
      */
+    @Test
     public void testLongHeader() throws Exception {
         StringBuilder inputBuilder = new StringBuilder();
         for (int i = 0; i < 2000; ++i) {
@@ -216,6 +226,7 @@ public class RFC822ParserTest extends TestCase {
     /**
      * Test for TIKA-678 - not all headers may be present
      */
+    @Test
     public void testSomeMissingHeaders() throws Exception {
        Parser parser = new RFC822Parser();
        Metadata metadata = new Metadata();

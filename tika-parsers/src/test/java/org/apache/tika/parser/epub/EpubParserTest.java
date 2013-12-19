@@ -16,18 +16,21 @@
  */
 package org.apache.tika.parser.epub;
 
-import java.io.InputStream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import junit.framework.TestCase;
+import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class EpubParserTest extends TestCase {
+public class EpubParserTest {
 
+    @Test
     public void testXMLParser() throws Exception {
         InputStream input = EpubParserTest.class.getResourceAsStream(
                 "/test-documents/testEPUB.epub");

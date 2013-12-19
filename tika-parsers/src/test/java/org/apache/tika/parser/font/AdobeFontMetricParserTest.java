@@ -16,7 +16,8 @@
  */
 package org.apache.tika.parser.font;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -26,11 +27,14 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.apache.tika.io.TikaInputStream;
+import org.junit.Test;
 
 /**
  * Test case for parsing afm files.
  */
-public class AdobeFontMetricParserTest extends TestCase {
+public class AdobeFontMetricParserTest {
+  
+    @Test
     public void testAdobeFontMetricParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();

@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.txt;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
@@ -25,15 +29,15 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-import junit.framework.TestCase;
-
-public class TXTParserTest extends TestCase {
+public class TXTParserTest {
 
     private Parser parser = new TXTParser();
 
+    @Test
     public void testEnglishText() throws Exception {
         String text =
             "Hello, World! This is simple UTF-8 text content written"
@@ -61,6 +65,7 @@ public class TXTParserTest extends TestCase {
         assertTrue(content.contains("stream"));
     }
     
+    @Test
     public void testUTF8Text() throws Exception {
         String text = "I\u00F1t\u00EBrn\u00E2ti\u00F4n\u00E0liz\u00E6ti\u00F8n";
 
@@ -75,6 +80,7 @@ public class TXTParserTest extends TestCase {
         assertTrue(handler.toString().contains(text));
     }
 
+    @Test
     public void testEmptyText() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -91,6 +97,7 @@ public class TXTParserTest extends TestCase {
      * otherwise ISO-8859-1, except if it contains the currency/euro symbol
      * (byte 0xa4) in which case it's more likely to be ISO-8859-15.
      */
+    @Test
     public void testLatinDetectionHeuristics() throws Exception {
         String windows = "test\r\n";
         String unix = "test\n";
@@ -128,6 +135,7 @@ public class TXTParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-240">TIKA-240</a> 
      */
+    @Test
     public void testDropByteOrderMark() throws Exception {
         assertExtractText("UTF-8 BOM", "test", new byte[] {
                 (byte) 0xEF, (byte) 0xBB, (byte) 0xBF, 't', 'e', 's', 't' });
@@ -142,6 +150,7 @@ public class TXTParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a> 
      */
+    @Test
     public void testUseIncomingCharsetAsHint() throws Exception {
         // Could be ISO 8859-1 or ISO 8859-15 or ...
         // u00e1 is latin small letter a with acute
@@ -167,6 +176,7 @@ public class TXTParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a> 
      */
+    @Test
     public void testUsingCharsetInContentTypeHeader() throws Exception {
         // Could be ISO 8859-1 or ISO 8859-15 or ...
         // u00e1 is latin small letter a with acute
@@ -205,6 +215,7 @@ public class TXTParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a> 
      */
+    @Test
     public void testRetainIncomingLanguage() throws Exception {
         final String test = "Simple Content";
 
@@ -218,6 +229,7 @@ public class TXTParserTest extends TestCase {
         assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
     }
 
+    @Test
     public void testCP866() throws Exception {
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
@@ -230,6 +242,7 @@ public class TXTParserTest extends TestCase {
         assertEquals("text/plain; charset=IBM866", metadata.get(Metadata.CONTENT_TYPE));
     }
 
+    @Test
     public void testEBCDIC_CP500() throws Exception {
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
@@ -258,6 +271,7 @@ public class TXTParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-771">TIKA-771</a> 
      */
+    @Test
     public void testCharsetDetectionWithShortSnipet() throws Exception {
         final String text = "Hello, World!";
 

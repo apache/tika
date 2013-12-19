@@ -28,9 +28,8 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.cxf.io.CachedOutputStream;
-import junit.framework.TestCase;
 
-public class CXFTestBase extends TestCase {
+public class CXFTestBase {
 
 	protected String getStringFromInputStream(InputStream in) throws Exception {
 		CachedOutputStream bos = new CachedOutputStream();

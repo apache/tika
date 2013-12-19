@@ -17,6 +17,9 @@ package org.apache.tika.server;
  * limitations under the License.
  */
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -40,7 +43,9 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.io.IOUtils;
 import org.eclipse.jetty.util.ajax.JSON;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -66,13 +71,8 @@ public class MetadataEPTest extends CXFTestBase {
     return new ByteArrayInputStream(out.toByteArray());
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see junit.framework.TestCase#setUp()
-   */
-  @Override
-  protected void setUp() throws Exception {
+  @Before
+  public void setUp() {
     JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
     sf.setResourceClasses(MetadataEP.class);
     List<Object> providers = new ArrayList<Object>();
@@ -87,13 +87,8 @@ public class MetadataEPTest extends CXFTestBase {
     server = sf.create();
   }
 
-  /*
-   * (non-Javadoc)
-   * 
-   * @see junit.framework.TestCase#tearDown()
-   */
-  @Override
-  protected void tearDown() throws Exception {
+  @After
+  public void tearDown()  {
     server.stop();
     server.destroy();
   }
@@ -106,6 +101,7 @@ public class MetadataEPTest extends CXFTestBase {
 
     Reader reader = new InputStreamReader((InputStream) response.getEntity());
 
+    @SuppressWarnings("resource")
     CSVReader csvReader = new CSVReader(reader);
 
     Map<String, String> metadata = new HashMap<String, String>();

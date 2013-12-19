@@ -16,13 +16,15 @@
  */
 package org.apache.tika.parser.video;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
+import org.junit.Test;
 
-public class FLVParserTest extends TestCase {
+public class FLVParserTest {
 
+    @Test
     public void testFLV() throws Exception {
         String path = "/test-documents/testFLV.flv";
         Metadata metadata = new Metadata();

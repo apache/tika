@@ -16,6 +16,9 @@
  */
 package org.apache.tika;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -25,6 +28,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.Before;
+import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -36,11 +41,13 @@ public class TestParsers extends TikaTest {
 
     private Tika tika;
 
+    @Before
     public void setUp() throws Exception {
         tc = TikaConfig.getDefaultConfig();
         tika = new Tika(tc);
     }
 
+    @Test
     public void testWORDxtraction() throws Exception {
         File file = getResourceAsFile("/test-documents/testWORD.doc");
         Parser parser = tika.getParser();
@@ -55,6 +62,7 @@ public class TestParsers extends TikaTest {
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
     }
 
+    @Test
     public void testEXCELExtraction() throws Exception {
         final String expected = "Numbers and their Squares";
         File file = getResourceAsFile("/test-documents/testEXCEL.xls");
@@ -73,6 +81,7 @@ public class TestParsers extends TikaTest {
         assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
     }
 
+    @Test
     public void testOptionalHyphen() throws Exception {
         String[] extensions =
                 new String[] { "ppt", "pptx", "doc", "docx", "rtf", "pdf"};
@@ -97,6 +106,7 @@ public class TestParsers extends TikaTest {
                    content.contains("Here is a comment"));
     }
 
+    @Test
     public void testComment() throws Exception {
         final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "pdf", "rtf"};
         for(String extension : extensions) {

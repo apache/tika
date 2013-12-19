@@ -16,20 +16,22 @@
  */
 package org.apache.tika.parser.image;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-import junit.framework.TestCase;
-
-public class ImageParserTest extends TestCase {
+public class ImageParserTest {
 
     private final Parser parser = new ImageParser();
 
+    @Test
     public void testBMP() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/bmp");
@@ -51,6 +53,7 @@ public class ImageParserTest extends TestCase {
         assertEquals("8 8 8", metadata.get(Metadata.BITS_PER_SAMPLE));
     }
 
+    @Test
     public void testGIF() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/gif");
@@ -81,6 +84,7 @@ public class ImageParserTest extends TestCase {
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(TikaCoreProperties.COMMENTS));
     }
 
+    @Test
     public void testJPEG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
@@ -116,6 +120,7 @@ public class ImageParserTest extends TestCase {
         assertEquals("Licensed to the Apache Software Foundation (ASF) under one or more contributor license agreements.  See the NOTICE file distributed with this work for additional information regarding copyright ownership.", metadata.get(TikaCoreProperties.COMMENTS));
     }
 
+    @Test
     public void testPNG() throws Exception {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/png");

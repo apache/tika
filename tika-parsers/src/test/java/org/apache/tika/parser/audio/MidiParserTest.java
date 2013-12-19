@@ -16,13 +16,16 @@
  */
 package org.apache.tika.parser.audio;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
+import org.junit.Test;
 
-public class MidiParserTest extends TestCase {
+public class MidiParserTest {
 
+    @Test
     public void testMID() throws Exception {
         String path = "/test-documents/testMID.mid";
         Metadata metadata = new Metadata();

@@ -17,6 +17,9 @@
 
 package org.apache.tika.server;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -31,6 +34,8 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -43,13 +48,8 @@ public class MetadataResourceTest extends CXFTestBase {
 
 	private Server server;
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#setUp()
-	 */
-	@Override
-	protected void setUp() throws Exception {
+	@Before
+	public void setUp() {
 		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 		sf.setResourceClasses(MetadataResource.class);
 		sf.setResourceProvider(MetadataResource.class,
@@ -64,13 +64,8 @@ public class MetadataResourceTest extends CXFTestBase {
 		server = sf.create();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see junit.framework.TestCase#tearDown()
-	 */
-	@Override
-	protected void tearDown() throws Exception {
+	@After
+	public void tearDown() {
 		server.stop();
 		server.destroy();
 	}
@@ -87,7 +82,8 @@ public class MetadataResourceTest extends CXFTestBase {
 		Reader reader = new InputStreamReader(
 				(InputStream) response.getEntity());
 
-		CSVReader csvReader = new CSVReader(reader);
+		@SuppressWarnings("resource")
+        CSVReader csvReader = new CSVReader(reader);
 
 		Map<String, String> metadata = new HashMap<String, String>();
 

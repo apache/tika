@@ -191,6 +191,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+      <version>4.11</version>
     </dependency>
     <dependency>
        <groupId>org.mockito</groupId>
@@ -270,4 +271,21 @@
     </pluginManagement>
   </build>
 
+  <organization>
+  	<name>The Apache Software Foundation</name>
+  	<url>http://www.apache.org</url>
+  </organization>
+  <scm>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-parsers</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-parsers</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-parsers</developerConnection>
+  </scm>
+  <issueManagement>
+  	<system>JIRA</system>
+  	<url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+  <ciManagement>
+  	<system>Jenkins</system>
+  	<url>https://builds.apache.org/job/Tika-trunk/</url>
+  </ciManagement>
 </project>

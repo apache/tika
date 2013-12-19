@@ -16,6 +16,11 @@
  */
 package org.apache.tika.parser.html;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,8 +35,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
@@ -40,13 +43,16 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class HtmlParserTest extends TestCase {
+public class HtmlParserTest {
 
+    @Test
     public void testParseAscii() throws Exception {
         String path = "/test-documents/testHTML.html";
         final StringWriter href = new StringWriter();
@@ -96,6 +102,8 @@ public class HtmlParserTest extends TestCase {
                 content.contains("Indexation du fichier"));
     }
 
+    @Test
+    @Ignore("The file 'testXHTML_utf8.html' is not available fo testing")
     public void XtestParseUTF8() throws IOException, SAXException, TikaException {
         String path = "/test-documents/testXHTML_utf8.html";
         Metadata metadata = new Metadata();
@@ -114,6 +122,7 @@ public class HtmlParserTest extends TestCase {
                 .contains("√•√§√∂"));
     }
 
+    @Test
     public void testXhtmlParsing() throws Exception {
         String path = "/test-documents/testXHTML.html";
         Metadata metadata = new Metadata();
@@ -130,6 +139,7 @@ public class HtmlParserTest extends TestCase {
         assertTrue(content.contains("an XHTML document"));
     }
 
+    @Test
     public void testParseEmpty() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         new HtmlParser().parse(
@@ -142,6 +152,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-210
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-210">TIKA-210</a>
      */
+    @Test
     public void testCharactersDirectlyUnderBodyElement() throws Exception {
         String test = "<html><body>test</body></html>";
         String content = new Tika().parseToString(
@@ -153,6 +164,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-287
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-287">TIKA-287</a>
      */
+    @Test
     public void testBaseHref() throws Exception {
         assertRelativeLink(
                 "http://lucene.apache.org/tika/",
@@ -221,6 +233,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-268
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-268">TIKA-268</a>
      */
+    @Test
     public void testWhitespaceBetweenTableCells() throws Exception {
         String test =
             "<html><body><table><tr><td>a</td><td>b</td></table></body></html>";
@@ -235,6 +248,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-332
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-332">TIKA-332</a>
      */
+    @Test
     public void testHttpEquivCharset() throws Exception {
         String test =
             "<html><head><meta http-equiv=\"content-type\""
@@ -252,6 +266,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-892
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-892">TIKA-892</a>
      */
+    @Test
     public void testHtml5Charset() throws Exception {
         String test =
                 "<html><head><meta charset=\"ISO-8859-15\" />"
@@ -268,6 +283,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-334
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-334">TIKA-334</a>
      */
+    @Test
     public void testDetectOfCharset() throws Exception {
         String test =
             "<html><head><title>\u017d</title></head><body></body></html>";
@@ -282,6 +298,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-341
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a>
      */
+    @Test
     public void testUsingCharsetInContentTypeHeader() throws Exception {
         final String test =
             "<html><head><title>the name is \u00e1ndre</title></head>"
@@ -309,6 +326,7 @@ public class HtmlParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-343">TIKA-343</a>
      */
+    @Test
     public void testLineBreak() throws Exception {
         String test = "<html><body><div>foo<br>bar</div>baz</body></html>";
         String text = new Tika().parseToString(
@@ -324,6 +342,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-339: Don't use language returned by CharsetDetector
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-339">TIKA-339</a>
      */
+    @Test
     public void testIgnoreCharsetDetectorLanguage() throws Exception {
         String test = "<html><title>Simple Content</title><body></body></html>";
         Metadata metadata = new Metadata();
@@ -339,6 +358,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-349
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-349">TIKA-349</a>
      */
+    @Test
     public void testHttpEquivCharsetFunkyAttributes() throws Exception {
         String test1 =
             "<html><head><meta http-equiv=\"content-type\""
@@ -368,6 +388,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-350
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-350">TIKA-350</a>
      */
+    @Test
     public void testUsingFunkyCharsetInContentTypeHeader() throws Exception {
         final String test =
             "<html><head><title>the name is \u00e1ndre</title></head>"
@@ -392,6 +413,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-357
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-357">TIKA-357</a>
      */
+    @Test
     public void testMetaHttpEquivWithLotsOfPreambleText() throws Exception {
         String path = "/test-documents/big-preamble.html";
         Metadata metadata = new Metadata();
@@ -406,6 +428,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-420
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-420">TIKA-420</a>
      */
+    @Test
     public void testBoilerplateRemoval() throws Exception {
         String path = "/test-documents/boilerplate.html";
 
@@ -426,6 +449,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-478. Don't emit <head> sub-elements inside of <body>.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-478">TIKA-478</a>
      */
+    @Test
     public void testElementOrdering() throws Exception {
         final String test = "<html><head><title>Title</title>" +
         "<meta http-equiv=\"content-type\" content=\"text/html\">" +
@@ -463,6 +487,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-463. Don't skip elements that have URLs.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
      */
+    @Test
     public void testImgUrlExtraction() throws Exception {
         final String test = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
@@ -483,6 +508,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-463. Don't skip elements that have URLs.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
      */
+    @Test
     public void testFrameSrcExtraction() throws Exception {
         final String test = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
@@ -503,6 +529,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-463. Don't skip elements that have URLs.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
      */
+    @Test
     public void testIFrameSrcExtraction() throws Exception {
         final String test = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
@@ -524,6 +551,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-463. Don't skip elements that have URLs.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
      */
+    @Test
     public void testAreaExtraction() throws Exception {
         final String test = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
@@ -546,6 +574,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-463. Don't skip elements that have URLs.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
      */
+    @Test
     public void testObjectExtraction() throws Exception {
         final String test = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
@@ -571,6 +600,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for change related to TIKA-463. Verify proper handling of <meta> tags.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-463">TIKA-463</a>
      */
+    @Test
     public void testMetaTagHandling() throws Exception {
         final String test = "<html><body><h1>header</h1><p>some text</p></body></html>";
 
@@ -594,6 +624,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-457. Better handling for broken HTML that has <frameset> inside of <body>.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-457">TIKA-457</a>
      */
+    @Test
     public void testBrokenFrameset() throws Exception {
         final String test1 = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
@@ -642,6 +673,7 @@ public class HtmlParserTest extends TestCase {
      * as delegate for BoilerpipeContentHandler
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-480">TIKA-480</a>
      */
+    @Test
     public void testBoilerplateDelegation() throws Exception {
         String path = "/test-documents/boilerplate.html";
 
@@ -664,6 +696,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-481. Verify href in <link> is resolved.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-481">TIKA-481</a>
      */
+    @Test
     public void testLinkHrefResolution() throws Exception {
         final String test = "<html><head><title>Title</title>" +
         "<base href=\"http://domain.com\" />" +
@@ -704,6 +737,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-564. Support returning markup from BoilerpipeContentHandler.
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-564">TIKA-564</a>
      */
+    @Test
     public void testBoilerplateWithMarkup() throws Exception {
         String path = "/test-documents/boilerplate.html";
 
@@ -729,11 +763,10 @@ public class HtmlParserTest extends TestCase {
     /**
      * Test case for TIKA-434 - Pushback buffer overflow in TagSoup
      */
+    @Test
     public void testPushback() throws IOException, TikaException {
         String content = new Tika().parseToString(
                 HtmlParserTest.class.getResourceAsStream("/test-documents/tika434.html"), new Metadata());
-
-
         assertNotNull(content);
     }
 
@@ -743,6 +776,7 @@ public class HtmlParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-869">TIKA-869</a>
      */
+    @Test
     public void testIdentityMapper() throws Exception {
         final String html = "<html><head><title>Title</title></head>" +
                 "<body></body></html>";
@@ -767,6 +801,7 @@ public class HtmlParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-889">TIKA-889</a>
      */
+    @Test
     public void testNewlineAndIndent() throws Exception {
         final String html = "<html><head><title>Title</title></head>" +
                 "<body><ul><li>one</li></ul></body></html>";
@@ -786,6 +821,7 @@ public class HtmlParserTest extends TestCase {
      * Test case for TIKA-961
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-961">TIKA-961</a>
      */
+    @Test
     public void testBoilerplateWhitespace() throws Exception {
         String path = "/test-documents/boilerplate-whitespace.html";
         
@@ -816,6 +852,7 @@ public class HtmlParserTest extends TestCase {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-983">TIKA-983</a>
      */
+    @Test
     public void testOpenGraphMetadata() throws Exception {
         String test1 =
             "<html><head><meta property=\"og:description\""
@@ -833,6 +870,7 @@ public class HtmlParserTest extends TestCase {
     }
 
     // TIKA-1011
+    @Test
     public void testUserDefinedCharset() throws Exception {
         String content = new Tika().parseToString(
                 HtmlParserTest.class.getResourceAsStream("/test-documents/testUserDefinedCharset.mhtml"), new Metadata());
@@ -840,6 +878,7 @@ public class HtmlParserTest extends TestCase {
     }
     
     //TIKA-1001
+    @Test
     public void testNoisyMetaCharsetHeaders() throws Exception {
        Tika tika = new Tika();
        String hit = "\u0623\u0639\u0631\u0628";

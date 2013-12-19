@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.image.xmp;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -25,11 +28,11 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.image.xmp.JempboxExtractor;
+import org.junit.Test;
 
-import junit.framework.TestCase;
-
-public class JempboxExtractorTest extends TestCase {
+public class JempboxExtractorTest {
    
+    @Test
     public void testParseJpeg() throws IOException, TikaException {
         Metadata metadata = new Metadata();
         InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented.jpg");
@@ -61,6 +64,7 @@ public class JempboxExtractorTest extends TestCase {
         assertTrue(subject.contains("coast"));
     }
 
+    @Test
     public void testParseJpegPhotoshop() throws IOException, TikaException {
         Metadata metadata = new Metadata();
         InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented_pspcs2mac.jpg");
@@ -77,6 +81,7 @@ public class JempboxExtractorTest extends TestCase {
         assertTrue(keywords.contains("coast"));
     }
     
+    @Test
     public void testParseJpegXnviewmp() throws IOException, TikaException {
         Metadata metadata = new Metadata();
         InputStream stream = getClass().getResourceAsStream("/test-documents/testJPEG_commented_xnviewmp026.jpg");
@@ -91,6 +96,7 @@ public class JempboxExtractorTest extends TestCase {
         assertTrue(keywords.contains("nature reserve"));
     }
     
+    @Test
     public void testJoinCreators() {
         assertEquals("Mr B", new JempboxExtractor(null).joinCreators(
                 Arrays.asList("Mr B")));

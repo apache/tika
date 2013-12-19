@@ -16,17 +16,23 @@
  */
 package org.apache.tika.parser.xml;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class DcXMLParserTest extends TikaTest {
 
+    @Test
     public void testXMLParserAsciiChars() throws Exception {
         InputStream input = DcXMLParserTest.class.getResourceAsStream(
                 "/test-documents/testXML.xml");
@@ -78,6 +84,7 @@ public class DcXMLParserTest extends TikaTest {
         }
     }
     
+    @Test
     public void testXMLParserNonAsciiChars() throws Exception {
         InputStream input = DcXMLParserTest.class.getResourceAsStream("/test-documents/testXML.xml");
         try {
@@ -92,6 +99,7 @@ public class DcXMLParserTest extends TikaTest {
     }
 
     // TIKA-1048
+    @Test
     public void testNoSpaces() throws Exception {
       String text = getXML("testXML2.xml").xml;
       assertFalse(text.contains("testSubject"));

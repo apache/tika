@@ -18,22 +18,29 @@ package org.apache.tika.mime;
 
 import java.util.List;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-public class PatternsTest extends TestCase {
+import org.junit.Before;
+import org.junit.Test;
+
+public class PatternsTest {
     private MimeTypes fullTypes = MimeTypes.getDefaultMimeTypes();
 
     private Patterns patterns;
     private MimeTypes types;
     private MimeType text;
 
-    protected void setUp() throws MimeTypeException {
+    @Before
+    public void setUp() throws MimeTypeException {
         patterns = new Patterns(new MediaTypeRegistry());
         types = new MimeTypes();
         text = types.forName("text/plain");
     }
 
     /** Test add() */
+    @Test
     public void testAdd() throws MimeTypeException {
         try {
             patterns.add(null, text);
@@ -56,6 +63,7 @@ public class PatternsTest extends TestCase {
     }
 
     /** Test matches() */
+    @Test
     public void testMatches() {
         try {
             patterns.matches(null);
@@ -65,6 +73,7 @@ public class PatternsTest extends TestCase {
         }
     }
 
+    @Test
     public void testExtension() throws MimeTypeException {
         MimeType doc = types.forName("application/vnd.ms-word");
         patterns.add("*.doc", doc);
@@ -72,6 +81,7 @@ public class PatternsTest extends TestCase {
         assertEquals(".doc", doc.getExtension());
     }
 
+    @Test
     public void testExtensions() throws Exception{
         MimeType jpeg = fullTypes.forName("image/jpeg");
 

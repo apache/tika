@@ -16,20 +16,23 @@
  */
 package org.apache.tika.parser.xml;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.tika.extractor.ContainerExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 import java.io.InputStream;
 
-public class FictionBookParserTest extends TestCase {
+public class FictionBookParserTest {
+  
+    @Test
     public void testFB2() throws Exception {
         InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2");
         try {
@@ -44,6 +47,7 @@ public class FictionBookParserTest extends TestCase {
         }
     }
 
+    @Test
     public void testEmbedded() throws Exception {
         InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2");
         try {

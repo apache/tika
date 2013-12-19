@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.odf;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
@@ -28,6 +31,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.opendocument.OpenOfficeParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class ODFParserTest extends TikaTest {
@@ -42,6 +46,7 @@ public class ODFParserTest extends TikaTest {
        };
     }
 
+    @Test
     public void testOO3() throws Exception {
        for (Parser parser : getParsers()) {
           InputStream input = ODFParserTest.class.getResourceAsStream(
@@ -67,6 +72,7 @@ public class ODFParserTest extends TikaTest {
        }
     }
 
+    @Test
     public void testOO2() throws Exception {
        for (Parser parser : getParsers()) {
           InputStream input = ODFParserTest.class.getResourceAsStream(
@@ -139,6 +145,7 @@ public class ODFParserTest extends TikaTest {
     * Similar to {@link #testXMLParser()}, but using a different
     *  OO2 file with different metadata in it
     */
+    @Test
    public void testOO2Metadata() throws Exception {
       InputStream input = ODFParserTest.class.getResourceAsStream(
             "/test-documents/testOpenOffice2.odf");
@@ -200,6 +207,7 @@ public class ODFParserTest extends TikaTest {
    /**
     * Similar to {@link #testXMLParser()}, but using an OO3 file
     */
+    @Test
    public void testOO3Metadata() throws Exception {
       InputStream input = ODFParserTest.class.getResourceAsStream(
             "/test-documents/testODFwithOOo3.odt");
@@ -269,6 +277,7 @@ public class ODFParserTest extends TikaTest {
       }
    }
 
+    @Test
     public void testODPMasterFooter() throws Exception {
         InputStream input = ODFParserTest.class.getResourceAsStream(
             "/test-documents/testMasterFooter.odp");
@@ -284,6 +293,7 @@ public class ODFParserTest extends TikaTest {
         }
     }  
 
+    @Test
     public void testODTFooter() throws Exception {
         InputStream input = ODFParserTest.class.getResourceAsStream(
             "/test-documents/testFooter.odt");
@@ -301,6 +311,7 @@ public class ODFParserTest extends TikaTest {
         }
     }  
 
+    @Test
     public void testODSFooter() throws Exception {
         InputStream input = ODFParserTest.class.getResourceAsStream(
             "/test-documents/testFooter.ods");

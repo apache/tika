@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,17 +28,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import junit.framework.TestCase;
-
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class CompositeParserTest extends TestCase {
+public class CompositeParserTest {
 
+    @Test
     public void testFindDuplicateParsers() {
         Parser a = new EmptyParser() {
             public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -65,6 +68,7 @@ public class CompositeParserTest extends TestCase {
         assertEquals(b, parsers.get(1));
     }
 
+    @Test
     public void testDefaultParser() throws Exception {
        TikaConfig config = TikaConfig.getDefaultConfig();
 
@@ -74,6 +78,7 @@ public class CompositeParserTest extends TestCase {
        assertEquals(config.getMediaTypeRegistry(), parser.getMediaTypeRegistry());
     }
 
+    @Test
     public void testMimeTypeAliases() throws Exception {
        MediaType bmpCanonical = MediaType.image("x-ms-bmp");
        Map<String,String> bmpCanonicalMetadata = new HashMap<String, String>();

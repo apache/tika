@@ -20,12 +20,16 @@ import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedSet;
-
-import junit.framework.TestCase;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * These tests try to ensure that the MimeTypesReader
@@ -40,22 +44,22 @@ import org.apache.tika.metadata.Metadata;
  *  changes, please review the test details, and
  *  update it to match the new state of the file! 
  */
-public class MimeTypesReaderTest extends TestCase {
+public class MimeTypesReaderTest {
 
     private MimeTypes mimeTypes;
     private List<Magic> magics;
 
-    @Override
     @SuppressWarnings("unchecked")
-    protected void setUp() throws Exception {
-        super.setUp();
+    @Before
+    public void setUp() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{
         this.mimeTypes = TikaConfig.getDefaultConfig().getMimeRepository();
 
         Field magicsField = mimeTypes.getClass().getDeclaredField("magics");
         magicsField.setAccessible(true);
         magics = (List<Magic>)magicsField.get(mimeTypes);
     }
-
+    
+    @Test
     public void testHtmlMatches() throws Exception {
        int minMatches = 10;
 
@@ -81,6 +85,7 @@ public class MimeTypesReaderTest extends TestCase {
        );
     }
 
+    @Test
     public void testExcelMatches() throws Exception {
        int minMatches = 4;
 
@@ -109,6 +114,7 @@ public class MimeTypesReaderTest extends TestCase {
     /**
      * @since TIKA-515
      */
+    @Test
     public void testReadComment() {
         try {
             assertNotNull(this.mimeTypes.forName("application/msword")
@@ -121,6 +127,7 @@ public class MimeTypesReaderTest extends TestCase {
     /**
      * @since TIKA-1012
      */
+    @Test
     public void testReadExtendedMetadata() throws Exception {
         MimeType mime = this.mimeTypes.forName("image/x-ms-bmp");
         assertEquals("BMP", mime.getAcronym());
@@ -139,6 +146,7 @@ public class MimeTypesReaderTest extends TestCase {
      * TIKA-746 Ensures that the custom mimetype maps were also 
      *  loaded and used
      */
+    @Test
     public void testCustomMimeTypes() {
        // Check that it knows about our two special ones
        String helloWorld = "hello/world";
@@ -180,6 +188,7 @@ public class MimeTypesReaderTest extends TestCase {
        }
     }
     
+    @Test
     public void testGetExtensionForPowerPoint() throws Exception {
         MimeType mt = this.mimeTypes.forName("application/vnd.ms-powerpoint");
         String ext = mt.getExtension();

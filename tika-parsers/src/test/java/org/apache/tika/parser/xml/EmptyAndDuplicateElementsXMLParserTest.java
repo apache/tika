@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.xml;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
@@ -24,6 +26,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
@@ -33,6 +36,7 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
     private Property LAST_NAME = Property.internalTextBag(
             "custom" + Metadata.NAMESPACE_PREFIX_DELIMITER + "LastName");
 
+    @Test
     public void testDefaultBehavior() throws Exception {
         InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
                 "/test-documents/testXML3.xml");
@@ -60,6 +64,7 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
         }
     }
     
+    @Test
     public void testEmptiesAndRepeats() throws Exception {
         InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
                 "/test-documents/testXML3.xml");

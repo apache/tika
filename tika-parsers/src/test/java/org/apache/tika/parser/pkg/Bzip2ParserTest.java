@@ -16,12 +16,16 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 /**
@@ -29,6 +33,7 @@ import org.xml.sax.ContentHandler;
  */
 public class Bzip2ParserTest extends AbstractPkgTest {
 
+    @Test
     public void testBzip2Parsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
@@ -69,6 +74,7 @@ public class Bzip2ParserTest extends AbstractPkgTest {
      * Tests that the ParseContext parser is correctly
      *  fired for all the embedded entries.
      */
+    @Test
     public void testEmbedded() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
        ContentHandler handler = new BodyContentHandler();

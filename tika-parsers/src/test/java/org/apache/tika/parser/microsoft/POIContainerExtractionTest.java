@@ -16,9 +16,14 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.mime.MediaType;
+import org.junit.Test;
 
 /**
  * Tests that the various POI powered parsers are
@@ -29,6 +34,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
     /**
      * For office files which don't have anything embedded in them
      */
+    @Test
     public void testWithoutEmbedded() throws Exception {
        ContainerExtractor extractor = new ParserContainerExtractor();
        
@@ -55,6 +61,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
      * Office files with embedded images, but no other
      *  office files in them
      */
+    @Test
     public void testEmbeddedImages() throws Exception {
        ContainerExtractor extractor = new ParserContainerExtractor();
        TrackingHandler handler;
@@ -107,6 +114,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
      *       -> excel
      *           -> image
      */
+    @Test
     public void testEmbeddedOfficeFiles() throws Exception {
        ContainerExtractor extractor = new ParserContainerExtractor();
        TrackingHandler handler;
@@ -267,6 +275,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
        assertEquals(TYPE_PDF, handler.mediaTypes.get(1));
     }
 
+    @Test
     public void testEmbeddedOfficeFilesXML() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
         TrackingHandler handler;
@@ -276,6 +285,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(2, handler.filenames.size());
     }
 
+    @Test
     public void testPowerpointImages() throws Exception {
         ContainerExtractor extractor = new ParserContainerExtractor();
         TrackingHandler handler;

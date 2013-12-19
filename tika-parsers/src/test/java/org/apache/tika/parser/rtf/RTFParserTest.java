@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.rtf;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -30,6 +34,7 @@ import org.apache.tika.metadata.OfficeOpenXMLCore;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.WriteOutContentHandler;
+import org.junit.Test;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -48,6 +53,7 @@ public class RTFParserTest extends TikaTest {
         }
     }
 
+    @Test
     public void testBasicExtraction() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTF.rtf");
         
@@ -65,12 +71,14 @@ public class RTFParserTest extends TikaTest {
         assertContains("indexation Word", content);
     }
 
+    @Test
     public void testUmlautSpacesExtraction2() throws Exception {
         String content = getText("testRTFUmlautSpaces2.rtf");
         content = content.replaceAll("\\s+", "");
         assertEquals("\u00DCbersicht", content);
     }
 
+    @Test
     public void testUnicodeUCNControlWordCharacterDoublingExtraction() throws Exception {
         String content = getText("testRTFUnicodeUCNControlWordCharacterDoubling.rtf");
 
@@ -81,17 +89,20 @@ public class RTFParserTest extends TikaTest {
         assertFalse("Doubled character \u5E74", content.contains("\u5E74\u5E74"));
     }
 
+    @Test
     public void testHexEscapeInsideWord() throws Exception {
         String content = getText("testRTFHexEscapeInsideWord.rtf");
         assertContains("ESP\u00cdRITO", content);
     }
 
+    @Test
     public void testWindowsCodepage1250() throws Exception {
         String content = getText("testRTFWindowsCodepage1250.rtf");
         assertContains("za\u017c\u00f3\u0142\u0107 g\u0119\u015bl\u0105 ja\u017a\u0144", content);
         assertContains("ZA\u017b\u00d3\u0141\u0106 G\u0118\u015aL\u0104 JA\u0179\u0143", content);
     }
 
+    @Test
     public void testTableCellSeparation() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTFTableCellSeparation.rtf");
         String content = tika.parseToString(file);
@@ -100,6 +111,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
     }
     
+    @Test
     public void testTableCellSeparation2() throws Exception {
         String content = getText("testRTFTableCellSeparation2.rtf");
         // TODO: why do we insert extra whitespace...?
@@ -107,6 +119,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("Station Fax", content);
     }
 
+    @Test
     public void testWordPadCzechCharactersExtraction() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTFWordPadCzechCharacters.rtf");
         String s1 = tika.parseToString(file);
@@ -114,6 +127,7 @@ public class RTFParserTest extends TikaTest {
         assertTrue(s1.contains("starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
     }
 
+    @Test
     public void testWord2010CzechCharactersExtraction() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTFWord2010CzechCharacters.rtf");
         String s1 = tika.parseToString(file);
@@ -121,6 +135,7 @@ public class RTFParserTest extends TikaTest {
         assertTrue(s1.contains("starov\u011Bk\u00E9 \u017Eidovsk\u00E9 n\u00E1bo\u017Eensk\u00E9 texty"));
     }
 
+    @Test
     public void testMS932Extraction() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTF-ms932.rtf");
         String s1 = tika.parseToString(file);
@@ -133,17 +148,20 @@ public class RTFParserTest extends TikaTest {
         assertEquals("\u30bf\u30a4\u30c8\u30eb", r.metadata.get(TikaCoreProperties.TITLE));
     }
 
+    @Test
     public void testUmlautSpacesExtraction() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTFUmlautSpaces.rtf");
         String s1 = tika.parseToString(file);
         assertTrue(s1.contains("\u00DCbersicht"));
     }
 
+    @Test
     public void testGothic() throws Exception {
         String content = getText("testRTFUnicodeGothic.rtf");
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
+    @Test
     public void testJapaneseText() throws Exception {
         Result r = getResult("testRTFJapanese.rtf");
         String content = r.text;
@@ -163,6 +181,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("\u6771\u4eac\u90fd\u4e09\u9df9\u5e02", content);
     }
 
+    @Test
     public void testMaxLength() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTFJapanese.rtf");
         Metadata metadata = new Metadata();
@@ -192,11 +211,13 @@ public class RTFParserTest extends TikaTest {
         assertTrue(content.length() <= 100);
     }
 
+    @Test
     public void testTextWithCurlyBraces() throws Exception {
         String content = getText("testRTFWithCurlyBraces.rtf");
         assertContains("{ some text inside curly brackets }", content);
     }
 
+    @Test
     public void testControls() throws Exception {
         Result r = getResult("testRTFControls.rtf");
         String content = r.text;
@@ -210,7 +231,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("\u201cDouble quoted text again\u201d", content);
     }
 
-
+    @Test
     public void testInvalidUnicode() throws Exception {
         Result r = getResult("testRTFInvalidUnicode.rtf");
         String content = r.text;
@@ -219,6 +240,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("Mismatched pair \ufffd\ufffd here", content);
     }
 
+    @Test
     public void testVarious() throws Exception {
         Result r = getResult("testRTFVarious.rtf");
         String content = r.text;
@@ -277,12 +299,14 @@ public class RTFParserTest extends TikaTest {
     	assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
+    @Test
     public void testVariousStyle() throws Exception {
         String content = getXML("testRTFVarious.rtf").xml;
         assertContains("<b>Bold</b>", content);
         assertContains("<i>italic</i>", content);
     }
 
+    @Test
     public void testBoldItalic() throws Exception {
         String content = getXML("testRTFBoldItalic.rtf").xml;
         assertContains("<b>bold</b>", content);
@@ -293,21 +317,25 @@ public class RTFParserTest extends TikaTest {
         assertContains("<i>italic then </i><b><i>bold then</i></b><b> not italic</b>", content);
     }
 
+    @Test
     public void testHyperlink() throws Exception {
         String content = getXML("testRTFHyperlink.rtf").xml;
         assertContains("our most <a href=\"http://r.office.microsoft.com/r/rlidwelcomeFAQ?clid=1033\">frequently asked questions</a>", content);
         assertEquals(-1, content.indexOf("<p>\t\t</p>"));
     }
 
+    @Test
     public void testIgnoredControlWord() throws Exception {
         assertContains("<p>The quick brown fox jumps over the lazy dog</p>", getXML("testRTFIgnoredControlWord.rtf").xml);
     }
 
+    @Test
     public void testFontAfterBufferedText() throws Exception {
         assertContains("\u0423\u0432\u0430\u0436\u0430\u0435\u043c\u044b\u0439 \u043a\u043b\u0438\u0435\u043d\u0442!",
                        getXML("testFontAfterBufferedText.rtf").xml);
     }
 
+    @Test
     public void testListMicrosoftWord() throws Exception {
         String content = getXML("testRTFListMicrosoftWord.rtf").xml;
         assertContains("<ol>\t<li>one</li>", content);
@@ -316,6 +344,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("</ul>", content);
     }
 
+    @Test
     public void testListLibreOffice() throws Exception {
         String content = getXML("testRTFListLibreOffice.rtf").xml;
         assertContains("<ol>\t<li>one</li>", content);
@@ -325,11 +354,13 @@ public class RTFParserTest extends TikaTest {
     }
 
     // TIKA-782
+    @Test
     public void testBinControlWord() throws Exception {
         assertTrue(getXML("testBinControlWord.rtf").xml.indexOf("\u00ff\u00ff\u00ff\u00ff") == -1);
     }
 
     // TIKA-999
+    @Test
     public void testMetaDataCounts() throws Exception {
       XMLResult xml = getXML("test_embedded_package.rtf");
       assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
@@ -339,6 +370,7 @@ public class RTFParserTest extends TikaTest {
     }
 
     // TIKA-1192
+    @Test
     public void testListOverride() throws Exception {
         Result r = getResult("testRTFListOverride.rtf");
         String content = r.text;

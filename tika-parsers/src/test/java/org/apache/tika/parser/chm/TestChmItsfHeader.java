@@ -16,20 +16,25 @@
  */
 package org.apache.tika.parser.chm;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Tests all public functions of ChmItsfHeader
  * 
  */
-public class TestChmItsfHeader extends TestCase {
+public class TestChmItsfHeader {
     private ChmItsfHeader chmItsfHeader = null;
 
+    @Before
     public void setUp() throws Exception {
         chmItsfHeader = new ChmItsfHeader();
         byte[] data = TestParameters.chmData;
@@ -39,65 +44,78 @@ public class TestChmItsfHeader extends TestCase {
                 ChmConstants.CHM_ITSF_V3_LEN - 1), chmItsfHeader);
     }
 
+    @Test
     public void getDataOffset() {
-        Assert.assertEquals(TestParameters.VP_DATA_OFFSET_LENGTH,
+        assertEquals(TestParameters.VP_DATA_OFFSET_LENGTH,
                 chmItsfHeader.getDataOffset());
     }
 
+    @Test
     public void getDir_uuid() {
-        Assert.assertNotNull(chmItsfHeader.getDir_uuid());
+        assertNotNull(chmItsfHeader.getDir_uuid());
     }
 
+    @Test
     public void getDirLen() {
-        Assert.assertEquals(TestParameters.VP_DIRECTORY_LENGTH,
+        assertEquals(TestParameters.VP_DIRECTORY_LENGTH,
                 chmItsfHeader.getDirLen());
     }
 
+    @Test
     public void getDirOffset() {
-        Assert.assertEquals(TestParameters.VP_DIRECTORY_OFFSET,
+        assertEquals(TestParameters.VP_DIRECTORY_OFFSET,
                 chmItsfHeader.getDirOffset());
     }
 
+    @Test
     public void getHeaderLen() {
-        Assert.assertEquals(TestParameters.VP_ITSF_HEADER_LENGTH,
+        assertEquals(TestParameters.VP_ITSF_HEADER_LENGTH,
                 chmItsfHeader.getHeaderLen());
     }
 
+    @Test
     public void getLangId() {
-        Assert.assertEquals(TestParameters.VP_LANGUAGE_ID,
+        assertEquals(TestParameters.VP_LANGUAGE_ID,
                 chmItsfHeader.getLangId());
     }
 
+    @Test
     public void getLastModified() {
-        Assert.assertEquals(TestParameters.VP_LAST_MODIFIED,
+        assertEquals(TestParameters.VP_LAST_MODIFIED,
                 chmItsfHeader.getLastModified());
     }
 
+    @Test
     public void getUnknown_000c() {
-        Assert.assertEquals(TestParameters.VP_UNKNOWN_000C,
+        assertEquals(TestParameters.VP_UNKNOWN_000C,
                 chmItsfHeader.getUnknown_000c());
     }
 
+    @Test
     public void getUnknownLen() {
-        Assert.assertEquals(TestParameters.VP_UNKNOWN_LEN,
+        assertEquals(TestParameters.VP_UNKNOWN_LEN,
                 chmItsfHeader.getUnknownLen());
     }
-
+    
+    @Test
     public void getUnknownOffset() {
-        Assert.assertEquals(TestParameters.VP_UNKNOWN_OFFSET,
+        assertEquals(TestParameters.VP_UNKNOWN_OFFSET,
                 chmItsfHeader.getUnknownOffset());
     }
 
+    @Test
     public void getVersion() {
-        Assert.assertEquals(TestParameters.VP_VERSION,
+        assertEquals(TestParameters.VP_VERSION,
                 chmItsfHeader.getVersion());
     }
 
+    @Test
     public void testToString() {
-        Assert.assertTrue(chmItsfHeader.toString().contains(
+        assertTrue(chmItsfHeader.toString().contains(
                 TestParameters.VP_ISTF_SIGNATURE));
     }
 
+    @After
     public void tearDown() throws Exception {
         chmItsfHeader = null;
     }
