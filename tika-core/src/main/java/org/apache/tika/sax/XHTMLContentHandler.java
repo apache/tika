@@ -90,6 +90,11 @@ public class XHTMLContentHandler extends SafeContentHandler {
     private final Metadata metadata;
 
     /**
+     * Flag to indicate whether the document has been started.
+     */
+    private boolean documentStarted = false;
+    
+    /**
      * Flags to indicate whether the document head element has been started/ended.
      */
     private boolean headStarted = false;
@@ -102,14 +107,18 @@ public class XHTMLContentHandler extends SafeContentHandler {
     }
 
     /**
-     * Starts an XHTML document by setting up the namespace mappings.
+     * Starts an XHTML document by setting up the namespace mappings 
+     * when called for the first time.
      * The standard XHTML prefix is generated lazily when the first
      * element is started.
      */
     @Override
     public void startDocument() throws SAXException {
-        super.startDocument();
-        startPrefixMapping("", XHTML);
+    	if(!documentStarted){
+    		documentStarted = true;
+            super.startDocument();
+            startPrefixMapping("", XHTML);
+    	}
     }
 
     /**
