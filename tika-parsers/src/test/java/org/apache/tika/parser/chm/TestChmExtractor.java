@@ -18,11 +18,8 @@ package org.apache.tika.parser.chm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -64,25 +61,6 @@ public class TestChmExtractor {
             ++count;
         }
         assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER, count);
-    }
-
-    @Test
-    public void testChmParser() throws Exception{
-        List<String> files = new ArrayList<String>();
-        files.add("/test-documents/testChm.chm");
-        files.add("/test-documents/testChm3.chm");
-
-        for (String fileName : files) {
-            InputStream stream =
-                    TestChmBlockInfo.class.getResourceAsStream(fileName);
-            try {
-                CHMDocumentInformation chmDocInfo = new CHMDocumentInformation(stream);
-                String text = chmDocInfo.getText();
-                assertTrue(text.length() > 0);
-            } finally {
-                stream.close();
-            }
-        }
     }
 
 }
