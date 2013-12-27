@@ -32,54 +32,19 @@ import org.xml.sax.SAXException;
 
 /**
  * Extracts text and metadata from chm file
- * 
  */
-public class CHMDocumentInformation {
-    /* Class members */
-    private ChmExtractor chmExtractor = null;
+class CHMDocumentInformation {
+
+    private final ChmExtractor chmExtractor;
 
     /**
      * Loads chm file as input stream and returns a new instance of chm doc info
      * 
-     * @param is
-     *            InputStream
-     * 
-     * @return chm document information
-     * @throws TikaException 
-     * @throws IOException 
+     * @param stream chm input stream
      */
-    public static CHMDocumentInformation load(InputStream is) throws TikaException, IOException {
-        CHMDocumentInformation document = new CHMDocumentInformation();
-        document.setChmExtractor(new ChmExtractor(is));
-        return document;
-    }
-
-    /**
-     * Appends extracted data from chm listing entries
-     * 
-     * @return extracted content of chm
-     */
-    private String getContent() {
-        StringBuilder sb = new StringBuilder();
-        DirectoryListingEntry entry;
-        
-        for (Iterator<DirectoryListingEntry> it = getChmExtractor()
-                .getChmDirList().getDirectoryListingEntryList().iterator(); it.hasNext();) 
-        {
-            try {
-                entry = it.next();
-                if (isRightEntry(entry)) {
-                    byte[][] tmp = getChmExtractor().extractChmEntry(entry);
-                    if (tmp != null) {
-                        sb.append(extract(tmp));
-                    }
-                }
-            } catch (TikaException e) {
-                //ignore
-            } // catch (IOException e) {//Pushback exception from tagsoup
-            // System.err.println(e.getMessage());
-        }
-        return sb.toString();
+    public CHMDocumentInformation(InputStream stream)
+            throws TikaException, IOException {
+        this.chmExtractor = new ChmExtractor(stream);
     }
 
     /**
@@ -95,42 +60,6 @@ public class CHMDocumentInformation {
     }
 
     /**
-     * Returns chm extractor
-     * 
-     * @return chmExtractor
-     */
-    private ChmExtractor getChmExtractor() {
-        return chmExtractor;
-    }
-
-    /**
-     * Sets a chm extractor
-     * 
-     * @param chmExtractor
-     */
-    private void setChmExtractor(ChmExtractor chmExtractor) {
-        this.chmExtractor = chmExtractor;
-    }
-
-    /**
-     * Returns chm metadata
-     * 
-     * @param metadata
-     * 
-     * @throws TikaException
-     * @throws IOException
-     */
-    public void getCHMDocInformation(Metadata metadata) throws TikaException,
-            IOException {
-        if (getChmExtractor() != null) {
-            /* Checking if file is a chm, done during creating chmItsf header */
-            metadata.add(Metadata.CONTENT_TYPE, "application/x-chm");
-        } else {
-            metadata.add(Metadata.CONTENT_TYPE, "unknown");
-        }
-    }
-
-    /**
      * Returns extracted text from chm file
      * 
      * @return text
@@ -138,7 +67,26 @@ public class CHMDocumentInformation {
      * @throws TikaException
      */
     public String getText() throws TikaException {
-        return getContent();
+        StringBuilder sb = new StringBuilder();
+        DirectoryListingEntry entry;
+        
+        for (Iterator<DirectoryListingEntry> it = chmExtractor
+                .getChmDirList().getDirectoryListingEntryList().iterator(); it.hasNext();) 
+        {
+            try {
+                entry = it.next();
+                if (isRightEntry(entry)) {
+                    byte[][] tmp = chmExtractor.extractChmEntry(entry);
+                    if (tmp != null) {
+                        sb.append(extract(tmp));
+                    }
+                }
+            } catch (TikaException e) {
+                //ignore
+            } // catch (IOException e) {//Pushback exception from tagsoup
+            // System.err.println(e.getMessage());
+        }
+        return sb.toString();
     }
 
     /**
@@ -180,7 +128,4 @@ public class CHMDocumentInformation {
         return wBuf.toString();
     }
 
-    public static void main(String[] args) {
-
-    }
 }

@@ -50,11 +50,10 @@ public class ChmParser extends AbstractParser {
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
-        CHMDocumentInformation chmInfo = CHMDocumentInformation.load(stream);
+        CHMDocumentInformation chmInfo = new CHMDocumentInformation(stream);
 
         // metadata
         metadata.set(Metadata.CONTENT_TYPE, "application/vnd.ms-htmlhelp");
-        chmInfo.getCHMDocInformation(metadata);
 
         // content
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
