@@ -48,18 +48,6 @@ class CHMDocumentInformation {
     }
 
     /**
-     * Checks if an entry is a html or not.
-     * 
-     * @param entry
-     *            chm directory listing entry
-     * 
-     * @return boolean
-     */
-    private boolean isRightEntry(DirectoryListingEntry entry) {
-        return (entry.getName().endsWith(".html") || entry.getName().endsWith(".htm"));
-    }
-
-    /**
      * Returns extracted text from chm file
      * 
      * @return text
@@ -68,36 +56,23 @@ class CHMDocumentInformation {
      */
     public String getText() throws TikaException {
         StringBuilder sb = new StringBuilder();
-        DirectoryListingEntry entry;
-        
-        for (Iterator<DirectoryListingEntry> it = chmExtractor
-                .getChmDirList().getDirectoryListingEntryList().iterator(); it.hasNext();) 
-        {
-            try {
-                entry = it.next();
-                if (isRightEntry(entry)) {
-                    byte[][] tmp = chmExtractor.extractChmEntry(entry);
-                    if (tmp != null) {
-                        sb.append(extract(tmp));
-                    }
-                }
-            } catch (TikaException e) {
-                //ignore
-            } // catch (IOException e) {//Pushback exception from tagsoup
-            // System.err.println(e.getMessage());
+
+        Iterator<DirectoryListingEntry> it =
+                chmExtractor.getChmDirList().getDirectoryListingEntryList().iterator();
+        while (it.hasNext()) {
+            DirectoryListingEntry entry = it.next();
+            if (entry.getName().endsWith(".html") || entry.getName().endsWith(".htm")) {
+                byte[] tmp = chmExtractor.extractChmEntry(entry);
+                sb.append(extract(tmp));
+            }
         }
         return sb.toString();
     }
 
     /**
-     * Extracts data from byte[][]
-     * 
-     * @param byteObject
-     * @return
-     * @throws IOException
-     * @throws SAXException
+     * Extracts data from byte[]
      */
-    private String extract(byte[][] byteObject) {// throws IOException
+    private String extract(byte[] byteObject) throws TikaException {// throws IOException
         StringBuilder wBuf = new StringBuilder();
         InputStream stream = null;
         Metadata metadata = new Metadata();
@@ -105,25 +80,14 @@ class CHMDocumentInformation {
         BodyContentHandler handler = new BodyContentHandler(-1);// -1
         ParseContext parser = new ParseContext();
         try {
-            for (int i = 0; i < byteObject.length; i++) {
-                stream = new ByteArrayInputStream(byteObject[i]);
-                try {
-                    htmlParser.parse(stream, handler, metadata, parser);
-                } catch (TikaException e) {
-                    wBuf.append(new String(byteObject[i]));
-//                    System.err.println("\n"
-//                            + CHMDocumentInformation.class.getName()
-//                            + " extract " + e.getMessage());
-                } finally {
-                    wBuf.append(handler.toString()
-                            + System.getProperty("line.separator"));
-                    stream.close();
-                }
-            }
+            stream = new ByteArrayInputStream(byteObject);
+            htmlParser.parse(stream, handler, metadata, parser);
+            wBuf.append(handler.toString()
+                    + System.getProperty("line.separator"));
         } catch (SAXException e) {
             throw new RuntimeException(e);
-        } catch (IOException e) {// 
-        // Pushback overflow from tagsoup
+        } catch (IOException e) {
+            // Pushback overflow from tagsoup
         }
         return wBuf.toString();
     }

@@ -57,14 +57,11 @@ public class TestChmExtractor {
     @Test
     public void testExtractChmEntry() throws TikaException{
         ChmDirectoryListingSet entries = chmExtractor.getChmDirList();
-        byte[][] localFile;
         int count = 0;
         for (Iterator<DirectoryListingEntry> it = entries
                 .getDirectoryListingEntryList().iterator(); it.hasNext();) {
-            localFile = chmExtractor.extractChmEntry(it.next());
-            if (localFile != null) {
-                ++count;
-            }
+            chmExtractor.extractChmEntry(it.next());
+            ++count;
         }
         assertEquals(TestParameters.VP_CHM_ENTITIES_NUMBER, count);
     }
