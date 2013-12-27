@@ -28,6 +28,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -50,13 +51,16 @@ public class ChmParser extends AbstractParser {
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         CHMDocumentInformation chmInfo = CHMDocumentInformation.load(stream);
+
+        // metadata
         metadata.set(Metadata.CONTENT_TYPE, "application/vnd.ms-htmlhelp");
-        extractMetadata(chmInfo, metadata);
-        CHM2XHTML.process(chmInfo, handler);
+        chmInfo.getCHMDocInformation(metadata);
+
+        // content
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.characters(chmInfo.getText());
+        xhtml.endDocument();
     }
 
-    private void extractMetadata(CHMDocumentInformation chmInfo,
-            Metadata metadata) throws TikaException, IOException {
-        chmInfo.getCHMDocInformation(metadata);
-    }
 }

@@ -49,6 +49,7 @@ public class AutoDetectParserTest {
     private static final String KEYNOTE    = "application/vnd.apple.keynote";
     private static final String PAGES      = "application/vnd.apple.pages";
     private static final String NUMBERS    = "application/vnd.apple.numbers";
+    private static final String CHM        = "application/vnd.ms-htmlhelp";
     private static final String RTF        = "application/rtf";
     private static final String PLAINTEXT  = "text/plain; charset=ISO-8859-1";
     private static final String UTF8TEXT   = "text/plain; charset=UTF-8";
@@ -162,6 +163,11 @@ public class AutoDetectParserTest {
     @Test
     public void testNumbers() throws Exception {
         assertAutoDetect("testNumbers.numbers", NUMBERS, "Checking Account: 300545668");
+    }
+
+    @Test
+    public void testChm() throws Exception {
+        assertAutoDetect("testChm.chm", CHM, "If you do not specify a window type or a window name, the main window is used.");
     }
 
     @Test
