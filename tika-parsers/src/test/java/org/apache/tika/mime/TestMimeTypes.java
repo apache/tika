@@ -423,9 +423,11 @@ public class TestMimeTypes {
 
     @Test
     public void testSwfDetection() throws Exception {
-        // TODO: Need a test flash file
         assertTypeByName("application/x-shockwave-flash", "x.swf");
         assertTypeByName("application/x-shockwave-flash", "x.SWF");
+        assertTypeByName("application/x-shockwave-flash", "test1.swf");
+        assertTypeByName("application/x-shockwave-flash", "test2.swf");
+        assertTypeByName("application/x-shockwave-flash", "test3.swf");
     }
 
     @Test
