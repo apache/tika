@@ -14,10 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.chm;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -29,7 +27,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.tika.metadata.Metadata;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,13 +53,10 @@ public class TestChmExtraction {
                         try {
                             stream = TestChmExtraction.class.getResourceAsStream(fileName);
 
-                            CHMDocumentInformation chmDocInfo = CHMDocumentInformation
-                                    .load(stream);
-                            Metadata md = new Metadata();
+                            CHMDocumentInformation chmDocInfo =
+                                    new CHMDocumentInformation(stream);
                             mutex.lock();
                             String text = chmDocInfo.getText();
-                            chmDocInfo.getCHMDocInformation(md);
-                            assertEquals(TestParameters.VP_CHM_MIME_TYPE, md.toString().trim());
                             assertTrue(text.length() > 0);
                         } catch (Exception e) {
                             e.printStackTrace();

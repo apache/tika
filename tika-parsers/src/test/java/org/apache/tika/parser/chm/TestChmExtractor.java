@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
@@ -80,11 +79,8 @@ public class TestChmExtractor {
             InputStream stream =
                     TestChmBlockInfo.class.getResourceAsStream(fileName);
             try {
-                CHMDocumentInformation chmDocInfo = CHMDocumentInformation.load(stream);
-                Metadata md = new Metadata();
+                CHMDocumentInformation chmDocInfo = new CHMDocumentInformation(stream);
                 String text = chmDocInfo.getText();
-                chmDocInfo.getCHMDocInformation(md);
-                assertEquals(TestParameters.VP_CHM_MIME_TYPE, md.toString().trim());
                 assertTrue(text.length() > 0);
             } finally {
                 stream.close();

@@ -14,17 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.tika.parser.chm;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,16 +29,8 @@ public class TestChmDocumentInformation {
 
     @Before
     public void setUp() throws Exception {
-        chmDoc = CHMDocumentInformation.load(
+        chmDoc = new CHMDocumentInformation(
                 new ByteArrayInputStream(TestParameters.chmData));
-    }
-
-    @Test
-    public void testGetCHMDocInformation() throws TikaException, IOException {
-        Metadata md = new Metadata();
-        chmDoc.getCHMDocInformation(md);
-        assertEquals(TestParameters.VP_CHM_MIME_TYPE, md.toString()
-                .trim());
     }
 
     @Test
