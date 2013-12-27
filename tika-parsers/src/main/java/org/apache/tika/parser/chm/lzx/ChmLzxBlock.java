@@ -106,7 +106,8 @@ public class ChmLzxBlock {
     private void extractContent() throws TikaException {
         assertStateNotNull();
         if (getChmSection().getData() != null) {
-            while (getContentLength() < getBlockLength()) {// && tempStopLoop
+            boolean continueLoop = true;
+            while (continueLoop && getContentLength() < getBlockLength()) {
                 if (getState() != null && getState().getBlockRemaining() == 0) {
                     if (getState().getHadStarted() == LzxState.NOT_STARTED_DECODING) {
                         getState().setHadStarted(LzxState.STARTED_DECODING);
@@ -183,6 +184,7 @@ public class ChmLzxBlock {
                     getState().setBlockRemaining(0);
                 }
 
+                int lastLength = getContentLength();
                 switch (getState().getBlockType()) {
                 case ChmCommons.ALIGNED_OFFSET:
                     // if(prevblock.lzxState.length>prevblock.lzxState.remaining)
@@ -200,6 +202,8 @@ public class ChmLzxBlock {
                 if ((getState().getFramesRead() < 32768)
                         && getState().getIntelFileSize() != 0)
                     intelE8Decoding();
+
+                continueLoop = getContentLength() > lastLength;
             }
         }
     }
@@ -277,7 +281,7 @@ public class ChmLzxBlock {
                         ChmConstants.LZX_NUM_SECONDARY_LENGTHS));
     }
 
-    public void decompressUncompressedBlock(int len, byte[] prevcontent) {
+    private void decompressUncompressedBlock(int len, byte[] prevcontent) {
         if (getContentLength() + getState().getBlockRemaining() <= getBlockLength()) {
             for (int i = getContentLength(); i < (getContentLength() + getState()
                     .getBlockRemaining()); i++)
@@ -296,7 +300,7 @@ public class ChmLzxBlock {
         }
     }
 
-    public void decompressAlignedBlock(int len, byte[] prevcontent) throws TikaException {
+    private void decompressAlignedBlock(int len, byte[] prevcontent) throws TikaException {
 
         if ((getChmSection() == null) || (getState() == null)
                 || (getState().getMainTreeTable() == null))
