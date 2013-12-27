@@ -1403,6 +1403,9 @@
   </mime-type>
   <mime-type type="application/vnd.ms-htmlhelp">
     <glob pattern="*.chm"/>
+    <magic priority="50">
+      <match value="ITSF" type="string" offset="0"/>
+    </magic>
   </mime-type>
   <mime-type type="application/vnd.ms-ims">
     <glob pattern="*.ims"/>
