@@ -18,7 +18,9 @@ package org.apache.tika.parser.chm;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -35,18 +37,20 @@ public class ChmParser extends AbstractParser {
     private static final long serialVersionUID = 5938777307516469802L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.application("chm"));
+            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                    MediaType.application("vnd.ms-htmlhelp"),
+                    MediaType.application("chm"),
+                    MediaType.application("x-chm"))));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         CHMDocumentInformation chmInfo = CHMDocumentInformation.load(stream);
-        metadata.set(Metadata.CONTENT_TYPE, "chm");
+        metadata.set(Metadata.CONTENT_TYPE, "application/vnd.ms-htmlhelp");
         extractMetadata(chmInfo, metadata);
         CHM2XHTML.process(chmInfo, handler);
     }
