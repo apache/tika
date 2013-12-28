@@ -44,12 +44,14 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.apache.tika.sax.TextContentHandler;
 import org.ccil.cowan.tagsoup.HTMLSchema;
 import org.ccil.cowan.tagsoup.Schema;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -925,4 +927,73 @@ public class HtmlParserTest {
         assertEquals("\ttext\n\n", linkContentHandler.getLinks().get(0).getText());
     }
 
+    /**
+     * Test case for TIKA-820:  Locator is unset for HTML parser
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-820">TIKA-820</a>
+     */
+    @Test
+    public void testLocator() throws Exception {
+        final int line = 0;
+        final int col = 1;
+        final int[] textPosition = new int[2];
+	
+        new HtmlParser().parse(HtmlParserTest.class.getResourceAsStream("/test-documents/testHTML.html"),
+        	new ContentHandler(){
+                Locator locator;
+
+                public void setDocumentLocator(Locator locator) {
+                    this.locator = locator;
+                }
+
+                public void startDocument() throws SAXException {
+                }
+
+                public void endDocument() throws SAXException {
+                }
+
+                public void startPrefixMapping(String prefix, String uri)
+                        throws SAXException {
+                }
+
+                public void endPrefixMapping(String prefix)
+                        throws SAXException {
+                }
+
+                public void startElement(String uri, String localName,
+                                         String qName, Attributes atts) throws SAXException {
+                }
+
+                public void endElement(String uri, String localName,
+                                       String qName) throws SAXException {
+                }
+
+                public void characters(char[] ch, int start, int length)
+                        throws SAXException {
+                    String text = new String(ch, start, length);
+                    if (text.equals("Test Indexation Html") && locator != null) {
+                        textPosition[line] = locator.getLineNumber();
+                        textPosition[col] = locator.getColumnNumber();
+                    }
+                }
+
+                public void ignorableWhitespace(char[] ch, int start,
+                                                int length) throws SAXException {
+                }
+
+                public void processingInstruction(String target, String data)
+                        throws SAXException {
+                }
+
+                public void skippedEntity(String name) throws SAXException {
+                }},
+                new Metadata(),
+                new ParseContext());
+
+        // The text occurs at line 24 (if lines start at 0) or 25 (if lines start at 1).
+        assertEquals(24, textPosition[line]);
+        // The column reported seems fuzzy, just test it is close enough.
+        assertTrue(Math.abs(textPosition[col]-47) < 10);
+    }
+    
 }
