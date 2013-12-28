@@ -92,9 +92,12 @@ public class HtmlParser extends AbstractParser {
             org.ccil.cowan.tagsoup.Parser parser =
                     new org.ccil.cowan.tagsoup.Parser();
 
+            // Use schema from context or default
+            Schema schema = context.get(Schema.class, HTML_SCHEMA);
+
             // TIKA-528: Reuse share schema to avoid heavy instantiation
             parser.setProperty(
-                    org.ccil.cowan.tagsoup.Parser.schemaProperty, HTML_SCHEMA);
+                    org.ccil.cowan.tagsoup.Parser.schemaProperty, schema);
             // TIKA-599: Shared schema is thread-safe only if bogons are ignored
             parser.setFeature(
                     org.ccil.cowan.tagsoup.Parser.ignoreBogonsFeature, true);
