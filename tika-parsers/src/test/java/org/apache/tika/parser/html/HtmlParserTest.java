@@ -42,7 +42,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.LinkContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
+import org.ccil.cowan.tagsoup.HTMLSchema;
+import org.ccil.cowan.tagsoup.Schema;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.Attributes;
@@ -890,4 +893,36 @@ public class HtmlParserTest {
           assertTrue("testing: " +fileName, content.contains(hit));
        }
     }
+
+    // TIKA-1193
+    @Test
+    public void testCustomHtmlSchema() throws Exception {
+        // Default schema does not allow tables inside anchors
+        String test = "<html><body><a><table><tr><td>text</tr></tr></table></a></body></html>";
+
+        Metadata metadata = new Metadata();
+        LinkContentHandler linkContentHandler = new LinkContentHandler();
+
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("ISO-8859-1")),
+                linkContentHandler, metadata, new ParseContext());
+
+        // Expect no anchor text
+        assertEquals("", linkContentHandler.getLinks().get(0).getText());
+
+        // We'll change the schema to allow tables inside anchors!
+        Schema schema = new HTMLSchema();
+        schema.elementType("a", HTMLSchema.M_ANY, 65535, 0);
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(Schema.class, schema);
+        linkContentHandler = new LinkContentHandler();
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("ISO-8859-1")),
+                linkContentHandler, metadata, parseContext);
+
+        // Expect anchor text
+        assertEquals("\ttext\n\n", linkContentHandler.getLinks().get(0).getText());
+    }
+
 }
