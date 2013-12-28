@@ -190,6 +190,7 @@
               org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
               org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
               org.osgi.framework;resolution:=optional,
+              org.w3c.dom;resolution:=optional,
               org.relaxng.datatype;resolution:=optional,
               org.xml.sax;resolution:=optional,
               org.xml.sax.ext;resolution:=optional,
