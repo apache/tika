@@ -45,6 +45,11 @@ public class TextContentHandler extends DefaultHandler {
     }
 
     @Override
+    public void setDocumentLocator(org.xml.sax.Locator locator) {
+	    delegate.setDocumentLocator(locator);
+    }
+
+    @Override
     public void characters(char[] ch, int start, int length)
             throws SAXException {
         delegate.characters(ch, start, length);
