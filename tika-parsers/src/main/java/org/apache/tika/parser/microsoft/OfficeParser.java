@@ -71,7 +71,10 @@ public class OfficeParser extends AbstractParser {
                     POIFSDocumentType.VISIO.type,
                     // Works isn't supported
                     POIFSDocumentType.XLR.type, // but Works 7.0 Spreadsheet is
-                    POIFSDocumentType.OUTLOOK.type
+                    POIFSDocumentType.OUTLOOK.type,
+                    POIFSDocumentType.SOLIDWORKS_PART.type,
+                    POIFSDocumentType.SOLIDWORKS_ASSEMBLY.type,
+                    POIFSDocumentType.SOLIDWORKS_DRAWING.type
                     )));
 
     public enum POIFSDocumentType {
@@ -87,7 +90,10 @@ public class OfficeParser extends AbstractParser {
         VISIO("vsd", MediaType.application("vnd.visio")),
         WORKS("wps", MediaType.application("vnd.ms-works")),
         XLR("xlr", MediaType.application("x-tika-msworks-spreadsheet")),
-        OUTLOOK("msg", MediaType.application("vnd.ms-outlook"));
+        OUTLOOK("msg", MediaType.application("vnd.ms-outlook")),
+        SOLIDWORKS_PART("sldprt", MediaType.application("sldworks")),
+        SOLIDWORKS_ASSEMBLY("sldasm", MediaType.application("sldworks")),
+        SOLIDWORKS_DRAWING("slddrw", MediaType.application("sldworks"));
 
         private final String extension;
         private final MediaType type;
@@ -177,6 +183,13 @@ public class OfficeParser extends AbstractParser {
         }
 
         switch (type) {
+        case SOLIDWORKS_PART:
+//        	new SolidworksExtractor(context).parse(root, xhtml);
+        	break;
+        case SOLIDWORKS_ASSEMBLY:
+        	break;
+        case SOLIDWORKS_DRAWING:
+        	break;
         case PUBLISHER:
            PublisherTextExtractor publisherTextExtractor =
               new PublisherTextExtractor(root);

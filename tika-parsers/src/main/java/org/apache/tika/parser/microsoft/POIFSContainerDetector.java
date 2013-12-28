@@ -120,6 +120,9 @@ public class POIFSContainerDetector implements Detector {
     /** StarOffice Writer */
     public static final MediaType SDW = application("vnd.stardivision.writer");
 
+    /** SolidWorks CAD file */
+    public static final MediaType SLDWORKS = application("sldworks");
+
     /** Regexp for matching the MPP Project Data stream */
     private static final Pattern mppDataMatch = Pattern.compile("\\s\\s\\s\\d+");
 
@@ -199,7 +202,9 @@ public class POIFSContainerDetector implements Detector {
      */
     protected static MediaType detect(Set<String> names, DirectoryEntry root) {
         if (names != null) {
-            if (names.contains("StarCalcDocument")) {
+            if (names.contains("SwDocContentMgr") && names.contains("SwDocMgrTempStorage")) {
+                return SLDWORKS;
+            } else if (names.contains("StarCalcDocument")) {
                 // Star Office Calc
                 return SDC;
             } else if (names.contains("StarWriterDocument")) {
