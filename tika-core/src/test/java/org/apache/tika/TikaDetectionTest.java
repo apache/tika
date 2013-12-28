@@ -129,6 +129,9 @@ public class TikaDetectionTest {
         assertEquals("application/sdp", tika.detect("x.sdp"));
         assertEquals("application/set-payment-initiation", tika.detect("x.setpay"));
         assertEquals("application/set-registration-initiation", tika.detect("x.setreg"));
+        assertEquals("application/sldworks", tika.detect("x.sldprt"));
+        assertEquals("application/sldworks", tika.detect("x.sldasm"));
+        assertEquals("application/sldworks", tika.detect("x.slddrw"));
         assertEquals("application/shf+xml", tika.detect("x.shf"));
         assertEquals("application/smil+xml", tika.detect("x.smi"));
         assertEquals("application/smil+xml", tika.detect("x.smil"));
