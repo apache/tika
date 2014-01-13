@@ -202,6 +202,15 @@ A release vote template has been generated for you:
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>java7</id>
+      <activation>
+        <jdk>[1.7,]</jdk>
+      </activation>
+      <modules>
+        <module>tika-java7</module>
+      </modules>
+    </profile>
   </profiles>
 
   <description>The Apache Tika™ toolkit detects and extracts metadata and structured text content from various documents using existing parser libraries. </description>
