@@ -91,6 +91,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 import com.google.gson.Gson;
+import org.apache.tika.io.FilenameUtils;
 
 /**
  * Simple command line interface for Apache Tika.
@@ -712,7 +713,7 @@ public class TikaCLI {
                 name = relID + "_" + name;
             }
 
-            File outputFile = new File(extractDir, name);
+            File outputFile = new File(extractDir, FilenameUtils.normalize(name));
             File parent = outputFile.getParentFile();
             if (!parent.exists()) {
                 if (!parent.mkdirs()) {
@@ -740,7 +741,16 @@ public class TikaCLI {
                     IOUtils.copy(inputStream, os);
                 }
             } catch (Exception e) {
-                logger.warn("Ignoring unexpected exception trying to save embedded file " + name, e);
+                //
+                // being a CLI program messages should go to the stderr too
+                //
+                String msg = String.format(
+                    "Ignoring unexpected exception trying to save embedded file %s (%s)",
+                    name,
+                    e.getMessage()
+                );
+                System.err.println(msg);
+                logger.warn(msg, e);
             } finally {
                 if (os != null) {
                     os.close();
