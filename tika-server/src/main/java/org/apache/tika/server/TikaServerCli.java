@@ -52,7 +52,7 @@ public class TikaServerCli {
   public static void main(String[] args) {
     Properties properties = new Properties();
     try {
-      properties.load(ClassLoader.getSystemResourceAsStream("tikaserver-version.properties"));
+      properties.load(TikaServerCli.class.getClassLoader().getResourceAsStream("tikaserver-version.properties"));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

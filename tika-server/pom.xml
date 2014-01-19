@@ -171,7 +171,31 @@
       </plugin>
     </plugins>
   </build>
-
+  <profiles>
+     <profile>
+         <id>server</id>
+         <build>
+             <defaultGoal>test</defaultGoal>
+             <plugins>
+                 <plugin>
+                     <groupId>org.codehaus.mojo</groupId>
+                     <artifactId>exec-maven-plugin</artifactId>
+                     <executions>
+                        <execution>
+                             <phase>test</phase>
+                             <goals>
+                                 <goal>java</goal>
+                             </goals>
+                             <configuration>
+                                 <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
+                             </configuration>
+                          </execution>
+                      </executions>
+                  </plugin>
+              </plugins>
+         </build>
+      </profile>
+  </profiles>  
   <url>http://tika.apache.org/</url>
   <organization>
   	<name>The Apache Software Foundation</name>
