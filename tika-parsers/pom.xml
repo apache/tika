@@ -190,8 +190,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
-      <version>4.11</version>
+      <scope>test</scope>      
     </dependency>
     <dependency>
        <groupId>org.mockito</groupId>
