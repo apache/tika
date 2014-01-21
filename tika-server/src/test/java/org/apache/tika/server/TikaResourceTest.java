@@ -89,11 +89,11 @@ public class TikaResourceTest extends CXFTestBase {
 	@Test
 	public void testApplicationWadl() throws Exception {
 		Response response = WebClient
-				.create(endPoint + TIKA_PATH + "/application.wadl")
+				.create(endPoint + TIKA_PATH + "?_wadl")
 				.accept("text/plain").get();
 		String resp = getStringFromInputStream((InputStream) response
 				.getEntity());
-		assertTrue(resp.length() > 0);
+		assertTrue(resp.startsWith("<application"));
 	}
 
 	@Test
@@ -151,10 +151,9 @@ public class TikaResourceTest extends CXFTestBase {
   @Test
   public void testSimpleWordMultipartXML() throws Exception {
     ClassLoader.getSystemResourceAsStream(TEST_DOC);  
-	Attachment attachmentPart = 
+    Attachment attachmentPart = 
         new Attachment("myworddoc", "application/msword", ClassLoader.getSystemResourceAsStream(TEST_DOC));
-	WebClient webClient = WebClient.create(endPoint + TIKA_PATH);
-	WebClient.getConfig(webClient).getHttpConduit().getClient().setReceiveTimeout(1000000L);
+    WebClient webClient = WebClient.create(endPoint + TIKA_PATH + "/form");
     Response response = webClient.type("multipart/form-data")
       .accept("text/xml")
       .put(attachmentPart);

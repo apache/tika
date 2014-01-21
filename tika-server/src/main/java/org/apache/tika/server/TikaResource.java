@@ -66,7 +66,7 @@ import org.apache.tika.sax.ExpandedTitleContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-@Path("/tika{id:(/.*)?}")
+@Path("/tika")
 public class TikaResource {
   public static final String GREETING = "This is Tika Server. Please PUT\n";
   private final Log logger = LogFactory.getLog(TikaResource.class);
@@ -165,6 +165,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
   @PUT
   @Consumes("multipart/form-data")
   @Produces("text/plain")
+  @Path("form")
   public StreamingOutput getTextFromMultipart(Attachment att, @Context final UriInfo info) {
 	  return produceText(att.getObject(InputStream.class), att.getHeaders(), info);
   }
@@ -231,6 +232,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
   @PUT
   @Consumes("multipart/form-data")
   @Produces("text/html")
+  @Path("form")
   public StreamingOutput getHTMLFromMultipart(Attachment att, @Context final UriInfo info) {
 	  return produceOutput(att.getObject(InputStream.class), att.getHeaders(), info, "html");
   }
@@ -245,6 +247,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
   @PUT
   @Consumes("multipart/form-data")
   @Produces("text/xml")
+  @Path("form")
   public StreamingOutput getXMLFromMultipart(Attachment att, @Context final UriInfo info) {
 	  return produceOutput(att.getObject(InputStream.class), att.getHeaders(), info, "xml");
   }
