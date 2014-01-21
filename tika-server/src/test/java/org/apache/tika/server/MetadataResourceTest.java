@@ -82,8 +82,7 @@ public class MetadataResourceTest extends CXFTestBase {
 		Reader reader = new InputStreamReader(
 				(InputStream) response.getEntity());
 
-		@SuppressWarnings("resource")
-        CSVReader csvReader = new CSVReader(reader);
+		CSVReader csvReader = new CSVReader(reader);
 
 		Map<String, String> metadata = new HashMap<String, String>();
 

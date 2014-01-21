@@ -44,13 +44,14 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import au.com.bytecode.opencsv.CSVWriter;
 
-@Path("/meta{id:(/.*)?}")
+@Path("/meta")
 public class MetadataResource {
   private static final Log logger = LogFactory.getLog(MetadataResource.class);
 
   @PUT
   @Consumes("multipart/form-data")
   @Produces("text/csv")
+  @Path("form")
   public StreamingOutput getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
 	  return produceMetadata(att.getObject(InputStream.class), att.getHeaders(), info);
   }
