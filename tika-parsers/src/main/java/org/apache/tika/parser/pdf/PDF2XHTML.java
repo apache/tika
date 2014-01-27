@@ -536,7 +536,6 @@ class PDF2XHTML extends PDFTextStripper {
                 handler.startElement("li", attrs);
                 handler.characters(e.getValue());
                 handler.endElement("li");
-                System.out.println("SIG DATA: " + e.getKey() + " : " + e.getValue());
             }
             handler.endElement("ol");
             handler.endElement("li");
