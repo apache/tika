@@ -18,10 +18,13 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
@@ -35,11 +38,13 @@ import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationMarkup;
+import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.apache.pdfbox.pdmodel.interactive.form.PDField;
+import org.apache.pdfbox.pdmodel.interactive.form.PDSignatureField;
 import org.apache.pdfbox.util.PDFTextStripper;
 import org.apache.pdfbox.util.TextPosition;
 import org.apache.tika.exception.TikaException;
@@ -62,6 +67,11 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 class PDF2XHTML extends PDFTextStripper {
     
+    /**
+     * format used for signature dates
+     */
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+ 
     /**
      * Maximum recursive depth during AcroForm processing.
      * Prevents theoretical AcroForm recursion bomb. 
@@ -446,36 +456,90 @@ class PDF2XHTML extends PDFTextStripper {
              handler.endElement("ol");
           }
       }
+    private void addFieldString(PDField field, XHTMLContentHandler handler) throws SAXException{
+        //Pick partial name to present in content and altName for attribute
+        //Ignoring FullyQualifiedName for now
+        String partName = field.getPartialName();
+        String altName = field.getAlternateFieldName();
 
-      private void addFieldString(PDField field, XHTMLContentHandler handler) throws SAXException{
-          //Pick partial name to present in content and altName for attribute
-          //Ignoring FullyQualifiedName for now
-          String partName = field.getPartialName();
-          String altName = field.getAlternateFieldName();
+        StringBuilder sb = new StringBuilder();
+        AttributesImpl attrs = new AttributesImpl();
 
-          StringBuilder sb = new StringBuilder();
-          AttributesImpl attrs = new AttributesImpl();
+        if (partName != null){
+            sb.append(partName).append(": ");
+        }
+        if (altName != null){
+            attrs.addAttribute("", "altName", "altName", "CDATA", altName);
+        }
+        //return early if PDSignature field
+        if (field instanceof PDSignatureField){
+            handleSignature(attrs, (PDSignatureField)field, handler);
+            return;
+        }
+        try {
+            //getValue can throw an IOException if there is no value
+            String value = field.getValue();
+            if (value != null && ! value.equals("null")){
+                sb.append(value);
+            }
+        } catch (IOException e) {
+            //swallow
+        }
 
-          if (partName != null){
-             sb.append(partName).append(": ");
-          }
-          if (altName != null){
-             attrs.addAttribute("", "altName", "altName", "CDATA", altName);
-          }
-          String value = "";
-          try {
-              value = field.getValue();
-          } catch (IOException e) {
-               //swallow
-          }
-          
-          if (value != null && ! value.equals("null")){
-              sb.append(value);
-          }
-          if (attrs.getLength() > 0 || sb.length() > 0){
-              handler.startElement("li", attrs);
-              handler.characters(sb.toString());
-              handler.endElement("li");
-          }
-      }
+        if (attrs.getLength() > 0 || sb.length() > 0){
+            handler.startElement("li", attrs);
+            handler.characters(sb.toString());
+            handler.endElement("li");
+        }
+    }
+
+    private void handleSignature(AttributesImpl parentAttributes, PDSignatureField sigField,
+            XHTMLContentHandler handler) throws SAXException{
+       
+
+        PDSignature sig = sigField.getSignature();
+        if (sig == null){
+            return;
+        }
+        Map<String, String> vals= new TreeMap<String, String>();
+        vals.put("name", sig.getName());
+        vals.put("contactInfo", sig.getContactInfo());
+        vals.put("location", sig.getLocation());
+        vals.put("reason", sig.getReason());
+
+        Calendar cal = sig.getSignDate();
+        if (cal != null){
+            dateFormat.setTimeZone(cal.getTimeZone());
+            vals.put("date", dateFormat.format(cal.getTime()));
+        }
+        //see if there is any data
+        int nonNull = 0;
+        for (String val : vals.keySet()){
+            if (val != null && ! val.equals("")){
+                nonNull++;
+            }
+        }
+        //if there is, process it
+        if (nonNull > 0){
+            handler.startElement("li", parentAttributes);
+
+            AttributesImpl attrs = new AttributesImpl();
+            attrs.addAttribute("", "type", "type", "CDATA", "signaturedata");
+
+            handler.startElement("ol", attrs);
+            for (Map.Entry<String, String> e : vals.entrySet()){
+                if (e.getValue() == null || e.getValue().equals("")){
+                    continue;
+                }
+                attrs = new AttributesImpl();
+                attrs.addAttribute("", "signdata", "signdata", "CDATA", e.getKey());
+                handler.startElement("li", attrs);
+                handler.characters(e.getValue());
+                handler.endElement("li");
+                System.out.println("SIG DATA: " + e.getKey() + " : " + e.getValue());
+            }
+            handler.endElement("ol");
+            handler.endElement("li");
+        }
+    }
 }

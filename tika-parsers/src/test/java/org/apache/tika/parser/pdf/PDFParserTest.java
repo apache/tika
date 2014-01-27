@@ -564,7 +564,7 @@ public class PDFParserTest extends TikaTest {
         //make sure nothing went wrong with getting the resource to test-documents
         //This will require modification with each new pdf test.
         //If this is too annoying, we can turn it off.
-        assertEquals("Number of pdf files tested", 14, pdfs);
+        assertEquals("Number of pdf files tested", 15, pdfs);
     }
 
 
@@ -616,4 +616,13 @@ public class PDFParserTest extends TikaTest {
        stream.close();     
     }
 */
+
+    //TIKA-1226
+    public void testSignatureInAcroForm() throws Exception{
+        //The current test doc does not contain any content in the signature area.
+        //This just tests that a RuntimeException is not thrown.
+        //TODO: find a better test file for this issue.
+        String xml = getXML("/testPDF_acroform3.pdf").xml;
+        assertTrue("found", (xml.indexOf("<li>aTextField: TIKA-1226</li>") > -1));
+    }
 }
