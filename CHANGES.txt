@@ -1,5 +1,9 @@
 Release 1.5 - Current Development
 
+  * Added option to use alternate NonSequentialPDFParser (TIKA-1201).
+
+  * Content from PDF AcroForms is now extracted (TIKA-973).
+
   * Fixed invalid asterisks from master slide in PPT (TIKA-1171).
 
   * Added test cases to confirm handling of auto-date in PPT and PPTX (TIKA-817).
@@ -14,7 +18,7 @@ Release 1.5 - Current Development
 
   * Upgraded POI to 3.10-beta2 (TIKA-1173).
 
-  * Upgraded PDFBox to 1.8.2 (TIKA-1153).
+  * Upgraded PDFBox to 1.8.3 (TIKA-1200).
 
   * Made HtmlEncodingDetector more flexible in finding meta 
     header charset (TIKA-1001).
@@ -24,7 +28,7 @@ Release 1.5 - Current Development
   * Fixed bug that prevented attachments within a PDF from being processed
     if the PDF itself was an attachment (TIKA-1124).
 
-  * Text from paragraph-level structured document tags is now extracted (TIKA-1130).
+  * Text from paragraph-level structured document tags in DOCX files is now extracted (TIKA-1130).
 
   * RTF: Fixed ArrayIndexOutOfBoundsException when parsing list override (TIKA-1192).
 
