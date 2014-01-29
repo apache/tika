@@ -1,5 +1,11 @@
 Release 1.5 - Current Development
 
+  * Updated Tika Server to support multipart/form-data payloads (TIKA-1198)
+
+  * Updated Tika Server to CXF 2.7.8 (TIKA-1197)
+
+  * Updated Tika Server to accept requests over wildcard addresses (TIKA-1196)
+
   * Added option to use alternate NonSequentialPDFParser (TIKA-1201).
 
   * Content from PDF AcroForms is now extracted (TIKA-973).
