@@ -40,7 +40,7 @@ public abstract class TikaTest {
     * This method will give you back the filename incl. the absolute path name
     * to the resource. If the resource does not exist it will give you back the
     * resource name incl. the path.
-    * 
+    *
     * @param name
     *            The named resource to search for.
     * @return an absolute path incl. the name which is in the same directory as
@@ -69,7 +69,7 @@ public abstract class TikaTest {
        }
        return stream;
    }
-    
+
     public void assertContains(String needle, String haystack) {
        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
@@ -85,22 +85,21 @@ public abstract class TikaTest {
     }
 
     protected XMLResult getXML(String filePath) throws Exception {
-        InputStream input = null;
-        Metadata metadata = new Metadata();
-        Parser parser = new AutoDetectParser();
-
-        ParseContext context = new ParseContext();
-        context.set(Parser.class, parser);
-
-        input = getResourceAsStream("/test-documents/" + filePath);
-        try {
-            ContentHandler handler = new ToXMLContentHandler();
-            parser.parse(input, handler, metadata, context);
-            return new XMLResult(handler.toString(), metadata);
-        } finally {
-            input.close();
-        }
+        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), new Metadata());
     }
+
+    protected XMLResult getXML(InputStream input, Parser parser, Metadata metadata) throws Exception {
+      ParseContext context = new ParseContext();
+      context.set(Parser.class, parser);
+
+      try {
+          ContentHandler handler = new ToXMLContentHandler();
+          parser.parse(input, handler, metadata, context);
+          return new XMLResult(handler.toString(), metadata);
+      } finally {
+          input.close();
+      }
+  }
 
     /**
      * Basic text extraction.
@@ -116,7 +115,7 @@ public abstract class TikaTest {
         }
         return handler.toString();
     }
-    
+
     public String getText(InputStream is, Parser parser, Metadata metadata) throws Exception{
         return getText(is, parser, new ParseContext(), metadata);
     }

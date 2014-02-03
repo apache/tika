@@ -1,5 +1,6 @@
 Release 1.5 - Current Development
-
+  * Added SourceCodeParser to support java, Groovy, C++ files (TIKA-1224)
+  
   * Updated Tika Server to support multipart/form-data payloads (TIKA-1198)
 
   * Updated Tika Server to CXF 2.7.8 (TIKA-1197)
