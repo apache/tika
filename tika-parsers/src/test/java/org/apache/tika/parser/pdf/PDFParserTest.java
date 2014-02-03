@@ -48,10 +48,11 @@ import org.xml.sax.ContentHandler;
  */
 public class PDFParserTest extends TikaTest {
 
+    public static final MediaType TYPE_TEXT = MediaType.TEXT_PLAIN;    
     public static final MediaType TYPE_EMF = MediaType.application("x-emf");
     public static final MediaType TYPE_PDF = MediaType.application("pdf");
     public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
-    
+    public static final MediaType TYPE_DOC = MediaType.application("msword");
 
     @Test
     public void testPdfParsing() throws Exception {
@@ -564,7 +565,7 @@ public class PDFParserTest extends TikaTest {
         //make sure nothing went wrong with getting the resource to test-documents
         //This will require modification with each new pdf test.
         //If this is too annoying, we can turn it off.
-        assertEquals("Number of pdf files tested", 15, pdfs);
+        assertEquals("Number of pdf files tested", 16, pdfs);
     }
 
 
@@ -624,5 +625,31 @@ public class PDFParserTest extends TikaTest {
         //TODO: find a better test file for this issue.
         String xml = getXML("/testPDF_acroform3.pdf").xml;
         assertTrue("found", (xml.indexOf("<li>aTextField: TIKA-1226</li>") > -1));
+    }
+
+    //TIKA-1228
+    public void testEmbeddedFilesInChildren() throws Exception {
+        String xml = getXML("/testPDF_childAttachments.pdf").xml;
+        //"regressiveness" exists only in Unit10.doc not in the container pdf document
+        assertTrue(xml.contains("regressiveness"));
+
+        TrackingHandler tracker = new TrackingHandler();
+        TikaInputStream tis = null;
+        ContainerExtractor ex = new ParserContainerExtractor();
+        try{
+            tis= TikaInputStream.get(
+                getResourceAsStream("/test-documents/testPDF_childAttachments.pdf"));
+            ex.extract(tis, ex, tracker);
+        } finally {
+            if (tis != null){
+                tis.close();
+            }
+        }
+        assertEquals(2, tracker.filenames.size());
+        assertEquals(2, tracker.mediaTypes.size());
+        assertEquals("Press Quality(1).joboptions", tracker.filenames.get(0));
+        assertEquals("Unit10.doc", tracker.filenames.get(1));
+        assertEquals(TYPE_TEXT, tracker.mediaTypes.get(0));
+        assertEquals(TYPE_DOC, tracker.mediaTypes.get(1));
     }
 }

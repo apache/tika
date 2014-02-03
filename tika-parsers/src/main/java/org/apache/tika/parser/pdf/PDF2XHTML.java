@@ -32,6 +32,7 @@ import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.COSObjectable;
+import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
@@ -346,48 +347,73 @@ class PDF2XHTML extends PDFTextStripper {
     }
     
     private void extractEmbeddedDocuments(PDDocument document, ContentHandler handler)
-          throws IOException, SAXException, TikaException {
-      PDDocumentCatalog catalog = document.getDocumentCatalog();
-      PDDocumentNameDictionary names = catalog.getNames();
-      if (names != null) {
+            throws IOException, SAXException, TikaException {
+        PDDocumentCatalog catalog = document.getDocumentCatalog();
+        PDDocumentNameDictionary names = catalog.getNames();
+        if (names == null){
+            return;
+        }
+        PDEmbeddedFilesNameTreeNode embeddedFiles = names.getEmbeddedFiles();
 
-          PDEmbeddedFilesNameTreeNode embeddedFiles = names.getEmbeddedFiles();
-          if (embeddedFiles != null) {
+        if (embeddedFiles == null) {
+            return;
+        }
 
-              EmbeddedDocumentExtractor embeddedExtractor = context.get(EmbeddedDocumentExtractor.class);
-              if (embeddedExtractor == null) {
-                  embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
-              }
+        EmbeddedDocumentExtractor embeddedExtractor = context.get(EmbeddedDocumentExtractor.class);
+        if (embeddedExtractor == null) {
+            embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
+        }
 
-              Map<String, COSObjectable> embeddedFileNames = embeddedFiles.getNames();
+        Map<String, COSObjectable> embeddedFileNames = embeddedFiles.getNames();
+        //For now, try to get the embeddedFileNames out of embeddedFiles or its kids.
+        //This code follows: pdfbox/examples/pdmodel/ExtractEmbeddedFiles.java
+        //If there is a need we could add a fully recursive search to find a non-null
+        //Map<String, COSObjectable> that contains the doc info.
+        if (embeddedFileNames != null){
+            processEmbeddedDocNames(embeddedFileNames, embeddedExtractor);
+        } else {
+            List<PDNameTreeNode> kids = embeddedFiles.getKids();
+            if (kids == null){
+                return;
+            }
+            for (PDNameTreeNode n : kids){
+                Map<String, COSObjectable> childNames = n.getNames();
+                if (childNames != null){
+                    processEmbeddedDocNames(childNames, embeddedExtractor);
+                }
+            }
+        }
+    }
 
-              if (embeddedFileNames != null) {
-                  for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
-                      PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
-                      PDEmbeddedFile file = spec.getEmbeddedFile();
 
-                      Metadata metadata = new Metadata();
-                      // TODO: other metadata?
-                      metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
-                      metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
-                      metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+    private void processEmbeddedDocNames(Map<String, COSObjectable> embeddedFileNames, 
+        EmbeddedDocumentExtractor embeddedExtractor) throws IOException, SAXException, TikaException {
+        if (embeddedFileNames == null){
+            return;
+        }
+        for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
+            PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
+            PDEmbeddedFile file = spec.getEmbeddedFile();
 
-                      if (embeddedExtractor.shouldParseEmbedded(metadata)) {
-                          TikaInputStream stream = TikaInputStream.get(file.createInputStream());
-                          try {
-                              embeddedExtractor.parseEmbedded(
-                                                              stream,
-                                                              new EmbeddedContentHandler(handler),
-                                                              metadata, false);
-                          } finally {
-                              stream.close();
-                          }
-                      }
-                  }
-              }
-          }
-      }
-  }
+            Metadata metadata = new Metadata();
+            // TODO: other metadata?
+            metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
+            metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
+            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+
+            if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+                TikaInputStream stream = TikaInputStream.get(file.createInputStream());
+                try {
+                    embeddedExtractor.parseEmbedded(
+                            stream,
+                            new EmbeddedContentHandler(handler),
+                            metadata, false);
+                } finally {
+                    stream.close();
+                }
+            }
+        }
+    }
     private void extractAcroForm(PDDocument pdf, XHTMLContentHandler handler) throws IOException, 
     SAXException {
         //Thank you, Ben Litchfield, for org.apache.pdfbox.examples.fdf.PrintFields

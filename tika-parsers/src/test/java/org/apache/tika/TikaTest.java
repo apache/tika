@@ -107,7 +107,7 @@ public abstract class TikaTest {
      * Tries to close input stream after processing.
      */
     public String getText(InputStream is, Parser parser, ParseContext context, Metadata metadata) throws Exception{
-        ContentHandler handler = new BodyContentHandler();
+        ContentHandler handler = new BodyContentHandler(1000000);
         try {
             parser.parse(is, handler, metadata, context);
         } finally {
