@@ -1,4 +1,4 @@
-Release 1.5 - Current Development
+Release 1.5 - 02/04/2014
 
   * Fixed bug in handling of embedded file processing in PDFs (TIKA-1228).
 
