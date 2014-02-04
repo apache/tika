@@ -1,11 +1,14 @@
 Release 1.5 - Current Development
-  * Added SourceCodeParser to support java, Groovy, C++ files (TIKA-1224)
+
+  * Fixed bug in handling of embedded file processing in PDFs (TIKA-1228).
+
+  * Added SourceCodeParser to support java, Groovy, C++ files (TIKA-1224).
   
-  * Updated Tika Server to support multipart/form-data payloads (TIKA-1198)
+  * Updated Tika Server to support multipart/form-data payloads (TIKA-1198).
 
-  * Updated Tika Server to CXF 2.7.8 (TIKA-1197)
+  * Updated Tika Server to CXF 2.7.8 (TIKA-1197).
 
-  * Updated Tika Server to accept requests over wildcard addresses (TIKA-1196)
+  * Updated Tika Server to accept requests over wildcard addresses (TIKA-1196).
 
   * Added option to use alternate NonSequentialPDFParser (TIKA-1201).
 
@@ -25,7 +28,7 @@ Release 1.5 - Current Development
 
   * Upgraded POI to 3.10-beta2 (TIKA-1173).
 
-  * Upgraded PDFBox to 1.8.3 (TIKA-1200).
+  * Upgraded PDFBox to 1.8.4 (TIKA-1230).
 
   * Made HtmlEncodingDetector more flexible in finding meta 
     header charset (TIKA-1001).
