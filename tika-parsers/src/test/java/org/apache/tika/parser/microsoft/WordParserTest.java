@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.InputStream;
 import java.util.Locale;
@@ -365,14 +366,15 @@ public class WordParserTest extends TikaTest {
                      "application/msword",
                      metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("Lutz Theurer", metadata.get(TikaCoreProperties.CREATOR));
-        assertTrue(xml.contains("example.com"));
-        //System.out.println(xml);
+        assertContains("example.com", xml);
 
-        // TODO
-//        assertTrue(xml.contains("<h1 class=\"title\">"));
-        
         // Check we don't have the special text HYPERLINK
+        assertFalse(xml.contains("HYPERLINK"));
+        
         // Check we do have the link
+        assertContains("<a href=\"http://tw-systemhaus.de\">http:", xml);
+        
         // Check we do have the email
+        assertContains("<a href=\"mailto:ab@example.com\">ab@", xml);
     }
 }
