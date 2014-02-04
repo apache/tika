@@ -34,6 +34,7 @@ import org.apache.poi.hwpf.model.PicturesTable;
 import org.apache.poi.hwpf.model.StyleDescription;
 import org.apache.poi.hwpf.usermodel.CharacterRun;
 import org.apache.poi.hwpf.usermodel.Field;
+import org.apache.poi.hwpf.usermodel.HeaderStories;
 import org.apache.poi.hwpf.usermodel.Paragraph;
 import org.apache.poi.hwpf.usermodel.Picture;
 import org.apache.poi.hwpf.usermodel.Range;
@@ -83,20 +84,24 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
             new org.apache.poi.hwpf.extractor.WordExtractor(document);
-
-        addTextIfAny(xhtml, "header", wordExtractor.getHeaderText());
+        HeaderStories headerFooter = new HeaderStories(document);
 
         // Grab the list of pictures. As far as we can tell,
         //  the pictures should be in order, and may be directly
         //  placed or referenced from an anchor
         PicturesTable pictureTable = document.getPicturesTable();
         PicturesSource pictures = new PicturesSource(document);
-        
+
+        // Do any headers, if present
+        Range[] headers = new Range[] { headerFooter.getFirstHeaderSubrange(),
+                headerFooter.getEvenHeaderSubrange(), headerFooter.getOddHeaderSubrange() };
+        handleHeaderFooter(headers, "header", document, pictures, pictureTable, xhtml);
+
         // Do the main paragraph text
         Range r = document.getRange();
         for(int i=0; i<r.numParagraphs(); i++) {
            Paragraph p = r.getParagraph(i);
-           i += handleParagraph(p, 0, r, document, pictures, pictureTable, xhtml);
+           i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable, xhtml);
         }
 
         // Do everything else
@@ -116,7 +121,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             xhtml.element("p", paragraph);
         }
 
-        addTextIfAny(xhtml, "footer", wordExtractor.getFooterText());
+        // Do any footers, if present
+        Range[] footers = new Range[] { headerFooter.getFirstFooterSubrange(),
+                headerFooter.getEvenFooterSubrange(), headerFooter.getOddFooterSubrange() };
+        handleHeaderFooter(footers, "footer", document, pictures, pictureTable, xhtml);
 
         // Handle any pictures that we haven't output yet
         for(Picture p = pictures.nextUnclaimed(); p != null; ) {
@@ -138,10 +146,42 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         } catch(FileNotFoundException e) {
         }
     }
+
+    private static int countParagraphs(Range... ranges) {
+        int count = 0;
+        for (Range r : ranges) {
+            if (r != null) { count += r.numParagraphs(); }
+        }
+        return count;
+    }
+    
+    private void handleHeaderFooter(Range[] ranges, String type, HWPFDocument document,
+          PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml) 
+          throws SAXException, IOException, TikaException {
+        if (countParagraphs(ranges) > 0) {
+            xhtml.startElement("div", "class", type);
+            for (Range r : ranges) {
+                if (r != null) {
+                    for(int i=0; i<r.numParagraphs(); i++) {
+                        Paragraph p = r.getParagraph(i);
+                        
+                        String text = p.text();
+                        if (text.replaceAll("[\\r\\n\\s]+", "").isEmpty()) {
+                            // Skip empty header or footer paragraphs
+                        } else {
+                            i += handleParagraph(p, 0, r, document, 
+                                    FieldsDocumentPart.HEADER, pictures, pictureTable, xhtml);
+                        }
+                     }
+                }
+            }
+            xhtml.endElement("div");
+        }
+    }
     
     private int handleParagraph(Paragraph p, int parentTableLevel, Range r, HWPFDocument document, 
-          PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml)
-          throws SAXException, IOException, TikaException {
+          FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable, 
+          XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
        // Note - a poi bug means we can't currently properly recurse
        //  into nested tables, so currently we don't
        if(p.isInTable() && p.getTableLevel() > parentTableLevel && parentTableLevel==0) {
@@ -157,7 +197,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
                 for(int pn=0; pn<cell.numParagraphs(); pn++) {
                    Paragraph cellP = cell.getParagraph(pn);
-                   handleParagraph(cellP, p.getTableLevel(), cell, document, pictures, pictureTable, xhtml);
+                   handleParagraph(cellP, p.getTableLevel(), cell, document, docPart, pictures, pictureTable, xhtml);
                 }
                 xhtml.endElement("td");
              }
@@ -193,8 +233,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
           // FIELD_BEGIN_MARK:
           if (cr.text().getBytes()[0] == 0x13) {
-             Field field = document.getFields().getFieldByStartOffset(FieldsDocumentPart.MAIN,
-                                                                      cr.getStartOffset());
+             Field field = document.getFields().getFieldByStartOffset(docPart, cr.getStartOffset());
              // 58 is an embedded document
              // 56 is a document link
              if (field != null && (field.getType() == 58 || field.getType() == 56)) {
@@ -362,7 +401,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              text += controls.get(j).text();
           }
           
-          if(text.startsWith("HYPERLINK") && text.indexOf('"') > -1) {
+          if((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK"))
+                 && text.indexOf('"') > -1) {
              String url = text.substring(
                    text.indexOf('"') + 1,
                    text.lastIndexOf('"')
