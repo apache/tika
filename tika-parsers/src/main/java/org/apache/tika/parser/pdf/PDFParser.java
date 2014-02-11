@@ -171,12 +171,18 @@ public class PDFParser extends AbstractParser {
             addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
         } catch (IOException e) {
             // Invalid date format, just ignore
+        } catch (StringIndexOutOfBoundsException e){
+            //remove after PDFBOX-1803 is fixed (TIKA-1233)
+            // Invalid date format, just ignore
         }
         try {
             Calendar modified = info.getModificationDate(); 
             addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
             addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
         } catch (IOException e) {
+            // Invalid date format, just ignore
+        } catch (StringIndexOutOfBoundsException e){
+            //remove after PDFBOX-1803 is fixed (TIKA-1233)
             // Invalid date format, just ignore
         }
         
