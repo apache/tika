@@ -563,9 +563,9 @@ public class PDFParserTest extends TikaTest {
             }
         }
         //make sure nothing went wrong with getting the resource to test-documents
-        //This will require modification with each new pdf test.
-        //If this is too annoying, we can turn it off.
-        assertEquals("Number of pdf files tested", 16, pdfs);
+        //must have tested >= 15 pdfs
+        boolean ge15 = (pdfs >= 15);
+        assertTrue("Number of pdf files tested >= 15 in non-sequential parser test", ge15);
     }
 
 
