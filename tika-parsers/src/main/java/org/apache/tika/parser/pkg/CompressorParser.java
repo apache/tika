@@ -61,6 +61,11 @@ public class CompressorParser extends AbstractParser {
             MediaType.set(BZIP, BZIP2, GZIP, XZ, PACK);
 
     static MediaType getMediaType(CompressorInputStream stream) {
+        // TODO Add support for the remaining CompressorInputStream formats:
+        //   FramedSnappyCompressorInputStream
+        //   LZMACompressorInputStream
+        //   SnappyCompressorInputStream
+        //   ZCompressorInputStream
         if (stream instanceof BZip2CompressorInputStream) {
             return BZIP2;
         } else if (stream instanceof GzipCompressorInputStream) {

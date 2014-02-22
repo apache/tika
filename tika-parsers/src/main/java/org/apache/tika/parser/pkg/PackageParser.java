@@ -65,11 +65,14 @@ public class PackageParser extends AbstractParser {
     private static final MediaType CPIO = MediaType.application("x-cpio");
     private static final MediaType DUMP = MediaType.application("x-tika-unix-dump");
     private static final MediaType TAR = MediaType.application("x-tar");
+    // Enable this when COMPRESS-267 is fixed, see TIKA-1243
+    private static final MediaType SEVENZ = MediaType.application("x-7z-compressed");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(ZIP, JAR, AR, CPIO, DUMP, TAR);
 
     static MediaType getMediaType(ArchiveInputStream stream) {
+        System.out.println(stream);
         if (stream instanceof JarArchiveInputStream) {
             return JAR;
         } else if (stream instanceof ZipArchiveInputStream) {
