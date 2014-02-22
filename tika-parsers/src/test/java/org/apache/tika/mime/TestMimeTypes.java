@@ -299,6 +299,10 @@ public class TestMimeTypes {
        assertTypeByData("application/x-gtar",  "test-documents.tar"); // GNU TAR
        assertTypeByData("application/x-gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
        assertTypeByData("application/x-cpio", "test-documents.cpio");
+       
+       // For spanned zip files, the .zip file doesn't have the header, it's the other parts
+       assertTypeByData("application/octet-stream", "test-documents-spanned.zip");
+       assertTypeByData("application/zip",          "test-documents-spanned.z01");
     }
     
     @Test
