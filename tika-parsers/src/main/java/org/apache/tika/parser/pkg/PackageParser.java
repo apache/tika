@@ -72,7 +72,6 @@ public class PackageParser extends AbstractParser {
             MediaType.set(ZIP, JAR, AR, CPIO, DUMP, TAR);
 
     static MediaType getMediaType(ArchiveInputStream stream) {
-        System.out.println(stream);
         if (stream instanceof JarArchiveInputStream) {
             return JAR;
         } else if (stream instanceof ZipArchiveInputStream) {
