@@ -4127,8 +4127,13 @@
 
   <mime-type type="image/vnd.mix"/>
   <mime-type type="image/vnd.ms-modi">
-    <glob pattern="*.mdi"/>
+       <glob pattern="*.mdi"/>
+       <_comment>Microsoft Document Imaging</_comment>
+       <magic priority="50">
+         <match value="0x45502A00" type="string" offset="0"/>
+       </magic>
   </mime-type>
+
   <mime-type type="image/vnd.net-fpx">
     <glob pattern="*.npx"/>
   </mime-type>
