@@ -3437,6 +3437,8 @@
     <alias type="application/x-zip-compressed"/>
     <magic priority="40">
       <match value="PK\003\004" type="string" offset="0"/>
+      <match value="PK\005\006" type="string" offset="0"/>
+      <match value="PK\x07\x08" type="string" offset="0"/>
     </magic>
     <glob pattern="*.zip"/>
   </mime-type>
