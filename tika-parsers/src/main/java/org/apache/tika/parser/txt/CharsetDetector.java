@@ -349,6 +349,10 @@ public class CharsetDetector {
      * @param encoding - name of character encoding
      */
     private void setCanonicalDeclaredEncoding(String encoding) {
+        if ((encoding == null) || encoding.isEmpty()) {
+            return;
+        }
+        
         Charset cs = Charset.forName(encoding);
         if (cs != null) {
             fDeclaredEncoding = cs.name();
