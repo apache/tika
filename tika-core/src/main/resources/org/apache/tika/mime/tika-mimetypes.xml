@@ -5250,6 +5250,9 @@
   <mime-type type="text/x-vcard">
     <glob pattern="*.vcf"/>
     <sub-class-of type="text/plain"/>
+    <magic priority="50">
+      <match value="BEGIN:VCARD" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="text/x-verilog">
