@@ -18,14 +18,17 @@
 package org.apache.tika.server;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.cxf.io.CachedOutputStream;
 
@@ -39,40 +42,38 @@ public class CXFTestBase {
 		return bos.getOut().toString();
 	}
 
-	protected Map<String, String> readArchive(ArchiveInputStream zip)
-			throws IOException {
+	protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
 		Map<String, String> data = new HashMap<String, String>();
+		File tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+        ZipFile zip = new ZipFile(tempFile);
+        Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+        while (entries.hasMoreElements()) {
+          ZipArchiveEntry entry = entries.nextElement();
+          ByteArrayOutputStream bos = new ByteArrayOutputStream();
+          IOUtils.copy(zip.getInputStream(entry), bos);
+          data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+        }
 
-		while (true) {
-			ArchiveEntry entry = zip.getNextEntry();
-			if (entry == null) {
-				break;
-			}
-			
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			IOUtils.copy(zip, bos);
-			data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
-		}
-
+        zip.close();
+        tempFile.delete();
 		return data;
 	}
 
-	protected String readArchiveText(ArchiveInputStream zip) throws IOException {
-		while (true) {
-			ArchiveEntry entry = zip.getNextEntry();
-			if (entry == null) {
-				break;
-			}
+	protected String readArchiveText(InputStream inputStream) throws IOException {
+	    File tempFile = writeTemporaryArchiveFile(inputStream, "zip");
+	    ZipFile zip = new ZipFile(tempFile);
+	    zip.getEntry(UnpackerResource.TEXT_FILENAME);
+	    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        IOUtils.copy(zip.getInputStream(zip.getEntry(UnpackerResource.TEXT_FILENAME)), bos);
 
-			if (!entry.getName().equals(UnpackerResource.TEXT_FILENAME)) {
-				continue;
-			}
+        zip.close();
+        tempFile.delete();
+		return bos.toString("UTF-8");
+	}
 
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			IOUtils.copy(zip, bos);
-			return bos.toString("UTF-8");
-		}
-
-		return null;
+	private File writeTemporaryArchiveFile(InputStream inputStream, String archiveType) throws IOException {
+	  File tempFile = File.createTempFile("tmp-", "." + archiveType);
+      IOUtils.copy(inputStream, new FileOutputStream(tempFile));
+      return tempFile;
 	}
 }
