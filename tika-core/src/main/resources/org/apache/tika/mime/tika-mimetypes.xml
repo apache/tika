@@ -145,7 +145,7 @@
   <mime-type type="application/example"/>
   <mime-type type="application/fastinfoset"/>
   <mime-type type="application/fastsoap"/>
-  
+
   <mime-type type="application/fits">
     <acronym>FITS</acronym>
     <_comment>Flexible Image Transport System</_comment>
@@ -1420,6 +1420,12 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/vnd.ms-outlook-pst">
+    <_comment>Outlook Personal Folders File Format</_comment>
+    <glob pattern="*.pst" />
+    <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
   <mime-type type="application/vnd.ms-pki.seccat">
     <glob pattern="*.cat"/>
   </mime-type>
@@ -2453,12 +2459,12 @@
     </magic>
     <glob pattern="*.torrent"/>
   </mime-type>
-  
+
   <mime-type type="application/x-bplist">
-    <!-- The priority is 60, as .webarchive files often contain 
-         (X)HTML content. The bplist magic must trump the XHTML 
-         magics further within the file. This must also be 
-         independent of the internal ordering of patterns within 
+    <!-- The priority is 60, as .webarchive files often contain
+         (X)HTML content. The bplist magic must trump the XHTML
+         magics further within the file. This must also be
+         independent of the internal ordering of patterns within
          MimeTypes -->
     <magic priority="60">
       <match value="bplist" type="string" offset="0"/>
@@ -2507,7 +2513,7 @@
     <glob pattern="*.shw"/>
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
-  
+
   <mime-type type="application/x-cpio">
     <_comment>UNIX CPIO Archive</_comment>
     <magic priority="50">
@@ -2715,7 +2721,7 @@
     <glob pattern="*.pfb"/>
     <magic priority="60">
       <!-- Match for PFB, the binary format -->
-      <match value="\x80\x01\xFF\xFF\x00\x00%!PS-AdobeFont" type="string" 
+      <match value="\x80\x01\xFF\xFF\x00\x00%!PS-AdobeFont" type="string"
               mask="0xFFFF0000FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" offset="0"/>
       <!-- Match for PFA, the text format" -->
       <match value="%!PS-AdobeFont-1.0" type="string" offset="0" />
@@ -3047,7 +3053,7 @@
       <match value="0M3C" type="string" offset="8" />
     </magic>
   </mime-type>
-  
+
   <mime-type type="application/x-quattro-pro">
     <glob pattern="*.qpw"/>
     <glob pattern="*.wb1"/>
@@ -3055,7 +3061,7 @@
     <glob pattern="*.wb3"/>
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
-  
+
   <mime-type type="application/x-rar-compressed">
     <_comment>RAR archive</_comment>
     <alias type="application/x-rar"/>
@@ -3618,8 +3624,8 @@
     <alias type="application/x-ogg"/>
     <magic priority="60">
       <!-- For a single stream file -->
-      <match value="OggS\000.......................\001vorbis" type="string" 
-             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFF" 
+      <match value="OggS\000.......................\001vorbis" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFF"
              offset="0"/>
       <match value="\x4f\x67\x67\x53\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00"
              type="string" offset="0"/>
@@ -5522,7 +5528,7 @@
     </magic>
     <glob pattern="*.movie"/>
   </mime-type>
-  
+
   <mime-type type="application/x-matroska">
     <_comment>Matroska Media Container</_comment>
     <!-- Common magic across all Matroska varients -->
