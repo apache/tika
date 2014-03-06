@@ -17,8 +17,8 @@
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.Locale;
@@ -111,7 +111,7 @@ public class WordParserTest extends TikaTest {
         assertTrue(xml.contains("<a href=\"http://tika.apache.org/\">Tika</a>"));
         // Paragraphs with other styles
         assertTrue(xml.contains("<p class=\"signature\">This one"));
-        
+
         // Try with a document that contains images
         xml = getXML("testWORD_3imgs.doc").xml;
 
@@ -119,7 +119,7 @@ public class WordParserTest extends TikaTest {
         assertTrue("Image not found in:\n"+xml, xml.contains("src=\"embedded:image1.png\""));
         assertTrue("Image not found in:\n"+xml, xml.contains("src=\"embedded:image2.jpg\""));
         assertTrue("Image not found in:\n"+xml, xml.contains("src=\"embedded:image3.png\""));
-            
+
         // Text too
         assertTrue(xml.contains("<p>The end!"));
 
@@ -135,7 +135,7 @@ public class WordParserTest extends TikaTest {
         // TIKA-692: test document containing multiple
         // character runs within a bold tag:
         xml = getXML("testWORD_bold_character_runs2.doc").xml;
-            
+
         // Make sure bold text arrived as single
         // contiguous string even though Word parser
         // handled this as 3 character runs
@@ -269,7 +269,7 @@ public class WordParserTest extends TikaTest {
         assertContains("And then some Gothic text:", content);
         assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
-    
+
     /**
      * TIKA-1044 - Handle documents where parts of the
      *  text have no formatting or styles applied to them
@@ -290,7 +290,7 @@ public class WordParserTest extends TikaTest {
        String content = handler.toString();
        assertContains("Will generate an exception", content);
     }
-    
+
     /**
      * Ensures that custom OLE2 (HPSF) properties are extracted
      */
@@ -299,7 +299,7 @@ public class WordParserTest extends TikaTest {
        InputStream input = WordParserTest.class.getResourceAsStream(
              "/test-documents/testWORD_custom_props.doc");
        Metadata metadata = new Metadata();
-       
+
        try {
           ContentHandler handler = new BodyContentHandler(-1);
           ParseContext context = new ParseContext();
@@ -308,7 +308,7 @@ public class WordParserTest extends TikaTest {
        } finally {
           input.close();
        }
-       
+
        assertEquals("application/msword",   metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.CREATOR));
        assertEquals("Etienne Jouvin",       metadata.get(TikaCoreProperties.MODIFIER));
@@ -351,7 +351,7 @@ public class WordParserTest extends TikaTest {
     public void testTabularSymbol() throws Exception {
         assertContains("one two", getXML("testWORD_tabular_symbol.doc").xml.replaceAll("\\s+", " "));
     }
-    
+
     /**
      * TIKA-1229 Hyperlinks in Headers should be output as such,
      *  not plain text with control characters
@@ -370,11 +370,16 @@ public class WordParserTest extends TikaTest {
 
         // Check we don't have the special text HYPERLINK
         assertFalse(xml.contains("HYPERLINK"));
-        
+
         // Check we do have the link
         assertContains("<a href=\"http://tw-systemhaus.de\">http:", xml);
-        
+
         // Check we do have the email
         assertContains("<a href=\"mailto:ab@example.com\">ab@", xml);
+    }
+
+    @Test
+    public void testControlCharacter() throws Exception {
+      assertContains("1. Introduzione<b> </a></b> </p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
     }
 }
