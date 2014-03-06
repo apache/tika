@@ -24,8 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
+import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.RandomAccess;
@@ -62,6 +64,9 @@ import org.xml.sax.SAXException;
  */
 public class PDFParser extends AbstractParser {
 
+
+    private static final MediaType MEDIA_TYPE = MediaType.application("pdf");
+
     /** Serial version UID */
     private static final long serialVersionUID = -752276948656079347L;
 
@@ -75,7 +80,7 @@ public class PDFParser extends AbstractParser {
     public static final String PASSWORD = "org.apache.tika.parser.pdf.password";
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.application("pdf"));
+        Collections.singleton(MEDIA_TYPE);
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -196,6 +201,60 @@ public class PDFParser extends AbstractParser {
             String name = key.getName();
             if(! handledMetadata.contains(name)) {
         	addMetadata(metadata, name, info.getDictionary().getDictionaryObject(key));
+            }
+        }
+        metadata.set("pdf:encrypted", Boolean.toString(document.isEncrypted()));
+
+        //try to get the various versions
+        //Caveats:
+        //    there is currently a fair amount of redundancy
+        //    TikaCoreProperties.FORMAT can be multivalued
+        //    There are also three potential pdf specific version keys: pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
+        metadata.set("pdf:PDFVersion", Float.toString(document.getDocument().getVersion()));
+        metadata.add(TikaCoreProperties.FORMAT.getName(), 
+            MEDIA_TYPE.toString()+"; version="+Float.toString(document.getDocument().getVersion()));
+
+        try {           
+            if( document.getDocumentCatalog().getMetadata() != null ) {
+                org.apache.jempbox.xmp.XMPMetadata xmp = document.getDocumentCatalog().getMetadata().exportXMPMetadata();
+                xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
+                XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
+                if( pdfaxmp != null ) {
+                    metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
+                    metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
+                    String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase();
+                    metadata.set("pdfa:PDFVersion", version );
+                    metadata.add(TikaCoreProperties.FORMAT.getName(), 
+                        MEDIA_TYPE.toString()+"; version=\""+version+"\"" );
+                } 
+                // TODO WARN if this XMP version is inconsistent with document header version?          
+            }
+        } catch (IOException e) {
+            metadata.set("pdf:metadata-xmp-parse-failed", ""+e);
+        }
+        //TODO: Let's try to move this into PDFBox.
+        //Attempt to determine Adobe extension level, if present:
+        COSDictionary root = document.getDocumentCatalog().getCOSDictionary();
+        COSDictionary extensions = (COSDictionary) root.getDictionaryObject(COSName.getPDFName("Extensions") );
+        if( extensions != null ) {
+            for( COSName extName : extensions.keySet() ) {
+                // If it's an Adobe one, interpret it to determine the extension level:
+                if( extName.equals( COSName.getPDFName("ADBE") )) {
+                    COSDictionary adobeExt = (COSDictionary) extensions.getDictionaryObject(extName);
+                    if( adobeExt != null ){
+                        String baseVersion = adobeExt.getNameAsString(COSName.getPDFName("BaseVersion"));
+                        int el = adobeExt.getInt(COSName.getPDFName("ExtensionLevel"));
+                        //-1 is sentinel value that something went wrong in getInt
+                        if (el != -1){
+                            metadata.set("pdf:PDFExtensionVersion", baseVersion+" Adobe Extension Level "+el );
+                            metadata.add(TikaCoreProperties.FORMAT.getName(), 
+                                MEDIA_TYPE.toString()+"; version=\""+baseVersion+" Adobe Extension Level "+el+"\"");
+                        }
+                    }                   
+                } else {
+                    // WARN that there is an Extension, but it's not Adobe's, and so is a 'new' format'.
+                    metadata.set("pdf:foundNonAdobeExtensionName", extName.getName());
+                }
             }
         }
     }
