@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.jempbox.xmp.XMPSchema;
+import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
 import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
@@ -160,10 +162,24 @@ public class PDFParser extends AbstractParser {
 
     private void extractMetadata(PDDocument document, Metadata metadata)
             throws TikaException {
+
+        org.apache.jempbox.xmp.XMPMetadata xmp = null;
+        XMPSchemaDublinCore dcSchema = null;
+        try{
+            if (document.getDocumentCatalog().getMetadata() != null){
+                xmp = document.getDocumentCatalog().getMetadata().exportXMPMetadata();
+            }
+            if (xmp != null){
+                dcSchema = xmp.getDublinCoreSchema();
+            }
+        } catch (IOException e){
+            //swallow
+        }
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
-        addMetadata(metadata, TikaCoreProperties.TITLE, info.getTitle());
-        addMetadata(metadata, TikaCoreProperties.CREATOR, info.getAuthor());
+        extractDublinCoreListItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
+        extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, info.getAuthor(), dcSchema);
+        extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, null, dcSchema);
         addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
         addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
         addMetadata(metadata, "producer", info.getProducer());
@@ -215,8 +231,7 @@ public class PDFParser extends AbstractParser {
             MEDIA_TYPE.toString()+"; version="+Float.toString(document.getDocument().getVersion()));
 
         try {           
-            if( document.getDocumentCatalog().getMetadata() != null ) {
-                org.apache.jempbox.xmp.XMPMetadata xmp = document.getDocumentCatalog().getMetadata().exportXMPMetadata();
+            if( xmp != null ) {
                 xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
                 XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
                 if( pdfaxmp != null ) {
@@ -257,6 +272,68 @@ public class PDFParser extends AbstractParser {
                 }
             }
         }
+    }
+
+    /**
+     * This tries to read a list from a particular property in
+     * XMPSchemaDublinCore.
+     * If it can't find the information, it falls back to the 
+     * pdfboxBaseline.  The pdfboxBaseline should be the value
+     * that pdfbox returns from its PDDocumentInformation object
+     * (e.g. getAuthor()) This method is designed include the pdfboxBaseline,
+     * and it should not duplicate the pdfboxBaseline.
+     * <p>
+     * Until PDFBOX-1803/TIKA-1233 are fixed, do not call this
+     * on dates!
+     * 
+     * @param property
+     * @param pdfBoxBaseline
+     * @param dc
+     * @param metadata
+     */
+    private void extractDublinCoreListItems(Metadata metadata, Property property, 
+            String pdfBoxBaseline, XMPSchemaDublinCore dc){
+        //if no dc, add baseline and return
+        if (dc == null){
+            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+                addMetadata(metadata, property, pdfBoxBaseline);
+            }
+            return;
+        }
+        List<String> items = getXMPBagOrSeqList(dc, property.getName());
+        if (items == null){
+            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+                addMetadata(metadata, property, pdfBoxBaseline);
+            }
+            return;
+        }
+        for (String item : items){
+            if (pdfBoxBaseline != null && ! item.equals(pdfBoxBaseline)){
+                addMetadata(metadata, property, item);
+            }
+        }
+        //finally, add the baseline
+        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+            addMetadata(metadata, property, pdfBoxBaseline);
+        }    
+    }
+
+    /**
+     * As of this writing, XMPSchema can contain bags or sequence lists
+     * for some attributes...despite standards documentation.  
+     * JempBox expects one or the other for specific attributes.
+     * Until more flexibility is added to JempBox, Tika will have to handle both.
+     * 
+     * @param schema
+     * @param name
+     * @return list of values or null
+     */
+    private List<String> getXMPBagOrSeqList(XMPSchema schema, String name){
+        List<String> ret = schema.getBagList(name);
+        if (ret == null){
+            ret = schema.getSequenceList(name);
+        }
+        return ret;
     }
 
     private void addMetadata(Metadata metadata, Property property, String value) {

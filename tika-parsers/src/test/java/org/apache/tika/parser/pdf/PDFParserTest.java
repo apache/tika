@@ -737,7 +737,34 @@ public class PDFParserTest extends TikaTest {
         assertEquals("pdfaid:part", m.get("pdfaid:part"), "1");
     }
 
+    public void testMultipleAuthors() throws Exception {
+        String fName = "testPDF_twoAuthors.pdf";
+        InputStream is = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/"+fName);
+        Parser p = new AutoDetectParser();
+        Metadata m = new Metadata();
+        ParseContext c = new ParseContext();
+        ContentHandler h = new BodyContentHandler();
+        p.parse(is, h, m, c);
+        is.close();
+        
+        String[] keys = new String[]{
+                "dc:creator",
+                "meta:author",
+                "creator",
+                "Author"
+        };
 
+        for (String k : keys){
+            String[] vals = m.getValues(k);
+            assertEquals("number of authors == 2 for key: "+ k, 2, vals.length);
+            Set<String> set = new HashSet<String>();
+            set.add(vals[0]);
+            set.add(vals[1]);
+            assertTrue("Sample Author 1", set.contains("Sample Author 1"));
+            assertTrue("Sample Author 2", set.contains("Sample Author 2"));
+        }
+    }
     /**
      * This is a workaround until PDFBox-1922 is fixed.
      * The goal is to test for equality but skip the version issue.
