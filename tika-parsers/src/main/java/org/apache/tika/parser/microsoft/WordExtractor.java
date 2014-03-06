@@ -133,7 +133,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
            );
            p = pictures.nextUnclaimed();
         }
-        
+
         // Handle any embeded office documents
         try {
             DirectoryEntry op = (DirectoryEntry) root.getEntry("ObjectPool");
@@ -154,9 +154,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
         return count;
     }
-    
+
     private void handleHeaderFooter(Range[] ranges, String type, HWPFDocument document,
-          PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml) 
+          PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml)
           throws SAXException, IOException, TikaException {
         if (countParagraphs(ranges) > 0) {
             xhtml.startElement("div", "class", type);
@@ -164,12 +164,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                 if (r != null) {
                     for(int i=0; i<r.numParagraphs(); i++) {
                         Paragraph p = r.getParagraph(i);
-                        
+
                         String text = p.text();
                         if (text.replaceAll("[\\r\\n\\s]+", "").isEmpty()) {
                             // Skip empty header or footer paragraphs
                         } else {
-                            i += handleParagraph(p, 0, r, document, 
+                            i += handleParagraph(p, 0, r, document,
                                     FieldsDocumentPart.HEADER, pictures, pictureTable, xhtml);
                         }
                      }
@@ -178,9 +178,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             xhtml.endElement("div");
         }
     }
-    
-    private int handleParagraph(Paragraph p, int parentTableLevel, Range r, HWPFDocument document, 
-          FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable, 
+
+    private int handleParagraph(Paragraph p, int parentTableLevel, Range r, HWPFDocument document,
+          FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable,
           XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
        // Note - a poi bug means we can't currently properly recurse
        //  into nested tables, so currently we don't
@@ -249,7 +249,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                xhtml.endElement("div");
              }
           }
-          
+
           if(cr.text().equals("\u0013")) {
              j += handleSpecialCharacterRuns(p, j, tas.isHeading(), pictures, xhtml);
           } else if(cr.text().startsWith("\u0008")) {
@@ -257,7 +257,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              for(int pn=0; pn<cr.text().length(); pn++) {
                 // Assume they're in the order from the unclaimed list...
                 Picture picture = pictures.nextUnclaimed();
-                
+
                 // Output
                 handlePictureCharacterRun(cr, picture, pictures, xhtml);
              }
@@ -269,7 +269,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              handleCharacterRun(cr, tas.isHeading(), xhtml);
           }
        }
-       
+
        // Close any still open style tags
        if (curStrikeThrough) {
          xhtml.endElement("s");
@@ -285,16 +285,16 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        }
 
        xhtml.endElement(tas.getTag());
-       
+
        return 0;
     }
-    
-    private void handleCharacterRun(CharacterRun cr, boolean skipStyling, XHTMLContentHandler xhtml) 
+
+    private void handleCharacterRun(CharacterRun cr, boolean skipStyling, XHTMLContentHandler xhtml)
           throws SAXException {
        // Skip trailing newlines
        if(!isRendered(cr) || cr.text().equals("\r"))
           return;
-       
+
        if(!skipStyling) {
          if (cr.isBold() != curBold) {
            // Enforce nesting -- must close s and i tags
@@ -337,7 +337,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
            curStrikeThrough = cr.isStrikeThrough();
          }
        }
-       
+
        // Clean up the text
        String text = cr.text();
        text = text.replace('\r', '\n');
@@ -348,27 +348,26 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
        // Copied from POI's org/apache/poi/hwpf/converter/AbstractWordConverter.processCharacters:
 
-       // line tabulator as break line
-       text = text.replace((char)0x000b,'\n');
-
        // Non-breaking hyphens are returned as char 30
        text = text.replace((char) 30, UNICODECHAR_NONBREAKING_HYPHEN);
 
        // Non-required hyphens to zero-width space
        text = text.replace((char) 31, UNICODECHAR_ZERO_WIDTH_SPACE);
-       
+
+       // Control characters as line break
+       text = text.replaceAll("[\u0000-\u001f]", "\n");
        xhtml.characters(text);
     }
     /**
      * Can be \13..text..\15 or \13..control..\14..text..\15 .
      * Nesting is allowed
      */
-    private int handleSpecialCharacterRuns(Paragraph p, int index, boolean skipStyling, 
+    private int handleSpecialCharacterRuns(Paragraph p, int index, boolean skipStyling,
           PicturesSource pictures, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
        List<CharacterRun> controls = new ArrayList<CharacterRun>();
        List<CharacterRun> texts = new ArrayList<CharacterRun>();
        boolean has14 = false;
-       
+
        // Split it into before and after the 14
        int i;
        for(i=index+1; i<p.numCharacterRuns(); i++) {
@@ -393,14 +392,14 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              }
           }
        }
-       
+
        // Do we need to do something special with this?
        if(controls.size() > 0) {
           String text = controls.get(0).text();
           for(int j=1; j<controls.size(); j++) {
              text += controls.get(j).text();
           }
-          
+
           if((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK"))
                  && text.indexOf('"') > -1) {
              String url = text.substring(
@@ -430,12 +429,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              handleCharacterRun(cr, skipStyling, xhtml);
           }
        }
-       
+
        // Tell them how many to skip over
        return i-index;
     }
 
-    private void handlePictureCharacterRun(CharacterRun cr, Picture picture, PicturesSource pictures, XHTMLContentHandler xhtml) 
+    private void handlePictureCharacterRun(CharacterRun cr, Picture picture, PicturesSource pictures, XHTMLContentHandler xhtml)
           throws SAXException, IOException, TikaException {
        if(!isRendered(cr) || picture == null) {
           // Oh dear, we've run out...
@@ -443,16 +442,16 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           //  the same real image
           return;
        }
-       
+
        // Which one is it?
        String extension = picture.suggestFileExtension();
        int pictureNumber = pictures.pictureNumber(picture);
-       
+
        // Make up a name for the picture
        // There isn't one in the file, but we need to be able to reference
        //  the picture from the img tag and the embedded resource
        String filename = "image"+pictureNumber+(extension.length()>0 ? "."+extension : "");
-       
+
        // Grab the mime type for the picture
        String mimeType = picture.getMimeType();
 
@@ -464,14 +463,14 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        xhtml.endElement("img");
 
        // Have we already output this one?
-       // (Only expose each individual image once) 
+       // (Only expose each individual image once)
        if(! pictures.hasOutput(picture)) {
           TikaInputStream stream = TikaInputStream.get(picture.getContent());
           handleEmbeddedResource(stream, filename, null, mimeType, xhtml, false);
           pictures.recordOutput(picture);
        }
     }
-    
+
     /**
      * Outputs a section of text if the given text is non-empty.
      *
@@ -489,7 +488,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             xhtml.endElement("div");
         }
     }
-    
+
     protected void parseWord6(
             NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
             throws IOException, SAXException, TikaException {
@@ -501,7 +500,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             throws IOException, SAXException, TikaException {
         HWPFOldDocument doc = new HWPFOldDocument(root);
         Word6Extractor extractor = new Word6Extractor(doc);
-        
+
         for(String p : extractor.getParagraphText()) {
             xhtml.element("p", p);
         }
@@ -518,10 +517,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         fixedParagraphStyles.put("Subtitle", new TagAndStyle("h2", "subtitle"));
         fixedParagraphStyles.put("HTML Preformatted", new TagAndStyle("pre", null));
     }
-    
+
     /**
      * Given a style name, return what tag should be used, and
-     *  what style should be applied to it. 
+     *  what style should be applied to it.
      */
     public static TagAndStyle buildParagraphTagAndStyle(String styleName, boolean isTable) {
        TagAndStyle tagAndStyle = fixedParagraphStyles.get(styleName);
@@ -554,7 +553,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
        return new TagAndStyle(tag,styleClass);
     }
-    
+
     public static class TagAndStyle {
        private String tag;
        private String styleClass;
@@ -572,43 +571,43 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           return tag.length()==2 && tag.startsWith("h");
        }
     }
-    
+
     /**
      * Determines if character run should be included in the extraction.
-     * 
+     *
      * @param cr character run.
      * @return true if character run should be included in extraction.
      */
     private boolean isRendered(final CharacterRun cr) {
  	   return cr == null || !cr.isMarkedDeleted();
     }
-    
-    
+
+
     /**
      * Provides access to the pictures both by offset, iteration
      *  over the un-claimed, and peeking forward
      */
     private static class PicturesSource {
-       private PicturesTable picturesTable; 
+       private PicturesTable picturesTable;
        private Set<Picture> output = new HashSet<Picture>();
        private Map<Integer,Picture> lookup;
        private List<Picture> nonU1based;
        private List<Picture> all;
        private int pn = 0;
-       
+
        private PicturesSource(HWPFDocument doc) {
           picturesTable = doc.getPicturesTable();
           all = picturesTable.getAllPictures();
-          
+
           // Build the Offset-Picture lookup map
           lookup = new HashMap<Integer, Picture>();
           for(Picture p : all) {
              lookup.put(p.getStartOffset(), p);
           }
-          
+
           // Work out which Pictures aren't referenced by
           //  a \u0001 in the main text
-          // These are \u0008 escher floating ones, ones 
+          // These are \u0008 escher floating ones, ones
           //  found outside the normal text, and who
           //  knows what else...
           nonU1based = new ArrayList<Picture>();
@@ -623,26 +622,26 @@ public class WordExtractor extends AbstractPOIFSExtractor {
              }
           }
        }
-       
+
        private boolean hasPicture(CharacterRun cr) {
           return picturesTable.hasPicture(cr);
        }
-       
+
        private void recordOutput(Picture picture) {
           output.add(picture);
        }
        private boolean hasOutput(Picture picture) {
           return output.contains(picture);
        }
-       
+
        private int pictureNumber(Picture picture) {
           return all.indexOf(picture) + 1;
        }
-       
+
        private Picture getFor(CharacterRun cr) {
           return lookup.get(cr.getPicOffset());
        }
-       
+
        /**
         * Return the next unclaimed one, used towards
         *  the end
