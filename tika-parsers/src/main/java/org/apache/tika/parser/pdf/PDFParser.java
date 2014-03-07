@@ -177,12 +177,14 @@ public class PDFParser extends AbstractParser {
         }
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
-        extractDublinCoreListItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
+        extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), (XMPSchema)dcSchema);
         extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, info.getAuthor(), dcSchema);
         extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, null, dcSchema);
         addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
         addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
         addMetadata(metadata, "producer", info.getProducer());
+        extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, (XMPSchema)dcSchema);
+
         // TODO: Move to description in Tika 2.0
         addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());
         addMetadata(metadata, "trapped", info.getTrapped());
@@ -274,6 +276,37 @@ public class PDFParser extends AbstractParser {
         }
     }
 
+   /**
+     * Try to extract all multilingual items from the XMPSchema
+     * <p>
+     * This relies on the property having a valid xmp getName()
+     * @param metadata
+     * @param property
+     * @param pdfBoxBaseline
+     * @param schema
+     */
+    private void extractMultilingualItems(Metadata metadata, Property property,
+            String pdfBoxBaseline, XMPSchema schema) {
+        if (schema == null){
+            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+                metadata.add(property, pdfBoxBaseline);
+            }
+            return;
+        }
+        
+        for (String lang : schema.getLanguagePropertyLanguages(property.getName())){
+            String value = schema.getLanguageProperty(property.getName(), lang);
+            if (value != null && pdfBoxBaseline != null 
+                    && ! value.equals(pdfBoxBaseline) && value.length() > 0){
+                metadata.add(property, value);
+            }
+        }
+        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+            metadata.add(property,  pdfBoxBaseline);
+        }
+    }
+
+
     /**
      * This tries to read a list from a particular property in
      * XMPSchemaDublinCore.
@@ -285,6 +318,8 @@ public class PDFParser extends AbstractParser {
      * <p>
      * Until PDFBOX-1803/TIKA-1233 are fixed, do not call this
      * on dates!
+     * <p>
+     * This relies on the property having a DublinCore compliant getName()
      * 
      * @param property
      * @param pdfBoxBaseline
