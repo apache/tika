@@ -191,11 +191,11 @@ class PDF2XHTML extends PDFTextStripper {
             extractEmbeddedDocuments(pdf, originalHandler);
             
             //extract acroform data at end of doc
-            if (config.getExtractAcroFormContent() == true){
+            if (config.getExtractAcroFormContent() == true) {
                 extractAcroForm(pdf, handler);
              }
             handler.endDocument();
-        } catch (TikaException e){
+        } catch (TikaException e) {
            throw new IOExceptionWithCause("Unable to end a document", e);
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
@@ -350,7 +350,7 @@ class PDF2XHTML extends PDFTextStripper {
             throws IOException, SAXException, TikaException {
         PDDocumentCatalog catalog = document.getDocumentCatalog();
         PDDocumentNameDictionary names = catalog.getNames();
-        if (names == null){
+        if (names == null) {
             return;
         }
         PDEmbeddedFilesNameTreeNode embeddedFiles = names.getEmbeddedFiles();
@@ -369,16 +369,16 @@ class PDF2XHTML extends PDFTextStripper {
         //This code follows: pdfbox/examples/pdmodel/ExtractEmbeddedFiles.java
         //If there is a need we could add a fully recursive search to find a non-null
         //Map<String, COSObjectable> that contains the doc info.
-        if (embeddedFileNames != null){
+        if (embeddedFileNames != null) {
             processEmbeddedDocNames(embeddedFileNames, embeddedExtractor);
         } else {
             List<PDNameTreeNode> kids = embeddedFiles.getKids();
-            if (kids == null){
+            if (kids == null) {
                 return;
             }
-            for (PDNameTreeNode n : kids){
+            for (PDNameTreeNode n : kids) {
                 Map<String, COSObjectable> childNames = n.getNames();
-                if (childNames != null){
+                if (childNames != null) {
                     processEmbeddedDocNames(childNames, embeddedExtractor);
                 }
             }
@@ -388,7 +388,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     private void processEmbeddedDocNames(Map<String, COSObjectable> embeddedFileNames, 
         EmbeddedDocumentExtractor embeddedExtractor) throws IOException, SAXException, TikaException {
-        if (embeddedFileNames == null){
+        if (embeddedFileNames == null) {
             return;
         }
         for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
@@ -414,6 +414,7 @@ class PDF2XHTML extends PDFTextStripper {
             }
         }
     }
+
     private void extractAcroForm(PDDocument pdf, XHTMLContentHandler handler) throws IOException, 
     SAXException {
         //Thank you, Ben Litchfield, for org.apache.pdfbox.examples.fdf.PrintFields
@@ -426,63 +427,66 @@ class PDF2XHTML extends PDFTextStripper {
         PDAcroForm form = catalog.getAcroForm();
         if (form == null)
             return;
-        
+
         @SuppressWarnings("rawtypes")
         List fields = form.getFields();
 
         if (fields == null)
-           return;
-        
+            return;
+
         @SuppressWarnings("rawtypes")
         ListIterator itr  = fields.listIterator();
 
         if (itr == null)
-           return;
+            return;
 
         handler.startElement("div", "class", "acroform");
         handler.startElement("ol");
-        while (itr.hasNext()){
-           Object obj = itr.next();
-           if (obj != null && obj instanceof PDField){
-              processAcroField((PDField)obj, handler, 0);
-           }
+
+        while (itr.hasNext()) {
+            Object obj = itr.next();
+            if (obj != null && obj instanceof PDField) {
+                processAcroField((PDField)obj, handler, 0);
+            }
         }
         handler.endElement("ol");
         handler.endElement("div");
     }
-    
+
     private void processAcroField(PDField field, XHTMLContentHandler handler, final int recurseDepth)
             throws SAXException, IOException { 
-         
-          if (recurseDepth >= MAX_ACROFORM_RECURSIONS){
-             return;
-          }
-          
-          addFieldString(field, handler);
-          
-          @SuppressWarnings("rawtypes")
-          List kids = field.getKids();
-          if(kids != null){
-             
-             @SuppressWarnings("rawtypes")
-             Iterator kidsIter = kids.iterator();
-             if (kidsIter == null){
+
+        if (recurseDepth >= MAX_ACROFORM_RECURSIONS) {
+            return;
+        }
+
+        addFieldString(field, handler);
+
+        @SuppressWarnings("rawtypes")
+        List kids = field.getKids();
+        if(kids != null) {
+
+            @SuppressWarnings("rawtypes")
+            Iterator kidsIter = kids.iterator();
+            if (kidsIter == null) {
                 return;
-             }
-             int r = recurseDepth+1;
-             handler.startElement("ol");
-             while(kidsIter.hasNext()){
+            }
+            int r = recurseDepth+1;
+            handler.startElement("ol");
+            //TODO: can generate <ol/>. Rework to avoid that.
+            while(kidsIter.hasNext()) {
                 Object pdfObj = kidsIter.next();
-                if(pdfObj != null && pdfObj instanceof PDField){
-                   PDField kid = (PDField)pdfObj;
-                   //recurse
-                   processAcroField(kid, handler, r);
+                if(pdfObj != null && pdfObj instanceof PDField) {
+                    PDField kid = (PDField)pdfObj;
+                    //recurse
+                    processAcroField(kid, handler, r);
                 }
-             }
-             handler.endElement("ol");
-          }
-      }
-    private void addFieldString(PDField field, XHTMLContentHandler handler) throws SAXException{
+            }
+            handler.endElement("ol");
+        }
+    }
+
+    private void addFieldString(PDField field, XHTMLContentHandler handler) throws SAXException {
         //Pick partial name to present in content and altName for attribute
         //Ignoring FullyQualifiedName for now
         String partName = field.getPartialName();
@@ -491,28 +495,28 @@ class PDF2XHTML extends PDFTextStripper {
         StringBuilder sb = new StringBuilder();
         AttributesImpl attrs = new AttributesImpl();
 
-        if (partName != null){
+        if (partName != null) {
             sb.append(partName).append(": ");
         }
-        if (altName != null){
+        if (altName != null) {
             attrs.addAttribute("", "altName", "altName", "CDATA", altName);
         }
         //return early if PDSignature field
-        if (field instanceof PDSignatureField){
+        if (field instanceof PDSignatureField) {
             handleSignature(attrs, (PDSignatureField)field, handler);
             return;
         }
         try {
             //getValue can throw an IOException if there is no value
             String value = field.getValue();
-            if (value != null && ! value.equals("null")){
+            if (value != null && ! value.equals("null")) {
                 sb.append(value);
             }
         } catch (IOException e) {
             //swallow
         }
 
-        if (attrs.getLength() > 0 || sb.length() > 0){
+        if (attrs.getLength() > 0 || sb.length() > 0) {
             handler.startElement("li", attrs);
             handler.characters(sb.toString());
             handler.endElement("li");
@@ -520,11 +524,11 @@ class PDF2XHTML extends PDFTextStripper {
     }
 
     private void handleSignature(AttributesImpl parentAttributes, PDSignatureField sigField,
-            XHTMLContentHandler handler) throws SAXException{
-       
+            XHTMLContentHandler handler) throws SAXException {
+
 
         PDSignature sig = sigField.getSignature();
-        if (sig == null){
+        if (sig == null) {
             return;
         }
         Map<String, String> vals= new TreeMap<String, String>();
@@ -534,27 +538,27 @@ class PDF2XHTML extends PDFTextStripper {
         vals.put("reason", sig.getReason());
 
         Calendar cal = sig.getSignDate();
-        if (cal != null){
+        if (cal != null) {
             dateFormat.setTimeZone(cal.getTimeZone());
             vals.put("date", dateFormat.format(cal.getTime()));
         }
         //see if there is any data
         int nonNull = 0;
-        for (String val : vals.keySet()){
-            if (val != null && ! val.equals("")){
+        for (String val : vals.keySet()) {
+            if (val != null && ! val.equals("")) {
                 nonNull++;
             }
         }
         //if there is, process it
-        if (nonNull > 0){
+        if (nonNull > 0) {
             handler.startElement("li", parentAttributes);
 
             AttributesImpl attrs = new AttributesImpl();
             attrs.addAttribute("", "type", "type", "CDATA", "signaturedata");
 
             handler.startElement("ol", attrs);
-            for (Map.Entry<String, String> e : vals.entrySet()){
-                if (e.getValue() == null || e.getValue().equals("")){
+            for (Map.Entry<String, String> e : vals.entrySet()) {
+                if (e.getValue() == null || e.getValue().equals("")) {
                     continue;
                 }
                 attrs = new AttributesImpl();
@@ -568,3 +572,4 @@ class PDF2XHTML extends PDFTextStripper {
         }
     }
 }
+
