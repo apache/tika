@@ -478,7 +478,7 @@ public class PDFParserTest extends TikaTest {
        ParseContext context = new ParseContext();
        String content = "";
        InputStream stream = null;
-       try{
+       try {
           context.set(org.apache.tika.parser.Parser.class, parser);
           stream = getResourceAsStream("/test-documents/testPDFEmbeddingAndEmbedded.docx");
           parser.parse(stream, handler, metadata, context);
@@ -540,8 +540,8 @@ public class PDFParserTest extends TikaTest {
         //empty for now
         Set<String> knownContentDiffs = new HashSet<String>();
 
-        for (File f : testDocs.listFiles()){
-            if (! f.getName().toLowerCase().endsWith(".pdf")){
+        for (File f : testDocs.listFiles()) {
+            if (! f.getName().toLowerCase().endsWith(".pdf")) {
                 continue;
             }
 
@@ -552,14 +552,14 @@ public class PDFParserTest extends TikaTest {
             Metadata sequentialMetadata = new Metadata();
             String sequentialContent = getText(new FileInputStream(f), sequentialParser, context, sequentialMetadata);
 
-            if (knownContentDiffs.contains(f.getName())){
+            if (knownContentDiffs.contains(f.getName())) {
                 assertFalse(f.getName(), defaultContent.equals(sequentialContent));
             } else {
                 assertEquals(f.getName(), defaultContent, sequentialContent);
             }
 
             //skip this one file.
-            if (knownMetadataDiffs.contains(f.getName())){
+            if (knownMetadataDiffs.contains(f.getName())) {
                 //turn back on once PDFBOX-1922 is fixed
                 //assertFalse(f.getName(), defaultMetadata.equals(sequentialMetadata));
             } else {
@@ -624,7 +624,7 @@ public class PDFParserTest extends TikaTest {
 */
 
     //TIKA-1226
-    public void testSignatureInAcroForm() throws Exception{
+    public void testSignatureInAcroForm() throws Exception {
         //The current test doc does not contain any content in the signature area.
         //This just tests that a RuntimeException is not thrown.
         //TODO: find a better test file for this issue.
@@ -641,12 +641,12 @@ public class PDFParserTest extends TikaTest {
         TrackingHandler tracker = new TrackingHandler();
         TikaInputStream tis = null;
         ContainerExtractor ex = new ParserContainerExtractor();
-        try{
+        try {
             tis= TikaInputStream.get(
                 getResourceAsStream("/test-documents/testPDF_childAttachments.pdf"));
             ex.extract(tis, ex, tracker);
         } finally {
-            if (tis != null){
+            if (tis != null) {
                 tis.close();
             }
         }
@@ -658,7 +658,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_DOC, tracker.mediaTypes.get(1));
     }
 
-    public void testVersions() throws Exception{
+    public void testVersions() throws Exception {
         
         Map<String, String> dcFormat = new HashMap<String, String>();
         dcFormat.put("4.x", "application/pdf; version=1.3");
@@ -686,7 +686,7 @@ public class PDFParserTest extends TikaTest {
         pdfExtensionVersions.put("11.x.PDFA-1b", "1.7 Adobe Extension Level 8");
 
         Parser p = new AutoDetectParser();
-        for (Map.Entry<String, String> e : dcFormat.entrySet()){
+        for (Map.Entry<String, String> e : dcFormat.entrySet()) {
             String fName = "testPDF_Version."+e.getKey()+".pdf";
             InputStream is = PDFParserTest.class.getResourceAsStream(
                     "/test-documents/"+fName);
@@ -697,14 +697,14 @@ public class PDFParserTest extends TikaTest {
             is.close();
             boolean foundDC = false;
             String[] vals = m.getValues("dc:format");
-            for (String v : vals){
-                if (v.equals(e.getValue())){
+            for (String v : vals) {
+                if (v.equals(e.getValue())) {
                     foundDC = true;
                 }
             }
             assertTrue("dc:format ::" + e.getValue(), foundDC);
             String extensionVersionTruth = pdfExtensionVersions.get(e.getKey());
-            if (extensionVersionTruth != null){
+            if (extensionVersionTruth != null) {
                 assertEquals("pdf:PDFExtensionVersion :: "+extensionVersionTruth,
                         extensionVersionTruth, 
                         m.get("pdf:PDFExtensionVersion"));
@@ -722,14 +722,14 @@ public class PDFParserTest extends TikaTest {
         p.parse(is, h, m, c);
         is.close();
         Set<String> versions = new HashSet<String>();
-        for (String fmt : m.getValues("dc:format")){
+        for (String fmt : m.getValues("dc:format")) {
             versions.add(fmt);
         }
         
         for (String hit : new String[]{ "application/pdf; version=1.7",
           "application/pdf; version=\"A-1b\"",
           "application/pdf; version=\"1.7 Adobe Extension Level 8\""
-        }){
+        }) {
             assertTrue(hit, versions.contains(hit));
         }
         
@@ -748,14 +748,14 @@ public class PDFParserTest extends TikaTest {
         p.parse(is, h, m, c);
         is.close();
         
-        String[] keys = new String[]{
+        String[] keys = new String[] {
                 "dc:creator",
                 "meta:author",
                 "creator",
                 "Author"
         };
 
-        for (String k : keys){
+        for (String k : keys) {
             String[] vals = m.getValues(k);
             assertEquals("number of authors == 2 for key: "+ k, 2, vals.length);
             Set<String> set = new HashSet<String>();
@@ -765,6 +765,7 @@ public class PDFParserTest extends TikaTest {
             assertTrue("Sample Author 2", set.contains("Sample Author 2"));
         }
     }
+
     /**
      * This is a workaround until PDFBox-1922 is fixed.
      * The goal is to test for equality but skip the version issue.
@@ -782,16 +783,16 @@ public class PDFParserTest extends TikaTest {
         
         assertEquals("metadata length: "+fName, thisNames.length, thatMetadata.names().length);
         
-        for (String n : thisNames){
+        for (String n : thisNames) {
             //don't pay attention to differences here for now
-            if (n.equals("pdf:PDFVersion") || n.equals("dc:format")){
+            if (n.equals("pdf:PDFVersion") || n.equals("dc:format")) {
                 continue;
             }
-            if (thisMetadata.isMultiValued(n) && thatMetadata.isMultiValued(n)){
+            if (thisMetadata.isMultiValued(n) && thatMetadata.isMultiValued(n)) {
                 String[] thisValues = thisMetadata.getValues(n);
                 String[] thatValues = thatMetadata.getValues(n);
                 testEqualMetadataValue(fName, thisValues, thatValues);
-            } else if (! thisMetadata.isMultiValued(n) && ! thatMetadata.isMultiValued(n)){
+            } else if (! thisMetadata.isMultiValued(n) && ! thatMetadata.isMultiValued(n)) {
                 assertEquals("unequal multivalued values: " + fName, thisMetadata.get(n), thatMetadata.get(n));
             } else {
                 //one is multivalued and the other isn't
@@ -800,15 +801,15 @@ public class PDFParserTest extends TikaTest {
         }
     }
     
-    private void testEqualMetadataValue(String fName, String[] thisValues, String[] thatValues){
+    private void testEqualMetadataValue(String fName, String[] thisValues, String[] thatValues) {
         assertTrue("null equality of metadata values: "+fName, 
                 (thisValues == null && thatValues == null) ||
                 (thisValues != null && thatValues != null));
 
         assertEquals("metadata values length: "+fName, thisValues.length, thatValues.length);
         List<String> list = Arrays.asList(thatValues);
-        for (String v : thisValues){
-            if (! list.contains(v)){
+        for (String v : thisValues) {
+            if (! list.contains(v)) {
                 assertTrue("metadata value; that doesn't contain" + v, false);
             }
         }

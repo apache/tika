@@ -63,7 +63,7 @@ public class PDFParserConfig implements Serializable{
     //True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
 
-    public PDFParserConfig(){
+    public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
     }
 
@@ -74,25 +74,25 @@ public class PDFParserConfig implements Serializable{
      * 
      * @param is
      */
-    public PDFParserConfig(InputStream is){
+    public PDFParserConfig(InputStream is) {
         init(is);
     }
 
     //initializes object and then tries to close inputstream
-    private void init(InputStream is){
+    private void init(InputStream is) {
 
-        if (is == null){
+        if (is == null) {
             return;
         }
         Properties props = new Properties();
-        try{
+        try {
             props.load(is);
-        } catch (IOException e){
+        } catch (IOException e) {
         } finally {
-            if (is != null){
+            if (is != null) {
                 try{
                     is.close();
-                } catch (IOException e){
+                } catch (IOException e) {
                     //swallow
                 }
             }
@@ -219,9 +219,9 @@ public class PDFParserConfig implements Serializable{
         if (p == null){
             return defaultMissing;
         }
-        if (p.toLowerCase().equals("true")){
+        if (p.toLowerCase().equals("true")) {
             return true;
-        } else if (p.toLowerCase().equals("false")){
+        } else if (p.toLowerCase().equals("false")) {
             return false;
         } else {
             return defaultMissing;
@@ -275,7 +275,4 @@ public class PDFParserConfig implements Serializable{
                 + ", useNonSequentialParser=" + useNonSequentialParser
                 + ", extractAcroFormContent=" + extractAcroFormContent + "]";
     }
-
-
-
 }

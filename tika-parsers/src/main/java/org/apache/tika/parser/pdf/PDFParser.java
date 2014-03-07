@@ -105,14 +105,14 @@ public class PDFParser extends AbstractParser {
             if (tstream != null && tstream.hasFile()) {
                 // File based, take that as a cue to use a temporary file
                 RandomAccess scratchFile = new RandomAccessFile(tmp.createTemporaryFile(), "rw");
-                if (localConfig.getUseNonSequentialParser() == true){
+                if (localConfig.getUseNonSequentialParser() == true) {
                     pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), scratchFile);
                 } else {
                     pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), scratchFile, true);
                 }
             } else {
                 // Go for the normal, stream based in-memory parsing
-                if (localConfig.getUseNonSequentialParser() == true){
+                if (localConfig.getUseNonSequentialParser() == true) {
                     pdfDocument = PDDocument.loadNonSeq(new CloseShieldInputStream(stream), new RandomAccessBuffer()); 
                 } else {
                     pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
@@ -166,13 +166,13 @@ public class PDFParser extends AbstractParser {
         org.apache.jempbox.xmp.XMPMetadata xmp = null;
         XMPSchemaDublinCore dcSchema = null;
         try{
-            if (document.getDocumentCatalog().getMetadata() != null){
+            if (document.getDocumentCatalog().getMetadata() != null) {
                 xmp = document.getDocumentCatalog().getMetadata().exportXMPMetadata();
             }
-            if (xmp != null){
+            if (xmp != null) {
                 dcSchema = xmp.getDublinCoreSchema();
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             //swallow
         }
         PDDocumentInformation info = document.getDocumentInformation();
@@ -194,7 +194,7 @@ public class PDFParser extends AbstractParser {
             addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
         } catch (IOException e) {
             // Invalid date format, just ignore
-        } catch (StringIndexOutOfBoundsException e){
+        } catch (StringIndexOutOfBoundsException e) {
             //remove after PDFBOX-1803 is fixed (TIKA-1233)
             // Invalid date format, just ignore
         }
@@ -204,7 +204,7 @@ public class PDFParser extends AbstractParser {
             addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
         } catch (IOException e) {
             // Invalid date format, just ignore
-        } catch (StringIndexOutOfBoundsException e){
+        } catch (StringIndexOutOfBoundsException e) {
             //remove after PDFBOX-1803 is fixed (TIKA-1233)
             // Invalid date format, just ignore
         }
@@ -258,11 +258,11 @@ public class PDFParser extends AbstractParser {
                 // If it's an Adobe one, interpret it to determine the extension level:
                 if( extName.equals( COSName.getPDFName("ADBE") )) {
                     COSDictionary adobeExt = (COSDictionary) extensions.getDictionaryObject(extName);
-                    if( adobeExt != null ){
+                    if( adobeExt != null ) {
                         String baseVersion = adobeExt.getNameAsString(COSName.getPDFName("BaseVersion"));
                         int el = adobeExt.getInt(COSName.getPDFName("ExtensionLevel"));
                         //-1 is sentinel value that something went wrong in getInt
-                        if (el != -1){
+                        if (el != -1) {
                             metadata.set("pdf:PDFExtensionVersion", baseVersion+" Adobe Extension Level "+el );
                             metadata.add(TikaCoreProperties.FORMAT.getName(), 
                                 MEDIA_TYPE.toString()+"; version=\""+baseVersion+" Adobe Extension Level "+el+"\"");
@@ -287,21 +287,21 @@ public class PDFParser extends AbstractParser {
      */
     private void extractMultilingualItems(Metadata metadata, Property property,
             String pdfBoxBaseline, XMPSchema schema) {
-        if (schema == null){
-            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+        if (schema == null) {
+            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
                 metadata.add(property, pdfBoxBaseline);
             }
             return;
         }
         
-        for (String lang : schema.getLanguagePropertyLanguages(property.getName())){
+        for (String lang : schema.getLanguagePropertyLanguages(property.getName())) {
             String value = schema.getLanguageProperty(property.getName(), lang);
             if (value != null && pdfBoxBaseline != null 
-                    && ! value.equals(pdfBoxBaseline) && value.length() > 0){
+                    && ! value.equals(pdfBoxBaseline) && value.length() > 0) {
                 metadata.add(property, value);
             }
         }
-        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
             metadata.add(property,  pdfBoxBaseline);
         }
     }
@@ -327,28 +327,28 @@ public class PDFParser extends AbstractParser {
      * @param metadata
      */
     private void extractDublinCoreListItems(Metadata metadata, Property property, 
-            String pdfBoxBaseline, XMPSchemaDublinCore dc){
+            String pdfBoxBaseline, XMPSchemaDublinCore dc) {
         //if no dc, add baseline and return
-        if (dc == null){
-            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+        if (dc == null) {
+            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
                 addMetadata(metadata, property, pdfBoxBaseline);
             }
             return;
         }
         List<String> items = getXMPBagOrSeqList(dc, property.getName());
-        if (items == null){
-            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+        if (items == null) {
+            if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
                 addMetadata(metadata, property, pdfBoxBaseline);
             }
             return;
         }
-        for (String item : items){
-            if (pdfBoxBaseline != null && ! item.equals(pdfBoxBaseline)){
+        for (String item : items) {
+            if (pdfBoxBaseline != null && ! item.equals(pdfBoxBaseline)) {
                 addMetadata(metadata, property, item);
             }
         }
         //finally, add the baseline
-        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0){
+        if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
             addMetadata(metadata, property, pdfBoxBaseline);
         }    
     }
@@ -363,9 +363,9 @@ public class PDFParser extends AbstractParser {
      * @param name
      * @return list of values or null
      */
-    private List<String> getXMPBagOrSeqList(XMPSchema schema, String name){
+    private List<String> getXMPBagOrSeqList(XMPSchema schema, String name) {
         List<String> ret = schema.getBagList(name);
-        if (ret == null){
+        if (ret == null) {
             ret = schema.getSequenceList(name);
         }
         return ret;
@@ -406,16 +406,16 @@ public class PDFParser extends AbstractParser {
             }
         } else if(value instanceof COSString) {
             addMetadata(metadata, name, ((COSString)value).getString());
-        } else if (value != null){
+        } else if (value != null) {
             addMetadata(metadata, name, value.toString());
         }
     }
 
-    public void setPDFParserConfig(PDFParserConfig config){
+    public void setPDFParserConfig(PDFParserConfig config) {
         this.defaultConfig = config;
     }
     
-    public PDFParserConfig getPDFParserConfig(){
+    public PDFParserConfig getPDFParserConfig() {
         return defaultConfig;
     }
     
@@ -426,7 +426,7 @@ public class PDFParser extends AbstractParser {
      * 
      * @deprecated use {@link #setPDFParserConfig(PDFParserConfig)}
      */
-    public void setUseNonSequentialParser(boolean v){
+    public void setUseNonSequentialParser(boolean v) {
         defaultConfig.setUseNonSequentialParser(v);
     }
     
@@ -434,7 +434,7 @@ public class PDFParser extends AbstractParser {
      * @see #setUseNonSequentialParser(boolean) 
      * @deprecated use {@link #getPDFParserConfig()}
      */
-    public boolean getUseNonSequentialParser(){
+    public boolean getUseNonSequentialParser() {
         return defaultConfig.getUseNonSequentialParser();
     }
     
