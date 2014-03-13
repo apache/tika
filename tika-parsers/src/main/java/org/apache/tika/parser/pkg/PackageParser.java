@@ -25,10 +25,12 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.StreamingNotSupportedException;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
+import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.tika.exception.TikaException;
@@ -69,7 +71,7 @@ public class PackageParser extends AbstractParser {
     private static final MediaType SEVENZ = MediaType.application("x-7z-compressed");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(ZIP, JAR, AR, CPIO, DUMP, TAR);
+            MediaType.set(ZIP, JAR, AR, CPIO, DUMP, TAR, SEVENZ);
 
     static MediaType getMediaType(ArchiveInputStream stream) {
         if (stream instanceof JarArchiveInputStream) {
@@ -84,6 +86,8 @@ public class PackageParser extends AbstractParser {
             return DUMP;
         } else if (stream instanceof TarArchiveInputStream) {
             return TAR;
+        } else if (stream instanceof SevenZWrapper) {
+            return SEVENZ;
         } else {
             return MediaType.OCTET_STREAM;
         }
@@ -107,12 +111,26 @@ public class PackageParser extends AbstractParser {
         stream = new CloseShieldInputStream(stream);
 
         // Ensure that the stream supports the mark feature
-        stream = new BufferedInputStream(stream);
+        if (! TikaInputStream.isTikaInputStream(stream)) {
+            stream = new BufferedInputStream(stream);
+        }
 
         ArchiveInputStream ais;
         try {
             ArchiveStreamFactory factory = new ArchiveStreamFactory();
             ais = factory.createArchiveInputStream(stream);
+        } catch (StreamingNotSupportedException sne) {
+            // Most archive formats work on streams, but a few need files
+            if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
+                // Rework as a file, and wrap
+                stream.reset();
+                TikaInputStream tstream = TikaInputStream.get(stream);
+                
+                // Pending a fix for COMPRESS_269, this bit is a little nasty
+                ais = new SevenZWrapper(new SevenZFile(tstream.getFile()));
+            } else {
+                throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
+            }
         } catch (ArchiveException e) {
             throw new TikaException("Unable to unpack document stream", e);
         }
@@ -178,4 +196,29 @@ public class PackageParser extends AbstractParser {
         }
     }
 
+    // Pending a fix for COMPRESS-269, we have to wrap ourselves
+    private static class SevenZWrapper extends ArchiveInputStream {
+        private SevenZFile file;
+        private SevenZWrapper(SevenZFile file) {
+            this.file = file;
+        }
+        
+        @Override
+        public int read() throws IOException {
+            return file.read();
+        }
+        @Override
+        public int read(byte[] b) throws IOException {
+            return file.read(b);
+        }
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            return file.read(b, off, len);
+        }
+
+        @Override
+        public ArchiveEntry getNextEntry() throws IOException {
+            return file.getNextEntry();
+        }
+    }
 }
