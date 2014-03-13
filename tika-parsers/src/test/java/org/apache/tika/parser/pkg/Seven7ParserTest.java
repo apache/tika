@@ -23,24 +23,30 @@ import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.xml.sax.ContentHandler;
 
 /**
  * Test case for parsing 7z files.
  */
 public class Seven7ParserTest extends AbstractPkgTest {
-    @Ignore // Pending a fix of COMPRESS-267, see TIKA-1243
+    private static final MediaType TYPE_7ZIP = MediaType.application("x-7z-compressed");
+    
     @Test
     public void test7ZParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-
+        
+        // Ensure 7zip is a parsable format
+        assertTrue("No 7zip parser found", 
+                parser.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
+        
+        // Parse
         InputStream stream = TarParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.7z");
         try {
@@ -49,7 +55,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
             stream.close();
         }
 
-        assertEquals("application/x-7z-compressed", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
         assertTrue(content.contains("test-documents/testEXCEL.xls"));
         assertTrue(content.contains("Sample Excel Worksheet"));
@@ -75,7 +81,6 @@ public class Seven7ParserTest extends AbstractPkgTest {
      * Tests that the ParseContext parser is correctly
      *  fired for all the embedded entries.
      */
-    @Ignore // Pending a fix of COMPRESS-267, see TIKA-1243
     @Test
     public void testEmbedded() throws Exception {
        Parser parser = new AutoDetectParser(); // Should auto-detect!
@@ -94,7 +99,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
        assertEquals(9, tracker.filenames.size());
        assertEquals(9, tracker.mediatypes.size());
        
-       // Should have names but not content types, as tar doesn't
+       // Should have names but not content types, as 7z doesn't
        //  store the content types
        assertEquals("test-documents/testEXCEL.xls", tracker.filenames.get(0));
        assertEquals("test-documents/testHTML.html", tracker.filenames.get(1));
