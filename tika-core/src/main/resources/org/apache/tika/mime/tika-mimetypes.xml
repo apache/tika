@@ -3635,12 +3635,23 @@
     <sub-class-of type="application/ogg"/>
   </mime-type>
 
+  <mime-type type="audio/x-oggflac">
+    <_comment>Ogg Packaged Free Lossless Audio Codec</_comment>
+    <magic priority="60">
+      <!-- For a single stream file -->
+      <match value="OggS\000.......................FLAC" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFF"
+             offset="0"/>
+    </magic>
+    <sub-class-of type="application/ogg"/>
+  </mime-type>
+
   <mime-type type="audio/opus">
     <_comment>Ogg Vorbis Codec Compressed WAV File</_comment>
     <magic priority="60">
       <!-- For a single stream file -->
       <match value="OggS\000.......................OpusHead" type="string"
-             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFF"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFF"
              offset="0"/>
     </magic>
     <glob pattern="*.opus"/>
@@ -3653,7 +3664,7 @@
     <magic priority="60">
       <!-- For a single stream file -->
       <match value="OggS\000.......................Speex   " type="string"
-             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFF"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFF"
              offset="0"/>
     </magic>
     <glob pattern="*.spx"/>
@@ -5414,6 +5425,28 @@
     <glob pattern="*.ogv"/>
     <sub-class-of type="application/ogg"/>
   </mime-type>
+  <mime-type type="video/x-theora">
+    <_comment>Ogg Theora Video</_comment>
+    <magic priority="60">
+      <!-- Assumes Video stream comes before Audio, may not always -->
+      <match value="OggS\000.......................\x80theora" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFF"
+             offset="0"/>
+    </magic>
+    <sub-class-of type="video/ogg"/>
+  </mime-type>
+  <mime-type type="video/x-ogm">
+    <_comment>Ogg Packaged OGM Video</_comment>
+    <magic priority="60">
+      <!-- Assumes Video stream comes before Audio, may not always -->
+      <match value="OggS\000.......................video" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFF"
+             offset="0"/>
+    </magic>
+    <glob pattern="*.ogm"/>
+    <sub-class-of type="video/ogg"/>
+  </mime-type>
+  <!-- TODO Dirac and Friends, see TIKA-1259 -->
 
   <mime-type type="video/parityfec"/>
   <mime-type type="video/pointer"/>
