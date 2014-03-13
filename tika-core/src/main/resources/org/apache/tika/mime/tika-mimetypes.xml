@@ -403,6 +403,7 @@
     </magic>
     <glob pattern="*.ogx"/>
   </mime-type>
+  <!-- TODO CMML, Annodex, CELT, KATE, see TIKA-1259 -->
 
   <mime-type type="application/onenote">
     <glob pattern="*.onetoc"/>
@@ -3637,10 +3638,23 @@
 
   <mime-type type="audio/x-oggflac">
     <_comment>Ogg Packaged Free Lossless Audio Codec</_comment>
+    <alias type="audio/x-ogg-flac"/>
     <magic priority="60">
       <!-- For a single stream file -->
       <match value="OggS\000.......................FLAC" type="string"
              mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFF"
+             offset="0"/>
+    </magic>
+    <sub-class-of type="application/ogg"/>
+  </mime-type>
+
+  <mime-type type="audio/x-oggpcm">
+    <_comment>Ogg Packaged Unompressed WAV File</_comment>
+    <alias type="audio/x-ogg-pcm"/>
+    <magic priority="60">
+      <!-- For a single stream file -->
+      <match value="OggS\000.......................PCM     " type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFF"
              offset="0"/>
     </magic>
     <sub-class-of type="application/ogg"/>
@@ -5425,6 +5439,7 @@
     <glob pattern="*.ogv"/>
     <sub-class-of type="application/ogg"/>
   </mime-type>
+
   <mime-type type="video/x-theora">
     <_comment>Ogg Theora Video</_comment>
     <magic priority="60">
@@ -5435,6 +5450,7 @@
     </magic>
     <sub-class-of type="video/ogg"/>
   </mime-type>
+
   <mime-type type="video/x-ogm">
     <_comment>Ogg Packaged OGM Video</_comment>
     <magic priority="60">
@@ -5446,6 +5462,40 @@
     <glob pattern="*.ogm"/>
     <sub-class-of type="video/ogg"/>
   </mime-type>
+
+  <mime-type type="video/x-ogguvs">
+    <_comment>Ogg Packaged Raw UVS Video</_comment>
+    <alias type="video/x-ogg-uvs"/>
+    <magic priority="60">
+      <match value="OggS\000.......................UVS " type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFF"
+             offset="0"/>
+    </magic>
+    <sub-class-of type="video/ogg"/>
+  </mime-type>
+
+  <mime-type type="video/x-oggyuv">
+    <_comment>Ogg Packaged Raw YUV Video</_comment>
+    <alias type="video/x-ogg-yuv"/>
+    <magic priority="60">
+      <match value="OggS\000.......................\001YUV" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFF"
+             offset="0"/>
+    </magic>
+    <sub-class-of type="video/ogg"/>
+  </mime-type>
+
+  <mime-type type="video/x-oggrgb">
+    <_comment>Ogg Packaged Raw RGB Video</_comment>
+    <alias type="video/x-ogg-rgb"/>
+    <magic priority="60">
+      <match value="OggS\000.......................\001RGB" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFF"
+             offset="0"/>
+    </magic>
+    <sub-class-of type="video/ogg"/>
+  </mime-type>
+
   <!-- TODO Dirac and Friends, see TIKA-1259 -->
 
   <mime-type type="video/parityfec"/>
