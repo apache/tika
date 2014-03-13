@@ -3632,7 +3632,6 @@
     </magic>
     <glob pattern="*.oga"/>
     <glob pattern="*.ogg"/>
-    <glob pattern="*.spx"/>
     <sub-class-of type="application/ogg"/>
   </mime-type>
 
@@ -3645,6 +3644,19 @@
              offset="0"/>
     </magic>
     <glob pattern="*.opus"/>
+    <sub-class-of type="application/ogg"/>
+  </mime-type>
+
+  <mime-type type="audio/speex">
+    <_comment>Ogg Speex Codec Compressed WAV File</_comment>
+    <alias type="application/x-speex"/>
+    <magic priority="60">
+      <!-- For a single stream file -->
+      <match value="OggS\000.......................Speex   " type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFF"
+             offset="0"/>
+    </magic>
+    <glob pattern="*.spx"/>
     <sub-class-of type="application/ogg"/>
   </mime-type>
 

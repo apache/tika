@@ -652,7 +652,8 @@ public class TikaDetectionTest {
         assertEquals("audio/mpeg", tika.detect("x.m3a"));
         assertEquals("audio/ogg", tika.detect("x.oga"));
         assertEquals("audio/ogg", tika.detect("x.ogg"));
-        assertEquals("audio/ogg", tika.detect("x.spx"));
+        // Differ from httpd - Speex more commonly uses its own mimetype
+        //assertEquals("audio/ogg", tika.detect("x.spx"));
         assertEquals("audio/vnd.digital-winds", tika.detect("x.eol"));
         assertEquals("audio/vnd.dts", tika.detect("x.dts"));
         assertEquals("audio/vnd.dts.hd", tika.detect("x.dtshd"));
