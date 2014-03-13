@@ -651,7 +651,8 @@ public class TikaDetectionTest {
         assertEquals("audio/mpeg", tika.detect("x.m2a"));
         assertEquals("audio/mpeg", tika.detect("x.m3a"));
         assertEquals("audio/ogg", tika.detect("x.oga"));
-        assertEquals("audio/ogg", tika.detect("x.ogg"));
+        // Differ from httpd - Use a dedicated mimetype of Vorbis
+        //assertEquals("audio/ogg", tika.detect("x.ogg"));
         // Differ from httpd - Speex more commonly uses its own mimetype
         //assertEquals("audio/ogg", tika.detect("x.spx"));
         assertEquals("audio/vnd.digital-winds", tika.detect("x.eol"));

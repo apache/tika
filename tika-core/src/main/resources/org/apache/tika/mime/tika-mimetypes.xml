@@ -3621,6 +3621,12 @@
   <mime-type type="audio/mpeg4-generic"/>
 
   <mime-type type="audio/ogg">
+    <_comment>Ogg Vorbis Audio</_comment>
+    <glob pattern="*.oga"/>
+    <sub-class-of type="application/ogg"/>
+  </mime-type>
+
+  <mime-type type="audio/vorbis">
     <_comment>Ogg Vorbis Codec Compressed WAV File</_comment>
     <alias type="application/x-ogg"/>
     <magic priority="60">
@@ -3631,9 +3637,8 @@
       <match value="\x4f\x67\x67\x53\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00"
              type="string" offset="0"/>
     </magic>
-    <glob pattern="*.oga"/>
     <glob pattern="*.ogg"/>
-    <sub-class-of type="application/ogg"/>
+    <sub-class-of type="audio/ogg"/>
   </mime-type>
 
   <mime-type type="audio/x-oggflac">
@@ -3645,7 +3650,7 @@
              mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFF"
              offset="0"/>
     </magic>
-    <sub-class-of type="application/ogg"/>
+    <sub-class-of type="audio/ogg"/>
   </mime-type>
 
   <mime-type type="audio/x-oggpcm">
@@ -3657,7 +3662,7 @@
              mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFFFF"
              offset="0"/>
     </magic>
-    <sub-class-of type="application/ogg"/>
+    <sub-class-of type="audio/ogg"/>
   </mime-type>
 
   <mime-type type="audio/opus">
@@ -3669,7 +3674,7 @@
              offset="0"/>
     </magic>
     <glob pattern="*.opus"/>
-    <sub-class-of type="application/ogg"/>
+    <sub-class-of type="audio/ogg"/>
   </mime-type>
 
   <mime-type type="audio/speex">
@@ -3682,7 +3687,7 @@
              offset="0"/>
     </magic>
     <glob pattern="*.spx"/>
-    <sub-class-of type="application/ogg"/>
+    <sub-class-of type="audio/ogg"/>
   </mime-type>
 
   <mime-type type="audio/parityfec"/>
@@ -3765,7 +3770,6 @@
   <mime-type type="audio/vnd.rhetorex.32kadpcm"/>
   <mime-type type="audio/vnd.sealedmedia.softseal.mpeg"/>
   <mime-type type="audio/vnd.vmx.cvsd"/>
-  <mime-type type="audio/vorbis"/>
   <mime-type type="audio/vorbis-config"/>
   <mime-type type="audio/x-aac">
     <glob pattern="*.aac"/>
@@ -5436,18 +5440,31 @@
   <mime-type type="video/nv"/>
 
   <mime-type type="video/ogg">
+    <_comment>Ogg Vorbis Video</_comment>
     <glob pattern="*.ogv"/>
     <sub-class-of type="application/ogg"/>
   </mime-type>
 
-  <mime-type type="video/x-theora">
+  <mime-type type="video/theora">
     <_comment>Ogg Theora Video</_comment>
+    <alias type="video/x-theora"/>
     <magic priority="60">
       <!-- Assumes Video stream comes before Audio, may not always -->
       <match value="OggS\000.......................\x80theora" type="string"
              mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFFFF"
              offset="0"/>
     </magic>
+    <sub-class-of type="video/ogg"/>
+  </mime-type>
+
+  <mime-type type="video/x-dirac">
+    <_comment>Ogg Packaged Dirac Video</_comment>
+    <magic priority="60">
+      <match value="OggS\000.......................BBCD" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFF"
+             offset="0"/>
+    </magic>
+    <glob pattern="*.drc"/>
     <sub-class-of type="video/ogg"/>
   </mime-type>
 
@@ -5495,8 +5512,6 @@
     </magic>
     <sub-class-of type="video/ogg"/>
   </mime-type>
-
-  <!-- TODO Dirac and Friends, see TIKA-1259 -->
 
   <mime-type type="video/parityfec"/>
   <mime-type type="video/pointer"/>
