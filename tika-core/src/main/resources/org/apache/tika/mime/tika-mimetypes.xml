@@ -403,7 +403,6 @@
     </magic>
     <glob pattern="*.ogx"/>
   </mime-type>
-  <!-- TODO CMML, Annodex, CELT, KATE, see TIKA-1259 -->
 
   <mime-type type="application/onenote">
     <glob pattern="*.onetoc"/>
@@ -3428,8 +3427,13 @@
   </mime-type>
 
   <mime-type type="application/xspf+xml">
+    <acronym>XSPF</acronym>
+    <_comment>XML Shareable Playlist Format</_comment>
+    <root-XML localName="playlist"
+              namespaceURI="http://xspf.org/ns/0/"/>
     <glob pattern="*.xspf"/>
   </mime-type>
+
   <mime-type type="application/xv+xml">
     <glob pattern="*.mxml"/>
     <glob pattern="*.xhvml"/>
@@ -3666,7 +3670,7 @@
   </mime-type>
 
   <mime-type type="audio/opus">
-    <_comment>Ogg Vorbis Codec Compressed WAV File</_comment>
+    <_comment>Ogg Opus Codec Compressed WAV File</_comment>
     <magic priority="60">
       <!-- For a single stream file -->
       <match value="OggS\000.......................OpusHead" type="string"
