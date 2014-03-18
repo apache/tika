@@ -1,3 +1,10 @@
+Release 1.6 - ??/??/2014
+
+  * Added mime entries for additional Ogg based formats (TIKA-1259)
+
+  * Updated the Ogg Vorbis plugin to v0.4, which adds detection for a wider
+    range of Ogg formats, and parsers for more Ogg Audio ones (TIKA-1113)
+
 Release 1.5 - 02/04/2014
 
   * Fixed bug in handling of embedded file processing in PDFs (TIKA-1228).
