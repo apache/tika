@@ -306,6 +306,16 @@ public class TestMimeTypes {
     }
     
     @Test
+    public void testFeedsDetection() throws Exception {
+        assertType("application/rss+xml",  "rsstest.rss");
+        assertType("application/atom+xml", "testATOM.atom");
+        assertTypeByData("application/rss+xml",  "rsstest.rss");
+        assertTypeByName("application/rss+xml",  "rsstest.rss");
+        assertTypeByData("application/atom+xml", "testATOM.atom");
+        assertTypeByName("application/atom+xml", "testATOM.atom");
+    }
+    
+    @Test
     public void testFitsDetection() throws Exception {
         // FITS image created using imagemagick convert of testJPEG.jpg
         assertType("application/fits", "testFITS.fits");

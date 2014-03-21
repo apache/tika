@@ -33,6 +33,7 @@
 
   <mime-type type="application/atom+xml">
     <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#"/>
+    <root-XML localName="feed" namespaceURI="http://www.w3.org/2005/Atom"/>
     <glob pattern="*.atom"/>
   </mime-type>
 

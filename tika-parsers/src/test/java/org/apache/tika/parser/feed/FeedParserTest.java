@@ -29,9 +29,8 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class FeedParserTest {
-
     @Test
-    public void testXMLParser() throws Exception {
+    public void testRSSParser() throws Exception {
         InputStream input = FeedParserTest.class
                 .getResourceAsStream("/test-documents/rsstest.rss");
         try {
@@ -50,6 +49,31 @@ public class FeedParserTest {
 
             // TODO find a way of testing the paragraphs and anchors
 
+        } finally {
+            input.close();
+        }
+    }
+
+
+    @Test
+    public void testAtomParser() throws Exception {
+        InputStream input = FeedParserTest.class
+                .getResourceAsStream("/test-documents/testATOM.atom");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+
+            new FeedParser().parse(input, handler, metadata, context);
+
+            String content = handler.toString();
+            assertFalse(content == null);
+
+            assertEquals("Sample Atom File for Junit test",
+                    metadata.get(TikaCoreProperties.DESCRIPTION));
+            assertEquals("Test Atom Feed", metadata.get(TikaCoreProperties.TITLE));
+
+            // TODO Check some more
         } finally {
             input.close();
         }
