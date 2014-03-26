@@ -44,7 +44,7 @@ public class TikaServerCli {
     Options options = new Options();
     options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
     options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
-    options.addOption("h", "help", false, "this help message");
+    options.addOption("?", "help", false, "this help message");
 
     return options;
   }
