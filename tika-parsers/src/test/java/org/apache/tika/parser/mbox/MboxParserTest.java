@@ -16,152 +16,156 @@
  */
 package org.apache.tika.parser.mbox;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
+import java.util.Map;
 
+import org.apache.tika.detect.TypeDetector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Before;
 import org.junit.Test;
-import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 public class MboxParserTest {
 
-    @Test
-    public void testSimple() {
-        Parser parser = new MboxParser();
-        Metadata metadata = new Metadata();
-        InputStream stream = getStream("test-documents/simple.mbox");
-        ContentHandler handler = mock(DefaultHandler.class);
+  protected ParseContext recursingContext;
+  private Parser autoDetectParser;
+  private TypeDetector typeDetector;
+  private MboxParser mboxParser;
 
-        try {
-            parser.parse(stream, handler, metadata, new ParseContext());
-            verify(handler).startDocument();
-            verify(handler, times(2)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
-            verify(handler, times(2)).endElement(XHTMLContentHandler.XHTML, "p", "p");
-            verify(handler).characters(new String("Test content 1").toCharArray(), 0, 14);
-            verify(handler).characters(new String("Test content 2").toCharArray(), 0, 14);
-            verify(handler).endDocument();
-        } catch (Exception e) {
-            fail("Exception thrown: " + e.getMessage());
-        }
+  @Before
+  public void setUp() throws Exception {
+    typeDetector = new TypeDetector();
+    autoDetectParser = new AutoDetectParser(typeDetector);
+    recursingContext = new ParseContext();
+    recursingContext.set(Parser.class, autoDetectParser);
+
+    mboxParser = new MboxParser();
+    mboxParser.setTracking(true);
+  }
+
+  @Test
+  public void testSimple() throws Exception {
+    ContentHandler handler = new BodyContentHandler();
+    Metadata metadata = new Metadata();
+    InputStream stream = getStream("/test-documents/simple.mbox");
+
+    try {
+      mboxParser.parse(stream, handler, metadata, recursingContext);
+    } finally {
+      stream.close();
     }
 
-    @Test
-    public void testHeaders() {
-        Parser parser = new MboxParser();
-        Metadata metadata = new Metadata();
-        InputStream stream = getStream("test-documents/headers.mbox");
-        ContentHandler handler = mock(DefaultHandler.class);
+    String content = handler.toString();
+    assertTrue(content.contains("Test content 1"));
+    assertTrue(content.contains("Test content 2"));
+    assertEquals("application/mbox", metadata.get(Metadata.CONTENT_TYPE));
 
-        try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+    Map<Integer, Metadata> mailsMetadata = mboxParser.getTrackingMetadata();
+    assertEquals("Nb. Of mails", 2, mailsMetadata.size());
 
-            verify(handler).startDocument();
-            verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
-            verify(handler).characters(new String("Test content").toCharArray(), 0, 12);
-            verify(handler).endDocument();
+    Metadata mail1 = mailsMetadata.get(0);
+    assertEquals("message/rfc822", mail1.get(Metadata.CONTENT_TYPE));
+    assertEquals("envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009", mail1.get("MboxParser-from"));
 
-            assertEquals("subject", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("subject", metadata.get(Metadata.SUBJECT));
-            assertEquals("<author@domain.com>", metadata.get(Metadata.AUTHOR));
-            assertEquals("<author@domain.com>", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals(null, metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
-            assertEquals("<name@domain.com>", metadata.get("MboxParser-return-path"));
-            assertEquals("Should be ISO date in UTC, converted from 'Tue, 9 Jun 2009 23:58:45 -0400'", 
-                    "2009-06-10T03:58:45Z", metadata.get(TikaCoreProperties.CREATED));
-        } catch (Exception e) {
-            fail("Exception thrown: " + e.getMessage());
-        }
+    Metadata mail2 = mailsMetadata.get(1);
+    assertEquals("message/rfc822", mail2.get(Metadata.CONTENT_TYPE));
+    assertEquals("envelope-sender-mailbox-name Mon Jun 01 11:00:00 2010", mail2.get("MboxParser-from"));
+  }
+
+  @Test
+  public void testHeaders() throws Exception {
+    ContentHandler handler = new BodyContentHandler();
+    Metadata metadata = new Metadata();
+    InputStream stream = getStream("/test-documents/headers.mbox");
+
+    try {
+      mboxParser.parse(stream, handler, metadata, recursingContext);
+    } finally {
+      stream.close();
     }
 
-    @Test
-    public void testMultilineHeader() {
-        Parser parser = new MboxParser();
-        Metadata metadata = new Metadata();
-        InputStream stream = getStream("test-documents/multiline.mbox");
-        ContentHandler handler = mock(DefaultHandler.class);
+    assertTrue(handler.toString().contains("Test content"));
+    assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
 
-        try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+    Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
 
-            verify(handler).startDocument();
-            verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
-            verify(handler).characters(new String("Test content").toCharArray(), 0, 12);
-            verify(handler).endDocument();
+    assertEquals("2009-06-10T03:58:45Z", mailMetadata.get(TikaCoreProperties.CREATED));
+    assertEquals("<author@domain.com>", mailMetadata.get(TikaCoreProperties.CREATOR));
+    assertEquals("subject", mailMetadata.get(Metadata.SUBJECT));
+    assertEquals("<author@domain.com>", mailMetadata.get(Metadata.AUTHOR));
+    assertEquals("message/rfc822", mailMetadata.get(Metadata.CONTENT_TYPE));
+    assertEquals("author@domain.com", mailMetadata.get("Message-From"));
+    assertEquals("<name@domain.com>", mailMetadata.get("MboxParser-return-path"));
+  }
 
-            assertEquals("from xxx by xxx with xxx; date", metadata.get("MboxParser-received"));
-        } catch (Exception e) {
-            fail("Exception thrown: " + e.getMessage());
-        }
+  @Test
+  public void testMultilineHeader() throws Exception {
+    ContentHandler handler = new BodyContentHandler();
+    Metadata metadata = new Metadata();
+    InputStream stream = getStream("/test-documents/multiline.mbox");
+
+    try {
+      mboxParser.parse(stream, handler, metadata, recursingContext);
+    } finally {
+      stream.close();
     }
 
-    @Test
-    public void testQuoted() {
-        Parser parser = new MboxParser();
-        Metadata metadata = new Metadata();
-        InputStream stream = getStream("test-documents/quoted.mbox");
-        ContentHandler handler = mock(DefaultHandler.class);
+    assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
 
-        try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+    Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
+    assertEquals("from xxx by xxx with xxx; date", mailMetadata.get("MboxParser-received"));
+  }
 
-            verify(handler).startDocument();
-            verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
-            verify(handler).startElement(eq(XHTMLContentHandler.XHTML), eq("q"), eq("q"), any(Attributes.class));
-            verify(handler).endElement(eq(XHTMLContentHandler.XHTML), eq("q"), eq("q"));
-            verify(handler).endElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"));
-            verify(handler).characters(new String("Test content").toCharArray(), 0, 12);
-            verify(handler).characters(new String("> quoted stuff").toCharArray(), 0, 14);
-            verify(handler).endDocument();
-        } catch (Exception e) {
-            fail("Exception thrown: " + e.getMessage());
-        }
+  @Test
+  public void testQuoted() throws Exception {
+    ContentHandler handler = new BodyContentHandler();
+    Metadata metadata = new Metadata();
+    InputStream stream = getStream("/test-documents/quoted.mbox");
+
+    try {
+      mboxParser.parse(stream, handler, metadata, recursingContext);
+    } finally {
+      stream.close();
     }
 
-    @Test
-    public void testComplex() {
-        Parser parser = new MboxParser();
-        Metadata metadata = new Metadata();
-        InputStream stream = getStream("test-documents/complex.mbox");
-        ContentHandler handler = mock(DefaultHandler.class);
+    assertTrue(handler.toString().contains("Test content"));
+    assertTrue(handler.toString().contains("> quoted stuff"));
+  }
 
-        try {
-            parser.parse(stream, handler, metadata, new ParseContext());
+  @Test
+  public void testComplex() throws Exception {
+    ContentHandler handler = new BodyContentHandler();
+    Metadata metadata = new Metadata();
+    InputStream stream = getStream("/test-documents/complex.mbox");
 
-            // TODO: Remove subject and author in Tika 2.0
-            assertEquals("Re: question about when shuffle/sort start working", metadata.get(Metadata.SUBJECT));
-            assertEquals("Re: question about when shuffle/sort start working", metadata.get(TikaCoreProperties.TITLE));
-            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(Metadata.AUTHOR));
-            assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", metadata.get(TikaCoreProperties.CREATOR));
-            assertEquals("core-user@hadoop.apache.org", metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
-            
-            verify(handler).startDocument();
-            verify(handler, times(3)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
-            verify(handler, times(3)).endElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"));
-            verify(handler, times(3)).startElement(eq(XHTMLContentHandler.XHTML), eq("q"), eq("q"), any(Attributes.class));
-            verify(handler, times(3)).endElement(eq(XHTMLContentHandler.XHTML), eq("q"), eq("q"));
-            verify(handler).endDocument();
-        } catch (Exception e) {
-            fail("Exception thrown: " + e.getMessage());
-        }
+    try {
+      mboxParser.parse(stream, handler, metadata, recursingContext);
+    } finally {
+      stream.close();
     }
 
-    private static InputStream getStream(String name) {
-        return Thread.currentThread().getContextClassLoader()
-        .getResourceAsStream(name);
-    }
+    assertEquals("Nb. Of mails", 3, mboxParser.getTrackingMetadata().size());
 
+    Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
+    assertEquals("Re: question about when shuffle/sort start working", firstMail.get(Metadata.SUBJECT));
+    assertEquals("Re: question about when shuffle/sort start working", firstMail.get(TikaCoreProperties.TITLE));
+    assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(Metadata.AUTHOR));
+    assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(TikaCoreProperties.CREATOR));
+    assertEquals("core-user@hadoop.apache.org", firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+
+    assertTrue(handler.toString().contains("When a Mapper completes"));
+  }
+
+  private static InputStream getStream(String name) {
+    return MboxParserTest.class.getClass().getResourceAsStream(name);
+  }
 
 }
