@@ -27,6 +27,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.IOUtils;
@@ -69,6 +71,22 @@ public class CXFTestBase {
         zip.close();
         tempFile.delete();
 		return bos.toString("UTF-8");
+	}
+
+	protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip) throws IOException {
+        Map<String, String> data = new HashMap<String, String>();
+        while (true) {
+            ArchiveEntry entry = zip.getNextEntry();
+            if (entry == null) {
+                break;
+            }
+
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copy(zip, bos);
+            data.put(entry.getName(), DigestUtils.md5Hex(bos.toByteArray()));
+        }
+
+        return data;
 	}
 
 	private File writeTemporaryArchiveFile(InputStream inputStream, String archiveType) throws IOException {
