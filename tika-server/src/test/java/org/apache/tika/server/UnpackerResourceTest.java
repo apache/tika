@@ -29,6 +29,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
@@ -37,7 +38,6 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class UnpackerResourceTest extends CXFTestBase {
@@ -190,14 +190,13 @@ public class UnpackerResourceTest extends CXFTestBase {
 		assertEquals(XSL_IMAGE2_MD5, data.get("1.jpg"));
 	}
 
-	@Ignore("Tar format correct, but unable reading by TarArchiveInputStream (COMPRESS-262)")
 	@Test
 	public void testTarDocPicture() throws Exception {
 		Response response = WebClient.create(endPoint + UNPACKER_PATH)
 				.type(APPLICATION_MSWORD).accept("application/x-tar")
 				.put(ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV));
 
-		Map<String, String> data = readZipArchive((InputStream) response.getEntity());
+		Map<String, String> data = readArchiveFromStream(new TarArchiveInputStream((InputStream) response.getEntity()));
 
 		assertEquals(JPG_MD5, data.get(JPG_NAME));
 	}
