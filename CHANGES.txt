@@ -1,5 +1,7 @@
 Release 1.6 - ??/??/2014
 
+  * Support Outlook Personal Folders File Format *.pst (TIKA-623)
+  
   * Added mime entries for additional Ogg based formats (TIKA-1259)
 
   * Updated the Ogg Vorbis plugin to v0.4, which adds detection for a wider
