@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pdf;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
@@ -31,10 +33,17 @@ import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
 import org.apache.pdfbox.pdmodel.PDEmbeddedFilesNameTreeNode;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.COSObjectable;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDCcitt;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDJpeg;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDPixelMap;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObject;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObjectForm;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObjectImage;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
@@ -214,9 +223,11 @@ class PDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void endPage(PDPage page) throws IOException {
-
         try {
             writeParagraphEnd();
+
+            extractImages(page.getResources());
+
             // TODO: remove once PDFBOX-1143 is fixed:
             if (config.getExtractAnnotationText()) {
                 for(Object o : page.getAnnotations()) {
@@ -269,10 +280,58 @@ class PDF2XHTML extends PDFTextStripper {
                     }
                 }
             }
+
             handler.endElement("div");
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
         }
+    }
+
+    private void extractImages(PDResources resources) throws SAXException {
+        if (resources == null) {
+            return;
+        }
+
+        for (PDXObject object : resources.getXObjects().values()) {
+            if (object instanceof PDXObjectForm) {
+                extractImages(((PDXObjectForm) object).getResources());
+            } else if (object instanceof PDXObjectImage) {
+                PDXObjectImage image = (PDXObjectImage) object;
+
+                Metadata metadata = new Metadata();
+                if (image instanceof PDJpeg) {
+                    metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+                } else if (image instanceof PDCcitt) {
+                    metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
+                } else if (image instanceof PDPixelMap) {
+                    metadata.set(Metadata.CONTENT_TYPE, "image/png");
+                }
+
+                EmbeddedDocumentExtractor extractor =
+                        getEmbeddedDocumentExtractor();
+                if (extractor.shouldParseEmbedded(metadata)) {
+                    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                    try {
+                        image.write2OutputStream(buffer);
+                        extractor.parseEmbedded(
+                                new ByteArrayInputStream(buffer.toByteArray()),
+                                new EmbeddedContentHandler(handler),
+                                metadata, false);
+                    } catch (IOException e) {
+                        // could not extract this image, so just skip it...
+                    }
+                }
+            }
+        }
+    }
+
+    protected EmbeddedDocumentExtractor getEmbeddedDocumentExtractor() {
+        EmbeddedDocumentExtractor extractor =
+                context.get(EmbeddedDocumentExtractor.class);
+        if (extractor == null) {
+            extractor = new ParsingEmbeddedDocumentExtractor(context);
+        }
+        return extractor;
     }
 
     @Override
@@ -359,18 +418,13 @@ class PDF2XHTML extends PDFTextStripper {
             return;
         }
 
-        EmbeddedDocumentExtractor embeddedExtractor = context.get(EmbeddedDocumentExtractor.class);
-        if (embeddedExtractor == null) {
-            embeddedExtractor = new ParsingEmbeddedDocumentExtractor(context);
-        }
-
         Map<String, COSObjectable> embeddedFileNames = embeddedFiles.getNames();
         //For now, try to get the embeddedFileNames out of embeddedFiles or its kids.
         //This code follows: pdfbox/examples/pdmodel/ExtractEmbeddedFiles.java
         //If there is a need we could add a fully recursive search to find a non-null
         //Map<String, COSObjectable> that contains the doc info.
         if (embeddedFileNames != null) {
-            processEmbeddedDocNames(embeddedFileNames, embeddedExtractor);
+            processEmbeddedDocNames(embeddedFileNames);
         } else {
             List<PDNameTreeNode> kids = embeddedFiles.getKids();
             if (kids == null) {
@@ -379,18 +433,20 @@ class PDF2XHTML extends PDFTextStripper {
             for (PDNameTreeNode n : kids) {
                 Map<String, COSObjectable> childNames = n.getNames();
                 if (childNames != null) {
-                    processEmbeddedDocNames(childNames, embeddedExtractor);
+                    processEmbeddedDocNames(childNames);
                 }
             }
         }
     }
 
 
-    private void processEmbeddedDocNames(Map<String, COSObjectable> embeddedFileNames, 
-        EmbeddedDocumentExtractor embeddedExtractor) throws IOException, SAXException, TikaException {
-        if (embeddedFileNames == null) {
+    private void processEmbeddedDocNames(Map<String, COSObjectable> embeddedFileNames)
+            throws IOException, SAXException, TikaException {
+        if (embeddedFileNames == null || embeddedFileNames.isEmpty()) {
             return;
         }
+
+        EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
         for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
             PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
             PDEmbeddedFile file = spec.getEmbeddedFile();
@@ -401,10 +457,10 @@ class PDF2XHTML extends PDFTextStripper {
             metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
             metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
 
-            if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+            if (extractor.shouldParseEmbedded(metadata)) {
                 TikaInputStream stream = TikaInputStream.get(file.createInputStream());
                 try {
-                    embeddedExtractor.parseEmbedded(
+                    extractor.parseEmbedded(
                             stream,
                             new EmbeddedContentHandler(handler),
                             metadata, false);

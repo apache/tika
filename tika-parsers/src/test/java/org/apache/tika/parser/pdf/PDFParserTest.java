@@ -632,7 +632,7 @@ public class PDFParserTest extends TikaTest {
         assertTrue("found", (xml.indexOf("<li>aTextField: TIKA-1226</li>") > -1));
     }
 
-    //TIKA-1228
+    @Test // TIKA-1228, TIKA-1268
     public void testEmbeddedFilesInChildren() throws Exception {
         String xml = getXML("/testPDF_childAttachments.pdf").xml;
         //"regressiveness" exists only in Unit10.doc not in the container pdf document
@@ -650,12 +650,16 @@ public class PDFParserTest extends TikaTest {
                 tis.close();
             }
         }
-        assertEquals(2, tracker.filenames.size());
-        assertEquals(2, tracker.mediaTypes.size());
-        assertEquals("Press Quality(1).joboptions", tracker.filenames.get(0));
-        assertEquals("Unit10.doc", tracker.filenames.get(1));
-        assertEquals(TYPE_TEXT, tracker.mediaTypes.get(0));
-        assertEquals(TYPE_DOC, tracker.mediaTypes.get(1));
+        assertEquals(4, tracker.filenames.size());
+        assertEquals(4, tracker.mediaTypes.size());
+        assertNull(tracker.filenames.get(0));
+        assertNull(tracker.filenames.get(1));
+        assertEquals("Press Quality(1).joboptions", tracker.filenames.get(2));
+        assertEquals("Unit10.doc", tracker.filenames.get(3));
+        assertEquals(MediaType.image("jpeg"), tracker.mediaTypes.get(0));
+        assertEquals(MediaType.image("tiff"), tracker.mediaTypes.get(1));
+        assertEquals(TYPE_TEXT, tracker.mediaTypes.get(2));
+        assertEquals(TYPE_DOC, tracker.mediaTypes.get(3));
     }
 
     public void testVersions() throws Exception {
