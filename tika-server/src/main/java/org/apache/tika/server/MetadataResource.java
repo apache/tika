@@ -38,6 +38,7 @@ import javax.ws.rs.core.UriInfo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.xml.sax.helpers.DefaultHandler;
@@ -47,7 +48,12 @@ import au.com.bytecode.opencsv.CSVWriter;
 @Path("/meta")
 public class MetadataResource {
   private static final Log logger = LogFactory.getLog(MetadataResource.class);
-
+  
+  private TikaConfig tikaConfig;
+  public MetadataResource(TikaConfig tikaConfig) {
+      this.tikaConfig = tikaConfig;
+  }
+  
   @PUT
   @Consumes("multipart/form-data")
   @Produces("text/csv")
@@ -64,7 +70,7 @@ public class MetadataResource {
   
   private StreamingOutput produceMetadata(InputStream is, MultivaluedMap<String, String> httpHeaders, UriInfo info) throws Exception {
     final Metadata metadata = new Metadata();
-    AutoDetectParser parser = TikaResource.createParser();
+    AutoDetectParser parser = TikaResource.createParser(tikaConfig);
     TikaResource.fillMetadata(parser, metadata, httpHeaders);
     TikaResource.logRequest(logger, info, metadata);
 

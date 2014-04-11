@@ -32,6 +32,7 @@ import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.xml.sax.helpers.DefaultHandler;
@@ -45,15 +46,18 @@ import org.xml.sax.helpers.DefaultHandler;
 @Path("/metadata")
 public class MetadataEP {
   private static final Log logger = LogFactory.getLog(MetadataEP.class);
-
-  /** The parser to use */
+  
+  private TikaConfig config;
   private final AutoDetectParser parser;
 
   /** The metdata for the request */
   private final Metadata metadata = new Metadata();
 
   public MetadataEP(@Context HttpHeaders httpHeaders, @Context UriInfo info) {
-    parser = TikaResource.createParser();
+    // TODO How to get this better?
+    config = TikaConfig.getDefaultConfig();
+    parser = TikaResource.createParser(config);
+    
     TikaResource.fillMetadata(parser, metadata, httpHeaders.getRequestHeaders());
     TikaResource.logRequest(logger, info, metadata);
   }

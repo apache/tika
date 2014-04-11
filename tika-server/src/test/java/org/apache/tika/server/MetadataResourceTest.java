@@ -50,10 +50,11 @@ public class MetadataResourceTest extends CXFTestBase {
 
 	@Before
 	public void setUp() {
+            super.setUp();
 		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 		sf.setResourceClasses(MetadataResource.class);
 		sf.setResourceProvider(MetadataResource.class,
-				new SingletonResourceProvider(new MetadataResource()));
+				new SingletonResourceProvider(new MetadataResource(tika)));
 		sf.setAddress(endPoint + "/");
 		BindingFactoryManager manager = sf.getBus().getExtension(
 				BindingFactoryManager.class);

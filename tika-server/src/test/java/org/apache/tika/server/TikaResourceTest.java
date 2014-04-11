@@ -47,10 +47,11 @@ public class TikaResourceTest extends CXFTestBase {
 
 	@Before
 	public void setUp() {
+	    super.setUp();
 		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 		sf.setResourceClasses(TikaResource.class);
 		sf.setResourceProvider(TikaResource.class,
-				new SingletonResourceProvider(new TikaResource()));
+				new SingletonResourceProvider(new TikaResource(tika)));
 		sf.setAddress(endPoint + "/");
 		BindingFactoryManager manager = sf.getBus().getExtension(
 				BindingFactoryManager.class);

@@ -75,6 +75,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Before
 	public void setUp() {
+            super.setUp();
 		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 		List<Object> providers = new ArrayList<Object>();
 		providers.add(new TarWriter());
@@ -83,7 +84,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     		sf.setProviders(providers);
 		sf.setResourceClasses(UnpackerResource.class);
 		sf.setResourceProvider(UnpackerResource.class,
-				new SingletonResourceProvider(new UnpackerResource()));
+				new SingletonResourceProvider(new UnpackerResource(tika)));
 		sf.setAddress(endPoint + "/");
 		BindingFactoryManager manager = sf.getBus().getExtension(
 				BindingFactoryManager.class);
