@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import org.apache.tika.Tika;
+import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;

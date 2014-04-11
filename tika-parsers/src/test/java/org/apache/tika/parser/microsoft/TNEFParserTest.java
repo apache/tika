@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
 
+import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.ContainerExtractor;
