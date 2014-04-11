@@ -32,13 +32,16 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.io.CachedOutputStream;
+import org.apache.cxf.jaxrs.JAXRSBindingFactory;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.tika.config.TikaConfig;
 import org.junit.After;
 import org.junit.Before;
 
-public class CXFTestBase {
+public abstract class CXFTestBase {
     protected static final String endPoint = 
             "http://localhost:" + TikaServerCli.DEFAULT_PORT;
     protected Server server;
@@ -47,7 +50,36 @@ public class CXFTestBase {
     @Before
     public void setUp() {
         this.tika = TikaConfig.getDefaultConfig();
+        
+        JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
+        setUpResources(sf);
+        setUpProviders(sf);
+        sf.setAddress(endPoint + "/");
+
+        BindingFactoryManager manager = sf.getBus().getExtension(
+            BindingFactoryManager.class
+        );
+
+        JAXRSBindingFactory factory = new JAXRSBindingFactory();
+        factory.setBus(sf.getBus());
+
+        manager.registerBindingFactory(
+            JAXRSBindingFactory.JAXRS_BINDING_ID,
+            factory
+        );
+
+        server = sf.create();
     }
+    
+    /**
+     * Have the test do {@link JAXRSServerFactoryBean#setResourceClasses(Class...)}
+     *  and {@link JAXRSServerFactoryBean#setResourceProvider(Class, org.apache.cxf.jaxrs.lifecycle.ResourceProvider)}
+     */
+    protected abstract void setUpResources(JAXRSServerFactoryBean sf);
+    /**
+     * Have the test do {@link JAXRSServerFactoryBean#setProviders(java.util.List)}, if needed
+     */
+    protected abstract void setUpProviders(JAXRSServerFactoryBean sf);
 
     @After
     public void tearDown() throws Exception {

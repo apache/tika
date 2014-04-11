@@ -30,22 +30,14 @@ import java.util.Map;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.cxf.binding.BindingFactoryManager;
-import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 public class UnpackerResourceTest extends CXFTestBase {
 	private static final String UNPACKER_PATH = "/unpacker";
 	private static final String ALL_PATH = "/all";
-
-	private static final String endPoint = "http://localhost:"
-			+ TikaServerCli.DEFAULT_PORT;
 
 	private static final String TEST_DOC_WAV = "Doc1_ole.doc";
 	private static final String WAV1_MD5 = "bdd0a78a54968e362445364f95d8dc96";
@@ -71,35 +63,21 @@ public class UnpackerResourceTest extends CXFTestBase {
 	private static final String APPLICATION_XML = "application/xml";
 	private static final String CONTENT_TYPE = "Content-type";
 
-	private Server server;
+    @Override
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        sf.setResourceClasses(UnpackerResource.class);
+        sf.setResourceProvider(UnpackerResource.class,
+                        new SingletonResourceProvider(new UnpackerResource(tika)));
+    }
 
-    @Before
-	public void setUp() {
-            super.setUp();
-		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-		List<Object> providers = new ArrayList<Object>();
-		providers.add(new TarWriter());
-		providers.add(new ZipWriter());
-                providers.add(new TikaExceptionMapper());
-    		sf.setProviders(providers);
-		sf.setResourceClasses(UnpackerResource.class);
-		sf.setResourceProvider(UnpackerResource.class,
-				new SingletonResourceProvider(new UnpackerResource(tika)));
-		sf.setAddress(endPoint + "/");
-		BindingFactoryManager manager = sf.getBus().getExtension(
-				BindingFactoryManager.class);
-		JAXRSBindingFactory factory = new JAXRSBindingFactory();
-		factory.setBus(sf.getBus());
-		manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
-				factory);
-		server = sf.create();
-	}
-
-    @After
-	public void tearDown() {
-		server.stop();
-		server.destroy();
-	}
+    @Override
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+        List<Object> providers = new ArrayList<Object>();
+        providers.add(new TarWriter());
+        providers.add(new ZipWriter());
+        providers.add(new TikaExceptionMapper());
+        sf.setProviders(providers);
+    }
 
 	@Test
 	public void testDocWAV() throws Exception {

@@ -24,49 +24,27 @@ import java.io.InputStream;
 
 import javax.ws.rs.core.Response;
 
-import org.apache.cxf.binding.BindingFactoryManager;
-import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 public class TikaResourceTest extends CXFTestBase {
-	private static final String TIKA_PATH = "/tika";
-	public static final String TEST_DOC = "test.doc";
-	public static final String TEST_XLSX = "16637.xlsx";
-	private static final int UNPROCESSEABLE = 422;
-	private static final String endPoint = "http://localhost:"
-			+ TikaServerCli.DEFAULT_PORT;
-	
-	private Server server;
+    private static final String TIKA_PATH = "/tika";
+    public static final String TEST_DOC = "test.doc";
+    public static final String TEST_XLSX = "16637.xlsx";
+    private static final int UNPROCESSEABLE = 422;
 
-	@Before
-	public void setUp() {
-	    super.setUp();
-		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-		sf.setResourceClasses(TikaResource.class);
-		sf.setResourceProvider(TikaResource.class,
-				new SingletonResourceProvider(new TikaResource(tika)));
-		sf.setAddress(endPoint + "/");
-		BindingFactoryManager manager = sf.getBus().getExtension(
-				BindingFactoryManager.class);
-		JAXRSBindingFactory factory = new JAXRSBindingFactory();
-		factory.setBus(sf.getBus());
-		manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
-				factory);
-		server = sf.create();
-	}
+    @Override
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        sf.setResourceClasses(TikaResource.class);
+        sf.setResourceProvider(TikaResource.class,
+                        new SingletonResourceProvider(new TikaResource(tika)));
+    }
 
-    @After
-	public void tearDown() throws Exception {
-		server.stop();
-		server.destroy();
-	}
+    @Override
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {}
 
 	@Test
 	public void testHelloWorld() throws Exception {

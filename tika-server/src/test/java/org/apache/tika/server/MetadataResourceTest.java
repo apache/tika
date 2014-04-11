@@ -28,48 +28,25 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
-import org.apache.cxf.binding.BindingFactoryManager;
-import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import au.com.bytecode.opencsv.CSVReader;
 
 public class MetadataResourceTest extends CXFTestBase {
-	private static final String META_PATH = "/meta";
+    private static final String META_PATH = "/meta";
 
-	private static final String endPoint = "http://localhost:"
-			+ TikaServerCli.DEFAULT_PORT;
+    @Override
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        sf.setResourceClasses(MetadataResource.class);
+        sf.setResourceProvider(MetadataResource.class,
+                        new SingletonResourceProvider(new MetadataResource(tika)));
+    }
 
-	private Server server;
-
-	@Before
-	public void setUp() {
-            super.setUp();
-		JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-		sf.setResourceClasses(MetadataResource.class);
-		sf.setResourceProvider(MetadataResource.class,
-				new SingletonResourceProvider(new MetadataResource(tika)));
-		sf.setAddress(endPoint + "/");
-		BindingFactoryManager manager = sf.getBus().getExtension(
-				BindingFactoryManager.class);
-		JAXRSBindingFactory factory = new JAXRSBindingFactory();
-		factory.setBus(sf.getBus());
-		manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID,
-				factory);
-		server = sf.create();
-	}
-
-	@After
-	public void tearDown() {
-		server.stop();
-		server.destroy();
-	}
+    @Override
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {}
 
 	@Test
 	public void testSimpleWord() throws Exception {
