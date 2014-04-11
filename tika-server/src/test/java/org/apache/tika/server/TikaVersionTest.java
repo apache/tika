@@ -35,19 +35,16 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class TikaVersionTest extends CXFTestBase {
-
   private static final String VERSION_PATH = "/version";
-  private static final String endPoint = "http://localhost:"
-      + TikaServerCli.DEFAULT_PORT;
-  private Server server;
 
   @Before
   public void setUp() {
+    super.setUp();
     JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
     sf.setResourceClasses(TikaVersion.class);
     sf.setResourceProvider(
         TikaVersion.class,
-        new SingletonResourceProvider(new TikaVersion())
+        new SingletonResourceProvider(new TikaVersion(tika))
     );
     sf.setAddress(endPoint + "/");
 

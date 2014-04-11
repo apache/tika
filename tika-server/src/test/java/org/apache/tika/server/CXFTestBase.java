@@ -32,9 +32,28 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.io.CachedOutputStream;
+import org.apache.tika.config.TikaConfig;
+import org.junit.After;
+import org.junit.Before;
 
 public class CXFTestBase {
+    protected static final String endPoint = 
+            "http://localhost:" + TikaServerCli.DEFAULT_PORT;
+    protected Server server;
+    protected TikaConfig tika;
+    
+    @Before
+    public void setUp() {
+        this.tika = TikaConfig.getDefaultConfig();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        server.stop();
+        server.destroy();
+    }
 
 	protected String getStringFromInputStream(InputStream in) throws Exception {
 		CachedOutputStream bos = new CachedOutputStream();

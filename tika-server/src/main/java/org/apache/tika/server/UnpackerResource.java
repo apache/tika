@@ -66,10 +66,9 @@ public class UnpackerResource {
   public static final String TEXT_FILENAME = "__TEXT__";
   private static final String META_FILENAME = "__METADATA__";
 
-  private final TikaConfig tikaConfig;
-
-  public UnpackerResource() {
-    tikaConfig = TikaConfig.getDefaultConfig();
+  private TikaConfig tikaConfig;
+  public UnpackerResource(TikaConfig tikaConfig) {
+      this.tikaConfig = tikaConfig;
   }
 
   @Path("unpacker{id:(/.*)?}")
@@ -102,7 +101,7 @@ public class UnpackerResource {
   ) throws Exception {
     Metadata metadata = new Metadata();
 
-    AutoDetectParser parser = TikaResource.createParser();
+    AutoDetectParser parser = TikaResource.createParser(tikaConfig);
 
     TikaResource.fillMetadata(parser, metadata, httpHeaders.getRequestHeaders());
     TikaResource.logRequest(logger, info, metadata);

@@ -50,6 +50,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.hwpf.OldWordFileFormatException;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -70,11 +71,16 @@ import org.xml.sax.SAXException;
 public class TikaResource {
   public static final String GREETING = "This is Tika Server. Please PUT\n";
   private final Log logger = LogFactory.getLog(TikaResource.class);
+  
+  private TikaConfig tikaConfig;
+  public TikaResource(TikaConfig tikaConfig) {
+      this.tikaConfig = tikaConfig;
+  }
 
   static {
     ExtractorFactory.setAllThreadsPreferEventExtractors(true);
   }
-
+  
   @GET
   @Produces("text/plain")
   public String getMessage() {
@@ -82,8 +88,8 @@ public class TikaResource {
   }
 
   @SuppressWarnings("serial")
-  public static AutoDetectParser createParser() {
-    final AutoDetectParser parser = new AutoDetectParser();
+  public static AutoDetectParser createParser(TikaConfig tikaConfig) {
+    final AutoDetectParser parser = new AutoDetectParser(tikaConfig);
 
     Map<MediaType,Parser> parsers = parser.getParsers();
     parsers.put(MediaType.APPLICATION_XML, new HtmlParser());
@@ -177,7 +183,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
 	  return produceText(is, httpHeaders.getRequestHeaders(), info);
   }
   public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {	  
-    final AutoDetectParser parser = createParser();
+    final AutoDetectParser parser = createParser(tikaConfig);
     final Metadata metadata = new Metadata();
 
     fillMetadata(parser, metadata, httpHeaders);
@@ -261,7 +267,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
   
   private StreamingOutput produceOutput(final InputStream is, final MultivaluedMap<String, String> httpHeaders, 
         final UriInfo info, final String format) {
-    final AutoDetectParser parser = createParser();
+    final AutoDetectParser parser = createParser(tikaConfig);
     final Metadata metadata = new Metadata();
 
     fillMetadata(parser, metadata, httpHeaders);

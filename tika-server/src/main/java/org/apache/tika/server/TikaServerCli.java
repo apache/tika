@@ -32,8 +32,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
 
 public class TikaServerCli {
   private static final Log logger = LogFactory.getLog(TikaServerCli.class);
@@ -84,9 +86,11 @@ public class TikaServerCli {
         port = Integer.valueOf(line.getOptionValue("port"));
       }
       
+      // The Tika Configuration to use throughout
+      TikaConfig tika = TikaConfig.getDefaultConfig();
 
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-      sf.setResourceClasses(MetadataEP.class,MetadataResource.class, TikaResource.class, UnpackerResource.class, TikaVersion.class);
+      sf.setResourceClasses(MetadataEP.class, MetadataResource.class, TikaResource.class, UnpackerResource.class, TikaVersion.class);
 
       List<Object> providers = new ArrayList<Object>();
       providers.add(new TarWriter());
@@ -94,11 +98,15 @@ public class TikaServerCli {
       providers.add(new CSVMessageBodyWriter());
       providers.add(new JSONMessageBodyWriter());
       providers.add(new TikaExceptionMapper());
-      providers.add(new SingletonResourceProvider(new MetadataResource()));
-      providers.add(new SingletonResourceProvider(new TikaResource()));
-      providers.add(new SingletonResourceProvider(new UnpackerResource()));
-      providers.add(new SingletonResourceProvider(new TikaVersion()));
       sf.setProviders(providers);
+      
+      List<ResourceProvider> rProviders = new ArrayList<ResourceProvider>();
+      rProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
+      rProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
+      rProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
+      rProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
+      sf.setResourceProviders(rProviders);
+      
       sf.setAddress("http://" + host + ":" + port + "/");
       BindingFactoryManager manager = sf.getBus().getExtension(
 				BindingFactoryManager.class);
