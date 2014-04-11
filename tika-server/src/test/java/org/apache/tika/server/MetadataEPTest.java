@@ -51,11 +51,20 @@ import org.junit.Test;
 import au.com.bytecode.opencsv.CSVReader;
 
 public class MetadataEPTest extends CXFTestBase {
-  private static final String META_PATH = "/metadata";
+    private static final String META_PATH = "/metadata";
 
-  private static final String endPoint = "http://localhost:" + TikaServerCli.DEFAULT_PORT;
+    @Override
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        sf.setResourceClasses(MetadataEP.class);
+    }
 
-  private Server server;
+    @Override
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+        List<Object> providers = new ArrayList<Object>();
+        providers.add(new CSVMessageBodyWriter());
+        providers.add(new JSONMessageBodyWriter());
+        sf.setProviders(providers);
+    }
 
   private static InputStream copy(InputStream in, int remaining) throws IOException {
     ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -69,28 +78,6 @@ public class MetadataEPTest extends CXFTestBase {
       remaining -= n;
     }
     return new ByteArrayInputStream(out.toByteArray());
-  }
-
-  @Before
-  public void setUp() {
-    JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-    sf.setResourceClasses(MetadataEP.class);
-    List<Object> providers = new ArrayList<Object>();
-    providers.add(new CSVMessageBodyWriter());
-    providers.add(new JSONMessageBodyWriter());
-    sf.setProviders(providers);
-    sf.setAddress(endPoint + "/");
-    BindingFactoryManager manager = sf.getBus().getExtension(BindingFactoryManager.class);
-    JAXRSBindingFactory factory = new JAXRSBindingFactory();
-    factory.setBus(sf.getBus());
-    manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
-    server = sf.create();
-  }
-
-  @After
-  public void tearDown()  {
-    server.stop();
-    server.destroy();
   }
 
   @Test

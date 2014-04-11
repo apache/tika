@@ -23,62 +23,36 @@ import java.io.InputStream;
 
 import javax.ws.rs.core.Response;
 
-import org.apache.cxf.binding.BindingFactoryManager;
-import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 public class TikaVersionTest extends CXFTestBase {
-  private static final String VERSION_PATH = "/version";
+   private static final String VERSION_PATH = "/version";
 
-  @Before
-  public void setUp() {
-    super.setUp();
-    JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-    sf.setResourceClasses(TikaVersion.class);
-    sf.setResourceProvider(
-        TikaVersion.class,
-        new SingletonResourceProvider(new TikaVersion(tika))
-    );
-    sf.setAddress(endPoint + "/");
+   @Override
+   protected void setUpResources(JAXRSServerFactoryBean sf) {
+       sf.setResourceClasses(TikaVersion.class);
+       sf.setResourceProvider(
+           TikaVersion.class,
+           new SingletonResourceProvider(new TikaVersion(tika))
+       );
+   }
 
-    BindingFactoryManager manager = sf.getBus().getExtension(
-        BindingFactoryManager.class
-    );
+   @Override
+   protected void setUpProviders(JAXRSServerFactoryBean sf) {}
 
-    JAXRSBindingFactory factory = new JAXRSBindingFactory();
-    factory.setBus(sf.getBus());
+   @Test
+   public void testGetVersion() throws Exception {
+       Response response = WebClient
+               .create(endPoint + VERSION_PATH)
+               .type("text/plain")
+               .accept("text/plain")
+               .get();
 
-    manager.registerBindingFactory(
-        JAXRSBindingFactory.JAXRS_BINDING_ID,
-        factory
-    );
-
-    server = sf.create();
-  }
-
-  @After
-  public void tearDown() throws Exception {
-    server.stop();
-    server.destroy();
-  }
-
-  @Test
-  public void testGetVersion() throws Exception {
-    Response response = WebClient
-        .create(endPoint + VERSION_PATH)
-        .type("text/plain")
-        .accept("text/plain")
-        .get();
-
-    assertEquals(new Tika().toString(),
-        getStringFromInputStream((InputStream) response.getEntity()));
-  }
-
+       assertEquals(new Tika().toString(),
+               getStringFromInputStream((InputStream) response.getEntity()));
+   }
 }
