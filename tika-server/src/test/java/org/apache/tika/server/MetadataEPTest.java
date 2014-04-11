@@ -36,16 +36,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import org.apache.cxf.binding.BindingFactoryManager;
-import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.io.IOUtils;
 import org.eclipse.jetty.util.ajax.JSON;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import au.com.bytecode.opencsv.CSVReader;

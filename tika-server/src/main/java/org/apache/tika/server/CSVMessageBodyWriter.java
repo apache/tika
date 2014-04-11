@@ -49,6 +49,7 @@ public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
   }
 
   @Override
+  @SuppressWarnings("resource")
   public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
       MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
       WebApplicationException {
@@ -62,7 +63,8 @@ public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
       list.addAll(Arrays.asList(values));
       writer.writeNext(list.toArray(values));
     }
-    // don't close, just flush the stream
+    
+    // Don't close, just flush the stream
     writer.flush();
   }
 }
