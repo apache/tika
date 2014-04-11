@@ -43,7 +43,6 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest.TrackingHandler;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -494,7 +493,6 @@ public class PDFParserTest extends TikaTest {
        assertTrue(needle > -1);
        assertTrue(needle > pdfHaystack && pdfHaystack > outerHaystack);
        
-       //plagiarized from POIContainerExtractionTest.  Thank you!
        TrackingHandler tracker = new TrackingHandler();
        TikaInputStream tis;
        ContainerExtractor ex = new ParserContainerExtractor();

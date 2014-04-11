@@ -19,11 +19,11 @@ package org.apache.tika.parser.xml;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.microsoft.AbstractPOIContainerExtractionTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -57,7 +57,7 @@ public class FictionBookParserTest {
             assertEquals(true, extractor.isSupported(stream));
 
             // Process it
-            AbstractPOIContainerExtractionTest.TrackingHandler handler = new AbstractPOIContainerExtractionTest.TrackingHandler();
+            TrackingHandler handler = new TrackingHandler();
             extractor.extract(stream, null, handler);
 
             assertEquals(2, handler.filenames.size());

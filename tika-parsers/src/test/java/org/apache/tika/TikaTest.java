@@ -19,18 +19,31 @@ package org.apache.tika;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedResourceHandler;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 /**
  * Parent class of Tika tests
@@ -128,5 +141,98 @@ public abstract class TikaTest {
         return getText(is, parser, new ParseContext(), new Metadata());
     }
 
+    /**
+     * Keeps track of media types and file names recursively.
+     *
+     */
+    public static class TrackingHandler implements EmbeddedResourceHandler {
+        public List<String> filenames = new ArrayList<String>();
+        public List<MediaType> mediaTypes = new ArrayList<MediaType>();
+        
+        private final Set<MediaType> skipTypes;
+        
+        public TrackingHandler() {
+            skipTypes = new HashSet<MediaType>();
+        }
+     
+        public TrackingHandler(Set<MediaType> skipTypes) {
+            this.skipTypes = skipTypes;
+        }
+
+        @Override
+        public void handle(String filename, MediaType mediaType,
+                InputStream stream) {
+            if (skipTypes.contains(mediaType)) {
+                return;
+            }
+            mediaTypes.add(mediaType);
+            filenames.add(filename);
+        }
+    }
+    
+    /**
+     * Copies byte[] of embedded documents into a List.
+     */
+    public static class ByteCopyingHandler implements EmbeddedResourceHandler {
+
+        public List<byte[]> bytes = new ArrayList<byte[]>();
+
+        @Override
+        public void handle(String filename, MediaType mediaType,
+                InputStream stream) {
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            if (! stream.markSupported()) {
+                stream = TikaInputStream.get(stream);
+            }
+            stream.mark(0);
+            try {
+                IOUtils.copy(stream, os);
+                bytes.add(os.toByteArray());
+                stream.reset();
+            } catch (IOException e) {
+                //swallow
+            }
+        }
+    }
+    
+    /**
+     * Stores metadata and (optionally) content.
+     * Many thanks to Jukka's example:
+     * http://wiki.apache.org/tika/RecursiveMetadata
+     *
+     */
+    public static class RecursiveMetadataParser extends ParserDecorator {
+        /** Key for content string if stored */
+        public static final String TIKA_CONTENT = "tika:content";
+
+        private static final long serialVersionUID = 1L;
+        
+        private List<Metadata> metadatas = new ArrayList<Metadata>();
+        private final boolean storeContent;
+        
+        public RecursiveMetadataParser(Parser parser, 
+                boolean storeContent) {
+            super(parser);
+            this.storeContent = storeContent;
+        }
+
+        @Override
+        public void parse(
+                InputStream stream, ContentHandler contentHandler,
+                Metadata metadata, ParseContext context)
+                        throws IOException, SAXException, TikaException {
+
+            super.parse(stream, contentHandler, metadata, context);
+            
+            if (storeContent) {
+                metadata.add(TIKA_CONTENT, contentHandler.toString());
+            }
+            metadatas.add(metadata);
+        }
+
+        public List<Metadata> getAllMetadata() {
+            return metadatas;
+        }        
+    }
 
 }
