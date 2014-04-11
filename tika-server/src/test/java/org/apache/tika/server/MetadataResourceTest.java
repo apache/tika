@@ -68,6 +68,7 @@ public class MetadataResourceTest extends CXFTestBase {
 		while ((nextLine = csvReader.readNext()) != null) {
 			metadata.put(nextLine[0], nextLine[1]);
 		}
+		csvReader.close();
 
 		assertNotNull(metadata.get("Author"));
 		assertEquals("Maxim Valyanskiy", metadata.get("Author"));
