@@ -17,6 +17,8 @@
 
 package org.apache.tika.server;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -31,13 +33,12 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
-import org.apache.cxf.io.CachedOutputStream;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 
@@ -87,13 +88,13 @@ public abstract class CXFTestBase {
         server.destroy();
     }
 
-	protected String getStringFromInputStream(InputStream in) throws Exception {
-		CachedOutputStream bos = new CachedOutputStream();
-		IOUtils.copy(in, bos);
-		in.close();
-		bos.close();
-		return bos.getOut().toString();
-	}
+    public static void assertContains(String needle, String haystack) {
+        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+    }
+
+    protected String getStringFromInputStream(InputStream in) throws Exception {
+        return IOUtils.toString(in);
+    }
 
 	protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
 		Map<String, String> data = new HashMap<String, String>();

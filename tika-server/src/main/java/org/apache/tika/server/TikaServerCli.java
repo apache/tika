@@ -90,7 +90,9 @@ public class TikaServerCli {
       TikaConfig tika = TikaConfig.getDefaultConfig();
 
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-      sf.setResourceClasses(MetadataEP.class, MetadataResource.class, TikaResource.class, UnpackerResource.class, TikaVersion.class);
+      sf.setResourceClasses(MetadataEP.class, MetadataResource.class, 
+              TikaResource.class, UnpackerResource.class, 
+              TikaMimeTypes.class, TikaVersion.class);
 
       List<Object> providers = new ArrayList<Object>();
       providers.add(new TarWriter());
@@ -104,6 +106,7 @@ public class TikaServerCli {
       rProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
       rProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
       rProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
+      rProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
       rProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
       sf.setResourceProviders(rProviders);
       
