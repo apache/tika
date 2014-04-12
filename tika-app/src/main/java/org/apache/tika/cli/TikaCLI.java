@@ -621,6 +621,9 @@ public class TikaCLI {
             }
             Parser p = parsers.get(type);
             if (p != null) {
+                if (p instanceof CompositeParser) {
+                    p = ((CompositeParser)p).getParsers().get(type);
+                }
                 System.out.println("  parser:    " + p.getClass().getName());
             }
         }
