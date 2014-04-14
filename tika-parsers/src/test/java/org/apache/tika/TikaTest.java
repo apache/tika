@@ -83,7 +83,7 @@ public abstract class TikaTest {
        return stream;
    }
 
-    public void assertContains(String needle, String haystack) {
+    public static void assertContains(String needle, String haystack) {
        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
 
