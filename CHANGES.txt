@@ -1,5 +1,7 @@
 Release 1.6 - ??/??/2014
 
+  * Extract attachments from RTF files (TIKA-1010)
+
   * Support Outlook Personal Folders File Format *.pst (TIKA-623)
   
   * Added mime entries for additional Ogg based formats (TIKA-1259)

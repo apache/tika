@@ -19,22 +19,41 @@ package org.apache.tika.parser.rtf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
+import org.xml.sax.ContentHandler;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -356,7 +375,24 @@ public class RTFParserTest extends TikaTest {
     // TIKA-782
     @Test
     public void testBinControlWord() throws Exception {
-        assertTrue(getXML("testBinControlWord.rtf").xml.indexOf("\u00ff\u00ff\u00ff\u00ff") == -1);
+        ByteCopyingHandler embHandler = new ByteCopyingHandler();
+        TikaInputStream tis = null;
+        try {
+            ContainerExtractor ex = new ParserContainerExtractor();
+            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testBinControlWord.rtf"));
+            assertEquals(true, ex.isSupported(tis));
+            ex.extract(tis, ex, embHandler);            
+        } finally {
+            tis.close();
+        }
+        assertEquals(1, embHandler.bytes.size());
+        
+        byte[] bytes = embHandler.bytes.get(0);
+        assertEquals(10, bytes.length);
+        //}
+        assertEquals(125, (int)bytes[4]);
+        //make sure that at least the last value is correct
+        assertEquals(-1, (int)bytes[9]);
     }
 
     // TIKA-999
@@ -375,6 +411,167 @@ public class RTFParserTest extends TikaTest {
         Result r = getResult("testRTFListOverride.rtf");
         String content = r.text;
         assertContains("Body", content);
+    }
+
+    //TIKA-1010
+    @Test
+    public void testEmbeddedMonster() throws Exception {
+        Set<MediaType> skipTypes = new HashSet<MediaType>();
+        skipTypes.add(MediaType.parse("application/x-emf"));
+        skipTypes.add(MediaType.parse("application/x-msmetafile"));
+        
+        
+        List<String> trueNames = new ArrayList<String>();
+        trueNames.add("file_0.doc");
+        trueNames.add("Hw.txt");
+        trueNames.add("file_1.xlsx");
+        trueNames.add("test-zip-of-zip_\u666E\u6797\u65AF\u987F.zip");
+        trueNames.add("html-within-zip.zip");
+        trueNames.add("text.html");
+        trueNames.add("testHTML_utf8_\u666E\u6797\u65AF\u987F.html");
+        trueNames.add("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
+        trueNames.add("file_2.xls");
+        trueNames.add("testMSG_\u666E\u6797\u65AF\u987F.msg");
+        trueNames.add("file_3.pdf");
+        trueNames.add("file_4.ppt");
+        trueNames.add("file_5.pptx");
+        trueNames.add("thumbnail_0.jpeg");
+        trueNames.add("file_6.doc");
+        trueNames.add("file_7.doc");
+        trueNames.add("file_8.docx");
+        trueNames.add("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
+
+        List<String> trueTypes = new ArrayList<String>();
+        trueTypes.add("application/msword");
+        trueTypes.add("text/plain");
+        trueTypes.add("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        trueTypes.add("application/zip");
+        trueTypes.add("application/zip");
+        trueTypes.add("text/html");
+        trueTypes.add("text/html");
+        trueTypes.add("image/jpeg");
+        trueTypes.add("application/vnd.ms-excel");
+        trueTypes.add("application/vnd.ms-outlook");
+        trueTypes.add("application/pdf");
+        trueTypes.add("application/vnd.ms-powerpoint");
+        trueTypes.add("application/vnd.openxmlformats-officedocument.presentationml.presentation");
+        trueTypes.add("image/jpeg");
+        trueTypes.add("application/msword");
+        trueTypes.add("application/msword");
+        trueTypes.add("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        trueTypes.add("image/jpeg");
+        
+        TrackingHandler tracker = new TrackingHandler(skipTypes);
+        TikaInputStream tis = null;
+        try {
+            ContainerExtractor ex = new ParserContainerExtractor();
+            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"));
+            assertEquals(true, ex.isSupported(tis));
+            ex.extract(tis, ex, tracker);
+
+        } finally {
+            tis.close();
+        }
+
+        assertEquals(trueNames.size(), tracker.filenames.size());
+        assertEquals(trueTypes.size(), tracker.mediaTypes.size());
+        for (int i = 0; i < tracker.filenames.size(); i++) {
+            String expectedName = trueNames.get(i);
+            if (expectedName == null) {
+                assertNull(tracker.filenames.get(i));
+            } else {
+                assertNotNull(tracker.filenames.get(i));
+                //necessary to getName() because MSOffice extractor includes
+                //directory: _1457338524/HW.txt
+                assertEquals("filename equals ", 
+                        expectedName, FilenameUtils.getName(tracker.filenames.get(i)));
+            }
+            assertEquals(trueTypes.get(i), tracker.mediaTypes.get(i).toString());
+        }
+        
+        tracker = new TrackingHandler();
+        tis = null;
+        try {
+            ContainerExtractor ex = new ParserContainerExtractor();
+            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"));
+            assertEquals(true, ex.isSupported(tis));
+            ex.extract(tis, ex, tracker);
+
+        } finally {
+            tis.close();
+        }
+        assertEquals(47, tracker.filenames.size());
+        assertEquals("thumbnail_26.emf", tracker.filenames.get(45));
+        assertEquals("thumbnail_27.wmf", tracker.filenames.get(46));
+    }
+    
+    //TIKA-1010 test regular (not "embedded") images/picts
+    public void testRegularImages() throws Exception {
+        Parser base = new AutoDetectParser();
+        ParseContext ctx = new ParseContext();
+        RecursiveMetadataParser parser = new RecursiveMetadataParser(base, false);
+        ctx.set(org.apache.tika.parser.Parser.class, parser);
+        TikaInputStream tis = null;
+        ContentHandler handler = new BodyContentHandler();
+        Metadata rootMetadata = new Metadata();
+        rootMetadata.add(Metadata.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
+        try {
+            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFRegularImages.rtf"));
+            parser.parse(tis, handler, rootMetadata, ctx);            
+        } finally {
+            tis.close();
+        }
+        List<Metadata> metadatas =  parser.getAllMetadata();
+
+        Metadata meta_jpg_exif = metadatas.get(0);//("testJPEG_EXIF_\u666E\u6797\u65AF\u987F.jpg");
+        Metadata meta_jpg = metadatas.get(2);//("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
+        
+        assertTrue(meta_jpg_exif != null);
+        assertTrue(meta_jpg != null);
+        assertTrue(Arrays.asList(meta_jpg_exif.getValues("dc:subject")).contains("serbor"));
+        assertTrue(meta_jpg.get("Comments").contains("Licensed to the Apache"));
+        //make sure old metadata doesn't linger between objects
+        assertFalse(Arrays.asList(meta_jpg.getValues("dc:subject")).contains("serbor"));
+        assertEquals("false", meta_jpg.get(RTFMetadata.THUMBNAIL));
+        assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
+        
+        assertEquals(40, meta_jpg.names().length);
+        assertEquals(105, meta_jpg.names().length);
+    }
+    
+    //TIKA-1010 test linked embedded doc
+    @Test
+    public void testEmbeddedLinkedDocument() throws Exception {
+        Set<MediaType> skipTypes = new HashSet<MediaType>();
+        skipTypes.add(MediaType.parse("application/x-emf"));
+        skipTypes.add(MediaType.parse("application/x-msmetafile"));
+
+        TrackingHandler tracker = new TrackingHandler(skipTypes);
+        TikaInputStream tis = null;
+        try {
+            ContainerExtractor ex = new ParserContainerExtractor();
+            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"));
+            assertEquals(true, ex.isSupported(tis));
+            ex.extract(tis, ex, tracker);
+
+        } finally {
+            tis.close();
+        }
+        //should gracefully skip link and not throw NPE, IOEx, etc
+        assertEquals(0, tracker.filenames.size());
+
+        tracker = new TrackingHandler();
+        tis = null;
+        try {
+            ContainerExtractor ex = new ParserContainerExtractor();
+            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"));
+            assertEquals(true, ex.isSupported(tis));
+            ex.extract(tis, ex, tracker);
+        } finally {
+            tis.close();
+        }
+        //should gracefully skip link and not throw NPE, IOEx, etc
+        assertEquals(2, tracker.filenames.size());
     }
 
     private Result getResult(String filename) throws Exception {
