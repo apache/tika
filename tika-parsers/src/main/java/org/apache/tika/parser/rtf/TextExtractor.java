@@ -130,6 +130,7 @@ final class TextExtractor {
     private static final Charset GB2312 = getCharset("GB2312");
     private static final Charset MS949 = getCharset("ms949");
 
+    private int written = 0;
     // Hold pending bytes (encoded in the current charset)
     // for text output:
     private byte[] pendingBytes = new byte[16];
@@ -205,6 +206,7 @@ final class TextExtractor {
 
     private final XHTMLContentHandler out;
     private final Metadata metadata;
+    private final RTFEmbObjHandler embObjHandler;
 
     // Used when extracting CREATION date:
     private int year, month, day, hour, minute;
@@ -327,9 +329,11 @@ final class TextExtractor {
         ANSICPG_MAP.put(57011, WINDOWS_57011);   // Punjabi
     }
 
-    public TextExtractor(XHTMLContentHandler out, Metadata metadata) {
+    public TextExtractor(XHTMLContentHandler out, Metadata metadata,
+            RTFEmbObjHandler embObjHandler) {
         this.metadata = metadata;
         this.out = out;
+        this.embObjHandler = embObjHandler;
     }
 
     public boolean isIgnoringLists() {
@@ -340,7 +344,7 @@ final class TextExtractor {
         this.ignoreLists = ignore;
     }
 
-    private static boolean isHexChar(int ch) {
+    protected static boolean isHexChar(int ch) {
         return (ch >= '0' && ch <= '9') ||
             (ch >= 'a' && ch <= 'f') ||
             (ch >= 'A' && ch <= 'F');
@@ -355,7 +359,7 @@ final class TextExtractor {
         return ch >= '0' && ch <= '9';
     }
 
-    private static int hexValue(int ch) {
+    protected static int hexValue(int ch) {
         if (ch >= '0' && ch <= '9') {
             return ch - '0';
         } else if (ch >= 'a' && ch <= 'z') {
@@ -384,16 +388,19 @@ final class TextExtractor {
         if (pendingCharCount != 0) {
             pushChars();
         }
-
-        // Save the byte in pending buffer:
-        if (pendingByteCount == pendingBytes.length) {
-            // Gradual but exponential growth:
-            final byte[] newArray = new byte[(int) (pendingBytes.length*1.25)];
-            System.arraycopy(pendingBytes, 0, newArray, 0, pendingBytes.length);
-            pendingBytes = newArray;
-            pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
-        }
-        pendingBytes[pendingByteCount++] = (byte) b;
+        if (groupState.pictDepth > 0) {
+            embObjHandler.writeMetadataChar((char)b);
+        } else {
+            // Save the byte in pending buffer:
+            if (pendingByteCount == pendingBytes.length) {
+                // Gradual but exponential growth:
+                final byte[] newArray = new byte[(int) (pendingBytes.length*1.25)];
+                System.arraycopy(pendingBytes, 0, newArray, 0, pendingBytes.length);
+                pendingBytes = newArray;
+                pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
+            }
+            pendingBytes[pendingByteCount++] = (byte) b;
+       }
     }
 
    // Buffers a byte as part of a control word:
@@ -417,6 +424,8 @@ final class TextExtractor {
 
         if (inHeader || fieldState == 1) {
             pendingBuffer.append(ch);
+        } else if (groupState.sn == true || groupState.sv == true) {
+            embObjHandler.writeMetadataChar(ch);
         } else {
             if (pendingCharCount == pendingChars.length) {
                 // Gradual but exponential growth:
@@ -467,7 +476,12 @@ final class TextExtractor {
                     // parsed document closing brace
                     break;
                 }
-            } else if (b != '\r' && b != '\n' && (!groupState.ignore || nextMetaData != null)) {
+            } else if (groupState.objdata == true ||
+                groupState.pictDepth == 1) {
+                embObjHandler.writeHexChar(b);
+            } else if (b != '\r' && b != '\n' 
+                    && (!groupState.ignore || nextMetaData != null ||
+                    groupState.sn == true || groupState.sv == true)) {
                 // Linefeed and carriage return are not
                 // significant
                 if (ansiSkip != 0) {
@@ -924,7 +938,7 @@ final class TextExtractor {
         // in the header can be unicode escaped as well:
         if (equals("u")) {
             // Unicode escape
-            if (!groupState.ignore) {
+            if (!groupState.ignore || groupState.sv || groupState.sn) {
                 final char utf16CodeUnit = (char) (param & 0xffff);
                 addOutputChar(utf16CodeUnit);
             }
@@ -938,14 +952,25 @@ final class TextExtractor {
             groupState.ucSkip = (int) param;
         } else if (equals("bin")) {
             if (param >= 0) {
-                int bytesToRead = param;
-                byte[] tmpArray = new byte[Math.min(1024, bytesToRead)];
-                while (bytesToRead > 0) {
-                    int r = in.read(tmpArray, 0, Math.min(bytesToRead, tmpArray.length));
-                    if (r < 0) {
-                        throw new TikaException("unexpected end of file: need " + param + " bytes of binary data, found " + (param-bytesToRead));
+                if (groupState.pictDepth == 1) {
+                    try{
+                        embObjHandler.writeBytes(in, param);
+                    } catch (IOException e) {
+                        //param was out of bounds or something went wrong during writing.
+                        //skip this obj and move on
+                        //TODO: log.warn
+                        embObjHandler.reset();
                     }
-                    bytesToRead -= r;
+                } else {
+                    int bytesToRead = param;
+                    byte[] tmpArray = new byte[Math.min(1024, bytesToRead)];
+                    while (bytesToRead > 0) {
+                        int r = in.read(tmpArray, 0, Math.min(bytesToRead, tmpArray.length));
+                        if (r < 0) {
+                            throw new TikaException("unexpected end of file: need " + param + " bytes of binary data, found " + (param-bytesToRead));
+                        }
+                        bytesToRead -= r;
+                    }
                 }
             } else {
                 // log some warning?
@@ -1156,11 +1181,27 @@ final class TextExtractor {
             // TODO: we should produce a table output here?
             //addOutputChar(' ');
             endParagraph(true);
+        } else if (equals("sp")) {
+            groupState.sp = true;
+        } else if (equals("sn")) {
+            embObjHandler.startSN();
+            groupState.sn = true;
+        } else if (equals("sv")) {
+            embObjHandler.startSV();
+            groupState.sv = true;
+        } else if (equals("object")) {
+            pushText();
+            embObjHandler.setInObject(true);
+            groupState.object = true;
+        } else if (equals("objdata")) {
+            groupState.objdata = true;
+            embObjHandler.startObjData();
         } else if (equals("pict")) {
             pushText();
             // TODO: create img tag?  but can that support
             // embedded image data?
-            groupState.ignore = true;
+            groupState.pictDepth = 1;
+            embObjHandler.startPict();
         } else if (equals("line")) {
             if (!ignored) {
                 addOutputChar('\n');
@@ -1309,6 +1350,25 @@ final class TextExtractor {
 
         assert groupState.depth > 0;
         ansiSkip = 0;
+        
+        if (groupState.objdata == true) {
+            embObjHandler.handleCompletedObject();
+            groupState.objdata = false;
+        } else if (groupState.pictDepth > 0) {
+            if (groupState.sn == true) {
+                embObjHandler.endSN();
+            } else if (groupState.sv == true) {
+                embObjHandler.endSV();
+            } else if (groupState.sp == true) {
+                embObjHandler.endSP();
+            } else if (groupState.pictDepth == 1) {
+                embObjHandler.handleCompletedObject();
+            }
+        }
+
+        if (groupState.object == true) {
+            embObjHandler.setInObject(false);
+        }
 
         // Be robust if RTF doc is corrupt (has too many
         // closing }s):

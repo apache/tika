@@ -94,5 +94,24 @@ public class FilenameUtilsTest {
         assertEquals(EXPECTED_NAME, FilenameUtils.normalize(TEST_NAME));
     }
 
+    @Test
+    public void testGetName() throws Exception {
+        testFilenameEquality("quick.ppt", "C:\\the\\quick.ppt");
+        testFilenameEquality("quick.ppt", "/the/quick.ppt");
+        testFilenameEquality("", "/the/quick/");
+        testFilenameEquality("", "~/the/quick////\\\\//");
+        testFilenameEquality("~~quick", "~~quick");
+        testFilenameEquality("quick.ppt", "quick.ppt");
+        testFilenameEquality("", "////");
+        testFilenameEquality("", "C:////");
+        testFilenameEquality("", "..");
+        testFilenameEquality("quick", "C:////../the/D:/quick");
+        testFilenameEquality("file.ppt", "path:to:file.ppt" );
+        testFilenameEquality("HW.txt", "_1457338542/HW.txt" );
+    }
+
+    private void testFilenameEquality(String expected, String path) {
+        assertEquals(expected, FilenameUtils.getName(path));
+    }
 
 }
