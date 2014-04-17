@@ -16,8 +16,12 @@
  */
 package org.apache.tika.server;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -31,8 +35,7 @@ import org.apache.tika.parser.Parser;
 import org.eclipse.jetty.util.ajax.JSON;
 
 /*
- * TODO Reduce duplication between the two methods, by
- * returning structured info that gets encoded two ways
+ * TODO Provide better support for the HTML based outputs
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
@@ -42,30 +45,68 @@ public class TikaMimeTypes {
     }
     
     @GET
+    @Produces("text/html")
+    public String getMimeTypesHTML() {
+        StringBuffer html = new StringBuffer();
+        html.append("<html><head><title>Tika Supported Mime Types</title></head>\n");
+        html.append("<body><h1>Tika Supported Mime Types</h1>\n");
+        
+        // Get our types
+        List<MediaTypeDetails> types = getMediaTypes();
+        
+        // Get the first type in each section
+        SortedMap<String,String> firstType = new TreeMap<String, String>();
+        for (MediaTypeDetails type : types) {
+            if (! firstType.containsKey(type.type.getType())) {
+                firstType.put(type.type.getType(), type.type.toString());
+            }
+        }
+        html.append("<ul>");
+        for (String section : firstType.keySet()) {
+            html.append("<li><a href=\"#" + firstType.get(section) + "\">" + 
+                        section + "</a></li>\n");
+        }
+        html.append("</ul>");
+        
+        // Output all of them
+        for (MediaTypeDetails type : types) {
+            html.append("<a name=\"" + type.type + "\"></a>\n");
+            html.append("<h2>" + type.type + "</h2>\n");
+            
+            for (MediaType alias : type.aliases) {
+                html.append("<div>Alias: " + alias + "</div>\n");
+            }
+            if (type.supertype != null) {
+                html.append("<div>Super Type: <a href=\"#" + type.supertype + 
+                            "\">" + type.supertype + "</a></div>\n");
+            }
+            
+            if (type.parser != null) {
+                html.append("<div>Parser: " + type.parser + "</div>\n");
+            }
+        }
+
+        html.append("</body></html>\n");
+        return html.toString();
+    }
+    
+    @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getMimeTypesJSON() {
         Map<String,Object> details = new HashMap<String, Object>();
         
-        MediaTypeRegistry registry = tika.getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers = ((CompositeParser)tika.getParser()).getParsers();
-
-        for (MediaType type : registry.getTypes()) {
+        for (MediaTypeDetails type : getMediaTypes()) {
             Map<String,Object> typeDets = new HashMap<String, Object>();
 
-            typeDets.put("alias", registry.getAliases(type));
-            MediaType supertype = registry.getSupertype(type);
-            if (supertype != null && !MediaType.OCTET_STREAM.equals(supertype)) {
-                typeDets.put("supertype", supertype);
+            typeDets.put("alias", type.aliases);
+            if (type.supertype != null) {
+                typeDets.put("supertype", type.supertype);
             }
-            Parser p = parsers.get(type);
-            if (p != null) {
-                if (p instanceof CompositeParser) {
-                    p = ((CompositeParser)p).getParsers().get(type);
-                }
-                typeDets.put("parser", p.getClass().getName());
+            if (type.parser != null) {
+                typeDets.put("parser", type.parser);
             }
 
-            details.put(type.toString(), typeDets);
+            details.put(type.type.toString(), typeDets);
         }
         
         return JSON.toString(details);
@@ -76,21 +117,39 @@ public class TikaMimeTypes {
     public String getMimeTypesPlain() {
         StringBuffer text = new StringBuffer();
         
-        MediaTypeRegistry registry = tika.getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers = ((CompositeParser)tika.getParser()).getParsers();
-
-        for (MediaType type : registry.getTypes()) {
-            text.append(type);
+        for (MediaTypeDetails type : getMediaTypes()) {
+            text.append(type.type.toString());
             text.append("\n");
             
-            for (MediaType alias : registry.getAliases(type)) {
-                text.append("  alias:     " + alias);
-                text.append("\n");
+            for (MediaType alias : type.aliases) {
+                text.append("  alias:     " + alias + "\n");
             }
+            if (type.supertype != null) {
+                text.append("  supertype: " + type.supertype.toString() + "\n");
+            }
+            
+            if (type.parser != null) {
+                text.append("  parser:    " + type.parser + "\n");
+            }
+        }
+
+        return text.toString();
+    }
+    
+    protected List<MediaTypeDetails> getMediaTypes() {
+        MediaTypeRegistry registry = tika.getMediaTypeRegistry();
+        Map<MediaType, Parser> parsers = ((CompositeParser)tika.getParser()).getParsers();
+        List<MediaTypeDetails> types = 
+                new ArrayList<TikaMimeTypes.MediaTypeDetails>(registry.getTypes().size());
+
+        for (MediaType type : registry.getTypes()) {
+            MediaTypeDetails details = new MediaTypeDetails();
+            details.type = type;
+            details.aliases = registry.getAliases(type).toArray(new MediaType[0]);
+            
             MediaType supertype = registry.getSupertype(type);
             if (supertype != null && !MediaType.OCTET_STREAM.equals(supertype)) {
-                text.append("  supertype: " + supertype);
-                text.append("\n");
+                details.supertype = supertype;
             }
             
             Parser p = parsers.get(type);
@@ -98,11 +157,19 @@ public class TikaMimeTypes {
                 if (p instanceof CompositeParser) {
                     p = ((CompositeParser)p).getParsers().get(type);
                 }
-                text.append("  parser:    " + p.getClass().getName());
-                text.append("\n");
+                details.parser = p.getClass().getName();
             }
+            
+            types.add(details);
         }
-
-        return text.toString();
+        
+        return types;
+    }
+    
+    private static class MediaTypeDetails {
+        private MediaType type;
+        private MediaType[] aliases;
+        private MediaType supertype;
+        private String parser;
     }
 }

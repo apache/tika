@@ -64,6 +64,27 @@ public class TikaMimeTypesTest extends CXFTestBase {
    }
 
    @Test
+   public void testGetHTML() throws Exception {
+       Response response = WebClient
+               .create(endPoint + MIMETYPES_PATH)
+               .type("text/html")
+               .accept("text/html")
+               .get();
+       
+       String text = getStringFromInputStream((InputStream) response.getEntity());
+       assertContains("text/plain", text);
+       assertContains("application/xml", text);
+       assertContains("video/x-ogm", text);
+       
+       assertContains("<h2>text/plain", text);
+       assertContains("name=\"text/plain", text);
+       
+       assertContains("Super Type: <a href=\"#video/ogg\">video/ogg", text);
+       
+       assertContains("Alias: image/bmp", text);
+   }
+
+   @Test
    @SuppressWarnings("unchecked")
    public void testGetJSON() throws Exception {
        Response response = WebClient
