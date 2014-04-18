@@ -117,7 +117,8 @@ public class PackageParser extends AbstractParser {
 
         ArchiveInputStream ais;
         try {
-            ArchiveStreamFactory factory = new ArchiveStreamFactory();
+            ArchiveStreamFactory factory = context.get(
+                    ArchiveStreamFactory.class, new ArchiveStreamFactory());
             ais = factory.createArchiveInputStream(stream);
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
