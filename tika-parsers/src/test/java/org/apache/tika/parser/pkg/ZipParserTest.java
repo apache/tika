@@ -24,8 +24,11 @@ import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.tika.Tika;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -33,6 +36,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Test case for parsing zip files.
@@ -171,4 +175,30 @@ public class ZipParserTest extends AbstractPkgTest {
         assertTrue(relIDs.allRelIDs.contains("test1.txt"));
         assertTrue(relIDs.allRelIDs.contains("test2.txt"));
     }
+
+    @Test // TIKA-936
+    public void testCustomEncoding() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.setEntryEncoding("SJIS");
+        trackingContext.set(ArchiveStreamFactory.class, factory);
+
+        InputStream stream = TikaInputStream.get(Base64.decodeBase64(
+                "UEsDBBQAAAAIAI+CvUCDo3+zIgAAACgAAAAOAAAAk/qWe4zqg4GDgi50"
+                + "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh"
+                + "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA"
+                + "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="));
+        try {
+            autoDetectParser.parse(
+                    stream, new DefaultHandler(),
+                    new Metadata(), trackingContext);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals(1, tracker.filenames.size());
+        assertEquals(
+                "\u65E5\u672C\u8A9E\u30E1\u30E2.txt",
+                tracker.filenames.get(0));
+    }
+
 }
