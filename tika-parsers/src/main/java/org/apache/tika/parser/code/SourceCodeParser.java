@@ -91,7 +91,7 @@ public class SourceCodeParser implements Parser {
         String line;
         int nbLines =  0;
         while ((line = reader.readLine()) != null) {
-            out.append(line + System.lineSeparator());
+            out.append(line + System.getProperty("line.separator"));
             String author = parserAuthor(line);
             if (author != null) {
               metadata.add(TikaCoreProperties.CREATOR, author);
