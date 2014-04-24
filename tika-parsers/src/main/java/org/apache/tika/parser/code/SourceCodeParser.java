@@ -38,6 +38,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -90,7 +91,7 @@ public class SourceCodeParser implements Parser {
         String line;
         int nbLines =  0;
         while ((line = reader.readLine()) != null) {
-            out.append(line);
+            out.append(line + System.lineSeparator());
             String author = parserAuthor(line);
             if (author != null) {
               metadata.add(TikaCoreProperties.CREATOR, author);
@@ -98,13 +99,12 @@ public class SourceCodeParser implements Parser {
             nbLines ++;
         }
         metadata.set("LoC", String.valueOf(nbLines));
-
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         Renderer renderer = getRenderer(type.toString());
         String codeAsHtml = renderer.highlight(name, out.toString(), charset.name(), false);
-        char[] charArray = codeAsHtml.toCharArray();
-        handler.startDocument();
-        handler.characters(charArray, 0, charArray.length);
-        handler.endDocument();
+        xhtml.startDocument();
+        xhtml.element("p", codeAsHtml);
+        xhtml.endDocument();
       }
     } finally {
       reader.close();
