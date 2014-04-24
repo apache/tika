@@ -77,8 +77,8 @@ public class TikaDetectionTest {
         assertEquals("application/octet-stream", tika.detect("x.lrf"));
         assertEquals("application/octet-stream", tika.detect("x.lzh"));
         assertEquals("application/octet-stream", tika.detect("x.so"));
-        assertEquals("application/octet-stream", tika.detect("x.iso"));
-        assertEquals("application/octet-stream", tika.detect("x.dmg"));
+        assertEquals("application/x-iso9660-image", tika.detect("x.iso"));
+        assertEquals("application/x-apple-diskimage", tika.detect("x.dmg"));
         assertEquals("application/octet-stream", tika.detect("x.dist"));
         assertEquals("application/octet-stream", tika.detect("x.distz"));
         assertEquals("application/octet-stream", tika.detect("x.pkg"));
