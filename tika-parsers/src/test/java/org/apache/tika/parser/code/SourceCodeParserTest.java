@@ -46,7 +46,7 @@ public class SourceCodeParserTest extends TikaTest {
 
   @Test
   public void testHTMLRender() throws Exception {
-    String htmlContent = getXML(getResourceAsStream("/test-documents/testJava.java"), sourceCodeParser, createMetadata("text/x-java-source")).xml;
+    String htmlContent = getXML(getResourceAsStream("/test-documents/testJAVA.java"), sourceCodeParser, createMetadata("text/x-java-source")).xml;
     assertTrue(htmlContent.indexOf("&gt;&lt;code&gt;&lt;span class=\"java_javadoc_comment\"&gt;") > 0);
     assertTrue(htmlContent.indexOf("&lt;span class=\"java_type\"&gt;HelloWorld&lt;/span&gt;") > 0);
     assertTrue(htmlContent.indexOf("&gt;&lt;span class=\"java_keyword\"&gt;public&lt;") > 0);
@@ -54,7 +54,7 @@ public class SourceCodeParserTest extends TikaTest {
 
   @Test
   public void testHTMLRenderWithReturnLine() throws Exception {
-    String htmlContent = getXML(getResourceAsStream("/test-documents/testJava.java"), sourceCodeParser, createMetadata("text/x-java-source")).xml;
+    String htmlContent = getXML(getResourceAsStream("/test-documents/testJAVA.java"), sourceCodeParser, createMetadata("text/x-java-source")).xml;
     assertTrue(htmlContent.indexOf("&lt;span class=\"java_javadoc_comment\"&gt;&amp;nbsp;*&lt;/span&gt;&lt;br /&gt;") > 0);
   }
 
@@ -76,7 +76,7 @@ public class SourceCodeParserTest extends TikaTest {
 
   @Test
   public void testReturnContentAsIsForTextHandler() throws Exception {
-    String strContent = getXML(getResourceAsStream("/test-documents/testJava.java"), new AutoDetectParser(), createMetadata("text/plain")).xml;
+    String strContent = getXML(getResourceAsStream("/test-documents/testJAVA.java"), new AutoDetectParser(), createMetadata("text/plain")).xml;
 
     assertTrue(strContent.indexOf("public class HelloWorld {") > 0);
   }
