@@ -150,6 +150,7 @@
   <mime-type type="application/fits">
     <acronym>FITS</acronym>
     <_comment>Flexible Image Transport System</_comment>
+    <tika:link>http://www.digitalpreservation.gov/formats/fdd/fdd000317.shtml</tika:link>
     <magic priority="50">
       <match value="SIMPLE  =                    T" type="string" offset="0"/>
     </magic>
@@ -379,8 +380,6 @@
     <glob pattern="*.lrf"/>
     <glob pattern="*.lzh"/>
     <glob pattern="*.so"/>
-    <glob pattern="*.iso"/>
-    <glob pattern="*.dmg"/>
     <glob pattern="*.dist"/>
     <glob pattern="*.distz"/>
     <glob pattern="*.pkg"/>
@@ -2379,6 +2378,16 @@
     <sub-class-of type="application/xml"/>
   </mime-type>
 
+  <mime-type type="application/x-apple-diskimage">
+    <glob pattern="*.dmg"/>
+    <!-- <glob pattern="*.img"/> too generic -->
+    <!-- <glob pattern="*.smi"/> conflicts with SMIL -->
+  </mime-type>
+
+  <mime-type type="application/x-appleworks">
+    <glob pattern="*.cwk"/>
+  </mime-type>
+
   <mime-type type="application/x-archive">
     <alias type="application/x-unix-archive"/>
     <magic priority="50">
@@ -2502,8 +2511,19 @@
   <mime-type type="application/x-chat">
     <glob pattern="*.chat"/>
   </mime-type>
+
   <mime-type type="application/x-chess-pgn">
     <glob pattern="*.pgn"/>
+  </mime-type>
+
+  <mime-type type="application/x-chrome-package">
+    <acronym>CRX</acronym>
+    <_comment>Chrome Extension Package</_comment>
+    <tika:link>https://developer.chrome.com/extensions/crx</tika:link>
+    <magic priority="50">
+      <match value="Cr24" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.crx"/>
   </mime-type>
 
   <mime-type type="application/x-compress">
@@ -2542,6 +2562,18 @@
     </magic>
     <glob pattern="*.deb"/>
     <glob pattern="*.udeb"/>
+  </mime-type>
+
+  <mime-type type="application/x-dex">
+    <acronym>DEX</acronym>
+    <_comment>Dalvik Executable Format</_comment>
+    <tika:link>http://source.android.com/devices/tech/dalvik/dex-format.html</tika:link>
+    <magic priority="50">
+      <match value="dex\n" type="string" offset="0">
+        <match value="\0" type="string" offset="7"/>
+      </match>
+    </magic>
+    <glob pattern="*.dex"/>
   </mime-type>
 
   <mime-type type="application/x-director">
@@ -2839,6 +2871,8 @@
     <_comment>ISO 9660 CD-ROM filesystem data</_comment>
     <magic priority="50">
       <match value="CD001" type="string" offset="32769"/>
+      <match value="CD001" type="string" offset="34817"/>
+      <match value="CD001" type="string" offset="36865"/>
     </magic>
     <glob pattern="*.iso"/>
   </mime-type>
@@ -3074,6 +3108,11 @@
       <match value="\x52\x61\x72\x21\x1a" type="string" offset="0"/>
     </magic>
     <glob pattern="*.rar"/>
+  </mime-type>
+
+  <mime-type type="application/x-roxio-toast">
+    <glob pattern="*.toast"/>
+    <sub-class-of type="application/x-iso9660-image"/>
   </mime-type>
 
   <mime-type type="application/x-rpm">
@@ -3319,6 +3358,14 @@
   <mime-type type="application/x-ustar">
     <glob pattern="*.ustar"/>
   </mime-type>
+
+  <mime-type type="application/x-vmdk">
+    <acronym>VMDK</acronym>
+    <_comment>Virtual Disk Format</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/VMDK</tika:link>
+    <glob pattern="*.vmdk"/>
+  </mime-type>
+
   <mime-type type="application/x-wais-source">
     <glob pattern="*.src"/>
   </mime-type>
@@ -3973,7 +4020,11 @@
   </mime-type>
 
   <mime-type type="image/example"/>
-  <mime-type type="image/fits"/>
+
+  <mime-type type="image/fits">
+    <sub-class-of type="application/fits"/>
+  </mime-type>
+
   <mime-type type="image/g3fax">
     <glob pattern="*.g3"/>
   </mime-type>
@@ -4104,16 +4155,17 @@
   <mime-type type="image/tiff-fx"/>
 
   <mime-type type="image/vnd.adobe.photoshop">
+    <acronym>PSD</acronym>
     <_comment>Photoshop Image</_comment>
     <alias type="image/x-psd"/>
     <alias type="application/photoshop"/>
-    <glob pattern="*.psd"/>
     <magic priority="50">
       <!-- Version of 0x0001 is PSD -->
       <match value="8BPS\x00\x01" type="string" offset="0"/>
       <!-- Version of 0x0002 is PSB -->
       <match value="8BPS\x00\x02" type="string" offset="0"/>
     </magic>
+    <glob pattern="*.psd"/>
   </mime-type>
 
   <mime-type type="image/vnd.adobe.premiere">
@@ -4224,12 +4276,35 @@
   <mime-type type="image/x-cmx">
     <glob pattern="*.cmx"/>
   </mime-type>
+
   <mime-type type="image/x-freehand">
+    <_comment>FreeHand image</_comment>
+    <magic priority="50">
+      <match value="AGD2" type="string" offset="0"/>
+      <match value="AGD3" type="string" offset="0"/>
+      <match value="AGD4" type="string" offset="0"/>
+      <match value="FreeHand10" type="string" offset="0:24"/>
+      <match value="FreeHand11" type="string" offset="0:24"/>
+      <match value="FreeHand12" type="string" offset="0:24"/>
+    </magic>
     <glob pattern="*.fh"/>
     <glob pattern="*.fhc"/>
     <glob pattern="*.fh4"/>
+    <glob pattern="*.fh40"/>
     <glob pattern="*.fh5"/>
+    <glob pattern="*.fh50"/>
     <glob pattern="*.fh7"/>
+    <glob pattern="*.fh8"/>
+    <glob pattern="*.fh9"/>
+    <glob pattern="*.fh10"/>
+    <glob pattern="*.fh11"/>
+    <glob pattern="*.fh12"/>
+    <glob pattern="*.ft7"/>
+    <glob pattern="*.ft8"/>
+    <glob pattern="*.ft9"/>
+    <glob pattern="*.ft10"/>
+    <glob pattern="*.ft11"/>
+    <glob pattern="*.ft12"/>
   </mime-type>
 
   <mime-type type="image/x-jp2-codestream">
