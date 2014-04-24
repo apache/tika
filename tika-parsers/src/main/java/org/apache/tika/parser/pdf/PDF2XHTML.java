@@ -111,6 +111,8 @@ class PDF2XHTML extends PDFTextStripper {
             // key methods to output to the given content
             // handler.
             PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, context, metadata, config);
+            
+            config.configure(pdf2XHTML);
 
             pdf2XHTML.writeText(document, new Writer() {
                 @Override
@@ -147,17 +149,6 @@ class PDF2XHTML extends PDFTextStripper {
         this.originalHandler = handler;
         this.context = context;
         this.handler = new XHTMLContentHandler(handler, metadata);
-        setForceParsing(true);
-        setSortByPosition(config.getSortByPosition());
-        if (config.getEnableAutoSpace()) {
-            setWordSeparator(" ");
-        } else {
-            setWordSeparator("");
-        }
-        // TODO: maybe expose setting these too:
-        //setAverageCharTolerance(1.0f);
-        //setSpacingTolerance(1.0f);
-        setSuppressDuplicateOverlappingText(config.getSuppressDuplicateOverlappingText());
     }
 
     void extractBookmarkText() throws SAXException {

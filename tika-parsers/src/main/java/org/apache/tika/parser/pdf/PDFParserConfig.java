@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Properties;
+
+import org.apache.pdfbox.util.PDFTextStripper;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -62,6 +64,12 @@ public class PDFParserConfig implements Serializable{
     
     //True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
+    
+    //The character width-based tolerance value used to estimate where spaces in text should be added
+    private Float averageCharTolerance;
+    
+    //The space width-based tolerance value used to estimate where spaces in text should be added
+    private Float spacingTolerance;
 
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
@@ -114,6 +122,28 @@ public class PDFParserConfig implements Serializable{
         setExtractAcroFormContent(
                 getProp(props.getProperty("extractAcroFormContent"),
                 getExtractAcroFormContent()));
+    }
+    
+    /**
+     * Configures the given pdf2XHTML.
+     * 
+     * @param pdf2XHTML
+     */
+    public void configure(PDF2XHTML pdf2XHTML) {
+        pdf2XHTML.setForceParsing(true);
+        pdf2XHTML.setSortByPosition(getSortByPosition());
+        if (getEnableAutoSpace()) {
+            pdf2XHTML.setWordSeparator(" ");
+        } else {
+            pdf2XHTML.setWordSeparator("");
+        }
+        if (getAverageCharTolerance() != null) {
+            pdf2XHTML.setAverageCharTolerance(getAverageCharTolerance());
+        }
+        if (getSpacingTolerance() != null) {
+            pdf2XHTML.setSpacingTolerance(getSpacingTolerance());
+        }
+        pdf2XHTML.setSuppressDuplicateOverlappingText(getSuppressDuplicateOverlappingText());
     }
 
     
@@ -213,6 +243,30 @@ public class PDFParserConfig implements Serializable{
      */
     public void setUseNonSequentialParser(boolean useNonSequentialParser) {
         this.useNonSequentialParser = useNonSequentialParser;
+    }
+
+    /** @see #setAverageCharTolerance(Float)*/
+    public Float getAverageCharTolerance() {
+        return averageCharTolerance;
+    }
+
+    /**
+     * See {@link PDFTextStripper#setAverageCharTolerance(float)}
+     */
+    public void setAverageCharTolerance(Float averageCharTolerance) {
+        this.averageCharTolerance = averageCharTolerance;
+    }
+
+    /** @see #setSpacingTolerance(Float)*/
+    public Float getSpacingTolerance() {
+        return spacingTolerance;
+    }
+
+    /**
+     * See {@link PDFTextStripper#setSpacingTolerance(float)}
+     */
+    public void setSpacingTolerance(Float spacingTolerance) {
+        this.spacingTolerance = spacingTolerance;
     }
 
     private boolean getProp(String p, boolean defaultMissing){
