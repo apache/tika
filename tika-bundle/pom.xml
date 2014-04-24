@@ -115,18 +115,19 @@
             </Bundle-Activator>
             <Embed-Dependency>
               tika-parsers;inline=true,
-              commons-compress, xz, commons-codec, commons-io,
+              commons-compress, xz, commons-codec,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               xmlbeans, dom4j,
               tagsoup,
-              asm,
+              asm-debug-all,
               juniversalchardet,
               vorbis-java-core, vorbis-java-tika,
               isoparser, aspectjrt,
-              metadata-extractor,
+              metadata-extractor, xmpcore,
               boilerpipe, rome,
-              apache-mime4j-core, apache-mime4j-dom
+              apache-mime4j-core, apache-mime4j-dom,
+			  jhighlight, netcdf, java-libpst
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
@@ -136,6 +137,7 @@
               org.apache.tika.parser.*
             </Export-Package>
             <Import-Package>
+			  !org.junit,
               *,
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
