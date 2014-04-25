@@ -287,7 +287,7 @@ public class TestMimeTypes {
        assertTypeByName("application/x-archive", "test.ar");
        assertTypeByName("application/zip",    "test.zip");
        assertTypeByName("application/x-tar",  "test.tar");
-       assertTypeByName("application/x-gzip", "test.tgz"); // See GZIP, not tar contents of it
+       assertTypeByName("application/gzip", "test.tgz"); // See GZIP, not tar contents of it
        assertTypeByName("application/x-cpio", "test.cpio");
        
        // TODO Add an example .deb and .udeb, then check these
@@ -297,7 +297,7 @@ public class TestMimeTypes {
        assertTypeByData("application/x-archive", "testARofSND.ar"); 
        assertTypeByData("application/zip",    "test-documents.zip");
        assertTypeByData("application/x-gtar",  "test-documents.tar"); // GNU TAR
-       assertTypeByData("application/x-gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
+       assertTypeByData("application/gzip", "test-documents.tgz"); // See GZIP, not tar contents of it
        assertTypeByData("application/x-cpio", "test-documents.cpio");
        
        // For spanned zip files, the .zip file doesn't have the header, it's the other parts
@@ -421,8 +421,8 @@ public class TestMimeTypes {
         assertTypeByName("image/svg+xml", "x.SVG");
 
         // Should *.svgz be svg or gzip
-        assertType("application/x-gzip", "testSVG.svgz");
-        assertTypeByData("application/x-gzip", "testSVG.svgz");
+        assertType("application/gzip", "testSVG.svgz");
+        assertTypeByData("application/gzip", "testSVG.svgz");
         assertTypeByName("image/svg+xml", "x.svgz");
         assertTypeByName("image/svg+xml", "x.SVGZ");
     }
@@ -498,8 +498,8 @@ public class TestMimeTypes {
         assertTypeByName("application/x-ms-wmz", "x.wmz");
         assertTypeByName("application/x-ms-wmz", "x.WMZ");
         // TODO: Need a test emz file
-        assertTypeByName("application/x-gzip", "x.emz");
-        assertTypeByName("application/x-gzip", "x.EMZ");
+        assertTypeByName("application/gzip", "x.emz");
+        assertTypeByName("application/gzip", "x.EMZ");
     }
 
     @Test

@@ -53,12 +53,13 @@ public class CompressorParser extends AbstractParser {
 
     private static final MediaType BZIP = MediaType.application("x-bzip");
     private static final MediaType BZIP2 = MediaType.application("x-bzip2");
-    private static final MediaType GZIP = MediaType.application("x-gzip");
+    private static final MediaType GZIP = MediaType.application("gzip");
+    private static final MediaType GZIP_ALT = MediaType.application("x-gzip");
     private static final MediaType XZ = MediaType.application("x-xz");
     private static final MediaType PACK = MediaType.application("application/x-java-pack200");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(BZIP, BZIP2, GZIP, XZ, PACK);
+            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, XZ, PACK);
 
     static MediaType getMediaType(CompressorInputStream stream) {
         // TODO Add support for the remaining CompressorInputStream formats:

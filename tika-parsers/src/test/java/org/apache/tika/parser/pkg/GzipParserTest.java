@@ -47,7 +47,7 @@ public class GzipParserTest extends AbstractPkgTest {
             stream.close();
         }
 
-        assertEquals("application/x-gzip", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
         assertTrue(content.contains("test-documents/testEXCEL.xls"));
         assertTrue(content.contains("Sample Excel Worksheet"));
@@ -112,7 +112,7 @@ public class GzipParserTest extends AbstractPkgTest {
             stream.close();
         }
 
-        assertEquals("application/x-gzip", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/gzip", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
         assertTrue(content.contains("Test SVG image"));
     }

@@ -2819,8 +2819,9 @@
     <sub-class-of type="application/x-tar"/>
   </mime-type>
 
-  <mime-type type="application/x-gzip">
+  <mime-type type="application/gzip">
     <_comment>Gzip Compressed Archive</_comment>
+    <alias type="application/x-gzip"/>
     <magic priority="40">
       <match value="\037\213" type="string" offset="0" />
       <match value="\x1f\x8b" type="string" offset="0" />
