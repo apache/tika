@@ -34,8 +34,11 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.eclipse.jetty.util.ajax.JSON;
 
-/*
- * TODO Provide better support for the HTML based outputs
+/**
+ * <p>Provides details of all the mimetypes known to Apache Tika,
+ *  similar to <em>--list-supported-types</em> with the Tika CLI.
+ *  
+ * <p>TODO Provide better support for the HTML based outputs
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
