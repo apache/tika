@@ -107,6 +107,7 @@ public class TikaServerCli {
       rProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
       rProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
       rProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
+      rProviders.add(new SingletonResourceProvider(new TikaDetectors(tika)));
       rProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
       sf.setResourceProviders(rProviders);
       
