@@ -37,22 +37,22 @@ import org.eclipse.jetty.util.ajax.JSON;
 /**
  * <p>Provides details of all the mimetypes known to Apache Tika,
  *  similar to <em>--list-supported-types</em> with the Tika CLI.
- *  
- * <p>TODO Provide better support for the HTML based outputs
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
     private TikaConfig tika;
+    private HTMLHelper html;
+    
     public TikaMimeTypes(TikaConfig tika) {
         this.tika = tika;
+        this.html = new HTMLHelper();
     }
     
     @GET
     @Produces("text/html")
     public String getMimeTypesHTML() {
-        StringBuffer html = new StringBuffer();
-        html.append("<html><head><title>Tika Supported Mime Types</title></head>\n");
-        html.append("<body><h1>Tika Supported Mime Types</h1>\n");
+        StringBuffer h = new StringBuffer();
+        html.generateHeader(h, "Apache Tika Supported Mime Types");
         
         // Get our types
         List<MediaTypeDetails> types = getMediaTypes();
@@ -64,33 +64,33 @@ public class TikaMimeTypes {
                 firstType.put(type.type.getType(), type.type.toString());
             }
         }
-        html.append("<ul>");
+        h.append("<ul>");
         for (String section : firstType.keySet()) {
-            html.append("<li><a href=\"#" + firstType.get(section) + "\">" + 
+            h.append("<li><a href=\"#" + firstType.get(section) + "\">" + 
                         section + "</a></li>\n");
         }
-        html.append("</ul>");
+        h.append("</ul>");
         
         // Output all of them
         for (MediaTypeDetails type : types) {
-            html.append("<a name=\"" + type.type + "\"></a>\n");
-            html.append("<h2>" + type.type + "</h2>\n");
+            h.append("<a name=\"" + type.type + "\"></a>\n");
+            h.append("<h2>" + type.type + "</h2>\n");
             
             for (MediaType alias : type.aliases) {
-                html.append("<div>Alias: " + alias + "</div>\n");
+                h.append("<div>Alias: " + alias + "</div>\n");
             }
             if (type.supertype != null) {
-                html.append("<div>Super Type: <a href=\"#" + type.supertype + 
+                h.append("<div>Super Type: <a href=\"#" + type.supertype + 
                             "\">" + type.supertype + "</a></div>\n");
             }
             
             if (type.parser != null) {
-                html.append("<div>Parser: " + type.parser + "</div>\n");
+                h.append("<div>Parser: " + type.parser + "</div>\n");
             }
         }
 
-        html.append("</body></html>\n");
-        return html.toString();
+        html.generateFooter(h);
+        return h.toString();
     }
     
     @GET

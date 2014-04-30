@@ -33,27 +33,25 @@ import org.eclipse.jetty.util.ajax.JSON;
 /**
  * <p>Provides details of all the {@link Detector}s registered with
  *  Apache Tika, similar to <em>--list-detectors</em> with the Tika CLI.
- *  
- * <p>TODO Provide better support for the HTML based outputs
  */
 @Path("/detectors")
 public class TikaDetectors {
     private TikaConfig tika;
+    private HTMLHelper html;
+    
     public TikaDetectors(TikaConfig tika) {
         this.tika = tika;
+        this.html = new HTMLHelper();
     }
     
     @GET
     @Produces("text/html")
     public String getDectorsHTML() {
-        StringBuffer html = new StringBuffer();
-        html.append("<html><head><title>Apache Tika Available Detectors</title></head>\n");
-        html.append("<body><h1>Detectors available to Apache Tika</h1>\n");
-
-        detectorAsHTML(tika.getDetector(), html, 2);
-        
-        html.append("</body></html>\n");
-        return html.toString();
+        StringBuffer h = new StringBuffer();
+        html.generateHeader(h, "Detectors available to Apache Tika");
+        detectorAsHTML(tika.getDetector(), h, 2);
+        html.generateFooter(h);
+        return h.toString();
     }
     private void detectorAsHTML(Detector d, StringBuffer html, int level) {
         html.append("<h");
