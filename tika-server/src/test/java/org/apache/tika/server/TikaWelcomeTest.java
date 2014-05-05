@@ -35,7 +35,7 @@ public class TikaWelcomeTest extends CXFTestBase {
        sf.setResourceClasses(TikaWelcome.class);
        sf.setResourceProvider(
                TikaWelcome.class,
-           new SingletonResourceProvider(new TikaWelcome(tika))
+           new SingletonResourceProvider(new TikaWelcome(tika, sf))
        );
    }
 
