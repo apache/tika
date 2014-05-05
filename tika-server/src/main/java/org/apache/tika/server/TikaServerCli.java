@@ -94,6 +94,7 @@ public class TikaServerCli {
               TikaResource.class, UnpackerResource.class, 
               TikaDetectors.class, TikaMimeTypes.class, 
               TikaVersion.class, TikaWelcome.class);
+      sf.setResourceClasses(TikaWelcome.class); 
 
       List<Object> providers = new ArrayList<Object>();
       providers.add(new TarWriter());
