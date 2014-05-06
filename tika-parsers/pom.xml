@@ -39,6 +39,7 @@
     <codec.version>1.5</codec.version> <!-- NOTE: sync with POI -->
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.4</vorbis.version>
+    <pdfbox.version>1.8.5</pdfbox.version>
   </properties>
 
   <dependencies>
@@ -100,7 +101,7 @@
     <dependency>
       <groupId>org.apache.pdfbox</groupId>
       <artifactId>pdfbox</artifactId>
-      <version>1.8.4</version>
+      <version>${pdfbox.version}</version>
     </dependency>
     <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
          as optional, but we prefer to have them always to avoid
