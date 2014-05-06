@@ -21,6 +21,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,6 +106,16 @@ public class TikaWelcome {
                 }
             }
         }
+        Collections.sort(found, new Comparator<Endpoint>() {
+            @Override
+            public int compare(Endpoint e1, Endpoint e2) {
+                int res = e1.path.compareTo(e2.path);
+                if (res == 0) {
+                    res = e1.methodName.compareTo(e2.methodName);
+                }
+                return res;
+            }
+        });
         return found;
     }
     
@@ -154,11 +165,11 @@ public class TikaWelcome {
         text.append("\n");
         text.append("For endpoints, please see ");
         text.append(DOCS_URL);
-        text.append("\n");
+        text.append("\n\n");
         
         for (Endpoint e : identifyEndpoints()) {
             text.append(e.httpMethod);
-            text.append(" @ ");
+            text.append(" ");
             text.append(e.path);
             text.append("\n");
             for (String produces : e.produces) {

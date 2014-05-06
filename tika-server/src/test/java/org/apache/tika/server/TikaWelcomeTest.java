@@ -28,14 +28,19 @@ import org.apache.tika.Tika;
 import org.junit.Test;
 
 public class TikaWelcomeTest extends CXFTestBase {
-   private static final String WELCOME_PATH = "/";
+   protected static final String WELCOME_PATH = "/";
+   private static final String VERSION_PATH = TikaVersionTest.VERSION_PATH;
 
    @Override
    protected void setUpResources(JAXRSServerFactoryBean sf) {
-       sf.setResourceClasses(TikaWelcome.class);
+       sf.setResourceClasses(TikaWelcome.class, TikaVersion.class);
        sf.setResourceProvider(
                TikaWelcome.class,
-           new SingletonResourceProvider(new TikaWelcome(tika, sf))
+               new SingletonResourceProvider(new TikaWelcome(tika, sf))
+       );
+       sf.setResourceProvider(
+               TikaVersion.class,
+               new SingletonResourceProvider(new TikaVersion(tika))
        );
    }
 
@@ -54,6 +59,15 @@ public class TikaWelcomeTest extends CXFTestBase {
        
        assertContains(new Tika().toString(), html);
        assertContains("href=\"http", html);
+       
+       // Check our details were found
+       assertContains("GET", html);
+       assertContains(WELCOME_PATH, html);
+       assertContains("text/plain", html);
+       assertContains("text/html", html);
+       
+       // Check that the Tika Version details come through too
+       assertContains(VERSION_PATH, html);
    }
 
    @Test
@@ -64,7 +78,15 @@ public class TikaWelcomeTest extends CXFTestBase {
                .accept("text/plain")
                .get();
 
-       assertContains(new Tika().toString(), 
-               getStringFromInputStream((InputStream) response.getEntity()));
+       String text = getStringFromInputStream((InputStream) response.getEntity());
+       assertContains(new Tika().toString(), text);
+       
+       // Check our details were found
+       assertContains("GET " + WELCOME_PATH, text);
+       assertContains("=> text/plain", text);
+       assertContains("=> text/html", text);
+       
+       // Check that the Tika Version details come through too
+       assertContains("GET " + VERSION_PATH, text);
    }
 }
