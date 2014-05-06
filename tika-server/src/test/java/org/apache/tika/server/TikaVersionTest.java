@@ -30,7 +30,7 @@ import org.apache.tika.Tika;
 import org.junit.Test;
 
 public class TikaVersionTest extends CXFTestBase {
-   private static final String VERSION_PATH = "/version";
+   protected static final String VERSION_PATH = "/version";
 
    @Override
    protected void setUpResources(JAXRSServerFactoryBean sf) {
