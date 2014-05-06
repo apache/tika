@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
+import java.util.List;
+import java.util.Iterator;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
@@ -38,6 +40,8 @@ import org.xml.sax.SAXException;
 
 import ucar.nc2.Attribute;
 import ucar.nc2.NetcdfFile;
+import ucar.nc2.Variable;
+import ucar.nc2.Dimension;
 
 /**
  * A {@link Parser} for <a
@@ -96,13 +100,54 @@ public class NetCDFParser extends AbstractParser {
                     metadata.add(property, String.valueOf(value));
                 }
             }
+            
+            
+           XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+           xhtml.startDocument();
+
+		   		xhtml.characters("dimensions:");
+				xhtml.newline();
+			
+				for (Dimension dim : ncFile.getDimensions()){
+                	xhtml.characters(dim.getName()); 
+                	xhtml.characters(" = ");
+                	xhtml.characters(String.valueOf(dim.getLength()));
+                	xhtml.characters(";");
+                	xhtml.newline();
+        		}
+			
+				xhtml.newline();
+				xhtml.characters("variables:");
+			
+				for (Variable var : ncFile.getVariables()){
+					xhtml.newline();
+					xhtml.characters(String.valueOf(var.getDataType())); // data type
+					xhtml.characters(" ");
+					xhtml.characters(var.getNameAndDimensions()); //variable name and dimensions
+					xhtml.characters(";");
+					//xhtml.newline();
+
+					xhtml.newline();
+			
+					List<Attribute> list = (var.getAttributes()); //list of variable attributes
+			
+						for(int i=0; i < list.size(); i++){ 
+     			
+     						Attribute element = (list.get(i));  
+     						String text = element.toString();
+							
+							xhtml.characters("	:");
+     						xhtml.characters(text); 
+     						xhtml.characters(";");
+							xhtml.newline();
+						}
+            	}   
+			
+          xhtml.endDocument();
+         
         } catch (IOException e) {
             throw new TikaException("NetCDF parse error", e);
         } 
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.endDocument();
     }
     
     private Property resolveMetadataKey(String localName) {
@@ -111,5 +156,4 @@ public class NetCDFParser extends AbstractParser {
         }
         return Property.internalText(localName);
     }
-
 }
