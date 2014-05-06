@@ -1,5 +1,9 @@
 Release 1.6 - ??/??/2014
 
+  * Improvements to NetCDF and HDF parsing to mimic the output of
+    ncdump and extract text dimensions and spatial and variable
+    information from scientific data files (TIKA-1265)
+
   * Extract attachments from RTF files (TIKA-1010)
 
   * Support Outlook Personal Folders File Format *.pst (TIKA-623)
