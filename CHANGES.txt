@@ -1,5 +1,13 @@
 Release 1.6 - ??/??/2014
 
+  * Added a user facing welcome page to the Tika Server, which
+    says what it is, and a very brief summary of what is available.
+    (Not working yet though...!) (TIKA-1269)
+
+  * Added Tika Server endpoints to list the available mime types,
+    Parsers and Detectors, similar to the --list-<foo> methods on
+    the Tika CLI App (TIKA-1270)
+
   * Improvements to NetCDF and HDF parsing to mimic the output of
     ncdump and extract text dimensions and spatial and variable
     information from scientific data files (TIKA-1265)
