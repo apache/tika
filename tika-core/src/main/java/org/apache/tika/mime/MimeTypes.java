@@ -473,18 +473,20 @@ public final class MimeTypes implements Detector, Serializable {
             if (name != null) {
                 MimeType hint = getMimeType(name);
                 if (magicMatches.isEmpty()) {
-                  magicMatches.add(hint);
+                    magicMatches.add(hint);
                 } else {
-                    for (final ListIterator<MimeType> i = magicMatches.listIterator(); i.hasNext(); ) {
-                        final MimeType magicMatch = i.next();
+                    boolean hintMatched = false;
+                    for (final MimeType magicMatch : magicMatches) {
                         // do this if differs only
                         if (!hint.getType().equals(magicMatch.getType())) {
                             if (registry.isSpecializationOf(hint.getType(), magicMatch.getType())) {
-                                i.set(hint);
-                            } else if (!registry.isSpecializationOf(magicMatch.getType(), hint.getType())) {
-                                i.remove();
+                                hintMatched = true;
+                                break;
                             }
                         }
+                    }
+                    if (hintMatched) {
+                        magicMatches.add(0, hint);
                     }
                 }
             }
@@ -496,18 +498,20 @@ public final class MimeTypes implements Detector, Serializable {
             try {
                 MimeType hint = forName(typeName);
                 if (magicMatches.isEmpty()) {
-                  magicMatches.add(hint);
+                    magicMatches.add(hint);
                 } else {
-                    for (final ListIterator<MimeType> i = magicMatches.listIterator(); i.hasNext(); ) {
-                        final MimeType magicMatch = i.next();
+                    boolean hintMatched = false;
+                    for (final MimeType magicMatch : magicMatches) {
                         // do this if differs only
                         if (!hint.getType().equals(magicMatch.getType())) {
                             if (registry.isSpecializationOf(hint.getType(), magicMatch.getType())) {
-                                i.set(hint);
-                            } else if (!registry.isSpecializationOf(magicMatch.getType(), hint.getType())) {
-                                i.remove();
+                                hintMatched = true;
+                                break;
                             }
                         }
+                    }
+                    if (hintMatched) {
+                        magicMatches.add(0, hint);
                     }
                 }
             } catch (MimeTypeException e) {
