@@ -47,6 +47,7 @@
   <modules>
     <module>tika-parent</module>
     <module>tika-core</module>
+    <module>parsers</module>
     <module>tika-parsers</module>
     <module>tika-xmp</module>
     <module>tika-app</module>

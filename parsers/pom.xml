@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>1.6-SNAPSHOT</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>parsers</artifactId>
+  <packaging>pom</packaging>
+  <name>Apache Tika Exploded Parsers</name>
+  <url>http://tika.apache.org/</url>
+
+  <properties>
+    <poi.version>3.10-FINAL</poi.version>
+    <codec.version>1.5</codec.version>
+    <!-- NOTE: sync with POI -->
+    <mime4j.version>0.7.2</mime4j.version>
+    <vorbis.version>0.1</vorbis.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+
+      <!-- Internal modules -->
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parsers-shared</artifactId>
+        <version>1.6-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parsers-html</artifactId>
+        <version>1.6-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-parsers-txt</artifactId>
+        <version>1.6-SNAPSHOT</version>
+      </dependency>
+
+      <!-- Optional OSGi dependency, used only when running within OSGi -->
+      <dependency>
+        <groupId>org.osgi</groupId>
+        <artifactId>org.osgi.core</artifactId>
+        <version>4.0.0</version>
+        <scope>provided</scope>
+        <optional>true</optional>
+      </dependency>
+
+      <dependency>
+        <groupId>org.apache.tika</groupId>
+        <artifactId>tika-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <!-- Externally Maintained Parsers -->
+      <dependency>
+        <groupId>org.gagravarr</groupId>
+        <artifactId>vorbis-java-tika</artifactId>
+        <version>${vorbis.version}</version>
+      </dependency>
+
+      <!-- Upstream parser libraries -->
+      <dependency>
+        <groupId>edu.ucar</groupId>
+        <artifactId>netcdf</artifactId>
+        <version>4.2-min</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james</groupId>
+        <artifactId>apache-mime4j-core</artifactId>
+        <version>${mime4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.james</groupId>
+        <artifactId>apache-mime4j-dom</artifactId>
+        <version>${mime4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>1.7</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>${codec.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.pdfbox</groupId>
+        <artifactId>pdfbox</artifactId>
+        <version>1.8.4</version>
+      </dependency>
+      <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
+           as optional, but we prefer to have them always to avoid
+           problems with encrypted PDFs. -->
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcmail-jdk15</artifactId>
+        <version>1.45</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk15</artifactId>
+        <version>1.45</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi</artifactId>
+        <version>${poi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-scratchpad</artifactId>
+        <version>${poi.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.poi</groupId>
+        <artifactId>poi-ooxml</artifactId>
+        <version>${poi.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>stax</groupId>
+            <artifactId>stax-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>xml-apis</groupId>
+            <artifactId>xml-apis</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-stax-api_1.0_spec</artifactId>
+        <version>1.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ccil.cowan.tagsoup</groupId>
+        <artifactId>tagsoup</artifactId>
+        <version>1.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-debug-all</artifactId>
+        <version>4.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.googlecode.mp4parser</groupId>
+        <artifactId>isoparser</artifactId>
+        <version>1.0-RC-1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.drewnoakes</groupId>
+        <artifactId>metadata-extractor</artifactId>
+        <version>2.6.2</version>
+      </dependency>
+      <dependency>
+        <groupId>de.l3s.boilerpipe</groupId>
+        <artifactId>boilerpipe</artifactId>
+        <version>1.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>rome</groupId>
+        <artifactId>rome</artifactId>
+        <version>0.9</version>
+      </dependency>
+      <dependency>
+        <groupId>org.gagravarr</groupId>
+        <artifactId>vorbis-java-core</artifactId>
+        <version>${vorbis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.googlecode.juniversalchardet</groupId>
+        <artifactId>juniversalchardet</artifactId>
+        <version>1.0.3</version>
+      </dependency>
+      <dependency>
+        <groupId>com.uwyn</groupId>
+        <artifactId>jhighlight</artifactId>
+        <version>1.0</version>
+        <exclusions>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>servlet-api</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+
+      <!-- Test dependencies -->
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.11</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-core</artifactId>
+        <version>1.7</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-log4j12</artifactId>
+        <version>1.5.6</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- Dependencies inherited by all child modules -->
+
+    <!-- Optional OSGi dependency, used only when running within OSGi -->
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.core</artifactId>
+      <optional>true</optional>
+    </dependency>
+  </dependencies>
+
+  <modules>
+    <module>shared</module>
+    <module>asm</module>
+    <module>audio</module>
+    <module>chm</module>
+    <module>code</module>
+    <module>html</module>
+    <module>txt</module>
+    <!-- WIP these below
+    <module>crypto</module>
+    <module>dwg</module>
+    <module>epub</module>
+    <module>executable</module>
+    <module>feed</module>
+    <module>font</module>
+    <module>hdf</module>
+    <module>image</module>
+    <module>iptc</module>
+    <module>iwork</module>
+    <module>jpeg</module>
+    <module>mail</module>
+    <module>mbox</module>
+    <module>microsoft</module>
+    <module>mp3</module>
+    <module>mp4</module>
+    <module>netcdf</module>
+    <module>odf</module>
+    <module>pdf</module>
+    <module>pkg</module>
+    <module>rtf</module>
+    <module>video</module>
+    <module>xml</module>
+    -->
+  </modules>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Bundle-DocURL>${project.url}</Bundle-DocURL>
+            <Bundle-Activator>
+              org.apache.tika.parser.internal.Activator
+            </Bundle-Activator>
+            <Import-Package>
+              org.w3c.dom,
+              org.apache.tika.*,
+              *;resolution:=optional
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
+            <exclude>src/test/resources/test-documents/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+
+    <pluginManagement>
+      <plugins>
+        <!-- This plugin's configuration is used to store Eclipse m2e      -->
+        <!-- settings only. It has no influence on the Maven build itself. -->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-scr-plugin</artifactId>
+                    <versionRange>[1.7.2,)</versionRange>
+                    <goals>
+                      <goal>scr</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <execute/>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+  <scm>
+    <url>http://svn.apache.org/viewvc/tika/trunk/parsers</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/parsers</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/parsers</developerConnection>
+  </scm>
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
+  </ciManagement>
+</project>
