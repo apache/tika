@@ -17,9 +17,13 @@
 package org.apache.tika.server;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -30,6 +34,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.eclipse.jetty.util.ajax.JSON;
 
 /**
@@ -60,35 +65,37 @@ public class TikaParsers {
         return getParsersHTML(false);
     }
     protected String getParsersHTML(boolean withMimeTypes) {
+        ParserDetails p = new ParserDetails(tika.getParser());
+        
         StringBuffer h = new StringBuffer();
         html.generateHeader(h, "Parsers available to Apache Tika");
-        parserAsHTML(tika.getParser(), withMimeTypes, h, 2);
+        parserAsHTML(p, withMimeTypes, h, 2);
         html.generateFooter(h);
         return h.toString();
     }
-    private void parserAsHTML(Parser p, boolean withMimeTypes, StringBuffer html, int level) {
+    private void parserAsHTML(ParserDetails p, boolean withMimeTypes, StringBuffer html, int level) {
         html.append("<h");
         html.append(level);
         html.append(">");
-        // TODO Parser Decorators
-        String name = p.getClass().getName();
-        html.append(name.substring(name.lastIndexOf('.')+1));
+        html.append(p.shortName);
         html.append("</h");
         html.append(level);
         html.append(">");
         html.append("<p>Class: ");
-        html.append(name);
+        html.append(p.className);
         html.append("</p>");
-        if (p instanceof CompositeParser) {
+        if (p.isDecorated) {
+            html.append("<p>Decorated Parser</p>");
+        }
+        if (p.isComposite) {
             html.append("<p>Composite Parser</p>");
-            // TODO Sort nicely
-            for (Parser cp : ((CompositeParser)p).getParsers(EMPTY_PC).values()) {
-                parserAsHTML(cp, withMimeTypes, html, level+1);
-            }            
+            for (Parser cp : p.childParsers) {
+                parserAsHTML(new ParserDetails(cp), withMimeTypes, html, level+1);
+            }
         } else if (withMimeTypes) {
             html.append("<p>Mime Types:");
             html.append("<ul>");
-            for (MediaType mt : p.getSupportedTypes(EMPTY_PC)) {
+            for (MediaType mt : p.supportedTypes) {
                 html.append("<li>");
                 html.append(mt.toString());
                 html.append("</li>");
@@ -98,66 +105,122 @@ public class TikaParsers {
         }
     }
     
-    /*
+    @GET
+    @Path("/details")
+    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
+    public String getParserDetailsJSON() {
+        return getParsersJSON(true);
+    }
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public String getDetectorsJSON() {
+    public String getParsersJSON() {
+        return getParsersJSON(false);
+    }
+    protected String getParsersJSON(boolean withMimeTypes) {
         Map<String,Object> details = new HashMap<String, Object>();
-        detectorAsMap(tika.getDetector(), details);
+        parserAsMap(new ParserDetails(tika.getParser()), withMimeTypes, details);
         return JSON.toString(details);
     }
-    private void detectorAsMap(Detector d, Map<String, Object> details) {
-        details.put("name", d.getClass().getName());
+    private void parserAsMap(ParserDetails p, boolean withMimeTypes, Map<String, Object> details) {
+        details.put("name", p.className);
+        details.put("composite", p.isComposite);
+        details.put("decorated", p.isDecorated);
         
-        boolean isComposite = (d instanceof CompositeDetector);
-        details.put("composite", isComposite);
-        if (isComposite) {
+        if (p.isComposite) {
             List<Map<String, Object>> c = new ArrayList<Map<String,Object>>();
-            for (Detector cd : ((CompositeDetector)d).getDetectors()) {
+            for (Parser cp : p.childParsers) {
                 Map<String,Object> cdet = new HashMap<String, Object>();
-                detectorAsMap(cd, cdet);
+                parserAsMap(new ParserDetails(cp), withMimeTypes, cdet);
                 c.add(cdet);
             }
             details.put("children", c);
+        } else if (withMimeTypes) {
+            List<String> mts = new ArrayList<String>(p.supportedTypes.size());
+            for (MediaType mt : p.supportedTypes) {
+                mts.add(mt.toString());
+            }
+            details.put("supportedTypes", mts);
         }
     }
     
     @GET
+    @Path("/details")
     @Produces("text/plain")
-    public String getDetectorsPlain() {
+    public String getParserDetailssPlain() {
+        return getParsersPlain(true);
+    }
+    @GET
+    @Produces("text/plain")
+    public String getParsersPlain() {
+        return getParsersPlain(false);
+    }
+    protected String getParsersPlain(boolean withMimeTypes) {
         StringBuffer text = new StringBuffer();
-        renderDetector(tika.getDetector(), text, 0);
+        renderParser(new ParserDetails(tika.getParser()), withMimeTypes, text, "");
         return text.toString();
     }
-    private void renderDetector(Detector d, StringBuffer text, int indent) {
-        boolean isComposite = (d instanceof CompositeDetector);
-        String name = d.getClass().getName();
+    private void renderParser(ParserDetails p, boolean withMimeTypes, StringBuffer text, String indent) {
+        String nextIndent = indent + "  ";
         
-        for (int i=0; i<indent; i++) {
-            text.append("  ");
+        text.append(indent);
+        text.append(p.className);
+        if (p.isDecorated) {
+            text.append(" (Decorated Parser)");
         }
-        text.append(name);
-        if (isComposite) {
-            text.append(" (Composite Detector):\n");
+        if (p.isComposite) {
+            text.append(" (Composite Parser):\n");
 
-            List<Detector> subDetectors = ((CompositeDetector)d).getDetectors();
-            for(Detector sd : subDetectors) {
-                renderDetector(sd, text, indent+1);
+            for (Parser cp : p.childParsers) {
+                renderParser(new ParserDetails(cp), withMimeTypes, text, nextIndent);
             }
         } else {
             text.append("\n");
+            if (withMimeTypes) {
+                for (MediaType mt : p.supportedTypes) {
+                    text.append(nextIndent);
+                    text.append("Supports: ");
+                    text.append(mt.toString());
+                    text.append("\n");
+                }
+            }
         }
     }
-    */
     
     private static class ParserDetails {
-        private String classname;
+        private String className;
+        private String shortName;
         private boolean isComposite;
         private boolean isDecorated;
-        private List<MediaType> supportedTypes;
+        private Set<MediaType> supportedTypes;
         private List<Parser> childParsers;
+        
         private ParserDetails(Parser p) {
-            // TODO Implement
+            if (p instanceof ParserDecorator) {
+                isDecorated = true;
+                p = ((ParserDecorator)p).getWrappedParser();
+            }
+            
+            className = p.getClass().getName();
+            shortName = className.substring(className.lastIndexOf('.')+1);
+            
+            if (p instanceof CompositeParser) {
+                isComposite = true;
+                supportedTypes = Collections.emptySet();
+                
+                // Get the unique set of child parsers
+                Set<Parser> children = new HashSet<Parser>(
+                        ((CompositeParser)p).getParsers(EMPTY_PC).values());
+                // Sort it by class name
+                childParsers = new ArrayList<Parser>(children);
+                Collections.sort(childParsers, new Comparator<Parser>() {
+                    @Override
+                    public int compare(Parser p1, Parser p2) {
+                        return p1.getClass().getName().compareTo(p2.getClass().getName());
+                    }
+                });
+            } else {
+                supportedTypes = p.getSupportedTypes(EMPTY_PC);
+            }
         }
     }
 }
