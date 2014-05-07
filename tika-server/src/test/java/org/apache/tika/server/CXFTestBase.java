@@ -18,6 +18,7 @@
 package org.apache.tika.server;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -90,6 +91,9 @@ public abstract class CXFTestBase {
 
     public static void assertContains(String needle, String haystack) {
         assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+    }
+    public static void assertNotFound(String needle, String haystack) {
+        assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
     }
 
     protected String getStringFromInputStream(InputStream in) throws Exception {
