@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 
@@ -165,56 +166,64 @@ public final class MimeTypes implements Detector, Serializable {
      * @param data first few bytes of a document stream
      * @return matching MIME type
      */
-    private MimeType getMimeType(byte[] data) {
+    private List<MimeType> getMimeType(byte[] data) {
         if (data == null) {
             throw new IllegalArgumentException("Data is missing");
         } else if (data.length == 0) {
             // See https://issues.apache.org/jira/browse/TIKA-483
-            return rootMimeType;
+            return Collections.singletonList(rootMimeType);
         }
 
         // Then, check for magic bytes
-        MimeType result = null;
+        // See https://issues.apache.org/jira/browse/TIKA-1292 consider all magic having same priority
+        ArrayList<MimeType> result = new ArrayList<MimeType>();
+        int lastPriority = Integer.MIN_VALUE; // assuming no one will use this priority
         for (Magic magic : magics) {
-            if (magic.eval(data)) {
-                result = magic.getType();
+            if (lastPriority != Integer.MIN_VALUE && magic.getPriority() != lastPriority) {
                 break;
+            }
+            if (magic.eval(data)) {
+                result.add(magic.getType());
+                lastPriority = magic.getPriority();
             }
         }
  
-        if (result != null) {
-            // When detecting generic XML (or possibly XHTML),
-            // extract the root element and match it against known types
-            if ("application/xml".equals(result.getName())
-                    || "text/html".equals(result.getName())) {
-                XmlRootExtractor extractor = new XmlRootExtractor();
+        if (!result.isEmpty()) {
+            for(ListIterator<MimeType> i = result.listIterator(); i.hasNext(); ) {
+                final MimeType matched = i.next();
+                // When detecting generic XML (or possibly XHTML),
+                // extract the root element and match it against known types
+                if ("application/xml".equals(matched.getName())
+                        || "text/html".equals(matched.getName())) {
+                    XmlRootExtractor extractor = new XmlRootExtractor();
 
-                QName rootElement = extractor.extractRootElement(data);
-                if (rootElement != null) {
-                    for (MimeType type : xmls) {
-                        if (type.matchesXML(
-                                rootElement.getNamespaceURI(),
-                                rootElement.getLocalPart())) {
-                            result = type;
-                            break;
+                    QName rootElement = extractor.extractRootElement(data);
+                    if (rootElement != null) {
+                        for (MimeType type : xmls) {
+                            if (type.matchesXML(
+                                    rootElement.getNamespaceURI(),
+                                    rootElement.getLocalPart())) {
+                                i.set(type);
+                                break;
+                            }
                         }
+                    } else if ("application/xml".equals(matched.getName())) {
+                        // Downgrade from application/xml to text/plain since
+                        // the document seems not to be well-formed.
+                        i.set(textMimeType);
                     }
-                } else if ("application/xml".equals(result.getName())) {
-                    // Downgrade from application/xml to text/plain since
-                    // the document seems not to be well-formed.
-                    result = textMimeType;
                 }
+                return result;
             }
-            return result;
         }
 
         // Finally, assume plain text if no control bytes are found
         try {
             TextDetector detector = new TextDetector(getMinLength());
             ByteArrayInputStream stream = new ByteArrayInputStream(data);
-            return forName(detector.detect(stream, new Metadata()).toString());
+            return Collections.singletonList(forName(detector.detect(stream, new Metadata()).toString()));
         } catch (Exception e) {
-            return rootMimeType;
+            return Collections.singletonList(rootMimeType);
         }
     }
 
@@ -429,14 +438,14 @@ public final class MimeTypes implements Detector, Serializable {
      */
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        MediaType type = MediaType.OCTET_STREAM;
+        final ArrayList<MimeType> magicMatches = new ArrayList<MimeType>();
 
         // Get type based on magic prefix
         if (input != null) {
             input.mark(getMinLength());
             try {
                 byte[] prefix = readMagicHeader(input);
-                type = getMimeType(prefix).getType();
+                magicMatches.addAll(getMimeType(prefix));
             } finally {
                 input.reset();
             }
@@ -462,9 +471,23 @@ public final class MimeTypes implements Detector, Serializable {
             }
 
             if (name != null) {
-                MediaType hint = getMimeType(name).getType();
-                if (registry.isSpecializationOf(hint, type)) {
-                    type = hint;
+                MimeType hint = getMimeType(name);
+                if (magicMatches.isEmpty()) {
+                    magicMatches.add(hint);
+                } else {
+                    boolean hintMatched = false;
+                    for (final MimeType magicMatch : magicMatches) {
+                        // do this if differs only
+                        if (!hint.getType().equals(magicMatch.getType())) {
+                            if (registry.isSpecializationOf(hint.getType(), magicMatch.getType())) {
+                                hintMatched = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hintMatched) {
+                        magicMatches.add(0, hint);
+                    }
                 }
             }
         }
@@ -473,16 +496,34 @@ public final class MimeTypes implements Detector, Serializable {
         String typeName = metadata.get(Metadata.CONTENT_TYPE);
         if (typeName != null) {
             try {
-                MediaType hint = forName(typeName).getType();
-                if (registry.isSpecializationOf(hint, type)) {
-                    type = hint;
+                MimeType hint = forName(typeName);
+                if (magicMatches.isEmpty()) {
+                    magicMatches.add(hint);
+                } else {
+                    boolean hintMatched = false;
+                    for (final MimeType magicMatch : magicMatches) {
+                        // do this if differs only
+                        if (!hint.getType().equals(magicMatch.getType())) {
+                            if (registry.isSpecializationOf(hint.getType(), magicMatch.getType())) {
+                                hintMatched = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hintMatched) {
+                        magicMatches.add(0, hint);
+                    }
                 }
             } catch (MimeTypeException e) {
                 // Malformed type name, ignore
             }
         }
 
-        return type;
+        if (!magicMatches.isEmpty()) {
+            return magicMatches.get(0).getType();
+        } else {
+            return rootMimeType.getType();
+        }
     }
 
     private static MimeTypes DEFAULT_TYPES = null;
