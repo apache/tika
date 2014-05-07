@@ -3499,7 +3499,7 @@
     <tika:link>http://en.wikipedia.org/wiki/ZIP_(file_format)</tika:link>
     <tika:uti>com.pkware.zip-archive</tika:uti>
     <alias type="application/x-zip-compressed"/>
-    <magic priority="40">
+    <magic priority="50">
       <match value="PK\003\004" type="string" offset="0"/>
       <match value="PK\005\006" type="string" offset="0"/>
       <match value="PK\x07\x08" type="string" offset="0"/>
