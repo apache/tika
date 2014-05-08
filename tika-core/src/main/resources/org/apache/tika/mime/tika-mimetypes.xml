@@ -3057,6 +3057,9 @@
   </mime-type>
   <mime-type type="application/x-msmoney">
     <glob pattern="*.mny"/>
+    <magic priority="60">
+      <match value="0x000100004D534953414D204461746162617365" type="string" offset="0" />
+    </magic>
   </mime-type>
   <mime-type type="application/x-mspublisher">
     <glob pattern="*.pub"/>
