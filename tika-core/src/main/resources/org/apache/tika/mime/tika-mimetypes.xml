@@ -1541,7 +1541,10 @@
     <glob pattern="*.wpl"/>
   </mime-type>
   <mime-type type="application/vnd.ms-xpsdocument">
+    <alias type="application/oxps"/>
+    <_comment>Open XML Paper Specification</_comment>
     <glob pattern="*.xps"/>
+    <glob pattern="*.oxps"/>
     <sub-class-of type="application/x-tika-ooxml"/>
   </mime-type>
   <mime-type type="application/vnd.mseq">

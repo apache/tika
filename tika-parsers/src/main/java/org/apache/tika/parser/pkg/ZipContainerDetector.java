@@ -204,6 +204,10 @@ public class ZipContainerDetector implements Detector {
                 MediaType type = detectOfficeOpenXML(pkg);
                 if (type != null) return type;
                 
+                // Is it XPS format?
+                type = detectXPSOPC(pkg);
+                if (type != null) return type;
+                
                 // Is it an AutoCAD format?
                 type = detectAutoCADOPC(pkg);
                 if (type != null) return type;
@@ -251,6 +255,19 @@ public class ZipContainerDetector implements Detector {
 
         // Build the MediaType object and return
         return MediaType.parse(docType);
+    }
+    /**
+     * Detects Open XML Paper Specification (XPS)
+     */
+    private static MediaType detectXPSOPC(OPCPackage pkg) {
+        PackageRelationshipCollection xps = 
+                pkg.getRelationshipsByType("http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
+        if (xps.size() == 1) {
+            return MediaType.application("vnd.ms-xpsdocument");
+        } else {
+            // Non-XPS Package received
+            return null;
+        }
     }
     /**
      * Detects AutoCAD formats that live in OPC packaging

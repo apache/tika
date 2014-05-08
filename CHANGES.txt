@@ -1,5 +1,8 @@
 Release 1.6 - ??/??/2014
 
+  * Zip Container Detection for DWFX and XPS formats, which are OPC
+    based (TIKA-1204, TIKA-1221)
+
   * Added a user facing welcome page to the Tika Server, which
     says what it is, and a very brief summary of what is available.
     (Not working yet though...!) (TIKA-1269)
