@@ -999,6 +999,9 @@
   <mime-type type="application/vnd.google-earth.kml+xml">
     <root-XML localName="kml"/>
     <root-XML namespaceURI="http://www.opengis.net/kml/2.2" localName="kml"/>
+    <root-XML namespaceURI="http://earth.google.com/kml/2.0" localName="kml"/>
+    <root-XML namespaceURI="http://earth.google.com/kml/2.1" localName="kml"/>
+    <root-XML namespaceURI="http://earth.google.com/kml/2.2" localName="kml"/>
     <acronym>KML</acronym>
     <_comment>Keyhole Markup Language</_comment>
     <glob pattern="*.kml"/>
