@@ -134,7 +134,7 @@ public class ZipContainerDetector implements Detector {
             try {
                 MediaType type = detectOpenDocument(zip);
                 if (type == null) {
-                    type = detectOfficeOpenXML(zip, tis);
+                    type = detectOPCBased(zip, tis);
                 }
                 if (type == null) {
                     type = detectIWork(zip);
@@ -192,7 +192,7 @@ public class ZipContainerDetector implements Detector {
         }
     }
 
-    private static MediaType detectOfficeOpenXML(ZipFile zip, TikaInputStream stream) {
+    private static MediaType detectOPCBased(ZipFile zip, TikaInputStream stream) {
         try {
             if (zip.getEntry("_rels/.rels") != null
                     || zip.getEntry("[Content_Types].xml") != null) {
@@ -200,8 +200,16 @@ public class ZipContainerDetector implements Detector {
                 OPCPackage pkg = OPCPackage.open(stream.getFile().getPath(), PackageAccess.READ);
                 stream.setOpenContainer(pkg);
 
-                // Detect based on the open OPC Package
-                return detectOfficeOpenXML(pkg);
+                // Is at an OOXML format?
+                MediaType type = detectOfficeOpenXML(pkg);
+                if (type != null) return type;
+                
+                // Is it an AutoCAD format?
+                type = detectAutoCADOPC(pkg);
+                if (type != null) return type;
+                
+                // We don't know what it is, sorry
+                return null;
             } else {
                 return null;
             }
@@ -243,6 +251,19 @@ public class ZipContainerDetector implements Detector {
 
         // Build the MediaType object and return
         return MediaType.parse(docType);
+    }
+    /**
+     * Detects AutoCAD formats that live in OPC packaging
+     */
+    private static MediaType detectAutoCADOPC(OPCPackage pkg) {
+        PackageRelationshipCollection dwfxSeq = 
+                pkg.getRelationshipsByType("http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
+        if (dwfxSeq.size() == 1) {
+            return MediaType.parse("model/vnd.dwfx+xps");
+        } else {
+            // Non-AutoCAD Package received
+            return null;
+        }
     }
 
     private static MediaType detectIWork(ZipFile zip) {

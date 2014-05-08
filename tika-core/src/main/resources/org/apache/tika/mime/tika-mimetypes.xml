@@ -4609,6 +4609,12 @@
   <mime-type type="model/vnd.dwf">
     <glob pattern="*.dwf"/>
   </mime-type>
+  <mime-type type="model/vnd.dwfx+xps">
+    <_comment>AutoCAD Design Web Format</_comment>
+    <glob pattern="*.dwfx"/>
+    <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
   <mime-type type="model/vnd.flatland.3dml"/>
   <mime-type type="model/vnd.gdl">
     <glob pattern="*.gdl"/>
