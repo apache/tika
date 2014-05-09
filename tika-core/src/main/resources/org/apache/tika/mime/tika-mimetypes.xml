@@ -403,6 +403,9 @@
     </magic>
     <glob pattern="*.ogx"/>
   </mime-type>
+  <mime-type type="application/kate">
+    <sub-class-of type="application/ogg"/>
+  </mime-type>
 
   <mime-type type="application/onenote">
     <glob pattern="*.onetoc"/>
