@@ -1,5 +1,7 @@
 Release 1.6 - ??/??/2014
 
+  * Upgrade to PDFBox 1.8.5 (TIKA-1290, TIKA-1231, TIKA-1233)
+
   * Zip Container Detection for DWFX and XPS formats, which are OPC
     based (TIKA-1204, TIKA-1221)
 
