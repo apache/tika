@@ -440,8 +440,15 @@ class PDF2XHTML extends PDFTextStripper {
         EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
         for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
             PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
+            if (spec == null) {
+                //skip silently
+                continue;
+            }
             PDEmbeddedFile file = spec.getEmbeddedFile();
-
+            if (file == null) {
+                //skip silently
+                continue;
+            }
             Metadata metadata = new Metadata();
             // TODO: other metadata?
             metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
