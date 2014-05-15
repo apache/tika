@@ -743,6 +743,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("pdfaid:part", m.get("pdfaid:part"), "1");
     }
 
+    @Test
     public void testMultipleAuthors() throws Exception {
         String fName = "testPDF_twoAuthors.pdf";
         InputStream is = PDFParserTest.class.getResourceAsStream(
@@ -770,6 +771,24 @@ public class PDFParserTest extends TikaTest {
             assertTrue("Sample Author 1", set.contains("Sample Author 1"));
             assertTrue("Sample Author 2", set.contains("Sample Author 2"));
         }
+    }
+
+    //STUB test for once TIKA-1295 is fixed
+    @Test
+    public void testMultipleTitles() throws Exception {
+        InputStream is = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDFTripleLangTitle.pdf");
+        Parser p = new AutoDetectParser();
+        Metadata m = new Metadata();
+        ParseContext c = new ParseContext();
+        ContentHandler h = new BodyContentHandler();
+        p.parse(is, h, m, c);
+        is.close();
+        //TODO: add other tests as part of TIKA-1295
+        //dc:title-fr-ca (or whatever we decide) should be "Bonjour World"
+        //dc:title-zh-ch is currently hosed...bug in PDFBox while injecting xmp?
+        //
+        assertEquals("Hello World", m.get("dc:title"));
     }
 
     /**

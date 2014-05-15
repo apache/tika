@@ -274,6 +274,8 @@ public class PDFParser extends AbstractParser {
      * Try to extract all multilingual items from the XMPSchema
      * <p>
      * This relies on the property having a valid xmp getName()
+     * <p>
+     * For now, this only extracts the first language if the property does not allow multiple values (see TIKA-1295)
      * @param metadata
      * @param property
      * @param pdfBoxBaseline
@@ -281,21 +283,37 @@ public class PDFParser extends AbstractParser {
      */
     private void extractMultilingualItems(Metadata metadata, Property property,
             String pdfBoxBaseline, XMPSchema schema) {
+        //if schema is null, just go with pdfBoxBaseline
         if (schema == null) {
             if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
-                metadata.add(property, pdfBoxBaseline);
+                metadata.set(property, pdfBoxBaseline);
             }
             return;
         }
-        
+
         for (String lang : schema.getLanguagePropertyLanguages(property.getName())) {
             String value = schema.getLanguageProperty(property.getName(), lang);
-            if (value != null && pdfBoxBaseline != null 
-                    && ! value.equals(pdfBoxBaseline) && value.length() > 0) {
-                metadata.add(property, value);
+
+            if (value != null && value.length() > 0) {
+                //if you're going to add it below in the baseline addition, don't add it now
+                if (pdfBoxBaseline != null && value.equals(pdfBoxBaseline)){
+                    continue;
+                }
+                metadata.add(property, value); 
+                if (! property.isMultiValuePermitted()){
+                    return;
+                }
             }
         }
+
         if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
+            //if we've already added something above and multivalue is not permitted
+            //return.
+            if (! property.isMultiValuePermitted()){
+                if (metadata.get(property) != null){
+                    return;
+                }
+            }
             metadata.add(property,  pdfBoxBaseline);
         }
     }
