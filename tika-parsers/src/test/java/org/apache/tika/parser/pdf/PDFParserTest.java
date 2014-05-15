@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.pdf;
 
+import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -464,6 +465,9 @@ public class PDFParserTest extends TikaTest {
     }
     
     //TIKA-1124
+    //IGNORE until TIKA-1298/PDFBOX 2079 is fixed or we all 
+    //move to Java 1.7
+    @Ignore 
     @Test
     public void testEmbeddedPDFEmbeddingAnotherDocument() throws Exception {
        /* format of test doc:
