@@ -244,7 +244,10 @@
     <_comment>Java Native Library for OSX</_comment>
     <magic priority="50">
       <match value="0xcafebabe" type="string" offset="0">
-         <match value="0xfeedface" type="string" offset="4096"/>
+        <match value="0xfeedface" type="string" offset="4096"/>
+        <match value="0xfeedfacf" type="string" offset="4096"/>
+        <match value="0xcefaedfe" type="string" offset="4096"/>
+        <match value="0xcffaedfe" type="string" offset="4096"/>
       </match>
     </magic>
     <glob pattern="*.jnilib"/>
