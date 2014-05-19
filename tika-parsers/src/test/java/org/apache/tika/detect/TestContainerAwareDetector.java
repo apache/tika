@@ -26,17 +26,20 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 import org.junit.Test;
 
 /**
  * Junit test class for {@link ContainerAwareDetector}
  */
 public class TestContainerAwareDetector {
-
-    private final Detector detector = new DefaultDetector();
+    private final TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+    private final MimeTypes mimeTypes = tikaConfig.getMimeRepository();
+    private final Detector detector = new DefaultDetector(mimeTypes);
 
     private void assertTypeByData(String file, String type) throws Exception {
        assertTypeByNameAndData(file, null, type);
@@ -49,6 +52,9 @@ public class TestContainerAwareDetector {
        assertTypeByNameAndData(file, byNameAndData);
     }
     private void assertTypeByNameAndData(String dataFile, String name, String type) throws Exception {
+        assertTypeByNameAndData(dataFile, name, type, null);
+    }
+    private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector, String typeFromMagic) throws Exception {
        TikaInputStream stream = TikaInputStream.get(
                TestContainerAwareDetector.class.getResource(
                        "/test-documents/" + dataFile));
@@ -57,8 +63,16 @@ public class TestContainerAwareDetector {
            if (name != null)
               m.add(Metadata.RESOURCE_NAME_KEY, name);
            
+           // Mime Magic version is likely to be less precise
+           if (typeFromMagic != null) {
+               assertEquals(
+                       MediaType.parse(typeFromMagic),
+                       mimeTypes.detect(stream, m));
+           }
+           
+           // All being well, the detector should get it perfect
            assertEquals(
-                   MediaType.parse(type),
+                   MediaType.parse(typeFromDetector),
                    detector.detect(stream, m));
        } finally {
            stream.close();
@@ -322,6 +336,11 @@ public class TestContainerAwareDetector {
         assertTypeByData("testWAR.war", "application/x-tika-java-web-archive");
         assertTypeByData("testEAR.ear", "application/x-tika-java-enterprise-archive");
         assertTypeByData("testAPK.apk", "application/vnd.android.package-archive");
+        
+        // JAR with HTML files in it
+        // TODO Fix TIKA-1292 and enable this test
+//        assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar",
+//                                "application/java-archive", "application/java-archive");
     }
 
     private TikaInputStream getTruncatedFile(String name, int n)
