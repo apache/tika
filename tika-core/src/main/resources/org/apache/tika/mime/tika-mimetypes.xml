@@ -345,8 +345,6 @@
       <match value="PO^Q`" type="string" offset="0"/>
       <match value="\376\067\0\043" type="string" offset="0"/>
       <match value="\333\245-\0\0\0" type="string" offset="0"/>
-      <match value="\354\245\301" type="string" offset="512"/>
-      <match value="\320\317\021\340\241\261\032\341" type="string" offset="0"/>
       <match value="\224\246\056" type="string" offset="0"/>
       <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
          <match value="W\x00o\x00r\x00d\x00D\x00o\x00c\x00u\x00m\x00e\x00n\x00t" type="string" offset="1152:4096" />
@@ -2077,8 +2075,9 @@
   <mime-type type="application/vnd.sss-cod"/>
   <mime-type type="application/vnd.sss-dtf"/>
   <mime-type type="application/vnd.sss-ntf"/>
+
   <mime-type type="application/vnd.stardivision.calc">
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-staroffice"/>
     <magic priority="50">
       <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
          <match value="StarCalc" type="string" offset="2048:2207" />
@@ -2087,7 +2086,7 @@
     <glob pattern="*.sdc"/>
   </mime-type>
   <mime-type type="application/vnd.stardivision.draw">
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-staroffice"/>
     <magic priority="50">
       <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
          <match value="StarDraw" type="string" offset="2048:2207" />
@@ -2096,7 +2095,7 @@
     <glob pattern="*.sda"/>
   </mime-type>
   <mime-type type="application/vnd.stardivision.impress">
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-staroffice"/>
     <magic priority="50">
       <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
          <match value="StarImpress" type="string" offset="2048:2207" />
@@ -2108,7 +2107,7 @@
     <glob pattern="*.smf"/>
   </mime-type>
   <mime-type type="application/vnd.stardivision.writer">
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-staroffice"/>
     <magic priority="50">
       <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
          <match value="StarWriter" type="string" offset="2048:2207" />
@@ -2117,12 +2116,13 @@
     <glob pattern="*.sdw"/>
   </mime-type>
   <mime-type type="application/x-staroffice-template">
-    <sub-class-of type="application/x-tika-msoffice"/>
+    <sub-class-of type="application/x-tika-staroffice"/>
     <glob pattern="*.vor"/>
   </mime-type>
   <mime-type type="application/vnd.stardivision.writer-global">
     <glob pattern="*.sgl"/>
   </mime-type>
+
   <mime-type type="application/vnd.street-stream"/>
   <mime-type type="application/vnd.sun.xml.calc">
     <glob pattern="*.sxc"/>
@@ -3339,7 +3339,7 @@
   <!-- http://www.microsoft.com/interop/docs/OfficeBinaryFormats.mspx      -->
   <!-- =================================================================== -->
   <mime-type type="application/x-tika-msoffice">
-    <magic>
+    <magic priority="40">
       <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8"/>
     </magic>
   </mime-type>
@@ -3385,6 +3385,11 @@
   <mime-type type="application/x-tika-ooxml-protected">
     <sub-class-of type="application/x-tika-ooxml"/>
     <_comment>Password Protected OOXML File</_comment>
+  </mime-type>
+
+  <!-- Older StarOffice formats extend up the Microsoft OLE2 format -->
+  <mime-type type="application/x-tika-staroffice">
+    <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
   <mime-type type="application/x-uc2-compressed">
