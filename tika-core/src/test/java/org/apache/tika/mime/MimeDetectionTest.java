@@ -211,4 +211,31 @@ public class MimeDetectionTest {
        }
     }
 
+    /**
+     * Tests that when two magic matches both apply, and both
+     *  have the same priority, we use the name to pick the
+     *  right one based on the glob, or the first one we
+     *  come across if not. See TIKA-1292 for more details.
+     */
+//  @Test    
+    public void DISABLEDtestMimeMagicClashSamePriority() throws IOException {
+        byte[] helloWorld = "Hello, World!".getBytes("UTF-8");
+        MediaType helloType = MediaType.parse("hello/world-file");
+        MediaType helloXType = MediaType.parse("hello/x-world-hello");
+        Metadata metadata;
+        
+        // With a filename, picks the right one
+        metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.hello.world");
+        assertEquals(helloType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
+        
+        metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "test.x-hello-world");
+        assertEquals(helloXType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
+        
+        // Without, goes for the first defined
+        metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "testingTESTINGtesting");
+        assertEquals(helloType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
+    }
 }
