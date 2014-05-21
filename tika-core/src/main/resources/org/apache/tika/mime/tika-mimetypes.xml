@@ -2839,7 +2839,7 @@
 
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
-    <magic priority="40">
+    <magic priority="50">
       <!-- GNU tar archive -->
       <match value="ustar  \0" type="string" offset="257" />
     </magic>
@@ -2856,7 +2856,7 @@
     <alias type="application/gzip-compressed"/>
     <alias type="application/x-gzip-compressed"/>
     <alias type="gzip/document"/>
-    <magic priority="40">
+    <magic priority="45">
       <match value="\037\213" type="string" offset="0" />
       <match value="\x1f\x8b" type="string" offset="0" />
     </magic>
@@ -3536,7 +3536,7 @@
     <tika:link>http://en.wikipedia.org/wiki/ZIP_(file_format)</tika:link>
     <tika:uti>com.pkware.zip-archive</tika:uti>
     <alias type="application/x-zip-compressed"/>
-    <magic priority="40">
+    <magic priority="50">
       <match value="PK\003\004" type="string" offset="0"/>
       <match value="PK\005\006" type="string" offset="0"/>
       <match value="PK\x07\x08" type="string" offset="0"/>
