@@ -19,6 +19,22 @@
   Description: This xml file defines the valid mime types used by Tika.
   The mime type data within this file is based on information from various
   sources like Apache Nutch, Apache HTTP Server, the file(1) command, etc.
+
+  Notes:
+   * Tika supports a wider range of match types than Freedesktop does
+   * Glob patterns must be unique, if there's a clash assign to the most
+     popular format
+   * The main mime type should be the canonical one, use aliases for any
+     other widely used forms
+   * Where there's a hierarchy in the types, list it via a parent
+   * Highly specific magic matches get a high priority
+   * General magic matches which could trigger a false-positive need
+     a low one
+   * The priority for containers normally need to be higher than for
+     the things they contain, so they don't accidently get detected
+     as what's in them
+   * For logic too complex to be expressed in a magic match, do the best
+     you can here, then provide a Custom Detector for the rest
 -->
 <mime-info>
 
