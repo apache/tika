@@ -217,8 +217,8 @@ public class MimeDetectionTest {
      *  right one based on the glob, or the first one we
      *  come across if not. See TIKA-1292 for more details.
      */
-//  @Test    
-    public void DISABLEDtestMimeMagicClashSamePriority() throws IOException {
+    @Test    
+    public void testMimeMagicClashSamePriority() throws IOException {
         byte[] helloWorld = "Hello, World!".getBytes("UTF-8");
         MediaType helloType = MediaType.parse("hello/world-file");
         MediaType helloXType = MediaType.parse("hello/x-world-hello");
@@ -233,9 +233,9 @@ public class MimeDetectionTest {
         metadata.set(Metadata.RESOURCE_NAME_KEY, "test.x-hello-world");
         assertEquals(helloXType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
         
-        // Without, goes for the first defined
+        // Without, goes for the one that sorts last
         metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, "testingTESTINGtesting");
-        assertEquals(helloType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
+        assertEquals(helloXType, mimeTypes.detect(new ByteArrayInputStream(helloWorld), metadata));
     }
 }
