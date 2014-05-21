@@ -338,9 +338,8 @@ public class TestContainerAwareDetector {
         assertTypeByData("testAPK.apk", "application/vnd.android.package-archive");
         
         // JAR with HTML files in it
-        // TODO Fix TIKA-1292 and enable this test
-//        assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar",
-//                                "application/java-archive", "application/java-archive");
+        assertTypeByNameAndData("testJAR_with_HTML.jar", "testJAR_with_HTML.jar",
+                                "application/java-archive", "application/java-archive");
     }
 
     private TikaInputStream getTruncatedFile(String name, int n)
