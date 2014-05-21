@@ -33,4 +33,13 @@
      </magic>
      <sub-class-of type="hello/world" />
   </mime-type>
+
+  <!-- This has the same match and priority, but different glob -->
+  <!-- We can use the filename to identify the difference, see TIKA-1292 -->
+  <mime-type type="hello/x-world-hello">
+     <glob pattern="*.x-hello-world" />
+     <magic priority="50">
+        <match value="Hello, World!" type="string" offset="0:13" />
+     </magic>
+  </mime-type>
 </mime-info>
