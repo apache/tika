@@ -79,6 +79,7 @@ public final class MimeTypes implements Detector, Serializable {
      * Root type, application/octet-stream.
      */
     private final MimeType rootMimeType;
+    private final List<MimeType> rootMimeTypeL;
 
     /**
      * Text type, text/plain.
@@ -112,6 +113,8 @@ public final class MimeTypes implements Detector, Serializable {
         rootMimeType = new MimeType(MediaType.OCTET_STREAM);
         textMimeType = new MimeType(MediaType.TEXT_PLAIN);
         xmlMimeType = new MimeType(MediaType.APPLICATION_XML);
+        
+        rootMimeTypeL = Collections.singletonList(rootMimeType);
 
         add(rootMimeType);
         add(textMimeType);
@@ -157,7 +160,11 @@ public final class MimeTypes implements Detector, Serializable {
     /**
      * Returns the MIME type that best matches the given first few bytes
      * of a document stream. Returns application/octet-stream if no better
-     * match is found.
+     * match is found. 
+     * <p>
+     * If multiple matches are found, the best (highest priority) matching
+     * type is returned. If multiple matches are found with the same priority,
+     * then all of these are returned.
      * <p>
      * The given byte array is expected to be at least {@link #getMinLength()}
      * long, or shorter only if the document stream itself is shorter.
@@ -165,44 +172,52 @@ public final class MimeTypes implements Detector, Serializable {
      * @param data first few bytes of a document stream
      * @return matching MIME type
      */
-    private MimeType getMimeType(byte[] data) {
+    private List<MimeType> getMimeType(byte[] data) {
         if (data == null) {
             throw new IllegalArgumentException("Data is missing");
         } else if (data.length == 0) {
             // See https://issues.apache.org/jira/browse/TIKA-483
-            return rootMimeType;
+            return rootMimeTypeL;
         }
 
         // Then, check for magic bytes
-        MimeType result = null;
+        List<MimeType> result = new ArrayList<MimeType>(1);
+        int currentPriority = -1;
         for (Magic magic : magics) {
-            if (magic.eval(data)) {
-                result = magic.getType();
+            if (currentPriority > 0 && currentPriority > magic.getPriority()) {
                 break;
+            }
+            if (magic.eval(data)) {
+                result.add(magic.getType());
+                currentPriority = magic.getPriority();
             }
         }
  
-        if (result != null) {
-            // When detecting generic XML (or possibly XHTML),
-            // extract the root element and match it against known types
-            if ("application/xml".equals(result.getName())
-                    || "text/html".equals(result.getName())) {
-                XmlRootExtractor extractor = new XmlRootExtractor();
+        if (!result.isEmpty()) {
+            for (int i=0; i<result.size(); i++) {
+                final MimeType matched = result.get(i);
+                
+                // When detecting generic XML (or possibly XHTML),
+                // extract the root element and match it against known types
+                if ("application/xml".equals(matched.getName())
+                        || "text/html".equals(matched.getName())) {
+                    XmlRootExtractor extractor = new XmlRootExtractor();
 
-                QName rootElement = extractor.extractRootElement(data);
-                if (rootElement != null) {
-                    for (MimeType type : xmls) {
-                        if (type.matchesXML(
-                                rootElement.getNamespaceURI(),
-                                rootElement.getLocalPart())) {
-                            result = type;
-                            break;
+                    QName rootElement = extractor.extractRootElement(data);
+                    if (rootElement != null) {
+                        for (MimeType type : xmls) {
+                            if (type.matchesXML(
+                                    rootElement.getNamespaceURI(),
+                                    rootElement.getLocalPart())) {
+                                result.set(i, type);
+                                break;
+                            }
                         }
+                    } else if ("application/xml".equals(matched.getName())) {
+                        // Downgrade from application/xml to text/plain since
+                        // the document seems not to be well-formed.
+                        result.set(i, textMimeType);
                     }
-                } else if ("application/xml".equals(result.getName())) {
-                    // Downgrade from application/xml to text/plain since
-                    // the document seems not to be well-formed.
-                    result = textMimeType;
                 }
             }
             return result;
@@ -212,9 +227,10 @@ public final class MimeTypes implements Detector, Serializable {
         try {
             TextDetector detector = new TextDetector(getMinLength());
             ByteArrayInputStream stream = new ByteArrayInputStream(data);
-            return forName(detector.detect(stream, new Metadata()).toString());
+            MimeType type = forName(detector.detect(stream, new Metadata()).toString());
+            return Collections.singletonList(type);
         } catch (Exception e) {
-            return rootMimeType;
+            return rootMimeTypeL;
         }
     }
 
@@ -429,14 +445,14 @@ public final class MimeTypes implements Detector, Serializable {
      */
     public MediaType detect(InputStream input, Metadata metadata)
             throws IOException {
-        MediaType type = MediaType.OCTET_STREAM;
+        List<MimeType> possibleTypes = null;
 
         // Get type based on magic prefix
         if (input != null) {
             input.mark(getMinLength());
             try {
                 byte[] prefix = readMagicHeader(input);
-                type = getMimeType(prefix).getType();
+                possibleTypes = getMimeType(prefix);
             } finally {
                 input.reset();
             }
@@ -462,10 +478,12 @@ public final class MimeTypes implements Detector, Serializable {
             }
 
             if (name != null) {
-                MediaType hint = getMimeType(name).getType();
-                if (registry.isSpecializationOf(hint, type)) {
-                    type = hint;
-                }
+                MimeType hint = getMimeType(name);
+                
+                // If we have some types based on mime magic, try to specialise
+                //  and/or select the type based on that
+                // Otherwise, use the type identified from the name
+                possibleTypes = applyHint(possibleTypes, hint);
             }
         }
 
@@ -473,16 +491,42 @@ public final class MimeTypes implements Detector, Serializable {
         String typeName = metadata.get(Metadata.CONTENT_TYPE);
         if (typeName != null) {
             try {
-                MediaType hint = forName(typeName).getType();
-                if (registry.isSpecializationOf(hint, type)) {
-                    type = hint;
-                }
+                MimeType hint = forName(typeName);
+                possibleTypes = applyHint(possibleTypes, hint);
             } catch (MimeTypeException e) {
                 // Malformed type name, ignore
             }
         }
 
-        return type;
+        if (possibleTypes == null || possibleTypes.isEmpty()) {
+            // Report that we don't know what it is
+            return MediaType.OCTET_STREAM;
+        } else {
+            return possibleTypes.get(0).getType();
+        }
+    }
+    /**
+     * Use the MimeType hint to try to clarify or specialise the current
+     *  possible types list.
+     * If the hint is a specialised form, use that instead
+     * If there are multiple possible types, use the hint to select one
+     */
+    private List<MimeType> applyHint(List<MimeType> possibleTypes, MimeType hint) {
+        if (possibleTypes == null || possibleTypes.isEmpty()) {
+            return Collections.singletonList(hint);
+        } else {
+            for (int i=0; i<possibleTypes.size(); i++) {
+                final MimeType type = possibleTypes.get(i);
+                if (hint.equals(type) ||
+                    registry.isSpecializationOf(hint.getType(), type.getType())) {
+                    // Use just this type
+                    return Collections.singletonList(hint);
+                }
+            }
+        }
+        
+        // Hint didn't help, sorry
+        return possibleTypes;
     }
 
     private static MimeTypes DEFAULT_TYPES = null;

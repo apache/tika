@@ -148,12 +148,14 @@ public class MimeTypesReaderTest {
      */
     @Test
     public void testCustomMimeTypes() {
-       // Check that it knows about our two special ones
+       // Check that it knows about our three special ones
        String helloWorld = "hello/world";
        String helloWorldFile = "hello/world-file";
+       String helloXWorld = "hello/x-world-hello";
        try {
           assertNotNull(this.mimeTypes.forName(helloWorld));
           assertNotNull(this.mimeTypes.forName(helloWorldFile));
+          assertNotNull(this.mimeTypes.forName(helloXWorld));
        } catch (Exception e) {
           fail(e.getMessage());
        }
@@ -162,15 +164,23 @@ public class MimeTypesReaderTest {
        try {
           MimeType hw = this.mimeTypes.forName(helloWorld);
           MimeType hwf = this.mimeTypes.forName(helloWorldFile);
+          MimeType hxw = this.mimeTypes.forName(helloXWorld);
           
-          // The parent has no comments, globs etc
+          // The parent has no comments, globs, magic etc
           assertEquals("", hw.getDescription());
           assertEquals("", hw.getExtension());
           assertEquals(0, hw.getExtensions().size());
+          assertEquals(0, hw.getMagics().size());
           
           // The file one does
           assertEquals("A \"Hello World\" file", hwf.getDescription());
           assertEquals(".hello.world", hwf.getExtension());
+          assertEquals(1, hwf.getMagics().size());
+          
+          // The alternate one has most
+          assertEquals("", hxw.getDescription());
+          assertEquals(".x-hello-world", hxw.getExtension());
+          assertEquals(1, hxw.getMagics().size());
           
           // Check that we can correct detect with the file one:
           // By name
@@ -178,11 +188,15 @@ public class MimeTypesReaderTest {
           m.add(Metadata.RESOURCE_NAME_KEY, "test.hello.world");
           assertEquals(hwf.toString(), this.mimeTypes.detect(null, m).toString());
           
-          // By contents
+          m = new Metadata();
+          m.add(Metadata.RESOURCE_NAME_KEY, "test.x-hello-world");
+          assertEquals(hxw.toString(), this.mimeTypes.detect(null, m).toString());
+          
+          // By contents - picks the x one as that sorts later
           m = new Metadata();
           ByteArrayInputStream s = new ByteArrayInputStream(
                 "Hello, World!".getBytes("ASCII"));
-          assertEquals(hwf.toString(), this.mimeTypes.detect(s, m).toString());
+          assertEquals(hxw.toString(), this.mimeTypes.detect(s, m).toString());
        } catch (Exception e) {
           fail(e.getMessage());
        }
