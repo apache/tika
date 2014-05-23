@@ -1,4 +1,5 @@
-package org.apache.tika.parser.rtf; /*
+package org.apache.tika.parser.rtf; 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -13,17 +14,30 @@ package org.apache.tika.parser.rtf; /*
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ import java.io.ByteArrayOutputStream; import java.io.IOException; import java.io.InputStream; import 
-java.util.concurrent.atomic.AtomicInteger; import org.apache.tika.config.TikaConfig; import 
-org.apache.tika.detect.Detector; import org.apache.tika.exception.TikaException; import 
-org.apache.tika.extractor.EmbeddedDocumentExtractor; import 
-org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor; import org.apache.tika.io.FilenameUtils; import 
-org.apache.tika.io.TikaInputStream; import org.apache.tika.metadata.Metadata; import 
-org.apache.tika.metadata.RTFMetadata; import org.apache.tika.mime.MediaType; import 
-org.apache.tika.mime.MimeType; import org.apache.tika.mime.MimeTypeException; import 
-org.apache.tika.mime.MimeTypes; import org.apache.tika.parser.ParseContext; import 
-org.apache.tika.sax.EmbeddedContentHandler; import org.xml.sax.ContentHandler; import 
-org.xml.sax.SAXException; /**
+ */ 
+import java.io.ByteArrayOutputStream; 
+import java.io.IOException; 
+import java.io.InputStream; 
+import java.util.concurrent.atomic.AtomicInteger; 
+import org.apache.tika.config.TikaConfig; 
+import org.apache.tika.detect.Detector; 
+import org.apache.tika.exception.TikaException; 
+import org.apache.tika.extractor.EmbeddedDocumentExtractor; 
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor; 
+import org.apache.tika.io.FilenameUtils; 
+import org.apache.tika.io.TikaInputStream; 
+import org.apache.tika.metadata.Metadata; 
+import org.apache.tika.metadata.RTFMetadata; 
+import org.apache.tika.mime.MediaType; 
+import org.apache.tika.mime.MimeType; 
+import org.apache.tika.mime.MimeTypeException; 
+import org.apache.tika.mime.MimeTypes; 
+import org.apache.tika.parser.ParseContext; 
+import org.apache.tika.sax.EmbeddedContentHandler; 
+import org.xml.sax.ContentHandler; 
+import org.xml.sax.SAXException; 
+
+/**
  * This class buffers data from embedded objects and pictures.
  *
  * <p/>
