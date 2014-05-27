@@ -34,6 +34,7 @@ import java.util.Set;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -640,28 +641,35 @@ public class PDFParserTest extends TikaTest {
         //"regressiveness" exists only in Unit10.doc not in the container pdf document
         assertTrue(xml.contains("regressiveness"));
 
-        TrackingHandler tracker = new TrackingHandler();
+        RecursiveMetadataParser p = new RecursiveMetadataParser(new AutoDetectParser(), false);
         TikaInputStream tis = null;
-        ContainerExtractor ex = new ParserContainerExtractor();
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
+        context.set(org.apache.tika.parser.Parser.class, p);
+
         try {
             tis= TikaInputStream.get(
-                getResourceAsStream("/test-documents/testPDF_childAttachments.pdf"));
-            ex.extract(tis, ex, tracker);
+                    getResourceAsStream("/test-documents/testPDF_childAttachments.pdf"));
+            p.parse(tis, new BodyContentHandler(-1), new Metadata(), context);
         } finally {
             if (tis != null) {
                 tis.close();
             }
         }
-        assertEquals(4, tracker.filenames.size());
-        assertEquals(4, tracker.mediaTypes.size());
-        assertNull(tracker.filenames.get(0));
-        assertNull(tracker.filenames.get(1));
-        assertEquals("Press Quality(1).joboptions", tracker.filenames.get(2));
-        assertEquals("Unit10.doc", tracker.filenames.get(3));
-        assertEquals(MediaType.image("jpeg"), tracker.mediaTypes.get(0));
-        assertEquals(MediaType.image("tiff"), tracker.mediaTypes.get(1));
-        assertEquals(TYPE_TEXT, tracker.mediaTypes.get(2));
-        assertEquals(TYPE_DOC, tracker.mediaTypes.get(3));
+
+        List<Metadata> metadatas = p.getAllMetadata();
+        assertEquals(5, metadatas.size());
+        assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
+        assertNull(metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("Press Quality(1).joboptions", metadatas.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("Unit10.doc", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals(MediaType.image("jpeg").toString(), metadatas.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals(MediaType.image("tiff").toString(), metadatas.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=ISO-8859-1", metadatas.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals(TYPE_DOC.toString(), metadatas.get(3).get(Metadata.CONTENT_TYPE));
     }
 
     public void testVersions() throws Exception {
@@ -837,6 +845,146 @@ public class PDFParserTest extends TikaTest {
             if (! list.contains(v)) {
                 assertTrue("metadata value; that doesn't contain" + v, false);
             }
+        }
+    }
+
+    @Test
+    public void testInlineSelector() throws Exception {
+        
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+
+        Parser defaultParser = new AutoDetectParser();
+
+        RecursiveMetadataParser p = new RecursiveMetadataParser(defaultParser, false);
+        ParseContext context = new ParseContext();
+        context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
+        context.set(org.apache.tika.parser.Parser.class, p);
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler(-1);
+        String path = "/test-documents/testPDF_childAttachments.pdf";
+        InputStream stream = TikaInputStream.get(this.getClass().getResource(path));
+
+        p.parse(stream, handler, metadata, context);
+
+        List<Metadata> metadatas = p.getAllMetadata();
+        int inline = 0;
+        int attach = 0;
+        for (Metadata m : metadatas) {
+            String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+            if (v != null) {
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                    inline++;
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                    attach++;
+                }
+            }
+        }
+        assertEquals(2, inline);
+        assertEquals(2, attach);
+
+        stream.close();
+        p.clear();
+
+        //now try turning off inline
+        stream = TikaInputStream.get(this.getClass().getResource(path));
+
+        context.set(org.apache.tika.extractor.DocumentSelector.class, new AvoidInlineSelector());
+        inline = 0;
+        attach = 0;
+        handler = new BodyContentHandler(-1);
+        metadata = new Metadata();
+        p.parse(stream, handler, metadata, context);
+
+        metadatas = p.getAllMetadata();
+        for (Metadata m : metadatas) {
+            String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+            if (v != null) {
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                    inline++;
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                    attach++;
+                }
+            }
+        }
+        assertEquals(0, inline);
+        assertEquals(2, attach);
+
+    }
+
+
+    @Test
+    public void testInlineConfig() throws Exception {
+        
+        Parser defaultParser = new AutoDetectParser();
+        RecursiveMetadataParser p = new RecursiveMetadataParser(defaultParser, false);
+        ParseContext context = new ParseContext();
+        context.set(org.apache.tika.parser.Parser.class, p);
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler(-1);
+        String path = "/test-documents/testPDF_childAttachments.pdf";
+        InputStream stream = TikaInputStream.get(this.getClass().getResource(path));
+
+        p.parse(stream, handler, metadata, context);
+
+        List<Metadata> metadatas = p.getAllMetadata();
+        int inline = 0;
+        int attach = 0;
+        for (Metadata m : metadatas) {
+            String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+            if (v != null) {
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                    inline++;
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                    attach++;
+                }
+            }
+        }
+        assertEquals(0, inline);
+        assertEquals(2, attach);
+
+        stream.close();
+        p.clear();
+
+        //now try turning off inline
+        stream = TikaInputStream.get(this.getClass().getResource(path));
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+
+        context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
+        inline = 0;
+        attach = 0;
+        handler = new BodyContentHandler(-1);
+        metadata = new Metadata();
+        p.parse(stream, handler, metadata, context);
+
+        metadatas = p.getAllMetadata();
+        for (Metadata m : metadatas) {
+            String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+            if (v != null) {
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                    inline++;
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                    attach++;
+                }
+            }
+        }
+        assertEquals(2, inline);
+        assertEquals(2, attach);
+    }
+
+
+    private class AvoidInlineSelector implements DocumentSelector {
+
+        @Override
+        public boolean select(Metadata metadata) {
+            String v = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+            if (v != null && v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                return false;
+            }
+            return true;
         }
     }
 }

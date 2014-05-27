@@ -26,4 +26,7 @@ public interface TikaMetadataKeys {
     String PROTECTED = "protected";
 
     String EMBEDDED_RELATIONSHIP_ID = "embeddedRelationshipId";
+
+    String EMBEDDED_RESOURCE_TYPE = "embeddedResourceType";
+
 }

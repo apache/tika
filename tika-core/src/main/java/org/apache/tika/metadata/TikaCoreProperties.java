@@ -36,6 +36,22 @@ package org.apache.tika.metadata;
  */
 @SuppressWarnings("deprecation")
 public interface TikaCoreProperties {
+
+    /**
+     * A file might contain different types of embedded documents.
+     * The most common is the attachment.
+     * An "inline" embedded resource should be used for embedded image
+     * files that are used to render the page image (as in PDXObjImages in PDF files).
+     * <p>
+     * Not all parsers have yet implemented this 
+     *
+     */
+    public enum EmbeddedResourceType {
+        inline,
+        attachment
+    };
+
+
     /**
      * @see DublinCore#FORMAT
      */
@@ -246,5 +262,13 @@ public interface TikaCoreProperties {
     @Deprecated
     public static final Property TRANSITION_SUBJECT_TO_OO_SUBJECT = Property.composite(OfficeOpenXMLCore.SUBJECT, 
             new Property[] { Property.internalText(Metadata.SUBJECT) });
+
+    /**
+     * See {@link #EMBEDDED_RESOURCE_TYPE}
+     */
+    public static final Property EMBEDDED_RESOURCE_TYPE = 
+            Property.internalClosedChoise(TikaMetadataKeys.EMBEDDED_RESOURCE_TYPE, 
+                    new String[]{EmbeddedResourceType.attachment.toString(), EmbeddedResourceType.inline.toString()});
+
     
 }

@@ -1,11 +1,5 @@
 package org.apache.tika.parser.pdf;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.util.Properties;
-
-import org.apache.pdfbox.util.PDFTextStripper;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -22,6 +16,13 @@ import org.apache.pdfbox.util.PDFTextStripper;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.util.Properties;
+
+import org.apache.pdfbox.util.PDFTextStripper;
 
 /**
  * Config for PDFParser.
@@ -64,6 +65,13 @@ public class PDFParserConfig implements Serializable{
     
     //True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
+
+    //True if inline PDXImage objects should be extracted
+    private boolean extractInlineImages = false;
+
+    //True if inline images (as identified by their object id within
+    //a pdf file) should only be extracted once.
+    private boolean extractUniqueInlineImagesOnly = true;
     
     //The character width-based tolerance value used to estimate where spaces in text should be added
     private Float averageCharTolerance;
@@ -122,6 +130,12 @@ public class PDFParserConfig implements Serializable{
         setExtractAcroFormContent(
                 getProp(props.getProperty("extractAcroFormContent"),
                 getExtractAcroFormContent()));
+        setExtractInlineImages(
+                getProp(props.getProperty("extractInlineImages"),
+                getExtractInlineImages()));
+        setExtractUniqueInlineImagesOnly(
+                getProp(props.getProperty("extractUniqueInlineImagesOnly"),
+                getExtractUniqueInlineImagesOnly()));
     }
     
     /**
@@ -162,6 +176,56 @@ public class PDFParserConfig implements Serializable{
     public boolean getExtractAcroFormContent() {
         return extractAcroFormContent;
     }
+
+    /**
+     * If true, extract inline embedded OBXImages.
+     * <b>Beware:</b> some PDF documents of modest size (~4MB) can contain
+     * thousands of embedded images totaling > 2.5 GB.  Also, at least as of PDFBox 1.8.5, 
+     * there can be surprisingly large memory consumption and/or out of memory errors.
+     * Set to <code>true</code> with caution.
+     * <p>
+     * The default is <code>false</code>.
+     * <p>
+     * See also: {@see #setExtractUniqueInlineImagesOnly(boolean)};
+     * 
+     * @param extractInlineImages
+     */
+    public void setExtractInlineImages(boolean extractInlineImages) {
+        this.extractInlineImages = extractInlineImages;        
+    }
+
+    /** @see #setExtractInlineImages(boolean) */
+    public boolean getExtractInlineImages() {
+        return extractInlineImages;
+    }
+
+    /**
+     * Multiple pages within a PDF file might refer to the same underlying image.
+     * If {@link #extractUniqueInlineImagesOnly} is set to <code>false</code>, the
+     * parser will call the EmbeddedExtractor each time the image appears on a page.
+     * This might be desired for some use cases.  However, to avoid duplication of 
+     * extracted images, set this to <code>true</code>.  The default is <code>true</code>.
+     * <p>
+     * Note that uniqueness is determined only by the underlying PDF COSObject id, not by 
+     * file hash or similar equality metric.
+     * If the PDF actually contains multiple copies of the same image 
+     * -- all with different object ids -- then all images will be extracted.
+     * <p>
+     * For this parameter to have any effect, {@link #extractInlineImages} must be 
+     * set to <code>true</code>.
+     * 
+     * @param extractUniqueInlineImagesOnly
+     */
+    public void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
+        this.extractUniqueInlineImagesOnly = extractUniqueInlineImagesOnly;
+        
+    }
+
+    /** @see #setExtractUniqueInlineImagesOnly(boolean) */
+    public boolean getExtractUniqueInlineImagesOnly() {
+        return extractUniqueInlineImagesOnly;
+    }
+
 
     /** @see #setEnableAutoSpace. */
     public boolean getEnableAutoSpace() {
@@ -286,10 +350,19 @@ public class PDFParserConfig implements Serializable{
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime
+                * result
+                + ((averageCharTolerance == null) ? 0 : averageCharTolerance
+                        .hashCode());
         result = prime * result + (enableAutoSpace ? 1231 : 1237);
         result = prime * result + (extractAcroFormContent ? 1231 : 1237);
         result = prime * result + (extractAnnotationText ? 1231 : 1237);
+        result = prime * result + (extractInlineImages ? 1231 : 1237);
+        result = prime * result + (extractUniqueInlineImagesOnly ? 1231 : 1237);
         result = prime * result + (sortByPosition ? 1231 : 1237);
+        result = prime
+                * result
+                + ((spacingTolerance == null) ? 0 : spacingTolerance.hashCode());
         result = prime * result
                 + (suppressDuplicateOverlappingText ? 1231 : 1237);
         result = prime * result + (useNonSequentialParser ? 1231 : 1237);
@@ -305,13 +378,27 @@ public class PDFParserConfig implements Serializable{
         if (getClass() != obj.getClass())
             return false;
         PDFParserConfig other = (PDFParserConfig) obj;
+        if (averageCharTolerance == null) {
+            if (other.averageCharTolerance != null)
+                return false;
+        } else if (!averageCharTolerance.equals(other.averageCharTolerance))
+            return false;
         if (enableAutoSpace != other.enableAutoSpace)
             return false;
         if (extractAcroFormContent != other.extractAcroFormContent)
             return false;
         if (extractAnnotationText != other.extractAnnotationText)
             return false;
+        if (extractInlineImages != other.extractInlineImages)
+            return false;
+        if (extractUniqueInlineImagesOnly != other.extractUniqueInlineImagesOnly)
+            return false;
         if (sortByPosition != other.sortByPosition)
+            return false;
+        if (spacingTolerance == null) {
+            if (other.spacingTolerance != null)
+                return false;
+        } else if (!spacingTolerance.equals(other.spacingTolerance))
             return false;
         if (suppressDuplicateOverlappingText != other.suppressDuplicateOverlappingText)
             return false;
@@ -327,6 +414,11 @@ public class PDFParserConfig implements Serializable{
                 + suppressDuplicateOverlappingText + ", extractAnnotationText="
                 + extractAnnotationText + ", sortByPosition=" + sortByPosition
                 + ", useNonSequentialParser=" + useNonSequentialParser
-                + ", extractAcroFormContent=" + extractAcroFormContent + "]";
+                + ", extractAcroFormContent=" + extractAcroFormContent
+                + ", extractInlineImages=" + extractInlineImages
+                + ", extractUniqueInlineImagesOnly="
+                + extractUniqueInlineImagesOnly + ", averageCharTolerance="
+                + averageCharTolerance + ", spacingTolerance="
+                + spacingTolerance + "]";
     }
 }
