@@ -22,10 +22,12 @@ import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -63,6 +65,7 @@ import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -91,6 +94,14 @@ class PDF2XHTML extends PDFTextStripper {
 
     // TODO: remove once PDFBOX-1130 is fixed:
     private boolean inParagraph = false;
+
+    /**
+     * This keeps track of the pdf object ids for inline
+     * images that have been processed.  If {@link PDFParserConfig#getExtractUniqueInlineImagesOnly()
+     * is true, this will be checked before extracting an embedded image.
+     */
+    private Set<String> processedInlineImages = new HashSet<String>();
+
 
     /**
      * Converts the given PDF document (and related metadata) to a stream
@@ -279,14 +290,27 @@ class PDF2XHTML extends PDFTextStripper {
     }
 
     private void extractImages(PDResources resources) throws SAXException {
-        if (resources == null) {
+        if (resources == null || config.getExtractInlineImages() == false) {
             return;
         }
 
-        for (PDXObject object : resources.getXObjects().values()) {
+        for (Map.Entry<String, PDXObject> entry : resources.getXObjects().entrySet()) {
+                        
+            PDXObject object = entry.getValue();
             if (object instanceof PDXObjectForm) {
                 extractImages(((PDXObjectForm) object).getResources());
             } else if (object instanceof PDXObjectImage) {
+                
+                //Do we only want to process unique COSObject ids?
+                //If so, have we already processed this one?
+                if (config.getExtractUniqueInlineImagesOnly() == true) {
+                    String cosObjectId = entry.getKey();
+                    if (processedInlineImages.contains(cosObjectId)){
+                        continue;
+                    }
+                    processedInlineImages.add(cosObjectId);
+                }
+
                 PDXObjectImage image = (PDXObjectImage) object;
 
                 Metadata metadata = new Metadata();
@@ -297,6 +321,8 @@ class PDF2XHTML extends PDFTextStripper {
                 } else if (image instanceof PDPixelMap) {
                     metadata.set(Metadata.CONTENT_TYPE, "image/png");
                 }
+                metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, 
+                        TikaCoreProperties.EmbeddedResourceType.inline.toString());
 
                 EmbeddedDocumentExtractor extractor =
                         getEmbeddedDocumentExtractor();
@@ -454,6 +480,8 @@ class PDF2XHTML extends PDFTextStripper {
             metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
             metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
             metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, 
+                    TikaCoreProperties.EmbeddedResourceType.attachment.toString());
 
             if (extractor.shouldParseEmbedded(metadata)) {
                 TikaInputStream stream = TikaInputStream.get(file.createInputStream());

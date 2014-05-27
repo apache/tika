@@ -232,7 +232,11 @@ public abstract class TikaTest {
 
         public List<Metadata> getAllMetadata() {
             return metadatas;
-        }        
+        }
+        
+        public void clear() {
+            metadatas.clear();
+        }
     }
 
 }

@@ -63,6 +63,13 @@ import org.xml.sax.SAXException;
  * the PDF contains any embedded documents (for example as part of a PDF
  * package) then this parser will use the {@link EmbeddedDocumentExtractor}
  * to handle them.
+ * <p>
+ * As of Tika 1.6, it is possible to extract inline images with
+ * the {@link EmbeddedDocumentExtractor} as if they were regular
+ * attachments.  By default, this feature is turned off because of
+ * the potentially enormous number and size of inline images.  To
+ * turn this feature on, see
+ * {@link PDFParserConfig#setExtractInlineImages(boolean)}.
  */
 public class PDFParser extends AbstractParser {
 
