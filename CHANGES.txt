@@ -1,5 +1,7 @@
 Release 1.6 - ??/??/2014
 
+  * Fixed bug in CLI json output (TIKA-1291/TIKA-1310)
+
   * Added ability to turn off image extraction from PDFs (TIKA-1294).
     Users must now turn on this capability via the PDFParserConfig.
 

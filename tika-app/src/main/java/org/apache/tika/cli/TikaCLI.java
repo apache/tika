@@ -31,8 +31,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
-import java.text.NumberFormat;
-import java.text.ParsePosition;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -46,6 +44,9 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -70,6 +71,7 @@ import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.io.json.JsonMetadataSerializer;
 import org.apache.tika.language.LanguageProfilerBuilder;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
@@ -90,7 +92,6 @@ import org.apache.tika.xmp.XMPMetadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-import com.google.gson.Gson;
 import org.apache.tika.io.FilenameUtils;
 
 /**
@@ -898,68 +899,30 @@ public class TikaCLI {
         	}
         }
     }
-    
+
     /**
-     * Uses GSON to do the JSON escaping, but does
-     *  the general JSON glueing ourselves.
+     * Uses GSON. 
      */
-    private class NoDocumentJSONMetHandler extends NoDocumentMetHandler {
-        private NumberFormat formatter;
-        private Gson gson;
-       
+    private class NoDocumentJSONMetHandler extends DefaultHandler {
+
+        private final Gson gson;
+
+        protected final Metadata metadata;
+        
+        protected PrintWriter writer;
+
         public NoDocumentJSONMetHandler(Metadata metadata, PrintWriter writer){
-            super(metadata, writer);
-            
-            formatter = NumberFormat.getInstance();
-            gson = new Gson();
+            this.metadata = metadata;
+            this.writer = writer;
+            GsonBuilder builder = new GsonBuilder();
+            builder.registerTypeHierarchyAdapter(Metadata.class, new JsonMetadataSerializer());
+            gson = builder.create();
         }
         
         @Override
-        public void outputMetadata(String[] names) {
-           writer.print("{ ");
-           boolean first = true;
-           for (String name : names) {
-              if(! first) {
-                 writer.println(", ");
-              } else {
-                 first = false;
-              }
-              gson.toJson(name, writer);
-              writer.print(":");
-              outputValues(metadata.getValues(name));
-           }
-           writer.print(" }");
-        }
-        
-        public void outputValues(String[] values) {
-           if(values.length > 1) {
-              writer.print("[");
-           }
-           for(int i=0; i<values.length; i++) {
-              String value = values[i];
-              if(i > 0) {
-                 writer.print(", ");
-              }
-              
-              if(value == null || value.length() == 0) {
-                 writer.print("null");
-              } else {
-                 // Is it a number?
-                 ParsePosition pos = new ParsePosition(0);
-                 formatter.parse(value, pos);
-                 if(value.length() == pos.getIndex()) {
-                    // It's a number. Remove leading zeros and output
-                    value = value.replaceFirst("^0+(\\d)", "$1");
-                    writer.print(value);
-                 } else {
-                    // Not a number, escape it
-                    gson.toJson(value, writer);
-                 }
-              }
-           }
-           if(values.length > 1) {
-              writer.print("]");
-           }
-        }
-    }
+        public void endDocument() throws SAXException {
+                gson.toJson(metadata, writer);
+                writer.flush();
+        }   
+    }    
 }

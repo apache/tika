@@ -135,6 +135,27 @@ public class TikaCLITest {
     }
 
     /**
+     * Basic tests for -json option
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testJsonMetadataOutput() throws Exception {
+        String[] params = {"--json", resourcePrefix + "testJsonMultipleInts.html"};
+        TikaCLI.main(params);
+        String json = outContent.toString();
+        //TIKA-1310
+        assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
+        
+        //test legacy alphabetic sort of keys
+        int enc = json.indexOf("\"Content-Encoding\"");
+        int fb = json.indexOf("fb:admins");
+        int title = json.indexOf("\"title\"");
+        assertTrue(enc > -1 && fb > -1 && enc < fb);
+        assertTrue (fb > -1 && title > -1 && fb < title);
+    }
+
+    /**
      * Tests -l option of the cli
      * 
      * @throws Exception
