@@ -874,9 +874,9 @@ public class PDFParserTest extends TikaTest {
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
-                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())){
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())){
                     attach++;
                 }
             }
@@ -901,9 +901,9 @@ public class PDFParserTest extends TikaTest {
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
-                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())){
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())){
                     attach++;
                 }
             }
@@ -934,9 +934,9 @@ public class PDFParserTest extends TikaTest {
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
-                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())){
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())){
                     attach++;
                 }
             }
@@ -964,9 +964,9 @@ public class PDFParserTest extends TikaTest {
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
-                if (v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+                if (v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())){
                     inline++;
-                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.attachment.toString())){
+                } else if (v.equals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString())){
                     attach++;
                 }
             }
@@ -981,7 +981,7 @@ public class PDFParserTest extends TikaTest {
         @Override
         public boolean select(Metadata metadata) {
             String v = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
-            if (v != null && v.equals(TikaCoreProperties.EmbeddedResourceType.inline.toString())){
+            if (v != null && v.equals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString())){
                 return false;
             }
             return true;
