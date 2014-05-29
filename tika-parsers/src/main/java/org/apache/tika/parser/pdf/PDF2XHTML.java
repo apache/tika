@@ -322,7 +322,7 @@ class PDF2XHTML extends PDFTextStripper {
                     metadata.set(Metadata.CONTENT_TYPE, "image/png");
                 }
                 metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, 
-                        TikaCoreProperties.EmbeddedResourceType.inline.toString());
+                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
 
                 EmbeddedDocumentExtractor extractor =
                         getEmbeddedDocumentExtractor();
@@ -481,7 +481,7 @@ class PDF2XHTML extends PDFTextStripper {
             metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
             metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, 
-                    TikaCoreProperties.EmbeddedResourceType.attachment.toString());
+                    TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
 
             if (extractor.shouldParseEmbedded(metadata)) {
                 TikaInputStream stream = TikaInputStream.get(file.createInputStream());
