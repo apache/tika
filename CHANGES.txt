@@ -1,5 +1,8 @@
 Release 1.6 - ??/??/2014
 
+  * Made RTFParser's list handling slightly more robust against corrupt
+    list metadata (TIKA-1305)
+
   * Fixed bug in CLI json output (TIKA-1291/TIKA-1310)
 
   * Added ability to turn off image extraction from PDFs (TIKA-1294).
