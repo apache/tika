@@ -413,7 +413,16 @@ public class RTFParserTest extends TikaTest {
         assertContains("Body", content);
     }
 
-    //TIKA-1010
+    // TIKA-1305
+    @Test
+    public void testCorruptListOverride() throws Exception {
+        Result r = getResult("testRTFCorruptListOverride.rtf");
+        String content = r.text;
+        assertContains("apple", content);
+    }
+
+
+    // TIKA-1010
     @Test
     public void testEmbeddedMonster() throws Exception {
         Set<MediaType> skipTypes = new HashSet<MediaType>();
