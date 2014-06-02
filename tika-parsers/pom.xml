@@ -76,7 +76,7 @@
     <dependency>
       <groupId>edu.ucar</groupId>
       <artifactId>netcdf</artifactId>
-      <version>4.2-min</version>
+      <version>4.2.20</version>
     </dependency>
     <dependency>
       <groupId>org.apache.james</groupId>
@@ -218,7 +218,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
-      <version>1.5.6</version>
+      <version>1.6.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
