@@ -22,10 +22,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
@@ -272,6 +275,27 @@ public class AutoDetectParserTest {
             tgz.close();
         }
     
+    }
+
+
+    /**
+     * Make sure XML parse errors don't trigger ZIP bomb detection.
+     *
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-1322">TIKA-1322</a>
+     */
+    @Test
+    public void testNoBombDetectedForInvalidXml() throws Exception {
+        // create zip with ten empty / invalid XML files, 1.xml .. 10.xml
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
+        for (int i = 1; i <= 10; i++) {
+            zos.putNextEntry(new ZipEntry(i + ".xml"));
+            zos.closeEntry();
+        }
+        zos.finish();
+        zos.close();
+        new AutoDetectParser(tika).parse(new ByteArrayInputStream(baos.toByteArray()), new BodyContentHandler(-1),
+                new Metadata());
     }
 
     /**

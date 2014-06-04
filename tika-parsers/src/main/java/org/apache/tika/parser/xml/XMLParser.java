@@ -76,10 +76,10 @@ public class XMLParser extends AbstractParser {
         } catch (SAXException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("XML parse error", e);
+        } finally {
+            xhtml.endElement("p");
+            xhtml.endDocument();
         }
-
-        xhtml.endElement("p");
-        xhtml.endDocument();
     }
 
     protected ContentHandler getContentHandler(
