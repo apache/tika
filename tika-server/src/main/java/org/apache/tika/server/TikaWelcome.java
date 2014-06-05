@@ -102,6 +102,9 @@ public class TikaWelcome {
                     if (methodPath != null) {
                         mPath += methodPath;
                     }
+                    if (produces == null) {
+                        produces = new String[0];
+                    }
                     found.add(new Endpoint(endpoint, m, mPath, httpMethod, produces));
                 }
             }
