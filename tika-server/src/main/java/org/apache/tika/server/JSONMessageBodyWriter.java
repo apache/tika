@@ -17,9 +17,9 @@
 
 package org.apache.tika.server;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.eclipse.jetty.util.ajax.JSON;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -30,11 +30,10 @@ import javax.ws.rs.ext.Provider;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringReader;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.Map;
-import java.util.TreeMap;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
@@ -52,22 +51,13 @@ public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
   public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
       MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
       WebApplicationException {
-
-      Map<String, Object> res = new TreeMap<String, Object>();
-
-    for (String name : metadata.names()) {
-      String[] values = metadata.getValues(name);
-      if (metadata.isMultiValued(name)) {
-        res.put(name, values);
-      } else {
-        res.put(name, values[0]);
-      }
-    }
-
-    String json = JSON.toString(res);
-    System.err.println("JSON : "+json);
-    StringReader r = new StringReader(json);
-    IOUtils.copy(r, entityStream);
-    entityStream.flush();
+        try {
+            Writer writer = new OutputStreamWriter(entityStream, "UTF-8");
+            JsonMetadata.toJson(metadata, writer);
+            writer.flush();
+        } catch (TikaException e) {
+            throw new IOException(e);
+        }
+        entityStream.flush();
   }
 }
