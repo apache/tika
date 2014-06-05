@@ -45,9 +45,6 @@ import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.BasicConfigurator;
@@ -75,6 +72,7 @@ import org.apache.tika.io.json.JsonMetadataSerializer;
 import org.apache.tika.language.LanguageProfilerBuilder;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
@@ -900,29 +898,25 @@ public class TikaCLI {
         }
     }
 
-    /**
-     * Uses GSON. 
-     */
     private class NoDocumentJSONMetHandler extends DefaultHandler {
-
-        private final Gson gson;
 
         protected final Metadata metadata;
         
         protected PrintWriter writer;
 
-        public NoDocumentJSONMetHandler(Metadata metadata, PrintWriter writer){
+        public NoDocumentJSONMetHandler(Metadata metadata, PrintWriter writer) {
             this.metadata = metadata;
             this.writer = writer;
-            GsonBuilder builder = new GsonBuilder();
-            builder.registerTypeHierarchyAdapter(Metadata.class, new JsonMetadataSerializer());
-            gson = builder.create();
         }
         
         @Override
         public void endDocument() throws SAXException {
-                gson.toJson(metadata, writer);
+            try {
+                JsonMetadata.toJson(metadata, writer);
                 writer.flush();
-        }   
-    }    
+            } catch (TikaException e) {
+                throw new SAXException(e);
+            }
+        }        
+    }
 }

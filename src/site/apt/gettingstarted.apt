@@ -56,6 +56,10 @@ Build artifacts
   Tika parsers. Collection of classes that implement the Tika Parser
   interface based on various external parser libraries.
 
+ [tika-serialization/target/tika-serialization-*.jar]
+  Serialization utilities. This is designed to centralize serialization
+  of common Tika objects. This package is used by tika-app and tika-server.
+
  [tika-app/target/tika-app-*.jar]
   Tika application. Combines the above components and all the external
   parser libraries into a single runnable jar with a GUI and a command
@@ -65,6 +69,14 @@ Build artifacts
   Tika bundle. An OSGi bundle that combines tika-parsers with non-OSGified
   parser libraries to make them easy to deploy in an OSGi environment.
 
+ [tika-server/target/tika-server-*.jar]
+  Tika server. Tika server uses the Apache CXF framework and provides
+  an implementation of JAX-RS for Java. The tika server component builds
+  to a standalone package in Tika. See 
+  {{{http://wiki.apache.org/tika/TikaJAXRS}the wiki}} 
+  for information on running this server
+
+ 
 Using Tika as a Maven dependency
 
  The core library, tika-core, contains the key interfaces and classes of Tika

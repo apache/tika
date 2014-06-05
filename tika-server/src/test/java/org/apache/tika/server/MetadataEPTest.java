@@ -39,7 +39,8 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.io.IOUtils;
-import org.eclipse.jetty.util.ajax.JSON;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -105,8 +106,7 @@ public class MetadataEPTest extends CXFTestBase {
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
     Reader reader = new InputStreamReader((InputStream) response.getEntity());
-    Map<?, ?> metadata = (Map<?, ?>) JSON.parse(reader);
-
+    Metadata metadata = JsonMetadata.fromJson(reader);
     assertNotNull(metadata.get("Author"));
     assertEquals("Maxim Valyanskiy", metadata.get("Author"));
   }
@@ -129,7 +129,7 @@ public class MetadataEPTest extends CXFTestBase {
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
     Reader reader = new InputStreamReader((InputStream) response.getEntity());
-    Map<?, ?> metadata = (Map<?, ?>) JSON.parse(reader);
+    Metadata metadata = JsonMetadata.fromJson(reader);
 
     assertNotNull(metadata.get("Author"));
     assertEquals("Maxim Valyanskiy", metadata.get("Author"));
