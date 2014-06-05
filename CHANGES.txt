@@ -1,5 +1,10 @@
 Release 1.6 - ??/??/2014
 
+  * The Tika Server URLs for the unpacker resources have been changed,
+    to bring them under a common prefix (TIKA-1324). The mapping is
+    /unpacker/{id} -> /unpack/{id}
+    /all/{id}      -> /unpack/all/{id}
+
   * Added module and core Tika interface for translating text between
     languages and added a default implementation that call's Microsoft's
     translate service (TIKA-1319)
@@ -18,8 +23,8 @@ Release 1.6 - ??/??/2014
     based (TIKA-1204, TIKA-1221)
 
   * Added a user facing welcome page to the Tika Server, which
-    says what it is, and a very brief summary of what is available.
-    (Not working yet though...!) (TIKA-1269)
+    says what it is, and a very brief summary of what is available. 
+    (TIKA-1269)
 
   * Added Tika Server endpoints to list the available mime types,
     Parsers and Detectors, similar to the --list-<foo> methods on
