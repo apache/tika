@@ -35,6 +35,8 @@ import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.language.translate.DefaultTranslator;
+import org.apache.tika.language.translate.Translator;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeTypeException;
@@ -70,8 +72,12 @@ public class TikaConfig {
         return new DefaultParser(types.getMediaTypeRegistry(), loader);
     }
 
+    private static Translator getDefaultTranslator(ServiceLoader loader) {
+        return new DefaultTranslator(loader);
+    }
     private final CompositeParser parser;
     private final Detector detector;
+    private final Translator translator;
 
     private final MimeTypes mimeTypes;
 
@@ -118,6 +124,7 @@ public class TikaConfig {
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorFromDomElement(element, mimeTypes, loader);
         this.parser = parserFromDomElement(element, mimeTypes, loader);
+        this.translator = translatorFromDomElement(element, loader);
     }
 
     /**
@@ -138,6 +145,7 @@ public class TikaConfig {
         this.mimeTypes = getDefaultMimeTypes(loader);
         this.detector = getDefaultDetector(mimeTypes, serviceLoader);
         this.parser = getDefaultParser(mimeTypes, serviceLoader);
+        this.translator = getDefaultTranslator(serviceLoader);
     }
 
     /**
@@ -169,6 +177,7 @@ public class TikaConfig {
             this.mimeTypes = getDefaultMimeTypes(ServiceLoader.getContextClassLoader());
             this.parser = getDefaultParser(mimeTypes, loader);
             this.detector = getDefaultDetector(mimeTypes, loader);
+            this.translator = getDefaultTranslator(loader);
         } else {
             // Locate the given configuration file
             InputStream stream = null;
@@ -198,6 +207,7 @@ public class TikaConfig {
                         parserFromDomElement(element, mimeTypes, loader);
                 this.detector =
                         detectorFromDomElement(element, mimeTypes, loader);
+                this.translator = translatorFromDomElement(element, loader);
             } catch (SAXException e) {
                 throw new TikaException(
                         "Specified Tika configuration has syntax errors: "
@@ -246,6 +256,15 @@ public class TikaConfig {
      */
     public Detector getDetector() {
         return detector;
+    }
+
+    /**
+     * Returns the configured translator instance.
+     *
+     * @return configured translator
+     */
+    public Translator getTranslator() {
+        return translator;
     }
 
     public MimeTypes getMimeRepository(){
@@ -391,5 +410,36 @@ public class TikaConfig {
            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
            return new CompositeDetector(registry, detectors);
        }
+    }
+
+    private static Translator translatorFromDomElement(
+            Element element, ServiceLoader loader)
+            throws TikaException, IOException {
+        List<Translator> translators = new ArrayList<Translator>();
+        NodeList nodes = element.getElementsByTagName("translator");
+        for (int i = 0; i < nodes.getLength(); i++) {
+            Element node = (Element) nodes.item(i);
+            String name = node.getAttribute("class");
+
+            try {
+                Class<? extends Translator> translatorClass =
+                        loader.getServiceClass(Translator.class, name);
+                translators.add(translatorClass.newInstance());
+            } catch (ClassNotFoundException e) {
+                throw new TikaException(
+                        "Unable to find a translator class: " + name, e);
+            } catch (IllegalAccessException e) {
+                throw new TikaException(
+                        "Unable to access a translator class: " + name, e);
+            } catch (InstantiationException e) {
+                throw new TikaException(
+                        "Unable to instantiate a translator class: " + name, e);
+            }
+        }
+        if (translators.isEmpty()) {
+            return getDefaultTranslator(loader);
+        } else {
+            return translators.get(0);
+        }
     }
 }

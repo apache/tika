@@ -1,5 +1,9 @@
 Release 1.6 - ??/??/2014
 
+  * Added module and core Tika interface for translating text between
+    languages and added a default implementation that call's Microsoft's
+    translate service (TIKA-1319)
+
   * Made RTFParser's list handling slightly more robust against corrupt
     list metadata (TIKA-1305)
 

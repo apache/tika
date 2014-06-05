@@ -27,7 +27,9 @@ import java.util.Properties;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.language.translate.Translator;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -59,6 +61,11 @@ public class Tika {
     private final Parser parser;
 
     /**
+     * The Translator instance used by this facade.
+     */
+    private final Translator translator;
+
+    /**
      * Maximum length of the strings returned by the parseToString methods.
      * Used to prevent out of memory problems with huge input documents.
      * The default setting is 100k characters.
@@ -66,7 +73,7 @@ public class Tika {
     private int maxStringLength = 100 * 1000;
 
     /**
-     * Creates a Tika facade using the given detector and parser instances.
+     * Creates a Tika facade using the given detector and parser instances, but the default Translator.
      *
      * @since Apache Tika 0.8
      * @param detector type detector
@@ -75,6 +82,21 @@ public class Tika {
     public Tika(Detector detector, Parser parser) {
         this.detector = detector;
         this.parser = parser;
+        this.translator = TikaConfig.getDefaultConfig().getTranslator();
+    }
+
+    /**
+     * Creates a Tika facade using the given detector, parser, and translator instances.
+     *
+     * @since Apache Tika 1.6
+     * @param detector type detector
+     * @param parser document parser
+     * @param translator text translator
+     */
+    public Tika(Detector detector, Parser parser, Translator translator) {
+        this.detector = detector;
+        this.parser = parser;
+        this.translator = translator;
     }
 
     /**
@@ -83,7 +105,7 @@ public class Tika {
      * @param config Tika configuration
      */
     public Tika(TikaConfig config) {
-        this(config.getDetector(), new AutoDetectParser(config));
+        this(config.getDetector(), new AutoDetectParser(config), config.getTranslator());
     }
 
     /**
@@ -94,8 +116,8 @@ public class Tika {
     }
 
     /**
-     * Creates a Tika facade using the given detector instance and the
-     * default parser configuration.
+     * Creates a Tika facade using the given detector instance, the
+     * default parser configuration, and the default Translator.
      *
      * @since Apache Tika 0.8
      * @param detector type detector
@@ -285,6 +307,69 @@ public class Tika {
             return detect((InputStream) null, name);
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected IOException", e);
+        }
+    }
+
+    /**
+     * Translate the given text String to and from the given languages.
+     * @see org.apache.tika.language.translate.Translator
+     * @param text The text to translate.
+     * @param sourceLanguage The input text language (for example, "hi").
+     * @param targetLanguage The desired output language (for example, "fr").
+     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
+     */
+    public String translate(String text, String sourceLanguage, String targetLanguage){
+        try {
+            return translator.translate(text, sourceLanguage, targetLanguage);
+        } catch (Exception e){
+            throw new IllegalStateException("Error translating data.", e);
+        }
+    }
+
+    /**
+     * Translate the given text String to the given language, attempting to auto-detect the source language.
+     * @see org.apache.tika.language.translate.Translator
+     * @param text The text to translate.
+     * @param targetLanguage The desired output language (for example, "en").
+     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
+     */
+    public String translate(String text, String targetLanguage){
+        try {
+            return translator.translate(text, targetLanguage);
+        } catch (Exception e){
+            throw new IllegalStateException("Error translating data.", e);
+        }
+    }
+
+    /**
+     * Translate the given text InputStream to and from the given languages.
+     * @see org.apache.tika.language.translate.Translator
+     * @param text The text to translate.
+     * @param sourceLanguage The input text language (for example, "hi").
+     * @param targetLanguage The desired output language (for example, "fr").
+     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
+     */
+    public String translate(InputStream text, String sourceLanguage, String targetLanguage){
+        try {
+            return translator.translate(IOUtils.toString(text), sourceLanguage, targetLanguage);
+        } catch (Exception e){
+            throw new IllegalStateException("Error translating data.", e);
+        }
+    }
+
+    /**
+     * Translate the given text InputStream to the given language, attempting to auto-detect the source language.
+     * This does not close the stream, so the caller has the responsibility of closing it.
+     * @see org.apache.tika.language.translate.Translator
+     * @param text The text to translate.
+     * @param targetLanguage The desired output language (for example, "en").
+     * @return The translated text. If translation is unavailable (client keys not set), returns the same text back.
+     */
+    public String translate(InputStream text, String targetLanguage){
+        try {
+            return translator.translate(IOUtils.toString(text), targetLanguage);
+        } catch (Exception e){
+            throw new IllegalStateException("Error translating data.", e);
         }
     }
 
@@ -533,6 +618,16 @@ public class Tika {
      */
     public Detector getDetector() {
         return detector;
+    }
+
+    /**
+     * Returns the translator instance used by this facade.
+     *
+     * @since Tika 1.6
+     * @return translator instance
+     */
+    public Translator getTranslator() {
+        return translator;
     }
 
     //--------------------------------------------------------------< Object >

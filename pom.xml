@@ -53,6 +53,7 @@
     <module>tika-app</module>
     <module>tika-bundle</module>
     <module>tika-server</module>
+    <module>tika-translate</module>
   </modules>
 
   <build>
