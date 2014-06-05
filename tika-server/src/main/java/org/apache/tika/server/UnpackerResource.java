@@ -60,6 +60,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+@Path("/unpack")
 public class UnpackerResource {
   private static final Log logger = LogFactory.getLog(UnpackerResource.class);
   public static final String TEXT_FILENAME = "__TEXT__";
@@ -70,7 +71,7 @@ public class UnpackerResource {
       this.tikaConfig = tikaConfig;
   }
 
-  @Path("/unpacker{id:(/.*)?}")
+  @Path("/{id:(/.*)?}")
   @PUT
   @Produces({"application/zip", "application/x-tar"})
   public Map<String, byte[]> unpack(

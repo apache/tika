@@ -36,8 +36,9 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
 public class UnpackerResourceTest extends CXFTestBase {
-	private static final String UNPACKER_PATH = "/unpacker";
-	private static final String ALL_PATH = "/all";
+        private static final String BASE_PATH = "/unpack";
+	private static final String UNPACKER_PATH = BASE_PATH + "";
+	private static final String ALL_PATH = BASE_PATH + "/all";
 
 	private static final String TEST_DOC_WAV = "Doc1_ole.doc";
 	private static final String WAV1_MD5 = "bdd0a78a54968e362445364f95d8dc96";
