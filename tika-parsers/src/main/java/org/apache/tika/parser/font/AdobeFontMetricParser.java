@@ -50,9 +50,11 @@ public class AdobeFontMetricParser extends AbstractParser {
     // TIKA-1325 Replace these with properties, from a well known standard
     static final String MET_AVG_CHAR_WIDTH = "AvgCharacterWidth";
     static final String MET_DOC_VERSION = "DocVersion";
+    static final String MET_PS_NAME = "PSName";
     static final String MET_FONT_NAME = "FontName";
     static final String MET_FONT_FULL_NAME = "FontFullName";
     static final String MET_FONT_FAMILY_NAME = "FontFamilyName";
+    static final String MET_FONT_SUB_FAMILY_NAME = "FontSubFamilyName";
     static final String MET_FONT_VERSION = "FontVersion";
     static final String MET_FONT_WEIGHT = "FontWeight";
     static final String MET_FONT_NOTICE = "FontNotice";
