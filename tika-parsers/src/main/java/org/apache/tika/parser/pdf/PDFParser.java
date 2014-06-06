@@ -239,11 +239,13 @@ public class PDFParser extends AbstractParser {
                 XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
                 if( pdfaxmp != null ) {
                     metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
-                    metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
-                    String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase();
-                    metadata.set("pdfa:PDFVersion", version );
-                    metadata.add(TikaCoreProperties.FORMAT.getName(), 
-                        MEDIA_TYPE.toString()+"; version=\""+version+"\"" );
+                    if (pdfaxmp.getConformance() != null) {
+                        metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
+                        String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase();
+                        metadata.set("pdfa:PDFVersion", version );
+                        metadata.add(TikaCoreProperties.FORMAT.getName(), 
+                            MEDIA_TYPE.toString()+"; version=\""+version+"\"" );
+                    }
                 } 
                 // TODO WARN if this XMP version is inconsistent with document header version?          
             }
