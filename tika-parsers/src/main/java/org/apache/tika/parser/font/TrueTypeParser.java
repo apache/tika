@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.font;
 
-import java.awt.Font;
-import java.awt.FontFormatException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -60,23 +58,6 @@ public class TrueTypeParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
         TikaInputStream tis = TikaInputStream.cast(stream);
         
-        // Until PDFBOX-1749 is fixed, if we can, use AWT to verify
-        //  that the file is valid (otherwise FontBox could hang)
-        // See TIKA-1182 for details
-        if (tis != null) {
-            try {
-                if (tis.hasFile()) {
-                    Font.createFont(Font.TRUETYPE_FONT, tis.getFile());
-                } else {
-                    tis.mark(0);
-                    Font.createFont(Font.TRUETYPE_FONT, stream);
-                    tis.reset();
-                }
-            } catch (FontFormatException ex) {
-                throw new TikaException("Bad TrueType font.");
-            }
-        }
-        
         // Ask FontBox to parse the file for us
         TrueTypeFont font;
         TTFParser parser = new TTFParser();
@@ -92,7 +73,8 @@ public class TrueTypeParser extends AbstractParser {
         metadata.set(
                 TikaCoreProperties.MODIFIED,
                 font.getHeader().getModified().getTime());
-
+        
+        // For now, we only output metadata, no textual contents
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();
