@@ -29,11 +29,12 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.junit.Test;
 
+import static org.apache.tika.parser.font.AdobeFontMetricParser.*;
+
 /**
- * Test case for parsing afm files.
+ * Test case for parsing various different font files.
  */
-public class AdobeFontMetricParserTest {
-  
+public class FontParsersTest {
     @Test
     public void testAdobeFontMetricParsing() throws Exception {
         Parser parser = new AutoDetectParser(); // Should auto-detect!
@@ -41,7 +42,7 @@ public class AdobeFontMetricParserTest {
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
         TikaInputStream stream = TikaInputStream.get(
-                AdobeFontMetricParserTest.class.getResource(
+                FontParsersTest.class.getResource(
                         "/test-documents/testAFM.afm"));
 
         try {
@@ -54,12 +55,12 @@ public class AdobeFontMetricParserTest {
         assertEquals("TestFullName", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Fri Jul 15 17:50:51 2011", metadata.get(Metadata.CREATION_DATE));
         
-        assertEquals("TestFontName", metadata.get("FontName"));
-        assertEquals("TestFullName", metadata.get("FontFullName"));
-        assertEquals("TestSymbol",   metadata.get("FontFamilyName"));
+        assertEquals("TestFontName", metadata.get(MET_FONT_NAME));
+        assertEquals("TestFullName", metadata.get(MET_FONT_FULL_NAME));
+        assertEquals("TestSymbol",   metadata.get(MET_FONT_FAMILY_NAME));
         
-        assertEquals("Medium",  metadata.get("FontWeight"));
-        assertEquals("001.008", metadata.get("FontVersion"));
+        assertEquals("Medium",  metadata.get(MET_FONT_WEIGHT));
+        assertEquals("001.008", metadata.get(MET_FONT_VERSION));
 
         String content = handler.toString();
 
