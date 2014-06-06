@@ -69,4 +69,42 @@ public class FontParsersTest {
         assertTrue(content.contains("This is a comment in a sample file"));
         assertTrue(content.contains("UniqueID 12345"));
     }
+    
+    @Test
+    public void testTTFParsing() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        TikaInputStream stream = TikaInputStream.get(
+                FontParsersTest.class.getResource(
+                        "/test-documents/testTrueType.ttf"));
+
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("NewBaskervilleEF-Roman", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("1904-01-01T00:00:00Z",   metadata.get(Metadata.CREATION_DATE));
+        
+        assertEquals("NewBaskervilleEF-Roman", metadata.get(MET_FONT_NAME));
+        assertEquals("NewBaskerville",         metadata.get(MET_FONT_FAMILY_NAME));
+        assertEquals("Regular",                metadata.get(MET_FONT_SUB_FAMILY_NAME));
+        assertEquals("NewBaskervilleEF-Roman", metadata.get(MET_PS_NAME));
+        
+        assertEquals("Copyright",           metadata.get("Copyright").substring(0, 9));
+        assertEquals("ITC New Baskerville", metadata.get("Trademark").substring(0, 19));
+        
+        // Not extracted
+        assertEquals(null, metadata.get(MET_FONT_FULL_NAME));
+        assertEquals(null, metadata.get(MET_FONT_WEIGHT));
+        assertEquals(null, metadata.get(MET_FONT_VERSION));
+
+        // Currently, the parser doesn't extract any contents
+        String content = handler.toString();
+        assertEquals("", content);
+    }
 }
