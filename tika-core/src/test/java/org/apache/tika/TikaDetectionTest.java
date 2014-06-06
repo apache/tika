@@ -584,7 +584,8 @@ public class TikaDetectionTest {
         assertEquals("application/x-msdownload", tika.detect("x.dll"));
         assertEquals("application/x-msdownload", tika.detect("x.com"));
         assertEquals("application/x-msdownload", tika.detect("x.bat"));
-        assertEquals("application/x-msdownload", tika.detect("x.msi"));
+        // Differ from httpd - MSI is different from normal windows executables
+        //assertEquals("application/x-msdownload", tika.detect("x.msi"));
         assertEquals("application/x-msmediaview", tika.detect("x.mvb"));
         assertEquals("application/x-msmediaview", tika.detect("x.m13"));
         assertEquals("application/x-msmediaview", tika.detect("x.m14"));

@@ -3010,10 +3010,19 @@
     <glob pattern="*.dll"/>
     <glob pattern="*.com"/>
     <glob pattern="*.bat"/>
-    <glob pattern="*.msi"/>
     <magic priority="50">
       <match value="MZ" type="string" offset="0"/>
     </magic>
+  </mime-type>
+
+  <mime-type type="application/x-ms-installer">
+    <_comment>Microsoft Windows Installer</_comment> 
+    <sub-class-of type="application/x-tika-msoffice"/>
+    <alias type="application/x-windows-installer"/>
+    <alias type="application/x-msi"/>
+    <glob pattern="*.msi"/>
+    <glob pattern="*.msp"/>
+    <glob pattern="*.mst"/>
   </mime-type>
 
   <mime-type type="application/x-msdownload;format=pe">
