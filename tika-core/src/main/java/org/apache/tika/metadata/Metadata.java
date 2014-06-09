@@ -25,6 +25,7 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -460,6 +461,27 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
      * @param date     property value
      */
     public void set(Property property, Date date) {
+        if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
+        }
+        if(property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
+            throw new PropertyTypeException(Property.ValueType.DATE, property.getPrimaryProperty().getValueType());
+        }
+        String dateString = null;
+        if (date != null) {
+            dateString = formatDate(date);
+        }
+        set(property, dateString);
+    }
+
+    /**
+     * Sets the date value of the identified metadata property.
+     *
+     * @since Apache Tika 0.8
+     * @param property simple integer property definition
+     * @param date     property value
+     */
+    public void set(Property property, Calendar date) {
         if(property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
             throw new PropertyTypeException(Property.PropertyType.SIMPLE, property.getPrimaryProperty().getPropertyType());
         }
