@@ -996,4 +996,25 @@ public class HtmlParserTest {
         assertTrue(Math.abs(textPosition[col]-47) < 10);
     }
     
+    
+     /**
+     * Test case for TIKA-1303: HTML parse should use the first title tag to set value in meta data 
+     * and ignore any subsequent title tags found in HTML.
+     * 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-1303">TIKA-1303</a>
+     */
+    @Test
+    public void testFirstTitleValueisSetToMetadata() throws Exception{
+        String test = "<html><title>Simple Content</title><body><h1></h1>"
+        		+ "<title>TitleToIgnore</title></body></html>";
+        Metadata metadata = new Metadata();
+        
+        new HtmlParser().parse (
+                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new BodyContentHandler(),  metadata, new ParseContext());
+
+        //Expecting first title to be set in meta data and second one to be ignored.
+        assertEquals("Simple Content", metadata.get(TikaCoreProperties.TITLE));
+    }
+    
 }
