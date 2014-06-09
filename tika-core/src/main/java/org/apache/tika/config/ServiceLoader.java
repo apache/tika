@@ -260,6 +260,35 @@ public class ServiceLoader {
     }
 
     /**
+     * Returns the defined static service providers of the given type, without
+     * attempting to load them.
+     * The providers are loaded using the service provider mechanism using
+     * the configured class loader (if any).
+     *
+     * @since Apache Tika 1.6
+     * @param iface service provider interface
+     * @return static list of uninitialised service providers
+     */
+    protected <T> List<String> identifyStaticServiceProviders(Class<T> iface) {
+        List<String> names = new ArrayList<String>();
+
+        if (loader != null) {
+            String serviceName = iface.getName();
+            Enumeration<URL> resources =
+                    findServiceResources("META-INF/services/" + serviceName);
+            for (URL resource : Collections.list(resources)) {
+                try {
+                    collectServiceClassNames(resource, names);
+                } catch (IOException e) {
+                    handler.handleLoadError(serviceName, e);
+                }
+            }
+        }
+        
+        return names;
+    }
+
+    /**
      * Returns the available static service providers of the given type.
      * The providers are loaded using the service provider mechanism using
      * the configured class loader (if any). The returned list is newly
@@ -274,18 +303,7 @@ public class ServiceLoader {
         List<T> providers = new ArrayList<T>();
 
         if (loader != null) {
-            List<String> names = new ArrayList<String>();
-
-            String serviceName = iface.getName();
-            Enumeration<URL> resources =
-                    findServiceResources("META-INF/services/" + serviceName);
-            for (URL resource : Collections.list(resources)) {
-                try {
-                    collectServiceClassNames(resource, names);
-                } catch (IOException e) {
-                    handler.handleLoadError(serviceName, e);
-                }
-            }
+            List<String> names = identifyStaticServiceProviders(iface);
 
             for (String name : names) {
                 try {
