@@ -19,6 +19,8 @@ package org.apache.tika.parser.font;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.TimeZone;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -80,20 +82,28 @@ public class FontParsersTest {
                 FontParsersTest.class.getResource(
                         "/test-documents/testTrueType.ttf"));
 
+        //Pending PDFBOX-2122's integration (PDFBox 1.8.6)
+        //we must set the default timezone to something
+        //standard for this test.
+        //TODO: once we upgrade to PDFBox 1.8.6, remove
+        //this timezone code.
+        TimeZone defaultTimeZone = TimeZone.getDefault();
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+
         try {
             parser.parse(stream, handler, metadata, context);
         } finally {
+            //make sure to reset default timezone
+            TimeZone.setDefault(defaultTimeZone);
             stream.close();
         }
 
         assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("NewBaskervilleEF-Roman", metadata.get(TikaCoreProperties.TITLE));
 
-        // Disabled pending a fix for PDFBOX-2122
-        // FontBox returns dates in local timezone
-//        assertEquals("1904-01-01T00:00:00Z",   metadata.get(Metadata.CREATION_DATE));
-//        assertEquals("1904-01-01T00:00:00Z",   metadata.get(TikaCoreProperties.CREATED));
-//        assertEquals("1904-01-01T00:00:00Z",   metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("1904-01-01T00:00:00Z",   metadata.get(Metadata.CREATION_DATE));
+        assertEquals("1904-01-01T00:00:00Z",   metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("1904-01-01T00:00:00Z",   metadata.get(TikaCoreProperties.MODIFIED));
         
         assertEquals("NewBaskervilleEF-Roman", metadata.get(MET_FONT_NAME));
         assertEquals("NewBaskerville",         metadata.get(MET_FONT_FAMILY_NAME));
