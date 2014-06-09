@@ -17,7 +17,9 @@
 package org.apache.tika.bundle;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 
@@ -26,23 +28,35 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.Configuration;
+import org.ops4j.pax.exam.junit.JUnit4TestRunner;
 import org.osgi.framework.BundleContext;
 import org.xml.sax.ContentHandler;
 
+@RunWith( JUnit4TestRunner.class )
 public class BundleIT {
-
     private final File TARGET = new File("target");
-
+    
+    private TestingServiceLoader nonOSGiLoader = new TestingServiceLoader();
+    
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException {
         File base = new File(TARGET, "test-bundles");
@@ -51,18 +65,65 @@ public class BundleIT {
                 bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
                 bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString()));
     }
- 
-    //@Test
-    public void testTikaBundle(BundleContext bc) throws Exception {
+    
+    @Test
+    public void testBundleDetection(BundleContext bc) throws Exception {
         Tika tika = new Tika();
 
         // Simple type detection
         assertEquals("text/plain", tika.detect("test.txt"));
         assertEquals("application/pdf", tika.detect("test.pdf"));
+    }
 
+    @Ignore // TODO Fix this test
+    @Test
+    public void testBundleSimpleText(BundleContext bc) throws Exception {
+        Tika tika = new Tika();
+        
         // Simple text extraction
         String xml = tika.parseToString(new File("pom.xml"));
         assertTrue(xml.contains("tika-bundle"));
+    }
+    
+    @Ignore // TODO Fix this test
+    @Test
+    public void testBundleDetectors(BundleContext bc) throws Exception {
+        // Get the non-OSGi detectors
+        List<String> nonOSGiDetectors =
+                nonOSGiLoader.identifyStaticServiceProviders(Detector.class);
+        
+        // Check we did get a few, just in case...
+        assertNotNull(nonOSGiDetectors);
+        assertTrue("Should have several non-OSGi detectors, found " + nonOSGiDetectors.size(),
+                   nonOSGiDetectors.size() > 3);
+        
+        // Get the ones found within OSGi
+        DefaultDetector detector = new DefaultDetector();
+        Set<String> osgiDetectors = new HashSet<String>();
+        for (Detector d : detector.getDetectors()) {
+            osgiDetectors.add(d.getClass().getName());
+        }
+        
+        // Check that OSGi didn't miss any
+        for (String detectorName : nonOSGiDetectors) {
+            if (!osgiDetectors.contains(detectorName)) {
+                fail("Detector " + detectorName + 
+                     " not found within OSGi Detector list: " + osgiDetectors);
+            }
+        }
+    }
+    
+    @Test
+    public void testBundleParsers(BundleContext bc) throws Exception {
+        TikaConfig tika = new TikaConfig();
+
+        // TODO Implement as with Detectors
+    }
+    
+    @Ignore // TODO Fix this test
+    @Test
+    public void testTikaBundle(BundleContext bc) throws Exception {
+        Tika tika = new Tika();
 
         // Package extraction
         ContentHandler handler = new BodyContentHandler();
@@ -100,4 +161,16 @@ public class BundleIT {
         assertTrue(content.contains("Rida Benjelloun"));
     }
 
+    /**
+     * Alternate ServiceLoader which works outside of OSGi, so we
+     * can compare between the two environments
+     */
+    private static class TestingServiceLoader extends ServiceLoader {
+        private TestingServiceLoader() {
+            super(TikaConfig.class.getClassLoader());
+        }
+        public <T> List<String> identifyStaticServiceProviders(Class<T> iface) {
+            return super.identifyStaticServiceProviders(iface);
+        }
+    }
 }
