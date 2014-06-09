@@ -127,7 +127,8 @@
               metadata-extractor, xmpcore,
               boilerpipe, rome,
               apache-mime4j-core, apache-mime4j-dom,
-              jhighlight, netcdf, java-libpst
+              jhighlight, java-libpst,
+              netcdf, jcip-annotations
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
