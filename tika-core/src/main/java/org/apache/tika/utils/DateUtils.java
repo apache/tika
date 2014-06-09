@@ -83,7 +83,7 @@ public class DateUtils {
         Calendar calendar = GregorianCalendar.getInstance(Locale.US);
         calendar.setTime(date);
         // Have it formatted
-        String formatted = formatDate(date);
+        String formatted = formatDate(calendar);
         // Strip the timezone details before returning
         return formatted.substring(0, formatted.length()-1);
     }
