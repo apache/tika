@@ -72,9 +72,9 @@ public class TrueTypeParser extends AbstractParser {
         // Report the details of the font
         metadata.set(Metadata.CONTENT_TYPE, TYPE.toString());
         metadata.set(TikaCoreProperties.CREATED, 
-                font.getHeader().getCreated().getTime());
+                font.getHeader().getCreated());
         metadata.set(TikaCoreProperties.MODIFIED,
-                font.getHeader().getModified().getTime());
+                font.getHeader().getModified());
         metadata.set(AdobeFontMetricParser.MET_DOC_VERSION,
                 Float.toString(font.getHeader().getVersion()));
         

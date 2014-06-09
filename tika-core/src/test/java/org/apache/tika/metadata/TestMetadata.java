@@ -20,8 +20,9 @@ package org.apache.tika.metadata;
 import java.util.Date;
 import java.util.Properties;
 
-
+import org.apache.tika.utils.DateUtils;
 import org.junit.Test;
+
 
 //Junit imports
 import static org.junit.Assert.assertEquals;
@@ -337,9 +338,15 @@ public class TestMetadata {
     public void testGetSetDateUnspecifiedTimezone() {
         Metadata meta = new Metadata();    
         
+        // Set explictly without a timezone
         meta.set(TikaCoreProperties.CREATED, "1970-01-01T00:00:01");
         assertEquals("should return string without time zone specifier because zone is not known",
         		"1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
+        
+        // Now ask DateUtils to format for us without one
+        meta.set(TikaCoreProperties.CREATED, DateUtils.formatDateUnknownTimezone(new Date(1000)));
+        assertEquals("should return string without time zone specifier because zone is not known",
+                         "1970-01-01T00:00:01", meta.get(TikaCoreProperties.CREATED));
     }
     
     /**
