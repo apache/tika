@@ -48,14 +48,13 @@ import org.ops4j.pax.exam.CoreOptions;
 import org.ops4j.pax.exam.Option;
 import org.ops4j.pax.exam.junit.Configuration;
 import org.ops4j.pax.exam.junit.JUnit4TestRunner;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.xml.sax.ContentHandler;
 
 @RunWith( JUnit4TestRunner.class )
 public class BundleIT {
     private final File TARGET = new File("target");
-    
-    private TestingServiceLoader nonOSGiLoader = new TestingServiceLoader();
     
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException {
@@ -64,6 +63,23 @@ public class BundleIT {
                 junitBundles(),
                 bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
                 bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString()));
+    }
+    
+    @Test
+    public void testBundleLoaded(BundleContext bc) throws Exception {
+        boolean hasCore = false, hasBundle = false;
+        for (Bundle b : bc.getBundles()) {
+            if ("org.apache.tika.core".equals(b.getSymbolicName())) {
+                hasCore = true;
+                assertEquals("Core not activated", Bundle.ACTIVE, b.getState());
+            }
+            if ("org.apache.tika.bundle".equals(b.getSymbolicName())) {
+                hasBundle = true;
+                assertEquals("Bundle not activated", Bundle.ACTIVE, b.getState());
+            }
+        }
+        assertTrue("Core bundle not found", hasCore);
+        assertTrue("Bundle bundle not found", hasBundle);
     }
     
     @Test
@@ -88,16 +104,17 @@ public class BundleIT {
     @Ignore // TODO Fix this test
     @Test
     public void testBundleDetectors(BundleContext bc) throws Exception {
-        // Get the non-OSGi detectors
-        List<String> nonOSGiDetectors =
-                nonOSGiLoader.identifyStaticServiceProviders(Detector.class);
+        // Get the raw detectors list
+        // TODO Why is this not finding the detector service resource files?
+        TestingServiceLoader loader = new TestingServiceLoader();
+        List<String> rawDetectors = loader.identifyStaticServiceProviders(Detector.class);
         
         // Check we did get a few, just in case...
-        assertNotNull(nonOSGiDetectors);
-        assertTrue("Should have several non-OSGi detectors, found " + nonOSGiDetectors.size(),
-                   nonOSGiDetectors.size() > 3);
+        assertNotNull(rawDetectors);
+        assertTrue("Should have several Detector names, found " + rawDetectors.size(),
+                rawDetectors.size() > 3);
         
-        // Get the ones found within OSGi
+        // Get the classes found within OSGi
         DefaultDetector detector = new DefaultDetector();
         Set<String> osgiDetectors = new HashSet<String>();
         for (Detector d : detector.getDetectors()) {
@@ -105,7 +122,7 @@ public class BundleIT {
         }
         
         // Check that OSGi didn't miss any
-        for (String detectorName : nonOSGiDetectors) {
+        for (String detectorName : rawDetectors) {
             if (!osgiDetectors.contains(detectorName)) {
                 fail("Detector " + detectorName + 
                      " not found within OSGi Detector list: " + osgiDetectors);
@@ -167,7 +184,7 @@ public class BundleIT {
      */
     private static class TestingServiceLoader extends ServiceLoader {
         private TestingServiceLoader() {
-            super(TikaConfig.class.getClassLoader());
+            super();
         }
         public <T> List<String> identifyStaticServiceProviders(Class<T> iface) {
             return super.identifyStaticServiceProviders(iface);
