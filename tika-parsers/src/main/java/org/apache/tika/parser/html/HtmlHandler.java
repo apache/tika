@@ -52,6 +52,8 @@ class HtmlHandler extends TextContentHandler {
     private int discardLevel = 0;
 
     private int titleLevel = 0;
+    
+    private boolean isTitleSetToMetadata = false; 
 
     private final StringBuilder title = new StringBuilder();
 
@@ -238,8 +240,9 @@ class HtmlHandler extends TextContentHandler {
 
         if (titleLevel > 0) {
             titleLevel--;
-            if (titleLevel == 0) {
+            if (titleLevel == 0 && !isTitleSetToMetadata) {            	
                 metadata.set(TikaCoreProperties.TITLE, title.toString().trim());
+                isTitleSetToMetadata = true;
             }
         }
         if (bodyLevel > 0) {
