@@ -128,7 +128,7 @@
               boilerpipe, rome,
               apache-mime4j-core, apache-mime4j-dom,
               jhighlight, java-libpst,
-              netcdf, jcip-annotations
+              netcdf, jcip-annotations, jmatio
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
@@ -207,6 +207,7 @@
               org.xmlpull.v1;resolution:=optional,
               schemasMicrosoftComOfficePowerpoint;resolution:=optional,
               schemasMicrosoftComOfficeWord;resolution:=optional,
+              sun.misc;resolution:=optional,
               ucar.grib;resolution:=optional,
               ucar.grib.grib1;resolution:=optional,
               ucar.grib.grib2;resolution:=optional,
@@ -217,6 +218,7 @@
               ucar.unidata.geoloc.projection.sat;resolution:=optional,
               ucar.unidata.io;resolution:=optional,
               ucar.unidata.util;resolution:=optional,
+              com.jmatio.io;resolution:=optional,
               visad;resolution:=optional,
               visad.data;resolution:=optional,
               visad.data.vis5d;resolution:=optional,

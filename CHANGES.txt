@@ -1,5 +1,9 @@
 Release 1.6 - ??/??/2014
 
+  * Tika now has support for parsing binary Matlab files as part of 
+    our larger effort to increase the number of scientific data formats 
+    supported. (TIKA-1327)
+
   * The Tika Server URLs for the unpacker resources have been changed,
     to bring them under a common prefix (TIKA-1324). The mapping is
     /unpacker/{id} -> /unpack/{id}
