@@ -469,6 +469,9 @@ public class TestMimeTypes {
        assertTypeByName("text/css", "testCSS.css");
        assertType(      "text/css", "testCSS.css");
        
+       assertTypeByName("text/csv", "testCSV.csv");
+       assertType(      "text/csv", "testCSV.csv");
+       
        assertTypeByName("text/html", "testHTML.html");
        assertType(      "text/html", "testHTML.html");
        
