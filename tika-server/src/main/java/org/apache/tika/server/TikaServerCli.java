@@ -85,7 +85,7 @@ public class TikaServerCli {
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
       // Note - at least one of these stops TikaWelcome matching on /
       // This prevents TikaWelcome acting as a partial solution to TIKA-1269
-      sf.setResourceClasses(MetadataEP.class, MetadataResource.class, 
+      sf.setResourceClasses(MetadataEP.class, MetadataResource.class, DetectorResource.class, 
               TikaResource.class, UnpackerResource.class, 
               TikaDetectors.class, TikaParsers.class, 
               TikaMimeTypes.class, TikaVersion.class, 
@@ -115,6 +115,7 @@ public class TikaServerCli {
       
       List<ResourceProvider> rProviders = new ArrayList<ResourceProvider>();
       rProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
+      rProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
       rProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
       rProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
       rProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
