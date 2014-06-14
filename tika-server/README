@@ -25,6 +25,11 @@ curl -v -T Doc1_ole.doc http://localhost:9998/unpacker > /var/tmp/x.zip
 
 curl -T price.xls http://localhost:9998/meta
 
+5) Detect media type from CSV format using file extension hint
+
+curl -X PUT -H "Content-Disposition: attachment; filename=foo.csv" --upload-file foo.csv http://localhost:9998/detect/stream
+
+
 HTTP Codes
 ----------
 200 - Ok
