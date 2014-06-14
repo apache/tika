@@ -1,4 +1,7 @@
 Release 1.6 - ??/??/2014
+  
+  * The Tika Detector interface is now exposed through the JAX-RS
+    server (TIKA-1336, TIKA-1336).
 
   * Tika now has support for parsing binary Matlab files as part of 
     our larger effort to increase the number of scientific data formats 
