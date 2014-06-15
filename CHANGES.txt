@@ -1,4 +1,7 @@
 Release 1.6 - ??/??/2014
+
+  * Tika now supports detection of the Persian/Farsi language.
+    (TIkA-1337)
   
   * The Tika Detector interface is now exposed through the JAX-RS
     server (TIKA-1336, TIKA-1336).
