@@ -162,7 +162,6 @@ public class PDFParser extends AbstractParser {
             }
             tmp.dispose();
         }
-        handler.endDocument();
     }
 
    

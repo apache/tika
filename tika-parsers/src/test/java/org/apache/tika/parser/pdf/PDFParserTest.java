@@ -46,6 +46,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 /**
@@ -627,6 +628,7 @@ public class PDFParserTest extends TikaTest {
 */
 
     //TIKA-1226
+    @Test
     public void testSignatureInAcroForm() throws Exception {
         //The current test doc does not contain any content in the signature area.
         //This just tests that a RuntimeException is not thrown.
@@ -672,6 +674,21 @@ public class PDFParserTest extends TikaTest {
         assertEquals(TYPE_DOC.toString(), metadatas.get(3).get(Metadata.CONTENT_TYPE));
     }
 
+
+    @Test
+    public void testSingleCloseDoc() throws Exception {
+        //TIKA-1341
+        InputStream is = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDFTripleLangTitle.pdf");
+        Parser p = new AutoDetectParser();
+        Metadata m = new Metadata();
+        ParseContext c = new ParseContext();
+        ContentHandler h = new EventCountingHandler();
+        p.parse(is, h,  m,  c);
+        assertEquals(1, ((EventCountingHandler)h).getEndDocument());
+    }
+
+    @Test
     public void testVersions() throws Exception {
         
         Map<String, String> dcFormat = new HashMap<String, String>();
@@ -975,6 +992,25 @@ public class PDFParserTest extends TikaTest {
         assertEquals(2, attach);
     }
 
+
+    /**
+     * 
+     * Simple class to count end of document events.  If functionality is useful,
+     * move to org.apache.tika in src/test
+     *
+     */
+    private class EventCountingHandler extends ContentHandlerDecorator {
+        private int endDocument = 0;
+        
+        @Override
+        public void endDocument() {
+            endDocument++;
+        }
+        
+        public int getEndDocument() {
+            return endDocument;
+        }
+    }
 
     private class AvoidInlineSelector implements DocumentSelector {
 
