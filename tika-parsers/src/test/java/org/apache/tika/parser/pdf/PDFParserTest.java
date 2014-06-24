@@ -467,9 +467,6 @@ public class PDFParserTest extends TikaTest {
     }
     
     //TIKA-1124
-    //IGNORE until TIKA-1298/PDFBOX 2079 is fixed or we all 
-    //move to Java 1.7
-    @Ignore 
     @Test
     public void testEmbeddedPDFEmbeddingAnotherDocument() throws Exception {
        /* format of test doc:
@@ -527,20 +524,26 @@ public class PDFParserTest extends TikaTest {
      */
     @Test
     public void testSequentialParser() throws Exception{
-        Parser defaultParser = new AutoDetectParser();
+
         Parser sequentialParser = new AutoDetectParser();
-        ParseContext context = new ParseContext();
-        PDFParserConfig config = new PDFParserConfig();
-        config.setUseNonSequentialParser(true);
-        context.set(PDFParserConfig.class, config);
+        Parser nonSequentialParser = new AutoDetectParser();
+
+        ParseContext seqContext = new ParseContext();
+        PDFParserConfig seqConfig = new PDFParserConfig();
+        seqConfig.setUseNonSequentialParser(false);
+        seqContext.set(PDFParserConfig.class, seqConfig);
+
+        ParseContext nonSeqContext = new ParseContext();
+        PDFParserConfig nonSeqConfig = new PDFParserConfig();
+        nonSeqConfig.setUseNonSequentialParser(true);
+        nonSeqContext.set(PDFParserConfig.class, nonSeqConfig);
 
         File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
         int pdfs = 0;
         Set<String> knownMetadataDiffs = new HashSet<String>();
         //PDFBox-1792/Tika-1203
         knownMetadataDiffs.add("testAnnotations.pdf");
-        //PDFBox-1792
-        knownMetadataDiffs.add("test_acroForm2.pdf");
+
         //empty for now
         Set<String> knownContentDiffs = new HashSet<String>();
 
@@ -550,25 +553,25 @@ public class PDFParserTest extends TikaTest {
             }
 
             pdfs++;
-            Metadata defaultMetadata = new Metadata();
-            String defaultContent = getText(new FileInputStream(f), defaultParser, defaultMetadata);
-
             Metadata sequentialMetadata = new Metadata();
-            String sequentialContent = getText(new FileInputStream(f), sequentialParser, context, sequentialMetadata);
+            String sequentialContent = getText(new FileInputStream(f), 
+                sequentialParser, seqContext, sequentialMetadata);
+
+            Metadata nonSequentialMetadata = new Metadata();
+            String nonSequentialContent = getText(new FileInputStream(f), 
+                nonSequentialParser, nonSeqContext, nonSequentialMetadata);
 
             if (knownContentDiffs.contains(f.getName())) {
-                assertFalse(f.getName(), defaultContent.equals(sequentialContent));
+                assertFalse(f.getName(), sequentialContent.equals(nonSequentialContent));
             } else {
-                assertEquals(f.getName(), defaultContent, sequentialContent);
+                assertEquals(f.getName(), sequentialContent, nonSequentialContent);
             }
 
             //skip this one file.
             if (knownMetadataDiffs.contains(f.getName())) {
-                //turn back on once PDFBOX-1922 is fixed
-                //assertFalse(f.getName(), defaultMetadata.equals(sequentialMetadata));
+                assertFalse(f.getName(), sequentialMetadata.equals(nonSequentialMetadata));
             } else {
-                //assertEquals(f.getName(), defaultMetadata, sequentialMetadata);
-                testMetadataEquality(f.getName(), defaultMetadata, sequentialMetadata);
+                assertEquals(f.getName(), sequentialMetadata, nonSequentialMetadata);
             }
         }
         //make sure nothing went wrong with getting the resource to test-documents
@@ -814,55 +817,6 @@ public class PDFParserTest extends TikaTest {
         //dc:title-zh-ch is currently hosed...bug in PDFBox while injecting xmp?
         //
         assertEquals("Hello World", m.get("dc:title"));
-    }
-
-    /**
-     * This is a workaround until PDFBox-1922 is fixed.
-     * The goal is to test for equality but skip the version issue.
-     * TODO: get rid of this asap and revert back to this.Metadata.equals(thatMetadata)!
-     * @return equal or not (ignore version differences)
-     */
-    private void testMetadataEquality(String fName, Metadata thisMetadata,
-            Metadata thatMetadata) {
-        String[] thisNames = thisMetadata.names();
-        String[] thatNames = thatMetadata.names();
-
-        assertTrue("metadata null test: "+fName, 
-         (thisNames == null && thatNames == null) ||
-         (thisNames != null && thatNames != null));
-        
-        assertEquals("metadata length: "+fName, thisNames.length, thatMetadata.names().length);
-        
-        for (String n : thisNames) {
-            //don't pay attention to differences here for now
-            if (n.equals("pdf:PDFVersion") || n.equals("dc:format")) {
-                continue;
-            }
-            if (thisMetadata.isMultiValued(n) && thatMetadata.isMultiValued(n)) {
-                String[] thisValues = thisMetadata.getValues(n);
-                String[] thatValues = thatMetadata.getValues(n);
-                testEqualMetadataValue(fName, thisValues, thatValues);
-            } else if (! thisMetadata.isMultiValued(n) && ! thatMetadata.isMultiValued(n)) {
-                assertEquals("unequal multivalued values: " + fName, thisMetadata.get(n), thatMetadata.get(n));
-            } else {
-                //one is multivalued and the other isn't
-                assertTrue("one multivalued, other isn't: "+fName, false);
-            }
-        }
-    }
-    
-    private void testEqualMetadataValue(String fName, String[] thisValues, String[] thatValues) {
-        assertTrue("null equality of metadata values: "+fName, 
-                (thisValues == null && thatValues == null) ||
-                (thisValues != null && thatValues != null));
-
-        assertEquals("metadata values length: "+fName, thisValues.length, thatValues.length);
-        List<String> list = Arrays.asList(thatValues);
-        for (String v : thisValues) {
-            if (! list.contains(v)) {
-                assertTrue("metadata value; that doesn't contain" + v, false);
-            }
-        }
     }
 
     @Test

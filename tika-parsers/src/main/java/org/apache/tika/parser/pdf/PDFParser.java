@@ -227,10 +227,11 @@ public class PDFParser extends AbstractParser {
         //Caveats:
         //    there is currently a fair amount of redundancy
         //    TikaCoreProperties.FORMAT can be multivalued
-        //    There are also three potential pdf specific version keys: pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
+        //    There are also three potential pdf specific version keys: pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion        
         metadata.set("pdf:PDFVersion", Float.toString(document.getDocument().getVersion()));
         metadata.add(TikaCoreProperties.FORMAT.getName(), 
-            MEDIA_TYPE.toString()+"; version="+Float.toString(document.getDocument().getVersion()));
+            MEDIA_TYPE.toString()+"; version="+
+            Float.toString(document.getDocument().getVersion()));
 
         try {           
             if( xmp != null ) {

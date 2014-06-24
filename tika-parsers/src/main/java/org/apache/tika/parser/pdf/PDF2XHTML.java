@@ -92,7 +92,7 @@ class PDF2XHTML extends PDFTextStripper {
     private final static int MAX_ACROFORM_RECURSIONS = 10;
 
 
-    // TODO: remove once PDFBOX-1130 is fixed:
+    // TODO: remove once PDFBOX-2160 is fixed:
     private boolean inParagraph = false;
 
     /**
@@ -353,7 +353,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void writeParagraphStart() throws IOException {
-        // TODO: remove once PDFBOX-1130 is fixed
+        // TODO: remove once PDFBOX-2160 is fixed
         if (inParagraph) {
             // Close last paragraph
             writeParagraphEnd();
@@ -369,7 +369,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void writeParagraphEnd() throws IOException {
-        // TODO: remove once PDFBOX-1130 is fixed
+        // TODO: remove once PDFBOX-2160 is fixed
         if (!inParagraph) {
             writeParagraphStart();
         }
@@ -535,29 +535,22 @@ class PDF2XHTML extends PDFTextStripper {
         handler.endElement("div");
     }
 
-    private void processAcroField(PDField field, XHTMLContentHandler handler, final int recurseDepth)
+    private void processAcroField(PDField field, XHTMLContentHandler handler, final int currentRecursiveDepth)
             throws SAXException, IOException { 
 
-        if (recurseDepth >= MAX_ACROFORM_RECURSIONS) {
+        if (currentRecursiveDepth >= MAX_ACROFORM_RECURSIONS) {
             return;
         }
 
         addFieldString(field, handler);
 
-        @SuppressWarnings("rawtypes")
-        List kids = field.getKids();
+        List<COSObjectable> kids = field.getKids();
         if(kids != null) {
 
-            @SuppressWarnings("rawtypes")
-            Iterator kidsIter = kids.iterator();
-            if (kidsIter == null) {
-                return;
-            }
-            int r = recurseDepth+1;
+            int r = currentRecursiveDepth+1;
             handler.startElement("ol");
             //TODO: can generate <ol/>. Rework to avoid that.
-            while(kidsIter.hasNext()) {
-                Object pdfObj = kidsIter.next();
+            for(COSObjectable pdfObj : kids) {
                 if(pdfObj != null && pdfObj instanceof PDField) {
                     PDField kid = (PDField)pdfObj;
                     //recurse
@@ -596,6 +589,8 @@ class PDF2XHTML extends PDFTextStripper {
             }
         } catch (IOException e) {
             //swallow
+        } catch (NullPointerException e) {
+            //TODO: remove once PDFBOX-2161 is fixed
         }
 
         if (attrs.getLength() > 0 || sb.length() > 0) {
