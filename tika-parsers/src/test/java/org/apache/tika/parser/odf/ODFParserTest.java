@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -326,4 +327,28 @@ public class ODFParserTest extends TikaTest {
             input.close();
         }
     }  
+    
+    @Test
+    public void testFromFile() throws Exception {
+       TikaInputStream tis = TikaInputStream.get(this.getClass().getResource(
+               "/test-documents/testODFwithOOo3.odt"));
+       assertEquals(true, tis.hasFile());
+
+       OpenDocumentParser parser = new OpenDocumentParser();
+
+       try {
+           Metadata metadata = new Metadata();
+           ContentHandler handler = new BodyContentHandler();
+           parser.parse(tis, handler, metadata, new ParseContext());
+
+           assertEquals(
+                   "application/vnd.oasis.opendocument.text",
+                   metadata.get(Metadata.CONTENT_TYPE));
+
+           String content = handler.toString();
+           assertTrue(content.contains("Tika is part of the Lucene project."));
+       } finally {
+           tis.close();
+       }
+    }
 }
