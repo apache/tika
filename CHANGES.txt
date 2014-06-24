@@ -27,7 +27,7 @@ Release 1.6 - ??/??/2014
   * Added ability to turn off image extraction from PDFs (TIKA-1294).
     Users must now turn on this capability via the PDFParserConfig.
 
-  * Upgrade to PDFBox 1.8.5 (TIKA-1290, TIKA-1231, TIKA-1233)
+  * Upgrade to PDFBox 1.8.6 (TIKA-1290, TIKA-1231, TIKA-1233, TIKA-1352)
 
   * Zip Container Detection for DWFX and XPS formats, which are OPC
     based (TIKA-1204, TIKA-1221)
