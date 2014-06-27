@@ -50,7 +50,7 @@ public class MicrosoftTranslator implements Translator {
     public MicrosoftTranslator() {
         Properties props = new Properties();
         InputStream stream;
-        stream = Translator.class.getResourceAsStream(PROPERTIES_FILE);
+        stream = MicrosoftTranslator.class.getResourceAsStream(PROPERTIES_FILE);
         try {
             if(stream != null) {
                 props.load(stream);
@@ -58,7 +58,11 @@ public class MicrosoftTranslator implements Translator {
                 clientSecret = props.getProperty(SECRET_PROPERTY);
                 if (!clientId.equals(DEFAULT_ID) && !clientSecret.equals(DEFAULT_SECRET)) available = true;
             }
+            else{
+            	System.err.println("STREAM IS NULL WTF: ["+PROPERTIES_FILE+"]");
+            }
         } catch (IOException e) {
+        	e.printStackTrace();
             // Error with properties file. Translation will not work.
             available = false;
         }
@@ -110,5 +114,23 @@ public class MicrosoftTranslator implements Translator {
      */
     public boolean isAvailable(){
         return available;
+    }
+    
+    /**
+     * Sets the client Id for the translator API.
+     * @param id The ID to set.
+     */
+    public void setId(String id){
+    	this.clientId = id;
+        if (!clientId.equals(DEFAULT_ID) && !clientSecret.equals(DEFAULT_SECRET)) available = true;
+    }
+    
+    /**
+     * Sets the client secret for the translator API.
+     * @param secret The secret to set.
+     */
+    public void setSecret(String secret){
+    	this.clientSecret = secret;
+        if (!clientId.equals(DEFAULT_ID) && !clientSecret.equals(DEFAULT_SECRET)) available = true;    	
     }
 }
