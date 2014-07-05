@@ -205,9 +205,9 @@ public class MP4Parser extends AbstractParser {
                   addMetadata(XMPDM.GENRE, metadata, genre);
 
                   // Year
-                  AppleRecordingYearBox year = getOrNull(apple, AppleRecordingYearBox.class);
+                  AppleRecordingYear2Box year = getOrNull(apple, AppleRecordingYear2Box.class);
                   if (year != null) {
-                      metadata.set(XMPDM.RELEASE_DATE, year.getDate());
+                      metadata.set(XMPDM.RELEASE_DATE, year.getValue());
                   }
 
                   // Track number
