@@ -16,16 +16,11 @@
  */
 package org.apache.tika.parser.mp4;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import com.coremedia.iso.IsoFile;
+import com.coremedia.iso.boxes.*;
+import com.coremedia.iso.boxes.apple.AppleItemListBox;
+import com.coremedia.iso.boxes.sampleentry.AudioSampleEntry;
+import com.googlecode.mp4parser.boxes.apple.*;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -39,31 +34,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import com.coremedia.iso.IsoFile;
-import com.coremedia.iso.boxes.Box;
-import com.coremedia.iso.boxes.ContainerBox;
-import com.coremedia.iso.boxes.FileTypeBox;
-import com.coremedia.iso.boxes.MetaBox;
-import com.coremedia.iso.boxes.MovieBox;
-import com.coremedia.iso.boxes.MovieHeaderBox;
-import com.coremedia.iso.boxes.SampleDescriptionBox;
-import com.coremedia.iso.boxes.SampleTableBox;
-import com.coremedia.iso.boxes.TrackBox;
-import com.coremedia.iso.boxes.TrackHeaderBox;
-import com.coremedia.iso.boxes.UserDataBox;
-import com.coremedia.iso.boxes.apple.AbstractAppleMetaDataBox;
-import com.coremedia.iso.boxes.apple.AppleAlbumBox;
-import com.coremedia.iso.boxes.apple.AppleArtistBox;
-import com.coremedia.iso.boxes.apple.AppleCommentBox;
-import com.coremedia.iso.boxes.apple.AppleCustomGenreBox;
-import com.coremedia.iso.boxes.apple.AppleEncoderBox;
-import com.coremedia.iso.boxes.apple.AppleItemListBox;
-import com.coremedia.iso.boxes.apple.AppleRecordingYearBox;
-import com.coremedia.iso.boxes.apple.AppleStandardGenreBox;
-import com.coremedia.iso.boxes.apple.AppleTrackAuthorBox;
-import com.coremedia.iso.boxes.apple.AppleTrackNumberBox;
-import com.coremedia.iso.boxes.apple.AppleTrackTitleBox;
-import com.coremedia.iso.boxes.sampleentry.AudioSampleEntry;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
 /**
  * Parser for the MP4 media container format, as well as the older
@@ -114,12 +87,12 @@ public class MP4Parser extends AbstractParser {
         //  avoid OOMs that may occur with in-memory buffering
         TikaInputStream tstream = TikaInputStream.get(stream);
         try {
-           isoFile = new IsoFile(tstream.getFileChannel());
+           isoFile = new IsoFile(new DirectFileReadDataSource(tstream.getFile()));
         } finally {
            tstream.close();
         }
-        
-        
+
+
         // Grab the file type box
         FileTypeBox fileType = getOrNull(isoFile, FileTypeBox.class);
         if (fileType != null) {
@@ -158,14 +131,8 @@ public class MP4Parser extends AbstractParser {
         MovieHeaderBox mHeader = getOrNull(moov, MovieHeaderBox.class);
         if (mHeader != null) {
            // Get the creation and modification dates
-           metadata.set(
-                 Metadata.CREATION_DATE, 
-                 MP4TimeToDate(mHeader.getCreationTime())
-           );
-           metadata.set(
-                 TikaCoreProperties.MODIFIED,
-                 MP4TimeToDate(mHeader.getModificationTime())
-           );
+           metadata.set(Metadata.CREATION_DATE, mHeader.getCreationTime());
+           metadata.set(TikaCoreProperties.MODIFIED, mHeader.getModificationTime());
            
            // Get the duration
            double durationSeconds = ((double)mHeader.getDuration()) / mHeader.getTimescale();
@@ -184,14 +151,8 @@ public class MP4Parser extends AbstractParser {
            
            TrackHeaderBox header = track.getTrackHeaderBox();
            // Get the creation and modification dates
-           metadata.set(
-                 TikaCoreProperties.CREATED, 
-                 MP4TimeToDate(header.getCreationTime())
-           );
-           metadata.set(
-                 TikaCoreProperties.MODIFIED,
-                 MP4TimeToDate(header.getModificationTime())
-           );
+           metadata.set(TikaCoreProperties.CREATED, header.getCreationTime());
+           metadata.set(TikaCoreProperties.MODIFIED, header.getModificationTime());
            
            // Get the video with and height
            metadata.set(Metadata.IMAGE_WIDTH,  (int)header.getWidth());
@@ -224,7 +185,7 @@ public class MP4Parser extends AbstractParser {
            AppleItemListBox apple = getOrNull(meta, AppleItemListBox.class);
            if (apple != null) {
               // Title
-              AppleTrackTitleBox title = getOrNull(apple, AppleTrackTitleBox.class);
+              AppleNameBox title = getOrNull(apple, AppleNameBox.class);
               addMetadata(TikaCoreProperties.TITLE, metadata, title);
 
               // Artist
@@ -241,20 +202,20 @@ public class MP4Parser extends AbstractParser {
               addMetadata(XMPDM.COMPOSER, metadata, composer);
               
               // Genre
-              AppleStandardGenreBox sGenre = getOrNull(apple, AppleStandardGenreBox.class);
-              AppleCustomGenreBox   cGenre = getOrNull(apple, AppleCustomGenreBox.class);
-              addMetadata(XMPDM.GENRE, metadata, sGenre);
-              addMetadata(XMPDM.GENRE, metadata, cGenre);
+              AppleGenreBox genre = getOrNull(apple, AppleGenreBox.class);
+              addMetadata(XMPDM.GENRE, metadata, genre);
               
               // Year
               AppleRecordingYearBox year = getOrNull(apple, AppleRecordingYearBox.class);
-              addMetadata(XMPDM.RELEASE_DATE, metadata, year);
+              if (year != null) {
+                  metadata.set(XMPDM.RELEASE_DATE, year.getDate());
+              }
               
               // Track number 
               AppleTrackNumberBox trackNum = getOrNull(apple, AppleTrackNumberBox.class);
               if (trackNum != null) {
-                 metadata.set(XMPDM.TRACK_NUMBER, trackNum.getTrackNumber());
-                 //metadata.set(XMPDM.NUMBER_OF_TRACKS, trackNum.getNumberOfTracks()); // TODO
+                 metadata.set(XMPDM.TRACK_NUMBER, trackNum.getA());
+                 //metadata.set(XMPDM.NUMBER_OF_TRACKS, trackNum.getB()); // TODO
               }
               
               // Comment
@@ -268,8 +229,8 @@ public class MP4Parser extends AbstractParser {
               
               // As text
               for (Box box : apple.getBoxes()) {
-                 if (box instanceof AbstractAppleMetaDataBox) {
-                    xhtml.element("p", ((AbstractAppleMetaDataBox)box).getValue());
+                 if (box instanceof Utf8AppleDataBox) {
+                    xhtml.element("p", ((Utf8AppleDataBox)box).getValue());
                  }
               }
            }
@@ -281,12 +242,12 @@ public class MP4Parser extends AbstractParser {
         xhtml.endDocument();
     }
     
-    private static void addMetadata(String key, Metadata m, AbstractAppleMetaDataBox metadata) {
+    private static void addMetadata(String key, Metadata m, Utf8AppleDataBox metadata) {
        if (metadata != null) {
           m.add(key, metadata.getValue());
        }
     }
-    private static void addMetadata(Property prop, Metadata m, AbstractAppleMetaDataBox metadata) {
+    private static void addMetadata(Property prop, Metadata m, Utf8AppleDataBox metadata) {
        if (metadata != null) {
           m.set(prop, metadata.getValue());
        }
@@ -302,7 +263,7 @@ public class MP4Parser extends AbstractParser {
     }
     private static final long EPOC_AS_MP4_TIME = 2082844800l;
     
-    private static <T extends Box> T getOrNull(ContainerBox box, Class<T> clazz) {
+    private static <T extends Box> T getOrNull(Container box, Class<T> clazz) {
        if (box == null) return null;
 
        List<T> boxes = box.getBoxes(clazz);
