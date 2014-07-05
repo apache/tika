@@ -257,16 +257,6 @@ public class MP4Parser extends AbstractParser {
        }
     }
     
-    /**
-     * MP4 Dates are stored as 32-bit integer, which represent the seconds 
-     * since midnight, January 1, 1904, and are generally in UTC 
-     */
-    private static Date MP4TimeToDate(long mp4Time) {
-       long unix = mp4Time - EPOC_AS_MP4_TIME;
-       return new Date(unix*1000);
-    }
-    private static final long EPOC_AS_MP4_TIME = 2082844800l;
-    
     private static <T extends Box> T getOrNull(Container box, Class<T> clazz) {
        if (box == null) return null;
 
