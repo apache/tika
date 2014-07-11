@@ -154,7 +154,9 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
-            PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
+            if (handler != null) {
+                PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
+            }
             
         } finally {
             if (pdfDocument != null) {

@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import org.junit.Ignore;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -25,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -89,6 +87,26 @@ public class PDFParserTest extends TikaTest {
                 !content.contains("ToolkitApache"));
         assertTrue("should have word boundary between paragraphs", 
                 !content.contains("libraries.Apache"));
+    }
+    
+    @Test
+    public void testPdfParsingMetadataOnly() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        Metadata metadata = new Metadata();
+
+        InputStream stream = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDF.pdf");
+
+        try {
+            parser.parse(stream, null, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Bertrand Delacr\u00e9taz", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Firefox", metadata.get(TikaCoreProperties.CREATOR_TOOL));
+        assertEquals("Apache Tika - Apache Tika", metadata.get(TikaCoreProperties.TITLE));
     }
 
     @Test

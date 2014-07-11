@@ -237,7 +237,8 @@ public class CompositeParser extends AbstractParser {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
-            TaggedContentHandler taggedHandler = new TaggedContentHandler(handler);
+            TaggedContentHandler taggedHandler = 
+                handler != null ? new TaggedContentHandler(handler) : null;
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
             } catch (RuntimeException e) {

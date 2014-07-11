@@ -114,7 +114,8 @@ public class AutoDetectParser extends CompositeParser {
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
 
             // TIKA-216: Zip bomb prevention
-            SecureContentHandler sch = new SecureContentHandler(handler, tis);
+            SecureContentHandler sch = 
+                handler != null ? new SecureContentHandler(handler, tis) : null;
             try {
                 // Parse the document
                 super.parse(tis, sch, metadata, context);
