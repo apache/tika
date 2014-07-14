@@ -48,101 +48,91 @@ import com.jmatio.common.MatDataTypes;
 
 
 public class MatParser extends AbstractParser {
-    
-    public static final String MATLAB_MIME_TYPE = 
-    "application/x-matlab-data";  
+
+    public static final String MATLAB_MIME_TYPE =
+            "application/x-matlab-data";
 
     private final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.application("x-matlab-data"));
+            Collections.singleton(MediaType.application("x-matlab-data"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context){
         return SUPPORTED_TYPES;
-        }
+    }
 
-    public void parse(InputStream stream, ContentHandler handler,
-        Metadata metadata, ParseContext context) throws IOException,
-        SAXException, TikaException {
- 				
-        //Set MIME type as metadata
+    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+
+        //Set MIME type as Matlab
         metadata.set(Metadata.CONTENT_TYPE, MATLAB_MIME_TYPE);
-         	
+
         try {
-        	
-            //Input file stream
+            // Use TIS so we can spool a temp file for parsing.
             TikaInputStream tis = TikaInputStream.get(stream);
-	        						
+
             //Extract information from header file
             MatFileReader mfr = new MatFileReader(tis.getFile()); //input .mat file
             MatFileHeader hdr = mfr.getMatFileHeader(); //.mat header information
 
-            String stringToSplit = hdr.getDescription(); //break header information into its parts
-            String[] parts = stringToSplit.split(",");
-				
-            // Ex .mat header "MATLAB 5.0 MAT-file, Platform: MACI64, Created on: Sun Mar  2 23:41:57 2014"
+            // Example header: "MATLAB 5.0 MAT-file, Platform: MACI64, Created on: Sun Mar  2 23:41:57 2014"
+            String[] parts = hdr.getDescription().split(","); // Break header information into its parts
+
             if (parts[2].contains("Created")) {
                 int lastIndex1 = parts[2].lastIndexOf("Created on:");
-                String dateCreated = parts[2].substring(lastIndex1 + 11).trim();
+                String dateCreated = parts[2].substring(lastIndex1 + "Created on:".length()).trim();
                 metadata.set("createdOn", dateCreated);
-                }
-    			
+            }
+
             if (parts[1].contains("Platform")) {
                 int lastIndex2 = parts[1].lastIndexOf("Platform:");
-                String platform = parts[1].substring(lastIndex2 + 9).trim();
+                String platform = parts[1].substring(lastIndex2 + "Platform:".length()).trim();
                 metadata.set("platform" , platform);
-                }
-    				
-            if (parts[0].contains("MATLAB")) {	
-                metadata.set("fileType", parts[0]);
-                }
-    			
-            //Get endian indicator from header file
-            String endianBytes = new String(hdr.getEndianIndicator()); //retrieve endian bytes and convert to string
-            String endianCode = String.valueOf(endianBytes.toCharArray()); //convert bytes to characters to string
-            metadata.set("endian", endianCode);
-	
-            //Text output	
-            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);          		
-            xhtml.startDocument();
-           		
-            //Get array names, size, and data types
-            Map<String, MLArray> data = mfr.getContent();
-            Set<String> vars = data.keySet();
-        		
-            //Loop through each variable 
-            for (Iterator<String> var = vars.iterator(); var.hasNext();) {
-                String varName = var.next();
-                MLArray varData = data.get(varName);
-                   
-                xhtml.characters(varName);
-                xhtml.characters(":");
-                xhtml.characters(String.valueOf(varData));
-                xhtml.newline();
-                   
-                //if the variable is a structure, extract variable info from structure
-                if (varData.isStruct()){
-                    MLStructure mlStructure = (MLStructure) mfr.getMLArray(varName);	
-                    Collection<MLArray> list = mlStructure.getAllFields();
-				   
-                    for (MLArray element : list){
-                        xhtml.characters("  ");
-                        xhtml.characters(String.valueOf(element));
-                        xhtml.newline();
-						
-                        //if there is an imbedded structure, extract variable info.						
-                        if (element.isStruct()){																		 
-                            String nest = element.contentToString();
-                            xhtml.characters("      ");
-                            xhtml.characters(nest);   
-                            xhtml.newline();
-                            }
-                        }
-                    }		
-            } 
+            }
 
-            xhtml.endDocument();		
-                		
-            } catch (IOException e) {
-                throw new TikaException("matparser error", e);
-                } 
-        }        
+            if (parts[0].contains("MATLAB")) {
+                metadata.set("fileType", parts[0]);
+            }
+
+            // Get endian indicator from header file
+            String endianBytes = new String(hdr.getEndianIndicator()); // Retrieve endian bytes and convert to string
+            String endianCode = String.valueOf(endianBytes.toCharArray()); // Convert bytes to characters to string
+            metadata.set("endian", endianCode);
+
+            //Text output	
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            xhtml.newline();
+            //Loop through each variable
+            for (Map.Entry<String, MLArray> entry : mfr.getContent().entrySet()) {
+                String varName = entry.getKey();
+                MLArray varData = entry.getValue();
+
+                xhtml.element("p", varName + ":" + String.valueOf(varData));
+
+                // If the variable is a structure, extract variable info from structure
+                if (varData.isStruct()){
+                    MLStructure mlStructure = (MLStructure) mfr.getMLArray(varName);
+                    xhtml.startElement("ul");
+                    xhtml.newline();
+                    for (MLArray element : mlStructure.getAllFields()){
+                        xhtml.startElement("li");
+                        xhtml.characters(String.valueOf(element));
+
+                        // If there is an embedded structure, extract variable info.
+                        if (element.isStruct()){
+                            xhtml.startElement("ul");
+                            // Should this actually be a recursive call?
+                            xhtml.element("li", element.contentToString());
+                            xhtml.endElement("ul");
+                        }
+
+                        xhtml.endElement("li");
+                    }
+                    xhtml.endElement("ul");
+                }
+            }
+            xhtml.endDocument();
+        } catch (IOException e) {
+            throw new TikaException("Error parsing Matlab file with MatParser", e);
+        }
+    }
 }

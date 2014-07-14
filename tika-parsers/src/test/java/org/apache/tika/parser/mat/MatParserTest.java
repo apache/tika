@@ -31,47 +31,70 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 /**
  * Test cases to exercise the {@link MatParser}.
- * 
+ *
  */
 public class MatParserTest {
 
     @Test
     public void testParser() throws Exception {
-        
+
         Parser parser = new MatParser();
-        ContentHandler handler = new BodyContentHandler();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
         String path = "/test-documents/breidamerkurjokull_radar_profiles_2009.mat";
 
-        InputStream stream = MatParser.class.getResourceAsStream(path); 
-                
+        InputStream stream = MatParser.class.getResourceAsStream(path);
+
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
-        	} finally {
-            	stream.close();
-        	}
-        
-        	//Check Metadata
-        	assertEquals("PCWIN64", metadata.get("platform"));
-        	assertEquals("MATLAB 5.0 MAT-file", metadata.get("fileType"));
-        	assertEquals("IM", metadata.get("endian"));
-        	assertEquals("Thu Feb 21 15:52:49 2013", metadata.get("createdOn"));
-               
-       		//Check Content
-       		String content = handler.toString();
-        
-       		assertTrue(content.contains("a1:[1x1  struct array]"));
-       		assertTrue(content.contains("[1024x1261  double array]"));
-       		assertTrue(content.contains("a2:[1x1  struct array]"));
-       		assertTrue(content.contains("[1024x1283  double array]"));
-       		assertTrue(content.contains("b1:[1x1  struct array]"));
-       		assertTrue(content.contains("[1024x1311  double array]"));
-       		assertTrue(content.contains("c1:[1x1  struct array]"));
-       		assertTrue(content.contains("[1024x909  double array]"));  	
-   			}
+        } finally {
+            stream.close();
+        }
+
+        //Check Metadata
+        assertEquals("PCWIN64", metadata.get("platform"));
+        assertEquals("MATLAB 5.0 MAT-file", metadata.get("fileType"));
+        assertEquals("IM", metadata.get("endian"));
+        assertEquals("Thu Feb 21 15:52:49 2013", metadata.get("createdOn"));
+
+        //Check Content
+        String content = handler.toString();
+
+        assertTrue(content.contains("<li>[1x909  double array]</li>"));
+        assertTrue(content.contains("<p>c1:[1x1  struct array]</p>"));
+        assertTrue(content.contains("<li>[1024x1  double array]</li>"));
+        assertTrue(content.contains("<p>b1:[1x1  struct array]</p>"));
+        assertTrue(content.contains("<p>a1:[1x1  struct array]</p>"));
+        assertTrue(content.contains("<li>[1024x1261  double array]</li>"));
+        assertTrue(content.contains("<li>[1x1  double array]</li>"));
+        assertTrue(content.contains("</body></html>"));
+    }
+
+    @Test
+    public void testParserForText() throws Exception {
+
+        Parser parser = new MatParser();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        Metadata metadata = new Metadata();
+        String path = "/test-documents/test_mat_text.mat";
+
+        InputStream stream = MatParser.class.getResourceAsStream(path);
+
+        try {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        //Check Content
+        String content = handler.toString();
+        assertTrue(content.contains("<p>double:[2x2  double array]</p>"));
+        System.err.println(content);
+    }
 
 }
