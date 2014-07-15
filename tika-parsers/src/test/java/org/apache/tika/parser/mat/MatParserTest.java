@@ -28,6 +28,7 @@ import junit.framework.TestCase;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -43,7 +44,7 @@ public class MatParserTest {
     @Test
     public void testParser() throws Exception {
 
-        Parser parser = new MatParser();
+        AutoDetectParser parser = new AutoDetectParser();
         ToXMLContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
         String path = "/test-documents/breidamerkurjokull_radar_profiles_2009.mat";
