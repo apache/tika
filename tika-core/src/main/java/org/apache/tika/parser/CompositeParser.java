@@ -249,7 +249,7 @@ public class CompositeParser extends AbstractParser {
                 throw new TikaException(
                         "TIKA-198: Illegal IOException from " + parser, e);
             } catch (SAXException e) {
-                taggedHandler.throwIfCauseOf(e);
+                if (taggedHandler != null) taggedHandler.throwIfCauseOf(e);
                 throw new TikaException(
                         "TIKA-237: Illegal SAXException from " + parser, e);
             }
