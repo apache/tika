@@ -233,7 +233,7 @@ public class CompositeParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        Parser parser = getParser(metadata);
+        Parser parser = getParser(metadata, context);
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
