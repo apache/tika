@@ -14,3 +14,5 @@
 #  limitations under the License.
 
 org.apache.tika.language.translate.MicrosoftTranslator
+org.apache.tika.language.translate.GoogleTranslator
+org.apache.tika.language.translate.CachedTranslator
