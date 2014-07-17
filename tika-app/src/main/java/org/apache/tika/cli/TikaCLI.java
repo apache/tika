@@ -327,13 +327,16 @@ public class TikaCLI {
             TikaGUI.main(new String[0]);
         } else if (arg.equals("--list-parser") || arg.equals("--list-parsers")) {
             pipeMode = false;
-            displayParsers(false);
+            displayParsers(false, false);
         } else if (arg.equals("--list-detector") || arg.equals("--list-detectors")) {
            pipeMode = false;
            displayDetectors();
         } else if (arg.equals("--list-parser-detail") || arg.equals("--list-parser-details")) {
             pipeMode = false;
-            displayParsers(true);
+            displayParsers(true, false);
+        } else if (arg.equals("--list-parser-detail-apt") || arg.equals("--list-parser-details-apt")) {
+            pipeMode = false;
+            displayParsers(true, true);
         } else if(arg.equals("--list-met-models")){
             pipeMode = false;
             displayMetModels();
@@ -457,7 +460,9 @@ public class TikaCLI {
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
         out.println("    --list-parser-details");
-        out.println("         List the available document parsers, and their supported mime types");
+        out.println("         List the available document parsers and their supported mime types");
+        out.println("    --list-parser-details-apt");
+        out.println("         List the available document parsers and their supported mime types in apt format.");
         out.println("    --list-detectors");
         out.println("         List the available document detectors");
         out.println("    --list-met-models");
@@ -528,26 +533,33 @@ public class TikaCLI {
      * If a parser is a composite parser, it will list the
      * sub parsers and their mime-types.
      */
-    private void displayParsers(boolean includeMimeTypes) {
-        displayParser(parser, includeMimeTypes, 0);
+    private void displayParsers(boolean includeMimeTypes, boolean aptListFormat) {
+        displayParser(parser, includeMimeTypes, aptListFormat, 3);
     }
      
-    private void displayParser(Parser p, boolean includeMimeTypes, int i) {
+    private void displayParser(Parser p, boolean includeMimeTypes, boolean apt, int i) {
         boolean isComposite = (p instanceof CompositeParser);
         String name = (p instanceof ParserDecorator) ?
                       ((ParserDecorator) p).getWrappedParser().getClass().getName() :
                       p.getClass().getName();
-        System.out.println(indent(i) + name + (isComposite ? " (Composite Parser):" : ""));
-        if (includeMimeTypes && !isComposite) {
-            for (MediaType mt : p.getSupportedTypes(context)) {
-                System.out.println(indent(i+2) + mt);
+        if (apt){
+            name = name.substring(0, name.lastIndexOf(".") + 1) + "{{{./api/" + name.replace(".", "/") + "}" + name.substring(name.lastIndexOf(".") + 1) + "}}";
+        }
+        if ((apt && !isComposite) || !apt) {    // Don't display Composite parsers in the apt output.
+            System.out.println(indent(i) + ((apt) ? "* " : "") + name + (isComposite ? " (Composite Parser):" : ""));
+            if (apt) System.out.println();
+            if (includeMimeTypes && !isComposite) {
+                for (MediaType mt : p.getSupportedTypes(context)) {
+                    System.out.println(indent(i + 3) + ((apt) ? "* " : "") + mt);
+                    if (apt) System.out.println();
+                }
             }
         }
         
         if (isComposite) {
             Parser[] subParsers = sortParsers(invertMediaTypeMap(((CompositeParser) p).getParsers()));
             for(Parser sp : subParsers) {
-                displayParser(sp, includeMimeTypes, i+2);
+                displayParser(sp, includeMimeTypes, apt, i + ((apt) ? 0 : 3));  // Don't indent for Composites in apt.
             }
         }
     }
