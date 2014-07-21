@@ -95,7 +95,6 @@ public class MatParserTest {
         //Check Content
         String content = handler.toString();
         assertTrue(content.contains("<p>double:[2x2  double array]</p>"));
-        System.err.println(content);
     }
 
 }
