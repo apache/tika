@@ -25,7 +25,6 @@ import java.nio.charset.Charset;
 
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.io.CloseShieldInputStream;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -38,52 +37,51 @@ import org.xml.sax.SAXException;
 
 public class EnviHeaderParser extends AbstractParser {
 
-	private static final long serialVersionUID = -1479368523072408091L;
+    private static final long serialVersionUID = -1479368523072408091L;
 
-	public static final String ENVI_MIME_TYPE = "application/envi.hdr";
+    public static final String ENVI_MIME_TYPE = "application/envi.hdr";
 
-	private static final Set<MediaType> SUPPORTED_TYPES = Collections
-			.singleton(MediaType.application("envi.hdr"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections
+            .singleton(MediaType.application("envi.hdr"));
 
-	public Set<MediaType> getSupportedTypes(ParseContext context) {
-		return SUPPORTED_TYPES;
-	}
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
 
-	public void parse(InputStream stream, ContentHandler handler,
-			Metadata metadata, ParseContext context) throws IOException,
-			SAXException, TikaException {
+    public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context) throws IOException,
+            SAXException, TikaException {
 
-		// Only outputting the MIME type as metadata
-		metadata.set(Metadata.CONTENT_TYPE, ENVI_MIME_TYPE);
+        // Only outputting the MIME type as metadata
+        metadata.set(Metadata.CONTENT_TYPE, ENVI_MIME_TYPE);
 
-		// The following code was taken from the TXTParser
-		// Automatically detect the character encoding
-		AutoDetectReader reader = new AutoDetectReader(
-				new CloseShieldInputStream(stream), metadata);
+        // The following code was taken from the TXTParser
+        // Automatically detect the character encoding
+        AutoDetectReader reader = new AutoDetectReader(
+                new CloseShieldInputStream(stream), metadata);
 
-		try {
-			Charset charset = reader.getCharset();
-			MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
-			// deprecated, see TIKA-431
-			metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+        try {
+            Charset charset = reader.getCharset();
+            MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
+            // deprecated, see TIKA-431
+            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
 
-			XHTMLContentHandler xhtml = new XHTMLContentHandler(handler,
-					metadata);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler,
+                    metadata);
 
-			xhtml.startDocument();
+            xhtml.startDocument();
 
-			// text contents of the xhtml
+            // text contents of the xhtml
             String line;
             while ((line = reader.readLine()) != null) {
                 xhtml.startElement("p");
                 xhtml.characters(line);
                 xhtml.endElement("p");
             }
-
-			xhtml.endDocument();
-		} finally {
-			reader.close();
-		}
-
-	}
+            
+            xhtml.endDocument();
+        } finally {
+            reader.close();
+        }
+    }
 }
