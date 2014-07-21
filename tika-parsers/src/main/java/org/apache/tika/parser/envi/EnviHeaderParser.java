@@ -73,14 +73,12 @@ public class EnviHeaderParser extends AbstractParser {
 			xhtml.startDocument();
 
 			// text contents of the xhtml
-			xhtml.startElement("p");
-			char[] buffer = new char[4096];
-			int n = reader.read(buffer);
-			while (n != -1) {
-				xhtml.characters(buffer, 0, n);
-				n = reader.read(buffer);
-			}
-			xhtml.endElement("p");
+            String line;
+            while ((line = reader.readLine()) != null) {
+                xhtml.startElement("p");
+                xhtml.characters(line);
+                xhtml.endElement("p");
+            }
 
 			xhtml.endDocument();
 		} finally {

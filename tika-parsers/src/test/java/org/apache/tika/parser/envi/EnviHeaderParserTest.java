@@ -20,6 +20,8 @@ package org.apache.tika.parser.envi;
 //Junit imports
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
 
 import org.apache.tika.metadata.Metadata;
@@ -41,7 +43,7 @@ public class EnviHeaderParserTest {
 		}
 
 		Parser parser = new EnviHeaderParser();
-		ContentHandler handler = new BodyContentHandler();
+		ToXMLContentHandler handler = new ToXMLContentHandler();
 		Metadata metadata = new Metadata();
 
 		InputStream stream = EnviHeaderParser.class
@@ -55,12 +57,12 @@ public class EnviHeaderParserTest {
 
 		// Check content of test file
 		String content = handler.toString();
-		assertTrue(content.contains("ENVI"));
-		assertTrue(content.contains("samples = 2400"));
-		assertTrue(content.contains("lines   = 2400"));
-		assertTrue(content.contains("bands   = 7"));
-		assertTrue(content.contains("header offset = 0"));
-		assertTrue(content.contains("file type = ENVI Standard"));
+        System.err.println(content);
+        assertTrue(content.contains("<body><p>ENVI</p>"));
+		assertTrue(content.contains("<p>samples = 2400</p>"));
+		assertTrue(content.contains("<p>lines   = 2400</p>"));
+		assertTrue(content.contains("<p>map info = {Sinusoidal, 1.5000, 1.5000, -10007091.3643, 5559289.2856, 4.6331271653e+02, 4.6331271653e+02, , units=Meters}</p>"));
+		assertTrue(content.contains("content=\"application/envi.hdr\""));
 		assertTrue(content
 				.contains("projection info = {16, 6371007.2, 0.000000, 0.0, 0.0, Sinusoidal, units=Meters}"));
 	}
