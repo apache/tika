@@ -165,13 +165,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                     for(int i=0; i<r.numParagraphs(); i++) {
                         Paragraph p = r.getParagraph(i);
 
-                        String text = p.text();
-                        if (text.replaceAll("[\\r\\n\\s]+", "").isEmpty()) {
-                            // Skip empty header or footer paragraphs
-                        } else {
-                            i += handleParagraph(p, 0, r, document,
-                                    FieldsDocumentPart.HEADER, pictures, pictureTable, xhtml);
-                        }
+                        i += handleParagraph(p, 0, r, document,
+                                FieldsDocumentPart.HEADER, pictures, pictureTable, xhtml);
                      }
                 }
             }
@@ -206,6 +201,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           xhtml.endElement("tbody");
           xhtml.endElement("table");
           return (t.numParagraphs()-1);
+       }
+
+       String text = p.text();
+       if (text.replaceAll("[\\r\\n\\s]+", "").isEmpty()) {
+            // Skip empty paragraphs
+            return 0;
        }
 
        TagAndStyle tas;
