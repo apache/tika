@@ -58,6 +58,10 @@ Release 1.6 - ??/??/2014
 
   * Fixed RuntimeException thrown for certain Word Documents (TIKA-1251).
 
+  * CLI: TikaCLI now has another option: --list-parser-details-apt, which outputs
+    the list of supported parsers in APT format. This is used to generate the list
+    on the formats page (TIKA-411).
+
 Release 1.5 - 02/04/2014
 
   * Fixed bug in handling of embedded file processing in PDFs (TIKA-1228).
@@ -104,9 +108,6 @@ Release 1.5 - 02/04/2014
 
   * CLI: TikaCLI now escapes invalid filename characters as hex
     characters (TIKA-1078).
-
-  * CLI: TikaCLI now has another option: --list-parser-details-apt, which outputs the list of 
-    supported parsers in APT format. This is used to generate the list on the formats page.
 
 Release 1.4 - 06/15/2013
 
