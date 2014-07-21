@@ -382,4 +382,19 @@ public class WordParserTest extends TikaTest {
     public void testControlCharacter() throws Exception {
       assertContains("1. Introduzione<b> </a></b> </p>", getXML("testControlCharacters.doc").xml.replaceAll("\\s+", " "));
     }
+
+    @Test
+    public void testParagraphsAfterTables() throws Exception {
+        XMLResult result = getXML("test_TIKA-1251.doc");
+
+        String xml = result.xml;
+        Metadata metadata = result.metadata;
+
+        assertEquals(
+                "application/msword",
+                metadata.get(Metadata.CONTENT_TYPE));
+
+        assertContains("<p>1. Organisering av vakten:</p>", xml);
+
+    }
 }
