@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 import java.util.List;
-import java.util.Iterator;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;

@@ -22,19 +22,14 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
-import junit.framework.TestCase;
-
 //TIKA imports
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
-import org.xml.sax.ContentHandler;
+
 /**
  * Test cases to exercise the {@link MatParser}.
  *
