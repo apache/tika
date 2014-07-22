@@ -143,9 +143,8 @@ public class ImageParser extends AbstractParser {
         if (names == null) {
             return;
         }
-        int length = names.length;
-        for (int i = 0; i < length; i++) {
-            loadNode(metadata, imageMetadata.getAsTree(names[i]), "", false);
+        for (String name : names) {
+            loadNode(metadata, imageMetadata.getAsTree(name), "", false);
         }
     }
 

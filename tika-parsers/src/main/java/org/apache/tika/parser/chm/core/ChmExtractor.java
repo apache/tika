@@ -226,8 +226,8 @@ public class ChmExtractor {
      */
     public List<String> enumerateChm() {
         List<String> listOfEntries = new ArrayList<String>();
-        for (Iterator<DirectoryListingEntry> it = getChmDirList().getDirectoryListingEntryList().iterator(); it.hasNext();) {
-            listOfEntries.add(it.next().getName());
+        for (DirectoryListingEntry directoryListingEntry : getChmDirList().getDirectoryListingEntryList()) {
+            listOfEntries.add(directoryListingEntry.getName());
         }
         return listOfEntries;
     }
