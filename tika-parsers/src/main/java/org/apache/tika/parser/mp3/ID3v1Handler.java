@@ -101,7 +101,7 @@ public class ID3v1Handler implements ID3Tags {
     }
 
     public List<ID3Comment> getComments() {
-       return Arrays.asList(new ID3Comment[] {comment});
+       return Arrays.asList(comment);
     }
 
     public String getGenre() {
