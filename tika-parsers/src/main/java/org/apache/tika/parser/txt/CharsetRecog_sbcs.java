@@ -1258,7 +1258,7 @@ abstract class CharsetRecog_sbcs extends CharsetRecognizer {
         }
         protected void matchInit(CharsetDetector det) 
         {
-            prev_fInputBytes = (byte[])det.fInputBytes.clone();
+            prev_fInputBytes = det.fInputBytes.clone();
             byte bb[] = unshape(det.fInputBytes);
             det.setText(bb);
         }

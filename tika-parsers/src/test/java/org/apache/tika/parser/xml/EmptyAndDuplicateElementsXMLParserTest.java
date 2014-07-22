@@ -96,12 +96,12 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
     
         private static final long serialVersionUID = 2458579047014545931L;
 
-        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata, Property tikaMetadata, String localPart) {
+        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata, Property tikaProperty, String localPart) {
             return new ElementMetadataHandler(
                     "http://custom",
                     localPart,
                     metadata,
-                    (Property) tikaMetadata);
+                    tikaProperty);
         }
         
         protected ContentHandler getContentHandler(
@@ -117,12 +117,12 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
         
         private static final long serialVersionUID = 3735646809954466229L;
 
-        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata, Property tikaMetadata, String localPart) {
+        protected ElementMetadataHandler getCustomElementHandler(Metadata metadata, Property tikaProperty, String localPart) {
             return new ElementMetadataHandler(
                     "http://custom",
                     localPart,
                     metadata,
-                    (Property) tikaMetadata,
+                    tikaProperty,
                     true,
                     true);
         }

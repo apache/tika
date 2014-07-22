@@ -186,7 +186,7 @@ public class SummaryExtractor {
                     metadata.set(prop, (Date)value);
                 } else if (value instanceof Boolean) {
                     Property prop = Property.externalBoolean(key);
-                    metadata.set(prop, ((Boolean)value).toString());
+                    metadata.set(prop, value.toString());
                 } else if (value instanceof Long) {
                     Property prop = Property.externalInteger(key);
                     metadata.set(prop, ((Long)value).intValue());
