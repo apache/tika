@@ -375,7 +375,7 @@ public class ChmLzxBlock {
                                 getState().getAlignedTreeTable()[t]);
                         matchoffset += t;
                     } else if (extra == 3) {
-                        int g = (int) getChmSection().getDesyncBits(
+                        int g = getChmSection().getDesyncBits(
                                 ChmConstants.LZX_NUM_PRIMARY_LENGTHS, 0);
                         int t = getState().getAlignedTreeTable()[g];
                         if (t >= getState().getMainTreeElements()) {
@@ -457,7 +457,7 @@ public class ChmLzxBlock {
         int matchlen = 0, matchfooter = 0, extra, rundest, runsrc;
         int matchoffset = 0;
         for (i = getContentLength(); i < len; i++) {
-            int f = (int) getChmSection().getDesyncBits(
+            int f = getChmSection().getDesyncBits(
                     ChmConstants.LZX_MAINTREE_TABLEBITS, 0);
             assertShortArrayNotNull(getState().getMainTreeTable());
             s = getState().getMainTreeTable()[f];
@@ -476,7 +476,7 @@ public class ChmLzxBlock {
                 s -= ChmConstants.LZX_NUM_CHARS;
                 matchlen = s & ChmConstants.LZX_NUM_PRIMARY_LENGTHS;
                 if (matchlen == ChmConstants.LZX_NUM_PRIMARY_LENGTHS) {
-                    matchfooter = getState().getLengthTreeTable()[(int) getChmSection()
+                    matchfooter = getState().getLengthTreeTable()[getChmSection()
                             .getDesyncBits(ChmConstants.LZX_LENGTH_TABLEBITS, 0)];
                     if (matchfooter >= ChmConstants.LZX_NUM_SECONDARY_LENGTHS) {
                         x = ChmConstants.LZX_LENGTH_TABLEBITS;
@@ -569,7 +569,7 @@ public class ChmLzxBlock {
         int i = offset; // represents offset
         int z, y, x;// local counters
         while (i < tablelen) {
-            z = pretreetable[(int) getChmSection().getDesyncBits(
+            z = pretreetable[getChmSection().getDesyncBits(
                     ChmConstants.LZX_PRETREE_TABLEBITS, 0)];
             if (z >= ChmConstants.LZX_PRETREE_NUM_ELEMENTS) {// 1 bug, should be
                                                              // 20
@@ -588,13 +588,13 @@ public class ChmLzxBlock {
                 getState().getLengthTreeLengtsTable()[i] = (short) z;
                 i++;
             } else if (z == 17) {
-                y = (int) getChmSection().getSyncBits(4);
+                y = getChmSection().getSyncBits(4);
                 y += 4;
                 for (int j = 0; j < y; j++)
                     if (i < getState().getLengthTreeLengtsTable().length)
                         getState().getLengthTreeLengtsTable()[i++] = 0;
             } else if (z == 18) {
-                y = (int) getChmSection().getSyncBits(5);
+                y = getChmSection().getSyncBits(5);
                 y += 20;
                 for (int j = 0; j < y; j++)
                     if (i < getState().getLengthTreeLengtsTable().length)
@@ -602,7 +602,7 @@ public class ChmLzxBlock {
             } else if (z == 19) {
                 y = getChmSection().getSyncBits(1);
                 y += 4;
-                z = pretreetable[(int) getChmSection().getDesyncBits(
+                z = pretreetable[getChmSection().getDesyncBits(
                         ChmConstants.LZX_PRETREE_TABLEBITS, 0)];
                 if (z >= ChmConstants.LZX_PRETREE_NUM_ELEMENTS) {// 20
                     x = ChmConstants.LZX_PRETREE_TABLEBITS;// 6

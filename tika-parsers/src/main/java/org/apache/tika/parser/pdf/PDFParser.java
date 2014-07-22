@@ -185,13 +185,13 @@ public class PDFParser extends AbstractParser {
         }
         PDDocumentInformation info = document.getDocumentInformation();
         metadata.set(PagedText.N_PAGES, document.getNumberOfPages());
-        extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), (XMPSchema)dcSchema);
+        extractMultilingualItems(metadata, TikaCoreProperties.TITLE, info.getTitle(), dcSchema);
         extractDublinCoreListItems(metadata, TikaCoreProperties.CREATOR, info.getAuthor(), dcSchema);
         extractDublinCoreListItems(metadata, TikaCoreProperties.CONTRIBUTOR, null, dcSchema);
         addMetadata(metadata, TikaCoreProperties.CREATOR_TOOL, info.getCreator());
         addMetadata(metadata, TikaCoreProperties.KEYWORDS, info.getKeywords());
         addMetadata(metadata, "producer", info.getProducer());
-        extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, (XMPSchema)dcSchema);
+        extractMultilingualItems(metadata, TikaCoreProperties.DESCRIPTION, null, dcSchema);
 
         // TODO: Move to description in Tika 2.0
         addMetadata(metadata, TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, info.getSubject());

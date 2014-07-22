@@ -153,7 +153,7 @@ class RTFObjDataParser {
                 if (type == POIFSDocumentType.OLE10_NATIVE) {
                     try {
                         // Try to un-wrap the OLE10Native record:
-                        Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode)root);
+                        Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(root);
                         ret = ole.getDataBuffer();
                     } catch (Ole10NativeException ex) {
                         // Not a valid OLE10Native record, skip it

@@ -953,7 +953,7 @@ final class TextExtractor {
             ansiSkip = groupState.ucSkip;
         } else if (equals("uc")) {
             // Change unicode shadow length
-            groupState.ucSkip = (int) param;
+            groupState.ucSkip = param;
         } else if (equals("bin")) {
             if (param >= 0) {
                 if (groupState.pictDepth == 1) {

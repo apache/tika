@@ -61,7 +61,7 @@ public class ChmSection {
     }
 
     public int unmarshalUByte() {
-        return (int) (getByte() & 255);
+        return getByte() & 255;
     }
 
     public byte getByte() {
