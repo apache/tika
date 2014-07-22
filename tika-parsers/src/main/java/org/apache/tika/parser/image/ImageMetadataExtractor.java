@@ -286,10 +286,10 @@ public class ImageMetadataExtractor {
             
             if(directory.containsTag(ExifSubIFDDirectory.TAG_FLASH)) {
                String flash = directory.getDescription(ExifSubIFDDirectory.TAG_FLASH);
-               if(flash.indexOf("Flash fired") > -1) {
+               if(flash.contains("Flash fired")) {
                   metadata.set(Metadata.FLASH_FIRED, Boolean.TRUE.toString());
                }
-               else if(flash.indexOf("Flash did not fire") > -1) {
+               else if(flash.contains("Flash did not fire")) {
                   metadata.set(Metadata.FLASH_FIRED, Boolean.FALSE.toString());
                }
                else {
