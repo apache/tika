@@ -135,7 +135,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
          if (notes == null) {
             continue;
          }
-         Integer id = Integer.valueOf(notes._getSheetNumber());
+         Integer id = notes._getSheetNumber();
          if (seenNotes.contains(id)) {
             continue;
          }
