@@ -125,9 +125,9 @@ public class ImageMetadataExtractor {
     protected void handle(Iterator<Directory> directories) throws MetadataException {
         while (directories.hasNext()) {
             Directory directory = directories.next();
-            for (int i = 0; i < handlers.length; i++) {
-                if (handlers[i].supports(directory.getClass())) {
-                    handlers[i].handle(directory, metadata);
+            for (DirectoryHandler handler : handlers) {
+                if (handler.supports(directory.getClass())) {
+                    handler.handle(directory, metadata);
                 }
             }
         }
@@ -162,9 +162,7 @@ public class ImageMetadataExtractor {
         public void handle(Directory directory, Metadata metadata)
                 throws MetadataException {
             if (directory.getTags() != null) {
-                Iterator<?> tags = directory.getTags().iterator();
-                while (tags.hasNext()) {
-                    Tag tag = (Tag) tags.next();
+                for (Tag tag : directory.getTags()) {
                     metadata.set(tag.getTagName(), tag.getDescription());
                 }
             }
@@ -183,9 +181,7 @@ public class ImageMetadataExtractor {
         public void handle(Directory directory, Metadata metadata)
                 throws MetadataException {
             if (directory.getTags() != null) {
-                Iterator<?> tags = directory.getTags().iterator();
-                while (tags.hasNext()) {
-                    Tag tag = (Tag) tags.next();
+                for (Tag tag : directory.getTags()) {
                     String name = tag.getTagName();
                     if (!MetadataFields.isMetadataField(name) && tag.getDescription() != null) {
                           String value = tag.getDescription().trim();

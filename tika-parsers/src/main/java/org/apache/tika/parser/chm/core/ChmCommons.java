@@ -211,10 +211,9 @@ public class ChmCommons {
                 && !ChmCommons.isEmpty(fileToBeSaved)) {
             try {
                 output = new FileOutputStream(fileToBeSaved);
-                if (output != null)
-                    for (int i = 0; i < buffer.length; i++) {
-                        output.write(buffer[i]);
-                    }
+                for (byte[] bufferEntry : buffer) {
+                    output.write(bufferEntry);
+                }
             } catch (FileNotFoundException e) {
                 throw new TikaException(e.getMessage());
             } catch (IOException e) {
@@ -324,12 +323,9 @@ public class ChmCommons {
      */
     public static int indexOf(List<DirectoryListingEntry> list, String pattern) {
         int place = 0;
-        for (Iterator<DirectoryListingEntry> iterator = list.iterator(); iterator.hasNext();) {
-            DirectoryListingEntry directoryListingEntry = iterator.next();
-            if (directoryListingEntry.toString().contains(pattern)) {
-                return place;
-            } else
-                ++place;
+        for (DirectoryListingEntry directoryListingEntry : list) {
+            if (directoryListingEntry.toString().contains(pattern)) return place;
+            ++place;
         }
         return -1;// not found
     }

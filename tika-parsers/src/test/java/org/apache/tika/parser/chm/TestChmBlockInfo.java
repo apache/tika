@@ -107,9 +107,7 @@ public class TestChmBlockInfo {
 
     @Test
     public void testGetChmBlockInfo() {
-        for (Iterator<DirectoryListingEntry> it = chmDirListCont
-                .getDirectoryListingEntryList().iterator(); it.hasNext();) {
-            DirectoryListingEntry directoryListingEntry = it.next();
+        for (DirectoryListingEntry directoryListingEntry : chmDirListCont.getDirectoryListingEntryList()) {
             chmBlockInfo = ChmBlockInfo.getChmBlockInfoInstance(
                     directoryListingEntry, (int) clrt.getBlockLen(),
                     chmLzxcControlData);

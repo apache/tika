@@ -65,10 +65,7 @@ public class ChmParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
 
-        Iterator<DirectoryListingEntry> it =
-                chmExtractor.getChmDirList().getDirectoryListingEntryList().iterator();
-        while (it.hasNext()) {
-            DirectoryListingEntry entry = it.next();
+        for (DirectoryListingEntry entry : chmExtractor.getChmDirList().getDirectoryListingEntryList()) {
             if (entry.getName().endsWith(".html") || entry.getName().endsWith(".htm")) {
                 xhtml.characters(extract(chmExtractor.extractChmEntry(entry)));
             }

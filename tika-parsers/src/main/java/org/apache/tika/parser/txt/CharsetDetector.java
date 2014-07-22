@@ -546,8 +546,8 @@ public class CharsetDetector {
         String[] charsetNames = new String [recognizers.size()];
         int out = 0;
         
-        for (int i = 0; i < recognizers.size(); i++) {
-            String name = recognizers.get(i).getName();
+        for (CharsetRecognizer recognizer : recognizers) {
+            String name = recognizer.getName();
             
             if (out == 0 || ! name.equals(charsetNames[out - 1])) {
                 charsetNames[out++] = name;
