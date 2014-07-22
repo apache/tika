@@ -192,7 +192,7 @@ public class SummaryExtractor {
                     metadata.set(prop, ((Long)value).intValue());
                 } else if (value instanceof Double) {
                     Property prop = Property.externalReal(key);
-                    metadata.set(prop, ((Double)value).doubleValue());
+                    metadata.set(prop, (Double)value);
                 } else if (value instanceof Integer) {
                     Property prop = Property.externalInteger(key);
                     metadata.set(prop, ((Integer)value).intValue());

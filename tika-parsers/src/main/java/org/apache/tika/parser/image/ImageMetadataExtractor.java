@@ -329,7 +329,7 @@ public class ImageMetadataExtractor {
             if(directory.containsTag(ExifIFD0Directory.TAG_ORIENTATION)) {
                Object length = directory.getObject(ExifIFD0Directory.TAG_ORIENTATION);
                if(length instanceof Integer) {
-                  metadata.set(Metadata.ORIENTATION, Integer.toString( ((Integer)length).intValue() ));
+                  metadata.set(Metadata.ORIENTATION, Integer.toString((Integer)length));
                } else {
                   metadata.set(Metadata.ORIENTATION, directory.getString(ExifIFD0Directory.TAG_ORIENTATION));
                }
@@ -442,8 +442,8 @@ public class ImageMetadataExtractor {
             if (geoLocation != null) {
                 DecimalFormat geoDecimalFormat = new DecimalFormat(GEO_DECIMAL_FORMAT_STRING,
                         new DecimalFormatSymbols(Locale.ENGLISH));
-                metadata.set(TikaCoreProperties.LATITUDE, geoDecimalFormat.format(new Double(geoLocation.getLatitude())));
-                metadata.set(TikaCoreProperties.LONGITUDE, geoDecimalFormat.format(new Double(geoLocation.getLongitude())));
+                metadata.set(TikaCoreProperties.LATITUDE, geoDecimalFormat.format(geoLocation.getLatitude()));
+                metadata.set(TikaCoreProperties.LONGITUDE, geoDecimalFormat.format(geoLocation.getLongitude()));
             }
         }
     }
