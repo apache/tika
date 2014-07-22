@@ -1416,7 +1416,7 @@ final class TextExtractor {
                 s = s.substring(9).trim();
                 // TODO: what other instructions can be in a
                 // HYPERLINK destination?
-                final boolean isLocalLink = s.indexOf("\\l ") != -1;
+                final boolean isLocalLink = s.contains("\\l ");
                 int idx = s.indexOf('"');
                 if (idx != -1) {
                     int idx2 = s.indexOf('"', 1+idx);

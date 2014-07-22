@@ -40,7 +40,7 @@ public class Pkcs7ParserTest extends TikaTest {
         } catch (NullPointerException npe) {
             fail("should not get NPE");
         } catch (TikaException te) {
-            assertTrue(te.toString().indexOf("cannot parse detached pkcs7 signature") != -1);
+            assertTrue(te.toString().contains("cannot parse detached pkcs7 signature"));
         } finally {
             input.close();
         }

@@ -655,7 +655,7 @@ public class PDFParserTest extends TikaTest {
         //This just tests that a RuntimeException is not thrown.
         //TODO: find a better test file for this issue.
         String xml = getXML("/testPDF_acroform3.pdf").xml;
-        assertTrue("found", (xml.indexOf("<li>aTextField: TIKA-1226</li>") > -1));
+        assertTrue("found", (xml.contains("<li>aTextField: TIKA-1226</li>")));
     }
 
     @Test // TIKA-1228, TIKA-1268
