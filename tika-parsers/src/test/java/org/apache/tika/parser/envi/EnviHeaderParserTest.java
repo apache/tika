@@ -56,7 +56,6 @@ public class EnviHeaderParserTest {
 
 		// Check content of test file
 		String content = handler.toString();
-        System.err.println(content);
         assertTrue(content.contains("<body><p>ENVI</p>"));
 		assertTrue(content.contains("<p>samples = 2400</p>"));
 		assertTrue(content.contains("<p>lines   = 2400</p>"));
