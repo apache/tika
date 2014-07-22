@@ -213,10 +213,8 @@ public class PDFParser extends AbstractParser {
         
         // All remaining metadata is custom
         // Copy this over as-is
-        List<String> handledMetadata = Arrays.asList(new String[] {
-             "Author", "Creator", "CreationDate", "ModDate",
-             "Keywords", "Producer", "Subject", "Title", "Trapped"
-        });
+        List<String> handledMetadata = Arrays.asList("Author", "Creator", "CreationDate", "ModDate",
+             "Keywords", "Producer", "Subject", "Title", "Trapped");
         for(COSName key : info.getDictionary().keySet()) {
             String name = key.getName();
             if(! handledMetadata.contains(name)) {
