@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
 
 /**

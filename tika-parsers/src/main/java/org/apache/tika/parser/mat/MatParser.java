@@ -20,31 +20,24 @@ package org.apache.tika.parser.mat;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Collection;
 import java.util.Set;
 import java.util.Map;
-import java.util.Iterator;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.apache.tika.io.IOUtils;
 
 //JMatIO imports
 import com.jmatio.io.MatFileHeader;
 import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLArray;
 import com.jmatio.types.MLStructure;
-import com.jmatio.types.MLCell;
-import com.jmatio.common.MatDataTypes;
 
 
 public class MatParser extends AbstractParser {
