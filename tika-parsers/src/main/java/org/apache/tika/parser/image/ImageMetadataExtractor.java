@@ -245,7 +245,13 @@ public class ImageMetadataExtractor {
     }
     
     static class ExifHandler implements DirectoryHandler {
-        private static final SimpleDateFormat DATE_UNSPECIFIED_TZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        private static final ThreadLocal<SimpleDateFormat> DATE_UNSPECIFIED_TZ = new ThreadLocal<SimpleDateFormat>(){
+            @Override
+            protected SimpleDateFormat initialValue()
+            {
+                return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            }
+        };
         public boolean supports(Class<? extends Directory> directoryType) {
             return directoryType == ExifIFD0Directory.class || 
                     directoryType == ExifSubIFDDirectory.class;
@@ -377,7 +383,7 @@ public class ImageMetadataExtractor {
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 if (original != null) {
-                    String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.format(original); // Same time zone as Metadata Extractor uses
+                    String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.get().format(original); // Same time zone as Metadata Extractor uses
                     metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
                     metadata.set(Metadata.ORIGINAL_DATE, datetimeNoTimeZone);
                 }
@@ -385,7 +391,7 @@ public class ImageMetadataExtractor {
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
                 Date datetime = directory.getDate(ExifIFD0Directory.TAG_DATETIME);
                 if (datetime != null) {
-                    String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.format(datetime);
+                    String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.get().format(datetime);
                     metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
                     // If Date/Time Original does not exist this might be creation date
                     if (metadata.get(TikaCoreProperties.CREATED) == null) {
