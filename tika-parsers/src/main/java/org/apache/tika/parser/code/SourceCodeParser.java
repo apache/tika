@@ -22,6 +22,7 @@ import static com.uwyn.jhighlight.renderer.XhtmlRendererFactory.JAVA;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +39,10 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
+import org.ccil.cowan.tagsoup.HTMLSchema;
+import org.ccil.cowan.tagsoup.Schema;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.uwyn.jhighlight.renderer.Renderer;
@@ -66,7 +69,10 @@ public class SourceCodeParser implements Parser {
   };
 
   private static final ServiceLoader LOADER = new ServiceLoader(SourceCodeParser.class.getClassLoader());
-
+  
+  //Parse the HTML document
+  private static final Schema HTML_SCHEMA = new HTMLSchema();
+  
   @Override
   public Set<MediaType> getSupportedTypes(ParseContext context) {
     return TYPES_TO_RENDERER.keySet();
@@ -99,12 +105,16 @@ public class SourceCodeParser implements Parser {
             nbLines ++;
         }
         metadata.set("LoC", String.valueOf(nbLines));
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         Renderer renderer = getRenderer(type.toString());
+        
         String codeAsHtml = renderer.highlight(name, out.toString(), charset.name(), false);
-        xhtml.startDocument();
-        xhtml.element("p", codeAsHtml);
-        xhtml.endDocument();
+        
+        Schema schema = context.get(Schema.class, HTML_SCHEMA);
+
+        org.ccil.cowan.tagsoup.Parser parser = new org.ccil.cowan.tagsoup.Parser();
+        parser.setProperty(org.ccil.cowan.tagsoup.Parser.schemaProperty, schema);
+        parser.setContentHandler(handler);
+        parser.parse(new InputSource(new StringReader(codeAsHtml)));
       }
     } finally {
       reader.close();

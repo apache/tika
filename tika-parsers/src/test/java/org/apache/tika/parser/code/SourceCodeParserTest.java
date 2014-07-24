@@ -20,6 +20,7 @@ import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
 import java.util.Set;
 
 import org.apache.tika.TikaTest;
@@ -45,17 +46,25 @@ public class SourceCodeParserTest extends TikaTest {
   }
 
   @Test
-  public void testHTMLRender() throws Exception {
-    String htmlContent = getXML(getResourceAsStream("/test-documents/testJAVA.java"), sourceCodeParser, createMetadata("text/x-java-source")).xml;
-    assertTrue(htmlContent.indexOf("&gt;&lt;code&gt;&lt;span class=\"java_javadoc_comment\"&gt;") > 0);
-    assertTrue(htmlContent.indexOf("&lt;span class=\"java_type\"&gt;HelloWorld&lt;/span&gt;") > 0);
-    assertTrue(htmlContent.indexOf("&gt;&lt;span class=\"java_keyword\"&gt;public&lt;") > 0);
-  }
-
-  @Test
   public void testHTMLRenderWithReturnLine() throws Exception {
     String htmlContent = getXML(getResourceAsStream("/test-documents/testJAVA.java"), sourceCodeParser, createMetadata("text/x-java-source")).xml;
-    assertTrue(htmlContent.indexOf("&lt;span class=\"java_javadoc_comment\"&gt;&amp;nbsp;*&lt;/span&gt;&lt;br /&gt;") > 0);
+    
+    assertTrue(htmlContent.indexOf("<html:html lang=\"en\" xml:lang=\"en\"") == 0);
+    assertTrue(htmlContent.indexOf("<html:span class=\"java_keyword\">public</span><html:span class=\"java_plain\">") > 0);
+    assertTrue(htmlContent.indexOf("<html:span class=\"java_keyword\">static</span>") > 0);
+    assertTrue(htmlContent.indexOf("<html:br clear=\"none\" />") > 0);
+  }
+  
+  @Test
+  public void testTextRender() throws Exception {
+    String textContent = getText(getResourceAsStream("/test-documents/testJAVA.java"), sourceCodeParser, createMetadata("text/x-java-source"));
+    
+    assertTrue(textContent.length() > 0);
+    assertTrue(textContent.indexOf("html") < 0);
+    
+    textContent = getText(new ByteArrayInputStream("public class HelloWorld {}".getBytes()), sourceCodeParser, createMetadata("text/x-java-source"));
+    assertTrue(textContent.length() > 0);
+    assertTrue(textContent.indexOf("html") < 0);
   }
 
   @Test
