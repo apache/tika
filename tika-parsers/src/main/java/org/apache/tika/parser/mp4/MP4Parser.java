@@ -16,11 +16,15 @@
  */
 package org.apache.tika.parser.mp4;
 
-import com.coremedia.iso.IsoFile;
-import com.coremedia.iso.boxes.*;
-import com.coremedia.iso.boxes.apple.AppleItemListBox;
-import com.coremedia.iso.boxes.sampleentry.AudioSampleEntry;
-import com.googlecode.mp4parser.boxes.apple.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -35,9 +39,30 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
+import com.coremedia.iso.IsoFile;
+import com.coremedia.iso.boxes.Box;
+import com.coremedia.iso.boxes.Container;
+import com.coremedia.iso.boxes.FileTypeBox;
+import com.coremedia.iso.boxes.MetaBox;
+import com.coremedia.iso.boxes.MovieBox;
+import com.coremedia.iso.boxes.MovieHeaderBox;
+import com.coremedia.iso.boxes.SampleDescriptionBox;
+import com.coremedia.iso.boxes.SampleTableBox;
+import com.coremedia.iso.boxes.TrackBox;
+import com.coremedia.iso.boxes.TrackHeaderBox;
+import com.coremedia.iso.boxes.UserDataBox;
+import com.coremedia.iso.boxes.apple.AppleItemListBox;
+import com.coremedia.iso.boxes.sampleentry.AudioSampleEntry;
+import com.googlecode.mp4parser.boxes.apple.AppleAlbumBox;
+import com.googlecode.mp4parser.boxes.apple.AppleArtistBox;
+import com.googlecode.mp4parser.boxes.apple.AppleCommentBox;
+import com.googlecode.mp4parser.boxes.apple.AppleEncoderBox;
+import com.googlecode.mp4parser.boxes.apple.AppleGenreBox;
+import com.googlecode.mp4parser.boxes.apple.AppleNameBox;
+import com.googlecode.mp4parser.boxes.apple.AppleRecordingYear2Box;
+import com.googlecode.mp4parser.boxes.apple.AppleTrackAuthorBox;
+import com.googlecode.mp4parser.boxes.apple.AppleTrackNumberBox;
+import com.googlecode.mp4parser.boxes.apple.Utf8AppleDataBox;
 
 /**
  * Parser for the MP4 media container format, as well as the older
