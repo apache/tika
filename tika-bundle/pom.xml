@@ -140,6 +140,7 @@
             <Import-Package>
 			  !org.junit,
               *,
+              android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
               com.adobe.xmp.properties;resolution:=optional,
               com.google.protobuf;resolution:=optional,
