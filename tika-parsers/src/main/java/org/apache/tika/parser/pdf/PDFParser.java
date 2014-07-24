@@ -472,7 +472,7 @@ public class PDFParser extends AbstractParser {
     }
 
     /** 
-     * @see #setEnableAutoSpace. 
+     * @see #setEnableAutoSpace(boolean) 
      * @deprecated use {@link #getPDFParserConfig()}
      */
     public boolean getEnableAutoSpace() {
@@ -513,7 +513,7 @@ public class PDFParser extends AbstractParser {
     }
 
     /** 
-     * @see #setSuppressDuplicateOverlappingText. 
+     * @see #setSuppressDuplicateOverlappingText(boolean) 
      * 
      * @deprecated use {@link #getPDFParserConfig()}
      */
@@ -536,7 +536,7 @@ public class PDFParser extends AbstractParser {
     }
 
     /** 
-     * @see #setSortByPosition. 
+     * @see #setSortByPosition(boolean) 
      * 
      * @deprecated use {@link #getPDFParserConfig()}
      */

@@ -165,7 +165,7 @@ public class PDFParserConfig implements Serializable{
      * If true (the default), extract content from AcroForms
      * at the end of the document.
      * 
-     * @param b
+     * @param extractAcroFormContent
      */
     public void setExtractAcroFormContent(boolean extractAcroFormContent) {
         this.extractAcroFormContent = extractAcroFormContent;
@@ -227,7 +227,7 @@ public class PDFParserConfig implements Serializable{
     }
 
 
-    /** @see #setEnableAutoSpace. */
+    /** @see #setEnableAutoSpace(boolean) */
     public boolean getEnableAutoSpace() {
         return enableAutoSpace;
     }

@@ -293,7 +293,12 @@ class PDF2XHTML extends PDFTextStripper {
             return;
         }
 
-        for (Map.Entry<String, PDXObject> entry : resources.getXObjects().entrySet()) {
+        Map<String, PDXObject> xObjects = resources.getXObjects();
+        if (xObjects == null) {
+            return;
+        }
+
+        for (Map.Entry<String, PDXObject> entry : xObjects.entrySet()) {
                         
             PDXObject object = entry.getValue();
             if (object instanceof PDXObjectForm) {
