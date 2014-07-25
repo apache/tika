@@ -964,7 +964,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(2, attach);
     }
 
-    @Test
+    @Test //TIKA-1376
     public void testEmbeddedFileNameExtraction() throws Exception {
         InputStream is = PDFParserTest.class.getResourceAsStream(
                 "/test-documents/testPDF_multiFormatEmbFiles.pdf");
@@ -976,9 +976,34 @@ public class PDFParserTest extends TikaTest {
         p.parse(is, h, m, c);
         is.close();
         List<Metadata> metadatas = p.getAllMetadata();
-        assertEquals("metadata size", 2, metadatas.size());
+        assertEquals("metadata size", 5, metadatas.size());
         Metadata firstAttachment = metadatas.get(0);
         assertEquals("attachment file name", "Test.txt", firstAttachment.get(Metadata.RESOURCE_NAME_KEY));
+    }
+
+    @Test //TIKA-1374
+    public void testOSSpecificEmbeddedFileExtraction() throws Exception {
+        InputStream is = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDF_multiFormatEmbFiles.pdf");
+        RecursiveMetadataParser p = new RecursiveMetadataParser(new AutoDetectParser(), true);
+        Metadata m = new Metadata();
+        ParseContext c = new ParseContext();
+        c.set(org.apache.tika.parser.Parser.class, p);
+        ContentHandler h = new BodyContentHandler();
+        p.parse(is, h, m, c);
+        is.close();
+        List<Metadata> metadatas = p.getAllMetadata();
+        assertEquals("metadata size", 5, metadatas.size());
+
+        assertEquals("file name", "Test.txt", metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("os specific", metadatas.get(0).get(RecursiveMetadataParser.TIKA_CONTENT));
+        assertEquals("file name", "TestMac.txt", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("mac embedded", metadatas.get(1).get(RecursiveMetadataParser.TIKA_CONTENT));
+        assertEquals("file name", "TestDos.txt", metadatas.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("dos embedded", metadatas.get(2).get(RecursiveMetadataParser.TIKA_CONTENT));
+        assertEquals("file name", "TestUnix.txt", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("unix embedded", metadatas.get(3).get(RecursiveMetadataParser.TIKA_CONTENT));
+        
     }
 
     /**
