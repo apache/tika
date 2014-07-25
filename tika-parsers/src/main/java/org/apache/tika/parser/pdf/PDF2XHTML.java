@@ -483,8 +483,11 @@ class PDF2XHTML extends PDFTextStripper {
                 continue;
             }
             Metadata metadata = new Metadata();
+            String actualFileName = spec.getFile();
+            actualFileName = (actualFileName == null) ? ent.getKey() : actualFileName;
+
             // TODO: other metadata?
-            metadata.set(Metadata.RESOURCE_NAME_KEY, ent.getKey());
+            metadata.set(Metadata.RESOURCE_NAME_KEY, actualFileName);
             metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
             metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, 
