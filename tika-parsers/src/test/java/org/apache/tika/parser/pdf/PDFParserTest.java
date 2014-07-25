@@ -528,7 +528,7 @@ public class PDFParserTest extends TikaTest {
        assertEquals(3, tracker.mediaTypes.size());
        assertEquals("image1.emf", tracker.filenames.get(0));
        assertNull(tracker.filenames.get(1));
-       assertEquals("My first attachment", tracker.filenames.get(2));
+       assertEquals("Test.docx", tracker.filenames.get(2));
        assertEquals(TYPE_EMF, tracker.mediaTypes.get(0));
        assertEquals(TYPE_PDF, tracker.mediaTypes.get(1));
        assertEquals(TYPE_DOCX, tracker.mediaTypes.get(2));
@@ -964,6 +964,22 @@ public class PDFParserTest extends TikaTest {
         assertEquals(2, attach);
     }
 
+    @Test
+    public void testEmbeddedFileNameExtraction() throws Exception {
+        InputStream is = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDF_multiFormatEmbFiles.pdf");
+        RecursiveMetadataParser p = new RecursiveMetadataParser(new AutoDetectParser(), false);
+        Metadata m = new Metadata();
+        ParseContext c = new ParseContext();
+        c.set(org.apache.tika.parser.Parser.class, p);
+        ContentHandler h = new BodyContentHandler();
+        p.parse(is, h, m, c);
+        is.close();
+        List<Metadata> metadatas = p.getAllMetadata();
+        assertEquals("metadata size", 2, metadatas.size());
+        Metadata firstAttachment = metadatas.get(0);
+        assertEquals("attachment file name", "Test.txt", firstAttachment.get(Metadata.RESOURCE_NAME_KEY));
+    }
 
     /**
      * 
