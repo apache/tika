@@ -286,6 +286,7 @@ class PDF2XHTML extends PDFTextStripper {
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a page", e);
         }
+        page.clear();
     }
 
     private void extractImages(PDResources resources) throws SAXException {
@@ -334,6 +335,7 @@ class PDF2XHTML extends PDFTextStripper {
                     ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                     try {
                         image.write2OutputStream(buffer);
+                        image.clear();
                         extractor.parseEmbedded(
                                 new ByteArrayInputStream(buffer.toByteArray()),
                                 new EmbeddedContentHandler(handler),
@@ -344,6 +346,7 @@ class PDF2XHTML extends PDFTextStripper {
                 }
             }
         }
+        resources.clear();
     }
 
     protected EmbeddedDocumentExtractor getEmbeddedDocumentExtractor() {
