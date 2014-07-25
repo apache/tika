@@ -44,6 +44,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Parent class of Tika tests
@@ -199,7 +200,8 @@ public abstract class TikaTest {
      * Stores metadata and (optionally) content.
      * Many thanks to Jukka's example:
      * http://wiki.apache.org/tika/RecursiveMetadata
-     *
+     * This ignores the incoming handler and applies a 
+     * new BodyContentHandler(-1) for each file.
      */
     public static class RecursiveMetadataParser extends ParserDecorator {
         /** Key for content string if stored */
@@ -218,10 +220,16 @@ public abstract class TikaTest {
 
         @Override
         public void parse(
-                InputStream stream, ContentHandler contentHandler,
+                InputStream stream, ContentHandler ignoredHandler,
                 Metadata metadata, ParseContext context)
                         throws IOException, SAXException, TikaException {
 
+            ContentHandler contentHandler = null;
+            if (storeContent) {
+                contentHandler = new BodyContentHandler(-1);
+            } else {
+                contentHandler = new DefaultHandler();
+            }
             super.parse(stream, contentHandler, metadata, context);
             
             if (storeContent) {

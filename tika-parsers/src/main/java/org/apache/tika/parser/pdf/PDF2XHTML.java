@@ -62,6 +62,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.IOExceptionWithCause;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -482,27 +483,45 @@ class PDF2XHTML extends PDFTextStripper {
                 //skip silently
                 continue;
             }
-            Metadata metadata = new Metadata();
-            String actualFileName = spec.getFile();
-            actualFileName = (actualFileName == null) ? ent.getKey() : actualFileName;
 
-            // TODO: other metadata?
-            metadata.set(Metadata.RESOURCE_NAME_KEY, actualFileName);
-            metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
-            metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, 
-                    TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+            //current strategy is to pull all, not just first non-null                
+            extractPDEmbeddedFile(ent.getKey(), spec.getFile(), spec.getEmbeddedFile(), extractor);
+            extractPDEmbeddedFile(ent.getKey(), spec.getFileMac(), spec.getEmbeddedFileMac(), extractor);
+            extractPDEmbeddedFile(ent.getKey(), spec.getFileDos(), spec.getEmbeddedFileDos(), extractor);
+            extractPDEmbeddedFile(ent.getKey(), spec.getFileUnix(), spec.getEmbeddedFileUnix(), extractor);
 
-            if (extractor.shouldParseEmbedded(metadata)) {
-                TikaInputStream stream = TikaInputStream.get(file.createInputStream());
-                try {
-                    extractor.parseEmbedded(
-                            stream,
-                            new EmbeddedContentHandler(handler),
-                            metadata, false);
-                } finally {
-                    stream.close();
-                }
+        }
+    }
+
+    private void extractPDEmbeddedFile(String defaultName, String fileName, PDEmbeddedFile file,
+                              EmbeddedDocumentExtractor extractor)
+            throws SAXException, IOException, TikaException{
+
+        if (file == null) {
+            //skip silently
+            return;
+        }
+
+        fileName = (fileName == null) ? defaultName : fileName;
+
+        // TODO: other metadata?
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+        metadata.set(Metadata.CONTENT_TYPE, file.getSubtype());
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(file.getSize()));
+        metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+
+        if (extractor.shouldParseEmbedded(metadata)) {
+            TikaInputStream stream = null;
+            try{
+                stream = TikaInputStream.get(file.createInputStream());
+                extractor.parseEmbedded(
+                        stream,
+                        new EmbeddedContentHandler(handler),
+                        metadata, false);
+            } finally {
+                IOUtils.closeQuietly(stream);
             }
         }
     }
