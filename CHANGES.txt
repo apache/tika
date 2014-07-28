@@ -1,4 +1,4 @@
-Release 1.6 - ??/??/2014
+Release 1.6 - 07/27/2014
 
   * Tika now supports detection of the Persian/Farsi language.
     (TIKA-1337)
