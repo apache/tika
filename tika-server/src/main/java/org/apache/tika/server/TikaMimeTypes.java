@@ -66,26 +66,24 @@ public class TikaMimeTypes {
         }
         h.append("<ul>");
         for (String section : firstType.keySet()) {
-            h.append("<li><a href=\"#" + firstType.get(section) + "\">" + 
-                        section + "</a></li>\n");
+            h.append("<li><a href=\"#").append(firstType.get(section)).append("\">").append(section).append("</a></li>\n");
         }
         h.append("</ul>");
         
         // Output all of them
         for (MediaTypeDetails type : types) {
-            h.append("<a name=\"" + type.type + "\"></a>\n");
-            h.append("<h2>" + type.type + "</h2>\n");
+            h.append("<a name=\"").append(type.type).append("\"></a>\n");
+            h.append("<h2>").append(type.type).append("</h2>\n");
             
             for (MediaType alias : type.aliases) {
-                h.append("<div>Alias: " + alias + "</div>\n");
+                h.append("<div>Alias: ").append(alias).append("</div>\n");
             }
             if (type.supertype != null) {
-                h.append("<div>Super Type: <a href=\"#" + type.supertype + 
-                            "\">" + type.supertype + "</a></div>\n");
+                h.append("<div>Super Type: <a href=\"#").append(type.supertype).append("\">").append(type.supertype).append("</a></div>\n");
             }
             
             if (type.parser != null) {
-                h.append("<div>Parser: " + type.parser + "</div>\n");
+                h.append("<div>Parser: ").append(type.parser).append("</div>\n");
             }
         }
 
@@ -125,14 +123,14 @@ public class TikaMimeTypes {
             text.append("\n");
             
             for (MediaType alias : type.aliases) {
-                text.append("  alias:     " + alias + "\n");
+                text.append("  alias:     ").append(alias).append("\n");
             }
             if (type.supertype != null) {
-                text.append("  supertype: " + type.supertype.toString() + "\n");
+                text.append("  supertype: ").append(type.supertype.toString()).append("\n");
             }
             
             if (type.parser != null) {
-                text.append("  parser:    " + type.parser + "\n");
+                text.append("  parser:    ").append(type.parser).append("\n");
             }
         }
 
