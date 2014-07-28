@@ -56,40 +56,6 @@
     <module>tika-translate</module>
   </modules>
 
-  <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <configuration>
-          <skip>true</skip> <!-- No need to deploy the reactor -->
-        </configuration>
-      </plugin>
-       <plugin>
-        <artifactId>maven-site-plugin</artifactId>
-        <configuration>
-          <templateDirectory>src/site</templateDirectory>
-          <template>site.vm</template>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>.*/**</exclude>
-            <exclude>CHANGES.txt</exclude>
-            <exclude>tika-dotnet/AssemblyInfo.cs</exclude>
-            <exclude>tika-dotnet/Tika.csproj</exclude>
-            <exclude>tika-dotnet/Tika.sln</exclude>
-            <exclude>tika-dotnet/Tika.sln.cache</exclude>
-            <exclude>tika-dotnet/obj/**</exclude>
-            <exclude>tika-dotnet/target/**</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-
   <profiles>
     <profile>
       <id>apache-release</id>
