@@ -21,24 +21,24 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test cases for the {@link MicrosoftTranslator} class.
  */
 public class MicrosoftTranslatorTest {
-    Tika tika;
+    MicrosoftTranslator translator;
     @Before
     public void setUp() {
-        tika = new Tika();
+        translator = new MicrosoftTranslator();
     }
 
     @Test
     public void testSimpleTranslate() throws Exception {
         String source = "hello";
         String expected = "salut";
-        String translated = tika.translate(source, "en", "fr");
-        System.err.println(tika.getTranslator().isAvailable());
-        if (tika.getTranslator().isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
+        String translated = translator.translate(source, "en", "fr");
+        if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
                 expected.equalsIgnoreCase(translated));
     }
 
@@ -46,10 +46,31 @@ public class MicrosoftTranslatorTest {
     public void testSimpleDetectTranslate() throws Exception {
         String source = "hello";
         String expected = "salut";
-        String translated = tika.translate(source, "fr");
-        System.err.println(tika.getTranslator().isAvailable());
-        if (tika.getTranslator().isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
+        String translated = translator.translate(source, "fr");
+        if (translator.isAvailable()) assertTrue("Translate " + source + " to " + expected + " (was " + translated + ")",
                 expected.equalsIgnoreCase(translated));
+    }
+    
+    @Test
+    public void testSettersAndIsAvailable(){
+    	try{
+    		translator.setId("foo");
+    		translator.setSecret("bar");
+    	}
+    	catch(Exception e){
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
+    	//reset
+    	translator = new MicrosoftTranslator();
+    	try{
+    		translator.setSecret("bar");
+    		translator.setId("foo");
+    	}
+    	catch(Exception e){
+    		e.printStackTrace();
+    		fail(e.getMessage());
+    	}
     }
 
 }
