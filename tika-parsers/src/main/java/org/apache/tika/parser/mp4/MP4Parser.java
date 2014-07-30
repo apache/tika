@@ -31,6 +31,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -267,7 +268,9 @@ public class MP4Parser extends AbstractParser {
 
                   // Encoder
                   AppleEncoderBox encoder = getOrNull(apple, AppleEncoderBox.class);
-                  // addMetadata(XMPDM.???, metadata, encoder); // TODO
+                  if (encoder != null) {
+                      metadata.set(XMP.CREATOR_TOOL, encoder.getValue());
+                  }
 
 
                   // As text

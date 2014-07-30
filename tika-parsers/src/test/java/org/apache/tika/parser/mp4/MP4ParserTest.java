@@ -24,6 +24,7 @@ import java.io.InputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -89,6 +90,8 @@ public class MP4ParserTest {
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         //assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE)); // TODO Extract
         assertEquals("M4A", metadata.get(XMPDM.AUDIO_COMPRESSOR));
+        
+        assertEquals("iTunes 10.5.3.3", metadata.get(XMP.CREATOR_TOOL));
         
         
         // Check again by file, rather than stream
