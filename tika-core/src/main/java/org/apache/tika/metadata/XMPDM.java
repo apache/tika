@@ -60,6 +60,11 @@ public interface XMPDM {
     Property ARTIST = Property.externalText("xmpDM:artist");
 
     /**
+     * "The name of the album artist or group for compilation albums."
+     */
+    Property ALBUM_ARTIST = Property.externalText("xmpDM:albumArtist");
+
+    /**
      * "The date and time when the audio was last modified."
      */
     Property AUDIO_MOD_DATE = Property.internalDate("xmpDM:audioModDate");
@@ -142,6 +147,11 @@ public interface XMPDM {
 //    Property BEAT_SPLICE_PARAMS = "xmpDM:beatSpliceParams";
 
     /**
+     * "An album created by various artists."
+     */
+    Property COMPILATION = Property.externalInteger("xmpDM:compilation");
+
+    /**
      * "The composer's name."
      */
     Property COMPOSER = Property.externalText("xmpDM:composer");
@@ -155,6 +165,11 @@ public interface XMPDM {
      * "The copyright information."
      */
     Property COPYRIGHT = Property.externalText("xmpDM:copyright");
+
+    /**
+     * "The disc number for part of an album set."
+     */
+    Property DISC_NUMBER = Property.externalInteger("xmpDM:discNumber");
 
     /**
      * "The duration of the media file."
