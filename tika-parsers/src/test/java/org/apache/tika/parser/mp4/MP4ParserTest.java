@@ -81,6 +81,10 @@ public class MP4ParserTest {
         assertEquals("Test Genre", metadata.get(XMPDM.GENRE));
         assertEquals("Test Comments", metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
+        assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
+        assertEquals("6", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("0", metadata.get(XMPDM.COMPILATION));
+        
         
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         //assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE)); // TODO Extract

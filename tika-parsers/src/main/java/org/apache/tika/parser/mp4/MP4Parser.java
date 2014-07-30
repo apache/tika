@@ -55,7 +55,10 @@ import com.coremedia.iso.boxes.apple.AppleItemListBox;
 import com.coremedia.iso.boxes.sampleentry.AudioSampleEntry;
 import com.googlecode.mp4parser.boxes.apple.AppleAlbumBox;
 import com.googlecode.mp4parser.boxes.apple.AppleArtistBox;
+import com.googlecode.mp4parser.boxes.apple.AppleArtist2Box;
 import com.googlecode.mp4parser.boxes.apple.AppleCommentBox;
+import com.googlecode.mp4parser.boxes.apple.AppleCompilationBox;
+import com.googlecode.mp4parser.boxes.apple.AppleDiskNumberBox;
 import com.googlecode.mp4parser.boxes.apple.AppleEncoderBox;
 import com.googlecode.mp4parser.boxes.apple.AppleGenreBox;
 import com.googlecode.mp4parser.boxes.apple.AppleNameBox;
@@ -217,6 +220,10 @@ public class MP4Parser extends AbstractParser {
                   addMetadata(TikaCoreProperties.CREATOR, metadata, artist);
                   addMetadata(XMPDM.ARTIST, metadata, artist);
 
+                  // Album Artist
+                  AppleArtist2Box artist2 = getOrNull(apple, AppleArtist2Box.class);
+                  addMetadata(XMPDM.ALBUM_ARTIST, metadata, artist2);
+
                   // Album
                   AppleAlbumBox album = getOrNull(apple, AppleAlbumBox.class);
                   addMetadata(XMPDM.ALBUM, metadata, album);
@@ -240,6 +247,18 @@ public class MP4Parser extends AbstractParser {
                   if (trackNum != null) {
                      metadata.set(XMPDM.TRACK_NUMBER, trackNum.getA());
                      //metadata.set(XMPDM.NUMBER_OF_TRACKS, trackNum.getB()); // TODO
+                  }
+
+                  // Disc number
+                  AppleDiskNumberBox discNum = getOrNull(apple, AppleDiskNumberBox.class);
+                  if (discNum != null) {
+                     metadata.set(XMPDM.DISC_NUMBER, discNum.getA());
+                  }
+
+                  // Compilation
+                  AppleCompilationBox compilation = getOrNull(apple, AppleCompilationBox.class);
+                  if (compilation != null) {
+                      metadata.set(XMPDM.COMPILATION, (int)compilation.getValue());
                   }
 
                   // Comment
