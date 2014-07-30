@@ -121,6 +121,30 @@ public class ID3v1Handler implements ID3Tags {
     }
 
     /**
+     * ID3v1 doesn't have album-wide artists,
+     *  so returns null;
+     */
+    public String getAlbumArtist() {
+        return null;
+    }
+
+    /**
+     * ID3v1 doesn't have disc numbers,
+     *  so returns null;
+     */
+    public String getDisc() {
+        return null;
+    }
+
+    /**
+     * ID3v1 doesn't have compilations,
+     *  so returns null;
+     */
+    public String getCompilation() {
+        return null;
+    }
+
+    /**
      * Returns the identified ISO-8859-1 substring from the given byte buffer.
      * The return value is the zero-terminated substring retrieved from
      * between the given start and end positions in the given byte buffer.
