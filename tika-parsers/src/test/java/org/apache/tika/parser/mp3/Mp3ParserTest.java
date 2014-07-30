@@ -115,6 +115,8 @@ public class Mp3ParserTest {
         assertTrue(content.contains("2008"));
         assertTrue(content.contains("Test Comment"));
         assertTrue(content.contains("Rock"));
+        assertTrue(content.contains(", track 1"));
+        assertTrue(content.contains(", disc 1"));
         
         // Check un-typed audio properties
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
@@ -124,11 +126,14 @@ public class Mp3ParserTest {
         // Check XMPDM-typed audio properties
         assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
         assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
+        assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
         assertEquals(null, metadata.get(XMPDM.COMPOSER));
         assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
         assertEquals("Rock", metadata.get(XMPDM.GENRE));
         assertEquals("XXX - ID3v1 Comment\nTest Comment", metadata.get(XMPDM.LOG_COMMENT.getName()));
         assertEquals("1", metadata.get(XMPDM.TRACK_NUMBER));
+        assertEquals("1/1", metadata.get(XMPDM.DISC_NUMBER));
+        assertEquals("1", metadata.get(XMPDM.COMPILATION));
         
         assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
         assertEquals("Mono", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
@@ -203,11 +208,24 @@ public class Mp3ParserTest {
         assertTrue(content.contains("2008"));
         assertTrue(content.contains("Test Comment"));
         assertTrue(content.contains("Rock"));
+        assertTrue(content.contains(", disc 1"));
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
         assertEquals("1", metadata.get("channels"));
         checkDuration(metadata, 2);
+
+        // Check XMPDM-typed audio properties
+        assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
+        assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
+        assertEquals("Test Album Artist", metadata.get(XMPDM.ALBUM_ARTIST));
+        assertEquals(null, metadata.get(XMPDM.COMPOSER));
+        assertEquals("2008", metadata.get(XMPDM.RELEASE_DATE));
+        assertEquals("Rock", metadata.get(XMPDM.GENRE));
+        assertEquals("1", metadata.get(XMPDM.COMPILATION));
+        
+        assertEquals(null, metadata.get(XMPDM.TRACK_NUMBER));
+        assertEquals("1", metadata.get(XMPDM.DISC_NUMBER));
     }
     
     /**
