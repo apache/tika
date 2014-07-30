@@ -76,8 +76,10 @@ public class Mp3Parser extends AbstractParser {
            metadata.set(TikaCoreProperties.TITLE, tag.getTitle());
            metadata.set(TikaCoreProperties.CREATOR, tag.getArtist());
            metadata.set(XMPDM.ARTIST, tag.getArtist());
+           metadata.set(XMPDM.ALBUM_ARTIST, tag.getAlbumArtist());
            metadata.set(XMPDM.COMPOSER, tag.getComposer());
            metadata.set(XMPDM.ALBUM, tag.getAlbum());
+           metadata.set(XMPDM.COMPILATION, tag.getCompilation());
            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
            metadata.set(XMPDM.GENRE, tag.getGenre());
            metadata.set(XMPDM.DURATION, audioAndTags.duration);
@@ -107,12 +109,18 @@ public class Mp3Parser extends AbstractParser {
            xhtml.element("p", tag.getArtist());
 
             // ID3v1.1 Track addition
+            StringBuilder sb = new StringBuilder();
+            sb.append(tag.getAlbum());
             if (tag.getTrackNumber() != null) {
-                xhtml.element("p", tag.getAlbum() + ", track " + tag.getTrackNumber());
+                sb.append(", track ").append(tag.getTrackNumber());
                 metadata.set(XMPDM.TRACK_NUMBER, tag.getTrackNumber());
-            } else {
-                xhtml.element("p", tag.getAlbum());
             }
+            if (tag.getDisc() != null) {
+                sb.append(", disc ").append(tag.getDisc());
+                metadata.set(XMPDM.DISC_NUMBER, tag.getDisc());
+            }
+            xhtml.element("p", sb.toString());
+            
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getGenre());
             xhtml.element("p", String.valueOf(audioAndTags.duration));
