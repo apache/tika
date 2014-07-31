@@ -19,6 +19,9 @@ Release 1.6 - 07/27/2014
     languages and added a default implementation that call's Microsoft's
     translate service (TIKA-1319)
 
+  * Added an Translator implementation that calls Lingo24's Premium
+    Machine Translation API (TIKA-1381)
+
   * Made RTFParser's list handling slightly more robust against corrupt
     list metadata (TIKA-1305)
 
