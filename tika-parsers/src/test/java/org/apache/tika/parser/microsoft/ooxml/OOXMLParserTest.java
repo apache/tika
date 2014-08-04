@@ -187,8 +187,6 @@ public class OOXMLParserTest extends TikaTest {
 
             Parser parser = new AutoDetectParser();
             Metadata metadata = new Metadata();
-            // TODO: should auto-detect without the resource name
-            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
     
@@ -262,8 +260,6 @@ public class OOXMLParserTest extends TikaTest {
 
             Parser parser = new AutoDetectParser();
             final Metadata metadata = new Metadata();
-            // TODO: should auto-detect without the resource name
-            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
 
 	    // Allow the value to be access from the inner class
 	    final int currentI = i;
@@ -714,8 +710,11 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Master footer is here", content);
     }
 
-    // TODO: once we fix TIKA-712, re-enable this
-    /*
+    /**
+     * TIKA-712 Master Slide Text from PPT and PPTX files
+     *  should be extracted too
+     */
+    @Test
     public void testMasterText() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -731,10 +730,8 @@ public class OOXMLParserTest extends TikaTest {
         String content = handler.toString();
         assertContains("Text that I added to the master slide", content);
     }
-    */
 
-    // TODO: once we fix TIKA-712, re-enable this
-    /*
+    @Test
     public void testMasterText2() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -750,7 +747,6 @@ public class OOXMLParserTest extends TikaTest {
         String content = handler.toString();
         assertContains("Text that I added to the master slide", content);
     }
-    */
 
     @Test
     public void testWordArt() throws Exception {
