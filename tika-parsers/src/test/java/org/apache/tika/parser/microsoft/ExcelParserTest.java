@@ -23,7 +23,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.InputStream;
 import java.util.Locale;
 
-import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
@@ -37,7 +36,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
-public class ExcelParserTest extends TikaTest {
+public class ExcelParserTest {
   
     @Test
     public void testExcelParser() throws Exception {
@@ -353,9 +352,4 @@ public class ExcelParserTest extends TikaTest {
        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
 
-    @Test
-    public void testComment() throws Exception {
-        String xml = getXML("testEXCEL_comments.xls").xml;
-        assertContains("This is a comment", xml);
-    }
 }
