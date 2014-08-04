@@ -249,6 +249,6 @@ public class OutlookParserTest {
         
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
-        //assertEquals(2, content.split("<\\/body>").length); // TODO Fix
+        assertEquals(2, content.split("<\\/body>").length);
     }
 }
