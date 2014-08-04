@@ -1101,4 +1101,11 @@ public class OOXMLParserTest extends TikaTest {
         assertTrue(a < b);
         assertTrue(b < c);
     }
+
+    @Test
+    public void testComment() throws Exception {
+        String xml = getXML("testEXCEL_comments.xlsx").xml;
+        assertContains("This is a comment", xml);
+    }
 }
+
