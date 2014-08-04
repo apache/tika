@@ -92,20 +92,20 @@ public class PowerPointParserTest extends TikaTest {
         for(int row=1;row<=3;row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
+            // TODO OfficeParser fails to extract the bullet symbol
             assertContains("Bullet " + row, content);
         }
         assertContains("Here is a numbered list:", content);
         for(int row=1;row<=3;row++) {
             //assertContains(row + ")\tNumber bullet " + row, content);
             //assertContains(row + ") Number bullet " + row, content);
-            // TODO: OOXMLExtractor fails to number the bullets:
+            // TODO: OfficeParser fails to number the bullets:
             assertContains("Number bullet " + row, content);
         }
 
         for(int row=1;row<=2;row++) {
             for(int col=1;col<=3;col++) {
-               // TODO Work out why the upgrade to POI 3.9 broke this test (table text)
-//                assertContains("Row " + row + " Col " + col, content);
+                assertContains("Row " + row + " Col " + col, content);
             }
         }
 
@@ -153,7 +153,10 @@ public class PowerPointParserTest extends TikaTest {
        assertEquals(-1, content.indexOf("*"));
     }
 
-    // TODO: once we fix TIKA-712, re-enable this
+    /**
+     * TIKA-712 Master Slide Text from PPT and PPTX files
+     *  should be extracted too
+     */
     @Test
     public void testMasterText() throws Exception {
         ContentHandler handler = new BodyContentHandler();
@@ -177,7 +180,6 @@ public class PowerPointParserTest extends TikaTest {
         assertEquals(-1, content.indexOf("*"));
     }
 
-    // TODO: once we fix TIKA-712, re-enable this
     @Test
     public void testMasterText2() throws Exception {
         ContentHandler handler = new BodyContentHandler();
