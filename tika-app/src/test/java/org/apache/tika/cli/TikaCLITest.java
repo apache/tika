@@ -236,7 +236,7 @@ public class TikaCLITest {
             // Image of the ChemDraw molecule
             File expectedIMG = new File(tempFile, "file4.png");
             // OLE10Native
-            File expectedOLE10 = new File(tempFile, "MBD002B0FA6_file5");
+            File expectedOLE10 = new File(tempFile, "MBD002B0FA6");
             // Something that really isnt a text file... Not sure what it is???
             File expected262FE3 = new File(tempFile, "MBD00262FE3.txt");
             // Image of one of the embedded resources
