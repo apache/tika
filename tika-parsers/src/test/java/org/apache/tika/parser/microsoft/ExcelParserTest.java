@@ -18,7 +18,6 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
 import static org.apache.tika.TikaTest.assertContains;
 import static org.apache.tika.TikaTest.assertNotContained;
 
@@ -131,6 +130,9 @@ public class ExcelParserTest {
             // Date/Time Format: m/d/yy h:mm
             assertContains("1/19/08 4:35", content);
 
+            // Fraction (2.5): # ?/?
+            assertContains("2 1/2", content);
+
             
             // Below assertions represent outstanding formatting issues to be addressed
             // they are included to allow the issues to be progressed with the Apache POI
@@ -142,9 +144,6 @@ public class ExcelParserTest {
 
             // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
             assertContains("At 4:20 AM on Thursday May 17, 2007", content);
-
-            // Fraction (2.5): # ?/?  (TODO Coming in POI 3.8 beta 6)
-            assertContains("2 1 / 2", content);
             **************************************************************************/
 
         } finally {
