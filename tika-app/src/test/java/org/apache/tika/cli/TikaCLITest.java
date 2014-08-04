@@ -225,24 +225,41 @@ public class TikaCLITest {
             
             TikaCLI.main(params);
             
+            StringBuffer allFiles = new StringBuffer();
+            for (String f : tempFile.list()) {
+                if (allFiles.length() > 0) allFiles.append(" : ");
+                allFiles.append(f);
+            }
+            
             // ChemDraw file
-            File expected1 = new File(tempFile, "MBD002B040A.cdx");
+            File expectedCDX = new File(tempFile, "MBD002B040A.cdx");
+            // Image of the ChemDraw molecule
+            File expectedIMG = new File(tempFile, "file4.png");
             // OLE10Native
-            File expected2 = new File(tempFile, "MBD002B0FA6_file5");
+            File expectedOLE10 = new File(tempFile, "MBD002B0FA6");
+            // Something that really isnt a text file... Not sure what it is???
+            File expected262FE3 = new File(tempFile, "MBD00262FE3.txt");
             // Image of one of the embedded resources
-            File expected3 = new File(tempFile, "file0.emf");
+            File expectedEMF = new File(tempFile, "file0.emf");
             
-            assertTrue(expected1.exists());
-            assertTrue(expected2.exists());
-            assertTrue(expected3.exists());
-            
-            assertTrue(expected1.length()>0);
-            assertTrue(expected2.length()>0);
-            assertTrue(expected3.length()>0);
+            assertExtracted(expectedCDX, allFiles.toString());
+            assertExtracted(expectedIMG, allFiles.toString());
+            assertExtracted(expectedOLE10, allFiles.toString());
+            assertExtracted(expected262FE3, allFiles.toString());
+            assertExtracted(expectedEMF, allFiles.toString());
         } finally {
             FileUtils.deleteDirectory(tempFile);
         }
-
+    }
+    protected static void assertExtracted(File f, String allFiles) {
+        assertTrue(
+                "File " + f.getName() + " not found in " + allFiles,
+                f.exists()
+        );
+        assertTrue(
+                "File " + f.getName() + " wasn't extracted with contents",
+                f.length() > 0
+        );
     }
 
     // TIKA-920

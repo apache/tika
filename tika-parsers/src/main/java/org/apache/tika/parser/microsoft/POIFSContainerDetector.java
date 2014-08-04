@@ -18,9 +18,9 @@ package org.apache.tika.parser.microsoft;
 
 import static org.apache.tika.mime.MediaType.application;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.FileChannel;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -375,10 +375,10 @@ public class POIFSContainerDetector implements Detector {
             throws IOException {
         // Force the document stream to a (possibly temporary) file
         // so we don't modify the current position of the stream
-        FileChannel channel = stream.getFileChannel();
+        File file = stream.getFile();
 
         try {
-            NPOIFSFileSystem fs = new NPOIFSFileSystem(channel);
+            NPOIFSFileSystem fs = new NPOIFSFileSystem(file, true);
 
             // Optimize a possible later parsing process by keeping
             // a reference to the already opened POI file system

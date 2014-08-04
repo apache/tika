@@ -121,7 +121,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
            InputStream stream = iter.next();
            sheetParts.add(iter.getSheetPart());
            
-           SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml, iter.getSheetComments());
+           SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(xhtml);
+           CommentsTable comments = iter.getSheetComments();
 
            // Start, and output the sheet name
            xhtml.startElement("div");
@@ -131,7 +132,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
            xhtml.startElement("table");
            xhtml.startElement("tbody");
            
-           processSheet(sheetExtractor, styles, strings, stream);
+           processSheet(sheetExtractor, comments, styles, strings, stream);
 
            xhtml.endElement("tbody");
            xhtml.endElement("table");
@@ -176,6 +177,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     
     public void processSheet(
           SheetContentsHandler sheetContentsExtractor,
+          CommentsTable comments,
           StylesTable styles,
           ReadOnlySharedStringsTable strings,
           InputStream sheetInputStream)
@@ -187,7 +189,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
          XMLReader sheetParser = saxParser.getXMLReader();
          XSSFSheetInterestingPartsCapturer handler =  
             new XSSFSheetInterestingPartsCapturer(new XSSFSheetXMLHandler(
-               styles, strings, sheetContentsExtractor, formatter, false));
+               styles, comments, strings, sheetContentsExtractor, formatter, false));
          sheetParser.setContentHandler(handler);
          sheetParser.parse(sheetSource);
          sheetInputStream.close();
@@ -205,13 +207,11 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
      */
     protected static class SheetTextAsHTML implements SheetContentsHandler {
        private XHTMLContentHandler xhtml;
-       private CommentsTable comments;
        private List<String> headers;
        private List<String> footers;
        
-       protected SheetTextAsHTML(XHTMLContentHandler xhtml, CommentsTable comments) {
+       protected SheetTextAsHTML(XHTMLContentHandler xhtml) {
           this.xhtml = xhtml;
-          this.comments = comments;
           headers = new ArrayList<String>();
           footers = new ArrayList<String>();
        }
@@ -222,29 +222,28 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
           } catch(SAXException e) {}
        }
        
-       public void endRow() {
+       public void endRow(int rowNum) {
           try {
              xhtml.endElement("tr");
           } catch(SAXException e) {}
        }
 
-       public void cell(String cellRef, String formattedValue) {
+       public void cell(String cellRef, String formattedValue, XSSFComment comment) {
           try {
              xhtml.startElement("td");
 
              // Main cell contents
-             xhtml.characters(formattedValue);
+             if (formattedValue != null) {
+                 xhtml.characters(formattedValue);
+             }
 
              // Comments
-             if(comments != null) {
-                XSSFComment comment = comments.findCellComment(cellRef);
-                if(comment != null) {
-                   xhtml.startElement("br");
-                   xhtml.endElement("br");
-                   xhtml.characters(comment.getAuthor());
-                   xhtml.characters(": ");
-                   xhtml.characters(comment.getString().getString());
-                }
+             if(comment != null) {
+                xhtml.startElement("br");
+                xhtml.endElement("br");
+                xhtml.characters(comment.getAuthor());
+                xhtml.characters(": ");
+                xhtml.characters(comment.getString().getString());
              }
 
              xhtml.endElement("td");
