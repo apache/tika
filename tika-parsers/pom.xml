@@ -36,7 +36,7 @@
 
   <properties>
     <poi.version>3.11-beta1</poi.version>
-    <codec.version>1.5</codec.version> <!-- NOTE: sync with POI -->
+    <codec.version>1.9</codec.version> <!-- NOTE: sync with POI -->
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.6</vorbis.version>
     <pdfbox.version>1.8.6</pdfbox.version>
