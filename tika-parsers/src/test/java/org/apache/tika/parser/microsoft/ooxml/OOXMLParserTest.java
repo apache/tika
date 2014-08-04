@@ -1000,9 +1000,9 @@ public class OOXMLParserTest extends TikaTest {
             assertEquals(
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                     metadata.get(Metadata.CONTENT_TYPE));
-            assertTrue(handler.toString().contains("BigCompany"));
-            assertTrue(handler.toString().contains("Seasoned"));
-            assertTrue(handler.toString().contains("Rich_text_in_cell"));
+            assertContains("BigCompany", handler.toString());
+            assertContains("Seasoned", handler.toString());
+            assertContains("Rich_text_in_cell", handler.toString());
         } finally {
             input.close();
         }
