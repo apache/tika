@@ -217,11 +217,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private void handleEmbeddedOLE(PackagePart part, ContentHandler handler, String rel)
             throws IOException, SAXException {
         // A POIFSFileSystem needs to be at least 3 blocks big to be valid
-        // TODO: TIKA-1118 Upgrade to POI 4.0 then enable this block of code
-//        if (part.getSize() >= 0 && part.getSize() < 512*3) {
-//           // Too small, skip
-//           return;
-//        }
+        if (part.getSize() >= 0 && part.getSize() < 512*3) {
+           // Too small, skip
+           return;
+        }
        
         // Open the POIFS (OLE2) structure and process
         POIFSFileSystem fs = new POIFSFileSystem(part.getInputStream());
