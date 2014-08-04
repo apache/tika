@@ -29,8 +29,10 @@ import org.apache.poi.xwpf.model.XWPFHeaderFooterPolicy;
 import org.apache.poi.xwpf.usermodel.BodyType;
 import org.apache.poi.xwpf.usermodel.IBody;
 import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.xwpf.usermodel.ICell;
 import org.apache.poi.xwpf.usermodel.IRunElement;
 import org.apache.poi.xwpf.usermodel.ISDTContent;
+import org.apache.poi.xwpf.usermodel.XWPFSDTCell;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeaderFooter;
 import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
@@ -332,10 +334,14 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
        xhtml.startElement("tbody");
        for(XWPFTableRow row : table.getRows()) {
           xhtml.startElement("tr");
-          for(XWPFTableCell cell : row.getTableCells()) {
-             xhtml.startElement("td");
-             extractIBodyText(cell, xhtml);
-             xhtml.endElement("td");
+          for(ICell cell : row.getTableICells()){
+              xhtml.startElement("td");
+              if (cell instanceof XWPFTableCell) {
+                  extractIBodyText((XWPFTableCell)cell, xhtml);
+              } else if (cell instanceof XWPFSDTCell) {
+                  xhtml.characters(((XWPFSDTCell)cell).getContent().getText());
+              }
+              xhtml.endElement("td");
           }
           xhtml.endElement("tr");
        }

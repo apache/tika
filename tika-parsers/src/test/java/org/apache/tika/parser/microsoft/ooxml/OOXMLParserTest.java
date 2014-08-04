@@ -987,6 +987,7 @@ public class OOXMLParserTest extends TikaTest {
     /**
      * Test for missing text described in 
      * <a href="https://issues.apache.org/jira/browse/TIKA-1130">TIKA-1130</a>.
+     * and TIKA-1317
      */
     @Test
     public void testMissingText() throws Exception {
@@ -1002,6 +1003,7 @@ public class OOXMLParserTest extends TikaTest {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertTrue(handler.toString().contains("BigCompany"));
             assertTrue(handler.toString().contains("Seasoned"));
+            assertTrue(handler.toString().contains("Rich_text_in_cell"));
         } finally {
             input.close();
         }
