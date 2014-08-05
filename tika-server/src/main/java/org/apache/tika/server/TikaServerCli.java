@@ -81,36 +81,7 @@ public class TikaServerCli {
       TikaConfig tika = TikaConfig.getDefaultConfig();
 
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-      // Note - at least one of these stops TikaWelcome matching on /
-      // This prevents TikaWelcome acting as a partial solution to TIKA-1269
-      sf.setResourceClasses(MetadataEP.class, MetadataResource.class, DetectorResource.class, 
-              TikaResource.class, UnpackerResource.class, 
-              TikaDetectors.class, TikaParsers.class, 
-              TikaMimeTypes.class, TikaVersion.class, 
-              TikaWelcome.class);
-      // Use this one instead for the Welcome page to work
-/*      
-      sf.setResourceClasses(
-//              MetadataEP.class, 
-              MetadataResource.class, 
-              TikaResource.class, 
-//              UnpackerResource.class, 
-              TikaDetectors.class, 
-              TikaMimeTypes.class, 
-              TikaParsers.class, 
-              TikaVersion.class, 
-              TikaWelcome.class
-      ); 
-*/
 
-      List<Object> providers = new ArrayList<Object>();
-      providers.add(new TarWriter());
-      providers.add(new ZipWriter());
-      providers.add(new CSVMessageBodyWriter());
-      providers.add(new JSONMessageBodyWriter());
-      providers.add(new TikaExceptionMapper());
-      sf.setProviders(providers);
-      
       List<ResourceProvider> rProviders = new ArrayList<ResourceProvider>();
       rProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
       rProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
@@ -122,6 +93,14 @@ public class TikaServerCli {
       rProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
       rProviders.add(new SingletonResourceProvider(new TikaWelcome(tika, sf)));
       sf.setResourceProviders(rProviders);
+      
+      List<Object> providers = new ArrayList<Object>();
+      providers.add(new TarWriter());
+      providers.add(new ZipWriter());
+      providers.add(new CSVMessageBodyWriter());
+      providers.add(new JSONMessageBodyWriter());
+      providers.add(new TikaExceptionMapper());
+      sf.setProviders(providers);
       
       sf.setAddress("http://" + host + ":" + port + "/");
       BindingFactoryManager manager = sf.getBus().getExtension(
