@@ -1,4 +1,14 @@
+Release 1.7 - ??/??/????
+
+
 Release 1.6 - 07/27/2014
+
+
+  * Upgraded to Commons Compress 1.8.1 (TIKA-1275).
+
+  * Upgraded to POI 3.11-beta1 (TIKA-1380).
+
+  * Tika now extracts SDTCell content from tables in .docx files (TIKA-1317).
 
   * Tika now supports detection of the Persian/Farsi language.
     (TIKA-1337)
