@@ -25,6 +25,7 @@ import org.apache.commons.io.FileUtils;
 
 import org.junit.After;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -236,7 +237,7 @@ public class TikaCLITest {
             // Image of the ChemDraw molecule
             File expectedIMG = new File(tempFile, "file4.png");
             // OLE10Native
-            File expectedOLE10 = new File(tempFile, "MBD002B0FA6");
+            File expectedOLE10 = new File(tempFile, "MBD002B0FA6_file5.bin");
             // Something that really isnt a text file... Not sure what it is???
             File expected262FE3 = new File(tempFile, "MBD00262FE3.txt");
             // Image of one of the embedded resources
@@ -252,10 +253,16 @@ public class TikaCLITest {
         }
     }
     protected static void assertExtracted(File f, String allFiles) {
+
         assertTrue(
                 "File " + f.getName() + " not found in " + allFiles,
                 f.exists()
         );
+
+        assertFalse(
+                "File " + f.getName() + " is a directory!", f.isDirectory()
+        );
+
         assertTrue(
                 "File " + f.getName() + " wasn't extracted with contents",
                 f.length() > 0
