@@ -248,7 +248,9 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 // TIKA-704: OLE 1.0 embedded document
                 Ole10Native ole =
                         Ole10Native.createFromEmbeddedOleObject(fs);
-                metadata.set(Metadata.RESOURCE_NAME_KEY, ole.getLabel());
+                if (ole.getLabel() != null) {
+                    metadata.set(Metadata.RESOURCE_NAME_KEY, ole.getLabel());
+                }
                 byte[] data = ole.getDataBuffer();
                 if (data != null) {
                     stream = TikaInputStream.get(data);
