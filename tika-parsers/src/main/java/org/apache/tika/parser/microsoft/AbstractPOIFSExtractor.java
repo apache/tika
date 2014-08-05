@@ -149,8 +149,9 @@ abstract class AbstractPOIFSExtractor {
                 try {
                     // Try to un-wrap the OLE10Native record:
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode)dir);
-                    metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '/' + ole.getLabel());
-                    
+                    if (ole.getLabel() != null) {
+                        metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '/' + ole.getLabel());
+                    }
                     byte[] data = ole.getDataBuffer();
                     embedded = TikaInputStream.get(data);
                 } catch (Ole10NativeException ex) {
