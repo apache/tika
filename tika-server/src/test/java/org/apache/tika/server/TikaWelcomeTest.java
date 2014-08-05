@@ -47,6 +47,27 @@ public class TikaWelcomeTest extends CXFTestBase {
    @Override
    protected void setUpProviders(JAXRSServerFactoryBean sf) {}
 
+   @Test
+   public void testGetHTMLWelcome() throws Exception {
+       Response response = WebClient
+               .create(endPoint + WELCOME_PATH)
+               .type("text/html")
+               .accept("text/html")
+               .get();
+
+       String html = getStringFromInputStream((InputStream) response.getEntity());
+       
+       assertContains(new Tika().toString(), html);
+       assertContains("href=\"http", html);
+       
+       // Check our details were found
+       assertContains("GET", html);
+       assertContains(WELCOME_PATH, html);
+       assertContains("text/plain", html);
+       
+       // Check that the Tika Version details come through too
+       assertContains(VERSION_PATH, html);
+   }
    
    @Test
    public void testGetTextWelcome() throws Exception {
