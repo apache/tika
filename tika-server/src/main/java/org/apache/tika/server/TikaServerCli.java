@@ -82,17 +82,18 @@ public class TikaServerCli {
 
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
-      List<ResourceProvider> rProviders = new ArrayList<ResourceProvider>();
-      rProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaDetectors(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaParsers(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaWelcome(tika, sf)));
-      sf.setResourceProviders(rProviders);
+      List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
+      rCoreProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaParsers(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
+      List<ResourceProvider> rAllProviders = new ArrayList<ResourceProvider>(rCoreProviders);
+      rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(tika, rCoreProviders)));
+      sf.setResourceProviders(rAllProviders);
       
       List<Object> providers = new ArrayList<Object>();
       providers.add(new TarWriter());
