@@ -31,14 +31,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.nio.charset.Charset;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Map;
-import java.util.Set;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -656,11 +651,11 @@ public class TikaCLI {
         if (encoding != null) {
             return new OutputStreamWriter(output, encoding);
         } else if (System.getProperty("os.name")
-                .toLowerCase().startsWith("mac os x")) {
+                .toLowerCase(Locale.getDefault()).startsWith("mac os x")) {
             // TIKA-324: Override the default encoding on Mac OS X
             return new OutputStreamWriter(output, "UTF-8");
         } else {
-            return new OutputStreamWriter(output);
+            return new OutputStreamWriter(output, Charset.defaultCharset());
         }
     }
 
@@ -759,6 +754,7 @@ public class TikaCLI {
                 // being a CLI program messages should go to the stderr too
                 //
                 String msg = String.format(
+                    Locale.getDefault(),
                     "Ignoring unexpected exception trying to save embedded file %s (%s)",
                     name,
                     e.getMessage()

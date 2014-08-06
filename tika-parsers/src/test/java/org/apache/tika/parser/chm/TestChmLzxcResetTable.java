@@ -59,7 +59,7 @@ public class TestChmLzxcResetTable {
         int indexOfControlData = chmDirListCont.getControlDataIndex();
 
         int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data,
-                ChmConstants.LZXC.getBytes());
+                ChmConstants.LZXC.getBytes("UTF-8"));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,

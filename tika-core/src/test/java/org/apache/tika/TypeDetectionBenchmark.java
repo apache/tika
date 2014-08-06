@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.Locale;
 
 import org.apache.tika.io.IOUtils;
 
@@ -56,6 +57,7 @@ public class TypeDetectionBenchmark {
                     tika.detect(new ByteArrayInputStream(content));
                 }
                 System.out.printf(
+                        Locale.getDefault(),
                         "%6dns per Tika.detect(%s) = %s%n",
                         System.currentTimeMillis() - start, file, type);
             } finally {

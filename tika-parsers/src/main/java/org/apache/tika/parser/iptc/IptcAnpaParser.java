@@ -20,11 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.TimeZone;
+import java.util.*;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -160,7 +156,7 @@ public class IptcAnpaParser implements Parser {
          }
          int msgsize = is.read(buf);                // read in at least the full data
 
-         String message = (new String(buf)).toLowerCase();
+         String message = (new String(buf, "UTF-8")).toLowerCase(Locale.getDefault());
          // these are not if-then-else, because we want to go from most common
          // and fall through to least.  this is imperfect, as these tags could
          // show up in other agency stories, but i can't find a spec or any
@@ -590,7 +586,7 @@ public class IptcAnpaParser implements Parser {
                      --read;
                   }
                }
-               if (tmp_line.toLowerCase().startsWith("by") || longline.equals("bdy_author")) {
+               if (tmp_line.toLowerCase(Locale.getDefault()).startsWith("by") || longline.equals("bdy_author")) {
                   longkey = "bdy_author";
 
                   // prepend a space to subsequent line, so it gets parsed consistent with the lead line
@@ -608,7 +604,7 @@ public class IptcAnpaParser implements Parser {
                }
                else if (FORMAT == this.FMT_IPTC_BLM) {
                   String byline = "   by ";
-                  if (tmp_line.toLowerCase().contains(byline)) {
+                  if (tmp_line.toLowerCase(Locale.getDefault()).contains(byline)) {
                      longkey = "bdy_author";
 
                      int term = tmp_line.length();
@@ -617,11 +613,11 @@ public class IptcAnpaParser implements Parser {
                      term = Math.min(term, (tmp_line.contains("\n") ? tmp_line.indexOf("\n") : term));
                      term = (term > 0 ) ? term : tmp_line.length();
                      // for bloomberg, the author line sits below their copyright statement
-                     bdy_author += tmp_line.substring(tmp_line.toLowerCase().indexOf(byline) + byline.length(), term) + " ";
+                     bdy_author += tmp_line.substring(tmp_line.toLowerCase(Locale.getDefault()).indexOf(byline) + byline.length(), term) + " ";
                      metastarted = true;
                      longline = ((tmp_line.contains("=")) && (!longline.equals(longkey)) ? longkey : "");
                   }
-                  else if(tmp_line.toLowerCase().startsWith("c.")) {
+                  else if(tmp_line.toLowerCase(Locale.getDefault()).startsWith("c.")) {
                      // the author line for bloomberg is a multiline starting with c.2011 Bloomberg News
                      // then containing the author info on the next line
                      if (val_next == TB) {
@@ -629,7 +625,7 @@ public class IptcAnpaParser implements Parser {
                         continue;
                      }
                   }
-                  else if(tmp_line.toLowerCase().trim().startsWith("(") && tmp_line.toLowerCase().trim().endsWith(")")) {
+                  else if(tmp_line.toLowerCase(Locale.getDefault()).trim().startsWith("(") && tmp_line.toLowerCase(Locale.getDefault()).trim().endsWith(")")) {
                      // the author line may have one or more comment lines between the copyright
                      // statement, and the By AUTHORNAME line
                      if (val_next == TB) {
@@ -639,7 +635,7 @@ public class IptcAnpaParser implements Parser {
                   }
                }
 
-               else if (tmp_line.toLowerCase().startsWith("eds") || longline.equals("bdy_source")) {
+               else if (tmp_line.toLowerCase(Locale.getDefault()).startsWith("eds") || longline.equals("bdy_source")) {
                   longkey = "bdy_source";
                   // prepend a space to subsequent line, so it gets parsed consistent with the lead line
                   tmp_line = (longline.equals(longkey) ? " " : "") + tmp_line;
@@ -736,14 +732,14 @@ public class IptcAnpaParser implements Parser {
                   // standard reuters format
                   format_in = "HH:mm MM-dd-yy";
                }
-               SimpleDateFormat dfi =   new SimpleDateFormat(format_in);
+               SimpleDateFormat dfi =   new SimpleDateFormat(format_in, Locale.getDefault());
                dfi.setTimeZone(TimeZone.getTimeZone("UTC"));
                dateunix = dfi.parse(ftr_datetime);
             }
             catch (ParseException ep) {
                // failed, but this will just fall through to setting the date to now
             }
-            SimpleDateFormat dfo =   new SimpleDateFormat(format_out);
+            SimpleDateFormat dfo =   new SimpleDateFormat(format_out, Locale.getDefault());
             dfo.setTimeZone(TimeZone.getTimeZone("UTC"));
             ftr_datetime = dfo.format(dateunix);
          }

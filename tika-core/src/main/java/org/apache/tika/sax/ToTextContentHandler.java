@@ -22,6 +22,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -57,7 +58,7 @@ public class ToTextContentHandler extends DefaultHandler {
      * @param stream output stream
      */
     public ToTextContentHandler(OutputStream stream) {
-        this(new OutputStreamWriter(stream));
+        this(new OutputStreamWriter(stream, Charset.defaultCharset()));
     }
 
     /**

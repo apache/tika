@@ -245,7 +245,7 @@ public class ImageMetadataExtractor {
     }
     
     static class ExifHandler implements DirectoryHandler {
-        private static final SimpleDateFormat DATE_UNSPECIFIED_TZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        private static final SimpleDateFormat DATE_UNSPECIFIED_TZ = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
         public boolean supports(Class<? extends Directory> directoryType) {
             return directoryType == ExifIFD0Directory.class || 
                     directoryType == ExifSubIFDDirectory.class;

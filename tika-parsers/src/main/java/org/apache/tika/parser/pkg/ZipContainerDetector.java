@@ -19,10 +19,7 @@ package org.apache.tika.parser.pkg;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -245,11 +242,11 @@ public class ZipContainerDetector implements Detector {
         String docType = coreType.substring(0, coreType.lastIndexOf('.'));
 
         // The Macro Enabled formats are a little special
-        if(docType.toLowerCase().endsWith("macroenabled")) {
-            docType = docType.toLowerCase() + ".12";
+        if(docType.toLowerCase(Locale.getDefault()).endsWith("macroenabled")) {
+            docType = docType.toLowerCase(Locale.getDefault()) + ".12";
         }
 
-        if(docType.toLowerCase().endsWith("macroenabledtemplate")) {
+        if(docType.toLowerCase(Locale.getDefault()).endsWith("macroenabledtemplate")) {
             docType = MACRO_TEMPLATE_PATTERN.matcher(docType).replaceAll("macroenabled.12");
         }
 

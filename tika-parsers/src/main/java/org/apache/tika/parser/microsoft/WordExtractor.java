@@ -18,12 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.HWPFOldDocument;
@@ -233,7 +228,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           CharacterRun cr = p.getCharacterRun(j);
 
           // FIELD_BEGIN_MARK:
-          if (cr.text().getBytes()[0] == 0x13) {
+          if (cr.text().getBytes("UTF-8")[0] == 0x13) {
              Field field = document.getFields().getFieldByStartOffset(docPart, cr.getStartOffset());
              // 58 is an embedded document
              // 56 is a document link
@@ -548,7 +543,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
            tag = "h" + Math.min(num, 6);
        } else {
            styleClass = styleName.replace(' ', '_');
-           styleClass = styleClass.substring(0,1).toLowerCase() +
+           styleClass = styleClass.substring(0,1).toLowerCase(Locale.getDefault()) +
                styleClass.substring(1);
        }
 

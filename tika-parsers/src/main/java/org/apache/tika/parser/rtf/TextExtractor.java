@@ -26,10 +26,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -1339,7 +1336,7 @@ final class TextExtractor {
         if (inHeader) {
             if (nextMetaData != null) {
                 if (nextMetaData == TikaCoreProperties.CREATED) {
-                    Calendar cal = Calendar.getInstance();
+                    Calendar cal = Calendar.getInstance(TimeZone.getDefault(), Locale.getDefault());
                     cal.set(year, month-1, day, hour, minute, 0);
                     metadata.set(nextMetaData, cal.getTime());
                 } else if (nextMetaData.isMultiValuePermitted()) {
