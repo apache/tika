@@ -30,7 +30,7 @@ import org.apache.commons.logging.LogFactory;
 @Provider
 @PreMatching
 public class TikaLoggingFilter implements ContainerRequestFilter {
-	private static final Log logger = LogFactory.getLog(TikaServerCli.class);
+	private static final Log logger = LogFactory.getLog(TikaLoggingFilter.class);
 	private boolean infoLevel;
 	public TikaLoggingFilter(boolean infoLevel) {
 		this.infoLevel = infoLevel;
