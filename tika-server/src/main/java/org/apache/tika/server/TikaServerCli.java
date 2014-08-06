@@ -18,7 +18,10 @@
 package org.apache.tika.server;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -39,11 +42,14 @@ public class TikaServerCli {
   private static final Log logger = LogFactory.getLog(TikaServerCli.class);
   public static final int DEFAULT_PORT = 9998;
   public static final String DEFAULT_HOST = "localhost";
-
+  public static final Set<String> LOG_LEVELS = 
+		  new HashSet<String>(Arrays.asList("debug", "info"));
+  
   private static Options getOptions() {
     Options options = new Options();
     options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
     options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
+    options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
     options.addOption("?", "help", false, "this help message");
 
     return options;
@@ -77,6 +83,16 @@ public class TikaServerCli {
         port = Integer.valueOf(line.getOptionValue("port"));
       }
       
+      TikaLoggingFilter logFilter = null;
+      if (line.hasOption("log")) {
+        String logLevel = line.getOptionValue("log");
+        if (LOG_LEVELS.contains(logLevel)) {
+            boolean isInfoLevel = "info".equals(logLevel);
+            logFilter = new TikaLoggingFilter(isInfoLevel);
+        } else {
+        	logger.info("Unsupported request URI log level: " + logLevel);
+        }
+      }
       // The Tika Configuration to use throughout
       TikaConfig tika = TikaConfig.getDefaultConfig();
 
@@ -101,6 +117,9 @@ public class TikaServerCli {
       providers.add(new CSVMessageBodyWriter());
       providers.add(new JSONMessageBodyWriter());
       providers.add(new TikaExceptionMapper());
+      if (logFilter != null) {
+    	  providers.add(logFilter);
+      }
       sf.setProviders(providers);
       
       sf.setAddress("http://" + host + ":" + port + "/");
