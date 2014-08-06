@@ -24,6 +24,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.poi.poifs.filesystem.DirectoryNode;
@@ -102,9 +103,9 @@ class RTFObjDataParser {
         //readBytes tests for reading too many bytes
         byte[] embObjBytes = readBytes(is, dataSz);
 
-        if (className.toLowerCase().equals("package")){
+        if (className.toLowerCase(Locale.getDefault()).equals("package")){
             return handlePackage(embObjBytes, metadata);
-        } else if (className.toLowerCase().equals("pbrush")) {
+        } else if (className.toLowerCase(Locale.getDefault()).equals("pbrush")) {
             //simple bitmap bytes
             return embObjBytes;
         } else {

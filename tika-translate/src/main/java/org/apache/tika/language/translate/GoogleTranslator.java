@@ -85,7 +85,7 @@ public class GoogleTranslator implements Translator {
 				.query("key", apiKey).query("source", sourceLanguage)
 				.query("target", targetLanguage).query("q", text).get();
 		BufferedReader reader = new BufferedReader(new InputStreamReader(
-				(InputStream) response.getEntity()));
+				(InputStream) response.getEntity(), "UTF-8"));
 		String line = null;
 		StringBuffer responseText = new StringBuffer();
 		while ((line = reader.readLine()) != null) {

@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URI;
+import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
 
@@ -39,14 +40,15 @@ public class TikaCLITest {
     private ByteArrayOutputStream outContent = null;
     private PrintStream stdout = null;
     private URI testDataURI = new File("src/test/resources/test-data/").toURI();
-    private String resourcePrefix = testDataURI.toString();
+    private String resourcePrefix;
 
     @Before
     public void setUp() throws Exception {
         profile = new File("welsh.ngp");
         outContent = new ByteArrayOutputStream();
+        resourcePrefix = testDataURI.toString();
         stdout = System.out;
-        System.setOut(new PrintStream(outContent));
+        System.setOut(new PrintStream(outContent, true, "UTF-8"));
     }
 
     /**
@@ -70,7 +72,7 @@ public class TikaCLITest {
     public void testListParserDetail() throws Exception{
         String[] params = {"--list-parser-detail"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("application/vnd.oasis.opendocument.text-web"));
+        assertTrue(outContent.toString("UTF-8").contains("application/vnd.oasis.opendocument.text-web"));
     }
 
     /**
@@ -83,7 +85,7 @@ public class TikaCLITest {
         String[] params = {"--list-parser"};
         TikaCLI.main(params);
         //Assert was commented temporarily for finding the problem
-        //		Assert.assertTrue(outContent != null && outContent.toString().contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
+        //		Assert.assertTrue(outContent != null && outContent.toString("UTF-8").contains("org.apache.tika.parser.iwork.IWorkPackageParser"));
     }
 
     /**
@@ -95,7 +97,7 @@ public class TikaCLITest {
     public void testXMLOutput() throws Exception{
         String[] params = {"-x", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
+        assertTrue(outContent.toString("UTF-8").contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
     }
 
     /**
@@ -107,9 +109,9 @@ public class TikaCLITest {
     public void testHTMLOutput() throws Exception{
         String[] params = {"-h", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
+        assertTrue(outContent.toString("UTF-8").contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
         assertTrue("Expanded <title></title> element should be present",
-                outContent.toString().contains("<title></title>"));
+                outContent.toString("UTF-8").contains("<title></title>"));
     }
 
     /**
@@ -121,7 +123,7 @@ public class TikaCLITest {
     public void testTextOutput() throws Exception{
         String[] params = {"-t", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("finished off the cake"));
+        assertTrue(outContent.toString("UTF-8").contains("finished off the cake"));
     }
 
     /**
@@ -132,7 +134,7 @@ public class TikaCLITest {
     public void testMetadataOutput() throws Exception{
         String[] params = {"-m", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("text/plain"));
+        assertTrue(outContent.toString("UTF-8").contains("text/plain"));
     }
 
     /**
@@ -144,7 +146,7 @@ public class TikaCLITest {
     public void testJsonMetadataOutput() throws Exception {
         String[] params = {"--json", resourcePrefix + "testJsonMultipleInts.html"};
         TikaCLI.main(params);
-        String json = outContent.toString();
+        String json = outContent.toString("UTF-8");
         //TIKA-1310
         assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
         
@@ -165,7 +167,7 @@ public class TikaCLITest {
     public void testLanguageOutput() throws Exception{
         String[] params = {"-l", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("en"));
+        assertTrue(outContent.toString("UTF-8").contains("en"));
     }
 
     /**
@@ -177,7 +179,7 @@ public class TikaCLITest {
     public void testDetectOutput() throws Exception{
         String[] params = {"-d", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("text/plain"));
+        assertTrue(outContent.toString("UTF-8").contains("text/plain"));
     }
 
     /**
@@ -189,7 +191,7 @@ public class TikaCLITest {
     public void testListMetModels() throws Exception{
         String[] params = {"--list-met-models", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("text/plain"));
+        assertTrue(outContent.toString("UTF-8").contains("text/plain"));
     }
 
     /**
@@ -201,7 +203,7 @@ public class TikaCLITest {
     public void testListSupportedTypes() throws Exception{
         String[] params = {"--list-supported-types", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString().contains("supertype: application/octet-stream"));
+        assertTrue(outContent.toString("UTF-8").contains("supertype: application/octet-stream"));
     }
 
     /**
@@ -274,7 +276,7 @@ public class TikaCLITest {
     public void testMultiValuedMetadata() throws Exception {
         String[] params = {"-m", resourcePrefix + "testMultipleSheets.numbers"};
         TikaCLI.main(params);
-        String content = outContent.toString();
+        String content = outContent.toString("UTF-8");
         assertTrue(content.contains("sheetNames: Checking"));
         assertTrue(content.contains("sheetNames: Secon sheet"));
         assertTrue(content.contains("sheetNames: Logical Sheet 3"));
@@ -288,7 +290,7 @@ public class TikaCLITest {
         new File("subdir/foo.txt").delete();
         new File("subdir").delete();
         TikaCLI.main(params);
-        String content = outContent.toString();
+        String content = outContent.toString("UTF-8");
         assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
         // clean up. TODO: These should be in target.
         new File("target/subdir/foo.txt").delete();

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.ws.rs.PUT;
@@ -126,6 +127,7 @@ public class UnpackerResource {
       parser.parse(is, ch, metadata, pc);
     } catch (TikaException ex) {
       logger.warn(String.format(
+              Locale.getDefault(),
               "%s: Unpacker failed",
               info.getPath()
       ), ex);

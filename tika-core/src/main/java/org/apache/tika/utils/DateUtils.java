@@ -80,7 +80,7 @@ public class DateUtils {
      */
     public static String formatDateUnknownTimezone(Date date) {
         // Create the Calendar object in the system timezone
-        Calendar calendar = GregorianCalendar.getInstance(Locale.US);
+        Calendar calendar = GregorianCalendar.getInstance(TimeZone.getDefault(), Locale.US);
         calendar.setTime(date);
         // Have it formatted
         String formatted = formatDate(calendar);
@@ -89,6 +89,7 @@ public class DateUtils {
     }
     private static String doFormatDate(Calendar calendar) {
         return String.format(
+                Locale.getDefault(),
                 "%04d-%02d-%02dT%02d:%02d:%02dZ",
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH) + 1,

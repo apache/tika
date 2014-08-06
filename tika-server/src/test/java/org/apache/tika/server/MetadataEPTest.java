@@ -82,7 +82,7 @@ public class MetadataEPTest extends CXFTestBase {
         .post(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
-    Reader reader = new InputStreamReader((InputStream) response.getEntity());
+    Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
 
     @SuppressWarnings("resource")
     CSVReader csvReader = new CSVReader(reader);
@@ -105,7 +105,7 @@ public class MetadataEPTest extends CXFTestBase {
 
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
-    Reader reader = new InputStreamReader((InputStream) response.getEntity());
+    Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
     Metadata metadata = JsonMetadata.fromJson(reader);
     assertNotNull(metadata.get("Author"));
     assertEquals("Maxim Valyanskiy", metadata.get("Author"));
@@ -128,7 +128,7 @@ public class MetadataEPTest extends CXFTestBase {
         .accept(MediaType.APPLICATION_JSON).post(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
     Assert.assertEquals(Status.OK.getStatusCode(), response.getStatus());
 
-    Reader reader = new InputStreamReader((InputStream) response.getEntity());
+    Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
     Metadata metadata = JsonMetadata.fromJson(reader);
 
     assertNotNull(metadata.get("Author"));

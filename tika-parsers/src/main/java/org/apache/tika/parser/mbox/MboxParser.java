@@ -167,7 +167,7 @@ public class MboxParser extends AbstractParser {
       return; // ignore malformed header lines
     }
 
-    String headerTag = headerMatcher.group(1).toLowerCase();
+    String headerTag = headerMatcher.group(1).toLowerCase(Locale.getDefault());
     String headerContent = headerMatcher.group(2);
 
     if (headerTag.equalsIgnoreCase("From")) {

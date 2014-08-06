@@ -1,5 +1,6 @@
 Release 1.7 - ??/??/????
-
+  * Use the forbidden-apis Maven plugin to check for unsafe Java
+    operations (TIKA-1387).
 
 Release 1.6 - 07/27/2014
 

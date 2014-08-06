@@ -212,9 +212,9 @@ public class ChmDirectoryListingSet {
             if (dir_chunk != null) {
 
                 int indexWorkData = ChmCommons.indexOf(dir_chunk,
-                        "::".getBytes());
+                        "::".getBytes("UTF-8"));
                 int indexUserData = ChmCommons.indexOf(dir_chunk,
-                        "/".getBytes());
+                        "/".getBytes("UTF-8"));
 
                 if (indexUserData < indexWorkData)
                     setPlaceHolder(indexUserData);
@@ -238,7 +238,7 @@ public class ChmDirectoryListingSet {
                             // dle.getNameLength()))));
                             dle.setName(new String(ChmCommons.copyOfRange(
                                     dir_chunk, getPlaceHolder(),
-                                    (getPlaceHolder() + dle.getNameLength()))));
+                                    (getPlaceHolder() + dle.getNameLength())), "UTF-8"));
                             checkControlData(dle);
                             checkResetTable(dle);
                             setPlaceHolder(getPlaceHolder()

@@ -1032,13 +1032,13 @@ public class OOXMLParserTest extends TikaTest {
             
             //grab stderr
             ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(errContent));
+            System.setErr(new PrintStream(errContent, true, "UTF-8"));
             parser.parse(input, handler, metadata, context);
             
             //return stderr
             System.setErr(origErr);
             
-            String err = errContent.toString();
+            String err = errContent.toString("UTF-8");
             assertTrue(err.length() == 0);
             input.close();
         }

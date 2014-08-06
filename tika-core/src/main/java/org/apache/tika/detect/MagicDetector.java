@@ -19,9 +19,11 @@ package org.apache.tika.detect;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,9 +97,13 @@ public class MagicDetector implements Detector {
                 || type.equals("unicodeBE")) {
             decoded = decodeString(value, type);
         } else if (type.equals("stringignorecase")) {
-            decoded = decodeString(value.toLowerCase(), type);
+            decoded = decodeString(value.toLowerCase(Locale.getDefault()), type);
         } else if (type.equals("byte")) {
-            decoded = tmpVal.getBytes();
+            try {
+                decoded = tmpVal.getBytes("UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new AssertionError("UTF-8 not supported.");
+            }
         } else if (type.equals("host16") || type.equals("little16")) {
             int i = Integer.parseInt(tmpVal, radix);
             decoded = new byte[] { (byte) (i & 0x00FF), (byte) (i >> 8) };
@@ -393,7 +399,7 @@ public class MagicDetector implements Detector {
                     flags = Pattern.CASE_INSENSITIVE;
                 }
                 
-                Pattern p = Pattern.compile(new String(this.pattern), flags);
+                Pattern p = Pattern.compile(new String(this.pattern, "UTF-8"), flags);
 
                 ByteBuffer bb = ByteBuffer.wrap(buffer);
                 CharBuffer result = ISO_8859_1.decode(bb);

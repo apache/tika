@@ -19,10 +19,7 @@ package org.apache.tika.io;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.Arrays;
 
 import org.junit.Test;
@@ -68,7 +65,11 @@ public class TailStreamTest
      */
     private static InputStream generateStream(int from, int length)
     {
-        return new ByteArrayInputStream(generateText(from, length).getBytes());
+        try {
+            return new ByteArrayInputStream(generateText(from, length).getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
     }
 
     /**
@@ -123,7 +124,7 @@ public class TailStreamTest
         TailStream stream = new TailStream(generateStream(0, 2 * count), count);
         readStream(stream);
         assertEquals("Wrong buffer", generateText(count, count), new String(
-                stream.getTail()));
+                stream.getTail(), "UTF-8"));
     }
 
     /**
@@ -144,7 +145,7 @@ public class TailStreamTest
             read = stream.read(buf);
         }
         assertEquals("Wrong buffer", generateText(count - tailSize, tailSize),
-                new String(stream.getTail()));
+                new String(stream.getTail(), "UTF-8"));
         stream.close();
     }
 
@@ -164,7 +165,7 @@ public class TailStreamTest
         stream.reset();
         readStream(stream);
         assertEquals("Wrong buffer", generateText(tailSize, tailSize),
-                new String(stream.getTail()));
+                new String(stream.getTail(), "UTF-8"));
     }
 
     /**
@@ -180,7 +181,7 @@ public class TailStreamTest
         byte[] buf = new byte[count];
         stream.read(buf);
         assertEquals("Wrong buffer", generateText(count - tailSize, tailSize),
-                new String(stream.getTail()));
+                new String(stream.getTail(), "UTF-8"));
         stream.close();
     }
 
@@ -197,7 +198,7 @@ public class TailStreamTest
         assertEquals("Wrong skip result", skipCount, stream.skip(skipCount));
         assertEquals("Wrong buffer",
                 generateText(skipCount - tailSize, tailSize),
-                new String(stream.getTail()));
+                new String(stream.getTail(), "UTF-8"));
         stream.close();
     }
 
@@ -211,7 +212,7 @@ public class TailStreamTest
         TailStream stream = new TailStream(generateStream(0, count), 2 * count);
         assertEquals("Wrong skip result", count, stream.skip(2 * count));
         assertEquals("Wrong buffer", generateText(0, count),
-                new String(stream.getTail()));
+                new String(stream.getTail(), "UTF-8"));
         stream.close();
     }
 

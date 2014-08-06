@@ -130,7 +130,7 @@ public class FLVParser extends AbstractParser {
         int size = input.readUnsignedShort();
         byte[] chars = new byte[size];
         input.readFully(chars);
-        return new String(chars);
+        return new String(chars, "UTF-8");
     }
 
     private Object readAMFObject(DataInputStream input) throws IOException {

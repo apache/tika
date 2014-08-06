@@ -18,11 +18,7 @@ package org.apache.tika.parser.pdf;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.jempbox.xmp.XMPSchema;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
@@ -241,7 +237,7 @@ public class PDFParser extends AbstractParser {
                     metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
                     if (pdfaxmp.getConformance() != null) {
                         metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
-                        String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase();
+                        String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase(Locale.getDefault());
                         metadata.set("pdfa:PDFVersion", version );
                         metadata.add(TikaCoreProperties.FORMAT.getName(), 
                             MEDIA_TYPE.toString()+"; version=\""+version+"\"" );

@@ -20,6 +20,7 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Properties;
 
 import org.apache.pdfbox.util.PDFTextStripper;
@@ -337,9 +338,9 @@ public class PDFParserConfig implements Serializable{
         if (p == null){
             return defaultMissing;
         }
-        if (p.toLowerCase().equals("true")) {
+        if (p.toLowerCase(Locale.getDefault()).equals("true")) {
             return true;
-        } else if (p.toLowerCase().equals("false")) {
+        } else if (p.toLowerCase(Locale.getDefault()).equals("false")) {
             return false;
         } else {
             return defaultMissing;
