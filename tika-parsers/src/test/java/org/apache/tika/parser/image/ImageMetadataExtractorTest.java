@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.image;
 
-import java.util.*;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -29,11 +28,20 @@ import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 
+import java.util.Arrays;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class ImageMetadataExtractorTest {
     
@@ -54,7 +62,7 @@ public class ImageMetadataExtractorTest {
         verify(handler1).supports(JpegCommentDirectory.class);
         verify(handler1).handle(directory, metadata);
     }
-    
+
     @Test
     public void testExifHandlerSupports() {
         assertTrue(new ImageMetadataExtractor.ExifHandler().supports(ExifIFD0Directory.class));
