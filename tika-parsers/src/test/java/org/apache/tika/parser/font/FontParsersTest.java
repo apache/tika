@@ -31,7 +31,13 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.junit.Test;
 
-import static org.apache.tika.parser.font.AdobeFontMetricParser.*;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_FULL_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_FAMILY_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_WEIGHT;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_VERSION;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_FONT_SUB_FAMILY_NAME;
+import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_PS_NAME;
 
 /**
  * Test case for parsing various different font files.

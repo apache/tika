@@ -19,7 +19,11 @@ package org.apache.tika.parser.pkg;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.compress.archivers.ArchiveException;

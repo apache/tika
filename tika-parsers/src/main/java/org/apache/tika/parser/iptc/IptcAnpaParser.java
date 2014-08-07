@@ -20,7 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TimeZone;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;

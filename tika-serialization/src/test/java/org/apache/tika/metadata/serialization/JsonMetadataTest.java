@@ -17,14 +17,16 @@ package org.apache.tika.metadata.serialization;
 * limitations under the License.
 */
 
-import static org.junit.Assert.*;
-
 import java.io.StringReader;
 import java.io.StringWriter;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class JsonMetadataTest {
 
