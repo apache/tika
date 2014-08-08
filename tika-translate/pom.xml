@@ -144,9 +144,9 @@
   	<url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/trunk/translate</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/translate</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/translate</developerConnection>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-translate</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-translate</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-translate</developerConnection>
   </scm>
   <issueManagement>
   	<system>JIRA</system>

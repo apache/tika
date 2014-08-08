@@ -22,9 +22,9 @@
     </organization>
 
     <scm>
-        <url>http://svn.apache.org/viewvc/tika/trunk/translate</url>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/translate</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/translate</developerConnection>
+        <url>http://svn.apache.org/viewvc/tika/trunk/tika-example</url>
+        <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-example</connection>
+        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-example</developerConnection>
     </scm>
 
     <issueManagement>
