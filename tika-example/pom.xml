@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>tika-parent</artifactId>
+        <groupId>org.apache.tika</groupId>
+        <version>1.7-SNAPSHOT</version>
+        <relativePath>../tika-parent/pom.xml</relativePath>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>tika-examples</artifactId>
+
+    <name>Apache Tika examples</name>
+    <url>http://tika.apache.org/</url>
+
+    <description>This module contains examples of how to use Apache Tika.</description>
+    <organization>
+        <name>The Apache Software Foundation</name>
+        <url>http://www.apache.org</url>
+    </organization>
+
+    <scm>
+        <url>http://svn.apache.org/viewvc/tika/trunk/translate</url>
+        <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/translate</connection>
+        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/translate</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.apache.org/jira/browse/TIKA</url>
+    </issueManagement>
+
+    <ciManagement>
+        <system>Jenkins</system>
+        <url>https://builds.apache.org/job/Tika-trunk/</url>
+    </ciManagement>
+
+    <!-- List of dependencies that we depend on for the examples. See the full list of Tika
+         modules and how to use them at http://mvnrepository.com/artifact/org.apache.tika.-->
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-parsers</artifactId>
+            <version>1.7-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-translate</artifactId>
+            <version>1.7-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+</project>
