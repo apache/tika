@@ -68,5 +68,9 @@
             <artifactId>tika-translate</artifactId>
             <version>1.7-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+        </dependency>
     </dependencies>
 </project>
