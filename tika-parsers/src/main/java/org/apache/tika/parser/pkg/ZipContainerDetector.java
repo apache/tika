@@ -246,11 +246,11 @@ public class ZipContainerDetector implements Detector {
         String docType = coreType.substring(0, coreType.lastIndexOf('.'));
 
         // The Macro Enabled formats are a little special
-        if(docType.toLowerCase(Locale.getDefault()).endsWith("macroenabled")) {
-            docType = docType.toLowerCase(Locale.getDefault()) + ".12";
+        if(docType.toLowerCase(Locale.ROOT).endsWith("macroenabled")) {
+            docType = docType.toLowerCase(Locale.ROOT) + ".12";
         }
 
-        if(docType.toLowerCase(Locale.getDefault()).endsWith("macroenabledtemplate")) {
+        if(docType.toLowerCase(Locale.ROOT).endsWith("macroenabledtemplate")) {
             docType = MACRO_TEMPLATE_PATTERN.matcher(docType).replaceAll("macroenabled.12");
         }
 

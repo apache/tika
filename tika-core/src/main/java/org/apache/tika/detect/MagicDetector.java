@@ -97,7 +97,7 @@ public class MagicDetector implements Detector {
                 || type.equals("unicodeBE")) {
             decoded = decodeString(value, type);
         } else if (type.equals("stringignorecase")) {
-            decoded = decodeString(value.toLowerCase(Locale.getDefault()), type);
+            decoded = decodeString(value.toLowerCase(Locale.ROOT), type);
         } else if (type.equals("byte")) {
             try {
                 decoded = tmpVal.getBytes("UTF-8");

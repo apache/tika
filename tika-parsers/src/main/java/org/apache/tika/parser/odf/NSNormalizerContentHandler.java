@@ -88,7 +88,7 @@ public class NSNormalizerContentHandler extends ContentHandlerDecorator {
     @Override
     public InputSource resolveEntity(String publicId, String systemId)
             throws IOException, SAXException {
-        if ((systemId != null && systemId.toLowerCase(Locale.getDefault()).endsWith(".dtd"))
+        if ((systemId != null && systemId.toLowerCase(Locale.ROOT).endsWith(".dtd"))
                 || DTD_PUBLIC_ID.equals(publicId)) {
             return new InputSource(new StringReader(""));
         } else {

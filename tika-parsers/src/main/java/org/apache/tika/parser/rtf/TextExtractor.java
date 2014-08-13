@@ -1341,7 +1341,7 @@ final class TextExtractor {
         if (inHeader) {
             if (nextMetaData != null) {
                 if (nextMetaData == TikaCoreProperties.CREATED) {
-                    Calendar cal = Calendar.getInstance(TimeZone.getDefault(), Locale.getDefault());
+                    Calendar cal = Calendar.getInstance(TimeZone.getDefault(), Locale.ROOT);
                     cal.set(year, month-1, day, hour, minute, 0);
                     metadata.set(nextMetaData, cal.getTime());
                 } else if (nextMetaData.isMultiValuePermitted()) {

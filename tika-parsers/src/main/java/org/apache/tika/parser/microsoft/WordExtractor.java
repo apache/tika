@@ -549,7 +549,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
            tag = "h" + Math.min(num, 6);
        } else {
            styleClass = styleName.replace(' ', '_');
-           styleClass = styleClass.substring(0,1).toLowerCase(Locale.getDefault()) +
+           styleClass = styleClass.substring(0,1).toLowerCase(Locale.ROOT) +
                styleClass.substring(1);
        }
 

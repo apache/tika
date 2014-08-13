@@ -103,9 +103,9 @@ class RTFObjDataParser {
         //readBytes tests for reading too many bytes
         byte[] embObjBytes = readBytes(is, dataSz);
 
-        if (className.toLowerCase(Locale.getDefault()).equals("package")){
+        if (className.toLowerCase(Locale.ROOT).equals("package")){
             return handlePackage(embObjBytes, metadata);
-        } else if (className.toLowerCase(Locale.getDefault()).equals("pbrush")) {
+        } else if (className.toLowerCase(Locale.ROOT).equals("pbrush")) {
             //simple bitmap bytes
             return embObjBytes;
         } else {
