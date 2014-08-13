@@ -84,7 +84,7 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
         @Override
         public String toString() {
-            return String.format(Locale.getDefault(), "<%s> of type %s", localName, elementType);
+            return String.format(Locale.ROOT, "<%s> of type %s", localName, elementType);
         }
 
         public String getUri() {

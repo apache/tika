@@ -658,7 +658,7 @@ public class TikaCLI {
         if (encoding != null) {
             return new OutputStreamWriter(output, encoding);
         } else if (System.getProperty("os.name")
-                .toLowerCase(Locale.getDefault()).startsWith("mac os x")) {
+                .toLowerCase(Locale.ROOT).startsWith("mac os x")) {
             // TIKA-324: Override the default encoding on Mac OS X
             return new OutputStreamWriter(output, "UTF-8");
         } else {
@@ -761,7 +761,7 @@ public class TikaCLI {
                 // being a CLI program messages should go to the stderr too
                 //
                 String msg = String.format(
-                    Locale.getDefault(),
+                    Locale.ROOT,
                     "Ignoring unexpected exception trying to save embedded file %s (%s)",
                     name,
                     e.getMessage()
