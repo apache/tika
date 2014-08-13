@@ -744,7 +744,7 @@ public class IptcAnpaParser implements Parser {
             catch (ParseException ep) {
                // failed, but this will just fall through to setting the date to now
             }
-            SimpleDateFormat dfo =   new SimpleDateFormat(format_out, Locale.ROOT);
+            SimpleDateFormat dfo = new SimpleDateFormat(format_out, Locale.ROOT);
             dfo.setTimeZone(TimeZone.getTimeZone("UTC"));
             ftr_datetime = dfo.format(dateunix);
          }
