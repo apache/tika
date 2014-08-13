@@ -75,7 +75,7 @@ public class ImageMetadataExtractorTest {
     public void testExifHandlerParseDate() throws MetadataException {
         ExifSubIFDDirectory exif = mock(ExifSubIFDDirectory.class);
         when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getDefault(), Locale.getDefault());
+        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getDefault(), Locale.ROOT);
         calendar.setTimeInMillis(0);
         calendar.set(2000, 0, 1, 0, 0, 0);
         when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(
@@ -91,7 +91,7 @@ public class ImageMetadataExtractorTest {
     public void testExifHandlerParseDateFallback() throws MetadataException {
         ExifIFD0Directory exif = mock(ExifIFD0Directory.class);
         when(exif.containsTag(ExifIFD0Directory.TAG_DATETIME)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getDefault(), Locale.getDefault());
+        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getDefault(), Locale.ROOT);
         calendar.setTimeInMillis(0);
         calendar.set(1999, 0, 1, 0, 0, 0);
         when(exif.getDate(ExifIFD0Directory.TAG_DATETIME)).thenReturn(

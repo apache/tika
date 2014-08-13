@@ -338,9 +338,9 @@ public class PDFParserConfig implements Serializable{
         if (p == null){
             return defaultMissing;
         }
-        if (p.toLowerCase(Locale.getDefault()).equals("true")) {
+        if (p.toLowerCase(Locale.ROOT).equals("true")) {
             return true;
-        } else if (p.toLowerCase(Locale.getDefault()).equals("false")) {
+        } else if (p.toLowerCase(Locale.ROOT).equals("false")) {
             return false;
         } else {
             return defaultMissing;

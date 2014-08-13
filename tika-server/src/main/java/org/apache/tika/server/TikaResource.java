@@ -205,7 +205,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
           throw new WebApplicationException(e);
         } catch (EncryptedDocumentException e) {
           logger.warn(String.format(
-                  Locale.getDefault(),
+                  Locale.ROOT,
                   "%s: Encrypted document",
                   info.getPath()
           ), e);
@@ -213,7 +213,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
           throw new WebApplicationException(e, Response.status(422).build());
         } catch (TikaException e) {
           logger.warn(String.format(
-            Locale.getDefault(),
+            Locale.ROOT,
             "%s: Text extraction failed",
             info.getPath()
           ), e);
@@ -306,7 +306,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
         }
         catch (EncryptedDocumentException e) {
           logger.warn(String.format(
-            Locale.getDefault(),
+            Locale.ROOT,
             "%s: Encrypted document",
             info.getPath()
           ), e);
@@ -314,7 +314,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
         }
         catch (TikaException e) {
           logger.warn(String.format(
-            Locale.getDefault(),
+            Locale.ROOT,
             "%s: Text extraction failed",
             info.getPath()
           ), e);
@@ -340,13 +340,13 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
   public static void logRequest(Log logger, UriInfo info, Metadata metadata) {
     if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)==null) {
       logger.info(String.format(
-              Locale.getDefault(),
+              Locale.ROOT,
               "%s (autodetecting type)",
               info.getPath()
       ));
     } else {
       logger.info(String.format(
-              Locale.getDefault(),
+              Locale.ROOT,
               "%s (%s)",
               info.getPath(),
               metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)

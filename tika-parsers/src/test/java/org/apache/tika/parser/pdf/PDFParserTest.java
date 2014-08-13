@@ -567,7 +567,7 @@ public class PDFParserTest extends TikaTest {
         Set<String> knownContentDiffs = new HashSet<String>();
 
         for (File f : testDocs.listFiles()) {
-            if (! f.getName().toLowerCase(Locale.getDefault()).endsWith(".pdf")) {
+            if (! f.getName().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
                 continue;
             }
 

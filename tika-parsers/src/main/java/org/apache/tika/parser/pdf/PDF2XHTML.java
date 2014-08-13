@@ -84,7 +84,7 @@ class PDF2XHTML extends PDFTextStripper {
     /**
      * format used for signature dates
      */
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT);
  
     /**
      * Maximum recursive depth during AcroForm processing.

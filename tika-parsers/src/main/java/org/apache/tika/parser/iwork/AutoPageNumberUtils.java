@@ -46,7 +46,7 @@ import java.util.Locale;
 	}
 	
 	public static String asAlphaNumericLower(int i) {
-		return asAlphaNumeric(i).toLowerCase(Locale.getDefault());
+		return asAlphaNumeric(i).toLowerCase(Locale.ROOT);
 	}
 	
 	/*
@@ -75,7 +75,7 @@ import java.util.Locale;
     }
     
 	public static String asRomanNumeralsLower(int i) {
-		return asRomanNumerals(i).toLowerCase(Locale.getDefault());
+		return asRomanNumerals(i).toLowerCase(Locale.ROOT);
 	}
     
     private static int i2r(StringBuffer sbuff, int i,

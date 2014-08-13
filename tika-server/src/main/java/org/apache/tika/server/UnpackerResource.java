@@ -127,7 +127,7 @@ public class UnpackerResource {
       parser.parse(is, ch, metadata, pc);
     } catch (TikaException ex) {
       logger.warn(String.format(
-              Locale.getDefault(),
+              Locale.ROOT,
               "%s: Unpacker failed",
               info.getPath()
       ), ex);
