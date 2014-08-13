@@ -28,7 +28,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>tika-examples</artifactId>
+    <artifactId>tika-example</artifactId>
 
     <name>Apache Tika examples</name>
     <url>http://tika.apache.org/</url>
