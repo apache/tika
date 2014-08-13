@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
+import java.util.Locale;
 
 /**
  * Abstract class used to interact with command line/external Translators.
@@ -47,7 +49,7 @@ public abstract class ExternalTranslator implements Translator {
      */
     public Reader runAndGetOutput(String command, String[] env, File workingDirectory) throws IOException, InterruptedException {
         Process process = Runtime.getRuntime().exec(command, env, workingDirectory);
-        InputStreamReader reader = new InputStreamReader(process.getInputStream());
+        InputStreamReader reader = new InputStreamReader(process.getInputStream(), Charset.defaultCharset());
         BufferedReader bufferedReader = new BufferedReader(reader);
         process.waitFor();
         return bufferedReader;

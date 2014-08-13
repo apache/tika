@@ -20,9 +20,14 @@ package org.apache.tika.language.translate;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.Properties;
 
 /**
@@ -73,7 +78,7 @@ public class MosesTranslator extends ExternalTranslator {
     public String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
         if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) return text;
         File tmpFile = new File(TMP_FILE_NAME);
-        BufferedWriter out = new BufferedWriter(new FileWriter(tmpFile));
+        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset());
         out.append(text).append('\n').close();
 
         Runtime.getRuntime().exec(buildCommand(smtPath, scriptPath), new String[]{}, buildWorkingDirectory(scriptPath));
@@ -81,9 +86,12 @@ public class MosesTranslator extends ExternalTranslator {
         File tmpTranslatedFile = new File(TMP_FILE_NAME + ".translated");
 
         StringBuilder stringBuilder = new StringBuilder();
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(TMP_FILE_NAME + ".translated"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(
+                new FileInputStream(tmpTranslatedFile),
+                Charset.defaultCharset()
+        ));
         String line;
-        while ((line = bufferedReader.readLine()) != null) stringBuilder.append(line);
+        while ((line = reader.readLine()) != null) stringBuilder.append(line);
 
         if (!tmpFile.delete() || !tmpTranslatedFile.delete()){
             throw new IOException("Failed to delete temporary files.");
