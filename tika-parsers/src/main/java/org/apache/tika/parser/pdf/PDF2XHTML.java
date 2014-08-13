@@ -82,7 +82,8 @@ import org.xml.sax.helpers.AttributesImpl;
 class PDF2XHTML extends PDFTextStripper {
     
     /**
-     * format used for signature dates
+     * Format used for signature dates
+     * TODO Make this thread-safe
      */
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT);
  
