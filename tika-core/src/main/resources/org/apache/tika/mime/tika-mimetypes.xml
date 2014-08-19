@@ -2395,6 +2395,17 @@
     <glob pattern="*.ace"/>
   </mime-type>
 
+  <mime-type type="application/x-axcrypt">
+    <_comment>AxCrypt</_comment>
+    <glob pattern="*.axx" />
+    <magic priority="60">
+      <!-- AxCrypt block header, skip length field, then Header of type Preamble -->
+      <match value="0xc0b9072e4f93f146a015792ca1d9e821" type="string" offset="0">
+         <match value="2" type="big32" offset="17" />
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-adobe-indesign">
     <acronym>INDD</acronym>
     <_comment>Adobe InDesign document</_comment>
