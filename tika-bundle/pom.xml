@@ -116,7 +116,7 @@
               commons-compress, xz, commons-codec,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
-              xmlbeans, dom4j,
+              xmlbeans,
               tagsoup,
               asm-debug-all,
               juniversalchardet,

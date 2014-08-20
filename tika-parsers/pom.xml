@@ -35,7 +35,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.11-beta1</poi.version>
+    <poi.version>3.11-beta2</poi.version>
     <codec.version>1.9</codec.version> <!-- NOTE: sync with POI -->
     <compress.version>1.8.1</compress.version>
     <tukaani.version>1.5</tukaani.version> <!-- NOTE: sync with commons-compress -->
@@ -153,11 +153,6 @@
           <artifactId>xml-apis</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-stax-api_1.0_spec</artifactId>
-      <version>1.0.1</version>
     </dependency>
     <dependency>
       <groupId>org.ccil.cowan.tagsoup</groupId>
