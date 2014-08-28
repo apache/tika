@@ -71,7 +71,7 @@
 
         <dependency>
             <groupId>org.apache.tika</groupId>
-            <artifactId>tika-core</artifactId>
+            <artifactId>tika-parsers</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
