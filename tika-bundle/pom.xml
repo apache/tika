@@ -251,6 +251,16 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- The Tika Bundle has no java code of its own, so no need to do -->
+      <!--  any forbidden API checking against it (it gets confused...) -->
+      <plugin>
+        <groupId>de.thetaphi</groupId>
+        <artifactId>forbiddenapis</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
