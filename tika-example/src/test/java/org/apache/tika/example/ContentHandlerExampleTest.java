@@ -26,6 +26,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.TikaTest.assertNotContained;
 
 public class ContentHandlerExampleTest {
     ContentHandlerExample example;
@@ -51,6 +52,33 @@ public class ContentHandlerExampleTest {
         assertContains("<title>", result);
         assertContains("<body>", result);
         assertContains(">test", result);
+    }
+
+    @Test
+    public void testParseBodyToHTML() throws IOException, SAXException, TikaException {
+        String result = example.parseBodyToHTML().trim();
+        
+        assertNotContained("<html", result);
+        assertNotContained("<head>", result);
+        assertNotContained("<meta name=\"dc:creator\"", result);
+        assertNotContained("<title>", result);
+        assertNotContained("<body>", result);
+        assertContains(">test", result);
+    }
+
+    @Test
+    public void testParseOnePartToHTML() throws IOException, SAXException, TikaException {
+        String result = example.parseOnePartToHTML().trim();
+        
+        assertNotContained("<html", result);
+        assertNotContained("<head>", result);
+        assertNotContained("<meta name=\"dc:creator\"", result);
+        assertNotContained("<title>", result);
+        assertNotContained("<body>", result);
+        assertContains("<p class=\"header\"", result);
+        assertContains("This is in the header", result);
+        assertNotContained("<h1>Test Document", result);
+        assertNotContained("<p>1 2 3", result);
     }
 
     // TODO Implement then test the other two methods
