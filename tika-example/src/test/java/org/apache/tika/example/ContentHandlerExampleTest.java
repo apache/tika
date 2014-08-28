@@ -23,8 +23,10 @@ import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.apache.tika.TikaTest.assertContains;
 import static org.apache.tika.TikaTest.assertNotContained;
 
@@ -81,5 +83,23 @@ public class ContentHandlerExampleTest {
         assertNotContained("<p>1 2 3", result);
     }
 
-    // TODO Implement then test the other two methods
+
+    @Test
+    public void testParseToPlainTextChunks() throws IOException, SAXException, TikaException {
+        List<String> result = example.parseToPlainTextChunks();
+        
+        assertEquals(3, result.size());
+        for (String chunk : result) {
+            assertTrue("Chunk under max size", chunk.length() <= example.MAXIMUM_TEXT_CHUNK_SIZE);
+        }
+
+        assertContains("This is in the header", result.get(0));
+        assertContains("Test Document", result.get(0));
+        
+        assertContains("Testing", result.get(1));
+        assertContains("1 2 3", result.get(1));
+        assertContains("TestTable", result.get(1));
+        
+        assertContains("Testing 123", result.get(2));
+    }
 }

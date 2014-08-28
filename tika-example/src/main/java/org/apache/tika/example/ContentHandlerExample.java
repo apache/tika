@@ -18,11 +18,14 @@ package org.apache.tika.example;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.sax.xpath.Matcher;
@@ -113,9 +116,36 @@ public class ContentHandlerExample {
         }
     }
     
+    protected final int MAXIMUM_TEXT_CHUNK_SIZE = 40;
     /**
      * Example of extracting the plain text in chunks, with each chunk
      *  of no more than a certain maximum size
      */
-    // TODO Implement
+    public List<String> parseToPlainTextChunks() throws IOException, SAXException, TikaException {
+        final List<String> chunks = new ArrayList<String>();
+        chunks.add("");
+        ContentHandlerDecorator handler = new ContentHandlerDecorator() {
+            @Override
+            public void characters(char[] ch, int start, int length) {
+                String lastChunk = chunks.get(chunks.size()-1);
+                String thisStr = new String(ch, start, length);
+                
+                if (lastChunk.length()+length > MAXIMUM_TEXT_CHUNK_SIZE) {
+                    chunks.add(thisStr);
+                } else {
+                    chunks.set(chunks.size()-1, lastChunk+thisStr);
+                }
+            }
+        };
+        
+        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc");
+        AutoDetectParser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        try {
+            parser.parse(stream, handler, metadata);
+            return chunks;
+        } finally {
+            stream.close();
+        }
+    }
 }
