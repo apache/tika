@@ -24,6 +24,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.sax.xpath.Matcher;
+import org.apache.tika.sax.xpath.MatchingContentHandler;
+import org.apache.tika.sax.xpath.XPathParser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -67,7 +71,51 @@ public class ContentHandlerExample {
         }
     }
     
-    // TODO Only one part of the file as HTML
-
-    // TODO Plain text, in chunks of a maximum size
+    /**
+     * Example of extracting just the body as HTML, without the
+     *  head part, as a string
+     */
+    public String parseBodyToHTML() throws IOException, SAXException, TikaException {
+        ContentHandler handler = new BodyContentHandler(
+                new ToXMLContentHandler());
+        
+        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc");
+        AutoDetectParser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        try {
+            parser.parse(stream, handler, metadata);
+            return handler.toString();
+        } finally {
+            stream.close();
+        }
+    }
+    
+    /**
+     * Example of extracting just one part of the document's body,
+     *  as HTML as a string, excluding the rest
+     */
+    public String parseOnePartToHTML() throws IOException, SAXException, TikaException {
+        // Only get things under html -> body -> div (class=header)
+        XPathParser xhtmlParser = new XPathParser("xhtml", XHTMLContentHandler.XHTML);
+        Matcher divContentMatcher = xhtmlParser.parse(
+                "/xhtml:html/xhtml:body/xhtml:div/descendant::node()");        
+        ContentHandler handler = new MatchingContentHandler(
+                new ToXMLContentHandler(), divContentMatcher);
+        
+        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc");
+        AutoDetectParser parser = new AutoDetectParser();
+        Metadata metadata = new Metadata();
+        try {
+            parser.parse(stream, handler, metadata);
+            return handler.toString();
+        } finally {
+            stream.close();
+        }
+    }
+    
+    /**
+     * Example of extracting the plain text in chunks, with each chunk
+     *  of no more than a certain maximum size
+     */
+    // TODO Implement
 }
