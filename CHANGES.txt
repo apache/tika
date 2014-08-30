@@ -1,4 +1,7 @@
 Release 1.7 - ??/??/????
+  * Parse output should indicate which Parser was actually used
+    (TIKA-674).
+
   * Use the forbidden-apis Maven plugin to check for unsafe Java
     operations (TIKA-1387).
 
@@ -12,7 +15,6 @@ Release 1.7 - ??/??/????
     use the main Tika interfaces (TIKA-1390).
 
 Release 1.6 - 07/27/2014
-
 
   * Upgraded to Commons Compress 1.8.1 (TIKA-1275).
 
