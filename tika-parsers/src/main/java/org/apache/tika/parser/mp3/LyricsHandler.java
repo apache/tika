@@ -82,7 +82,7 @@ public class LyricsHandler {
             //  size including the LYRICSBEGIN but excluding the 
             //  length+LYRICS200 at the end.
             int length = Integer.parseInt(
-                    new String(tagData, lookat-6, 6)
+                    new String(tagData, lookat-6, 6, "UTF-8")
             );
 
             String lyrics = new String(

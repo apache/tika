@@ -66,8 +66,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
-      <version>4.11</version>
     </dependency>
   </dependencies>
 
@@ -218,9 +216,9 @@
   	<url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/tags/1.6/tika-server</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.6/tika-server</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.6/tika-server</developerConnection>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-server</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-server</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-server</developerConnection>
   </scm>
   <issueManagement>
   	<system>JIRA</system>

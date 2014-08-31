@@ -17,10 +17,11 @@
 
 package org.apache.tika.server;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -41,11 +42,14 @@ public class TikaServerCli {
   private static final Log logger = LogFactory.getLog(TikaServerCli.class);
   public static final int DEFAULT_PORT = 9998;
   public static final String DEFAULT_HOST = "localhost";
-
+  public static final Set<String> LOG_LEVELS = 
+		  new HashSet<String>(Arrays.asList("debug", "info"));
+  
   private static Options getOptions() {
     Options options = new Options();
     options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
     options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
+    options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
     options.addOption("?", "help", false, "this help message");
 
     return options;
@@ -79,51 +83,44 @@ public class TikaServerCli {
         port = Integer.valueOf(line.getOptionValue("port"));
       }
       
+      TikaLoggingFilter logFilter = null;
+      if (line.hasOption("log")) {
+        String logLevel = line.getOptionValue("log");
+        if (LOG_LEVELS.contains(logLevel)) {
+            boolean isInfoLevel = "info".equals(logLevel);
+            logFilter = new TikaLoggingFilter(isInfoLevel);
+        } else {
+        	logger.info("Unsupported request URI log level: " + logLevel);
+        }
+      }
       // The Tika Configuration to use throughout
       TikaConfig tika = TikaConfig.getDefaultConfig();
 
       JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
-      // Note - at least one of these stops TikaWelcome matching on /
-      // This prevents TikaWelcome acting as a partial solution to TIKA-1269
-      sf.setResourceClasses(MetadataEP.class, MetadataResource.class, DetectorResource.class, 
-              TikaResource.class, UnpackerResource.class, 
-              TikaDetectors.class, TikaParsers.class, 
-              TikaMimeTypes.class, TikaVersion.class, 
-              TikaWelcome.class);
-      // Use this one instead for the Welcome page to work
-/*      
-      sf.setResourceClasses(
-//              MetadataEP.class, 
-              MetadataResource.class, 
-              TikaResource.class, 
-//              UnpackerResource.class, 
-              TikaDetectors.class, 
-              TikaMimeTypes.class, 
-              TikaParsers.class, 
-              TikaVersion.class, 
-              TikaWelcome.class
-      ); 
-*/
 
+      List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
+      rCoreProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaDetectors(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaParsers(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
+      List<ResourceProvider> rAllProviders = new ArrayList<ResourceProvider>(rCoreProviders);
+      rAllProviders.add(new SingletonResourceProvider(new TikaWelcome(tika, rCoreProviders)));
+      sf.setResourceProviders(rAllProviders);
+      
       List<Object> providers = new ArrayList<Object>();
       providers.add(new TarWriter());
       providers.add(new ZipWriter());
       providers.add(new CSVMessageBodyWriter());
       providers.add(new JSONMessageBodyWriter());
       providers.add(new TikaExceptionMapper());
+      if (logFilter != null) {
+    	  providers.add(logFilter);
+      }
       sf.setProviders(providers);
-      
-      List<ResourceProvider> rProviders = new ArrayList<ResourceProvider>();
-      rProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaDetectors(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaParsers(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaVersion(tika)));
-      rProviders.add(new SingletonResourceProvider(new TikaWelcome(tika, sf)));
-      sf.setResourceProviders(rProviders);
       
       sf.setAddress("http://" + host + ":" + port + "/");
       BindingFactoryManager manager = sf.getBus().getExtension(

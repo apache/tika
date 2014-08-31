@@ -17,8 +17,9 @@
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.TikaTest.assertNotContained;
 
 import java.io.InputStream;
 import java.util.Locale;
@@ -65,13 +66,13 @@ public class ExcelParserTest {
             assertEquals("2007-10-01T16:31:43Z", metadata.get(Metadata.DATE));
             
             String content = handler.toString();
-            assertTrue(content.contains("Sample Excel Worksheet"));
-            assertTrue(content.contains("Numbers and their Squares"));
-            assertTrue(content.contains("\t\tNumber\tSquare"));
-            assertTrue(content.contains("9"));
-            assertFalse(content.contains("9.0"));
-            assertTrue(content.contains("196"));
-            assertFalse(content.contains("196.0"));
+            assertContains("Sample Excel Worksheet", content);
+            assertContains("Numbers and their Squares", content);
+            assertContains("\t\tNumber\tSquare", content);
+            assertContains("9", content);
+            assertNotContained("9.0", content);
+            assertContains("196", content);
+            assertNotContained("196.0", content);
         } finally {
             input.close();
         }
@@ -95,12 +96,12 @@ public class ExcelParserTest {
             String content = handler.toString();
 
             // Number #,##0.00
-            assertTrue(content.contains("1,599.99"));
-            assertTrue(content.contains("-1,599.99"));
+            assertContains("1,599.99", content);
+            assertContains("-1,599.99", content);
 
             // Currency $#,##0.00;[Red]($#,##0.00)
-            assertTrue(content.contains("$1,599.99"));
-            assertTrue(content.contains("($1,599.99)"));
+            assertContains("$1,599.99", content);
+            assertContains("($1,599.99)", content);
 
             // Scientific 0.00E+00
             // poi <=3.8beta1 returns 1.98E08, newer versions return 1.98+E08
@@ -108,26 +109,29 @@ public class ExcelParserTest {
             assertTrue(content.contains("-1.98E08") || content.contains("-1.98E+08"));
 
             // Percentage.
-            assertTrue(content.contains("2.50%"));
+            assertContains("2.50%", content);
             // Excel rounds up to 3%, but that requires Java 1.6 or later
             if(System.getProperty("java.version").startsWith("1.5")) {
-                assertTrue(content.contains("2%"));
+                assertContains("2%", content);
             } else {
-                assertTrue(content.contains("3%"));
+                assertContains("3%", content);
             }
 
             // Time Format: h:mm
-            assertTrue(content.contains("6:15"));
-            assertTrue(content.contains("18:15"));
+            assertContains("6:15", content);
+            assertContains("18:15", content);
 
             // Date Format: d-mmm-yy
-            assertTrue(content.contains("17-May-07"));
+            assertContains("17-May-07", content);
 
             // Date Format: m/d/yy
-            assertTrue(content.contains("10/3/09"));
+            assertContains("10/3/09", content);
             
             // Date/Time Format: m/d/yy h:mm
-            assertTrue(content.contains("1/19/08 4:35"));
+            assertContains("1/19/08 4:35", content);
+
+            // Fraction (2.5): # ?/?
+            assertContains("2 1/2", content);
 
             
             // Below assertions represent outstanding formatting issues to be addressed
@@ -136,13 +140,10 @@ public class ExcelParserTest {
 
             /*************************************************************************
             // Custom Number (0 "dollars and" .00 "cents")
-            assertTrue(content.contains("19 dollars and .99 cents"));
+            assertContains("19 dollars and .99 cents", content);
 
             // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
-            assertTrue(content.contains("At 4:20 AM on Thursday May 17, 2007"));
-
-            // Fraction (2.5): # ?/?  (TODO Coming in POI 3.8 beta 6)
-            assertTrue(content.contains("2 1 / 2"));
+            assertContains("At 4:20 AM on Thursday May 17, 2007", content);
             **************************************************************************/
 
         } finally {
@@ -171,21 +172,21 @@ public class ExcelParserTest {
             String content = handler.toString();
             
             // The first sheet has a pie chart
-            assertTrue(content.contains("charttabyodawg"));
-            assertTrue(content.contains("WhamPuff"));
+            assertContains("charttabyodawg", content);
+            assertContains("WhamPuff", content);
             
             // The second sheet has a bar chart and some text
-            assertTrue(content.contains("Sheet1"));
-            assertTrue(content.contains("Test Excel Spreasheet"));
-            assertTrue(content.contains("foo"));
-            assertTrue(content.contains("bar"));
-            assertTrue(content.contains("fizzlepuff"));
-            assertTrue(content.contains("whyaxis"));
-            assertTrue(content.contains("eksaxis"));
+            assertContains("Sheet1", content);
+            assertContains("Test Excel Spreasheet", content);
+            assertContains("foo", content);
+            assertContains("bar", content);
+            assertContains("fizzlepuff", content);
+            assertContains("whyaxis", content);
+            assertContains("eksaxis", content);
             
             // The third sheet has some text
-            assertTrue(content.contains("Sheet2"));
-            assertTrue(content.contains("dingdong"));
+            assertContains("Sheet2", content);
+            assertContains("dingdong", content);
         } finally {
             input.close();
         }
@@ -206,7 +207,7 @@ public class ExcelParserTest {
                     "application/vnd.ms-excel",
                     metadata.get(Metadata.CONTENT_TYPE));
             String content = handler.toString();
-            assertTrue(content.contains("Number Formats"));
+            assertContains("Number Formats", content);
         } finally {
             input.close();
         }
@@ -224,7 +225,7 @@ public class ExcelParserTest {
             new OfficeParser().parse(input, handler, metadata, context);
 
             String content = handler.toString();
-            assertTrue(content.contains("Microsoft Works"));
+            assertContains("Microsoft Works", content);
         } finally {
             input.close();
         }

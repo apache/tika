@@ -17,6 +17,7 @@
 package org.apache.tika.io;
 
 import java.util.HashSet;
+import java.util.Locale;
 
 
 public class FilenameUtils {
@@ -65,7 +66,7 @@ public class FilenameUtils {
 
         for (char c: name.toCharArray()) {
             if (RESERVED.contains(c)) {
-                sb.append('%').append((c<16) ? "0" : "").append(Integer.toHexString(c).toUpperCase());
+                sb.append('%').append((c<16) ? "0" : "").append(Integer.toHexString(c).toUpperCase(Locale.ROOT));
             } else {
                 sb.append(c);
             }

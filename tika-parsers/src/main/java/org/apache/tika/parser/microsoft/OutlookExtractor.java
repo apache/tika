@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Locale;
 
 import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
 import org.apache.poi.hsmf.MAPIMessage;
@@ -126,7 +127,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                  String[] headers = msg.getHeaders();
                  if(headers != null && headers.length > 0) {
                      for(String header: headers) {
-                        if(header.toLowerCase().startsWith("date:")) {
+                        if(header.toLowerCase(Locale.ROOT).startsWith("date:")) {
                             String date = header.substring(header.indexOf(':')+1).trim();
                             
                             // See if we can parse it as a normal mail date

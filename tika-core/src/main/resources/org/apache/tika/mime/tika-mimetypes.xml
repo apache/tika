@@ -2395,6 +2395,17 @@
     <glob pattern="*.ace"/>
   </mime-type>
 
+  <mime-type type="application/x-axcrypt">
+    <_comment>AxCrypt</_comment>
+    <glob pattern="*.axx" />
+    <magic priority="60">
+      <!-- AxCrypt block header, skip length field, then Header of type Preamble -->
+      <match value="0xc0b9072e4f93f146a015792ca1d9e821" type="string" offset="0">
+         <match value="2" type="big32" offset="17" />
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-adobe-indesign">
     <acronym>INDD</acronym>
     <_comment>Adobe InDesign document</_comment>
@@ -3760,8 +3771,6 @@
       <match value="OggS\000.......................\001vorbis" type="string"
              mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFF"
              offset="0"/>
-      <match value="\x4f\x67\x67\x53\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00"
-             type="string" offset="0"/>
     </magic>
     <glob pattern="*.ogg"/>
     <sub-class-of type="audio/ogg"/>
@@ -5613,6 +5622,18 @@
     <_comment>Ogg Vorbis Video</_comment>
     <glob pattern="*.ogv"/>
     <sub-class-of type="application/ogg"/>
+  </mime-type>
+
+  <mime-type type="video/daala">
+    <_comment>Ogg Daala Video</_comment>
+    <alias type="video/x-daala"/>
+    <magic priority="60">
+      <!-- Assumes Video stream comes before Audio, may not always -->
+      <match value="OggS\000.......................\x80daala" type="string"
+             mask="0xFFFFFFFF00000000000000000000000000000000000000000000000000FFFFFFFFFFFF"
+             offset="0"/>
+    </magic>
+    <sub-class-of type="video/ogg"/>
   </mime-type>
 
   <mime-type type="video/theora">

@@ -21,6 +21,9 @@ import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
 
+import java.io.UnsupportedEncodingException;
+import java.util.UnknownFormatConversionException;
+
 /**
  * Description There are two types of directory chunks -- index chunks, and
  * listing chunks. The index chunk will be omitted if there is only one listing
@@ -55,11 +58,7 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
  */
 public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private static final long serialVersionUID = -6139486487475923593L;
-    private byte[] signature = new String(ChmConstants.PMGL).getBytes(); /*
-                                                                          * 0
-                                                                          * (PMGL
-                                                                          * )
-                                                                          */
+    private byte[] signature;
     private long free_space; /* 4 */
     private long unknown_0008; /* 8 */
     private int block_prev; /* c */
@@ -68,6 +67,18 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     /* local usage */
     private int dataRemained;
     private int currentPlace = 0;
+
+    public ChmPmglHeader() {
+        try {
+            signature = ChmConstants.PMGL.getBytes("UTF-8"); /*
+                                                                          * 0
+                                                                          * (PMGL
+                                                                          * )
+                                                                          */
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
+    }
 
     private int getDataRemained() {
         return dataRemained;
@@ -95,7 +106,11 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("signatute:=" + new String(getSignature()) + ", ");
+        try {
+            sb.append("signatute:=" + new String(getSignature(), "UTF-8") + ", ");
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
         sb.append("free space:=" + getFreeSpace() + ", ");
         sb.append("unknown0008:=" + getUnknown0008() + ", ");
         sb.append("prev block:=" + getBlockPrev() + ", ");
@@ -160,10 +175,13 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
                 chmPmglHeader.getBlockNext()));
 
         /* check structure */
-        if (!new String(chmPmglHeader.getSignature()).equals(ChmConstants.PMGL))
-            throw new ChmParsingException(ChmPmglHeader.class.getName()
-                    + " pmgl != pmgl.signature");
-
+        try {
+            if (!new String(chmPmglHeader.getSignature(), "UTF-8").equals(ChmConstants.PMGL))
+                throw new ChmParsingException(ChmPmglHeader.class.getName()
+                        + " pmgl != pmgl.signature");
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
     }
 
     public byte[] getSignature() {

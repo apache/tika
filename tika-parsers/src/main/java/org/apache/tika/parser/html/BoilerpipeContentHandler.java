@@ -20,6 +20,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.WriteOutContentHandler;
@@ -83,8 +84,8 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
         @Override
         public String toString() {
-            return String.format("<%s> of type %s", localName, elementType);
-        };
+            return String.format(Locale.ROOT, "<%s> of type %s", localName, elementType);
+        }
 
         public String getUri() {
             return uri;

@@ -99,11 +99,11 @@ public class TikaDetectorsTest extends CXFTestBase {
        
        String jsonStr = getStringFromInputStream((InputStream) response.getEntity());
        Map<String,Map<String,Object>> json = (Map<String,Map<String,Object>>)JSON.parse(jsonStr);
-       
+
        // Should have a nested structure
-       assertEquals(true, json.containsKey("name"));
-       assertEquals(true, json.containsKey("composite"));
-       assertEquals(true, json.containsKey("children"));
+       assertTrue(json.containsKey("name"));
+       assertTrue(json.containsKey("composite"));
+       assertTrue(json.containsKey("children"));
        assertEquals("org.apache.tika.detect.DefaultDetector", json.get("name"));
        assertEquals(Boolean.TRUE, json.get("composite"));
 
@@ -113,11 +113,11 @@ public class TikaDetectorsTest extends CXFTestBase {
        boolean hasOgg = false, hasPOIFS = false, hasZIP = false, hasMime = false;
        for (Object o : children) {
            Map<String,Object> d = (Map<String,Object>)o;
-           assertEquals(true, d.containsKey("name"));
-           assertEquals(true, d.containsKey("composite"));
+           assertTrue(d.containsKey("name"));
+           assertTrue(d.containsKey("composite"));
            assertEquals(Boolean.FALSE, d.get("composite"));
            assertEquals(false, d.containsKey("children"));
-           
+
            String name = (String)d.get("name");
            if (OggDetector.class.getName().equals(name)) {
                hasOgg = true;
@@ -132,9 +132,9 @@ public class TikaDetectorsTest extends CXFTestBase {
                hasMime = true;
            }
        }
-       assertEquals(true, hasOgg);
-       assertEquals(true, hasPOIFS);
-       assertEquals(true, hasZIP);
-       assertEquals(true, hasMime);
+       assertTrue(hasOgg);
+       assertTrue(hasPOIFS);
+       assertTrue(hasZIP);
+       assertTrue(hasMime);
    }
 }

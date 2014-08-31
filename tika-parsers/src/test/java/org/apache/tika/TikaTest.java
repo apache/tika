@@ -16,6 +16,7 @@
  */
 package org.apache.tika;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -87,6 +88,10 @@ public abstract class TikaTest {
     public static void assertContains(String needle, String haystack) {
        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
+
+    public static void assertNotContained(String needle, String haystack) {
+        assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
+     }
 
     protected static class XMLResult {
         public final String xml;

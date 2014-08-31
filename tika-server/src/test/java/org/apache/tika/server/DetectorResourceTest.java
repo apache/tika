@@ -57,7 +57,7 @@ public class DetectorResourceTest extends CXFTestBase {
 	}
 
 	@Test
-	public void testDetectCsvWithExt() throws IllegalStateException, Exception {
+	public void testDetectCsvWithExt() throws Exception {
 		String url = endPoint + DETECT_STREAM_PATH;
 		Response response = WebClient
 				.create(endPoint + DETECT_STREAM_PATH)
@@ -74,7 +74,7 @@ public class DetectorResourceTest extends CXFTestBase {
 	}
 
 	@Test
-	public void testDetectCsvNoExt() throws IllegalStateException, Exception {
+	public void testDetectCsvNoExt() throws Exception {
 		String url = endPoint + DETECT_STREAM_PATH;
 		Response response = WebClient
 				.create(endPoint + DETECT_STREAM_PATH)

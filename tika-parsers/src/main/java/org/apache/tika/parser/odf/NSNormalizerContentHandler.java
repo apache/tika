@@ -18,6 +18,7 @@ package org.apache.tika.parser.odf;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Locale;
 
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.Attributes;
@@ -87,7 +88,7 @@ public class NSNormalizerContentHandler extends ContentHandlerDecorator {
     @Override
     public InputSource resolveEntity(String publicId, String systemId)
             throws IOException, SAXException {
-        if ((systemId != null && systemId.toLowerCase().endsWith(".dtd"))
+        if ((systemId != null && systemId.toLowerCase(Locale.ROOT).endsWith(".dtd"))
                 || DTD_PUBLIC_ID.equals(publicId)) {
             return new InputSource(new StringReader(""));
         } else {

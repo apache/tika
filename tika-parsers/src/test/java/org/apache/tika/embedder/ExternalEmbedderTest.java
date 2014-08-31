@@ -34,6 +34,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tika.embedder.Embedder;
@@ -58,7 +59,7 @@ import org.xml.sax.SAXException;
 public class ExternalEmbedderTest {
 
     protected static final DateFormat EXPECTED_METADATA_DATE_FORMATTER =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
     protected static final String DEFAULT_CHARSET = "UTF-8";
     private static final String COMMAND_METADATA_ARGUMENT_DESCRIPTION = "dc:description";
     private static final String TEST_TXT_PATH = "/test-documents/testTXT.txt";

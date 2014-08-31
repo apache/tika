@@ -56,7 +56,7 @@ public class MicrosoftTranslator implements Translator {
                 props.load(stream);
                 clientId = props.getProperty(ID_PROPERTY);
                 clientSecret = props.getProperty(SECRET_PROPERTY);
-                if (!clientId.equals(DEFAULT_ID) && !clientSecret.equals(DEFAULT_SECRET)) available = true;
+                this.available = checkAvailable();   
             }
         } catch (IOException e) {
         	e.printStackTrace();
@@ -119,7 +119,7 @@ public class MicrosoftTranslator implements Translator {
      */
     public void setId(String id){
     	this.clientId = id;
-        if (!clientId.equals(DEFAULT_ID) && !clientSecret.equals(DEFAULT_SECRET)) available = true;
+        this.available = checkAvailable();   
     }
     
     /**
@@ -128,6 +128,13 @@ public class MicrosoftTranslator implements Translator {
      */
     public void setSecret(String secret){
     	this.clientSecret = secret;
-        if (!clientId.equals(DEFAULT_ID) && !clientSecret.equals(DEFAULT_SECRET)) available = true;    	
+        this.available = checkAvailable();   	
+    }
+    
+    private boolean checkAvailable(){
+       return clientId != null && 
+    		   !clientId.equals(DEFAULT_ID) && 
+    		   clientSecret != null && 
+    		   !clientSecret.equals(DEFAULT_SECRET);
     }
 }

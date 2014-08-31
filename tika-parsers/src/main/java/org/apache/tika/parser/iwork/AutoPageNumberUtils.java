@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.iwork;
 
+import java.util.Locale;
+
 /**
  * Utility class to allow for conversion from an integer to Roman numerals
  * or alpha-numeric symbols in line with Pages auto numbering formats.
@@ -44,7 +46,7 @@ package org.apache.tika.parser.iwork;
 	}
 	
 	public static String asAlphaNumericLower(int i) {
-		return asAlphaNumeric(i).toLowerCase();
+		return asAlphaNumeric(i).toLowerCase(Locale.ROOT);
 	}
 	
 	/*
@@ -73,7 +75,7 @@ package org.apache.tika.parser.iwork;
     }
     
 	public static String asRomanNumeralsLower(int i) {
-		return asRomanNumerals(i).toLowerCase();
+		return asRomanNumerals(i).toLowerCase(Locale.ROOT);
 	}
     
     private static int i2r(StringBuffer sbuff, int i,

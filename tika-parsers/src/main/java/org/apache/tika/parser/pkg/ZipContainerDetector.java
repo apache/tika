@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -245,11 +246,11 @@ public class ZipContainerDetector implements Detector {
         String docType = coreType.substring(0, coreType.lastIndexOf('.'));
 
         // The Macro Enabled formats are a little special
-        if(docType.toLowerCase().endsWith("macroenabled")) {
-            docType = docType.toLowerCase() + ".12";
+        if(docType.toLowerCase(Locale.ROOT).endsWith("macroenabled")) {
+            docType = docType.toLowerCase(Locale.ROOT) + ".12";
         }
 
-        if(docType.toLowerCase().endsWith("macroenabledtemplate")) {
+        if(docType.toLowerCase(Locale.ROOT).endsWith("macroenabledtemplate")) {
             docType = MACRO_TEMPLATE_PATTERN.matcher(docType).replaceAll("macroenabled.12");
         }
 

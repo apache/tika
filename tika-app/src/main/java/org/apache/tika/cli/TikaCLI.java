@@ -31,13 +31,15 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
@@ -656,11 +658,11 @@ public class TikaCLI {
         if (encoding != null) {
             return new OutputStreamWriter(output, encoding);
         } else if (System.getProperty("os.name")
-                .toLowerCase().startsWith("mac os x")) {
+                .toLowerCase(Locale.ROOT).startsWith("mac os x")) {
             // TIKA-324: Override the default encoding on Mac OS X
             return new OutputStreamWriter(output, "UTF-8");
         } else {
-            return new OutputStreamWriter(output);
+            return new OutputStreamWriter(output, Charset.defaultCharset());
         }
     }
 
@@ -759,6 +761,7 @@ public class TikaCLI {
                 // being a CLI program messages should go to the stderr too
                 //
                 String msg = String.format(
+                    Locale.ROOT,
                     "Ignoring unexpected exception trying to save embedded file %s (%s)",
                     name,
                     e.getMessage()
@@ -821,13 +824,17 @@ public class TikaCLI {
                 @Override
                 public void run() {
                     try {
+                        InputStream input = null;
                         try {
                             InputStream rawInput = socket.getInputStream();
                             OutputStream output = socket.getOutputStream();
-                            InputStream input = TikaInputStream.get(rawInput);
+                            input = TikaInputStream.get(rawInput);
                             type.process(input, output, new Metadata());
                             output.flush();
                         } finally {
+                            if (input != null) {
+                                input.close();
+                            }
                             socket.close();
                         }
                     } catch (Exception e) {
