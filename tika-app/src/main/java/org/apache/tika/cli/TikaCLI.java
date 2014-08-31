@@ -824,13 +824,17 @@ public class TikaCLI {
                 @Override
                 public void run() {
                     try {
+                        InputStream input = null;
                         try {
                             InputStream rawInput = socket.getInputStream();
                             OutputStream output = socket.getOutputStream();
-                            InputStream input = TikaInputStream.get(rawInput);
+                            input = TikaInputStream.get(rawInput);
                             type.process(input, output, new Metadata());
                             output.flush();
                         } finally {
+                            if (input != null) {
+                                input.close();
+                            }
                             socket.close();
                         }
                     } catch (Exception e) {
