@@ -25,6 +25,8 @@ import org.apache.tika.parser.chm.core.ChmConstants;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.UnsupportedEncodingException;
+
 public class TestPmglHeader {
     ChmPmglHeader chmPmglHeader = null;
 
@@ -44,9 +46,9 @@ public class TestPmglHeader {
     }
 
     @Test
-    public void testChmPmglHeaderGet() {
+    public void testChmPmglHeaderGet() throws UnsupportedEncodingException {
         assertEquals(TestParameters.VP_PMGL_SIGNATURE, new String(
-                chmPmglHeader.getSignature()));
+                chmPmglHeader.getSignature(), "UTF-8"));
     }
 
     @Test

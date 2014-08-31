@@ -61,8 +61,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
-      <version>4.11</version>
     </dependency>
     <dependency>
       <groupId>org.ops4j.pax.exam</groupId>
@@ -253,6 +251,16 @@
           </execution>
         </executions>
       </plugin>
+
+      <!-- The Tika Bundle has no java code of its own, so no need to do -->
+      <!--  any forbidden API checking against it (it gets confused...) -->
+      <plugin>
+        <groupId>de.thetaphi</groupId>
+        <artifactId>forbiddenapis</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
@@ -309,9 +317,9 @@
   	<url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/tags/1.6/tika-bundle</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.6/tika-bundle</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.6/tika-bundle</developerConnection>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-bundle</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-bundle</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-bundle</developerConnection>
   </scm>
   <issueManagement>
   	<system>JIRA</system>

@@ -61,8 +61,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
-      <version>4.11</version>
     </dependency>
   </dependencies>
     <build>
@@ -146,9 +144,9 @@
   	<url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/tags/1.6/translate</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.6/translate</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.6/translate</developerConnection>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-translate</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-translate</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-translate</developerConnection>
   </scm>
   <issueManagement>
   	<system>JIRA</system>

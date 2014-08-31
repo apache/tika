@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 
 import org.apache.tika.exception.TikaException;
@@ -42,7 +43,7 @@ import org.apache.tika.parser.chm.exception.ChmParsingException;
 /* structure of ITSF headers */
 public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
     private static final long serialVersionUID = 2215291838533213826L;
-    private byte[] signature = new String("ITSF").getBytes(); /* 0 (ITSF) */
+    private byte[] signature;
     private int version; /* 4 */
     private int header_len; /* 8 */
     private int unknown_000c; /* c */
@@ -60,12 +61,24 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
     private int dataRemained;
     private int currentPlace = 0;
 
+    public ChmItsfHeader() {
+        try {
+            signature = ChmConstants.ITSF.getBytes("UTF-8"); /* 0 (ITSF) */
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
+    }
+
     /**
      * Prints the values of ChmfHeader
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(new String(getSignature()) + " ");
+        try {
+            sb.append(new String(getSignature(), "UTF-8") + " ");
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
         sb.append(getVersion() + " ");
         sb.append(getHeaderLen() + " ");
         sb.append(getUnknown_000c() + " ");
@@ -458,9 +471,12 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         chmItsfHeader.setUnknownLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownLen()));
         chmItsfHeader.setDirOffset(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirOffset()));
         chmItsfHeader.setDirLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirLen()));
-
-        if (!new String(chmItsfHeader.getSignature()).equals(ChmConstants.ITSF))
-            throw new TikaException("seems not valid file");
+        try {
+            if (!new String(chmItsfHeader.getSignature(), "UTF-8").equals(ChmConstants.ITSF))
+                throw new TikaException("seems not valid file");
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
         if (chmItsfHeader.getVersion() == ChmConstants.CHM_VER_2) {
             if (chmItsfHeader.getHeaderLen() < ChmConstants.CHM_ITSF_V2_LEN)
                 throw new TikaException("something wrong with header");

@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -566,7 +567,7 @@ public class PDFParserTest extends TikaTest {
         Set<String> knownContentDiffs = new HashSet<String>();
 
         for (File f : testDocs.listFiles()) {
-            if (! f.getName().toLowerCase().endsWith(".pdf")) {
+            if (! f.getName().toLowerCase(Locale.ROOT).endsWith(".pdf")) {
                 continue;
             }
 

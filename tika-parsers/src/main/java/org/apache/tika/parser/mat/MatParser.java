@@ -86,7 +86,7 @@ public class MatParser extends AbstractParser {
             }
 
             // Get endian indicator from header file
-            String endianBytes = new String(hdr.getEndianIndicator()); // Retrieve endian bytes and convert to string
+            String endianBytes = new String(hdr.getEndianIndicator(), "UTF-8"); // Retrieve endian bytes and convert to string
             String endianCode = String.valueOf(endianBytes.toCharArray()); // Convert bytes to characters to string
             metadata.set("endian", endianCode);
 

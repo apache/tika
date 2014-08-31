@@ -728,6 +728,12 @@ public class TestMimeTypes {
     }
     
     @Test
+    public void testAxCrypt() throws Exception {
+        // test-TXT.txt encrypted with a key of "tika"
+        assertTypeDetection("testTXT-tika.axx", "application/x-axcrypt");
+    }
+    
+    @Test
     public void testMatroskaDetection() throws Exception {
         assertType("video/x-matroska", "testMKV.mkv");
         // TODO: Need custom detector data detection, see TIKA-1180

@@ -157,7 +157,7 @@ public class MpegStreamTest
     public void testSkipNoCurrentHeader() throws IOException
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        bos.write("This is a test".getBytes());
+        bos.write("This is a test".getBytes("UTF-8"));
         ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
         stream = new MpegStream(in);
         assertFalse("Wrong result", stream.skipFrame());

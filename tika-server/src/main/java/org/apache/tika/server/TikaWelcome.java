@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +36,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 
@@ -59,12 +60,14 @@ public class TikaWelcome {
     
     private Tika tika;
     private HTMLHelper html;
-    private List<Class<?>> endpoints;
+    private List<Class<?>> endpoints = new LinkedList<Class<?>>();
     
-    public TikaWelcome(TikaConfig tika, JAXRSServerFactoryBean sf) {
+    public TikaWelcome(TikaConfig tika, List<ResourceProvider> rCoreProviders) {
         this.tika = new Tika(tika);
         this.html = new HTMLHelper();
-        this.endpoints = sf.getResourceClasses();
+        for (ResourceProvider rp : rCoreProviders) {
+            this.endpoints.add(rp.getResourceClass());
+        }
     }
     
     protected List<Endpoint> identifyEndpoints() {

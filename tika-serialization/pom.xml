@@ -59,7 +59,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
     </dependency>
 
   </dependencies>
@@ -85,9 +84,9 @@
     <url>http://www.apache.org</url>
   </organization>
   <scm>
-    <url>http://svn.apache.org/viewvc/tika/tags/1.6/tika-app</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.6/tika-serialization</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.6/tika-serialization</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/trunk/tika-app</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-serialization</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-serialization</developerConnection>
   </scm>
   <issueManagement>
     <system>JIRA</system>

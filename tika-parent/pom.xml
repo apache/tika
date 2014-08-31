@@ -242,15 +242,15 @@
       <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
-        <version>4.10</version>
+        <version>4.11</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
   </dependencyManagement>
 
   <properties>
-    <maven.compile.source>1.6</maven.compile.source>
-    <maven.compile.target>1.6</maven.compile.target>
+    <maven.compiler.source>1.6</maven.compiler.source>
+    <maven.compiler.target>1.6</maven.compiler.target>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
   </properties>
 
@@ -258,10 +258,33 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.1</version>
         <configuration>
-          <source>${maven.compile.source}</source>
-          <target>${maven.compile.target}</target>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>de.thetaphi</groupId>
+        <artifactId>forbiddenapis</artifactId>
+        <version>1.6.1</version>
+        <configuration>
+          <targetVersion>${maven.compiler.target}</targetVersion>
+          <internalRuntimeForbidden>true</internalRuntimeForbidden>
+          <failOnUnsupportedJava>false</failOnUnsupportedJava>
+          <bundledSignatures>
+            <bundledSignature>jdk-unsafe</bundledSignature>
+            <bundledSignature>jdk-deprecated</bundledSignature>
+          </bundledSignatures>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+              <goal>testCheck</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
     <pluginManagement>
@@ -324,8 +347,8 @@
   </profiles>
 
   <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/1.6/tika-parent</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/1.6/tika-parent</developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/tags/1.6/tika-parent</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/trunk/tika-parent</url>
   </scm>
 </project>

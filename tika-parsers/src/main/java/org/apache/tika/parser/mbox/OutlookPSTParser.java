@@ -140,7 +140,7 @@ public class OutlookPSTParser extends AbstractParser {
     mailMetadata.set("priority", valueOf(pstMail.getPriority()));
     mailMetadata.set("flagged", valueOf(pstMail.isFlagged()));
 
-    byte[] mailContent = pstMail.getBody().getBytes();
+    byte[] mailContent = pstMail.getBody().getBytes("UTF-8");
     embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
   }
 

@@ -45,7 +45,7 @@ public class BodyContentHandlerTest {
         xhtml.element("p", "Test text");
         xhtml.endDocument();
 
-        assertEquals("Test text\n", buffer.toString());
+        assertEquals("Test text\n", buffer.toString("UTF-8"));
     }
 
 }

@@ -67,7 +67,6 @@ public class PackageParser extends AbstractParser {
     private static final MediaType CPIO = MediaType.application("x-cpio");
     private static final MediaType DUMP = MediaType.application("x-tika-unix-dump");
     private static final MediaType TAR = MediaType.application("x-tar");
-    // Enable this when COMPRESS-267 is fixed, see TIKA-1243
     private static final MediaType SEVENZ = MediaType.application("x-7z-compressed");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
@@ -127,7 +126,7 @@ public class PackageParser extends AbstractParser {
                 stream.reset();
                 TikaInputStream tstream = TikaInputStream.get(stream);
                 
-                // Pending a fix for COMPRESS_269, this bit is a little nasty
+                // Pending a fix for COMPRESS-269, this bit is a little nasty
                 ais = new SevenZWrapper(new SevenZFile(tstream.getFile()));
             } else {
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);

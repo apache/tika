@@ -21,6 +21,8 @@ import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
 
+import java.io.UnsupportedEncodingException;
+
 /**
  * 
  * ::DataSpace/Storage/<SectionName>/ControlData This file contains $20 bytes of
@@ -40,11 +42,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     private static final long serialVersionUID = -7897854774939631565L;
     /* class' members */
     private long size; /* 0 */
-    private byte[] signature = new String(ChmConstants.LZXC).getBytes(); /*
-                                                                          * 4
-                                                                          * (LZXC
-                                                                          * )
-                                                                          */
+    private byte[] signature;
     private long version; /* 8 */
     private long resetInterval; /* c */
     private long windowSize; /* 10 */
@@ -54,6 +52,18 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     /* local usage */
     private int dataRemained;
     private int currentPlace = 0;
+
+    public ChmLzxcControlData() {
+        try {
+            signature = ChmConstants.LZXC.getBytes("UTF-8"); /*
+                                                              * 4
+                                                              * (LZXC
+                                                              * )
+                                                              */
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
+    }
 
     /**
      * Returns a remained data
@@ -247,8 +257,12 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("size(unknown):=" + this.getSize() + ", ");
-        sb.append("signature(Compression type identifier):="
-                + new String(this.getSignature()) + ", ");
+        try {
+            sb.append("signature(Compression type identifier):="
+                    + new String(this.getSignature(), "UTF-8") + ", ");
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
         sb.append("version(Possibly numeric code for LZX):="
                 + this.getVersion() + System.getProperty("line.separator"));
         sb.append("resetInterval(The Huffman reset interval):="
@@ -299,10 +313,14 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
                     "window size / resetInterval should be more than 1");
 
         /* checks a signature */
-        if (!new String(chmLzxcControlData.getSignature())
-                .equals(ChmConstants.LZXC))
-            throw new ChmParsingException(
-                    "the signature does not seem to be correct");
+        try {
+            if (!new String(chmLzxcControlData.getSignature(), "UTF-8")
+                    .equals(ChmConstants.LZXC))
+                throw new ChmParsingException(
+                        "the signature does not seem to be correct");
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 not supported.");
+        }
     }
 
     /**

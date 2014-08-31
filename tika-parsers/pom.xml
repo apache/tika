@@ -44,8 +44,7 @@
     <pdfbox.version>1.8.6</pdfbox.version>
   </properties>
 
-  <dependencies>    
-
+  <dependencies>
     <!-- Optional OSGi dependency, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>
@@ -101,11 +100,12 @@
       <artifactId>commons-compress</artifactId>
       <version>${compress.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.tukaani</groupId>
-      <artifactId>xz</artifactId>
+    <dependency> 
+      <groupId>org.tukaani</groupId> 
+      <artifactId>xz</artifactId> 
       <version>${tukaani.version}</version>
-    </dependency>
+   </dependency>
+
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
@@ -215,7 +215,6 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
        <groupId>org.mockito</groupId>
@@ -311,9 +310,9 @@
   	<url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/tags/1.6/tika-parsers</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.6/tika-parsers</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.6/tika-parsers</developerConnection>
+  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-parsers</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-parsers</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-parsers</developerConnection>
   </scm>
   <issueManagement>
   	<system>JIRA</system>

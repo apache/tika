@@ -26,7 +26,11 @@ import org.apache.james.mime4j.dom.address.Address;
 import org.apache.james.mime4j.dom.address.AddressList;
 import org.apache.james.mime4j.dom.address.Mailbox;
 import org.apache.james.mime4j.dom.address.MailboxList;
-import org.apache.james.mime4j.dom.field.*;
+import org.apache.james.mime4j.dom.field.AddressListField;
+import org.apache.james.mime4j.dom.field.DateTimeField;
+import org.apache.james.mime4j.dom.field.MailboxListField;
+import org.apache.james.mime4j.dom.field.ParsedField;
+import org.apache.james.mime4j.dom.field.UnstructuredField;
 import org.apache.james.mime4j.field.LenientFieldParser;
 import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
@@ -141,8 +145,7 @@ class MailContentHandler implements ContentHandler {
     /**
      * Header for the whole message or its parts
      * 
-     * @see http 
-     *      ://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/
+     * @see http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/
      *      Field.html
      **/
     public void field(Field field) throws MimeException {

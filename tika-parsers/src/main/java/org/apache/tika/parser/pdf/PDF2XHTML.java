@@ -25,6 +25,7 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -81,9 +82,10 @@ import org.xml.sax.helpers.AttributesImpl;
 class PDF2XHTML extends PDFTextStripper {
     
     /**
-     * format used for signature dates
+     * Format used for signature dates
+     * TODO Make this thread-safe
      */
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT);
  
     /**
      * Maximum recursive depth during AcroForm processing.

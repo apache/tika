@@ -27,6 +27,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.UnsupportedEncodingException;
+
 /**
  * Tests all public methods of the ChmItspHeader
  * 
@@ -134,9 +136,9 @@ public class TestChmItspHeader {
     }
 
     @Test
-    public void testGetSignature() {
+    public void testGetSignature() throws UnsupportedEncodingException {
         assertEquals(TestParameters.VP_ISTP_SIGNATURE, new String(
-                chmItspHeader.getSignature()));
+                chmItspHeader.getSignature(), "UTF-8"));
     }
 
     @Test

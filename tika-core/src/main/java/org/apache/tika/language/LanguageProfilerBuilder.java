@@ -405,7 +405,7 @@ public class LanguageProfilerBuilder {
      */
     public void save(OutputStream os) throws IOException {
         os.write(("# NgramProfile generated at " + new Date() + 
-                  " for Apache Tika Language Identification\n").getBytes());
+                  " for Apache Tika Language Identification\n").getBytes("UTF-8"));
 
         // And then each ngram
 

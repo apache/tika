@@ -108,7 +108,8 @@ public class TestParsers extends TikaTest {
 
     @Test
     public void testComment() throws Exception {
-        final String[] extensions = new String[] {"ppt", "pptx", "doc", "docx", "pdf", "rtf"};
+        final String[] extensions = new String[] {"ppt", "pptx", "doc", 
+            "docx", "xls", "xlsx", "pdf", "rtf"};
         for(String extension : extensions) {
             verifyComment(extension, "testComment");
         }

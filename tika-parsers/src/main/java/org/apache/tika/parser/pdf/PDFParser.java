@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import org.apache.jempbox.xmp.XMPSchema;
@@ -204,7 +205,7 @@ public class PDFParser extends AbstractParser {
             // Invalid date format, just ignore
         }
         try {
-            Calendar modified = info.getModificationDate(); 
+            Calendar modified = info.getModificationDate();
             addMetadata(metadata, Metadata.LAST_MODIFIED, modified);
             addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
         } catch (IOException e) {
@@ -214,7 +215,7 @@ public class PDFParser extends AbstractParser {
         // All remaining metadata is custom
         // Copy this over as-is
         List<String> handledMetadata = Arrays.asList("Author", "Creator", "CreationDate", "ModDate",
-             "Keywords", "Producer", "Subject", "Title", "Trapped");
+                "Keywords", "Producer", "Subject", "Title", "Trapped");
         for(COSName key : info.getDictionary().keySet()) {
             String name = key.getName();
             if(! handledMetadata.contains(name)) {
@@ -241,7 +242,7 @@ public class PDFParser extends AbstractParser {
                     metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
                     if (pdfaxmp.getConformance() != null) {
                         metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
-                        String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase();
+                        String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase(Locale.ROOT);
                         metadata.set("pdfa:PDFVersion", version );
                         metadata.add(TikaCoreProperties.FORMAT.getName(), 
                             MEDIA_TYPE.toString()+"; version=\""+version+"\"" );

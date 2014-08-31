@@ -389,7 +389,7 @@ public class AutoDetectParserTest {
     public void testSpecificParserList() throws Exception {
         AutoDetectParser parser = new AutoDetectParser(new MyDetector(), new MyParser());
         
-        InputStream is = new ByteArrayInputStream("test".getBytes());
+        InputStream is = new ByteArrayInputStream("test".getBytes("UTF-8"));
         Metadata metadata = new Metadata();
         parser.parse(is, new BodyContentHandler(), metadata, new ParseContext());
         

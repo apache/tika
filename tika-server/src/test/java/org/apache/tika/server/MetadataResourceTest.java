@@ -57,8 +57,7 @@ public class MetadataResourceTest extends CXFTestBase {
 				.put(ClassLoader
 						.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
-		Reader reader = new InputStreamReader(
-				(InputStream) response.getEntity());
+		Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
 
 		CSVReader csvReader = new CSVReader(reader);
 
