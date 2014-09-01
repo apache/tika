@@ -1,4 +1,5 @@
-Release 1.7 - ??/??/????
+Release 1.6 - 08/31/2014
+
   * Parse output should indicate which Parser was actually used
     (TIKA-674).
 
@@ -13,8 +14,6 @@ Release 1.7 - ??/??/????
 
   * Created the tika-example module. It will have examples of how to
     use the main Tika interfaces (TIKA-1390).
-
-Release 1.6 - 07/27/2014
 
   * Upgraded to Commons Compress 1.8.1 (TIKA-1275).
 

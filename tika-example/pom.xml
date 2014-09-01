@@ -23,7 +23,7 @@
     <parent>
         <artifactId>tika-parent</artifactId>
         <groupId>org.apache.tika</groupId>
-        <version>1.7-SNAPSHOT</version>
+        <version>1.6-SNAPSHOT</version>
         <relativePath>../tika-parent/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
