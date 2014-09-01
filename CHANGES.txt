@@ -1,3 +1,7 @@
+Release 1.7 - Current Development
+
+
+
 Release 1.6 - 08/31/2014
 
   * Parse output should indicate which Parser was actually used
