@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.7-SNAPSHOT</version>
+    <version>1.6</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -38,7 +38,7 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>1.7-SNAPSHOT</version>
+      <version>1.6</version>
     </dependency>
     <dependency>
       <groupId>com.memetix</groupId>
@@ -144,9 +144,9 @@
   	<url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-translate</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-translate</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-translate</developerConnection>
+  	<url>http://svn.apache.org/viewvc/tika/tags/1.6-rc2/tika-translate</url>
+  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.6-rc2/tika-translate</connection>
+  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.6-rc2/tika-translate</developerConnection>
   </scm>
   <issueManagement>
   	<system>JIRA</system>
