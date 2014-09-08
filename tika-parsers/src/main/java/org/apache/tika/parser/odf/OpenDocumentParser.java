@@ -127,6 +127,8 @@ public class OpenDocumentParser extends AbstractParser {
                 zipFile = (ZipFile) container;
             } else if (tis.hasFile()) {
                 zipFile = new ZipFile(tis.getFile());                
+            } else {
+                zipStream = new ZipInputStream(stream);
             }
         } else {
             zipStream = new ZipInputStream(stream);
