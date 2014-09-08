@@ -17,6 +17,7 @@
 package org.apache.tika.parser.pkg;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -91,6 +92,7 @@ public class TarParserTest extends AbstractPkgTest {
        // Should have found all 9 documents, but not the directory
        assertEquals(9, tracker.filenames.size());
        assertEquals(9, tracker.mediatypes.size());
+       assertEquals(9, tracker.modifiedAts.size());
        
        // Should have names but not content types, as tar doesn't
        //  store the content types
@@ -106,6 +108,10 @@ public class TarParserTest extends AbstractPkgTest {
        
        for(String type : tracker.mediatypes) {
           assertNull(type);
+       }
+       for(String mod : tracker.modifiedAts) {
+           assertNotNull(mod);
+           assertTrue("Modified at " + mod, mod.startsWith("20"));
        }
     }
 }
