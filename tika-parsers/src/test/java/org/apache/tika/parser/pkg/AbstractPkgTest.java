@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
@@ -60,11 +61,13 @@ public abstract class AbstractPkgTest extends TikaTest {
    protected static class EmbeddedTrackingParser extends AbstractParser {
       protected List<String> filenames = new ArrayList<String>();
       protected List<String> mediatypes = new ArrayList<String>();
+      protected List<String> modifiedAts = new ArrayList<String>();
       protected byte[] lastSeenStart;
       
       public void reset() {
          filenames.clear();
          mediatypes.clear();
+         modifiedAts.clear();
       }
       
       public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -77,6 +80,7 @@ public abstract class AbstractPkgTest extends TikaTest {
             SAXException, TikaException {
          filenames.add(metadata.get(Metadata.RESOURCE_NAME_KEY));
          mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));
+         modifiedAts.add(metadata.get(TikaCoreProperties.MODIFIED));
          
          lastSeenStart = new byte[32];
          stream.read(lastSeenStart);

@@ -90,9 +90,11 @@ public class GzipParserTest extends AbstractPkgTest {
        // Should find a single entry, for the (compressed) tar file
        assertEquals(1, tracker.filenames.size());
        assertEquals(1, tracker.mediatypes.size());
+       assertEquals(1, tracker.modifiedAts.size());
        
        assertEquals(null, tracker.filenames.get(0));
        assertEquals(null, tracker.mediatypes.get(0));
+       assertEquals(null, tracker.modifiedAts.get(0));
 
        // Tar file starts with the directory name
        assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, "ASCII"));

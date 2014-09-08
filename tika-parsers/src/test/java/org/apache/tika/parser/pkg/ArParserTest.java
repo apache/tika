@@ -87,8 +87,12 @@ public class ArParserTest extends AbstractPkgTest {
 
 		assertEquals(1, tracker.filenames.size());
 		assertEquals(1, tracker.mediatypes.size());
+                assertEquals(1, tracker.modifiedAts.size());
 
 		assertEquals("testTXT.txt", tracker.filenames.get(0));
+		
+		String modifiedAt = tracker.modifiedAts.get(0);
+	        assertTrue("Modified at " + modifiedAt, modifiedAt.startsWith("201"));
 
 		for (String type : tracker.mediatypes) {
 			assertNull(type);

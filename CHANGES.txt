@@ -1,5 +1,7 @@
 Release 1.7 - Current Development
 
+  * PackageParser includes the last-modified date from the archive
+    in the metadata, when handling embedded entries (TIKA-1246)
 
 
 Release 1.6 - 08/31/2014

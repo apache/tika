@@ -40,6 +40,7 @@ import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -169,7 +170,9 @@ public class PackageParser extends AbstractParser {
             throws SAXException, IOException, TikaException {
         String name = entry.getName();
         if (archive.canReadEntryData(entry)) {
+            // Fetch the metadata on the entry contained in the archive
             Metadata entrydata = new Metadata();
+            entrydata.set(TikaCoreProperties.MODIFIED, entry.getLastModifiedDate());
             if (name != null && name.length() > 0) {
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
                 AttributesImpl attributes = new AttributesImpl();
@@ -180,6 +183,7 @@ public class PackageParser extends AbstractParser {
 
                 entrydata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, name);
             }
+            
             if (extractor.shouldParseEmbedded(entrydata)) {
                 // For detectors to work, we need a mark/reset supporting
                 // InputStream, which ArchiveInputStream isn't, so wrap

@@ -17,6 +17,7 @@
 package org.apache.tika.parser.pkg;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -100,9 +101,10 @@ public class ZipParserTest extends AbstractPkgTest {
        // Should have found all 9 documents
        assertEquals(9, tracker.filenames.size());
        assertEquals(9, tracker.mediatypes.size());
+       assertEquals(9, tracker.modifiedAts.size());
        
-       // Should have names but not content types, as zip doesn't
-       //  store the content types
+       // Should have names and modified dates, but not content types, 
+       //  as zip doesn't store the content types
        assertEquals("testEXCEL.xls", tracker.filenames.get(0));
        assertEquals("testHTML.html", tracker.filenames.get(1));
        assertEquals("testOpenOffice2.odt", tracker.filenames.get(2));
@@ -115,6 +117,10 @@ public class ZipParserTest extends AbstractPkgTest {
        
        for(String type : tracker.mediatypes) {
           assertNull(type);
+       }
+       for(String mod : tracker.modifiedAts) {
+           assertNotNull(mod);
+           assertTrue("Modified at " + mod, mod.startsWith("20"));
        }
     }
 
