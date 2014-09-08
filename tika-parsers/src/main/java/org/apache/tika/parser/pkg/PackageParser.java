@@ -105,34 +105,37 @@ public class PackageParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        // At the end we want to close the archive stream to release
-        // any associated resources, but the underlying document stream
-        // should not be closed
-        stream = new CloseShieldInputStream(stream);
-
+       
         // Ensure that the stream supports the mark feature
-        if (! TikaInputStream.isTikaInputStream(stream)) {
+        if (! TikaInputStream.isTikaInputStream(stream))
             stream = new BufferedInputStream(stream);
-        }
-
-        ArchiveInputStream ais;
+        
+        
+        TemporaryResources tmp = new TemporaryResources();
+        ArchiveInputStream ais = null;
         try {
-            ArchiveStreamFactory factory = context.get(
-                    ArchiveStreamFactory.class, new ArchiveStreamFactory());
-            ais = factory.createArchiveInputStream(stream);
+            ArchiveStreamFactory factory = context.get(ArchiveStreamFactory.class, new ArchiveStreamFactory());
+            // At the end we want to close the archive stream to release
+            // any associated resources, but the underlying document stream
+            // should not be closed
+            ais = factory.createArchiveInputStream(new CloseShieldInputStream(stream));
+            
         } catch (StreamingNotSupportedException sne) {
             // Most archive formats work on streams, but a few need files
             if (sne.getFormat().equals(ArchiveStreamFactory.SEVEN_Z)) {
                 // Rework as a file, and wrap
                 stream.reset();
-                TikaInputStream tstream = TikaInputStream.get(stream);
+                TikaInputStream tstream = TikaInputStream.get(stream, tmp);
                 
                 // Pending a fix for COMPRESS-269, this bit is a little nasty
                 ais = new SevenZWrapper(new SevenZFile(tstream.getFile()));
+                
             } else {
+                tmp.close();
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
             }
         } catch (ArchiveException e) {
+            tmp.close();
             throw new TikaException("Unable to unpack document stream", e);
         }
 
@@ -159,6 +162,7 @@ public class PackageParser extends AbstractParser {
             }
         } finally {
             ais.close();
+            tmp.close();
         }
 
         xhtml.endDocument();
@@ -173,6 +177,7 @@ public class PackageParser extends AbstractParser {
             // Fetch the metadata on the entry contained in the archive
             Metadata entrydata = new Metadata();
             entrydata.set(TikaCoreProperties.MODIFIED, entry.getLastModifiedDate());
+            entrydata.set(Metadata.CONTENT_LENGTH, Long.toString(entry.getSize()));
             if (name != null && name.length() > 0) {
                 entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
                 AttributesImpl attributes = new AttributesImpl();
@@ -223,6 +228,11 @@ public class PackageParser extends AbstractParser {
         @Override
         public ArchiveEntry getNextEntry() throws IOException {
             return file.getNextEntry();
+        }
+        
+        @Override
+        public void close() throws IOException {
+            file.close();
         }
     }
 }
