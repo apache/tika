@@ -158,10 +158,15 @@ public class OfficeParser extends AbstractParser {
                 root = ((NPOIFSFileSystem) container).getRoot();
             } else if (container instanceof DirectoryNode) {
                 root = (DirectoryNode) container;
-            } else if (tstream.hasFile()) {
-                root = new NPOIFSFileSystem(tstream.getFile(), true).getRoot();
             } else {
-                root = new NPOIFSFileSystem(new CloseShieldInputStream(tstream)).getRoot();
+                NPOIFSFileSystem fs;
+                if (tstream.hasFile()) {
+                    fs = new NPOIFSFileSystem(tstream.getFile(), true);
+                } else {
+                    fs = new NPOIFSFileSystem(new CloseShieldInputStream(tstream));
+                }
+                tstream.setOpenContainer(fs);
+                root = fs.getRoot();
             }
         }
         parse(root, context, metadata, xhtml);
