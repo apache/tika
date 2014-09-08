@@ -189,10 +189,7 @@ public class OfficeParser extends AbstractParser {
 
         switch (type) {
         case SOLIDWORKS_PART:
-//        	new SolidworksExtractor(context).parse(root, xhtml);
-        	break;
         case SOLIDWORKS_ASSEMBLY:
-        	break;
         case SOLIDWORKS_DRAWING:
         	break;
         case PUBLISHER:
@@ -260,6 +257,10 @@ public class OfficeParser extends AbstractParser {
            } catch (GeneralSecurityException ex) {
               throw new EncryptedDocumentException(ex);
            }
+        default:
+            // For unsupported / unhandled types, just the metadata
+            //  is extracted, which happened above
+            break;
         }
     }
 
