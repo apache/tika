@@ -442,7 +442,7 @@ public class RTFParserTest extends TikaTest {
         trueNames.add("file_3.pdf");
         trueNames.add("file_4.ppt");
         trueNames.add("file_5.pptx");
-        trueNames.add("thumbnail_0.jpeg");
+        trueNames.add("thumbnail.jpeg");
         trueNames.add("file_6.doc");
         trueNames.add("file_7.doc");
         trueNames.add("file_8.docx");

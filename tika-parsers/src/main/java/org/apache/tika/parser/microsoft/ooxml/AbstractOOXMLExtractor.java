@@ -136,12 +136,11 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
     private void handleThumbnail( ContentHandler handler ) {
         try {
             OPCPackage opcPackage = extractor.getPackage();
-            int thumbIndex = 0;
             for (PackageRelationship rel : opcPackage.getRelationshipsByType( PackageRelationshipTypes.THUMBNAIL )) {
                 PackagePart tPart = opcPackage.getPart(rel);
                 InputStream tStream = tPart.getInputStream();
                 Metadata thumbnailMetadata = new Metadata();                
-                String thumbName = "thumbnail_"  + thumbIndex + "." + tPart.getPartName().getExtension();
+                String thumbName = tPart.getPartName().getName();
                 thumbnailMetadata.set(Metadata.RESOURCE_NAME_KEY, thumbName);
                 
                 AttributesImpl attributes = new AttributesImpl();
@@ -155,11 +154,10 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                 thumbnailMetadata.set(TikaCoreProperties.TITLE, tPart.getPartName().getName());
                 
                 if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata)) {
-                    embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream), new EmbeddedContentHandler(handler), thumbnailMetadata, true);
+                    embeddedExtractor.parseEmbedded(TikaInputStream.get(tStream), new EmbeddedContentHandler(handler), thumbnailMetadata, false);
                 }
                 
                 tStream.close();
-                thumbIndex ++;
             }
          } catch (Exception ex) {
              

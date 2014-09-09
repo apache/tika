@@ -1056,47 +1056,37 @@ public class OOXMLParserTest extends TikaTest {
      
     }
     
-    //TIKA-1223
     @Test
     public void testDOCXThumbnail() throws Exception {
         String xml = getXML("testDOCX_Thumbnail.docx").xml;
         int a = xml.indexOf("This file contains a thumbnail");
-        int b = xml.indexOf("<div class=\"embedded\" id=\"thumbnail_0.emf\" />");
-        int c = xml.indexOf( "<div class=\"package-entry\"><h1>thumbnail_0.emf</h1></div>" );
+        int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.emf\" />");
         
         assertTrue(a != -1);
         assertTrue(b != -1);
-        assertTrue(c != -1);
         assertTrue(a < b);
-        assertTrue(b < c);
     }
     
     @Test
     public void testXLSXThumbnail() throws Exception {
         String xml = getXML("testXLSX_Thumbnail.xlsx").xml;
         int a = xml.indexOf("This file contains an embedded thumbnail by default");
-        int b = xml.indexOf("<div class=\"embedded\" id=\"thumbnail_0.wmf\" />");
-        int c = xml.indexOf( "<div class=\"package-entry\"><h1>thumbnail_0.wmf</h1></div>" );
+        int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.wmf\" />");
         
         assertTrue(a != -1);
         assertTrue(b != -1);
-        assertTrue(c != -1);
         assertTrue(a < b);
-        assertTrue(b < c);
     }
     
     @Test
     public void testPPTXThumbnail() throws Exception {
         String xml = getXML("testPPTX_Thumbnail.pptx").xml;
         int a = xml.indexOf("<body><p>This file contains an embedded thumbnail</p>");
-        int b = xml.indexOf("<div class=\"embedded\" id=\"thumbnail_0.jpeg\" />");
-        int c = xml.indexOf( "<div class=\"package-entry\"><h1>thumbnail_0.jpeg</h1></div>" );
+        int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.jpeg\" />");
         
         assertTrue(a != -1);
         assertTrue(b != -1);
-        assertTrue(c != -1);
         assertTrue(a < b);
-        assertTrue(b < c);
     }
 
 }
