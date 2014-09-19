@@ -62,7 +62,6 @@ public class AutoDetectParser extends CompositeParser {
      * available parsers have their 3rd party jars included, as otherwise the
      * use of the default TikaConfig will throw various "ClassNotFound" exceptions.
      * 
-     * @param detector Detector to use
      * @param parsers
      */
     public AutoDetectParser(Parser...parsers) {
