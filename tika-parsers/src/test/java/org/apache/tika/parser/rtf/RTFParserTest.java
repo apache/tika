@@ -16,23 +16,6 @@
  */
 package org.apache.tika.parser.rtf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -48,10 +31,28 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -516,7 +517,8 @@ public class RTFParserTest extends TikaTest {
     public void testRegularImages() throws Exception {
         Parser base = new AutoDetectParser();
         ParseContext ctx = new ParseContext();
-        RecursiveMetadataParser parser = new RecursiveMetadataParser(base, false);
+        RecursiveParserWrapper parser = new RecursiveParserWrapper(base,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         ctx.set(org.apache.tika.parser.Parser.class, parser);
         TikaInputStream tis = null;
         ContentHandler handler = new BodyContentHandler();
@@ -528,7 +530,7 @@ public class RTFParserTest extends TikaTest {
         } finally {
             tis.close();
         }
-        List<Metadata> metadatas =  parser.getAllMetadata();
+        List<Metadata> metadatas =  parser.getMetadata();
 
         Metadata meta_jpg_exif = metadatas.get(0);//("testJPEG_EXIF_\u666E\u6797\u65AF\u987F.jpg");
         Metadata meta_jpg = metadatas.get(2);//("testJPEG_\u666E\u6797\u65AF\u987F.jpg");

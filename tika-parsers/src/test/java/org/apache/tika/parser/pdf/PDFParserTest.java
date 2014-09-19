@@ -16,21 +16,6 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
@@ -44,10 +29,27 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 /**
  * Test case for parsing pdf files.
  */
@@ -667,7 +669,8 @@ public class PDFParserTest extends TikaTest {
         //"regressiveness" exists only in Unit10.doc not in the container pdf document
         assertTrue(xml.contains("regressiveness"));
 
-        RecursiveMetadataParser p = new RecursiveMetadataParser(new AutoDetectParser(), false);
+        RecursiveParserWrapper p = new RecursiveParserWrapper(new AutoDetectParser(),
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         TikaInputStream tis = null;
         ParseContext context = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
@@ -686,16 +689,17 @@ public class PDFParserTest extends TikaTest {
             }
         }
 
-        List<Metadata> metadatas = p.getAllMetadata();
+        List<Metadata> metadatas = p.getMetadata();
+
         assertEquals(5, metadatas.size());
         assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
         assertNull(metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals("Press Quality(1).joboptions", metadatas.get(2).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals("Unit10.doc", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
-        assertEquals(MediaType.image("jpeg").toString(), metadatas.get(0).get(Metadata.CONTENT_TYPE));
-        assertEquals(MediaType.image("tiff").toString(), metadatas.get(1).get(Metadata.CONTENT_TYPE));
-        assertEquals("text/plain; charset=ISO-8859-1", metadatas.get(2).get(Metadata.CONTENT_TYPE));
-        assertEquals(TYPE_DOC.toString(), metadatas.get(3).get(Metadata.CONTENT_TYPE));
+        assertEquals("Press Quality(1).joboptions", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("Unit10.doc", metadatas.get(4).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals(MediaType.image("jpeg").toString(), metadatas.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals(MediaType.image("tiff").toString(), metadatas.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("text/plain; charset=ISO-8859-1", metadatas.get(3).get(Metadata.CONTENT_TYPE));
+        assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
     }
 
 
@@ -849,7 +853,8 @@ public class PDFParserTest extends TikaTest {
 
         Parser defaultParser = new AutoDetectParser();
 
-        RecursiveMetadataParser p = new RecursiveMetadataParser(defaultParser, false);
+        RecursiveParserWrapper p = new RecursiveParserWrapper(defaultParser,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         ParseContext context = new ParseContext();
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
         context.set(org.apache.tika.parser.Parser.class, p);
@@ -860,7 +865,7 @@ public class PDFParserTest extends TikaTest {
 
         p.parse(stream, handler, metadata, context);
 
-        List<Metadata> metadatas = p.getAllMetadata();
+        List<Metadata> metadatas = p.getMetadata();
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -877,7 +882,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(2, attach);
 
         stream.close();
-        p.clear();
+        p.reset();
 
         //now try turning off inline
         stream = TikaInputStream.get(this.getClass().getResource(path));
@@ -889,7 +894,7 @@ public class PDFParserTest extends TikaTest {
         metadata = new Metadata();
         p.parse(stream, handler, metadata, context);
 
-        metadatas = p.getAllMetadata();
+        metadatas = p.getMetadata();
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -910,7 +915,8 @@ public class PDFParserTest extends TikaTest {
     public void testInlineConfig() throws Exception {
         
         Parser defaultParser = new AutoDetectParser();
-        RecursiveMetadataParser p = new RecursiveMetadataParser(defaultParser, false);
+        RecursiveParserWrapper p = new RecursiveParserWrapper(defaultParser,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         ParseContext context = new ParseContext();
         context.set(org.apache.tika.parser.Parser.class, p);
         Metadata metadata = new Metadata();
@@ -920,7 +926,7 @@ public class PDFParserTest extends TikaTest {
 
         p.parse(stream, handler, metadata, context);
 
-        List<Metadata> metadatas = p.getAllMetadata();
+        List<Metadata> metadatas = p.getMetadata();
         int inline = 0;
         int attach = 0;
         for (Metadata m : metadatas) {
@@ -937,7 +943,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals(2, attach);
 
         stream.close();
-        p.clear();
+        p.reset();
 
         //now try turning off inline
         stream = TikaInputStream.get(this.getClass().getResource(path));
@@ -952,7 +958,7 @@ public class PDFParserTest extends TikaTest {
         metadata = new Metadata();
         p.parse(stream, handler, metadata, context);
 
-        metadatas = p.getAllMetadata();
+        metadatas = p.getMetadata();
         for (Metadata m : metadatas) {
             String v = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             if (v != null) {
@@ -971,16 +977,18 @@ public class PDFParserTest extends TikaTest {
     public void testEmbeddedFileNameExtraction() throws Exception {
         InputStream is = PDFParserTest.class.getResourceAsStream(
                 "/test-documents/testPDF_multiFormatEmbFiles.pdf");
-        RecursiveMetadataParser p = new RecursiveMetadataParser(new AutoDetectParser(), false);
+        RecursiveParserWrapper p = new RecursiveParserWrapper(
+                new AutoDetectParser(),
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         Metadata m = new Metadata();
         ParseContext c = new ParseContext();
         c.set(org.apache.tika.parser.Parser.class, p);
         ContentHandler h = new BodyContentHandler();
         p.parse(is, h, m, c);
         is.close();
-        List<Metadata> metadatas = p.getAllMetadata();
+        List<Metadata> metadatas = p.getMetadata();
         assertEquals("metadata size", 5, metadatas.size());
-        Metadata firstAttachment = metadatas.get(0);
+        Metadata firstAttachment = metadatas.get(1);
         assertEquals("attachment file name", "Test.txt", firstAttachment.get(Metadata.RESOURCE_NAME_KEY));
     }
 
@@ -988,24 +996,26 @@ public class PDFParserTest extends TikaTest {
     public void testOSSpecificEmbeddedFileExtraction() throws Exception {
         InputStream is = PDFParserTest.class.getResourceAsStream(
                 "/test-documents/testPDF_multiFormatEmbFiles.pdf");
-        RecursiveMetadataParser p = new RecursiveMetadataParser(new AutoDetectParser(), true);
+        RecursiveParserWrapper p = new RecursiveParserWrapper(
+                new AutoDetectParser(),
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
         Metadata m = new Metadata();
         ParseContext c = new ParseContext();
         c.set(org.apache.tika.parser.Parser.class, p);
         ContentHandler h = new BodyContentHandler();
         p.parse(is, h, m, c);
         is.close();
-        List<Metadata> metadatas = p.getAllMetadata();
+        List<Metadata> metadatas = p.getMetadata();
         assertEquals("metadata size", 5, metadatas.size());
 
-        assertEquals("file name", "Test.txt", metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
-        assertContains("os specific", metadatas.get(0).get(RecursiveMetadataParser.TIKA_CONTENT));
-        assertEquals("file name", "TestMac.txt", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
-        assertContains("mac embedded", metadatas.get(1).get(RecursiveMetadataParser.TIKA_CONTENT));
-        assertEquals("file name", "TestDos.txt", metadatas.get(2).get(Metadata.RESOURCE_NAME_KEY));
-        assertContains("dos embedded", metadatas.get(2).get(RecursiveMetadataParser.TIKA_CONTENT));
-        assertEquals("file name", "TestUnix.txt", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
-        assertContains("unix embedded", metadatas.get(3).get(RecursiveMetadataParser.TIKA_CONTENT));
+        assertEquals("file name", "Test.txt", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("os specific", metadatas.get(1).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("file name", "TestMac.txt", metadatas.get(2).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("mac embedded", metadatas.get(2).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("file name", "TestDos.txt", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("dos embedded", metadatas.get(3).get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("file name", "TestUnix.txt", metadatas.get(4).get(Metadata.RESOURCE_NAME_KEY));
+        assertContains("unix embedded", metadatas.get(4).get(RecursiveParserWrapper.TIKA_CONTENT));
         
     }
 

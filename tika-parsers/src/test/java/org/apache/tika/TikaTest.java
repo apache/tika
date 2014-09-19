@@ -16,9 +16,17 @@
  */
 package org.apache.tika;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.tika.extractor.EmbeddedResourceHandler;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.xml.sax.ContentHandler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -31,21 +39,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedResourceHandler;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Parent class of Tika tests
@@ -200,56 +196,4 @@ public abstract class TikaTest {
             }
         }
     }
-    
-    /**
-     * Stores metadata and (optionally) content.
-     * Many thanks to Jukka's example:
-     * http://wiki.apache.org/tika/RecursiveMetadata
-     * This ignores the incoming handler and applies a 
-     * new BodyContentHandler(-1) for each file.
-     */
-    public static class RecursiveMetadataParser extends ParserDecorator {
-        /** Key for content string if stored */
-        public static final String TIKA_CONTENT = "tika:content";
-
-        private static final long serialVersionUID = 1L;
-        
-        private List<Metadata> metadatas = new ArrayList<Metadata>();
-        private final boolean storeContent;
-        
-        public RecursiveMetadataParser(Parser parser, 
-                boolean storeContent) {
-            super(parser);
-            this.storeContent = storeContent;
-        }
-
-        @Override
-        public void parse(
-                InputStream stream, ContentHandler ignoredHandler,
-                Metadata metadata, ParseContext context)
-                        throws IOException, SAXException, TikaException {
-
-            ContentHandler contentHandler = null;
-            if (storeContent) {
-                contentHandler = new BodyContentHandler(-1);
-            } else {
-                contentHandler = new DefaultHandler();
-            }
-            super.parse(stream, contentHandler, metadata, context);
-            
-            if (storeContent) {
-                metadata.add(TIKA_CONTENT, contentHandler.toString());
-            }
-            metadatas.add(metadata);
-        }
-
-        public List<Metadata> getAllMetadata() {
-            return metadatas;
-        }
-        
-        public void clear() {
-            metadatas.clear();
-        }
-    }
-
 }
