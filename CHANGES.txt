@@ -3,6 +3,9 @@ Release 1.7 - Current Development
   * PackageParser includes the last-modified date from the archive
     in the metadata, when handling embedded entries (TIKA-1246)
 
+  * Created a new Tesseract OCR Parser to extract text from images.
+    Requires installation of Tesseract before use (TIKA-93).
+
 
 Release 1.6 - 08/31/2014
 
