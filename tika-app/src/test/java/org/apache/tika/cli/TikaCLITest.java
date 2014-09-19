@@ -16,19 +16,19 @@
  */
 package org.apache.tika.cli;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.tika.exception.TikaException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URI;
-import java.util.Locale;
 
-import org.apache.commons.io.FileUtils;
-
-import org.junit.After;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the Tika's cli
@@ -39,7 +39,8 @@ public class TikaCLITest {
     private File profile = null;
     private ByteArrayOutputStream outContent = null;
     private PrintStream stdout = null;
-    private URI testDataURI = new File("src/test/resources/test-data/").toURI();
+    private File testDataFile = new File("src/test/resources/test-data");
+    private URI testDataURI = testDataFile.toURI();
     private String resourcePrefix;
 
     @Before
@@ -295,5 +296,29 @@ public class TikaCLITest {
         // clean up. TODO: These should be in target.
         new File("target/subdir/foo.txt").delete();
         new File("target/subdir").delete();
+    }
+
+    @Test
+    public void testDefaultConfigException() throws Exception {
+        //default xml parser will throw TikaException
+        //this and TestConfig() are broken into separate tests so that
+        //setUp and tearDown() are called each time
+        String[] params = {resourcePrefix + "bad_xml.xml"};
+        boolean tikaEx = false;
+        try {
+            TikaCLI.main(params);
+        } catch (TikaException e) {
+            tikaEx = true;
+        }
+        assertTrue(tikaEx);
+    }
+
+    @Test
+    public void testConfig() throws Exception {
+        String[] params = new String[]{"--config="+testDataFile.toString()+"/tika-config1.xml", resourcePrefix+"bad_xml.xml"};
+        TikaCLI.main(params);
+        String content = outContent.toString("UTF-8");
+        assertTrue(content.contains("apple"));
+        assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
     }
 }
