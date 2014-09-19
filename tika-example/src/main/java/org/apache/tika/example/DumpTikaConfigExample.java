@@ -168,7 +168,6 @@ public class DumpTikaConfigExample {
 
     private void addParsers(CompositeParser p, Map<String, Parser> parsers) {
         for (Parser child : p.getParsers().values()) {
-            System.out.println(child.getClass().getName());
             if (child instanceof CompositeParser) {
                 addParsers((CompositeParser)child, parsers);
             } else {
