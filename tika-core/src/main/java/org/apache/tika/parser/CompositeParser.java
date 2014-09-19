@@ -16,16 +16,6 @@
  */
 package org.apache.tika.parser;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -35,6 +25,16 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Composite parser that delegates parsing tasks to a component parser
@@ -203,7 +203,6 @@ public class CompositeParser extends AbstractParser {
            // We always work on the normalised, canonical form
            type = registry.normalize(type);
         }
-        
         while (type != null) {
             // Try finding a parser for the type
             Parser parser = map.get(type);
@@ -239,7 +238,11 @@ public class CompositeParser extends AbstractParser {
             TikaInputStream taggedStream = TikaInputStream.get(stream, tmp);
             TaggedContentHandler taggedHandler = 
                 handler != null ? new TaggedContentHandler(handler) : null;
-	    metadata.add("X-Parsed-By", parser.getClass().getName());
+            if (parser instanceof ParserDecorator){
+                metadata.add("X-Parsed-By", ((ParserDecorator) parser).getWrappedParser().getClass().getName());
+            } else {
+                metadata.add("X-Parsed-By", parser.getClass().getName());
+            }
             try {
                 parser.parse(taggedStream, taggedHandler, metadata, context);
             } catch (RuntimeException e) {
