@@ -106,7 +106,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
        Object[] aliases = (Object[])bmp.get("alias");
        assertEquals(1, aliases.length);
        assertEquals("image/bmp", aliases[0]);
-       assertEquals("org.apache.tika.parser.image.ImageParser", bmp.get("parser"));
+       assertEquals("org.apache.tika.parser.ocr.TesseractOCRParser", bmp.get("parser"));
 
        Map<String,Object> ogm = json.get("video/x-ogm");
        assertEquals("video/ogg", ogm.get("supertype"));
