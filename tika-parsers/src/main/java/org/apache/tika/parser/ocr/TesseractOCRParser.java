@@ -45,6 +45,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -132,6 +133,10 @@ public class TesseractOCRParser extends AbstractParser {
             throws IOException, SAXException, TikaException {
     	TesseractOCRConfig config = context.get(TesseractOCRConfig.class);
     	if(config == null) config = new TesseractOCRConfig();
+
+        String[] checkCmd = {config.getTesseractPath() + "tesseract"};
+        // If Tesseract is not on the path, do not try to run OCR.
+        if (!ExternalParser.check(checkCmd)) return;
     	
     	XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
     	xhtml.startDocument();
