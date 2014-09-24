@@ -1,5 +1,14 @@
 Release 1.7 - Current Development
 
+  * Upgrade to PDFBox 1.8.7 (TIKA-1419).
+
+  * Add RecursiveParserWrapper (aka Jukka's and Nick's) 
+    RecursiveMetadataParser (TIKA-1329)
+
+  * Add example for how to dump TikaConfig to XML (TIKA-1418).
+
+  * Allow users to specify a tika config file for tika-app (TIKA-1426).
+
   * PackageParser includes the last-modified date from the archive
     in the metadata, when handling embedded entries (TIKA-1246)
 
