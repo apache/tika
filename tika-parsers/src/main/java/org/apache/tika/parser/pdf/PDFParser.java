@@ -36,6 +36,7 @@ import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.RandomAccess;
 import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.tika.exception.TikaException;
@@ -164,6 +165,8 @@ public class PDFParser extends AbstractParser {
                pdfDocument.close();
             }
             tmp.dispose();
+            //TODO: once we migrate to PDFBox 2.0, remove this (PDFBOX-2200)
+            PDFont.clearResources();
         }
     }
 
