@@ -66,11 +66,6 @@
             <artifactId>tika-translate</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.googlecode.libphonenumber</groupId>
-            <artifactId>libphonenumber</artifactId>
-            <version>6.2.2</version>
-        </dependency>
 
 
         <dependency>
