@@ -41,7 +41,7 @@ public class PhoneExtractingContentHandlerTest {
     public void testExtractPhoneNumbers() throws Exception {
         Parser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        // The PhoneExtractingContentHandler will examine any characters for phone numbers, before passing them
+        // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
         InputStream stream = PhoneExtractingContentHandlerTest.class.getResourceAsStream("testPhoneNumberExtractor.odt");
@@ -55,5 +55,9 @@ public class PhoneExtractingContentHandlerTest {
         assertContains("9498888888", phoneNumbers[0]);
         assertContains("9497777777", phoneNumbers[1]);
         assertContains("9496666666", phoneNumbers[2]);
+        assertContains("9495555555", phoneNumbers[3]);
+        assertContains("4193404645", phoneNumbers[4]);
+        assertContains("9044687081", phoneNumbers[5]);
+        assertContains("2604094811", phoneNumbers[6]);
     }
 }
