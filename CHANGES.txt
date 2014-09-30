@@ -1,4 +1,7 @@
 Release 1.7 - Current Development
+  * Add markup for files embedded in PDFs (TIKA-1427).
+ 
+  * Extract files embedded in annotations in PDFS (TIKA-1433).
 
   * Upgrade to PDFBox 1.8.7 (TIKA-1419).
 

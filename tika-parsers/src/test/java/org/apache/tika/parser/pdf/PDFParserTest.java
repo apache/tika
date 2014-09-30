@@ -16,10 +16,21 @@
  */
 package org.apache.tika.parser.pdf;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLCore;
@@ -33,18 +44,9 @@ import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
+import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1024,6 +1026,40 @@ public class PDFParserTest extends TikaTest {
         assertEquals("file name", "TestUnix.txt", metadatas.get(4).get(Metadata.RESOURCE_NAME_KEY));
         assertContains("unix embedded", metadatas.get(4).get(RecursiveParserWrapper.TIKA_CONTENT));
         
+    }
+
+    @Test //TIKA-1427
+    public void testEmbeddedFileMarkup() throws Exception {
+        Parser parser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        context.set(org.apache.tika.parser.Parser.class, parser);
+
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractInlineImages(true);
+        config.setExtractUniqueInlineImagesOnly(false);
+        context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
+
+
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new ToXMLContentHandler();
+        String path = "/test-documents/testPDF_childAttachments.pdf";
+        InputStream stream = null;
+        try {
+            stream = TikaInputStream.get(this.getClass().getResource(path));
+            parser.parse(stream, handler, metadata, context);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
+        String xml = handler.toString();
+        //regular attachment
+        assertContains("<div class=\"embedded\" id=\"Unit10.doc\" />", xml);
+        //inline image
+        assertContains("<div class=\"embedded\" id=\"0\" inline_image=\"true\" />", xml);
+
+        //doc embedded inside an annotation
+        xml = getXML("testPDFFileEmbInAnnotation.pdf").xml;
+        assertContains("<div class=\"embedded\" id=\"Excel.xlsx\" />", xml);
     }
 
     /**
