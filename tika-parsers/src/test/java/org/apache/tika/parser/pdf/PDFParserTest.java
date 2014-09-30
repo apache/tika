@@ -704,6 +704,13 @@ public class PDFParserTest extends TikaTest {
 
 
     @Test
+    public void testEmbeddedFilesInAnnotations() throws Exception {
+        String xml = getXML("/testPDFFileEmbInAnnotation.pdf").xml;
+
+        assertTrue(xml.contains("This is a Excel"));
+    }
+
+    @Test
     public void testSingleCloseDoc() throws Exception {
         //TIKA-1341
         InputStream is = PDFParserTest.class.getResourceAsStream(
