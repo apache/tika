@@ -25,10 +25,10 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.apache.tika.TikaTest.assertContains;
 import static org.apache.tika.TikaTest.assertNotContained;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ContentHandlerExampleTest {
     ContentHandlerExample example;

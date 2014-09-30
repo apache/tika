@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.tika.example;
+package org.apache.tika.sax;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.CleanPhoneText;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;

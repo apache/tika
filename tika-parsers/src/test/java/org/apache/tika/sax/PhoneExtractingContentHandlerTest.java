@@ -15,21 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.tika.example;
+package org.apache.tika.sax;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 
 import java.io.InputStream;
 
-import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Test class for the {@link org.apache.tika.example.PhoneExtractingContentHandler}
+ * Test class for the {@link org.apache.tika.sax.PhoneExtractingContentHandler}
  * class. This demonstrates how to parse a document and retrieve any phone numbers
  * found within.
  *
@@ -44,7 +43,7 @@ public class PhoneExtractingContentHandlerTest {
         // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        InputStream stream = PhoneExtractingContentHandlerTest.class.getResourceAsStream("testPhoneNumberExtractor.odt");
+        InputStream stream = PhoneExtractingContentHandlerTest.class.getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt");
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
         }
@@ -59,5 +58,9 @@ public class PhoneExtractingContentHandlerTest {
         assertContains("4193404645", phoneNumbers[4]);
         assertContains("9044687081", phoneNumbers[5]);
         assertContains("2604094811", phoneNumbers[6]);
+    }
+
+    private void assertContains(String needle, String haystack) {
+        assertTrue("'" + haystack + "' should contain '" + needle + "'", haystack.contains(needle));
     }
 }
