@@ -25,7 +25,7 @@ import org.junit.Test;
 
 import java.io.InputStream;
 
-import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
 
 /**
  * Test class for the {@link org.apache.tika.sax.PhoneExtractingContentHandler}
@@ -58,9 +58,5 @@ public class PhoneExtractingContentHandlerTest {
         assertContains("4193404645", phoneNumbers[4]);
         assertContains("9044687081", phoneNumbers[5]);
         assertContains("2604094811", phoneNumbers[6]);
-    }
-
-    private void assertContains(String needle, String haystack) {
-        assertTrue("'" + haystack + "' should contain '" + needle + "'", haystack.contains(needle));
     }
 }
