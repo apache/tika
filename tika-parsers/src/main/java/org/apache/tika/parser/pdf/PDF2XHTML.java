@@ -48,6 +48,8 @@ import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObjectForm;
 import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObjectImage;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDAction;
 import org.apache.pdfbox.pdmodel.interactive.action.type.PDActionURI;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
+import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationFileAttachment;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationMarkup;
 import org.apache.pdfbox.pdmodel.interactive.digitalsignature.PDSignature;
@@ -232,14 +234,27 @@ class PDF2XHTML extends PDFTextStripper {
 
             extractImages(page.getResources());
 
-            // TODO: remove once PDFBOX-1143 is fixed:
-            if (config.getExtractAnnotationText()) {
-                for(Object o : page.getAnnotations()) {
-                    if( o instanceof PDAnnotationLink ) {
-                        PDAnnotationLink annotationlink = (PDAnnotationLink) o;
-                        if (annotationlink.getAction()  != null) {
+            EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
+            for (PDAnnotation annotation : page.getAnnotations()) {
+
+                if (annotation instanceof PDAnnotationFileAttachment){
+                    PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
+                    PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
+                    try {
+                        extractMultiOSPDEmbeddedFiles("", fileSpec, extractor);
+                    } catch (SAXException e) {
+                        throw new IOExceptionWithCause("file embedded in annotation sax exception", e);
+                    } catch (TikaException e) {
+                        throw new IOExceptionWithCause("file embedded in annotation tika exception", e);
+                    }
+                }
+                // TODO: remove once PDFBOX-1143 is fixed:
+                if (config.getExtractAnnotationText()) {
+                    if (annotation instanceof PDAnnotationLink) {
+                        PDAnnotationLink annotationlink = (PDAnnotationLink) annotation;
+                        if (annotationlink.getAction() != null) {
                             PDAction action = annotationlink.getAction();
-                            if( action instanceof PDActionURI ) {
+                            if (action instanceof PDActionURI) {
                                 PDActionURI uri = (PDActionURI) action;
                                 String link = uri.getURI();
                                 if (link != null) {
@@ -248,16 +263,16 @@ class PDF2XHTML extends PDFTextStripper {
                                     handler.endElement("a");
                                     handler.endElement("div");
                                 }
-                             }
+                            }
                         }
                     }
 
-                    if (o instanceof PDAnnotationMarkup) {
-                        PDAnnotationMarkup annot = (PDAnnotationMarkup) o;
-                        String title = annot.getTitlePopup();
-                        String subject = annot.getSubject();
-                        String contents = annot.getContents();
-                        // TODO: maybe also annot.getRichContents()?
+                    if (annotation instanceof PDAnnotationMarkup) {
+                        PDAnnotationMarkup annotationMarkup = (PDAnnotationMarkup) annotation;
+                        String title = annotationMarkup.getTitlePopup();
+                        String subject = annotationMarkup.getSubject();
+                        String contents = annotationMarkup.getContents();
+                        // TODO: maybe also annotationMarkup.getRichContents()?
                         if (title != null || subject != null || contents != null) {
                             handler.startElement("div", "class", "annotation");
 
@@ -476,23 +491,22 @@ class PDF2XHTML extends PDFTextStripper {
         EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
         for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
             PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
-            if (spec == null) {
-                //skip silently
-                continue;
-            }
-            PDEmbeddedFile file = spec.getEmbeddedFile();
-            if (file == null) {
-                //skip silently
-                continue;
-            }
-
-            //current strategy is to pull all, not just first non-null                
-            extractPDEmbeddedFile(ent.getKey(), spec.getFile(), spec.getEmbeddedFile(), extractor);
-            extractPDEmbeddedFile(ent.getKey(), spec.getFileMac(), spec.getEmbeddedFileMac(), extractor);
-            extractPDEmbeddedFile(ent.getKey(), spec.getFileDos(), spec.getEmbeddedFileDos(), extractor);
-            extractPDEmbeddedFile(ent.getKey(), spec.getFileUnix(), spec.getEmbeddedFileUnix(), extractor);
-
+            extractMultiOSPDEmbeddedFiles(ent.getKey(), spec, extractor);
         }
+    }
+
+    private void extractMultiOSPDEmbeddedFiles(String defaultName,
+        PDComplexFileSpecification spec, EmbeddedDocumentExtractor extractor) throws IOException,
+            SAXException, TikaException {
+
+        if (spec == null) {
+            return;
+        }
+        //current strategy is to pull all, not just first non-null
+        extractPDEmbeddedFile(defaultName, spec.getFile(), spec.getEmbeddedFile(), extractor);
+        extractPDEmbeddedFile(defaultName, spec.getFileMac(), spec.getEmbeddedFileMac(), extractor);
+        extractPDEmbeddedFile(defaultName, spec.getFileDos(), spec.getEmbeddedFileDos(), extractor);
+        extractPDEmbeddedFile(defaultName, spec.getFileUnix(), spec.getEmbeddedFileUnix(), extractor);
     }
 
     private void extractPDEmbeddedFile(String defaultName, String fileName, PDEmbeddedFile file,
