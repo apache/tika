@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.example;
+package org.apache.tika.sax;
 
 import java.util.Locale;
 import java.util.regex.Matcher;
