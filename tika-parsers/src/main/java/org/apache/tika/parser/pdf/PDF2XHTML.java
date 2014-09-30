@@ -106,6 +106,7 @@ class PDF2XHTML extends PDFTextStripper {
      */
     private Set<String> processedInlineImages = new HashSet<String>();
 
+    private int inlineImageCounter = 0;
 
     /**
      * Converts the given PDF document (and related metadata) to a stream
@@ -358,6 +359,14 @@ class PDF2XHTML extends PDFTextStripper {
                                 new ByteArrayInputStream(buffer.toByteArray()),
                                 new EmbeddedContentHandler(handler),
                                 metadata, false);
+                        
+                        AttributesImpl attributes = new AttributesImpl();
+                        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                        attributes.addAttribute("", "id", "id", "CDATA", Integer.toString(inlineImageCounter++));
+                        attributes.addAttribute("", "inline_image", "inline_image", "CDATA", "true");
+                        handler.startElement("div", attributes);
+                        handler.endElement("div");
+
                     } catch (IOException e) {
                         // could not extract this image, so just skip it...
                     }
@@ -536,6 +545,12 @@ class PDF2XHTML extends PDFTextStripper {
                         stream,
                         new EmbeddedContentHandler(handler),
                         metadata, false);
+
+                AttributesImpl attributes = new AttributesImpl();
+                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                attributes.addAttribute("", "id", "id", "CDATA", fileName);
+                handler.startElement("div", attributes);
+                handler.endElement("div");
             } finally {
                 IOUtils.closeQuietly(stream);
             }
