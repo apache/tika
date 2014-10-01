@@ -695,7 +695,7 @@ public class PDFParserTest extends TikaTest {
 
         assertEquals(5, metadatas.size());
         assertNull(metadatas.get(0).get(Metadata.RESOURCE_NAME_KEY));
-        assertNull(metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
+        assertEquals("image0.jpg", metadatas.get(1).get(Metadata.RESOURCE_NAME_KEY));
         assertEquals("Press Quality(1).joboptions", metadatas.get(3).get(Metadata.RESOURCE_NAME_KEY));
         assertEquals("Unit10.doc", metadatas.get(4).get(Metadata.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("jpeg").toString(), metadatas.get(1).get(Metadata.CONTENT_TYPE));
@@ -1055,7 +1055,7 @@ public class PDFParserTest extends TikaTest {
         //regular attachment
         assertContains("<div class=\"embedded\" id=\"Unit10.doc\" />", xml);
         //inline image
-        assertContains("<div class=\"embedded\" id=\"0\" inline_image=\"true\" />", xml);
+        assertContains("<img src=\"embedded:image1.tif\" alt=\"image1.tif\" />", xml);
 
         //doc embedded inside an annotation
         xml = getXML("testPDFFileEmbInAnnotation.pdf").xml;

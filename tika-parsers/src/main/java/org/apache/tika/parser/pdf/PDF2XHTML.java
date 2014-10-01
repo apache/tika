@@ -324,7 +324,31 @@ class PDF2XHTML extends PDFTextStripper {
             if (object instanceof PDXObjectForm) {
                 extractImages(((PDXObjectForm) object).getResources());
             } else if (object instanceof PDXObjectImage) {
-                
+
+                PDXObjectImage image = (PDXObjectImage) object;
+
+                Metadata metadata = new Metadata();
+                String extension = "";
+                if (image instanceof PDJpeg) {
+                    metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+                    extension = ".jpg";
+                } else if (image instanceof PDCcitt) {
+                    metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
+                    extension = ".tif";
+                } else if (image instanceof PDPixelMap) {
+                    metadata.set(Metadata.CONTENT_TYPE, "image/png");
+                    extension = ".png";
+                }
+                String fileName = "image"+inlineImageCounter+++extension;
+                metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
+
+                // Output the img tag
+                AttributesImpl attr = new AttributesImpl();
+                attr.addAttribute("", "src", "src", "CDATA", "embedded:" + fileName);
+                attr.addAttribute("", "alt", "alt", "CDATA", fileName);
+                handler.startElement("img", attr);
+                handler.endElement("img");
+
                 //Do we only want to process unique COSObject ids?
                 //If so, have we already processed this one?
                 if (config.getExtractUniqueInlineImagesOnly() == true) {
@@ -335,17 +359,7 @@ class PDF2XHTML extends PDFTextStripper {
                     processedInlineImages.add(cosObjectId);
                 }
 
-                PDXObjectImage image = (PDXObjectImage) object;
-
-                Metadata metadata = new Metadata();
-                if (image instanceof PDJpeg) {
-                    metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
-                } else if (image instanceof PDCcitt) {
-                    metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
-                } else if (image instanceof PDPixelMap) {
-                    metadata.set(Metadata.CONTENT_TYPE, "image/png");
-                }
-                metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, 
+                metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                         TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
 
                 EmbeddedDocumentExtractor extractor =
@@ -359,14 +373,6 @@ class PDF2XHTML extends PDFTextStripper {
                                 new ByteArrayInputStream(buffer.toByteArray()),
                                 new EmbeddedContentHandler(handler),
                                 metadata, false);
-                        
-                        AttributesImpl attributes = new AttributesImpl();
-                        attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-                        attributes.addAttribute("", "id", "id", "CDATA", Integer.toString(inlineImageCounter++));
-                        attributes.addAttribute("", "inline_image", "inline_image", "CDATA", "true");
-                        handler.startElement("div", attributes);
-                        handler.endElement("div");
-
                     } catch (IOException e) {
                         // could not extract this image, so just skip it...
                     }
