@@ -22,12 +22,11 @@ import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -103,8 +102,10 @@ class PDF2XHTML extends PDFTextStripper {
      * This keeps track of the pdf object ids for inline
      * images that have been processed.  If {@link PDFParserConfig#getExtractUniqueInlineImagesOnly()
      * is true, this will be checked before extracting an embedded image.
+     * The integer keeps track of the inlineImageCounter for that image.
+     * This integer is used to identify images in the markup.
      */
-    private Set<String> processedInlineImages = new HashSet<String>();
+    private Map<String, Integer> processedInlineImages = new HashMap<String, Integer>();
 
     private int inlineImageCounter = 0;
 
@@ -339,7 +340,12 @@ class PDF2XHTML extends PDFTextStripper {
                     metadata.set(Metadata.CONTENT_TYPE, "image/png");
                     extension = ".png";
                 }
-                String fileName = "image"+inlineImageCounter+++extension;
+
+                Integer imageNumber = processedInlineImages.get(entry.getKey());
+                if (imageNumber == null) {
+                    imageNumber = inlineImageCounter++;
+                }
+                String fileName = "image"+imageNumber+extension;
                 metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
 
                 // Output the img tag
@@ -353,10 +359,10 @@ class PDF2XHTML extends PDFTextStripper {
                 //If so, have we already processed this one?
                 if (config.getExtractUniqueInlineImagesOnly() == true) {
                     String cosObjectId = entry.getKey();
-                    if (processedInlineImages.contains(cosObjectId)){
+                    if (processedInlineImages.containsKey(cosObjectId)){
                         continue;
                     }
-                    processedInlineImages.add(cosObjectId);
+                    processedInlineImages.put(cosObjectId, imageNumber);
                 }
 
                 metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
