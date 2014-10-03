@@ -1,4 +1,10 @@
 Release 1.7 - Current Development
+
+  * The ForkParser service is now registered in Activator
+    (TIKA-1354).
+
+  * The Rome Library was upgraded to version 1.5 (TIKA-1435).
+
   * Add markup for files embedded in PDFs (TIKA-1427).
  
   * Extract files embedded in annotations in PDFS (TIKA-1433).
