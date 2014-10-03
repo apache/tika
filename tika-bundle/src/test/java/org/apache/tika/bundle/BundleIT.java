@@ -23,10 +23,13 @@ import static org.junit.Assert.fail;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +40,9 @@ import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -55,7 +60,7 @@ import org.xml.sax.ContentHandler;
 @RunWith( JUnit4TestRunner.class )
 public class BundleIT {
     private final File TARGET = new File("target");
-    
+
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException {
         File base = new File(TARGET, "test-bundles");
@@ -64,7 +69,7 @@ public class BundleIT {
                 bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
                 bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString()));
     }
-    
+
     @Test
     public void testBundleLoaded(BundleContext bc) throws Exception {
         boolean hasCore = false, hasBundle = false;
@@ -81,7 +86,7 @@ public class BundleIT {
         assertTrue("Core bundle not found", hasCore);
         assertTrue("Bundle bundle not found", hasBundle);
     }
-    
+
     @Test
     public void testBundleDetection(BundleContext bc) throws Exception {
         Tika tika = new Tika();
@@ -91,16 +96,37 @@ public class BundleIT {
         assertEquals("application/pdf", tika.detect("test.pdf"));
     }
 
+    @Test
+    public void testForkParser(BundleContext bc) throws Exception {
+        ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
+        ClassLoader classLoader = parser.getClass().getClassLoader();
+        String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
+        InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+        Writer writer = new StringWriter();
+        ContentHandler contentHandler = new BodyContentHandler(writer);
+        Metadata metadata = new Metadata();
+        Detector contentTypeDetector = new DefaultDetector(classLoader);
+        MediaType type = contentTypeDetector.detect(stream, metadata);
+        assertEquals(type.toString(), "text/html");
+        metadata.add(Metadata.CONTENT_TYPE, type.toString());
+        ParseContext parseCtx = new ParseContext();
+        parser.parse(stream, contentHandler, metadata, parseCtx);
+        writer.flush();
+        String content = writer.toString();
+        assertTrue(content.length() > 0);
+        assertEquals("test content", content.trim());
+    }
+
     @Ignore // TODO Fix this test
     @Test
     public void testBundleSimpleText(BundleContext bc) throws Exception {
         Tika tika = new Tika();
-        
+
         // Simple text extraction
         String xml = tika.parseToString(new File("pom.xml"));
         assertTrue(xml.contains("tika-bundle"));
     }
-    
+
     @Ignore // TODO Fix this test
     @Test
     public void testBundleDetectors(BundleContext bc) throws Exception {
@@ -108,19 +134,19 @@ public class BundleIT {
         // TODO Why is this not finding the detector service resource files?
         TestingServiceLoader loader = new TestingServiceLoader();
         List<String> rawDetectors = loader.identifyStaticServiceProviders(Detector.class);
-        
+
         // Check we did get a few, just in case...
         assertNotNull(rawDetectors);
         assertTrue("Should have several Detector names, found " + rawDetectors.size(),
                 rawDetectors.size() > 3);
-        
+
         // Get the classes found within OSGi
         DefaultDetector detector = new DefaultDetector();
         Set<String> osgiDetectors = new HashSet<String>();
         for (Detector d : detector.getDetectors()) {
             osgiDetectors.add(d.getClass().getName());
         }
-        
+
         // Check that OSGi didn't miss any
         for (String detectorName : rawDetectors) {
             if (!osgiDetectors.contains(detectorName)) {
@@ -129,14 +155,14 @@ public class BundleIT {
             }
         }
     }
-    
+
     @Test
     public void testBundleParsers(BundleContext bc) throws Exception {
         TikaConfig tika = new TikaConfig();
 
         // TODO Implement as with Detectors
     }
-    
+
     @Ignore // TODO Fix this test
     @Test
     public void testTikaBundle(BundleContext bc) throws Exception {
