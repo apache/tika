@@ -1,4 +1,7 @@
 Release 1.7 - Current Development
+
+  * Thread safety issue in ImageMetadataExtractor were resolved
+    (TIKA-1369).
  
   * The ForkParser service is now registered in Activator
     (TIKA-1354).
