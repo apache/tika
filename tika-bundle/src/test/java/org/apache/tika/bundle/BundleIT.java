@@ -16,6 +16,8 @@
  */
 package org.apache.tika.bundle;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -23,7 +25,6 @@ import static org.junit.Assert.fail;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -98,6 +99,27 @@ public class BundleIT {
     }
 
     @Test
+    public void testForkParserPdf(BundleContext bc) throws Exception {
+        ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
+        ClassLoader classLoader = parser.getClass().getClassLoader();
+        File file = new File(new File("").getAbsoluteFile().getParentFile(), "tika-parsers/src/test/resources/test-documents/testPDF.pdf");
+        InputStream stream = new BufferedInputStream(new FileInputStream(file));
+        Writer writer = new StringWriter();
+        ContentHandler contentHandler = new BodyContentHandler(writer);
+        Metadata metadata = new Metadata();
+        Detector contentTypeDetector = new DefaultDetector(classLoader);
+        MediaType type = contentTypeDetector.detect(stream, metadata);
+        assertEquals(type.toString(), "application/pdf");
+        metadata.add(Metadata.CONTENT_TYPE, type.toString());
+        ParseContext parseCtx = new ParseContext();
+        parser.parse(stream, contentHandler, metadata, parseCtx);
+        writer.flush();
+        String content = writer.toString();
+        assertTrue(content.length() > 0);
+        assertEquals("test content", content.trim());
+    }
+
+    @Test
     public void testForkParser(BundleContext bc) throws Exception {
         ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
         ClassLoader classLoader = parser.getClass().getClassLoader();
@@ -128,6 +150,7 @@ public class BundleIT {
         assertTrue(xml.contains("tika-bundle"));
     }
 
+    
     @Ignore // TODO Fix this test
     @Test
     public void testBundleDetectors(BundleContext bc) throws Exception {
