@@ -35,11 +35,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.sun.syndication.feed.synd.SyndContent;
-import com.sun.syndication.feed.synd.SyndEntry;
-import com.sun.syndication.feed.synd.SyndFeed;
-import com.sun.syndication.io.FeedException;
-import com.sun.syndication.io.SyndFeedInput;
+import com.rometools.rome.feed.synd.SyndContent;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndFeed;
+import com.rometools.rome.io.FeedException;
+import com.rometools.rome.io.SyndFeedInput;
 
 /**
  * Feed parser.
@@ -85,8 +85,7 @@ public class FeedParser extends AbstractParser {
             xhtml.element("p", description);
 
             xhtml.startElement("ul");
-            for (Object e : feed.getEntries()) {
-                SyndEntry entry = (SyndEntry) e;
+            for (SyndEntry entry : feed.getEntries()) {
                 String link = entry.getLink();
                 if (link != null) {
                     xhtml.startElement("li");
