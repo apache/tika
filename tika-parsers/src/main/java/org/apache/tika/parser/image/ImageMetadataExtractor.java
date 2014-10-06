@@ -385,19 +385,29 @@ public class ImageMetadataExtractor {
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 if (original != null) {
-		    String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.get().format(original); // Same time zone as Metadata Extractor uses
-                    metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
-                    metadata.set(Metadata.ORIGINAL_DATE, datetimeNoTimeZone);
+                    try {
+                        String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.get().format(original); // Same time zone as Metadata Extractor uses
+                        metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
+                        metadata.set(Metadata.ORIGINAL_DATE, datetimeNoTimeZone);
+                    }
+                    finally {
+                        DATE_UNSPECIFIED_TZ.remove();
+                    }
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
                 Date datetime = directory.getDate(ExifIFD0Directory.TAG_DATETIME);
                 if (datetime != null) {
-		    String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.get().format(datetime);
-                    metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
-                    // If Date/Time Original does not exist this might be creation date
-                    if (metadata.get(TikaCoreProperties.CREATED) == null) {
-                        metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
+                    try {
+                        String datetimeNoTimeZone = DATE_UNSPECIFIED_TZ.get().format(datetime);
+                        metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
+                        // If Date/Time Original does not exist this might be creation date
+                        if (metadata.get(TikaCoreProperties.CREATED) == null) {
+                            metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
+                        }
+                    }
+                    finally {
+                        DATE_UNSPECIFIED_TZ.remove();
                     }
                 }
             }
