@@ -80,6 +80,13 @@
       <artifactId>netcdf</artifactId>
       <version>4.2.20</version>
     </dependency>
+    <!-- copied from netcdf pom, with the 'scope optional' line removed -->
+    <!-- Required for reading THREDDS, NcML, BUFR, HDF-EOS, NEXRAD2, OPeNDAP files. -->
+    <dependency>
+      <groupId>jdom</groupId>
+      <artifactId>jdom</artifactId>
+      <version>1.0</version>
+    </dependency>
     <dependency>
       <groupId>net.sourceforge.jmatio</groupId>
       <artifactId>jmatio</artifactId>
