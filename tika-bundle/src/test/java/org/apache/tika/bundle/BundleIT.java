@@ -100,14 +100,13 @@ public class BundleIT {
 
     @Test
     public void testForkParserPdf(BundleContext bc) throws Exception {
-        ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
-        ClassLoader classLoader = parser.getClass().getClassLoader();
+        ForkParser parser = bc.getService(bc.getServiceReference(ForkParser.class));
         File file = new File(new File("").getAbsoluteFile().getParentFile(), "tika-parsers/src/test/resources/test-documents/testPDF.pdf");
         InputStream stream = new BufferedInputStream(new FileInputStream(file));
         Writer writer = new StringWriter();
         ContentHandler contentHandler = new BodyContentHandler(writer);
         Metadata metadata = new Metadata();
-        Detector contentTypeDetector = new DefaultDetector(classLoader);
+        Detector contentTypeDetector = bc.getService(bc.getServiceReference(Detector.class));
         MediaType type = contentTypeDetector.detect(stream, metadata);
         assertEquals(type.toString(), "application/pdf");
         metadata.add(Metadata.CONTENT_TYPE, type.toString());
@@ -116,19 +115,17 @@ public class BundleIT {
         writer.flush();
         String content = writer.toString();
         assertTrue(content.length() > 0);
-        assertEquals("test content", content.trim());
     }
 
     @Test
     public void testForkParser(BundleContext bc) throws Exception {
-        ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
-        ClassLoader classLoader = parser.getClass().getClassLoader();
+        ForkParser parser = bc.getService(bc.getServiceReference(ForkParser.class));
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
         InputStream stream = new ByteArrayInputStream(data.getBytes(IOUtils.UTF_8));
         Writer writer = new StringWriter();
         ContentHandler contentHandler = new BodyContentHandler(writer);
         Metadata metadata = new Metadata();
-        Detector contentTypeDetector = new DefaultDetector(classLoader);
+        Detector contentTypeDetector = bc.getService(bc.getServiceReference(Detector.class));
         MediaType type = contentTypeDetector.detect(stream, metadata);
         assertEquals(type.toString(), "text/html");
         metadata.add(Metadata.CONTENT_TYPE, type.toString());
