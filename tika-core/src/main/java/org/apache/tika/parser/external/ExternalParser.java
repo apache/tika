@@ -304,7 +304,13 @@ public class ExternalParser extends AbstractParser {
                    for(Pattern p : metadataPatterns.keySet()) {
                       Matcher m = p.matcher(line);
                       if(m.find()) {
-                         metadata.add( metadataPatterns.get(p), m.group(1) );
+                    	 if (metadataPatterns.get(p) != null && 
+                    			 !metadataPatterns.get(p).equals("")){
+                                   metadata.add( metadataPatterns.get(p), m.group(1) );
+                    	 }
+                    	 else{
+                    		 metadata.add( m.group(1), m.group(2));
+                    	 }
                       }
                    }
                 }
