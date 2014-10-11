@@ -53,3 +53,4 @@ org.apache.tika.parser.chm.ChmParser
 org.apache.tika.parser.code.SourceCodeParser
 org.apache.tika.parser.mat.MatParser
 org.apache.tika.parser.ocr.TesseractOCRParser
+org.apache.tika.parser.gdal.GDALParser
