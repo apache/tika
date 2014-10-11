@@ -1,5 +1,8 @@
 Release 1.7 - Current Development
 
+  * Tika now integrates the Geospatial Data Abstraction Library
+    (GDAL) for parsing hundreds of geospatial formats (TIKA-605).
+
   * ExternalParsers can now use Regexs to specify dynamic keys
    (TIKA-1441).
 
