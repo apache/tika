@@ -1,5 +1,8 @@
 Release 1.7 - Current Development
 
+  * ExternalParsers can now use Regexs to specify dynamic keys
+   (TIKA-1441).
+
   * Thread safety issue in ImageMetadataExtractor were resolved
     (TIKA-1369).
  
