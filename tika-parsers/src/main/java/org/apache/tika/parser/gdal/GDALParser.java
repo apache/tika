@@ -297,10 +297,11 @@ public class GDALParser extends AbstractParser {
 	private void extractMetFromOutput(String output, Metadata met) {
 		Scanner scanner = new Scanner(output);
 		String currentKey = null;
+		String[] headings = {"Subdatasets", "Corner Coordinates"};
 		StringBuilder metVal = new StringBuilder();
 		while (scanner.hasNextLine()) {
 			String line = scanner.nextLine();
-			if (line.contains("=")) {
+			if (line.contains("=") || hasHeadings(line, headings)) {
 				if (currentKey != null) {
 					// time to flush this key and met val
 					met.add(currentKey, metVal.toString());
@@ -319,6 +320,18 @@ public class GDALParser extends AbstractParser {
 			}
 
 		}
+	}
+	
+	private boolean hasHeadings(String line, String[] headings){
+		if (headings != null && headings.length > 0){
+			for(String heading: headings){
+				if(line.contains(heading)){
+					return true;
+				}
+			}
+			return false;
+		}
+		else return false;
 	}
 
 	private void applyPatternsToOutput(String output, Metadata metadata,
