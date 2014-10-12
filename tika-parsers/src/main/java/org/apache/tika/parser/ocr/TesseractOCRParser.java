@@ -29,6 +29,8 @@ import java.io.Reader;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
@@ -43,6 +45,7 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
@@ -97,7 +100,7 @@ public class TesseractOCRParser extends AbstractParser {
 	
 	public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-		
+
 		TemporaryResources tmp = new TemporaryResources();
 		FileOutputStream fos = null;
 		TikaInputStream tis = null;
@@ -131,6 +134,7 @@ public class TesseractOCRParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+
     	TesseractOCRConfig config = context.get(TesseractOCRConfig.class);
     	if(config == null) config = new TesseractOCRConfig();
 
@@ -139,8 +143,7 @@ public class TesseractOCRParser extends AbstractParser {
         if (!ExternalParser.check(checkCmd)) return;
     	
     	XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-    	xhtml.startDocument();
-    	
+
         TemporaryResources tmp = new TemporaryResources();
         File output = null;
         try {
@@ -167,7 +170,6 @@ public class TesseractOCRParser extends AbstractParser {
         		output.delete();
             
         }
-        xhtml.endDocument();
     }
 
 	/**
@@ -241,19 +243,21 @@ public class TesseractOCRParser extends AbstractParser {
      * @throws IOException if an input error occurred
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml)
-            throws SAXException, IOException {
-    	
+	throws SAXException, IOException {
+ 
         Reader reader = new InputStreamReader(stream, "UTF-8");
+        xhtml.startDocument();
+        xhtml.startElement("div");
         try {
-            xhtml.startElement("div");
             char[] buffer = new char[1024];
             for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
-                xhtml.characters(buffer, 0, n);
+                if (n > 0) xhtml.characters(buffer, 0, n);
             }
-            xhtml.endElement("div");
         } finally {
             reader.close();
         }
+        xhtml.endElement("div");
+        xhtml.endDocument();
     }
 
     /**
