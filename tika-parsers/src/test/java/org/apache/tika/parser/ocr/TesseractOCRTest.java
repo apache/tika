@@ -33,6 +33,12 @@ import static org.junit.Assume.assumeTrue;
 
 public class TesseractOCRTest  extends TikaTest {
 
+    public static boolean canRun() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        TesseractOCRTest tesseractOCRTest = new TesseractOCRTest();
+        return tesseractOCRTest.canRun(config);
+    }
+
     private boolean canRun(TesseractOCRConfig config) {
         String[] checkCmd = {config.getTesseractPath() + "tesseract"};
         // If Tesseract is not on the path, do not run the test.
