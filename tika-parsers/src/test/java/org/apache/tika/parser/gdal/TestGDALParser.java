@@ -30,6 +30,7 @@ import org.apache.tika.sax.BodyContentHandler;
 //Junit imports
 import org.junit.Test;
 import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assume.assumeTrue;
@@ -81,7 +82,6 @@ public class TestGDALParser extends TikaTest {
 			assertEquals(expectedLowerRight, met.get("Lower Right"));
 			assertNotNull(met.get("Upper Right"));
 			assertEquals(expectedLowerLeft, met.get("Lower Left"));
-
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
@@ -91,11 +91,14 @@ public class TestGDALParser extends TikaTest {
 	@Test
 	public void testParseMetadata() {
 		assumeTrue(canRun());
-		String expectedNcInst = "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
-		String expectedModelNameEnglish = "NCAR CCSM";
-		String expectedProgramId = "Source file unknown Version unknown Date unknown";
-		String expectedProjectId = "IPCC Fourth Assessment";
-		String expectedRealization = "1";
+		final String expectedNcInst = "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
+		final String expectedModelNameEnglish = "NCAR CCSM";
+		final String expectedProgramId = "Source file unknown Version unknown Date unknown";
+		final String expectedProjectId = "IPCC Fourth Assessment";
+		final String expectedRealization = "1";
+		final String expectedTitle = "model output prepared for IPCC AR4";
+		final String expectedSub8Name = "\":ua";
+		final String expectedSub8Desc = "[1x17x128x256] eastward_wind (32-bit floating-point)";
 
 		GDALParser parser = new GDALParser();
 		InputStream stream = TestGDALParser.class
@@ -118,6 +121,12 @@ public class TestGDALParser extends TikaTest {
 			assertEquals(expectedProjectId, met.get("NC_GLOBAL#project_id"));
 			assertNotNull(met.get("NC_GLOBAL#realization"));
 			assertEquals(expectedRealization, met.get("NC_GLOBAL#realization"));
+			assertNotNull(met.get("NC_GLOBAL#title"));
+			assertEquals(expectedTitle, met.get("NC_GLOBAL#title"));
+			assertNotNull(met.get("SUBDATASET_8_NAME"));
+			assertTrue(met.get("SUBDATASET_8_NAME").endsWith(expectedSub8Name));
+			assertNotNull(met.get("SUBDATASET_8_DESC"));
+			assertEquals(expectedSub8Desc, met.get("SUBDATASET_8_DESC"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
