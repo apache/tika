@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+
 //Tika imports
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
@@ -39,6 +40,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import static org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
 
@@ -230,6 +232,10 @@ public class GDALParser extends AbstractParser {
 			Metadata metadata, ParseContext context) throws IOException,
 			SAXException, TikaException {
 
+		if (!ExternalParser.check("gdalinfo")){
+			return;
+		}
+		
 		// first set up and run GDAL
 		// process the command
 		TemporaryResources tmp = new TemporaryResources();
@@ -394,9 +400,10 @@ public class GDALParser extends AbstractParser {
 				xhtml.characters(buffer, 0, n);
 			}
 			xhtml.endElement("p");
-			xhtml.endDocument();
+
 		} finally {
 			reader.close();
+			xhtml.endDocument();
 		}
 
 	}

@@ -86,11 +86,11 @@ public class TestGDALParser extends TikaTest {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-
 	}
 
 	@Test
 	public void testParseMetadata() {
+		assumeTrue(canRun());
 		String expectedNcInst = "NCAR (National Center for Atmospheric Research, Boulder, CO, USA)";
 		String expectedModelNameEnglish = "NCAR CCSM";
 		String expectedProgramId = "Source file unknown Version unknown Date unknown";
@@ -122,17 +122,17 @@ public class TestGDALParser extends TikaTest {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-
 	}
-	
+
 	@Test
-	public void testParseFITS(){
+	public void testParseFITS() {
+		assumeTrue(canRun());
 		String expectedAllgMin = "-7.319537E1";
 		String expectedAtodcorr = "COMPLETE";
 		String expectedAtodfile = "uref$dbu1405iu.r1h";
 		String expectedCalVersion = "                        ";
 		String expectedCalibDef = "1466";
-		
+
 		GDALParser parser = new GDALParser();
 		InputStream stream = TestGDALParser.class
 				.getResourceAsStream("/test-documents/WFPC2u5780205r_c0fx.fits");
@@ -144,19 +144,17 @@ public class TestGDALParser extends TikaTest {
 			assertNotNull(met.get("ALLG-MIN"));
 			assertEquals(expectedAllgMin, met.get("ALLG-MIN"));
 			assertNotNull(met.get("ATODCORR"));
-			assertEquals(expectedAtodcorr, met.get("ATODCORR"));			
+			assertEquals(expectedAtodcorr, met.get("ATODCORR"));
 			assertNotNull(met.get("ATODFILE"));
 			assertEquals(expectedAtodfile, met.get("ATODFILE"));
 			assertNotNull(met.get("CAL_VER"));
 			assertEquals(expectedCalVersion, met.get("CAL_VER"));
 			assertNotNull(met.get("CALIBDEF"));
-			assertEquals(expectedCalibDef, met.get("CALIBDEF"));			
-			
+			assertEquals(expectedCalibDef, met.get("CALIBDEF"));
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
-
 	}
-
 }
