@@ -3430,6 +3430,15 @@
     <glob pattern="*.ustar"/>
   </mime-type>
 
+  <mime-type type="application/x-vhd">
+    <acronym>VHD</acronym>
+    <_comment>Virtual PC Virtual Hard Disk</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/VHD_%28file_format%29</tika:link>
+    <magic priority="50">
+      <match value="conectix" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-vmdk">
     <acronym>VMDK</acronym>
     <_comment>Virtual Disk Format</_comment>
