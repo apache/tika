@@ -4356,6 +4356,17 @@
     <glob pattern="*.wbmp"/>
   </mime-type>
 
+  <mime-type type="image/webp">
+    <acronym>WEBP</acronym>
+    <tika:link>http://en.wikipedia.org/wiki/WebP</tika:link>
+    <!-- container spec https://developers.google.com/speed/webp/docs/riff_container -->
+    <magic priority="50">
+      <match value="RIFF....WEBP" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF"/>
+    </magic>
+    <glob pattern="*.webp"/>
+  </mime-type>
+
   <mime-type type="image/vnd.xiff">
     <glob pattern="*.xif"/>
   </mime-type>
