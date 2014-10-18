@@ -363,6 +363,14 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testWEBPDetection() throws Exception {
+        assertType("image/webp", "testWEBP.webp");
+        assertTypeByData("image/webp", "testWEBP.webp");
+        assertTypeByName("image/webp", "x.webp");
+        assertTypeByName("image/webp", "x.WEBP");
+    }
+
+    @Test
     public void testBmpDetection() throws Exception {
         assertType("image/x-ms-bmp", "testBMP.bmp");
         assertTypeByData("image/x-ms-bmp", "testBMP.bmp");
