@@ -36,6 +36,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.ocr.TesseractOCRParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.junit.Test;
@@ -83,13 +85,19 @@ public class RFC822ParserTest {
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
             verify(handler).startDocument();
-            //4 body-part divs -- two outer bodies and two inner bodies
-            verify(handler, times(4)).startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"), any(Attributes.class));
-            verify(handler, times(4)).endElement(XHTMLContentHandler.XHTML, "div", "div");
-            //5 paragraph elements, 4 for body-parts and 1 for encompassing message
-            verify(handler, times(5)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
-            verify(handler, times(5)).endElement(XHTMLContentHandler.XHTML, "p", "p");
+            int bodyExpectedTimes = 4, multipackExpectedTimes = 5;;
+            int invokingTimes = bodyExpectedTimes;
+            TesseractOCRConfig config = new TesseractOCRConfig();
+            if (TesseractOCRParserTest.canRun(config)) {
+              invokingTimes = multipackExpectedTimes;
+            }
+            
+            verify(handler, times(invokingTimes)).startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"), any(Attributes.class));
+            verify(handler, times(invokingTimes)).endElement(XHTMLContentHandler.XHTML, "div", "div");
+            verify(handler, times(multipackExpectedTimes)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
+            verify(handler, times(multipackExpectedTimes)).endElement(XHTMLContentHandler.XHTML, "p", "p");
             verify(handler).endDocument();
+            
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
