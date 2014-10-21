@@ -36,7 +36,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.ocr.TesseractOCRParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -87,8 +86,7 @@ public class RFC822ParserTest {
             verify(handler).startDocument();
             int bodyExpectedTimes = 4, multipackExpectedTimes = 5;;
             int invokingTimes = bodyExpectedTimes;
-            TesseractOCRConfig config = new TesseractOCRConfig();
-            if (TesseractOCRParserTest.canRun(config)) {
+            if (TesseractOCRParserTest.canRun()) {
               invokingTimes = multipackExpectedTimes;
             }
             
