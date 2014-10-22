@@ -16,16 +16,16 @@
  */
 package org.apache.tika.cli;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.net.URI;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.PrintStream;
-import java.net.URI;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -151,6 +151,29 @@ public class TikaCLITest {
         //TIKA-1310
         assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
         
+        //test legacy alphabetic sort of keys
+        int enc = json.indexOf("\"Content-Encoding\"");
+        int fb = json.indexOf("fb:admins");
+        int title = json.indexOf("\"title\"");
+        assertTrue(enc > -1 && fb > -1 && enc < fb);
+        assertTrue (fb > -1 && title > -1 && fb < title);
+    }
+
+    /**
+     * Test for -json with prettyprint option
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testJsonMetadataPrettyPrintOutput() throws Exception {
+        String[] params = {"--json", "-r", resourcePrefix + "testJsonMultipleInts.html"};
+        TikaCLI.main(params);
+        String json = outContent.toString("UTF-8");
+
+        assertTrue(json.contains("  \"X-Parsed-By\": [\n" +
+                "    \"org.apache.tika.parser.DefaultParser\",\n" +
+                "    \"org.apache.tika.parser.html.HtmlParser\"\n" +
+                "  ],\n"));
         //test legacy alphabetic sort of keys
         int enc = json.indexOf("\"Content-Encoding\"");
         int fb = json.indexOf("fb:admins");
@@ -321,4 +344,40 @@ public class TikaCLITest {
         assertTrue(content.contains("apple"));
         assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
     }
+
+    @Test
+    public void testJsonRecursiveMetadataParserMetadataOnly() throws Exception {
+        String[] params = new String[]{"-m", "-J", "-r", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString("UTF-8");
+        assertTrue(content.contains("[\n" +
+                "  {\n" +
+                "    \"Application-Name\": \"Microsoft Office Word\",\n" +
+                "    \"Application-Version\": \"15.0000\",\n" +
+                "    \"Character Count\": \"28\",\n" +
+                "    \"Character-Count-With-Spaces\": \"31\","));
+        assertTrue(content.endsWith("    \"tika:embedded_resource_path\": \"test_recursive_embedded.docx/embed1.zip\"\n" +
+                "  }\n" +
+                "]"));
+        assertFalse(content.contains("tika:content"));
+
+    }
+
+    @Test
+    public void testJsonRecursiveMetadataParserDefault() throws Exception {
+        String[] params = new String[]{"-J", "-r", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString("UTF-8");
+        assertTrue(content.contains("\"tika:content\": \"\\u003chtml xmlns\\u003d\\\"http://www.w3.org/1999/xhtml"));
+    }
+
+    @Test
+    public void testJsonRecursiveMetadataParserText() throws Exception {
+        String[] params = new String[]{"-J", "-r", "-t", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString("UTF-8");
+        assertTrue(content.contains("\\n\\nembed_4\\n"));
+        assertTrue(content.contains("\\n\\nembed_0"));
+    }
+
 }

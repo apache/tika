@@ -1,12 +1,15 @@
 Release 1.7 - Current Development
 
+  * Tika CLI and GUI now have option to view JSON rendering of output
+    of RecursiveParserWrapper (TIKA-1451).
+
   * Tika now integrates the Geospatial Data Abstraction Library
     (GDAL) for parsing hundreds of geospatial formats (TIKA-605).
 
   * ExternalParsers can now use Regexs to specify dynamic keys
    (TIKA-1441).
 
-  * Thread safety issue in ImageMetadataExtractor were resolved
+  * Thread safety issues in ImageMetadataExtractor were resolved
     (TIKA-1369).
  
   * The ForkParser service is now registered in Activator

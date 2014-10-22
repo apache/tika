@@ -16,52 +16,6 @@
  */
 package org.apache.tika.cli;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
-import org.apache.log4j.WriterAppender;
-import org.apache.poi.poifs.filesystem.DirectoryEntry;
-import org.apache.poi.poifs.filesystem.DocumentEntry;
-import org.apache.poi.poifs.filesystem.DocumentInputStream;
-import org.apache.poi.poifs.filesystem.POIFSFileSystem;
-import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.CompositeDetector;
-import org.apache.tika.detect.DefaultDetector;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.fork.ForkParser;
-import org.apache.tika.gui.TikaGUI;
-import org.apache.tika.io.CloseShieldInputStream;
-import org.apache.tika.io.FilenameUtils;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.language.LanguageProfilerBuilder;
-import org.apache.tika.language.ProfilingHandler;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.NetworkParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.ParserDecorator;
-import org.apache.tika.parser.PasswordProvider;
-import org.apache.tika.parser.html.BoilerpipeContentHandler;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.apache.tika.xmp.XMPMetadata;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -92,6 +46,56 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.apache.log4j.SimpleLayout;
+import org.apache.log4j.WriterAppender;
+import org.apache.poi.poifs.filesystem.DirectoryEntry;
+import org.apache.poi.poifs.filesystem.DocumentEntry;
+import org.apache.poi.poifs.filesystem.DocumentInputStream;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.fork.ForkParser;
+import org.apache.tika.gui.TikaGUI;
+import org.apache.tika.io.CloseShieldInputStream;
+import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.language.LanguageProfilerBuilder;
+import org.apache.tika.language.ProfilingHandler;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.NetworkParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.ExpandedTitleContentHandler;
+import org.apache.tika.xmp.XMPMetadata;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Simple command line interface for Apache Tika.
@@ -281,6 +285,8 @@ public class TikaCLI {
     private String configFilePath;
 
     private OutputType type = XML;
+
+    private boolean recursiveJSON = false;
     
     private LanguageProfilerBuilder ngp = null;
 
@@ -367,7 +373,9 @@ public class TikaCLI {
             password = arg.substring("--password=".length());
         } else  if (arg.equals("-j") || arg.equals("--json")) {
             type = JSON;
-        } else  if (arg.equals("-y") || arg.equals("--xmp")) {
+        } else if (arg.equals("-J") || arg.equals("--jsonRecursive")) {
+            recursiveJSON = true;
+        } else if (arg.equals("-y") || arg.equals("--xmp")) {
             type = XMP;
         } else if (arg.equals("-x") || arg.equals("--xml")) {
             type = XML;
@@ -423,18 +431,55 @@ public class TikaCLI {
                 } else {
                     url = new URL(arg);
                 }
-                Metadata metadata = new Metadata();
-                InputStream input = TikaInputStream.get(url, metadata);
-                try {
-                    type.process(input, System.out, metadata);
-                } finally {
-                    input.close();
-                    System.out.flush();
+                if (recursiveJSON) {
+                    handleRecursiveJson(url, System.out);
+                } else {
+                    Metadata metadata = new Metadata();
+                    InputStream input = TikaInputStream.get(url, metadata);
+                    try {
+                        type.process(input, System.out, metadata);
+                    } finally {
+                        input.close();
+                        System.out.flush();
+                    }
                 }
             }
         }
     }
 
+    private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
+        Metadata metadata = new Metadata();
+        InputStream input = TikaInputStream.get(url, metadata);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser, getContentHandlerFactory(type));
+        try {
+            wrapper.parse(input, null, metadata, context);
+        } finally {
+            input.close();
+        }
+        JsonMetadataList.setPrettyPrinting(prettyPrint);
+        Writer writer = getOutputWriter(output, encoding);
+        try {
+            JsonMetadataList.toJson(wrapper.getMetadata(), writer);
+        } finally {
+            writer.flush();
+        }
+    }
+
+    private ContentHandlerFactory getContentHandlerFactory(OutputType type) {
+        BasicContentHandlerFactory.HANDLER_TYPE handlerType = BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
+        if (type.equals(HTML)) {
+            handlerType = BasicContentHandlerFactory.HANDLER_TYPE.HTML;
+        } else if (type.equals(XML)) {
+            handlerType = BasicContentHandlerFactory.HANDLER_TYPE.XML;
+        } else if (type.equals(TEXT)) {
+            handlerType = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+        } else if (type.equals(TEXT_MAIN)) {
+            handlerType = BasicContentHandlerFactory.HANDLER_TYPE.BODY;
+        } else if (type.equals(METADATA)) {
+            handlerType = BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
+        }
+        return new BasicContentHandlerFactory(handlerType, -1);
+    }
     private void usage() {
         PrintStream out = System.out;
         out.println("usage: java -jar tika-app.jar [option...] [file|port...]");
@@ -458,13 +503,16 @@ public class TikaCLI {
         out.println("    -m  or --metadata      Output only metadata");
         out.println("    -j  or --json          Output metadata in JSON");
         out.println("    -y  or --xmp           Output metadata in XMP");
+        out.println("    -J  or --jsonRecursive Output metadata and content from all");
+        out.println("                           embedded files (choose content type");
+        out.println("                           with -x, -h, -t or -m; default is -x)");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("    -eX or --encoding=X    Use output encoding X");
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
-        out.println("    -r  or --pretty-print  For XML and XHTML outputs, adds newlines and");
+        out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
         out.println("                           whitespace, for better readability");
         out.println();
         out.println("    --create-profile=X");
@@ -950,6 +998,7 @@ public class TikaCLI {
         @Override
         public void endDocument() throws SAXException {
             try {
+                JsonMetadata.setPrettyPrinting(prettyPrint);
                 JsonMetadata.toJson(metadata, writer);
                 writer.flush();
             } catch (TikaException e) {
