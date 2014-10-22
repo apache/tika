@@ -20,28 +20,33 @@ package org.apache.tika.metadata.serialization;
 
 import java.io.Reader;
 import java.io.Writer;
+import java.lang.reflect.Type;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
+import com.google.gson.reflect.TypeToken;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 
-public class JsonMetadata extends JsonMetadataBase{
+public class JsonMetadataList extends JsonMetadataBase {
+    
+    private final static Type listType = new TypeToken<List<Metadata>>(){}.getType();
     private static Gson GSON;
-
     static {
         GSON = defaultInit();
     }
+
     /**
      * Serializes a Metadata object to Json.  This does not flush or close the writer.
      * 
-     * @param metadata metadata to write
+     * @param metadataList list of metadata to write
      * @param writer writer
-     * @throws TikaException if there is an IOException during writing
+     * @throws org.apache.tika.exception.TikaException if there is an IOException during writing
      */
-    public static void toJson(Metadata metadata, Writer writer) throws TikaException {
+    public static void toJson(List<Metadata> metadataList, Writer writer) throws TikaException {
         try {
-            GSON.toJson(metadata, writer);
+            GSON.toJson(metadataList, writer);
         } catch (JsonIOException e) {
             throw new TikaException(e.getMessage());
         }
@@ -50,19 +55,22 @@ public class JsonMetadata extends JsonMetadataBase{
     /**
      * Read metadata from reader.
      *
-     * @param reader reader to read from
+     * @param reader
      * @return Metadata or null if nothing could be read from the reader
-     * @throws TikaException in case of parse failure by Gson or IO failure with Reader
+     * @throws org.apache.tika.exception.TikaException in case of parse failure by Gson or IO failure with Reader
      */
-    public static Metadata fromJson(Reader reader) throws TikaException {
-        Metadata m = null;
+    public static List<Metadata> fromJson(Reader reader) throws TikaException {
+        List<Metadata> ms = null;
+        if (reader == null) {
+            return ms;
+        }
         try {
-            m = GSON.fromJson(reader, Metadata.class);
+            ms = GSON.fromJson(reader, listType);
         } catch (com.google.gson.JsonParseException e){
             //covers both io and parse exceptions
             throw new TikaException(e.getMessage());
         }
-        return m;
+        return ms;
     }
 
     /**
@@ -83,5 +91,6 @@ public class JsonMetadata extends JsonMetadataBase{
             GSON = defaultInit();
         }
     }
+
 
 }

@@ -57,6 +57,24 @@ public class JsonMetadataTest {
 
         //test that this really is 6 Chinese characters
         assertEquals(6, deserialized.get("alma_mater").length());
+
+        //now test pretty print;
+        writer = new StringWriter();
+        JsonMetadata.setPrettyPrinting(true);
+        JsonMetadata.toJson(metadata, writer);
+        assertTrue(writer.toString().contains(
+                "  \"json_escapes\": \"the: \\\"quick\\\" brown, fox\",\n" +
+                "  \"k1\": [\n" +
+                "    \"v1\",\n" +
+                "    \"v2\"\n" +
+                "  ],\n" +
+                "  \"k3\": [\n" +
+                "    \"v3\",\n" +
+                "    \"v3\"\n" +
+                "  ],\n" +
+                "  \"k4\": \"500,000\",\n" +
+                "  \"url\": \"/myApp/myAction.html?method\\u003drouter\\u0026cmd\\u003d1\"\n" +
+                "}"));
     }
     
     @Test
@@ -111,5 +129,4 @@ public class JsonMetadataTest {
         Metadata deserialized = JsonMetadata.fromJson(new StringReader(writer.toString()));
         assertEquals(m, deserialized);        
     }
-
 }
