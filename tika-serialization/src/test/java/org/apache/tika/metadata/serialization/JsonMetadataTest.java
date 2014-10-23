@@ -100,7 +100,7 @@ public class JsonMetadataTest {
             ex = true;
         }
         assertFalse(ex);
-        assertEquals("", writer.toString());        
+        assertEquals("null", writer.toString());        
     }
 
     @Test
