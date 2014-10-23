@@ -118,13 +118,14 @@ public class ChmDirectoryListingSet {
         this.placeHolder = placeHolder;
     }
 
+    private ChmPmglHeader PMGLheader;
     /**
      * Enumerates chm directory listing entries
      * 
      * @param chmItsHeader
-     *            chm itsf header
+     *            chm itsf PMGLheader
      * @param chmItspHeader
-     *            chm itsp header
+     *            chm itsp PMGLheader
      */
     private void enumerateChmDirectoryListingList(ChmItsfHeader chmItsHeader,
             ChmItspHeader chmItspHeader) {
@@ -136,33 +137,24 @@ public class ChmDirectoryListingSet {
             setDataOffset(chmItsHeader.getDataOffset());
 
             /* loops over all pmgls */
-            int previous_index = 0;
+//            int previous_index = 0;
             byte[] dir_chunk = null;
-            for (int i = startPmgl; i <= stopPmgl; i++) {
-                int data_copied = ((1 + i) * (int) chmItspHeader.getBlock_len())
-                        + dir_offset;
-                if (i == 0) {
-                    dir_chunk = new byte[(int) chmItspHeader.getBlock_len()];
-                    // dir_chunk = Arrays.copyOfRange(getData(), dir_offset,
-                    // (((1+i) * (int)chmItspHeader.getBlock_len()) +
-                    // dir_offset));
-                    dir_chunk = ChmCommons
-                            .copyOfRange(getData(), dir_offset,
-                                    (((1 + i) * (int) chmItspHeader
-                                            .getBlock_len()) + dir_offset));
-                    previous_index = data_copied;
-                } else {
-                    dir_chunk = new byte[(int) chmItspHeader.getBlock_len()];
-                    // dir_chunk = Arrays.copyOfRange(getData(), previous_index,
-                    // (((1+i) * (int)chmItspHeader.getBlock_len()) +
-                    // dir_offset));
-                    dir_chunk = ChmCommons
-                            .copyOfRange(getData(), previous_index,
-                                    (((1 + i) * (int) chmItspHeader
-                                            .getBlock_len()) + dir_offset));
-                    previous_index = data_copied;
-                }
+            for (int i = startPmgl; i>=0 /*&& i <= stopPmgl*/; ) {
+                System.err.println(i);
+                dir_chunk = new byte[(int) chmItspHeader.getBlock_len()];
+                // dir_chunk = Arrays.copyOfRange(getData(), previous_index,
+                // (((1+i) * (int)chmItspHeader.getBlock_len()) +
+                // dir_offset));
+                int start = i * (int) chmItspHeader.getBlock_len() + dir_offset;
+                dir_chunk = ChmCommons
+                        .copyOfRange(getData(), start,
+                                start +(int) chmItspHeader.getBlock_len());
+
+                PMGLheader = new ChmPmglHeader();
+                PMGLheader.parse(dir_chunk, PMGLheader);
                 enumerateOneSegment(dir_chunk);
+                
+                i=PMGLheader.getBlockNext();
                 dir_chunk = null;
             }
         } catch (Exception e) {
@@ -202,6 +194,15 @@ public class ChmDirectoryListingSet {
         }
     }
 
+    public static final boolean startsWith(byte[] data, String prefix) {
+        for (int i=0; i<prefix.length(); i++) {
+            if (data[i]!=prefix.charAt(i)) {
+                return false;
+            }
+        }
+        
+        return true;
+    }
     /**
      * Enumerates chm directory listing entries in single chm segment
      * 
@@ -210,18 +211,33 @@ public class ChmDirectoryListingSet {
     private void enumerateOneSegment(byte[] dir_chunk) {
         try {
             if (dir_chunk != null) {
+                int header_len;
+                if (startsWith(dir_chunk, ChmConstants.CHM_PMGI_MARKER)) {
+                    header_len = ChmConstants.CHM_PMGI_LEN;
+                    return;
+                }
+                else if (startsWith(dir_chunk, ChmConstants.PMGL)) {
+                    header_len = ChmConstants.CHM_PMGL_LEN;
+                }
+                else {
+                    throw new Exception("Back dir entry block.");
+                }
 
                 int indexWorkData = ChmCommons.indexOf(dir_chunk,
                         "::".getBytes("UTF-8"));
                 int indexUserData = ChmCommons.indexOf(dir_chunk,
                         "/".getBytes("UTF-8"));
 
-                if (indexUserData < indexWorkData)
+                if (indexUserData>=0 && indexUserData < indexWorkData)
                     setPlaceHolder(indexUserData);
-                else
+                else if (indexWorkData>=0) {
                     setPlaceHolder(indexWorkData);
+                }
+                else {
+                    setPlaceHolder(indexUserData);
+                }
 
-                if (getPlaceHolder() > 0
+                if (getPlaceHolder() > 0 && getPlaceHolder() < dir_chunk.length - PMGLheader.getFreeSpace()
                         && dir_chunk[getPlaceHolder() - 1] != 115) {// #{
                     do {
                         if (dir_chunk[getPlaceHolder() - 1] > 0) {
@@ -294,7 +310,7 @@ public class ChmDirectoryListingSet {
      * @return boolean
      */
     private boolean hasNext(byte[] dir_chunk) {
-        while (getPlaceHolder() < dir_chunk.length) {
+        while (getPlaceHolder() < dir_chunk.length - PMGLheader.getFreeSpace()) {
             if (dir_chunk[getPlaceHolder()] == 47
                     && dir_chunk[getPlaceHolder() + 1] != ':') {
                 setPlaceHolder(getPlaceHolder());

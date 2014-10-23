@@ -128,8 +128,9 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         this.setDataRemained(this.getDataRemained() - count);
     }
 
-    private int unmarshalInt32(byte[] data, int dest) throws TikaException {
+    private int unmarshalInt32(byte[] data) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
+        int dest;
         if (4 > this.getDataRemained())
             throw new TikaException("4 > dataLenght");
         dest = data[this.getCurrentPlace()]
@@ -142,8 +143,9 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         return dest;
     }
 
-    private long unmarshalUInt32(byte[] data, long dest) throws ChmParsingException {
+    private long unmarshalUInt32(byte[] data) throws ChmParsingException {
         ChmAssert.assertByteArrayNotNull(data);
+        long dest;
         if (4 > getDataRemained())
             throw new ChmParsingException("4 > dataLenght");
         dest = data[this.getCurrentPlace()]
@@ -165,14 +167,10 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         /* unmarshal fields */
         chmPmglHeader.unmarshalCharArray(data, chmPmglHeader,
                 ChmConstants.CHM_SIGNATURE_LEN);
-        chmPmglHeader.setFreeSpace(chmPmglHeader.unmarshalUInt32(data,
-                chmPmglHeader.getFreeSpace()));
-        chmPmglHeader.setUnknown0008(chmPmglHeader.unmarshalUInt32(data,
-                chmPmglHeader.getUnknown0008()));
-        chmPmglHeader.setBlockPrev(chmPmglHeader.unmarshalInt32(data,
-                chmPmglHeader.getBlockPrev()));
-        chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data,
-                chmPmglHeader.getBlockNext()));
+        chmPmglHeader.setFreeSpace(chmPmglHeader.unmarshalUInt32(data));
+        chmPmglHeader.setUnknown0008(chmPmglHeader.unmarshalUInt32(data));
+        chmPmglHeader.setBlockPrev(chmPmglHeader.unmarshalInt32(data));
+        chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data));
 
         /* check structure */
         try {
