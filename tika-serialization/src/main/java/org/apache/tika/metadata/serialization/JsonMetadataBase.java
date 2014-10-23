@@ -45,32 +45,8 @@ public class JsonMetadataBase {
         @Override
         public String[] getNames(Metadata m) {
             String[] names = m.names();
-            Arrays.sort(names, new MetadataKeyComparator());
+            Arrays.sort(names, new PrettyMetadataKeyComparator());
             return names;
-        }
-
-        private class MetadataKeyComparator implements java.util.Comparator<String> {
-            @Override
-            public int compare(String s1, String s2) {
-                if (s1 == null) {
-                    return 1;
-                } else if (s2 == null) {
-                    return -1;
-                }
-
-                //this is stinky.  This should reference RecursiveParserWrapper.TIKA_CONTENT
-                //but that would require making core a dependency of serialization...
-                //do we want to do that?
-                if (s1.equals("tika:content")) {
-                    if (s2.equals("tika:content")) {
-                        return 0;
-                    }
-                    return 2;
-                } else if (s2.equals("tika:content")) {
-                    return -2;
-                }
-                return s1.compareTo(s2);
-            }
         }
     }
 }
