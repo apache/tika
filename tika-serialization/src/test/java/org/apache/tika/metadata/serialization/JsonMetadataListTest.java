@@ -63,7 +63,7 @@ public class JsonMetadataListTest {
     public void testListNull() throws Exception {
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(null, writer);
-        assertEquals("", writer.toString().trim());
+        assertEquals("null", writer.toString().trim());
 
         List<Metadata> m = JsonMetadataList.fromJson(null);
         assertNull(m);
