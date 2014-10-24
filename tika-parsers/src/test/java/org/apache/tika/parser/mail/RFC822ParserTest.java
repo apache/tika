@@ -84,14 +84,14 @@ public class RFC822ParserTest {
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
             verify(handler).startDocument();
-            int bodyExpectedTimes = 4, multipackExpectedTimes = 5;;
-            int invokingTimes = bodyExpectedTimes;
-            if (TesseractOCRParserTest.canRun()) {
-              invokingTimes = multipackExpectedTimes;
+            int bodyExpectedTimes = 4, multipackExpectedTimes = 5;
+            // TIKA-1422. TesseractOCRParser interferes with the number of times the handler is invoked.
+            // But, different versions of Tesseract lead to a different number of invocations. So, we
+            // only verify the handler if Tesseract cannot run.
+            if (!TesseractOCRParserTest.canRun()) {
+                verify(handler, times(bodyExpectedTimes)).startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"), any(Attributes.class));
+                verify(handler, times(bodyExpectedTimes)).endElement(XHTMLContentHandler.XHTML, "div", "div");
             }
-            
-            verify(handler, times(invokingTimes)).startElement(eq(XHTMLContentHandler.XHTML), eq("div"), eq("div"), any(Attributes.class));
-            verify(handler, times(invokingTimes)).endElement(XHTMLContentHandler.XHTML, "div", "div");
             verify(handler, times(multipackExpectedTimes)).startElement(eq(XHTMLContentHandler.XHTML), eq("p"), eq("p"), any(Attributes.class));
             verify(handler, times(multipackExpectedTimes)).endElement(XHTMLContentHandler.XHTML, "p", "p");
             verify(handler).endDocument();
