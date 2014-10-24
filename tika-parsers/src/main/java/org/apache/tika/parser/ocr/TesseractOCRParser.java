@@ -290,13 +290,4 @@ public class TesseractOCRParser extends AbstractParser {
     }.start();
   }
 
-  private List<Parser> getImageParsers() {
-    List<Parser> parsers = new ArrayList<Parser>();
-    parsers.add(new ImageParser());
-    parsers.add(new PSDParser());
-    parsers.add(new TiffParser());
-    parsers.add(new JpegParser());
-    return parsers;
-  }
-
 }
