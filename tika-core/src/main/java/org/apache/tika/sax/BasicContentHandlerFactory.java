@@ -15,11 +15,13 @@ package org.apache.tika.sax;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.xml.sax.ContentHandler;
-import org.xml.sax.helpers.DefaultHandler;
 
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * Basic factory for creating common types of ContentHandlers
@@ -53,12 +55,13 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
     @Override
     public ContentHandler getNewContentHandler() {
 
+        if (type == HANDLER_TYPE.BODY) {
+            return new BodyContentHandler(writeLimit);
+        } else if (type == HANDLER_TYPE.IGNORE) {
+            return new DefaultHandler();
+        }
         if (writeLimit > -1) {
             switch(type) {
-                case BODY:
-                    return new BodyContentHandler(writeLimit);
-                case IGNORE:
-                    return new DefaultHandler();
                 case TEXT:
                     return new WriteOutContentHandler(new ToTextContentHandler(), writeLimit);
                 case HTML:
@@ -70,10 +73,6 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
             }
         } else {
             switch (type) {
-                case BODY:
-                    return new BodyContentHandler();
-                case IGNORE:
-                    return new DefaultHandler();
                 case TEXT:
                     return new ToTextContentHandler();
                 case HTML:
@@ -89,12 +88,17 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
 
     @Override
     public ContentHandler getNewContentHandler(OutputStream os, String encoding) throws UnsupportedEncodingException {
+
+        if (type == HANDLER_TYPE.IGNORE) {
+            return new DefaultHandler();
+        }
+
         if (writeLimit > -1) {
             switch(type) {
                 case BODY:
-                    return new WriteOutContentHandler(new BodyContentHandler(new ToTextContentHandler(os, encoding)), writeLimit);
-                case IGNORE:
-                    return new DefaultHandler();
+                    return new WriteOutContentHandler(
+                            new BodyContentHandler(
+                                    new OutputStreamWriter(os, encoding)), writeLimit);
                 case TEXT:
                     return new WriteOutContentHandler(new ToTextContentHandler(os, encoding), writeLimit);
                 case HTML:
@@ -107,9 +111,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
         } else {
             switch (type) {
                 case BODY:
-                    return new BodyContentHandler(new ToTextContentHandler(os, encoding));
-                case IGNORE:
-                    return new DefaultHandler();
+                    return new BodyContentHandler(new OutputStreamWriter(os, encoding));
                 case TEXT:
                     return new ToTextContentHandler(os, encoding);
                 case HTML:
