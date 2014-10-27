@@ -121,7 +121,7 @@ public class TikaGUI extends JFrame
     }
 
     //maximum length to allow for mark for reparse to get JSON
-    private final int MAX_MARK = 20971520;//20MB
+    private final int MAX_MARK = 20*1024*1024;//20MB
     /**
      * Parsing context.
      */
@@ -379,7 +379,8 @@ public class TikaGUI extends JFrame
         }
         if (isReset) {
             RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser,
-                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
+                    new BasicContentHandlerFactory(
+                            BasicContentHandlerFactory.HANDLER_TYPE.BODY, -1));
             wrapper.parse(input, null, new Metadata(), new ParseContext());
             StringWriter jsonBuffer = new StringWriter();
             JsonMetadataList.setPrettyPrinting(true);
