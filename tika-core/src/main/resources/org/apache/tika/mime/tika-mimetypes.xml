@@ -3040,9 +3040,14 @@
     <sub-class-of type="application/x-msdownload"/>
     <magic priority="55">
       <!-- Technically the header offset is stored at 0x3c, and isn't a -->
-      <!-- constant, but it's almost always set to start at 0x80 or 0xf0 -->
-      <match value="PE\000\000" type="string" offset="128"/>
-      <match value="PE\000\000" type="string" offset="240"/>
+      <!-- constant, but it's almost always set to start at 0x80, 0xb0, -->
+      <!-- 0xd0 or 0xf0. Will always have the MZ msdoc header too. -->
+      <match value="MZ" type="string" offset="0">
+         <match value="PE\000\000" type="string" offset="128"/>
+         <match value="PE\000\000" type="string" offset="176"/>
+         <match value="PE\000\000" type="string" offset="208"/>
+         <match value="PE\000\000" type="string" offset="240"/>
+      </match>
     </magic>
   </mime-type>
   <!-- the PE header should be PEx00x00 then a two byte machine type -->

@@ -742,6 +742,21 @@ public class TestMimeTypes {
     }
     
     @Test
+    public void testWindowsEXE() throws Exception {
+        assertTypeByName("application/x-msdownload", "x.dll");
+        assertTypeByName("application/x-ms-installer", "x.msi");
+        assertTypeByName("application/x-dosexec", "x.exe");
+        
+        assertTypeByData("application/x-msdownload; format=pe", "testTinyPE.exe");
+        assertTypeByNameAndData("application/x-msdownload; format=pe", "testTinyPE.exe");
+        
+        // A jar file with part of a PE header, but not a full one
+        //  should still be detected as a zip or jar (without/with name)
+        assertTypeByData("application/zip", "testJAR_with_PEHDR.jar");
+        assertTypeByNameAndData("application/java-archive", "testJAR_with_PEHDR.jar");
+    }
+    
+    @Test
     public void testMatroskaDetection() throws Exception {
         assertType("video/x-matroska", "testMKV.mkv");
         // TODO: Need custom detector data detection, see TIKA-1180
