@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.ParserContainerExtractor;
@@ -578,13 +579,24 @@ public class PDFParserTest extends TikaTest {
             }
 
             pdfs++;
+            
+            String sequentialContent = null;
             Metadata sequentialMetadata = new Metadata();
-            String sequentialContent = getText(new FileInputStream(f), 
-                sequentialParser, seqContext, sequentialMetadata);
+            try {
+                sequentialContent = getText(new FileInputStream(f), 
+                        sequentialParser, seqContext, sequentialMetadata);
+            } catch (Exception e) {
+                throw new TikaException("Sequential Parser failed on test file " + f, e);
+            }
 
+            String nonSequentialContent = null;
             Metadata nonSequentialMetadata = new Metadata();
-            String nonSequentialContent = getText(new FileInputStream(f), 
-                nonSequentialParser, nonSeqContext, nonSequentialMetadata);
+            try {
+                nonSequentialContent = getText(new FileInputStream(f), 
+                     nonSequentialParser, nonSeqContext, nonSequentialMetadata);
+            } catch (Exception e) {
+                throw new TikaException("Non-Sequential Parser failed on test file " + f, e);
+            }
 
             if (knownContentDiffs.contains(f.getName())) {
                 assertFalse(f.getName(), sequentialContent.equals(nonSequentialContent));
