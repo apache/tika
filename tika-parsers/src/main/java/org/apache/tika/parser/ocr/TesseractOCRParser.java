@@ -139,7 +139,7 @@ public class TesseractOCRParser extends AbstractParser {
     if (config == null)
       config = new TesseractOCRConfig();
 
-    String[] checkCmd = { config.getTesseractPath() + "tesseract" };
+    String[] checkCmd = { config.getTesseractPath() + getTesseractProg() };
     // If Tesseract is not on the path, do not try to run OCR.
     if (!ExternalParser.check(checkCmd))
       return;
@@ -189,7 +189,7 @@ public class TesseractOCRParser extends AbstractParser {
    *           if an input error occurred
    */
   private void doOCR(File input, File output, TesseractOCRConfig config) throws IOException, TikaException {
-    String[] cmd = { config.getTesseractPath() + "tesseract", input.getPath(), output.getPath(), "-l",
+    String[] cmd = { config.getTesseractPath() + getTesseractProg(), input.getPath(), output.getPath(), "-l",
         config.getLanguage(), "-psm", config.getPageSegMode() };
 
     ProcessBuilder pb = new ProcessBuilder(cmd);
@@ -288,6 +288,10 @@ public class TesseractOCRParser extends AbstractParser {
 
       }
     }.start();
+  }
+  
+  static String getTesseractProg() {
+    return System.getProperty("os.name").startsWith("Windows") ? "tesseract.exe" : "tesseract";
   }
 
 }

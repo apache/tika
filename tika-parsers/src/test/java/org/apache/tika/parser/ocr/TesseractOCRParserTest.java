@@ -16,6 +16,12 @@
  */
 package org.apache.tika.parser.ocr;
 
+import static org.apache.tika.parser.ocr.TesseractOCRParser.getTesseractProg;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
+
+import java.io.InputStream;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
@@ -26,11 +32,6 @@ import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 
-import java.io.InputStream;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
-
 public class TesseractOCRParserTest extends TikaTest {
 
     public static boolean canRun() {
@@ -40,7 +41,7 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
     private boolean canRun(TesseractOCRConfig config) {
-        String[] checkCmd = {config.getTesseractPath() + "tesseract"};
+        String[] checkCmd = {config.getTesseractPath() + getTesseractProg()};
         // If Tesseract is not on the path, do not run the test.
         return ExternalParser.check(checkCmd);
     }
