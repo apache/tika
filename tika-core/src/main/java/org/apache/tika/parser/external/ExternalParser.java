@@ -341,12 +341,7 @@ public class ExternalParser extends AbstractParser {
        }
        
        try {
-          Process process;
-          if(checkCmd.length == 1) {
-             process = Runtime.getRuntime().exec(checkCmd[0]);
-          } else {
-             process = Runtime.getRuntime().exec(checkCmd);
-          }
+          Process process= Runtime.getRuntime().exec(checkCmd);
           int result = process.waitFor();
           
           for(int err : errorValue) {
