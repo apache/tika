@@ -127,8 +127,9 @@ public class PDFParser extends AbstractParser {
                     pdfDocument = PDDocument.load(new CloseShieldInputStream(stream), true);
                 }
             }
-            
-           
+
+            metadata.set("pdf:encrypted", Boolean.toString(pdfDocument.isEncrypted()));
+
             if (pdfDocument.isEncrypted()) {
                 String password = null;
                 
@@ -225,7 +226,6 @@ public class PDFParser extends AbstractParser {
         	addMetadata(metadata, name, info.getDictionary().getDictionaryObject(key));
             }
         }
-        metadata.set("pdf:encrypted", Boolean.toString(document.isEncrypted()));
 
         //try to get the various versions
         //Caveats:
