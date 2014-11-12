@@ -1,5 +1,7 @@
 Release 1.7 - Current Development
 
+  * Fix warning of slf4j logger on Tika Server startup (TIKA-1472).
+
   * Tika CLI and GUI now have option to view JSON rendering of output
     of RecursiveParserWrapper (TIKA-1451).
 
