@@ -14,7 +14,8 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -63,7 +64,7 @@
       <groupId>javax.mail</groupId>
       <artifactId>mail</artifactId>
       <version>1.4.4</version>
-    </dependency> 
+    </dependency>
     <dependency>
       <groupId>commons-cli</groupId>
       <artifactId>commons-cli</artifactId>
@@ -147,7 +148,7 @@
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
                 </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.IncludeResourceTransformer">
                   <resource>META-INF/LICENSE</resource>
                   <file>target/classes/META-INF/LICENSE</file>
@@ -209,46 +210,46 @@
     </plugins>
   </build>
   <profiles>
-     <profile>
-         <id>server</id>
-         <build>
-             <defaultGoal>test</defaultGoal>
-             <plugins>
-                 <plugin>
-                     <groupId>org.codehaus.mojo</groupId>
-                     <artifactId>exec-maven-plugin</artifactId>
-                     <executions>
-                        <execution>
-                             <phase>test</phase>
-                             <goals>
-                                 <goal>java</goal>
-                             </goals>
-                             <configuration>
-                                 <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
-                             </configuration>
-                          </execution>
-                      </executions>
-                  </plugin>
-              </plugins>
-         </build>
-      </profile>
-  </profiles>  
+    <profile>
+      <id>server</id>
+      <build>
+        <defaultGoal>test</defaultGoal>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <phase>test</phase>
+                <goals>
+                  <goal>java</goal>
+                </goals>
+                <configuration>
+                  <mainClass>org.apache.tika.server.TikaServerCli</mainClass>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
   <url>http://tika.apache.org/</url>
   <organization>
-  	<name>The Apache Software Foundation</name>
-  	<url>http://www.apache.org</url>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-server</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-server</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-server</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/trunk/tika-server</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-server</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-server</developerConnection>
   </scm>
   <issueManagement>
-  	<system>JIRA</system>
-  	<url>https://issues.apache.org/jira/browse/TIKA</url>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
   </issueManagement>
   <ciManagement>
-  	<system>Jenkins</system>
-  	<url>https://builds.apache.org/job/Tika-trunk/</url>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
 </project>
