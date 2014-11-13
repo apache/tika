@@ -19,7 +19,8 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -36,9 +37,11 @@
 
   <properties>
     <poi.version>3.11-beta2</poi.version>
-    <codec.version>1.9</codec.version> <!-- NOTE: sync with POI -->
+    <codec.version>1.9</codec.version>
+    <!-- NOTE: sync with POI -->
     <compress.version>1.8.1</compress.version>
-    <tukaani.version>1.5</tukaani.version> <!-- NOTE: sync with commons-compress -->
+    <tukaani.version>1.5</tukaani.version>
+    <!-- NOTE: sync with commons-compress -->
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.6</vorbis.version>
     <pdfbox.version>1.8.7</pdfbox.version>
@@ -84,7 +87,7 @@
       <groupId>net.sourceforge.jmatio</groupId>
       <artifactId>jmatio</artifactId>
       <version>1.0</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.james</groupId>
       <artifactId>apache-mime4j-core</artifactId>
@@ -100,11 +103,11 @@
       <artifactId>commons-compress</artifactId>
       <version>${compress.version}</version>
     </dependency>
-    <dependency> 
-      <groupId>org.tukaani</groupId> 
-      <artifactId>xz</artifactId> 
+    <dependency>
+      <groupId>org.tukaani</groupId>
+      <artifactId>xz</artifactId>
       <version>${tukaani.version}</version>
-   </dependency>
+    </dependency>
 
     <dependency>
       <groupId>commons-codec</groupId>
@@ -170,9 +173,9 @@
       <version>1.0.2</version>
     </dependency>
     <dependency>
-       <groupId>com.drewnoakes</groupId>
-       <artifactId>metadata-extractor</artifactId>
-       <version>2.6.2</version>
+      <groupId>com.drewnoakes</groupId>
+      <artifactId>metadata-extractor</artifactId>
+      <version>2.6.2</version>
     </dependency>
     <dependency>
       <groupId>de.l3s.boilerpipe</groupId>
@@ -206,7 +209,7 @@
       </exclusions>
     </dependency>
     <dependency>
-    <groupId>com.pff</groupId>
+      <groupId>com.pff</groupId>
       <artifactId>java-libpst</artifactId>
       <version>0.8.1</version>
     </dependency>
@@ -217,10 +220,10 @@
       <artifactId>junit</artifactId>
     </dependency>
     <dependency>
-       <groupId>org.mockito</groupId>
-       <artifactId>mockito-core</artifactId>
-       <version>1.7</version>
-       <scope>test</scope>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.7</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -243,9 +246,9 @@
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Import-Package>
-                org.w3c.dom,
-                org.apache.tika.*,
-                *;resolution:=optional
+              org.w3c.dom,
+              org.apache.tika.*,
+              *;resolution:=optional
             </Import-Package>
           </instructions>
         </configuration>
@@ -294,7 +297,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <execute />
+                    <execute/>
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -306,20 +309,20 @@
   </build>
 
   <organization>
-  	<name>The Apache Software Foundation</name>
-  	<url>http://www.apache.org</url>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-parsers</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-parsers</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-parsers</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/trunk/tika-parsers</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-parsers</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-parsers</developerConnection>
   </scm>
   <issueManagement>
-  	<system>JIRA</system>
-  	<url>https://issues.apache.org/jira/browse/TIKA</url>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
   </issueManagement>
   <ciManagement>
-  	<system>Jenkins</system>
-  	<url>https://builds.apache.org/job/Tika-trunk/</url>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
 </project>

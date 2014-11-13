@@ -19,7 +19,8 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -92,22 +93,22 @@
             <configuration>
               <target>
                 <exec executable="${ikvm}/bin/ikvmc.exe">
-                  <arg value="-nowarn:0100" />
-                  <arg value="-nowarn:0105" />
-                  <arg value="-nowarn:0109" />
-                  <arg value="-nowarn:0111" />
-                  <arg value="-nowarn:0112" />
-                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Charsets.dll" />
-                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Core.dll" />
-                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Text.dll" />
-                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Util.dll" />
-                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.API.dll" />
-                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.Transform.dll" />
-                  <arg value="-target:library" />
-                  <arg value="-compressresources" />
-                  <arg value="-out:${project.build.directory}/${project.build.finalName}.dll" />
-                  <arg value="-recurse:${project.build.directory}\*.class" />
-                  <arg value="${project.build.directory}/dependency/tika-app.jar" />
+                  <arg value="-nowarn:0100"/>
+                  <arg value="-nowarn:0105"/>
+                  <arg value="-nowarn:0109"/>
+                  <arg value="-nowarn:0111"/>
+                  <arg value="-nowarn:0112"/>
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Charsets.dll"/>
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Core.dll"/>
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Text.dll"/>
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.Util.dll"/>
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.API.dll"/>
+                  <arg value="-reference:${ikvm}/bin/IKVM.OpenJDK.XML.Transform.dll"/>
+                  <arg value="-target:library"/>
+                  <arg value="-compressresources"/>
+                  <arg value="-out:${project.build.directory}/${project.build.finalName}.dll"/>
+                  <arg value="-recurse:${project.build.directory}\*.class"/>
+                  <arg value="${project.build.directory}/dependency/tika-app.jar"/>
                 </exec>
               </target>
             </configuration>
@@ -170,20 +171,20 @@
 
   <description>A .NET port of Tika functionality.</description>
   <organization>
-  	<name>The Apache Software Foundation</name>
-  	<url>http://www.apache.org</url>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-dotnet</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-dotnet</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-dotnet</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/trunk/tika-dotnet</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-dotnet</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-dotnet</developerConnection>
   </scm>
   <issueManagement>
-  	<system>JIRA</system>
-  	<url>https://issues.apache.org/jira/browse/TIKA</url>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
   </issueManagement>
   <ciManagement>
-  	<system>Jenkins</system>
-  	<url>https://builds.apache.org/job/Tika-trunk/</url>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
 </project>

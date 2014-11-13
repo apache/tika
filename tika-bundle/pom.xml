@@ -19,7 +19,8 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -136,7 +137,7 @@
               org.apache.tika.parser.*
             </Export-Package>
             <Import-Package>
-			  !org.junit,
+              !org.junit,
               *,
               android.util;resolution:=optional,
               com.adobe.xmp;resolution:=optional,
@@ -300,11 +301,11 @@
               </execution>
             </executions>
             <configuration>
-             <systemPropertyVariables>
-               <org.ops4j.pax.logging.DefaultServiceLog.level>
-                 WARN
-               </org.ops4j.pax.logging.DefaultServiceLog.level>
-             </systemPropertyVariables>
+              <systemPropertyVariables>
+                <org.ops4j.pax.logging.DefaultServiceLog.level>
+                  WARN
+                </org.ops4j.pax.logging.DefaultServiceLog.level>
+              </systemPropertyVariables>
             </configuration>
           </plugin>
         </plugins>
@@ -313,20 +314,20 @@
   </profiles>
 
   <organization>
-  	<name>The Apache Software Founation</name>
-  	<url>http://www.apache.org</url>
+    <name>The Apache Software Founation</name>
+    <url>http://www.apache.org</url>
   </organization>
   <scm>
-  	<url>http://svn.apache.org/viewvc/tika/trunk/tika-bundle</url>
-  	<connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-bundle</connection>
-  	<developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-bundle</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/trunk/tika-bundle</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-bundle</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-bundle</developerConnection>
   </scm>
   <issueManagement>
-  	<system>JIRA</system>
-  	<url>https://issues.apache.org/jira/browse/TIKA</url>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
   </issueManagement>
   <ciManagement>
-  	<system>Jenkins</system>
-  	<url>https://builds.apache.org/job/Tika-trunk/</url>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
   </ciManagement>
 </project>
