@@ -19,6 +19,7 @@ package org.apache.tika.parser.ocr;
 import org.apache.tika.TikaTest;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
@@ -58,7 +59,7 @@ public class TesseractOCRConfigTest extends TikaTest {
                 "/test-properties/TesseractOCRConfig-full.properties");
 
         TesseractOCRConfig config = new TesseractOCRConfig(stream);
-        assertEquals("Invalid overridden tesseractPath value", "/opt/tesseract/", config.getTesseractPath());
+        assertEquals("Invalid overridden tesseractPath value", "/opt/tesseract" + File.separator, config.getTesseractPath());
         assertEquals("Invalid overridden language value", "fra+deu", config.getLanguage());
         assertEquals("Invalid overridden pageSegMode value", "2", config.getPageSegMode());
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
