@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -34,6 +33,7 @@ import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -49,10 +49,12 @@ public class ChmParser extends AbstractParser {
                     MediaType.application("chm"),
                     MediaType.application("x-chm"))));
 
+    @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    @Override
     public void parse(InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
@@ -66,36 +68,40 @@ public class ChmParser extends AbstractParser {
         xhtml.startDocument();
 
         for (DirectoryListingEntry entry : chmExtractor.getChmDirList().getDirectoryListingEntryList()) {
-            if (entry.getName().endsWith(".html") || entry.getName().endsWith(".htm")) {
-                xhtml.characters(extract(chmExtractor.extractChmEntry(entry)));
+            final String entryName = entry.getName();
+            if (entryName.endsWith(".html") 
+                    || entryName.endsWith(".htm")
+            ) {
+//                AttributesImpl attrs = new AttributesImpl();
+//                attrs.addAttribute("", "name", "name", "String", entryName);
+//                xhtml.startElement("", "document", "document", attrs);
+                
+                byte[] data = chmExtractor.extractChmEntry(entry);
+
+                parsePage(data, xhtml);
+                
+//                xhtml.endElement("", "", "document");
             }
         }
 
         xhtml.endDocument();
     }
 
-    /**
-     * Extracts data from byte[]
-     */
-    private String extract(byte[] byteObject) throws TikaException {// throws IOException
-        StringBuilder wBuf = new StringBuilder();
+
+    private void parsePage(byte[] byteObject, ContentHandler xhtml) throws TikaException {// throws IOException
         InputStream stream = null;
         Metadata metadata = new Metadata();
         HtmlParser htmlParser = new HtmlParser();
-        BodyContentHandler handler = new BodyContentHandler(-1);// -1
+        ContentHandler handler = new EmbeddedContentHandler(new BodyContentHandler(xhtml));// -1
         ParseContext parser = new ParseContext();
         try {
             stream = new ByteArrayInputStream(byteObject);
             htmlParser.parse(stream, handler, metadata, parser);
-            wBuf.append(handler.toString()
-                    + System.getProperty("line.separator"));
         } catch (SAXException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
             // Pushback overflow from tagsoup
         }
-        return wBuf.toString();
     }
-
-
+    
 }

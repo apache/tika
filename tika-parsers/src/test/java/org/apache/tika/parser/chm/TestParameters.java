@@ -18,7 +18,6 @@ package org.apache.tika.parser.chm;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.core.ChmCommons.EntryType;
 
@@ -91,7 +90,7 @@ public class TestParameters {
     static final int VP_CONTROL_DATA_VERSION = 2;
     static final int VP_WINDOW_SIZE = 65536;
     static final int VP_WINDOWS_PER_RESET = 1;
-    static final int VP_CHM_ENTITIES_NUMBER = 101;
+    static final int VP_CHM_ENTITIES_NUMBER = 100; //updated  by Hawking
     static final int VP_PMGI_FREE_SPACE = 3;
     static final int VP_PMGL_BLOCK_NEXT = -1;
     static final int VP_PMGL_BLOCK_PREV = -1;

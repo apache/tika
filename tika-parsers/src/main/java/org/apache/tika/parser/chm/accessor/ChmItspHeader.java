@@ -147,10 +147,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > this.getDataRemained())
             throw new TikaException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
@@ -161,10 +161,10 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
         ChmAssert.assertByteArrayNotNull(data);
         if (4 > dataLenght)
             throw new TikaException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -555,11 +555,5 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
 
         if (chmItspHeader.getHeader_len() != ChmConstants.CHM_ITSP_V1_LEN)
             throw new ChmParsingException("!= ChmConstants.CHM_ITSP_V1_LEN");
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
     }
 }

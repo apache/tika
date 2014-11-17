@@ -105,10 +105,10 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
         if (4 > getDataRemained())
             throw new ChmParsingException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -185,13 +185,6 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
         } catch (UnsupportedEncodingException e) {
             throw new AssertionError("UTF-8 not supported.");
         }
-
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
 
     }
 }
