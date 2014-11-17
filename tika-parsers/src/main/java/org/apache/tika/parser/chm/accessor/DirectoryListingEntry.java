@@ -81,7 +81,7 @@ public class DirectoryListingEntry {
         sb.append("length:=" + getLength());
         return sb.toString();
     }
-
+    
     /**
      * Returns an entry name length
      * 
@@ -147,8 +147,5 @@ public class DirectoryListingEntry {
 
     protected void setLength(int length) {
         this.length = length;
-    }
-
-    public static void main(String[] args) {
     }
 }

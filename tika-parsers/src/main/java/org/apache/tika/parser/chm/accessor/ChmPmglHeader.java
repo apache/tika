@@ -16,13 +16,12 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import java.io.UnsupportedEncodingException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
-
-import java.io.UnsupportedEncodingException;
-import java.util.UnknownFormatConversionException;
 
 /**
  * Description There are two types of directory chunks -- index chunks, and
@@ -100,7 +99,10 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         return free_space;
     }
 
-    public void setFreeSpace(long free_space) {
+    public void setFreeSpace(long free_space) throws TikaException {
+        if (free_space < 0) {
+            throw new TikaException("Bad PMGLheader.FreeSpace="+free_space);
+        }
         this.free_space = free_space;
     }
 
@@ -128,28 +130,30 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         this.setDataRemained(this.getDataRemained() - count);
     }
 
-    private int unmarshalInt32(byte[] data, int dest) throws TikaException {
+    private int unmarshalInt32(byte[] data) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
+        int dest;
         if (4 > this.getDataRemained())
             throw new TikaException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         this.setCurrentPlace(this.getCurrentPlace() + 4);
         this.setDataRemained(this.getDataRemained() - 4);
         return dest;
     }
 
-    private long unmarshalUInt32(byte[] data, long dest) throws ChmParsingException {
+    private long unmarshalUInt32(byte[] data) throws ChmParsingException {
         ChmAssert.assertByteArrayNotNull(data);
+        long dest;
         if (4 > getDataRemained())
             throw new ChmParsingException("4 > dataLenght");
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -165,14 +169,10 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         /* unmarshal fields */
         chmPmglHeader.unmarshalCharArray(data, chmPmglHeader,
                 ChmConstants.CHM_SIGNATURE_LEN);
-        chmPmglHeader.setFreeSpace(chmPmglHeader.unmarshalUInt32(data,
-                chmPmglHeader.getFreeSpace()));
-        chmPmglHeader.setUnknown0008(chmPmglHeader.unmarshalUInt32(data,
-                chmPmglHeader.getUnknown0008()));
-        chmPmglHeader.setBlockPrev(chmPmglHeader.unmarshalInt32(data,
-                chmPmglHeader.getBlockPrev()));
-        chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data,
-                chmPmglHeader.getBlockNext()));
+        chmPmglHeader.setFreeSpace(chmPmglHeader.unmarshalUInt32(data));
+        chmPmglHeader.setUnknown0008(chmPmglHeader.unmarshalUInt32(data));
+        chmPmglHeader.setBlockPrev(chmPmglHeader.unmarshalInt32(data));
+        chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data));
 
         /* check structure */
         try {
@@ -214,12 +214,5 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     protected void setBlockNext(int block_next) {
         this.block_next = block_next;
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-
     }
 }

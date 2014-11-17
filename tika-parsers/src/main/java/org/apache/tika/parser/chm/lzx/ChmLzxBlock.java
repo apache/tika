@@ -47,7 +47,7 @@ public class ChmLzxBlock {
     private int previousBlockType = -1;
 
     public ChmLzxBlock(int blockNumber, byte[] dataSegment, long blockLength,
-            ChmLzxBlock prevBlock) {
+            ChmLzxBlock prevBlock) throws TikaException {
         try {
             if (validateConstructorParams(blockNumber, dataSegment, blockLength)) {
                 setBlockNumber(blockNumber);
@@ -55,7 +55,7 @@ public class ChmLzxBlock {
                 if (prevBlock != null
                         && prevBlock.getState().getBlockLength() > prevBlock
                                 .getState().getBlockRemaining())
-                    setChmSection(new ChmSection(prevBlock.getContent()));
+                    setChmSection(new ChmSection(dataSegment, prevBlock.getContent()));
                 else
                     setChmSection(new ChmSection(dataSegment));
 
@@ -65,10 +65,12 @@ public class ChmLzxBlock {
                 // we need to take care of previous context
                 // ============================================
                 checkLzxBlock(prevBlock);
-                setContent((int) blockLength);
                 if (prevBlock == null
-                        || getContent().length < (int) getBlockLength()) {
+                        || blockLength < (int) getBlockLength()) {
                     setContent((int) getBlockLength());
+                }
+                else {
+                    setContent((int) blockLength);
                 }
 
                 if (prevBlock != null && prevBlock.getState() != null)
@@ -77,8 +79,8 @@ public class ChmLzxBlock {
                 extractContent();
             } else
                 throw new TikaException("Check your chm lzx block parameters");
-        } catch (Exception e) {
-            // TODO: handle exception
+        } catch (TikaException e) {
+            throw e;
         }
     }
 
@@ -136,40 +138,41 @@ public class ChmLzxBlock {
                     }
 
                     switch (getState().getBlockType()) {
-                    case ChmCommons.ALIGNED_OFFSET:
-                        createAlignedTreeTable();
-                    case ChmCommons.VERBATIM:
-                        /* Creates mainTreeTable */
-                        createMainTreeTable();
-                        createLengthTreeTable();
-                        if (getState().getMainTreeLengtsTable()[0xe8] != 0)
+                        case ChmCommons.ALIGNED_OFFSET:
+                            createAlignedTreeTable();
+                            //fall through
+                        case ChmCommons.VERBATIM:
+                            /* Creates mainTreeTable */
+                            createMainTreeTable();
+                            createLengthTreeTable();
+                            if (getState().getMainTreeLengtsTable()[0xe8] != 0)
+                                getState().setIntelState(IntelState.STARTED);
+                            break;
+                        case ChmCommons.UNCOMPRESSED:
                             getState().setIntelState(IntelState.STARTED);
-                        break;
-                    case ChmCommons.UNCOMPRESSED:
-                        getState().setIntelState(IntelState.STARTED);
-                        if (getChmSection().getTotal() > 16)
-                            getChmSection().setSwath(
-                                    getChmSection().getSwath() - 1);
-                        getState().setR0(
-                                (new BigInteger(getChmSection()
-                                        .reverseByteOrder(
-                                                getChmSection().unmarshalBytes(
-                                                        4))).longValue()));
-                        getState().setR1(
-                                (new BigInteger(getChmSection()
-                                        .reverseByteOrder(
-                                                getChmSection().unmarshalBytes(
-                                                        4))).longValue()));
-                        getState().setR2(
-                                (new BigInteger(getChmSection()
-                                        .reverseByteOrder(
-                                                getChmSection().unmarshalBytes(
-                                                        4))).longValue()));
-                        break;
-                    default:
-                        break;
+                            if (getChmSection().getTotal() > 16)
+                                getChmSection().setSwath(
+                                        getChmSection().getSwath() - 1);
+                            getState().setR0(
+                                    (new BigInteger(getChmSection()
+                                            .reverseByteOrder(
+                                                    getChmSection().unmarshalBytes(
+                                                            4))).longValue()));
+                            getState().setR1(
+                                    (new BigInteger(getChmSection()
+                                            .reverseByteOrder(
+                                                    getChmSection().unmarshalBytes(
+                                                            4))).longValue()));
+                            getState().setR2(
+                                    (new BigInteger(getChmSection()
+                                            .reverseByteOrder(
+                                                    getChmSection().unmarshalBytes(
+                                                            4))).longValue()));
+                            break;
+                        default:
+                            break;
                     }
-                }
+                } //end of if BlockRemaining == 0
 
                 int tempLen;
 
@@ -188,14 +191,13 @@ public class ChmLzxBlock {
                 switch (getState().getBlockType()) {
                 case ChmCommons.ALIGNED_OFFSET:
                     // if(prevblock.lzxState.length>prevblock.lzxState.remaining)
-                    decompressAlignedBlock(tempLen, getChmSection().getData());// prevcontext
+                    decompressAlignedBlock(tempLen, getChmSection().getPrevContent() == null ? getChmSection().getData() : getChmSection().getPrevContent());// prevcontext
                     break;
                 case ChmCommons.VERBATIM:
-                    decompressVerbatimBlock(tempLen, getChmSection().getData());
+                    decompressVerbatimBlock(tempLen, getChmSection().getPrevContent() == null ? getChmSection().getData() : getChmSection().getPrevContent());
                     break;
                 case ChmCommons.UNCOMPRESSED:
-                    decompressUncompressedBlock(tempLen, getChmSection()
-                            .getData());
+                    decompressUncompressedBlock(tempLen, getChmSection().getPrevContent() == null ? getChmSection().getData() : getChmSection().getPrevContent());
                     break;
                 }
                 getState().increaseFramesRead();
@@ -254,6 +256,7 @@ public class ChmLzxBlock {
     }
 
     private void createLengthTreeTable() throws TikaException {
+        //Read Pre Tree Table
         short[] prelentable = createPreLenTable();
 
         if (prelentable == null) {
@@ -270,14 +273,15 @@ public class ChmLzxBlock {
             throw new ChmParsingException("pretreetable is null");
         }
 
+        //Build Length Tree
         createLengthTreeLenTable(0, ChmConstants.LZX_NUM_SECONDARY_LENGTHS,
                 pretreetable, prelentable);
 
         getState().setLengthTreeTable(
                 createTreeTable2(getState().getLengthTreeLengtsTable(),
-                        (1 << ChmConstants.LZX_MAINTREE_TABLEBITS)
+                        (1 << ChmConstants.LZX_LENGTH_TABLEBITS)
                                 + (ChmConstants.LZX_LENGTH_MAXSYMBOLS << 1),
-                        ChmConstants.LZX_MAINTREE_TABLEBITS,
+                        ChmConstants.LZX_LENGTH_TABLEBITS,
                         ChmConstants.LZX_NUM_SECONDARY_LENGTHS));
     }
 
@@ -312,13 +316,15 @@ public class ChmLzxBlock {
         int matchoffset = 0;
         for (i = getContentLength(); i < len; i++) {
             /* new code */
-            border = getChmSection().getDesyncBits(
-                    ChmConstants.LZX_MAINTREE_TABLEBITS, 0);
+            //read huffman tree from main tree
+            border = getChmSection().peekBits(
+                    ChmConstants.LZX_MAINTREE_TABLEBITS);
             if (border >= getState().mainTreeTable.length)
-                break;
+                throw new ChmParsingException("error decompressing aligned block.");
+                //break;
             /* end new code */
-            s = getState().mainTreeTable[getChmSection().getDesyncBits(
-                    ChmConstants.LZX_MAINTREE_TABLEBITS, 0)];
+            s = getState().mainTreeTable[getChmSection().peekBits(
+                    ChmConstants.LZX_MAINTREE_TABLEBITS)];
             if (s >= getState().getMainTreeElements()) {
                 x = ChmConstants.LZX_MAINTREE_TABLEBITS;
                 do {
@@ -328,7 +334,9 @@ public class ChmLzxBlock {
                 } while ((s = getState().mainTreeTable[s]) >= getState()
                         .getMainTreeElements());
             }
-            getChmSection().getSyncBits(getState().mainTreeTable[s]);
+            //System.out.printf("%d,", s);
+            //?getChmSection().getSyncBits(getState().mainTreeTable[s]);
+            getChmSection().getSyncBits(getState().getMainTreeLengtsTable()[s]);
             if (s < ChmConstants.LZX_NUM_CHARS) {
                 content[i] = (byte) s;
             } else {
@@ -336,10 +344,9 @@ public class ChmLzxBlock {
                 matchlen = s & ChmConstants.LZX_NUM_PRIMARY_LENGTHS;
                 if (matchlen == ChmConstants.LZX_NUM_PRIMARY_LENGTHS) {
                     matchfooter = getState().lengthTreeTable[getChmSection()
-                            .getDesyncBits(ChmConstants.LZX_MAINTREE_TABLEBITS,
-                                    0)];
-                    if (matchfooter >= ChmConstants.LZX_MAINTREE_TABLEBITS) {
-                        x = ChmConstants.LZX_MAINTREE_TABLEBITS;
+                            .peekBits(ChmConstants.LZX_LENGTH_TABLEBITS)];//.LZX_MAINTREE_TABLEBITS)];
+                    if (matchfooter >= ChmConstants.LZX_LENGTH_MAXSYMBOLS/*?LZX_LENGTH_TABLEBITS*/) {
+                        x = ChmConstants.LZX_LENGTH_TABLEBITS;
                         do {
                             x++;
                             matchfooter <<= 1;
@@ -357,13 +364,14 @@ public class ChmLzxBlock {
                     matchoffset = (ChmConstants.POSITION_BASE[matchoffset] - 2);
                     if (extra > 3) {
                         extra -= 3;
-                        long l = getChmSection().getSyncBits(extra);
-                        matchoffset += (l << 3);
-                        int g = getChmSection().getDesyncBits(
-                                ChmConstants.LZX_NUM_PRIMARY_LENGTHS, 0);
-                        int t = getState().getAlignedTreeTable()[g];
+                        long verbatim_bits = getChmSection().getSyncBits(extra);
+                        matchoffset += (verbatim_bits << 3);
+                        //READ HUFF SYM in Aligned Tree
+                        int aligned_bits = getChmSection().peekBits(
+                                ChmConstants.LZX_NUM_PRIMARY_LENGTHS);
+                        int t = getState().getAlignedTreeTable()[aligned_bits];
                         if (t >= getState().getMainTreeElements()) {
-                            x = ChmConstants.LZX_MAINTREE_TABLEBITS;
+                            x = ChmConstants.LZX_ALIGNED_TABLEBITS; //?LZX_MAINTREE_TABLEBITS; //?LZX_ALIGNED_TABLEBITS
                             do {
                                 x++;
                                 t <<= 1;
@@ -372,14 +380,14 @@ public class ChmLzxBlock {
                                     .getMainTreeElements());
                         }
                         getChmSection().getSyncBits(
-                                getState().getAlignedTreeTable()[t]);
+                                getState().getAlignedLenTable()[t]);
                         matchoffset += t;
                     } else if (extra == 3) {
-                        int g = getChmSection().getDesyncBits(
-                                ChmConstants.LZX_NUM_PRIMARY_LENGTHS, 0);
+                        int g = getChmSection().peekBits(
+                                ChmConstants.LZX_NUM_PRIMARY_LENGTHS);
                         int t = getState().getAlignedTreeTable()[g];
                         if (t >= getState().getMainTreeElements()) {
-                            x = ChmConstants.LZX_MAINTREE_TABLEBITS;
+                            x = ChmConstants.LZX_ALIGNED_TABLEBITS; //?LZX_MAINTREE_TABLEBITS;
                             do {
                                 x++;
                                 t <<= 1;
@@ -388,7 +396,7 @@ public class ChmLzxBlock {
                                     .getMainTreeElements());
                         }
                         getChmSection().getSyncBits(
-                                getState().getAlignedTreeTable()[t]);
+                                getState().getAlignedLenTable()[t]);
                         matchoffset += t;
                     } else if (extra > 0) {
                         long l = getChmSection().getSyncBits(extra);
@@ -457,8 +465,8 @@ public class ChmLzxBlock {
         int matchlen = 0, matchfooter = 0, extra, rundest, runsrc;
         int matchoffset = 0;
         for (i = getContentLength(); i < len; i++) {
-            int f = getChmSection().getDesyncBits(
-                    ChmConstants.LZX_MAINTREE_TABLEBITS, 0);
+            int f = getChmSection().peekBits(
+                    ChmConstants.LZX_MAINTREE_TABLEBITS);
             assertShortArrayNotNull(getState().getMainTreeTable());
             s = getState().getMainTreeTable()[f];
             if (s >= ChmConstants.LZX_MAIN_MAXSYMBOLS) {
@@ -477,7 +485,7 @@ public class ChmLzxBlock {
                 matchlen = s & ChmConstants.LZX_NUM_PRIMARY_LENGTHS;
                 if (matchlen == ChmConstants.LZX_NUM_PRIMARY_LENGTHS) {
                     matchfooter = getState().getLengthTreeTable()[getChmSection()
-                            .getDesyncBits(ChmConstants.LZX_LENGTH_TABLEBITS, 0)];
+                            .peekBits(ChmConstants.LZX_LENGTH_TABLEBITS)];
                     if (matchfooter >= ChmConstants.LZX_NUM_SECONDARY_LENGTHS) {
                         x = ChmConstants.LZX_LENGTH_TABLEBITS;
                         do {
@@ -569,8 +577,9 @@ public class ChmLzxBlock {
         int i = offset; // represents offset
         int z, y, x;// local counters
         while (i < tablelen) {
-            z = pretreetable[getChmSection().getDesyncBits(
-                    ChmConstants.LZX_PRETREE_TABLEBITS, 0)];
+            //Read HUFF sym to z
+            z = pretreetable[getChmSection().peekBits(
+                    ChmConstants.LZX_PRETREE_TABLEBITS)];
             if (z >= ChmConstants.LZX_PRETREE_NUM_ELEMENTS) {// 1 bug, should be
                                                              // 20
                 x = ChmConstants.LZX_PRETREE_TABLEBITS;
@@ -581,6 +590,7 @@ public class ChmLzxBlock {
                 } while ((z = pretreetable[z]) >= ChmConstants.LZX_PRETREE_NUM_ELEMENTS);
             }
             getChmSection().getSyncBits(prelentable[z]);
+            
             if (z < 17) {
                 z = getState().getLengthTreeLengtsTable()[i] - z;
                 if (z < 0)
@@ -597,20 +607,20 @@ public class ChmLzxBlock {
                 y = getChmSection().getSyncBits(5);
                 y += 20;
                 for (int j = 0; j < y; j++)
-                    if (i < getState().getLengthTreeLengtsTable().length)
+                    //no tolerate //if (i < getState().getLengthTreeLengtsTable().length)
                         getState().getLengthTreeLengtsTable()[i++] = 0;
             } else if (z == 19) {
                 y = getChmSection().getSyncBits(1);
                 y += 4;
-                z = pretreetable[getChmSection().getDesyncBits(
-                        ChmConstants.LZX_PRETREE_TABLEBITS, 0)];
+                z = pretreetable[getChmSection().peekBits(
+                        ChmConstants.LZX_PRETREE_TABLEBITS)];
                 if (z >= ChmConstants.LZX_PRETREE_NUM_ELEMENTS) {// 20
                     x = ChmConstants.LZX_PRETREE_TABLEBITS;// 6
                     do {
                         x++;
                         z <<= 1;
                         z += getChmSection().checkBit(x);
-                    } while ((z = pretreetable[z]) >= ChmConstants.LZX_MAINTREE_TABLEBITS);
+                    } while ((z = pretreetable[z]) >= ChmConstants.LZX_PRETREE_NUM_ELEMENTS);//LZX_MAINTREE_TABLEBITS);
                 }
                 getChmSection().getSyncBits(prelentable[z]);
                 z = getState().getLengthTreeLengtsTable()[i] - z;
@@ -623,20 +633,25 @@ public class ChmLzxBlock {
     }
 
     private void createMainTreeTable() throws TikaException {
+        //Read Pre Tree Table
         short[] prelentable = createPreLenTable();
         short[] pretreetable = createTreeTable2(prelentable,
                 (1 << ChmConstants.LZX_PRETREE_TABLEBITS)
                         + (ChmConstants.LZX_PRETREE_MAXSYMBOLS << 1),
                 ChmConstants.LZX_PRETREE_TABLEBITS,
                 ChmConstants.LZX_PRETREE_MAXSYMBOLS);
+
         createMainTreeLenTable(0, ChmConstants.LZX_NUM_CHARS, pretreetable,
                 prelentable);
+        
+        //Read Pre Tree Table
         prelentable = createPreLenTable();
         pretreetable = createTreeTable2(prelentable,
                 (1 << ChmConstants.LZX_PRETREE_TABLEBITS)
                         + (ChmConstants.LZX_PRETREE_MAXSYMBOLS << 1),
                 ChmConstants.LZX_PRETREE_TABLEBITS,
                 ChmConstants.LZX_PRETREE_MAXSYMBOLS);
+
         createMainTreeLenTable(ChmConstants.LZX_NUM_CHARS,
                 getState().mainTreeLengtsTable.length, pretreetable,
                 prelentable);
@@ -647,7 +662,6 @@ public class ChmLzxBlock {
                                 + (ChmConstants.LZX_MAINTREE_MAXSYMBOLS << 1),
                         ChmConstants.LZX_MAINTREE_TABLEBITS, getState()
                                 .getMainTreeElements()));
-
     }
 
     private void createMainTreeLenTable(int offset, int tablelen,
@@ -657,8 +671,8 @@ public class ChmLzxBlock {
         int i = offset;
         int z, y, x;
         while (i < tablelen) {
-            int f = getChmSection().getDesyncBits(
-                    ChmConstants.LZX_PRETREE_TABLEBITS, 0);
+            int f = getChmSection().peekBits(
+                    ChmConstants.LZX_PRETREE_TABLEBITS);
             z = pretreetable[f];
             if (z >= ChmConstants.LZX_PRETREE_MAXSYMBOLS) {
                 x = ChmConstants.LZX_PRETREE_TABLEBITS;
@@ -692,8 +706,8 @@ public class ChmLzxBlock {
             } else if (z == 19) {
                 y = getChmSection().getSyncBits(1);
                 y += 4;
-                z = pretreetable[getChmSection().getDesyncBits(
-                        ChmConstants.LZX_PRETREE_TABLEBITS, 0)];
+                z = pretreetable[getChmSection().peekBits(
+                        ChmConstants.LZX_PRETREE_TABLEBITS)];
                 if (z >= ChmConstants.LZX_PRETREE_MAXSYMBOLS) {
                     x = ChmConstants.LZX_PRETREE_TABLEBITS;
                     do {
@@ -720,7 +734,7 @@ public class ChmLzxBlock {
     }
 
     private short[] createAlignedLenTable() {
-        int tablelen = ChmConstants.LZX_BLOCKTYPE_UNCOMPRESSED;
+        int tablelen = ChmConstants.LZX_ALIGNED_NUM_ELEMENTS;//LZX_BLOCKTYPE_UNCOMPRESSED;//
         int bits = ChmConstants.LZX_BLOCKTYPE_UNCOMPRESSED;
         short[] tmp = new short[tablelen];
         for (int i = 0; i < tablelen; i++) {
@@ -729,9 +743,9 @@ public class ChmLzxBlock {
         return tmp;
     }
 
-    private void createAlignedTreeTable() {
+    private void createAlignedTreeTable() throws ChmParsingException {
         getState().setAlignedLenTable(createAlignedLenTable());
-        getState().setAlignedLenTable(
+        getState().setAlignedTreeTable(//setAlignedLenTable(
                 createTreeTable2(getState().getAlignedLenTable(),
                         (1 << ChmConstants.LZX_NUM_PRIMARY_LENGTHS)
                                 + (ChmConstants.LZX_ALIGNED_MAXSYMBOLS << 1),
@@ -740,7 +754,7 @@ public class ChmLzxBlock {
     }
 
     private short[] createTreeTable2(short[] lentable, int tablelen, int bits,
-            int maxsymbol) {
+            int maxsymbol) throws ChmParsingException {
         short[] tmp = new short[tablelen];
         short sym;
         int leaf;
@@ -756,10 +770,12 @@ public class ChmLzxBlock {
         while (bit_num <= bits) {
             for (sym = 0; sym < maxsymbol; sym++) {
                 if (lentable.length > sym && lentable[sym] == bit_num) {
-                    leaf = pos;// pos=0
+                    leaf = pos;
 
-                    if ((pos += bit_mask) > table_mask)
-                        return null;
+                    if ((pos += bit_mask) > table_mask) {
+                        /* table overflow */
+                        throw new ChmParsingException("Table overflow");
+                    }
 
                     fill = bit_mask;
                     while (fill-- > 0)
@@ -808,11 +824,10 @@ public class ChmLzxBlock {
                         }
                         tmp[leaf] = sym;
 
-                        if ((pos += bit_mask) > table_mask)
-                            return null;
-                        /* table overflow */
-                    } else {
-                        // return null;
+                        if ((pos += bit_mask) > table_mask) {
+                            /* table overflow */
+                            throw new ChmParsingException("Table overflow");
+                        }
                     }
                 }
                 bit_mask >>= 1;
@@ -832,18 +847,13 @@ public class ChmLzxBlock {
     }
 
     public byte[] getContent(int startOffset, int endOffset) {
-        int length = endOffset - startOffset;
-        // return (getContent() != null) ? Arrays.copyOfRange(getContent(),
-        // startOffset, (startOffset + length)) : new byte[1];
         return (getContent() != null) ? ChmCommons.copyOfRange(getContent(),
-                startOffset, (startOffset + length)) : new byte[1];
+                startOffset, endOffset) : new byte[1];
     }
 
     public byte[] getContent(int start) {
-        // return (getContent() != null) ? Arrays.copyOfRange(getContent(),
-        // start, (getContent().length + start)) : new byte[1];
         return (getContent() != null) ? ChmCommons.copyOfRange(getContent(),
-                start, (getContent().length + start)) : new byte[1];
+                start, getContent().length) : new byte[1];
     }
 
     private void setContent(int contentLength) {
@@ -854,7 +864,8 @@ public class ChmLzxBlock {
         if (chmPrevLzxBlock == null && getBlockLength() < Integer.MAX_VALUE)
             setState(new ChmLzxState((int) getBlockLength()));
         else
-            setState(chmPrevLzxBlock.getState());
+            //use clone to avoid changing a cached or to be cached block
+            setState(chmPrevLzxBlock.getState().clone()); 
     }
 
     private boolean validateConstructorParams(int blockNumber,
@@ -898,13 +909,5 @@ public class ChmLzxBlock {
 
     private void setState(ChmLzxState state) {
         this.state = state;
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-        // TODO Auto-generated method stub
-
     }
 }

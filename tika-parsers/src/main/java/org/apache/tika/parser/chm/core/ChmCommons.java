@@ -19,7 +19,6 @@ package org.apache.tika.parser.chm.core;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
@@ -357,12 +356,6 @@ public class ChmCommons {
      */
     public static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
     }
 
 }

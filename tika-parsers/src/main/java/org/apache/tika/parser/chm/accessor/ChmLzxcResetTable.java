@@ -158,10 +158,10 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
 
     private long unmarshalUInt32(byte[] data, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
-        dest = data[this.getCurrentPlace()]
-                | data[this.getCurrentPlace() + 1] << 8
-                | data[this.getCurrentPlace() + 2] << 16
-                | data[this.getCurrentPlace() + 3] << 24;
+        dest = (data[this.getCurrentPlace()] & 0xff)
+                | (data[this.getCurrentPlace() + 1] & 0xff) << 8
+                | (data[this.getCurrentPlace() + 2] & 0xff) << 16
+                | (data[this.getCurrentPlace() + 3] & 0xff) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);
@@ -316,13 +316,6 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
      */
     public void setBlockLlen(long block_len) {
         this.block_len = block_len;
-    }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-
     }
 
     // @Override

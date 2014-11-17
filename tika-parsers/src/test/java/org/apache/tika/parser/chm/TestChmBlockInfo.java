@@ -18,8 +18,6 @@ package org.apache.tika.parser.chm;
 
 import static org.junit.Assert.assertTrue;
 
-import java.util.Iterator;
-
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;

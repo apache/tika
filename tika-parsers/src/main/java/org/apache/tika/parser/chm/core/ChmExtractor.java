@@ -20,9 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
@@ -96,7 +94,7 @@ public class ChmExtractor {
     }
 
     /**
-     * Returns lzxc block length
+     * Returns lzxc hit_cache length
      * 
      * @return lzxBlockLength
      */
@@ -105,7 +103,7 @@ public class ChmExtractor {
     }
 
     /**
-     * Sets lzxc block length
+     * Sets lzxc hit_cache length
      * 
      * @param lzxBlockLength
      */
@@ -114,7 +112,7 @@ public class ChmExtractor {
     }
 
     /**
-     * Returns lzxc block offset
+     * Returns lzxc hit_cache offset
      * 
      * @return lzxBlockOffset
      */
@@ -123,7 +121,7 @@ public class ChmExtractor {
     }
 
     /**
-     * Sets lzxc block offset
+     * Sets lzxc hit_cache offset
      */
     private void setLzxBlockOffset(long lzxBlockOffset) {
         this.lzxBlockOffset = lzxBlockOffset;
@@ -215,7 +213,7 @@ public class ChmExtractor {
             setLzxBlocksCache(new ArrayList<ChmLzxBlock>());
 
         } catch (IOException e) {
-            // ignore
+            e.printStackTrace();
         }
     }
 
@@ -257,34 +255,37 @@ public class ChmExtractor {
                         dataOffset + directoryListingEntry.getLength()));
             } else if (directoryListingEntry.getEntryType() == EntryType.COMPRESSED
                     && !ChmCommons.hasSkip(directoryListingEntry)) {
-                /* Gets a chm block info */
+                /* Gets a chm hit_cache info */
                 ChmBlockInfo bb = ChmBlockInfo.getChmBlockInfoInstance(
                         directoryListingEntry, (int) getChmLzxcResetTable()
                                 .getBlockLen(), getChmLzxcControlData());
 
-                int i = 0, start = 0, block = 0;
+                int i = 0, start = 0, hit_cache = 0;
 
                 if ((getLzxBlockLength() < Integer.MAX_VALUE)
                         && (getLzxBlockOffset() < Integer.MAX_VALUE)) {
                     // TODO: Improve the caching
                     // caching ... = O(n^2) - depends on startBlock and endBlock
-                    if (getLzxBlocksCache().size() != 0) {
+                    start = -1;
+                    if (!getLzxBlocksCache().isEmpty()) {
                         for (i = 0; i < getLzxBlocksCache().size(); i++) {
-                            lzxBlock = getLzxBlocksCache().get(i);
-                            for (int j = bb.getIniBlock(); j <= bb
-                                    .getStartBlock(); j++) {
-                                if (lzxBlock.getBlockNumber() == j)
+                            //lzxBlock = getLzxBlocksCache().get(i);
+                            int bn = getLzxBlocksCache().get(i).getBlockNumber();
+                            for (int j = bb.getIniBlock(); j <= bb.getStartBlock(); j++) {
+                                if (bn == j) {
                                     if (j > start) {
                                         start = j;
-                                        block = i;
+                                        hit_cache = i;
                                     }
-                                if (start == bb.getStartBlock())
-                                    break;
+                                }
                             }
+                            if (start == bb.getStartBlock())
+                                break;
                         }
                     }
 
-                    if (i == getLzxBlocksCache().size() && i == 0) {
+//                    if (i == getLzxBlocksCache().size() && i == 0) {
+                    if (start<0) {
                         start = bb.getIniBlock();
 
                         byte[] dataSegment = ChmCommons.getChmBlockSegment(
@@ -298,7 +299,7 @@ public class ChmExtractor {
 
                         getLzxBlocksCache().add(lzxBlock);
                     } else {
-                        lzxBlock = getLzxBlocksCache().get(block);
+                        lzxBlock = getLzxBlocksCache().get(hit_cache);
                     }
 
                     for (i = start; i <= bb.getEndBlock();) {
@@ -349,8 +350,12 @@ public class ChmExtractor {
                             .getBlockCount()) {
                         getLzxBlocksCache().clear();
                     }
+                } //end of if
+                
+                if (buffer.size() != directoryListingEntry.getLength()) {
+                    throw new TikaException("CHM file extract error: extracted Length is wrong.");
                 }
-            }
+            } //end of if compressed
         } catch (Exception e) {
             throw new TikaException(e.getMessage());
         }

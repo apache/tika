@@ -16,17 +16,14 @@
  */
 package org.apache.tika.parser.chm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-
 import java.io.ByteArrayInputStream;
-import java.util.Iterator;
 import java.util.List;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
 import org.apache.tika.parser.chm.core.ChmExtractor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,6 +51,7 @@ public class TestChmExtractor {
     @Test
     public void testExtractChmEntry() throws TikaException{
         ChmDirectoryListingSet entries = chmExtractor.getChmDirList();
+        
         int count = 0;
         for (DirectoryListingEntry directoryListingEntry : entries.getDirectoryListingEntryList()) {
             chmExtractor.extractChmEntry(directoryListingEntry);
