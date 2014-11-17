@@ -32,10 +32,9 @@ import java.util.Properties;
  * parseContext.set(TesseractOCRConfig.class, config);<br>
  * </p>
  *
- * Parameters can also be set by creating the TesseractOCRConfig.properties file
- * and placing it in the package org/apache/tika/parser/ocr on the classpath.  An
- * example file can be found in the test resources folder:
- * <code>tika-parsers/src/test/resources/test-properties/TesseractOCRConfig-full.properties</code>.
+ * Parameters can also be set by either editing the existing TesseractOCRConfig.properties file in,
+ * tika-parser/src/main/resources/org/apache/tika/parser/ocr, or overriding it by creating your own
+ * and placing it in the package org/apache/tika/parser/ocr on the classpath.
  * 
  */
 public class TesseractOCRConfig implements Serializable{
@@ -206,7 +205,7 @@ public class TesseractOCRConfig implements Serializable{
 		try {
 			return Integer.parseInt(p);
 		} catch (Throwable ex) {
-			throw new RuntimeException(String.format("Cannot parse TesseractOCRConfig variable $s, invalid integer value", property), ex);
+			throw new RuntimeException(String.format("Cannot parse TesseractOCRConfig variable %s, invalid integer value", property), ex);
 		}
 	}
 
