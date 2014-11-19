@@ -167,7 +167,7 @@ class HtmlHandler extends TextContentHandler {
                 metadata.set(Metadata.CONTENT_TYPE, value);
             }
         } else {
-            metadata.add(name, value);
+            metadata.set(name, value);
         }
     }
 
