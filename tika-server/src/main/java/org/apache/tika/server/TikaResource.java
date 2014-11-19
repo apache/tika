@@ -17,14 +17,28 @@
 
 package org.apache.tika.server;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.poi.hwpf.OldWordFileFormatException;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ExpandedTitleContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
@@ -45,32 +59,19 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.poi.extractor.ExtractorFactory;
-import org.apache.poi.hwpf.OldWordFileFormatException;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaMetadataKeys;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.HtmlParser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 @Path("/tika")
 public class TikaResource {
   public static final String GREETING = "This is Tika Server. Please PUT\n";
+  public static final String X_TIKA_OCR_LANGUAGE_HEADER = "X-Tika-OCRLanguage";
   private final Log logger = LogFactory.getLog(TikaResource.class);
   
   private TikaConfig tikaConfig;
@@ -132,6 +133,18 @@ public class TikaResource {
     return httpHeaders.getFirst("File-Name");
   }
 
+  public static void fillParseContext(ParseContext parseContext, MultivaluedMap<String, String> httpHeaders) {
+    String language = httpHeaders.getFirst(X_TIKA_OCR_LANGUAGE_HEADER);
+    if (language != null) {
+      if (!language.matches("([A-Za-z](\\+?))*")) {
+        throw new WebApplicationException(String.format("Invalid %s format", X_TIKA_OCR_LANGUAGE_HEADER));
+      }
+      TesseractOCRConfig ocrConfig = new TesseractOCRConfig();
+      ocrConfig.setLanguage(language);
+      parseContext.set(TesseractOCRConfig.class, ocrConfig);
+    }
+  }
+
   @SuppressWarnings("serial")
 public static void fillMetadata(AutoDetectParser parser, Metadata metadata, MultivaluedMap<String, String> httpHeaders) {
     String fileName = detectFilename(httpHeaders);
@@ -186,8 +199,10 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
   public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {	  
     final AutoDetectParser parser = createParser(tikaConfig);
     final Metadata metadata = new Metadata();
+    final ParseContext context = new ParseContext();
 
     fillMetadata(parser, metadata, httpHeaders);
+    fillParseContext(context, httpHeaders);
 
     logRequest(logger, info, metadata);
 
@@ -200,7 +215,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
         TikaInputStream tis = TikaInputStream.get(is);
 
         try {
-            parser.parse(tis, body, metadata);
+            parser.parse(tis, body, metadata, context);
         } catch (SAXException e) {
           throw new WebApplicationException(e);
         } catch (EncryptedDocumentException e) {
@@ -272,8 +287,11 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
         final UriInfo info, final String format) {
     final AutoDetectParser parser = createParser(tikaConfig);
     final Metadata metadata = new Metadata();
+    final ParseContext context = new ParseContext();
 
     fillMetadata(parser, metadata, httpHeaders);
+    fillParseContext(context, httpHeaders);
+
 
     logRequest(logger, info, metadata);
 
@@ -299,7 +317,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
         TikaInputStream tis = TikaInputStream.get(is);
 
         try {
-          parser.parse(tis, content, metadata);
+          parser.parse(tis, content, metadata, context);
         }
         catch (SAXException e) {
           throw new WebApplicationException(e);
