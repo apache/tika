@@ -16,15 +16,6 @@
  */
 package org.apache.tika.parser.html;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -34,6 +25,15 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 class HtmlHandler extends TextContentHandler {
 
@@ -167,7 +167,7 @@ class HtmlHandler extends TextContentHandler {
                 metadata.set(Metadata.CONTENT_TYPE, value);
             }
         } else {
-            metadata.set(name, value);
+            metadata.add(name, value);
         }
     }
 

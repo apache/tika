@@ -16,21 +16,6 @@
  */
 package org.apache.tika.parser.chm;
 
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.regex.Pattern;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -41,6 +26,22 @@ import org.apache.tika.parser.chm.core.ChmExtractor;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.SAXException;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.assertTrue;
 
 public class TestChmExtraction {
 
@@ -197,11 +198,12 @@ public class TestChmExtraction {
     
     @Test
     public void test_TIKA_1446() throws Exception {
-      File chmFolder = new File("./target/test-classes/test-documents/chm/");
-      for (String fileName : chmFolder.list()) {
-        File file = new File(chmFolder, fileName);
-        InputStream stream = new FileInputStream(file);
-        testingChm(stream);
-      }
+        URL chmDir = TestChmExtraction.class.getResource("/test-documents/chm/");
+        File chmFolder = new File(chmDir.toURI());
+        for (String fileName : chmFolder.list()) {
+            File file = new File(chmFolder, fileName);
+            InputStream stream = new FileInputStream(file);
+            testingChm(stream);
+        }
     }
 }
