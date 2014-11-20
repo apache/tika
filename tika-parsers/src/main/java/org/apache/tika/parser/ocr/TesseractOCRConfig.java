@@ -135,6 +135,9 @@ public class TesseractOCRConfig implements Serializable{
 	 * Multiple languages may be specified, separated by plus characters.
 	 */
 	public void setLanguage(String language) {
+		if (!language.matches("([A-Za-z](\\+?))*")) {
+			throw new IllegalArgumentException("Invalid language code");
+		}
 		this.language = language;
 	}
 	
@@ -148,6 +151,9 @@ public class TesseractOCRConfig implements Serializable{
 	 * Default is 1 = Automatic page segmentation with OSD (Orientation and Script Detection)
 	 */
 	public void setPageSegMode(String pageSegMode) {
+		if (!pageSegMode.matches("[1-9]|10")) {
+			throw new IllegalArgumentException("Invalid language code");
+		}
 		this.pageSegMode = pageSegMode;
 	}
 	

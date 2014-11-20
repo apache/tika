@@ -17,29 +17,6 @@
 
 package org.apache.tika.server;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.poi.extractor.ExtractorFactory;
-import org.apache.poi.hwpf.OldWordFileFormatException;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaMetadataKeys;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.html.HtmlParser;
-import org.apache.tika.parser.ocr.TesseractOCRConfig;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import javax.ws.rs.Consumes;
@@ -64,14 +41,42 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.Field;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.poi.extractor.ExtractorFactory;
+import org.apache.poi.hwpf.OldWordFileFormatException;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.html.HtmlParser;
+import org.apache.tika.parser.ocr.TesseractOCRConfig;
+import org.apache.tika.parser.pdf.PDFParserConfig;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ExpandedTitleContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 @Path("/tika")
 public class TikaResource {
   public static final String GREETING = "This is Tika Server. Please PUT\n";
-  public static final String X_TIKA_OCR_LANGUAGE_HEADER = "X-Tika-OCRLanguage";
+  public static final String X_TIKA_OCR_HEADER_PREFIX = "X-Tika-OCR";
+  public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
+
+
   private final Log logger = LogFactory.getLog(TikaResource.class);
   
   private TikaConfig tikaConfig;
@@ -134,14 +139,44 @@ public class TikaResource {
   }
 
   public static void fillParseContext(ParseContext parseContext, MultivaluedMap<String, String> httpHeaders) {
-    String language = httpHeaders.getFirst(X_TIKA_OCR_LANGUAGE_HEADER);
-    if (language != null) {
-      if (!language.matches("([A-Za-z](\\+?))*")) {
-        throw new WebApplicationException(String.format("Invalid %s format", X_TIKA_OCR_LANGUAGE_HEADER));
+    TesseractOCRConfig ocrConfig = new TesseractOCRConfig();
+    PDFParserConfig pdfParserConfig = new PDFParserConfig();
+    for (String key : httpHeaders.keySet()) {
+      if (StringUtils.startsWith(key, X_TIKA_OCR_HEADER_PREFIX)) {
+          processHeaderConfig(httpHeaders, ocrConfig, key, X_TIKA_OCR_HEADER_PREFIX);
+      } else if (StringUtils.startsWith(key, X_TIKA_PDF_HEADER_PREFIX)) {
+        processHeaderConfig(httpHeaders, pdfParserConfig, key, X_TIKA_PDF_HEADER_PREFIX);
       }
-      TesseractOCRConfig ocrConfig = new TesseractOCRConfig();
-      ocrConfig.setLanguage(language);
-      parseContext.set(TesseractOCRConfig.class, ocrConfig);
+    }
+    parseContext.set(TesseractOCRConfig.class, ocrConfig);
+    parseContext.set(PDFParserConfig.class, pdfParserConfig);
+  }
+
+  /**
+   * Utility method to set a property on a class via reflection.
+   *
+   * @param httpHeaders the HTTP headers set.
+   * @param object the <code>Object</code> to set the property on.
+   * @param key the key of the HTTP Header.
+   * @param prefix the name of the HTTP Header prefix used to find property.
+   * @throws WebApplicationException thrown when field cannot be found.
+   */
+  private static void processHeaderConfig(MultivaluedMap<String, String> httpHeaders, Object object, String key, String prefix) {
+    try {
+      String property = StringUtils.removeStart(key, prefix);
+      Field field = object.getClass().getDeclaredField(StringUtils.uncapitalize(property));
+      field.setAccessible(true);
+      if (field.getType() == String.class) {
+        field.set(object, httpHeaders.getFirst(key));
+      } else if (field.getType() == int.class) {
+        field.setInt(object, Integer.parseInt(httpHeaders.getFirst(key)));
+      } else if (field.getType() == double.class) {
+        field.setDouble(object, Double.parseDouble(httpHeaders.getFirst(key)));
+      } else if (field.getType() == boolean.class) {
+        field.setBoolean(object, Boolean.parseBoolean(httpHeaders.getFirst(key)));
+      }
+    } catch (Throwable ex) {
+      throw new WebApplicationException(String.format("%s is an invalid %s header", key, X_TIKA_OCR_HEADER_PREFIX));
     }
   }
 
