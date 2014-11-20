@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TesseractOCRConfigTest extends TikaTest {
 
@@ -65,6 +67,24 @@ public class TesseractOCRConfigTest extends TikaTest {
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
         assertEquals("Invalid overridden maxFileSizeToOcr value", 2000000, config.getMaxFileSizeToOcr());
         assertEquals("Invalid overridden timeout value", 240, config.getTimeout());
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testValidateLanguage() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setLanguage("eng");
+        config.setLanguage("eng+fra");
+        assertTrue("Couldn't set valid values", true);
+        config.setLanguage("rm -Rf *");
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void testValidatePageSegMode() {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        config.setPageSegMode("0");
+        config.setPageSegMode("10");
+        assertTrue("Couldn't set valid values", true);
+        config.setPageSegMode("11");
     }
 
 }
