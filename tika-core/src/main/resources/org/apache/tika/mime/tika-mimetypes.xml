@@ -2870,7 +2870,6 @@
     <_comment>Gzip Compressed Archive</_comment>
     <alias type="application/x-gzip"/>
     <alias type="application/x-gunzip"/>
-    <alias type="application/gzip-compressed"/>
     <alias type="application/gzipped"/>
     <alias type="application/gzip-compressed"/>
     <alias type="application/x-gzip-compressed"/>
@@ -4285,7 +4284,6 @@
     <alias type="application/dwg"/>
     <alias type="application/x-dwg"/>
     <alias type="application/x-autocad"/>
-    <alias type="image/vnd.dwg"/>
     <alias type="drawing/dwg"/>
     <glob pattern="*.dwg"/>
     <magic priority="50">
