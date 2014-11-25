@@ -115,7 +115,7 @@
     <glob pattern="*.dita"/>
   </mime-type>
   <mime-type type="application/dita+xml;format=task">
-    <sub-class-of type="application/dita+xml;format=task"/>
+    <sub-class-of type="application/dita+xml"/>
     <_comment>DITA Task Topic</_comment>
     <root-XML localName="task"/>
     <root-XML localName="task" namespaceURI="http://docs.oasis-open.org/namespace"/>
