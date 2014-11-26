@@ -17,23 +17,24 @@ package org.apache.tika.parser;
  * limitations under the License.
  */
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.FilenameUtils;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaMetadataKeys;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.sax.ContentHandlerFactory;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.FilenameUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 /**
  * This is a helper class that wraps a parser in a recursive handler.
@@ -75,25 +76,17 @@ public class RecursiveParserWrapper implements Parser {
      */
     private static final long serialVersionUID = 9086536568120690938L;
 
-
-    
-    public final static String TIKA_PREFIX = "tika:";
-    public final static String TIKA_EXCEPTION_PREFIX = "tika_ex:";
-    
     //move this to TikaCoreProperties?
-    public final static Property TIKA_CONTENT = Property.internalText(TIKA_PREFIX+"content");
-    public final static Property PARSE_TIME_MILLIS = Property.internalText(TIKA_PREFIX+"parse_time_millis");
+    public final static Property TIKA_CONTENT = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"content");
+    public final static Property PARSE_TIME_MILLIS = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"parse_time_millis");
     public final static Property WRITE_LIMIT_REACHED =
-                Property.internalBoolean(TIKA_EXCEPTION_PREFIX+"write_limit_reached");
+                Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"write_limit_reached");
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = 
-                Property.internalBoolean(TIKA_EXCEPTION_PREFIX+"embedded_resource_limit_reached");
-
-    public final static Property PARSE_EXCEPTION =
-            Property.internalBoolean(TIKA_EXCEPTION_PREFIX+"parse_exception");
+                Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"embedded_resource_limit_reached");
 
     //move this to TikaCoreProperties?
     public final static Property EMBEDDED_RESOURCE_PATH = 
-                Property.internalText(TIKA_PREFIX+"embedded_resource_path");
+                Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"embedded_resource_path");
  
     private final Parser wrappedParser;
     private final ContentHandlerFactory contentHandlerFactory;
