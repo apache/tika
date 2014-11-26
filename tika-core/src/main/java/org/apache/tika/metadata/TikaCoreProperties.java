@@ -51,7 +51,20 @@ public interface TikaCoreProperties {
         ATTACHMENT
     };
 
+    /**
+     * Use this to prefix metadata properties that store information
+     * about the parsing process.  Users should be able to distinguish
+     * between metadata that was contained within the document and
+     * metadata about the parsing process.
+     * In Tika 2.0 (or earlier?), let's change X-ParsedBy to X-TIKA-Parsed-By.
+     */
+    public static String TIKA_META_PREFIX = "X-TIKA"+Metadata.NAMESPACE_PREFIX_DELIMITER;
 
+    /**
+     * Use this to store parse exception information in the Metadata object.
+     */
+    public static String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX+"EXCEPTION"+
+            Metadata.NAMESPACE_PREFIX_DELIMITER;
     /**
      * @see DublinCore#FORMAT
      */

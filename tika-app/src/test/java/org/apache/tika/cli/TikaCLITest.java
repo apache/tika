@@ -356,10 +356,8 @@ public class TikaCLITest {
                 "    \"Application-Version\": \"15.0000\",\n" +
                 "    \"Character Count\": \"28\",\n" +
                 "    \"Character-Count-With-Spaces\": \"31\","));
-        assertTrue(content.endsWith("    \"tika:embedded_resource_path\": \"test_recursive_embedded.docx/embed1.zip\"\n" +
-                "  }\n" +
-                "]"));
-        assertFalse(content.contains("tika:content"));
+        assertTrue(content.contains("\"X-TIKA:embedded_resource_path\": \"test_recursive_embedded.docx/embed1.zip\""));
+        assertFalse(content.contains("X-TIKA:content"));
 
     }
 
@@ -368,7 +366,7 @@ public class TikaCLITest {
         String[] params = new String[]{"-J", "-r", resourcePrefix+"test_recursive_embedded.docx"};
         TikaCLI.main(params);
         String content = outContent.toString("UTF-8");
-        assertTrue(content.contains("\"tika:content\": \"\\u003chtml xmlns\\u003d\\\"http://www.w3.org/1999/xhtml"));
+        assertTrue(content.contains("\"X-TIKA:content\": \"\\u003chtml xmlns\\u003d\\\"http://www.w3.org/1999/xhtml"));
     }
 
     @Test

@@ -254,7 +254,7 @@ public class PDFParser extends AbstractParser {
                 // TODO WARN if this XMP version is inconsistent with document header version?          
             }
         } catch (IOException e) {
-            metadata.set("pdf:metadata-xmp-parse-failed", ""+e);
+            metadata.set(TikaCoreProperties.TIKA_META_PREFIX+"pdf:metadata-xmp-parse-failed", ""+e);
         }
         //TODO: Let's try to move this into PDFBox.
         //Attempt to determine Adobe extension level, if present:
