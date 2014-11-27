@@ -232,6 +232,28 @@ public class TestMimeTypes {
     }
     
     /**
+     * Files from Excel 2 through 4 are based on the BIFF record
+     *  structure, but without a wrapping OLE2 structure.
+     * Excel 5 and Excel 95+ work on OLE2
+     */
+    @Test
+    public void testOldExcel() throws Exception {
+        // With just a name, we'll think everything's a new Excel file
+        assertTypeByName("application/vnd.ms-excel","testEXCEL_4.xls");
+        assertTypeByName("application/vnd.ms-excel","testEXCEL_5.xls");
+        assertTypeByName("application/vnd.ms-excel","testEXCEL_95.xls");
+        
+        // With data, we can work out if it's old or new style
+        assertTypeByData("application/vnd.ms-excel.sheet.4","testEXCEL_4.xls");
+        assertTypeByData("application/x-tika-msoffice","testEXCEL_5.xls");
+        assertTypeByData("application/x-tika-msoffice","testEXCEL_95.xls");
+        
+        assertTypeByNameAndData("application/vnd.ms-excel.sheet.4","testEXCEL_4.xls");
+        assertTypeByNameAndData("application/vnd.ms-excel","testEXCEL_5.xls");
+        assertTypeByNameAndData("application/vnd.ms-excel","testEXCEL_95.xls");
+    }
+    
+    /**
      * Note - detecting container formats by mime magic is very very
      *  iffy, as we can't be sure where things will end up.
      * People really ought to use the container aware detection...

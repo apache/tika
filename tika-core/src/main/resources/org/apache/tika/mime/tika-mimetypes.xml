@@ -1395,7 +1395,6 @@
       <match value="Foglio\ di\ lavoro\ Microsoft\ Exce" type="string" offset="2080"/>
       <match value="Biff5" type="string" offset="2114"/>
       <match value="Biff5" type="string" offset="2121"/>
-      <match value="\x09\x04\x06\x00\x00\x00\x10\x00" type="string" offset="0"/>
       <match value="0xd0cf11e0a1b11ae1" type="string" offset="0:8">
          <match value="W\x00o\x00r\x00k\x00b\x00o\x00o\x00k" type="string" offset="1152:4096" />
       </match>
@@ -1427,6 +1426,60 @@
     <_comment>Microsoft Excel 2007 Binary Spreadsheet</_comment>
     <glob pattern="*.xlsb"/>
     <sub-class-of type="application/x-tika-ooxml"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.sheet.4">
+    <_comment>Microsoft Excel 4 Worksheet</_comment>
+    <magic priority="60">
+      <match value="0x09040600" type="string" offset="0">
+        <match value="0x00001000" type="string" offset="4"/> <!-- Sheet -->
+        <match value="0x00002000" type="string" offset="4"/> <!-- Chart -->
+        <match value="0x00004000" type="string" offset="4"/> <!-- Macro -->
+      </match>
+    </magic>
+    <sub-class-of type="application/x-tika-old-excel"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-excel.workspace.4">
+    <_comment>Microsoft Excel 4 Workspace</_comment>
+    <magic priority="60">
+      <match value="0x09040600" type="string" offset="0">
+        <match value="0x00000001" type="string" offset="4"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-tika-old-excel"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.sheet.3">
+    <_comment>Microsoft Excel 3 Worksheet</_comment>
+    <magic priority="60">
+      <match value="0x09020600" type="string" offset="0">
+        <match value="0x00001000" type="string" offset="4"/> <!-- Sheet -->
+        <match value="0x00002000" type="string" offset="4"/> <!-- Chart -->
+        <match value="0x00004000" type="string" offset="4"/> <!-- Macro -->
+      </match>
+    </magic>
+    <sub-class-of type="application/x-tika-old-excel"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-excel.workspace.3">
+    <_comment>Microsoft Excel 3 Workspace</_comment>
+    <magic priority="60">
+      <match value="0x09020600" type="string" offset="0">
+        <match value="0x00000001" type="string" offset="4"/>
+      </match>
+    </magic>
+    <sub-class-of type="application/x-tika-old-excel"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-excel.sheet.2">
+    <_comment>Microsoft Excel 2 Worksheet</_comment>
+    <magic priority="60">
+      <match value="0x09000400" type="string" offset="0">
+        <match value="0x00001000" type="string" offset="4"/> <!-- Sheet -->
+        <match value="0x00002000" type="string" offset="4"/> <!-- Chart -->
+        <match value="0x00004000" type="string" offset="4"/> <!-- Macro -->
+      </match>
+    </magic>
+    <sub-class-of type="application/x-tika-old-excel"/>
   </mime-type>
 
   <mime-type type="application/vnd.ms-fontobject">
@@ -3397,6 +3450,10 @@
          <match value="W\x00k\x00s\x00S\x00S\x00W\x00o\x00r\x00k\x00B\x00o\x00o\x00k" type="string" offset="1152:4096" />
       </match>
     </magic>
+  </mime-type>
+
+  <mime-type type="application/x-tika-old-excel">
+    <_comment>Pre-OLE2 (Old) Microsoft Excel Worksheets</_comment>
   </mime-type>
 
   <!-- =================================================================== -->
