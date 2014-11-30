@@ -149,6 +149,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 // Records are in a different structure so needs a
                 //  different parser to process them
                 // TODO Call one, see TIKA-1490
+                return;
             } else {
                // Corrupt file / very old file, just skip text extraction
                return;
