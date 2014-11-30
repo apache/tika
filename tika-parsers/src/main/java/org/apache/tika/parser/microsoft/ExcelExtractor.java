@@ -96,6 +96,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     private boolean listenForAllRecords = false;
     
     private static final String WORKBOOK_ENTRY = "Workbook";
+    private static final String BOOK_ENTRY = "Book";
 
     public ExcelExtractor(ParseContext context) {
         super(context);
@@ -143,8 +144,15 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             DirectoryNode root, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException, TikaException {
         if (! root.hasEntry(WORKBOOK_ENTRY)) {
-           // Corrupt file / very old file, just skip
-           return;
+            if (root.hasEntry(BOOK_ENTRY)) {
+                // Excel 5 / Excel 95 file
+                // Records are in a different structure so needs a
+                //  different parser to process them
+                // TODO Call one, see TIKA-1490
+            } else {
+               // Corrupt file / very old file, just skip text extraction
+               return;
+            }
         }
        
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
@@ -610,5 +618,4 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         }
 
     }
-
 }
