@@ -413,7 +413,7 @@ public class ID3v2Frame implements MP3Frame {
 
             // Now data
             int copyFrom = offset+nameLength+sizeLength+flagLength;
-            size = Math.min(size, frameData.length-copyFrom);
+            size = Math.max(0, Math.min(size, frameData.length-copyFrom)); // TIKA-1218, prevent negative size for malformed files.
             data = new byte[size];
             System.arraycopy(frameData, copyFrom, data, 0, size);
         }
