@@ -1,5 +1,8 @@
 Release 1.7 - Current Development
 
+  * Prevent exceptions from being thrown for some malformed
+    mp3 files (TIKA-1218).
+
   * Reformat pom.xml files to use two spaces per indent (TIKA-1475).
 
   * Fix warning of slf4j logger on Tika Server startup (TIKA-1472).
