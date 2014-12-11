@@ -4154,6 +4154,16 @@
     <glob pattern="*.dib"/>
   </mime-type>
 
+  <mime-type type="image/x-bpg">
+    <acronym>BPG</acronym>
+    <_comment>Better Portable Graphics</_comment>
+    <magic priority="50">
+      <match value="0x425047FB" type="string" offset="0">
+      </match>
+    </magic>
+    <glob pattern="*.bpg"/>
+  </mime-type>
+
   <mime-type type="image/cgm">
     <acronym>CGM</acronym>
     <_comment>Computer Graphics Metafile</_comment>
