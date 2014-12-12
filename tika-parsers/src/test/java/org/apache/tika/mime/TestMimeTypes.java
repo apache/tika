@@ -360,6 +360,14 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testBpgDetection() throws Exception {
+        assertType("image/x-bpg", "testBPG.bpg");
+        assertTypeByData("image/x-bpg", "testBPG.bpg");
+        assertTypeByData("image/x-bpg", "testBPG_commented.bpg");
+        assertTypeByName("image/x-bpg", "x.bpg");
+    }
+    
+    @Test
     public void testTiffDetection() throws Exception {
         assertType("image/tiff", "testTIFF.tif");
         assertTypeByData("image/tiff", "testTIFF.tif");
