@@ -96,7 +96,6 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>1.6.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -199,6 +198,7 @@
               org.osgi.framework;resolution:=optional,
               org.quartz;resolution:=optional,
               org.quartz.impl;resolution:=optional,
+              org.slf4j;resolution:=optional
               org.w3c.dom;resolution:=optional,
               org.relaxng.datatype;resolution:=optional,
               org.xml.sax;resolution:=optional,

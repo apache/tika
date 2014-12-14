@@ -28,6 +28,10 @@
   <artifactId>tika-server</artifactId>
   <name>Apache Tika server</name>
 
+  <properties>
+    <cxf.version>3.0.3</cxf.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -47,18 +51,18 @@
     <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-frontend-jaxrs</artifactId>
-      <version>3.0.2</version>
+      <version>${cxf.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-service-description</artifactId>
-      <version>3.0.2</version>
+      <version>${cxf.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-transports-http-jetty</artifactId>
-      <version>3.0.2</version>
+      <version>${cxf.version}</version>
     </dependency>
     <dependency>
       <groupId>javax.mail</groupId>
@@ -78,7 +82,7 @@
     <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-client</artifactId>
-      <version>3.0.2</version>
+      <version>${cxf.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
