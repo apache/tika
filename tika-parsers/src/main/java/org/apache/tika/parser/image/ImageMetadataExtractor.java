@@ -18,6 +18,7 @@ package org.apache.tika.parser.image;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
@@ -27,6 +28,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.Metadata;
@@ -37,18 +39,22 @@ import org.xml.sax.SAXException;
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.imaging.tiff.TiffMetadataReader;
+import com.drew.lang.BufferReader;
+import com.drew.lang.ByteArrayReader;
 import com.drew.lang.GeoLocation;
 import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifIFD0Directory;
+import com.drew.metadata.exif.ExifReader;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.ExifThumbnailDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
+import com.drew.metadata.xmp.XmpReader;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
@@ -104,6 +110,51 @@ public class ImageMetadataExtractor {
             handle(tiffMetadata);
         } catch (MetadataException e) {
             throw new TikaException("Can't read TIFF metadata", e);
+        }
+    }
+    
+    public void parseRawExif(InputStream stream, int length, boolean needsExifHeader)
+            throws IOException, SAXException, TikaException {
+        byte[] exif;
+        if (needsExifHeader) {
+            exif = new byte[length+6];
+            exif[0] = (byte)'E';
+            exif[1] = (byte)'x';
+            exif[2] = (byte)'i';
+            exif[3] = (byte)'f';
+            IOUtils.readFully(stream, exif, 6, length);
+        } else {
+            exif = new byte[length];
+            IOUtils.readFully(stream, exif, 0, length);
+        }
+        parseRawExif(exif);
+    }
+    public void parseRawExif(byte[] exifData)
+            throws IOException, SAXException, TikaException {
+        BufferReader exifReader = new ByteArrayReader(exifData);
+        
+        com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
+        ExifReader reader = new ExifReader();
+        reader.extract(exifReader, metadata);
+        
+        try {
+            handle(metadata);
+        } catch (MetadataException e) {
+            throw new TikaException("Can't process the EXIF Data", e);
+        }
+    }
+    public void parseRawXMP(byte[] xmpData)
+            throws IOException, SAXException, TikaException {
+        BufferReader xmpReader = new ByteArrayReader(xmpData);
+        
+        com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
+        XmpReader reader = new XmpReader();
+        reader.extract(xmpReader, metadata);
+        
+        try {
+            handle(metadata);
+        } catch (MetadataException e) {
+            throw new TikaException("Can't process the XMP Data", e);
         }
     }
 
