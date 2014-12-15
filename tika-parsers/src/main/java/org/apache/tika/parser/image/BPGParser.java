@@ -27,6 +27,7 @@ import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -91,7 +92,23 @@ public class BPGParser extends AbstractParser {
         
         // Colour Space: YCbCr / RGB / YCgCo / YCbCrK / CMYK
         int colourSpace = cer & 0x7;
-        // TODO Identify a suitable metadata key for this
+        switch (colourSpace) {
+            case 0:
+                metadata.set(Photoshop.COLOR_MODE, "YCbCr Colour");
+                break;
+            case 1:
+                metadata.set(Photoshop.COLOR_MODE, "RGB Colour");
+                break;
+            case 2:
+                metadata.set(Photoshop.COLOR_MODE, "YCgCo Colour");
+                break;
+            case 3:
+                metadata.set(Photoshop.COLOR_MODE, "YCbCrK Colour");
+                break;
+            case 4:
+                metadata.set(Photoshop.COLOR_MODE, "CMYK Colour");
+                break;
+        }
         
         // Are there extensions or not?
         boolean hasExtensions = (cer & 0x8) == 0x8;
