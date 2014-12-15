@@ -19,6 +19,7 @@ package org.apache.tika.parser.image;
 import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
@@ -43,5 +44,44 @@ public class BPGParserTest {
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("75", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("10", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("YCbCr Colour", metadata.get(Photoshop.COLOR_MODE));
+    }
+
+    /**
+     * Tests a file with comments
+     */
+    @Test
+    public void testBPG_Commented() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/x-bpg");
+        InputStream stream =
+            getClass().getResourceAsStream("/test-documents/testBPG_commented.bpg");
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+
+        assertEquals("103", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("77", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("10", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("YCbCr Colour", metadata.get(Photoshop.COLOR_MODE));
+        
+        // TODO Check comment data
+    }
+
+    /**
+     * Tests a file with geographic information in it
+     */
+    @Test
+    public void testBPG_Geo() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.CONTENT_TYPE, "image/x-bpg");
+        InputStream stream =
+            getClass().getResourceAsStream("/test-documents/testBPG_GEO.bpg");
+        parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
+
+        assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
+        assertEquals("68", metadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("10", metadata.get(Metadata.BITS_PER_SAMPLE));
+        assertEquals("YCbCr Colour", metadata.get(Photoshop.COLOR_MODE));
+        
+        // TODO Check comment data
     }
 }

@@ -28,6 +28,7 @@ import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Photoshop;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -95,10 +96,9 @@ public class PSDParser extends AbstractParser {
         int depth = EndianUtils.readUShortBE(stream);
         metadata.set(TIFF.BITS_PER_SAMPLE, Integer.toString(depth));
         
-        // Colour mode
-        // Bitmap = 0; Grayscale = 1; Indexed = 2; RGB = 3; CMYK = 4; Multichannel = 7; Duotone = 8; Lab = 9.
+        // Colour mode, eg Bitmap or RGB
         int colorMode = EndianUtils.readUShortBE(stream);
-        // TODO Identify a suitable metadata key for this
+        metadata.set(Photoshop.COLOR_MODE, Photoshop._COLOR_MODE_CHOICES_INDEXED[colorMode]);
         
         // Next is the Color Mode section
         // We don't care about this bit
