@@ -571,8 +571,6 @@ public class PDFParserTest extends TikaTest {
         knownMetadataDiffs.add("testAnnotations.pdf");
         // Added for TIKA-93.
         knownMetadataDiffs.add("testOCR.pdf");
-        //PDFBox-2490/TIKA-1467; should be ok with version >= PDFBox 1.8.8
-        knownMetadataDiffs.add("testPDF_protected.pdf");
 
         //empty for now
         Set<String> knownContentDiffs = new HashSet<String>();
