@@ -24,7 +24,7 @@ import java.util.Date;
  * properties defined in the XMP standard.
  *
  * @since Apache Tika 0.7
- * @see <a href="http://www.adobe.com/devnet/xmp/pdfs/XMPSpecificationPart2.pdf"
+ * @see <a href="http://wwwimages.adobe.com/content/dam/Adobe/en/devnet/xmp/pdfs/cc-201306/XMPSpecificationPart2.pdf"
  *        >XMP Specification, Part 2: Standard Schemas</a>
  */
 public interface XMPDM {
