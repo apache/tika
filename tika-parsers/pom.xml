@@ -44,7 +44,7 @@
     <!-- NOTE: sync with commons-compress -->
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.6</vorbis.version>
-    <pdfbox.version>1.8.7</pdfbox.version>
+    <pdfbox.version>1.8.8</pdfbox.version>
   </properties>
 
   <dependencies>
