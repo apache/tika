@@ -36,6 +36,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import com.drew.lang.BufferReader;
+import com.drew.lang.ByteArrayReader;
+import com.drew.metadata.MetadataException;
+import com.drew.metadata.exif.ExifReader;
+import com.drew.metadata.xmp.XmpReader;
+
 /**
  * Parser for the Better Portable Graphics )BPG) File Format.
  * 
@@ -53,10 +59,10 @@ public class BPGParser extends AbstractParser {
         return SUPPORTED_TYPES;
     }
     
-    protected int EXTENSION_TAG_EXIF = 1;
-    protected int EXTENSION_TAG_ICC_PROFILE = 2;
-    protected int EXTENSION_TAG_XMP = 3;
-    protected int EXTENSION_TAG_THUMBNAIL = 4;
+    protected static final int EXTENSION_TAG_EXIF = 1;
+    protected static final int EXTENSION_TAG_ICC_PROFILE = 2;
+    protected static final int EXTENSION_TAG_XMP = 3;
+    protected static final int EXTENSION_TAG_THUMBNAIL = 4;
 
     public void parse(
             InputStream stream, ContentHandler handler,
@@ -133,39 +139,69 @@ public class BPGParser extends AbstractParser {
             alphaDataLength = EndianUtils.readUE7(stream);
         
         // Extension Data
+        if (hasExtensions) {
+            long extensionsDataSeen = 0;
+            ImageMetadataExtractor metadataExtractor = 
+                    new ImageMetadataExtractor(metadata);
+            
+            while (extensionsDataSeen < extensionDataLength) {
+                int extensionType = (int)EndianUtils.readUE7(stream);
+                long extensionLength = EndianUtils.readUE7(stream);
+                switch (extensionType) {
+                    case EXTENSION_TAG_EXIF:
+                        handleExif(stream, extensionLength, metadataExtractor);
+                        break;
+                    case EXTENSION_TAG_XMP:
+                        handleXMP(stream, extensionLength, metadataExtractor);
+                        break;
+                    default:
+                        stream.skip(extensionLength);
+                }
+                extensionsDataSeen += extensionLength;
+            }
+        }
         
         // HEVC Header + Data
         // Alpha HEVC Header + Data
         // We can't do anything with these parts
-
-        // TODO Update from here on
-        
-        // Next is the Image Resources section
-        // Check for certain interesting keys here
-/*
-        long imageResourcesSectionSize = EndianUtils.readIntBE(stream);
-        long read = 0;
-        while(read < imageResourcesSectionSize) {
-           ResourceBlock rb = new ResourceBlock(stream);
-           read += rb.totalLength;
-           
-           // Is it one we can do something useful with?
-           if(rb.id == ResourceBlock.ID_CAPTION) {
-              metadata.add(TikaCoreProperties.DESCRIPTION, rb.getDataAsString()); 
-           } else if(rb.id == ResourceBlock.ID_EXIF_1) {
-              // TODO Parse the EXIF info
-           } else if(rb.id == ResourceBlock.ID_EXIF_3) {
-              // TODO Parse the EXIF info
-           } else if(rb.id == ResourceBlock.ID_XMP) {
-              // TODO Parse the XMP info
-           }
-        }
-*/
-        
         
         // We don't have any helpful text, sorry...
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         xhtml.endDocument();
+    }
+    
+    protected void handleExif(InputStream stream, long exifLength, 
+            ImageMetadataExtractor extractor) throws IOException, TikaException {
+        byte[] exif = new byte[(int)exifLength];
+        IOUtils.readFully(stream, exif);
+        BufferReader exifReader = new ByteArrayReader(exif);
+        
+        com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
+        ExifReader reader = new ExifReader();
+        reader.extract(exifReader, metadata);
+        
+        try {
+            extractor.handle(metadata);
+        } catch (MetadataException e) {
+            throw new TikaException("Can't read BPG EXIF Data", e);
+        }
+    }
+    
+    protected void handleXMP(InputStream stream, long xmpLength, 
+            ImageMetadataExtractor extractor) throws IOException, TikaException {
+        byte[] xmp = new byte[(int)xmpLength];
+        IOUtils.readFully(stream, xmp);
+        BufferReader xmpReader = new ByteArrayReader(xmp);
+        
+        com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
+        XmpReader reader = new XmpReader();
+        reader.extract(xmpReader, metadata);
+        
+        try {
+            extractor.handle(metadata);
+        } catch (MetadataException e) {
+            throw new TikaException("Can't read BPG XMP Data", e);
+        }
     }
 }
