@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.apache.tika.TikaTest.assertContains;
 import static org.apache.tika.TikaTest.assertNotContained;
 
@@ -26,12 +27,14 @@ import java.util.Locale;
 
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -146,6 +149,55 @@ public class ExcelParserTest {
             assertContains("At 4:20 AM on Thursday May 17, 2007", content);
             **************************************************************************/
 
+        } finally {
+            input.close();
+        }
+    }
+    
+    @Test
+    public void testExcelParserPassword() throws Exception {
+        InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL_protected_passtika.xls");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            new OfficeParser().parse(input, handler, metadata, context);
+            fail("Document is encrypted, shouldn't parse");
+        } catch (EncryptedDocumentException e) {
+            // Good
+        } finally {
+            input.close();
+        }
+
+        // Try again, this time with the password
+        input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL_protected_passtika.xls");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            context.set(PasswordProvider.class, new PasswordProvider() {
+                @Override
+                public String getPassword(Metadata metadata) {
+                    return "tika";
+                }
+            });
+            new OfficeParser().parse(input, handler, metadata, context);
+
+            assertEquals(
+                    "application/vnd.ms-excel",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            
+            assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("Antoni", metadata.get(TikaCoreProperties.CREATOR));
+            assertEquals("2011-11-25T09:52:48Z", metadata.get(TikaCoreProperties.CREATED));
+            
+            String content = handler.toString();
+            assertContains("This is an Encrypted Excel spreadsheet", content);
+            assertNotContained("9.0", content);
         } finally {
             input.close();
         }

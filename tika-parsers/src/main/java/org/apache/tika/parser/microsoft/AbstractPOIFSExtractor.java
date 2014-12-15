@@ -40,6 +40,7 @@ import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -47,12 +48,17 @@ import org.xml.sax.SAXException;
 
 abstract class AbstractPOIFSExtractor {
     private final EmbeddedDocumentExtractor extractor;
+    private PasswordProvider passwordProvider;
     private TikaConfig tikaConfig;
     private MimeTypes mimeTypes;
     private Detector detector;
+    private Metadata metadata;
     private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
 
     protected AbstractPOIFSExtractor(ParseContext context) {
+        this(context, null);
+    }
+    protected AbstractPOIFSExtractor(ParseContext context, Metadata metadata) {
         EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
 
         if (ex==null) {
@@ -61,9 +67,11 @@ abstract class AbstractPOIFSExtractor {
             this.extractor = ex;
         }
         
-        tikaConfig = context.get(TikaConfig.class);
-        mimeTypes = context.get(MimeTypes.class);
-        detector = context.get(Detector.class);
+        this.passwordProvider = context.get(PasswordProvider.class);
+        this.tikaConfig = context.get(TikaConfig.class);
+        this.mimeTypes = context.get(MimeTypes.class);
+        this.detector = context.get(Detector.class);
+        this.metadata = metadata;
     }
     
     // Note - these cache, but avoid creating the default TikaConfig if not needed
@@ -84,6 +92,17 @@ abstract class AbstractPOIFSExtractor {
        
        mimeTypes = getTikaConfig().getMimeRepository();
        return mimeTypes;
+    }
+    
+    /**
+     * Returns the password to be used for this file, or null
+     *  if no / default password should be used
+     */
+    protected String getPassword() {
+        if (passwordProvider != null) {
+            return passwordProvider.getPassword(metadata);
+        }
+        return null;
     }
     
     protected void handleEmbeddedResource(TikaInputStream resource, String filename,
