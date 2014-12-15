@@ -73,4 +73,42 @@ public class MetadataResourceTest extends CXFTestBase {
         assertEquals("Maxim Valyanskiy", metadata.get("Author"));
     }
 
+    @Test
+    public void testPasswordProtected() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/vnd.ms-excel")
+                .accept("text/csv")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+        
+        // Won't work, no password given
+        assertEquals(500, response.getStatus());
+        
+        // Try again, this time with the password
+        response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/vnd.ms-excel")
+                .accept("text/csv")
+                .header("Password", "password")
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+        
+        // Will work
+        assertEquals(200, response.getStatus());
+
+        // Check results
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
+        CSVReader csvReader = new CSVReader(reader);
+
+        Map<String, String> metadata = new HashMap<String, String>();
+
+        String[] nextLine;
+        while ((nextLine = csvReader.readNext()) != null) {
+            metadata.put(nextLine[0], nextLine[1]);
+        }
+        csvReader.close();
+
+        assertNotNull(metadata.get("Author"));
+        assertEquals("pavel", metadata.get("Author"));
+    }
 }
