@@ -1,5 +1,11 @@
 Release 1.7 - Current Development
 
+  * Tika Server support for providing the password for files on a 
+    per-request basis through the Password http header (TIKA-1494)
+
+  * Simple support for the BPG (Better Portable Graphics) image format
+    (TIKA-1491, TIKA-1495)
+
   * Prevent exceptions from being thrown for some malformed
     mp3 files (TIKA-1218).
 
