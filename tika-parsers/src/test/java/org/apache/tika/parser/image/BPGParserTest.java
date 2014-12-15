@@ -82,6 +82,6 @@ public class BPGParserTest {
         assertEquals("10", metadata.get(Metadata.BITS_PER_SAMPLE));
         assertEquals("YCbCr Colour", metadata.get(Photoshop.COLOR_MODE));
         
-        // TODO Check comment data
+        // TODO Check geographic data
     }
 }

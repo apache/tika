@@ -117,11 +117,11 @@ public class PSDParser extends AbstractParser {
            if(rb.id == ResourceBlock.ID_CAPTION) {
               metadata.add(TikaCoreProperties.DESCRIPTION, rb.getDataAsString()); 
            } else if(rb.id == ResourceBlock.ID_EXIF_1) {
-              // TODO Parse the EXIF info
+              // TODO Parse the EXIF info via ImageMetadataExtractor
            } else if(rb.id == ResourceBlock.ID_EXIF_3) {
-              // TODO Parse the EXIF info
+              // TODO Parse the EXIF info via ImageMetadataExtractor
            } else if(rb.id == ResourceBlock.ID_XMP) {
-              // TODO Parse the XMP info
+              // TODO Parse the XMP info via ImageMetadataExtractor
            }
         }
         
