@@ -48,29 +48,29 @@ public class MetadataResourceTest extends CXFTestBase {
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {}
 
-	@Test
-	public void testSimpleWord() throws Exception {
-		Response response = WebClient
-				.create(endPoint + META_PATH)
-				.type("application/msword")
-				.accept("text/csv")
-				.put(ClassLoader
-						.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+    @Test
+    public void testSimpleWord() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .accept("text/csv")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
-		Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
 
-		CSVReader csvReader = new CSVReader(reader);
+        CSVReader csvReader = new CSVReader(reader);
 
-		Map<String, String> metadata = new HashMap<String, String>();
+        Map<String, String> metadata = new HashMap<String, String>();
 
-		String[] nextLine;
-		while ((nextLine = csvReader.readNext()) != null) {
-			metadata.put(nextLine[0], nextLine[1]);
-		}
-		csvReader.close();
+        String[] nextLine;
+        while ((nextLine = csvReader.readNext()) != null) {
+            metadata.put(nextLine[0], nextLine[1]);
+        }
+        csvReader.close();
 
-		assertNotNull(metadata.get("Author"));
-		assertEquals("Maxim Valyanskiy", metadata.get("Author"));
-	}
+        assertNotNull(metadata.get("Author"));
+        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+    }
 
 }
