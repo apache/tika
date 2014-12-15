@@ -55,6 +55,7 @@ import org.apache.poi.hssf.record.StringRecord;
 import org.apache.poi.hssf.record.TextObjectRecord;
 import org.apache.poi.hssf.record.chart.SeriesTextRecord;
 import org.apache.poi.hssf.record.common.UnicodeString;
+import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
 import org.apache.poi.hssf.usermodel.HSSFPictureData;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
@@ -64,6 +65,7 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
@@ -98,8 +100,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     private static final String WORKBOOK_ENTRY = "Workbook";
     private static final String BOOK_ENTRY = "Book";
 
-    public ExcelExtractor(ParseContext context) {
-        super(context);
+    public ExcelExtractor(ParseContext context, Metadata metadata) {
+        super(context, metadata);
     }
 
     /**
@@ -155,7 +157,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                return;
             }
         }
+        
+        // If a password was supplied, use it, otherwise the default
+        Biff8EncryptionKey.setCurrentUserPassword(getPassword());
        
+        // Have the file processed in event mode
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
         listener.processFile(root, isListenForAllRecords());
         listener.throwStoredException();

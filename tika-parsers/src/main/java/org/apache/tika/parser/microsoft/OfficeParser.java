@@ -206,7 +206,7 @@ public class OfficeParser extends AbstractParser {
         case WORKBOOK:
         case XLR:
            Locale locale = context.get(Locale.class, Locale.getDefault());
-           new ExcelExtractor(context).parse(root, xhtml, locale);
+           new ExcelExtractor(context, metadata).parse(root, xhtml, locale);
            break;
         case PROJECT:
            // We currently can't do anything beyond the metadata
