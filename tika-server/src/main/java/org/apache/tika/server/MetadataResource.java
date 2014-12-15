@@ -41,6 +41,7 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.xml.sax.helpers.DefaultHandler;
 
 import au.com.bytecode.opencsv.CSVWriter;
@@ -70,11 +71,12 @@ public class MetadataResource {
   
   private StreamingOutput produceMetadata(InputStream is, MultivaluedMap<String, String> httpHeaders, UriInfo info) throws Exception {
     final Metadata metadata = new Metadata();
+    final ParseContext context = new ParseContext();
     AutoDetectParser parser = TikaResource.createParser(tikaConfig);
-    TikaResource.fillMetadata(parser, metadata, httpHeaders);
+    TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
     TikaResource.logRequest(logger, info, metadata);
 
-    parser.parse(is, new DefaultHandler(), metadata);
+    parser.parse(is, new DefaultHandler(), metadata, context);
 
     return new StreamingOutput() {
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {

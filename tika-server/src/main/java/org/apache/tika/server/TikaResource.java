@@ -181,7 +181,7 @@ public class TikaResource {
   }
 
   @SuppressWarnings("serial")
-public static void fillMetadata(AutoDetectParser parser, Metadata metadata, MultivaluedMap<String, String> httpHeaders) {
+public static void fillMetadata(AutoDetectParser parser, Metadata metadata, ParseContext context, MultivaluedMap<String, String> httpHeaders) {
     String fileName = detectFilename(httpHeaders);
     if (fileName != null) {
       metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName);
@@ -215,6 +215,11 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
         }
       });
     }
+    
+    String password = httpHeaders.getFirst("Password");
+    if (password != null) {
+        // TODO
+    }
   }
 
   @PUT
@@ -236,7 +241,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
     final Metadata metadata = new Metadata();
     final ParseContext context = new ParseContext();
 
-    fillMetadata(parser, metadata, httpHeaders);
+    fillMetadata(parser, metadata, context, httpHeaders);
     fillParseContext(context, httpHeaders);
 
     logRequest(logger, info, metadata);
@@ -324,7 +329,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Mult
     final Metadata metadata = new Metadata();
     final ParseContext context = new ParseContext();
 
-    fillMetadata(parser, metadata, httpHeaders);
+    fillMetadata(parser, metadata, context, httpHeaders);
     fillParseContext(context, httpHeaders);
 
 

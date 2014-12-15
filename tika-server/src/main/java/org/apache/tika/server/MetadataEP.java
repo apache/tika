@@ -35,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -52,13 +53,14 @@ public class MetadataEP {
 
   /** The metdata for the request */
   private final Metadata metadata = new Metadata();
+  private final ParseContext context = new ParseContext();
 
   public MetadataEP(@Context HttpHeaders httpHeaders, @Context UriInfo info) {
     // TODO How to get this better?
     config = TikaConfig.getDefaultConfig();
     parser = TikaResource.createParser(config);
     
-    TikaResource.fillMetadata(parser, metadata, httpHeaders.getRequestHeaders());
+    TikaResource.fillMetadata(parser, metadata, context, httpHeaders.getRequestHeaders());
     TikaResource.logRequest(logger, info, metadata);
   }
 
@@ -73,7 +75,7 @@ public class MetadataEP {
    */
   @POST
   public Response getMetadata(InputStream is) throws Exception {
-    parser.parse(is, new DefaultHandler(), metadata);
+    parser.parse(is, new DefaultHandler(), metadata, context);
     return Response.ok(metadata).build();
   }
 
@@ -104,7 +106,7 @@ public class MetadataEP {
     // process the request
     Status defaultErrorResponse = Status.BAD_REQUEST;
     try {
-      parser.parse(is, new DefaultHandler(), metadata);
+      parser.parse(is, new DefaultHandler(), metadata, context);
       // once we've parsed the document successfully, we should use NOT_FOUND
       // if we did not see the field
       defaultErrorResponse = Status.NOT_FOUND;
@@ -145,7 +147,7 @@ public class MetadataEP {
     // process the request
     Status defaultErrorResponse = Status.BAD_REQUEST;
     try {
-      parser.parse(is, new DefaultHandler(), metadata);
+      parser.parse(is, new DefaultHandler(), metadata, context);
       // once we've parsed the document successfully, we should use NOT_FOUND
       // if we did not see the field
       defaultErrorResponse = Status.NOT_FOUND;

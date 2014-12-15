@@ -101,10 +101,11 @@ public class UnpackerResource {
           boolean saveAll
   ) throws Exception {
     Metadata metadata = new Metadata();
+    ParseContext pc = new ParseContext();
 
     AutoDetectParser parser = TikaResource.createParser(tikaConfig);
 
-    TikaResource.fillMetadata(parser, metadata, httpHeaders.getRequestHeaders());
+    TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
     TikaResource.logRequest(logger, info, metadata);
 
     ContentHandler ch;
@@ -115,8 +116,6 @@ public class UnpackerResource {
     } else {
       ch = new DefaultHandler();
     }
-
-    ParseContext pc = new ParseContext();
 
     Map<String, byte[]> files = new HashMap<String, byte[]>();
     MutableInt count = new MutableInt();
