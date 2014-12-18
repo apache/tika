@@ -1,10 +1,14 @@
 Release 1.7 - Current Development
 
+  * Tika Server support for RecursiveParserWrapper's JSON output
+    (endpoint=rmeta) equivalent to (TIKA-1451's) -J option 
+    in tika-app (TIKA-1498).
+
   * Tika Server support for providing the password for files on a 
-    per-request basis through the Password http header (TIKA-1494)
+    per-request basis through the Password http header (TIKA-1494).
 
   * Simple support for the BPG (Better Portable Graphics) image format
-    (TIKA-1491, TIKA-1495)
+    (TIKA-1491, TIKA-1495).
 
   * Prevent exceptions from being thrown for some malformed
     mp3 files (TIKA-1218).
@@ -34,7 +38,7 @@ Release 1.7 - Current Development
  
   * Extract files embedded in annotations in PDFS (TIKA-1433).
 
-  * Upgrade to PDFBox 1.8.7 (TIKA-1419).
+  * Upgrade to PDFBox 1.8.8 (TIKA-1419, TIKA-1442).
 
   * Add RecursiveParserWrapper (aka Jukka's and Nick's) 
     RecursiveMetadataParser (TIKA-1329)
