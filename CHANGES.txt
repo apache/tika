@@ -1,5 +1,10 @@
 Release 1.7 - Current Development
 
+  * Tika Parent uses dependency management to keep duplicate 
+    dependencies in different modules the same version (TIKA-1384).
+
+  * Upgraded slf4j to version 1.7.7 (TIKA-1496).
+
   * Tika Server support for RecursiveParserWrapper's JSON output
     (endpoint=rmeta) equivalent to (TIKA-1451's) -J option 
     in tika-app (TIKA-1498).
