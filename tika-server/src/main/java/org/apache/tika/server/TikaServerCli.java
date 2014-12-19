@@ -118,6 +118,7 @@ public class TikaServerCli {
       providers.add(new CSVMessageBodyWriter());
       providers.add(new MetadataListMessageBodyWriter());
       providers.add(new JSONMessageBodyWriter());
+      providers.add(new XMPMessageBodyWriter());
       providers.add(new TikaExceptionMapper());
       if (logFilter != null) {
     	  providers.add(logFilter);

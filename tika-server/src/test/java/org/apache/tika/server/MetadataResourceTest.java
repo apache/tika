@@ -23,14 +23,19 @@ import static org.junit.Assert.assertNotNull;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
+import org.apache.cxf.helpers.IOUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.junit.Test;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -46,7 +51,13 @@ public class MetadataResourceTest extends CXFTestBase {
     }
 
     @Override
-    protected void setUpProviders(JAXRSServerFactoryBean sf) {}
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+        List<Object> providers = new ArrayList<Object>();
+        providers.add(new JSONMessageBodyWriter());
+        providers.add(new CSVMessageBodyWriter());
+        providers.add(new XMPMessageBodyWriter());
+        sf.setProviders(providers);
+    }
 
     @Test
     public void testSimpleWord() throws Exception {
@@ -111,4 +122,35 @@ public class MetadataResourceTest extends CXFTestBase {
         assertNotNull(metadata.get("Author"));
         assertEquals("pavel", metadata.get("Author"));
     }
+
+    @Test
+    public void testJSON() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .accept("application/json")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
+
+        Metadata metadata = JsonMetadata.fromJson(reader);
+        assertNotNull(metadata.get("Author"));
+        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+    }
+
+    @Test
+    public void testXMP() throws Exception {
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .accept("application/rdf+xml")
+                .put(ClassLoader
+                        .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+
+        String result = IOUtils.readStringFromStream((InputStream)response.getEntity());
+        assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", result);
+    }
+
 }
+
