@@ -23,7 +23,12 @@ import java.util.Map;
 import org.apache.tika.ResourceLoggingClassLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.EmptyParser;
+import org.apache.tika.parser.ErrorParser;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +45,7 @@ public class TikaConfigTest {
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-866">TIKA-866</a>
      */
     @Test
-    public void testInvalidParser() throws Exception {
+    public void withInvalidParser() throws Exception {
         URL url = TikaConfigTest.class.getResource("TIKA-866-invalid.xml");
         System.setProperty("tika.config", url.toExternalForm());
         try {
@@ -59,7 +64,8 @@ public class TikaConfigTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-866">TIKA-866</a>
      */
-    public void testCompositeParser() throws Exception {
+    @Test
+    public void asCompositeParser() throws Exception {
         URL url = TikaConfigTest.class.getResource("TIKA-866-composite.xml");
         System.setProperty("tika.config", url.toExternalForm());
         try {
@@ -77,7 +83,8 @@ public class TikaConfigTest {
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-866">TIKA-866</a>
      */
-    public void testValidParser() throws Exception {
+    @Test
+    public void onlyValidParser() throws Exception {
         URL url = TikaConfigTest.class.getResource("TIKA-866-valid.xml");
         System.setProperty("tika.config", url.toExternalForm());
         try {
@@ -94,7 +101,8 @@ public class TikaConfigTest {
      * that should be used when loading the mimetypes and when
      * discovering services
      */
-    public void testClassLoaderUsedEverywhere() throws Exception {
+    @Test
+    public void ensureClassLoaderUsedEverywhere() throws Exception {
         ResourceLoggingClassLoader customLoader = 
                 new ResourceLoggingClassLoader(getClass().getClassLoader());
         TikaConfig config;
@@ -126,5 +134,47 @@ public class TikaConfigTest {
         assertNotNull(resources.get("org/apache/tika/mime/tika-mimetypes.xml"));
         // - Custom Mimetypes
         assertNotNull(resources.get("org/apache/tika/mime/custom-mimetypes.xml"));
+    }
+    
+    /**
+     * TIKA-1445 It should be possible to exclude DefaultParser from
+     *  certain types, so another parser explicitly listed will take them
+     */
+    @Test
+    public void defaultParserWithExcludes() throws Exception {
+        URL url = TikaConfigTest.class.getResource("TIKA-1445-default-except.xml");
+        System.setProperty("tika.config", url.toExternalForm());
+        try {
+            TikaConfig config = new TikaConfig();
+            
+            CompositeParser cp = (CompositeParser)config.getParser();
+            List<Parser> parsers = cp.getAllComponentParsers();
+            Parser p;
+            
+            // Will be the three parsers defined in the xml
+            assertEquals(3, parsers.size());
+            
+            // Should have a wrapped DefaultParser, not the main DefaultParser,
+            //  as it is excluded from handling certain classes
+            p = parsers.get(0);
+            assertTrue(p.toString(), p instanceof ParserDecorator);
+            assertEquals(DefaultParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+            
+            // Should have two others which claim things, which they wouldn't
+            //  otherwise handle
+            p = parsers.get(1);
+            assertTrue(p.toString(), p instanceof ParserDecorator);
+            assertEquals(EmptyParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+            assertEquals("hello/world", p.getSupportedTypes(null).iterator().next().toString());
+            
+            p = parsers.get(2);
+            assertTrue(p.toString(), p instanceof ParserDecorator);
+            assertEquals(ErrorParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+            assertEquals("fail/world", p.getSupportedTypes(null).iterator().next().toString());
+        } catch (TikaException e) {
+            fail("Unexpected TikaException: " + e);
+        } finally {
+            System.clearProperty("tika.config");
+        }
     }
 }

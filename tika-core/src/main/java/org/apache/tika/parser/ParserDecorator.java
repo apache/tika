@@ -18,6 +18,7 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
@@ -52,6 +53,31 @@ public class ParserDecorator extends AbstractParser {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 return types;
+            }
+        };
+    }
+
+    /**
+     * Decorates the given parser so that it never claims to support
+     * parsing of the given media types, but will work for all others.
+     *
+     * @param parser the parser to be decorated
+     * @param types excluded/ignored media types
+     * @return the decorated parser
+     */
+    public static final Parser withoutTypes(
+            Parser parser, final Set<MediaType> excludeTypes) {
+        return new ParserDecorator(parser) {
+            private static final long serialVersionUID = 7979614774021768609L;
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                // Get our own, writable copy of the types the parser supports
+                Set<MediaType> parserTypes = 
+                        new HashSet<MediaType>(super.getSupportedTypes(context));
+                // Remove anything on our excludes list
+                parserTypes.removeAll(excludeTypes);
+                // Return whatever is left
+                return parserTypes;
             }
         };
     }
