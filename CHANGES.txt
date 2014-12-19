@@ -1,4 +1,5 @@
 Release 1.7 - Current Development
+  * Tika Server support for JSON and XMP views of metadata (TIKA-1497).
 
   * Tika Parent uses dependency management to keep duplicate 
     dependencies in different modules the same version (TIKA-1384).
