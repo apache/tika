@@ -39,6 +39,7 @@ import org.xml.sax.ContentHandler;
 public class CompositeParserTest {
 
     @Test
+    @SuppressWarnings("serial")
     public void testFindDuplicateParsers() {
         Parser a = new EmptyParser() {
             public Set<MediaType> getSupportedTypes(ParseContext context) {
