@@ -95,6 +95,16 @@ public class MetadataResourceTest extends CXFTestBase {
         
         // Won't work, no password given
         assertEquals(500, response.getStatus());
+
+        // Try again, this time with the wrong password
+        response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/vnd.ms-excel")
+                .accept("text/csv")
+                .header("Password", "wrong password")
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
+
+        assertEquals(500, response.getStatus());
         
         // Try again, this time with the password
         response = WebClient
