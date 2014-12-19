@@ -20,14 +20,19 @@ package org.apache.tika.server;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.helpers.IOUtils;
@@ -36,6 +41,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.junit.Assert;
 import org.junit.Test;
 
 import au.com.bytecode.opencsv.CSVReader;
@@ -56,6 +62,7 @@ public class MetadataResourceTest extends CXFTestBase {
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
         providers.add(new XMPMessageBodyWriter());
+        providers.add(new TextMessageBodyWriter());
         sf.setProviders(providers);
     }
 
@@ -160,6 +167,75 @@ public class MetadataResourceTest extends CXFTestBase {
 
         String result = IOUtils.readStringFromStream((InputStream)response.getEntity());
         assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", result);
+    }
+
+    //Now test requesting one field
+    @Test
+    public void testGetField_XXX_NotFound() throws Exception {
+        Response response = WebClient.create(endPoint + META_PATH + "/xxx").type("application/msword")
+                .accept(MediaType.APPLICATION_JSON).put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        Assert.assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void testGetField_Author_TEXT_Partial_BAD_REQUEST() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+                .accept(MediaType.TEXT_PLAIN).put(copy(stream, 8000));
+        Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    @Test
+    public void testGetField_Author_TEXT_Partial_Found() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+                .accept(MediaType.TEXT_PLAIN).put(copy(stream, 12000));
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        String s = IOUtils.readStringFromStream((InputStream)response.getEntity());
+        assertEquals("Maxim Valyanskiy", s);
+    }
+
+    @Test
+    public void testGetField_Author_JSON_Partial_Found() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/Author").type("application/msword")
+                .accept(MediaType.APPLICATION_JSON).put(copy(stream, 12000));
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader((InputStream)response.getEntity()));
+        assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+        assertEquals(1, metadata.names().length);
+    }
+
+    @Test
+    public void testGetField_Author_XMP_Partial_Found() throws Exception {
+
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
+
+        Response response = WebClient.create(endPoint + META_PATH + "/dc:creator").type("application/msword")
+                .accept("application/rdf+xml").put(copy(stream, 12000));
+        Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        String s = IOUtils.readStringFromStream((InputStream)response.getEntity());
+        assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", s);
+    }
+
+    private static InputStream copy(InputStream in, int remaining) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        while (remaining > 0) {
+            byte[] bytes = new byte[remaining];
+            int n = in.read(bytes);
+            if (n <= 0) {
+                break;
+            }
+            out.write(bytes, 0, n);
+            remaining -= n;
+        }
+        return new ByteArrayInputStream(out.toByteArray());
     }
 
 }
