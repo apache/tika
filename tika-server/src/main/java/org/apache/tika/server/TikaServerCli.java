@@ -100,6 +100,7 @@ public class TikaServerCli {
 
       List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
       rCoreProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
+      rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tika)));
       rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
       rCoreProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
       rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
@@ -115,6 +116,7 @@ public class TikaServerCli {
       providers.add(new TarWriter());
       providers.add(new ZipWriter());
       providers.add(new CSVMessageBodyWriter());
+      providers.add(new MetadataListMessageBodyWriter());
       providers.add(new JSONMessageBodyWriter());
       providers.add(new TikaExceptionMapper());
       if (logFilter != null) {
