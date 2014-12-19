@@ -140,6 +140,15 @@ public class CompositeParser extends AbstractParser {
     }
 
     /**
+     * Returns all parsers registered with the Composite Parser,
+     *  including ones which may not currently be active.
+     * This won't include the Fallback Parser, if defined
+     */
+    public List<Parser> getAllComponentParsers() {
+        return Collections.unmodifiableList(parsers);
+    }
+    
+    /**
      * Returns the component parsers.
      *
      * @return component parsers, keyed by media type

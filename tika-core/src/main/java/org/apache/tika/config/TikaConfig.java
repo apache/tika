@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -344,22 +345,18 @@ public class TikaConfig {
                 }
                 Parser parser = parserClass.newInstance();
 
-                NodeList mimes = node.getElementsByTagName("mime");
-                if (mimes.getLength() > 0) {
-                    Set<MediaType> types = new HashSet<MediaType>();
-                    for (int j = 0; j < mimes.getLength(); j++) {
-                        String mime = getText(mimes.item(j));
-                        MediaType type = MediaType.parse(mime);
-                        if (type != null) {
-                            types.add(type);
-                        } else {
-                            throw new TikaException(
-                                    "Invalid media type name: " + mime);
-                        }
-                    }
-                    parser = ParserDecorator.withTypes(parser, types);
+                // Is there an explicit list of mime types for this to handle?
+                Set<MediaType> parserTypes = mediaTypesListFromDomElement(node, "mime");
+                if (! parserTypes.isEmpty()) {
+                    parser = ParserDecorator.withTypes(parser, parserTypes);
+                }
+                // Is there an explicit list of mime types this shouldn't handle?
+                Set<MediaType> parserExclTypes = mediaTypesListFromDomElement(node, "mime-exclude");
+                if (! parserExclTypes.isEmpty()) {
+                    parser = ParserDecorator.withoutTypes(parser, parserExclTypes);
                 }
 
+                // All done with setup
                 parsers.add(parser);
             } catch (ClassNotFoundException e) {
                 throw new TikaException(
@@ -378,6 +375,26 @@ public class TikaConfig {
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
             return new CompositeParser(registry, parsers);
         }
+    }
+    private static Set<MediaType> mediaTypesListFromDomElement(
+            Element node, String tag) 
+            throws TikaException, IOException {
+        NodeList mimes = node.getElementsByTagName(tag);
+        if (mimes.getLength() > 0) {
+            Set<MediaType> types = new HashSet<MediaType>();
+            for (int j = 0; j < mimes.getLength(); j++) {
+                String mime = getText(mimes.item(j));
+                MediaType type = MediaType.parse(mime);
+                if (type != null) {
+                    types.add(type);
+                } else {
+                    throw new TikaException(
+                            "Invalid media type name: " + mime);
+                }
+            }
+            return types;
+        }
+        return Collections.emptySet();
     }
 
     private static Detector detectorFromDomElement(
