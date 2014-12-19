@@ -22,6 +22,7 @@ import java.io.InputStream;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
@@ -64,6 +65,60 @@ public class MetadataResource {
   public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
     return Response.ok(
             parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
+  }
+
+  /**
+   * Get a specific metadata field. If the input stream cannot be parsed, but a
+   * value was found for the given metadata field, then the value of the field
+   * is returned as part of a 200 OK response; otherwise a
+   * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST} is generated. If the stream was successfully
+   * parsed but the specific metadata field was not found, then a
+   * {@link javax.ws.rs.core.Response.Status#NOT_FOUND} is returned.
+   * <p>
+   * Note that this method handles multivalue fields and returns possibly more
+   * metadata value than requested.
+   * <p>
+   * If you want XMP, you must be careful to specify the exact XMP key.
+   * For example, "Author" will return nothing, but "dc:creator" will return the correct value.
+   *
+   * @param is inputstream
+   * @param httpHeaders httpheaders
+   * @param info info
+   * @param field the tika metadata field name
+   * @return one of {@link javax.ws.rs.core.Response.Status#OK}, {@link javax.ws.rs.core.Response.Status#NOT_FOUND}, or
+   *         {@link javax.ws.rs.core.Response.Status#BAD_REQUEST}
+   * @throws Exception
+   */
+  @PUT
+  @Path("{field}")
+  @Produces({"text/csv", "application/json", "application/rdf+xml", "text/plain"})
+  public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders,
+                                   @Context UriInfo info, @PathParam("field") String field) throws Exception {
+
+    // use BAD request to indicate that we may not have had enough data to
+    // process the request
+    Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
+    Metadata metadata = null;
+    try {
+      metadata = parseMetadata(is, httpHeaders.getRequestHeaders(), info);
+      // once we've parsed the document successfully, we should use NOT_FOUND
+      // if we did not see the field
+      defaultErrorResponse = Response.Status.NOT_FOUND;
+    } catch (Exception e) {
+      logger.info("Failed to process field " + field, e);
+    }
+
+    if (metadata == null || metadata.get(field) == null) {
+      return Response.status(defaultErrorResponse).entity("Failed to get metadata field " + field).build();
+    }
+
+    // remove fields we don't care about for the response
+    for (String name : metadata.names()) {
+      if (!field.equals(name)) {
+        metadata.remove(name);
+      }
+    }
+    return Response.ok(metadata).build();
   }
 
   private Metadata parseMetadata(InputStream is,
