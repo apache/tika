@@ -75,6 +75,7 @@ public class RecursiveMetadataResource {
     RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser,
             new BasicContentHandlerFactory(type, -1));
     TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
+    TikaResource.fillParseContext(context, httpHeaders);
     TikaResource.logRequest(logger, info, metadata);
 
     wrapper.parse(is, new DefaultHandler(), metadata, context);

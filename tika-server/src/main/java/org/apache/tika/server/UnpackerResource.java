@@ -21,7 +21,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -35,6 +38,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
+import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -142,12 +146,26 @@ public class UnpackerResource {
       files.put(TEXT_FILENAME, text.toByteArray());
 
       ByteArrayOutputStream metaStream = new ByteArrayOutputStream();
-      MetadataResource.metadataToCsv(metadata, metaStream);
+      metadataToCsv(metadata, metaStream);
 
       files.put(META_FILENAME, metaStream.toByteArray());
     }
 
     return files;
+  }
+
+  public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
+    CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+
+    for (String name : metadata.names()) {
+      String[] values = metadata.getValues(name);
+      ArrayList<String> list = new ArrayList<String>(values.length+1);
+      list.add(name);
+      list.addAll(Arrays.asList(values));
+      writer.writeNext(list.toArray(values));
+    }
+
+    writer.close();
   }
 
   private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {

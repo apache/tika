@@ -17,85 +17,65 @@
 
 package org.apache.tika.server;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.tika.config.TikaConfig;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.xml.sax.helpers.DefaultHandler;
 
-import au.com.bytecode.opencsv.CSVWriter;
 
 @Path("/meta")
 public class MetadataResource {
   private static final Log logger = LogFactory.getLog(MetadataResource.class);
-  
+
   private TikaConfig tikaConfig;
+
   public MetadataResource(TikaConfig tikaConfig) {
-      this.tikaConfig = tikaConfig;
+    this.tikaConfig = tikaConfig;
   }
-  
+
   @PUT
   @Consumes("multipart/form-data")
-  @Produces("text/csv")
+  @Produces({"text/csv", "application/json", "application/rdf+xml"})
   @Path("form")
-  public StreamingOutput getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-	  return produceMetadata(att.getObject(InputStream.class), att.getHeaders(), info);
+  public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
+    return Response.ok(
+            parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info)).build();
   }
-  
+
   @PUT
-  @Produces("text/csv")
-  public StreamingOutput getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-	  return produceMetadata(is, httpHeaders.getRequestHeaders(), info);
+  @Produces({"text/csv", "application/json", "application/rdf+xml"})
+  public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    return Response.ok(
+            parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
   }
-  
-  private StreamingOutput produceMetadata(InputStream is, MultivaluedMap<String, String> httpHeaders, UriInfo info) throws Exception {
+
+  private Metadata parseMetadata(InputStream is,
+                                 MultivaluedMap<String, String> httpHeaders, UriInfo info) throws Exception {
     final Metadata metadata = new Metadata();
     final ParseContext context = new ParseContext();
     AutoDetectParser parser = TikaResource.createParser(tikaConfig);
     TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
+    TikaResource.fillParseContext(context, httpHeaders);
     TikaResource.logRequest(logger, info, metadata);
 
     parser.parse(is, new DefaultHandler(), metadata, context);
-
-    return new StreamingOutput() {
-      public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-        metadataToCsv(metadata, outputStream);
-      }
-    };
-  }
-
-  public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
-    CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, "UTF-8"));
-
-    for (String name : metadata.names()) {
-      String[] values = metadata.getValues(name);
-      ArrayList<String> list = new ArrayList<String>(values.length+1);
-      list.add(name);
-      list.addAll(Arrays.asList(values));
-      writer.writeNext(list.toArray(values));
-    }
-
-    writer.close();
+    return metadata;
   }
 }
