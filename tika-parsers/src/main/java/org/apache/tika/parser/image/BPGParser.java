@@ -80,8 +80,8 @@ public class BPGParser extends AbstractParser {
         // TODO Identify a suitable metadata key for this
 
         // Is there an alpha plane as well as a colour plane?
-        boolean hasAlphaPlane = (pdf & 0x8) == 0x8;
-        // TODO Identify a suitable metadata key for this
+        boolean hasAlphaPlane1 = (pdf & 0x8) == 0x8;
+        // TODO Identify a suitable metadata key for this+hasAlphaPlane2
         
         // Bit depth minus 8
         int bitDepth = (pdf >> 4) + 8;
@@ -91,7 +91,7 @@ public class BPGParser extends AbstractParser {
         int cer = stream.read();
         
         // Colour Space: YCbCr / RGB / YCgCo / YCbCrK / CMYK
-        int colourSpace = cer & 0x7;
+        int colourSpace = cer & 0x15;
         switch (colourSpace) {
             case 0:
                 metadata.set(Photoshop.COLOR_MODE, "YCbCr Colour");
@@ -111,7 +111,12 @@ public class BPGParser extends AbstractParser {
         }
         
         // Are there extensions or not?
-        boolean hasExtensions = (cer & 0x8) == 0x8;
+        boolean hasExtensions = (cer & 16) == 16;
+
+        // Is the Alpha Plane 2 flag set?
+        boolean hasAlphaPlane2 = (cer & 32) == 32;
+
+        // cer then holds 2 more booleans - limited range, reserved
         
         // Width and height next
         int width  = (int)EndianUtils.readUE7(stream);
@@ -129,7 +134,7 @@ public class BPGParser extends AbstractParser {
         
         // Alpha Data Length, if alpha used
         long alphaDataLength = 0;
-        if (hasAlphaPlane)
+        if (hasAlphaPlane1 || hasAlphaPlane2)
             alphaDataLength = EndianUtils.readUE7(stream);
         
         // Extension Data
