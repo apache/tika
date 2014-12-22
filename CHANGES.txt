@@ -63,6 +63,9 @@ Release 1.7 - Current Development
   * Created a new Tesseract OCR Parser to extract text from images.
     Requires installation of Tesseract before use (TIKA-93).
 
+  * Basic parser for older Excel formats, such as Excel 4, 5 and 95,
+    which can get simple text, and metadata for Excel 5+95 (TIKA-1490)
+
 
 Release 1.6 - 08/31/2014
 

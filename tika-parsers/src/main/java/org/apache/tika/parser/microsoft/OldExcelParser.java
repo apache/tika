@@ -72,17 +72,16 @@ public class OldExcelParser extends AbstractParser {
        // TODO Get the version and type, to set as the Content Type
        
        // Have the text extracted and given to our Content Handler
-       parse(extractor, handler, metadata);
+       XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+       parse(extractor, xhtml);
     }
     
-    protected static void parse(OldExcelExtractor extractor, ContentHandler handler,
-            Metadata metadata) throws TikaException, IOException, SAXException {
+    protected static void parse(OldExcelExtractor extractor, 
+            XHTMLContentHandler xhtml) throws TikaException, IOException, SAXException {
         // Get the whole text, as a single string
         String text = extractor.getText();
         
         // Split and output
-        XHTMLContentHandler xhtml =
-                new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         
         String line;
