@@ -68,7 +68,7 @@ public abstract class AbstractPOIContainerExtractionTest {
         }
     }
     
-    protected TikaInputStream getTestFile(String filename) throws Exception {
+    protected static TikaInputStream getTestFile(String filename) throws Exception {
         URL input = AbstractPOIContainerExtractionTest.class.getResource(
                "/test-documents/" + filename);
         assertNotNull(filename + " not found", input);
