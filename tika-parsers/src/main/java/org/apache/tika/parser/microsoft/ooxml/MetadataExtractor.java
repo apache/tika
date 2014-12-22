@@ -159,8 +159,8 @@ public class MetadataExtractor {
           Metadata metadata) {
        org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperties
            props = properties.getUnderlyingProperties();
-
-       for(CTProperty property : props.getPropertyList()) {
+       for (int i = 0; i < props.sizeOfPropertyArray(); i++) {
+          CTProperty property = props.getPropertyArray(i);
           String val = null;
           Date date = null;
 

@@ -16,21 +16,20 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.PrintStream;
-import java.io.StringWriter;
-import java.util.Locale;
-
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -41,10 +40,14 @@ import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class OOXMLParserTest extends TikaTest {
 
@@ -1089,5 +1092,56 @@ public class OOXMLParserTest extends TikaTest {
         assertTrue(a < b);
     }
 
+    @Test
+    public void testEncrypted() throws Exception {
+        Map<String, String> tests = new HashMap<String, String>();
+        tests.put("testWORD_protected_passtika.docx",
+                "This is an encrypted Word 2007 File");
+        tests.put("testPPT_protected_passtika.pptx",
+                "This is an encrypted PowerPoint 2007 slide.");
+        tests.put("testEXCEL_protected_passtika.xlsx",
+                "This is an Encrypted Excel spreadsheet.");
+
+        Parser parser = new AutoDetectParser();
+        Metadata m = new Metadata();
+        PasswordProvider passwordProvider = new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "tika";
+            }
+        };
+        ParseContext passwordContext = new ParseContext();
+        passwordContext.set(org.apache.tika.parser.PasswordProvider.class, passwordProvider);
+
+        for (Map.Entry<String, String> e : tests.entrySet()) {
+            InputStream is = null;
+            try {
+                is = getTestDocument(e.getKey());
+                ContentHandler handler = new BodyContentHandler();
+                parser.parse(is, handler, m, passwordContext);
+                assertContains(e.getValue(), handler.toString());
+            } finally {
+                is.close();
+            }
+        }
+
+        ParseContext context = new ParseContext();
+        //now try with no password
+        for (Map.Entry<String, String> e : tests.entrySet()) {
+            InputStream is = null;
+            boolean exc = false;
+            try {
+                is = getTestDocument(e.getKey());
+                ContentHandler handler = new BodyContentHandler();
+                parser.parse(is, handler, m, context);
+            } catch (EncryptedDocumentException ex) {
+                exc = true;
+            }  finally {
+                is.close();
+            }
+            assertTrue(exc);
+        }
+
+    }
 }
 

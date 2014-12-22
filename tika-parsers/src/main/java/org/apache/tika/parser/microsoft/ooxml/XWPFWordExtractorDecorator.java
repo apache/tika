@@ -16,11 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.namespace.QName;
 
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
@@ -32,7 +31,6 @@ import org.apache.poi.xwpf.usermodel.IBodyElement;
 import org.apache.poi.xwpf.usermodel.ICell;
 import org.apache.poi.xwpf.usermodel.IRunElement;
 import org.apache.poi.xwpf.usermodel.ISDTContent;
-import org.apache.poi.xwpf.usermodel.XWPFSDTCell;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeaderFooter;
 import org.apache.poi.xwpf.usermodel.XWPFHyperlink;
@@ -42,6 +40,7 @@ import org.apache.poi.xwpf.usermodel.XWPFPicture;
 import org.apache.poi.xwpf.usermodel.XWPFPictureData;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFSDT;
+import org.apache.poi.xwpf.usermodel.XWPFSDTCell;
 import org.apache.poi.xwpf.usermodel.XWPFStyle;
 import org.apache.poi.xwpf.usermodel.XWPFStyles;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
@@ -197,7 +196,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
        // Attach bookmarks for the paragraph
        // (In future, we might put them in the right place, for now
        //  we just put them in the correct paragraph)
-       for (CTBookmark bookmark : paragraph.getCTP().getBookmarkStartList()) {
+       for (int i = 0; i < paragraph.getCTP().sizeOfBookmarkStartArray(); i++) {
+          CTBookmark bookmark = paragraph.getCTP().getBookmarkStartArray(i);
           xhtml.startElement("a", "name", bookmark.getName());
           xhtml.endElement("a");
        }
