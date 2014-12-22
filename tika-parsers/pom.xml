@@ -36,7 +36,7 @@
   <url>http://tika.apache.org/</url>
 
   <properties>
-    <poi.version>3.11-beta2</poi.version>
+    <poi.version>3.11</poi.version>
     <codec.version>1.9</codec.version>
     <!-- NOTE: sync with POI -->
     <compress.version>1.8.1</compress.version>

@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.xml.namespace.QName;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.PackagePart;
@@ -50,6 +50,7 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTComment;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTPicture;
+import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdList;
 import org.openxmlformats.schemas.presentationml.x2006.main.CTSlideIdListEntry;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -99,7 +100,8 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             // comments (if present)
             XSLFComments comments = slide.getComments();
             if (comments != null) {
-                for (CTComment comment : comments.getCTCommentsList().getCmList()) {
+                for (int i = 0; i < comments.getNumberOfComments(); i++) {
+                    CTComment comment = comments.getCommentAt(i);
                     xhtml.element("p", comment.getText());
                 }
             }
@@ -181,32 +183,35 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
        } catch(Exception e) {
           throw new TikaException(e.getMessage()); // Shouldn't happen
        }
-       
-       for (CTSlideIdListEntry ctSlide : document.getSlideReferences().getSldIdList()) {
-          // Add the slide
-          PackagePart slidePart;
-          try {
-             slidePart = document.getSlidePart(ctSlide);
-          } catch(IOException e) {
-             throw new TikaException("Broken OOXML file", e);
-          } catch(XmlException xe) {
-             throw new TikaException("Broken OOXML file", xe);
-          }
-          parts.add(slidePart);
-          
-          // If it has drawings, return those too
-          try {
-             for(PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
-               if(rel.getTargetMode() == TargetMode.INTERNAL) {
-                   PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                   parts.add( rel.getPackage().getPart(relName) );
-                }
-             }
-          } catch(InvalidFormatException e) {
-             throw new TikaException("Broken OOXML file", e);
-          }
-       }
 
+       CTSlideIdList ctSlideIdList = document.getSlideReferences();
+       if (ctSlideIdList != null) {
+           for (int i = 0; i < ctSlideIdList.sizeOfSldIdArray(); i++) {
+               CTSlideIdListEntry ctSlide = ctSlideIdList.getSldIdArray(i);
+               // Add the slide
+               PackagePart slidePart;
+               try {
+                   slidePart = document.getSlidePart(ctSlide);
+               } catch (IOException e) {
+                   throw new TikaException("Broken OOXML file", e);
+               } catch (XmlException xe) {
+                   throw new TikaException("Broken OOXML file", xe);
+               }
+               parts.add(slidePart);
+
+               // If it has drawings, return those too
+               try {
+                   for (PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
+                       if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                           PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                           parts.add(rel.getPackage().getPart(relName));
+                       }
+                   }
+               } catch (InvalidFormatException e) {
+                   throw new TikaException("Broken OOXML file", e);
+               }
+           }
+       }
        return parts;
     }
 }
