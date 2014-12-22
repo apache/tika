@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.TikaTest.assertNotContained;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.apache.tika.TikaTest.assertContains;
-import static org.apache.tika.TikaTest.assertNotContained;
 
 import java.io.InputStream;
 import java.util.Locale;
@@ -29,6 +29,7 @@ import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -41,8 +42,8 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class ExcelParserTest {
-  
     @Test
+    @SuppressWarnings("deprecation") // Checks legacy Tika-1.0 style metadata keys
     public void testExcelParser() throws Exception {
         InputStream input = ExcelParserTest.class.getResourceAsStream(
                 "/test-documents/testEXCEL.xls");
@@ -330,48 +331,97 @@ public class ExcelParserTest {
     }
 
     /**
-     * We don't currently support the old Excel 95 .xls file format, 
-     *  but we shouldn't break on these files either (TIKA-976)  
+     * Excel 5 and 95 are older formats, and only get basic support
      */
     @Test
     public void testExcel95() throws Exception {
        Detector detector = new DefaultDetector();
        AutoDetectParser parser = new AutoDetectParser();
+       InputStream input;
+       MediaType type;
+       Metadata m;
        
-       InputStream input = ExcelParserTest.class.getResourceAsStream(
-             "/test-documents/testEXCEL_95.xls");
-       Metadata m = new Metadata();
+       // First try detection of Excel 5
+       m = new Metadata();
+       m.add(Metadata.RESOURCE_NAME_KEY, "excel_5.xls");
+       input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_5.xls");
+       try {
+           type = detector.detect(input, m);
+           assertEquals("application/vnd.ms-excel", type.toString());
+        } finally {
+           input.close();
+        }
+       
+       // Now Excel 95
+       m = new Metadata();
        m.add(Metadata.RESOURCE_NAME_KEY, "excel_95.xls");
-       
-       // Should be detected correctly
-       MediaType type = null;
-       try {
-          type = detector.detect(input, m);
-          assertEquals("application/vnd.ms-excel", type.toString());
-       } finally {
-          input.close();
-       }
-       
-       // OfficeParser will claim to handle it
-       assertEquals(true, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
-       
-       // OOXMLParser won't handle it
-       assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
-       
-       // AutoDetectParser doesn't break on it
        input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls");
-
        try {
-          ContentHandler handler = new BodyContentHandler(-1);
-          ParseContext context = new ParseContext();
-          context.set(Locale.class, Locale.US);
-          parser.parse(input, handler, m, context);
+           type = detector.detect(input, m);
+           assertEquals("application/vnd.ms-excel", type.toString());
+        } finally {
+           input.close();
+        }
 
-          String content = handler.toString();
-          assertEquals("", content);
-       } finally {
-          input.close();
-       }
+        // OfficeParser can handle it
+        assertEquals(true, (new OfficeParser()).getSupportedTypes(new ParseContext()).contains(type));
+
+        // OOXMLParser won't handle it
+        assertEquals(false, (new OOXMLParser()).getSupportedTypes(new ParseContext()).contains(type));
+       
+        
+        // Parse the Excel 5 file
+        m = new Metadata();
+        input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_5.xls");
+        try {
+            ContentHandler handler = new BodyContentHandler(-1);
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            parser.parse(input, handler, m, context);
+
+            String content = handler.toString();
+            
+            // Sheet names
+            assertContains("Feuil1", content);
+            assertContains("Feuil3", content);
+            
+            // Text
+            assertContains("Sample Excel", content);
+            assertContains("Number", content);
+            
+            // Numbers
+            assertContains("15", content);
+            assertContains("225", content);
+            
+            // Metadata was also fetched
+            assertEquals("Simple Excel document", m.get(TikaCoreProperties.TITLE));
+            assertEquals("Keith Bennett", m.get(TikaCoreProperties.CREATOR));
+        } finally {
+            input.close();
+        }
+        
+        // Parse the Excel 95 file
+        m = new Metadata();
+        input = ExcelParserTest.class.getResourceAsStream("/test-documents/testEXCEL_95.xls");
+        try {
+            ContentHandler handler = new BodyContentHandler(-1);
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            parser.parse(input, handler, m, context);
+
+            String content = handler.toString();
+            
+            // Sheet name
+            assertContains("Foglio1", content);
+            
+            // Very boring file, no actual text or numbers!
+            
+            // Metadata was also fetched
+            assertEquals(null, m.get(TikaCoreProperties.TITLE));
+            assertEquals("Marco Quaranta", m.get(Office.LAST_AUTHOR));
+        } finally {
+            input.close();
+        }
     }
     
     /**

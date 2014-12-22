@@ -34,6 +34,7 @@ import org.apache.poi.hssf.eventusermodel.FormatTrackingHSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFEventFactory;
 import org.apache.poi.hssf.eventusermodel.HSSFListener;
 import org.apache.poi.hssf.eventusermodel.HSSFRequest;
+import org.apache.poi.hssf.extractor.OldExcelExtractor;
 import org.apache.poi.hssf.record.BOFRecord;
 import org.apache.poi.hssf.record.BoundSheetRecord;
 import org.apache.poi.hssf.record.CellValueRecordInterface;
@@ -150,7 +151,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 // Excel 5 / Excel 95 file
                 // Records are in a different structure so needs a
                 //  different parser to process them
-                // TODO Call one, see TIKA-1490
+                OldExcelExtractor extractor = new OldExcelExtractor(root);
+                OldExcelParser.parse(extractor, xhtml);
                 return;
             } else {
                // Corrupt file / very old file, just skip text extraction
