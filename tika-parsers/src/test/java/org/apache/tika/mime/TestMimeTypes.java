@@ -587,7 +587,8 @@ public class TestMimeTypes {
              repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.ditamap")).toString());
        assertEquals("application/dita+xml", 
              repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA.dita")).toString());
-       assertEquals("application/dita+xml", 
+       // Concept inherits from topic
+       assertEquals("application/dita+xml; format=topic", 
              repo.getMediaTypeRegistry().getSupertype(getTypeByNameAndData("testDITA2.dita")).toString());
     }
 

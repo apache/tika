@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -143,10 +142,8 @@ public class MimeTypesReaderTest {
             mime.getLinks().get(0).toString());
     }
     
-    // TODO Get this to work - currently jumps two levels!
     @Test
-    @Ignore
-    public void testReadParameterHeirarchy() throws Exception {
+    public void testReadParameterHierarchy() throws Exception {
         MimeType mimeBTree4 = this.mimeTypes.forName("application/x-berkeley-db;format=btree;version=4");
         MediaType mtBTree4 = mimeBTree4.getType();
         
