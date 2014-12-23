@@ -819,6 +819,36 @@ public class TestMimeTypes {
         assertText(new byte[] { '\t', '\r', '\n', 0x0C, 0x1B });
         assertNotText(new byte[] { '\t', '\r', '\n', 0x0E, 0x1C });
     }
+    
+    @Test
+    public void testBerkeleyDB() throws IOException {
+        assertTypeByData(
+                "application/x-berkeley-db; format=btree; version=2", 
+                "testBDB_btree_2.db");
+        assertTypeByData(
+                "application/x-berkeley-db; format=btree; version=3", 
+                "testBDB_btree_3.db");
+        assertTypeByData(
+                "application/x-berkeley-db; format=btree; version=4", 
+                "testBDB_btree_4.db");
+        // V4 and V5 share the same btree format
+        assertTypeByData(
+                "application/x-berkeley-db; format=btree; version=4", 
+                "testBDB_btree_5.db");
+        
+        assertTypeByData(
+                "application/x-berkeley-db; format=hash; version=2", 
+                "testBDB_hash_2.db");
+        assertTypeByData(
+                "application/x-berkeley-db; format=hash; version=3", 
+                "testBDB_hash_3.db");
+        assertTypeByData(
+                "application/x-berkeley-db; format=hash; version=4", 
+                "testBDB_hash_4.db");
+        assertTypeByData(
+                "application/x-berkeley-db; format=hash; version=5", 
+                "testBDB_hash_5.db");
+    }
 
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);

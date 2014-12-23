@@ -23,9 +23,10 @@ import java.util.List;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
-
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -140,6 +141,26 @@ public class MimeTypesReaderTest {
         assertEquals("public.xml", mime.getUniformTypeIdentifier());
         assertEquals("http://en.wikipedia.org/wiki/Xml", 
             mime.getLinks().get(0).toString());
+    }
+    
+    // TODO Get this to work - currently jumps two levels!
+    @Test
+    @Ignore
+    public void testReadParameterHeirarchy() throws Exception {
+        MimeType mimeBTree4 = this.mimeTypes.forName("application/x-berkeley-db;format=btree;version=4");
+        MediaType mtBTree4 = mimeBTree4.getType();
+        
+        // Canonicalised with spaces
+        assertEquals("application/x-berkeley-db; format=btree; version=4", mimeBTree4.toString());
+        assertEquals("application/x-berkeley-db; format=btree; version=4", mtBTree4.toString());
+        
+        // Parent has one parameter
+        MediaType mtBTree = this.mimeTypes.getMediaTypeRegistry().getSupertype(mtBTree4);
+        assertEquals("application/x-berkeley-db; format=btree", mtBTree.toString());
+        
+        // Parent of that has none
+        MediaType mtBD = this.mimeTypes.getMediaTypeRegistry().getSupertype(mtBTree);
+        assertEquals("application/x-berkeley-db", mtBD.toString());
     }
     
     /**
