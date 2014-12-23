@@ -2523,32 +2523,53 @@
     <glob pattern="*.bcpio"/>
   </mime-type>
 
-  <!-- TODO Rationalise to add a third level -->
   <mime-type type="application/x-berkeley-db">
+    <_comment>Berkeley DB</_comment>
     <alias type="application/x-dbm"/>
+  </mime-type>
+  <mime-type type="application/x-berkeley-db;format=hash">
+    <_comment>Berkeley DB Hash Database</_comment>
     <magic priority="50">
-      <!-- Hash -->
+      <match value="0x00061561" type="host32" offset="0"/>
       <match value="0x00061561" type="big32" offset="0"/>
+      <match value="0x00061561" type="little32" offset="0"/>
       <match value="0x00061561" type="host32" offset="12"/>
       <match value="0x00061561" type="big32" offset="12"/>
       <match value="0x00061561" type="little32" offset="12"/>
-      <!-- BTree -->
+    </magic>
+    <sub-class-of type="application/x-berkeley-db"/>
+  </mime-type>
+  <mime-type type="application/x-berkeley-db;format=btree">
+    <_comment>Berkeley DB BTree Database</_comment>
+    <magic priority="50">
       <match value="0x00053162" type="host32" offset="0"/>
       <match value="0x00053162" type="big32" offset="0"/>
       <match value="0x00053162" type="little32" offset="0"/>
       <match value="0x00053162" type="host32" offset="12"/>
       <match value="0x00053162" type="big32" offset="12"/>
       <match value="0x00053162" type="little32" offset="12"/>
-      <!-- Queue -->
+    </magic>
+    <sub-class-of type="application/x-berkeley-db"/>
+  </mime-type>
+  <mime-type type="application/x-berkeley-db;format=queue">
+    <_comment>Berkeley DB Queue Database</_comment>
+    <magic priority="50">
       <match value="0x00042253" type="host32" offset="12"/>
       <match value="0x00042253" type="big32" offset="12"/>
       <match value="0x00042253" type="little32" offset="12"/>
-      <!-- Log -->
+    </magic>
+    <sub-class-of type="application/x-berkeley-db"/>
+  </mime-type>
+  <mime-type type="application/x-berkeley-db;format=log">
+    <_comment>Berkeley DB Log Database</_comment>
+    <magic priority="50">
       <match value="0x00040988" type="host32" offset="12"/>
       <match value="0x00040988" type="little32" offset="12"/>
       <match value="0x00040988" type="big32" offset="12"/>
     </magic>
+    <sub-class-of type="application/x-berkeley-db"/>
   </mime-type>
+
   <mime-type type="application/x-berkeley-db;format=hash;version=2">
     <_comment>Berkeley DB Version 2 Hash Database</_comment>
     <magic priority="60">
@@ -2562,7 +2583,7 @@
           <match value="0x0005" type="little32" offset="16"/>
       </match>
     </magic>
-    <sub-class-of type="application/x-berkeley-db"/>
+    <sub-class-of type="application/x-berkeley-db;format=hash"/>
   </mime-type>
   <mime-type type="application/x-berkeley-db;format=hash;version=3">
     <_comment>Berkeley DB Version 3 Hash Database</_comment>
@@ -2577,7 +2598,7 @@
           <match value="0x0007" type="little32" offset="16"/>
       </match>
     </magic>
-    <sub-class-of type="application/x-berkeley-db"/>
+    <sub-class-of type="application/x-berkeley-db;format=hash"/>
   </mime-type>
   <mime-type type="application/x-berkeley-db;format=hash;version=4">
     <_comment>Berkeley DB Version 4 Hash Database</_comment>
@@ -2592,7 +2613,7 @@
           <match value="0x0008" type="little32" offset="16"/>
       </match>
     </magic>
-    <sub-class-of type="application/x-berkeley-db"/>
+    <sub-class-of type="application/x-berkeley-db;format=hash"/>
   </mime-type>
   <mime-type type="application/x-berkeley-db;format=hash;version=5">
     <_comment>Berkeley DB Version 5 Hash Database</_comment>
@@ -2607,8 +2628,9 @@
           <match value="0x0009" type="little32" offset="16"/>
       </match>
     </magic>
-    <sub-class-of type="application/x-berkeley-db"/>
+    <sub-class-of type="application/x-berkeley-db;format=hash"/>
   </mime-type>
+
   <mime-type type="application/x-berkeley-db;format=btree;version=2">
     <_comment>Berkeley DB Version 2 BTree Database</_comment>
     <magic priority="60">
@@ -2622,7 +2644,7 @@
           <match value="0x0006" type="little32" offset="16"/>
       </match>
     </magic>
-    <sub-class-of type="application/x-berkeley-db"/>
+    <sub-class-of type="application/x-berkeley-db;format=btree"/>
   </mime-type>
   <mime-type type="application/x-berkeley-db;format=btree;version=3">
     <_comment>Berkeley DB Version 3 BTree Database</_comment>
@@ -2637,7 +2659,7 @@
           <match value="0x0008" type="little32" offset="16"/>
       </match>
     </magic>
-    <sub-class-of type="application/x-berkeley-db"/>
+    <sub-class-of type="application/x-berkeley-db;format=btree"/>
   </mime-type>
   <mime-type type="application/x-berkeley-db;format=btree;version=4">
     <_comment>Berkeley DB Version 4 and 5 BTree Database</_comment>
@@ -2652,7 +2674,7 @@
           <match value="0x0009" type="little32" offset="16"/>
       </match>
     </magic>
-    <sub-class-of type="application/x-berkeley-db"/>
+    <sub-class-of type="application/x-berkeley-db;format=btree"/>
   </mime-type>
 
   <mime-type type="application/x-bibtex-text-file">
