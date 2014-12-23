@@ -3192,6 +3192,46 @@
   <mime-type type="application/x-mswrite">
     <glob pattern="*.wri"/>
   </mime-type>
+
+  <mime-type type="application/x-mysql-db">
+  </mime-type>
+  <mime-type type="application/x-mysql-table-definition">
+    <_comment>MySQL Table Definition (Format)</_comment>
+    <!-- Glob is normally .frm, but that's already taken -->
+    <magic priority="40">
+      <match value="0xfe0107" type="string" offset="0"/>
+      <match value="0xfe0108" type="string" offset="0"/>
+      <match value="0xfe0109" type="string" offset="0"/>
+      <match value="0xfe010a" type="string" offset="0"/>
+      <match value="0xfe010b" type="string" offset="0"/>
+      <match value="0xfe010c" type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="application/x-mysql-db"/>
+  </mime-type>
+  <mime-type type="application/x-mysql-misam-index">
+    <_comment>MySQL MISAM Index</_comment>
+    <magic priority="40">
+      <match value="0xfefe03" type="string" offset="0"/>
+      <match value="0xfefe05" type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="application/x-mysql-db"/>
+  </mime-type>
+  <mime-type type="application/x-mysql-misam-compressed-index">
+    <_comment>MySQL MISAM Compressed Index</_comment>
+    <glob pattern="*.MYI"/>
+    <magic priority="40">
+      <match value="0xfefe06" type="string" offset="0"/>
+      <match value="0xfefe07" type="string" offset="0"/>
+    </magic>
+    <sub-class-of type="application/x-mysql-db"/>
+  </mime-type>
+  <mime-type type="application/x-mysql-misam-data">
+    <_comment>MySQL MISAM Data</_comment>
+    <glob pattern="*.MYD"/>
+    <!-- MISAM Data files are header-less, so no magic -->
+    <sub-class-of type="application/x-mysql-db"/>
+  </mime-type>
+
   <mime-type type="application/x-netcdf">
     <glob pattern="*.nc"/>
     <glob pattern="*.cdf"/>
@@ -3363,6 +3403,12 @@
 
   <mime-type type="application/x-silverlight-app">
     <glob pattern="*.xap"/>
+  </mime-type>
+
+  <mime-type type="application/x-sqlite3">
+    <magic priority="50">
+      <match value="SQLite format 3\x00" type="string" offset="0"/>
+    </magic>
   </mime-type>
 
   <mime-type type="application/x-stuffit">
