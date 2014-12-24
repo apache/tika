@@ -158,6 +158,12 @@ public class MimeTypesReaderTest {
         // Parent of that has none
         MediaType mtBD = this.mimeTypes.getMediaTypeRegistry().getSupertype(mtBTree);
         assertEquals("application/x-berkeley-db", mtBD.toString());
+        
+        // If we use one with parameters not known in the media registry,
+        //  getting the parent will return the non-parameter version
+        MediaType mtAlt = MediaType.application("x-berkeley-db; format=unknown; version=42");
+        MediaType mtAltP = this.mimeTypes.getMediaTypeRegistry().getSupertype(mtAlt);
+        assertEquals("application/x-berkeley-db", mtAltP.toString());
     }
     
     /**
