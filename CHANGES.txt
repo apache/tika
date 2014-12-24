@@ -1,5 +1,8 @@
 Release 1.7 - Current Development
 
+  * HTML tags are properly stripped from content by FeedParser
+    (TIKA-1500).
+
   * Tika Server support for selecting a single metadata key;
     wrapped MetadataEP into MetadataResource (TIKA-1499).
 
