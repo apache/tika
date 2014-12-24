@@ -135,7 +135,13 @@ public class TestGDALParser extends TikaTest {
 
 	@Test
 	public void testParseFITS() {
+        String fitsFilename = "/test-documents/WFPC2u5780205r_c0fx.fits";
+
 		assumeTrue(canRun());
+        // If the exit code is 1 (meaning FITS isn't supported by the installed version of gdalinfo, don't run this test.
+        String[] fitsCommand = { "gdalinfo", TestGDALParser.class.getResource(fitsFilename).getPath() };
+        assumeTrue(ExternalParser.check(fitsCommand, 1));
+
 		String expectedAllgMin = "-7.319537E1";
 		String expectedAtodcorr = "COMPLETE";
 		String expectedAtodfile = "uref$dbu1405iu.r1h";
@@ -144,7 +150,7 @@ public class TestGDALParser extends TikaTest {
 
 		GDALParser parser = new GDALParser();
 		InputStream stream = TestGDALParser.class
-				.getResourceAsStream("/test-documents/WFPC2u5780205r_c0fx.fits");
+				.getResourceAsStream(fitsFilename);
 		Metadata met = new Metadata();
 		BodyContentHandler handler = new BodyContentHandler();
 		try {
