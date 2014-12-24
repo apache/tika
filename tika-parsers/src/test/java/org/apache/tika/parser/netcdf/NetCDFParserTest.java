@@ -38,10 +38,6 @@ public class NetCDFParserTest {
 
     @Test
     public void testParseGlobalMetadata() throws Exception {
-        if(System.getProperty("java.version").startsWith("1.5")) {
-            return;
-        }
-
         Parser parser = new NetCDFParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -63,13 +59,13 @@ public class NetCDFParserTest {
         assertEquals(metadata.get(Metadata.REALIZATION), "1");
         assertEquals(metadata.get(Metadata.EXPERIMENT_ID),
                 "720 ppm stabilization experiment (SRESA1B)");
-                
+
         String content = handler.toString();
-       	assertTrue(content.contains(":long_name = \"Surface area\";"));
-       	assertTrue(content.contains("float area(lat=128, lon=256);"));
-       	assertTrue(content.contains("float lat(lat=128);"));
-       	assertTrue(content.contains("double lat_bnds(lat=128, bnds=2);"));
-       	assertTrue(content.contains("double lon_bnds(lon=256, bnds=2);"));
+       	assertTrue(content.contains("long_name = \"Surface area\""));
+       	assertTrue(content.contains("float area(lat=128, lon=256)"));
+       	assertTrue(content.contains("float lat(lat=128)"));
+       	assertTrue(content.contains("double lat_bnds(lat=128, bnds=2)"));
+       	assertTrue(content.contains("double lon_bnds(lon=256, bnds=2)"));
        	
        	
     }
