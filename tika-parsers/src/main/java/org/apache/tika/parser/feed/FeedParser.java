@@ -96,7 +96,7 @@ public class FeedParser extends AbstractParser {
                     SyndContent content = entry.getDescription();
                     if (content != null) {
                         xhtml.newline();
-                        xhtml.characters(content.getValue());
+                        xhtml.characters(stripTags(content));
                     }
                     xhtml.endElement("li");
                 }
