@@ -2877,6 +2877,7 @@
       <match value="\nDate:" type="string" offset="2:9"/>
     </magic>
     <glob pattern="*.emlx"/>
+    <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
 
   <mime-type type="application/x-killustrator">
@@ -4900,6 +4901,7 @@
       <match value="Xref:" type="string" offset="0" />
       <match value="Article" type="string" offset="0" />
     </magic>
+    <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
 
   <mime-type type="message/partial"/>
@@ -4925,6 +4927,7 @@
     <glob pattern="*.mime"/>
     <glob pattern="*.mht"/>
     <glob pattern="*.mhtml"/>
+    <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
 
   <mime-type type="message/s-http"/>
@@ -5720,6 +5723,10 @@
     <glob pattern="*.tcl"/>
     <glob pattern="*.tk"/>
     <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-tika-text-based-message">
+    <_comment>Text-based (non-binary) Message</_comment>
   </mime-type>
 
   <mime-type type="text/x-uuencode">

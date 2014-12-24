@@ -757,13 +757,18 @@ public class TestMimeTypes {
     }
     
     @Test
-    public void testEmlx() throws IOException {
+    public void testEmail() throws IOException {
+        // EMLX
         assertTypeDetection("testEMLX.emlx", "message/x-emlx");
-    }
-    
-    @Test
-    public void testGroupWiseEml() throws Exception {
+        
+        // Groupwise
         assertTypeDetection("testGroupWiseEml.eml", "message/rfc822");
+        
+        // Lotus
+        assertTypeDetection("testLotusEml.eml", "message/rfc822");
+        
+        // Thunderbird - doesn't currently work by name
+        assertTypeByNameAndData("message/rfc822", "testThunderbirdEml.eml");
     }
     
     @Test
