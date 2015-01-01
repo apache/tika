@@ -1,4 +1,4 @@
-Release 1.7 - Current Development
+Release 1.7 - 1/1/2015
 
   * HTML tags are properly stripped from content by FeedParser
     (TIKA-1500).
