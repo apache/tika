@@ -19,14 +19,13 @@
   under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.7-SNAPSHOT</version>
+    <version>1.7</version>
     <relativePath>tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -37,12 +36,12 @@
 
   <scm>
     <connection>
-      scm:svn:http://svn.apache.org/repos/asf/tika/trunk
+      scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.7-rc1
     </connection>
     <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/tika/trunk
+      scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.7-rc1
     </developerConnection>
-    <url>http://svn.apache.org/viewvc/tika/trunk</url>
+    <url>http://svn.apache.org/viewvc/tika/tags/1.7-rc1</url>
   </scm>
 
   <modules>
@@ -99,28 +98,27 @@
                 <phase>deploy</phase>
                 <configuration>
                   <tasks>
-                    <mkdir dir="${basedir}/target/${project.version}"/>
+                    <mkdir dir="${basedir}/target/${project.version}" />
                     <copy todir="${basedir}/target/${project.version}" flatten="true">
                       <fileset dir="${basedir}">
-                        <include name="CHANGES.txt"/>
-                        <include name="target/*-src.zip*"/>
-                        <include name="tika-app/target/*-${project.version}.jar*"/>
+                        <include name="CHANGES.txt" />
+                        <include name="target/*-src.zip*" />
+                        <include name="tika-app/target/*-${project.version}.jar*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="MD5" fileext=".md5">
                       <fileset dir="${basedir}/target/${project.version}">
-                        <include name="*.zip"/>
-                        <include name="*.?ar"/>
+                        <include name="*.zip" />
+                        <include name="*.?ar" />
                       </fileset>
                     </checksum>
                     <checksum algorithm="SHA1" fileext=".sha">
                       <fileset dir="${basedir}/target/${project.version}">
-                        <include name="*.zip"/>
-                        <include name="*.?ar"/>
+                        <include name="*.zip" />
+                        <include name="*.?ar" />
                       </fileset>
                     </checksum>
-                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip"
-                              algorithm="SHA1" property="checksum"/>
+                    <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA1" property="checksum" />
                     <echo file="${basedir}/target/vote.txt">
                       From: ${username}@apache.org
                       To: dev@tika.apache.org
@@ -143,7 +141,7 @@
                       [ ] +1 Release this package as Apache Tika ${project.version}
                       [ ] -1 Do not release this package because...${line.separator}
                     </echo>
-                    <echo/>
+                    <echo />
                     <echo>
                       The release candidate has been prepared in:
 
@@ -157,7 +155,7 @@
 
                       file://${basedir}/target/vote.txt
                     </echo>
-                    <echo/>
+                    <echo />
                   </tasks>
                 </configuration>
               </execution>
