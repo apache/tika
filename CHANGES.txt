@@ -1,4 +1,7 @@
-Release 1.7 - 1/1/2015
+Release 1.7 - 1/5/2015
+
+  * Fixed resource leak in OutlookPSTParser that caused TikaException 
+    when invoked via AutoDetectParser on Windows (TIKA-1506).
 
   * HTML tags are properly stripped from content by FeedParser
     (TIKA-1500).

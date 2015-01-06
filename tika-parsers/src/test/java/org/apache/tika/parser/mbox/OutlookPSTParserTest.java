@@ -50,7 +50,7 @@ public class OutlookPSTParserTest extends TikaTest {
 
   @Test
   public void testParse() throws Exception {
-    OutlookPSTParser pstParser = new OutlookPSTParser();
+    Parser pstParser = new AutoDetectParser();
     Metadata metadata = new Metadata();
     ContentHandler handler = new ToHTMLContentHandler();
 

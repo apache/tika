@@ -74,8 +74,9 @@ public class OutlookPSTParser extends AbstractParser {
     xhtml.startDocument();
 
     TikaInputStream in = TikaInputStream.get(stream);
+    PSTFile pstFile = null;
     try {
-      PSTFile pstFile = new PSTFile(in.getFile().getPath());
+      pstFile = new PSTFile(in.getFile().getPath());
       metadata.set(Metadata.CONTENT_LENGTH, valueOf(pstFile.getFileHandle().length()));
       boolean isValid = pstFile.getFileHandle().getFD().valid();
       metadata.set("isValid", valueOf(isValid));
@@ -84,6 +85,14 @@ public class OutlookPSTParser extends AbstractParser {
       }
     } catch (Exception e) {
       throw new TikaException(e.getMessage(), e);
+    } finally {
+      if (pstFile != null && pstFile.getFileHandle() != null) {
+        try{
+          pstFile.getFileHandle().close();
+        } catch (IOException e) {
+          //swallow closing exception
+        }
+      }
     }
 
     xhtml.endDocument();
