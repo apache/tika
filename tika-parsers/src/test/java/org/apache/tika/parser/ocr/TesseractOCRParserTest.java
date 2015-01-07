@@ -36,7 +36,6 @@ import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -54,6 +53,10 @@ public class TesseractOCRParserTest extends TikaTest {
         return ExternalParser.check(checkCmd);
     }
 
+    /*
+    Check that if Tesseract is not found, the TesseractOCRParser claims to not support
+    any file types. So, the standard image parser is called instead.
+     */
     @Test
     public void offersNoTypesIfNotFound() throws Exception {
         TesseractOCRParser parser = new TesseractOCRParser();
@@ -72,17 +75,26 @@ public class TesseractOCRParserTest extends TikaTest {
 
         // And DefaultParser won't use us
         assertEquals(ImageParser.class, defaultParser.getParsers(parseContext).get(png).getClass());
+    }
 
+    /*
+    If Tesseract is found, test we retrieve the proper number of supporting Parsers.
+     */
+    @Test
+    public void offersTypesIfFound() throws Exception {
+        TesseractOCRParser parser = new TesseractOCRParser();
+        DefaultParser defaultParser = new DefaultParser();
 
-        // With a correct path, with offer the usual types
-        TesseractOCRConfig normalConfig = new TesseractOCRConfig();
-        assumeTrue(canRun(normalConfig));
-        parseContext.set(TesseractOCRConfig.class, normalConfig);
+        ParseContext parseContext = new ParseContext();
+        MediaType png = MediaType.image("png");
+
+        // Assuming that Tesseract is on the path, we should find 5 Parsers that support PNG.
+        assumeTrue(canRun());
 
         assertEquals(5, parser.getSupportedTypes(parseContext).size());
         assertTrue(parser.getSupportedTypes(parseContext).contains(png));
 
-        // DefaultParser now will
+        // DefaultParser will now select the TesseractOCRParser.
         assertEquals(TesseractOCRParser.class, defaultParser.getParsers(parseContext).get(png).getClass());
     }
 
@@ -126,8 +138,7 @@ public class TesseractOCRParserTest extends TikaTest {
         parseContext.set(Parser.class, parser);
         parseContext.set(PDFParserConfig.class, pdfConfig);
 
-        InputStream stream = TesseractOCRParserTest.class.getResourceAsStream(
-                resource);
+        InputStream stream = TesseractOCRParserTest.class.getResourceAsStream(resource);
 
         try {
             parser.parse(stream, new DefaultHandler(), new Metadata(), parseContext);
@@ -155,8 +166,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
     @Test
     public void testSingleImage() throws Exception {
-        TesseractOCRConfig config = new TesseractOCRConfig();
-        assumeTrue(canRun(config));
+        assumeTrue(canRun());
         String xml = getXML("testOCR.jpg").xml;
         assertContains("OCR Testing", xml);
     }
