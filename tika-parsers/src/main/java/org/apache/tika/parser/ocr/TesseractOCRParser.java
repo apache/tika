@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -86,8 +87,15 @@ public class TesseractOCRParser extends AbstractParser {
   }
 
   @Override
-  public Set<MediaType> getSupportedTypes(ParseContext arg0) {
-    return SUPPORTED_TYPES;
+  public Set<MediaType> getSupportedTypes(ParseContext context) {
+      // If Tesseract is installed, offer our supported image types
+      TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
+      if (hasTesseract(config))
+          return SUPPORTED_TYPES;
+      
+      // Otherwise don't advertise anything, so the other image parsers
+      //  can be selected instead
+      return Collections.emptySet();
   }
 
   private void setEnv(TesseractOCRConfig config, ProcessBuilder pb) {
@@ -95,6 +103,11 @@ public class TesseractOCRParser extends AbstractParser {
       Map<String, String> env = pb.environment();
       env.put("TESSDATA_PREFIX", config.getTesseractPath());
     }
+  }
+  
+  private boolean hasTesseract(TesseractOCRConfig config) {
+      String[] checkCmd = { config.getTesseractPath() + getTesseractProg() };
+      return ExternalParser.check(checkCmd);
   }
 
   public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
@@ -130,12 +143,12 @@ public class TesseractOCRParser extends AbstractParser {
   @Override
   public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
       throws IOException, SAXException, TikaException {
-
     TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
 
-    String[] checkCmd = { config.getTesseractPath() + getTesseractProg() };
-    // If Tesseract is not on the path, do not try to run OCR.
-    if (!ExternalParser.check(checkCmd))
+    // If Tesseract is not on the path with the current config, do not try to run OCR
+    // getSupportedTypes shouldn't have listed us as handling it, so this should only
+    //  occur if someone directly calls this parser, not via DefaultParser or similar
+    if (! hasTesseract(config))
       return;
 
     XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
