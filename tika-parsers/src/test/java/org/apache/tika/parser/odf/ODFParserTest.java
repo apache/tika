@@ -19,8 +19,6 @@ package org.apache.tika.parser.odf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
@@ -356,23 +354,23 @@ public class ODFParserTest extends TikaTest {
     
     @Test
     public void testNPEFromFile() throws Exception {
-      File file = new File(this.getClass().getResource("/test-documents/testNPEOpenDocument.odt").getPath());
-      InputStream tis = TikaInputStream.get(new FileInputStream(file));
-      OpenDocumentParser parser = new OpenDocumentParser();
+        TikaInputStream tis = TikaInputStream.get(this.getClass().getResource(
+                "/test-documents/testNPEOpenDocument.odt"));
+        OpenDocumentParser parser = new OpenDocumentParser();
 
-      try {
+        try {
           Metadata metadata = new Metadata();
           ContentHandler handler = new BodyContentHandler();
           parser.parse(tis, handler, metadata, new ParseContext());
-    
+
           assertEquals(
                   "application/vnd.oasis.opendocument.text",
                   metadata.get(Metadata.CONTENT_TYPE));
-    
+
           String content = handler.toString();
           assertTrue(content.contains("primero hay que generar un par de claves"));
-      } finally {
+        } finally {
           tis.close();
-      }
+        }
     }
 }
