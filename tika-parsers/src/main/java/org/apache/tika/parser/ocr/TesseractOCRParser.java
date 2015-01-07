@@ -75,20 +75,12 @@ import org.xml.sax.SAXException;
  */
 public class TesseractOCRParser extends AbstractParser {
   private static final long serialVersionUID = -8167538283213097265L;
-  private static final Set<MediaType> SUPPORTED_TYPES = getTypes();
   private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
-
-  private static Set<MediaType> getTypes() {
-    HashSet<MediaType> supportedTypes = new HashSet<MediaType>();
-
-    supportedTypes.add(MediaType.image("png"));
-    supportedTypes.add(MediaType.image("jpeg"));
-    supportedTypes.add(MediaType.image("tiff"));
-    supportedTypes.add(MediaType.image("x-ms-bmp"));
-    supportedTypes.add(MediaType.image("gif"));
-
-    return supportedTypes;
-  }
+  private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+          new HashSet<MediaType>(Arrays.asList(new MediaType[] {
+              MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
+              MediaType.image("x-ms-bmp"), MediaType.image("gif")
+  })));
 
   @Override
   public Set<MediaType> getSupportedTypes(ParseContext context) {
