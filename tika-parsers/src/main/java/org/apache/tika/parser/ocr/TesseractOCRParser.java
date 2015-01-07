@@ -197,7 +197,7 @@ public class TesseractOCRParser extends AbstractParser {
           new ImageParser(), new JpegParser(), new TiffParser()
       });
       CompositeImageParser() {
-          super(MediaTypeRegistry.getDefaultRegistry(), imageParsers);
+          super(new MediaTypeRegistry(), imageParsers);
       }
   }
 
