@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.ocr;
 
-import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -137,13 +136,9 @@ public class TesseractOCRParser extends AbstractParser {
             int w = image.getWidth(null);
             int h = image.getHeight(null);
             BufferedImage bImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-            Graphics2D g2 = bImage.createGraphics();
-            g2.drawImage(image, 0, 0, null);
-            g2.dispose();
             File file = tmp.createTemporaryFile();
             fos = new FileOutputStream(file);
             ImageIO.write(bImage, "png", fos);
-            bImage = null;
             tis = TikaInputStream.get(file);
             parse(tis, handler, metadata, context);
 
