@@ -28,6 +28,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,7 @@ public class TesseractOCRParser extends AbstractParser {
               MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"),
               MediaType.image("x-ms-bmp"), MediaType.image("gif")
   })));
+  private static Map<String,Boolean> TESSERACT_PRESENT = new HashMap<String, Boolean>();
 
   @Override
   public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -102,8 +104,19 @@ public class TesseractOCRParser extends AbstractParser {
   }
   
   private boolean hasTesseract(TesseractOCRConfig config) {
-      String[] checkCmd = { config.getTesseractPath() + getTesseractProg() };
-      return ExternalParser.check(checkCmd);
+      // Fetch where the config says to find Tesseract
+      String tesseract = config.getTesseractPath() + getTesseractProg();
+      
+      // Have we already checked for a copy of Tesseract there?
+      if (TESSERACT_PRESENT.containsKey(tesseract)) {
+          return TESSERACT_PRESENT.get(tesseract);
+      }
+      
+      // Try running Tesseract from there, and see if it exists + works
+      String[] checkCmd = { tesseract };
+      boolean hasTesseract = ExternalParser.check(checkCmd);
+      TESSERACT_PRESENT.put(tesseract, hasTesseract);
+      return hasTesseract;
   }
 
   public void parse(Image image, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException,
