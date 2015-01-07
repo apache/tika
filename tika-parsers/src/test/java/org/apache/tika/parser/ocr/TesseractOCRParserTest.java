@@ -25,6 +25,7 @@ import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
@@ -32,7 +33,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.parser.image.ImageParser;
-import org.apache.tika.parser.jpeg.JpegParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -162,6 +162,39 @@ public class TesseractOCRParserTest extends TikaTest {
         } finally {
             stream.close();
         }
+    }
+    
+    @Test
+    public void getNormalMetadataToo() throws Exception {
+        TesseractOCRConfig config = new TesseractOCRConfig();
+        assumeTrue(canRun(config));
 
+        Parser parser = new AutoDetectParser();
+        BodyContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, config);
+        parseContext.set(Parser.class, new TesseractOCRParser());
+
+        InputStream stream = TesseractOCRParserTest.class.getResourceAsStream(
+                "/test-documents/testOCR.jpg");
+
+        try {
+            parser.parse(stream, handler, metadata, parseContext);
+            
+            // OCR text
+            assertContains("Apache", handler.toString());
+            assertContains("OCR Testing", handler.toString());
+
+            // Core JPEG properties from JPEGParser should still come through
+            assertEquals("136", metadata.get(Metadata.IMAGE_WIDTH));
+            assertEquals("66", metadata.get(Metadata.IMAGE_LENGTH));
+            assertEquals("8", metadata.get(Metadata.BITS_PER_SAMPLE));
+            assertEquals(null, metadata.get(Metadata.SAMPLES_PER_PIXEL));
+            assertContains("This is a test Apache Tika imag", metadata.get(Metadata.COMMENTS));
+        } finally {
+            stream.close();
+        }
     }
 }

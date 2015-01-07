@@ -192,6 +192,7 @@ public class TesseractOCRParser extends AbstractParser {
   // TIKA-1445 workaround parser
   private static Parser _TMP_IMAGE_METADATA_PARSER = new CompositeImageParser();
   private static class CompositeImageParser extends CompositeParser {
+      private static final long serialVersionUID = -2398203346206381382L;
       private static List<Parser> imageParsers = Arrays.asList(new Parser[]{
           new ImageParser(), new JpegParser(), new TiffParser()
       });
