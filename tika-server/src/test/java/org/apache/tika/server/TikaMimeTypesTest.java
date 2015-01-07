@@ -18,6 +18,7 @@
 package org.apache.tika.server;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.Map;
@@ -106,7 +107,10 @@ public class TikaMimeTypesTest extends CXFTestBase {
        Object[] aliases = (Object[])bmp.get("alias");
        assertEquals(1, aliases.length);
        assertEquals("image/bmp", aliases[0]);
-       assertEquals("org.apache.tika.parser.ocr.TesseractOCRParser", bmp.get("parser"));
+
+       String whichParser = bmp.get("parser").toString();
+       assertTrue("Which parser", whichParser.equals("org.apache.tika.parser.ocr.TesseractOCRParser") ||
+               whichParser.equals("org.apache.tika.parser.image.ImageParser"));
 
        Map<String,Object> ogm = json.get("video/x-ogm");
        assertEquals("video/ogg", ogm.get("supertype"));
