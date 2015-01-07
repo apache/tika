@@ -17,6 +17,7 @@
 package org.apache.tika.parser.ocr;
 
 import static org.apache.tika.parser.ocr.TesseractOCRParser.getTesseractProg;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -24,10 +25,14 @@ import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
+import org.apache.tika.parser.image.ImageParser;
+import org.apache.tika.parser.jpeg.JpegParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
@@ -44,6 +49,38 @@ public class TesseractOCRParserTest extends TikaTest {
         String[] checkCmd = {config.getTesseractPath() + getTesseractProg()};
         // If Tesseract is not on the path, do not run the test.
         return ExternalParser.check(checkCmd);
+    }
+    
+    @Test
+    public void offersNoTypesIfNotFound() throws Exception {
+        TesseractOCRParser parser = new TesseractOCRParser();
+        DefaultParser defaultParser = new DefaultParser();
+        MediaType png = MediaType.image("png");
+        
+        // With an invalid path, will offer no types
+        TesseractOCRConfig invalidConfig = new TesseractOCRConfig();
+        invalidConfig.setTesseractPath("/made/up/path");
+        
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(TesseractOCRConfig.class, invalidConfig);
+
+        // No types offered
+        assertEquals(0, parser.getSupportedTypes(parseContext).size());
+        
+        // And DefaultParser won't use us
+        assertEquals(ImageParser.class, defaultParser.getParsers(parseContext).get(png).getClass());
+        
+        
+        // With a correct path, with offer the usual types
+        TesseractOCRConfig normalConfig = new TesseractOCRConfig();
+        assumeTrue(canRun(normalConfig));
+        parseContext.set(TesseractOCRConfig.class, normalConfig);
+        
+        assertEquals(5, parser.getSupportedTypes(parseContext).size());
+        assertTrue(parser.getSupportedTypes(parseContext).contains(png));
+        
+        // DefaultParser now will
+        assertEquals(TesseractOCRParser.class, defaultParser.getParsers(parseContext).get(png).getClass());
     }
 
     @Test
