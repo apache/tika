@@ -103,19 +103,22 @@
                       <fileset dir="${basedir}">
                         <include name="CHANGES.txt" />
                         <include name="target/*-src.zip*" />
-                        <include name="tika-app/target/*-${project.version}.jar*" />
+                        <include name="tika-app/target/tika-app-${project.version}.jar*" />
+                        <include name="tika-server/target/tika-server-${project.version}.jar*" />
                       </fileset>
                     </copy>
                     <checksum algorithm="MD5" fileext=".md5">
                       <fileset dir="${basedir}/target/${project.version}">
                         <include name="*.zip" />
                         <include name="*.?ar" />
+                        <include name="*.jar" />
                       </fileset>
                     </checksum>
                     <checksum algorithm="SHA1" fileext=".sha">
                       <fileset dir="${basedir}/target/${project.version}">
                         <include name="*.zip" />
                         <include name="*.?ar" />
+                        <include name="*.jar" />
                       </fileset>
                     </checksum>
                     <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA1" property="checksum" />
