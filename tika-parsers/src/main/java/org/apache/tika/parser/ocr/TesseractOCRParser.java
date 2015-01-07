@@ -26,8 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -44,7 +46,9 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.external.ExternalParser;
@@ -177,16 +181,7 @@ public class TesseractOCRParser extends AbstractParser {
       //  composite parsers with strategies (eg Composite, Try In Turn),
       //  always send the image onwards to the regular parser to have
       //  the metadata for them extracted as well
-      String type = metadata.get(Metadata.CONTENT_TYPE);
-      if (_TMP_IMG_PARSER.getSupportedTypes(context).contains(type)) {
-          _TMP_IMG_PARSER.parse(tikaStream, handler, metadata, context);
-      }
-      if (_TMP_JPEG_PARSER.getSupportedTypes(context).contains(type)) {
-          _TMP_JPEG_PARSER.parse(tikaStream, handler, metadata, context);
-      }
-      if (_TMP_TIFF_PARSER.getSupportedTypes(context).contains(type)) {
-          _TMP_TIFF_PARSER.parse(tikaStream, handler, metadata, context);
-      }
+      _TMP_IMAGE_METADATA_PARSER.parse(tikaStream, handler, metadata, context);
     } finally {
       tmp.dispose();
       if (output != null) {
@@ -194,10 +189,16 @@ public class TesseractOCRParser extends AbstractParser {
       }
     }
   }
-  // TIKA-1445 workaround parsers
-  private static Parser _TMP_IMG_PARSER = new ImageParser();
-  private static Parser _TMP_JPEG_PARSER = new JpegParser();
-  private static Parser _TMP_TIFF_PARSER = new TiffParser();
+  // TIKA-1445 workaround parser
+  private static Parser _TMP_IMAGE_METADATA_PARSER = new CompositeImageParser();
+  private static class CompositeImageParser extends CompositeParser {
+      private static List<Parser> imageParsers = Arrays.asList(new Parser[]{
+          new ImageParser(), new JpegParser(), new TiffParser()
+      });
+      CompositeImageParser() {
+          super(MediaTypeRegistry.getDefaultRegistry(), imageParsers);
+      }
+  }
 
   /**
    * Run external tesseract-ocr process.
