@@ -205,6 +205,14 @@
         <role>committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Tyler Palsulich</name>
+      <id>tpalsulich</id>
+      <timezone>-8</timezone>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
   </developers>
   <contributors>
     <contributor>
