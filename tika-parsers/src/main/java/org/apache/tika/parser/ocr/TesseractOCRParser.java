@@ -69,10 +69,9 @@ import org.xml.sax.SAXException;
  * 
  */
 public class TesseractOCRParser extends AbstractParser {
-
-  private static final long serialVersionUID = 1L;
-
+  private static final long serialVersionUID = -8167538283213097265L;
   private static final Set<MediaType> SUPPORTED_TYPES = getTypes();
+  private static final TesseractOCRConfig DEFAULT_CONFIG = new TesseractOCRConfig();
 
   private static Set<MediaType> getTypes() {
     HashSet<MediaType> supportedTypes = new HashSet<MediaType>();
@@ -132,9 +131,7 @@ public class TesseractOCRParser extends AbstractParser {
   public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context)
       throws IOException, SAXException, TikaException {
 
-    TesseractOCRConfig config = context.get(TesseractOCRConfig.class);
-    if (config == null)
-      config = new TesseractOCRConfig();
+    TesseractOCRConfig config = context.get(TesseractOCRConfig.class, DEFAULT_CONFIG);
 
     String[] checkCmd = { config.getTesseractPath() + getTesseractProg() };
     // If Tesseract is not on the path, do not try to run OCR.
