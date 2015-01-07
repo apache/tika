@@ -25,7 +25,6 @@ import java.io.InputStream;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.DefaultParser;
@@ -105,7 +104,7 @@ public class TesseractOCRParserTest extends TikaTest {
 
         try {
             parser.parse(stream, handler, metadata, parseContext);
-            assertTrue(handler.toString().contains("Happy New Year 2003!"));
+            assertContains("Happy New Year 2003!", handler.toString());
         } finally {
             stream.close();
         }
@@ -130,9 +129,9 @@ public class TesseractOCRParserTest extends TikaTest {
         try {
             parser.parse(stream, handler, metadata, parseContext);
 
-            assertTrue(handler.toString().contains("Happy New Year 2003!"));
-            assertTrue(handler.toString().contains("This is some text."));
-            assertTrue(handler.toString().contains("Here is an embedded image:"));
+            assertContains("Happy New Year 2003!", handler.toString());
+            assertContains("This is some text.", handler.toString());
+            assertContains("Here is an embedded image:", handler.toString());
         } finally {
             stream.close();
         }
