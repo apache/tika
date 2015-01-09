@@ -111,14 +111,12 @@
                       <fileset dir="${basedir}/target/${project.version}">
                         <include name="*.zip" />
                         <include name="*.?ar" />
-                        <include name="*.jar" />
                       </fileset>
                     </checksum>
                     <checksum algorithm="SHA1" fileext=".sha">
                       <fileset dir="${basedir}/target/${project.version}">
                         <include name="*.zip" />
                         <include name="*.?ar" />
-                        <include name="*.jar" />
                       </fileset>
                     </checksum>
                     <checksum file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" algorithm="SHA1" property="checksum" />
