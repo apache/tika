@@ -1,4 +1,4 @@
-Release 1.7 - 1/5/2015
+Release 1.7 - 1/9/2015
 
   * Fixed resource leak in OutlookPSTParser that caused TikaException 
     when invoked via AutoDetectParser on Windows (TIKA-1506).
