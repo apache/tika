@@ -46,6 +46,7 @@ org.apache.tika.parser.odf.OpenDocumentParser
 org.apache.tika.parser.pdf.PDFParser
 org.apache.tika.parser.pkg.CompressorParser
 org.apache.tika.parser.pkg.PackageParser
+org.apache.tika.parser.pkg.RarParser
 org.apache.tika.parser.rtf.RTFParser
 org.apache.tika.parser.txt.TXTParser
 org.apache.tika.parser.video.FLVParser

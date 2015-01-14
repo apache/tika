@@ -112,7 +112,7 @@
             </Bundle-Activator>
             <Embed-Dependency>
               tika-parsers;inline=true,
-              commons-compress, xz, commons-codec,
+              commons-compress, xz, commons-codec, junrar,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               xmlbeans,
@@ -171,6 +171,9 @@
               org.apache.commons.httpclient.params;resolution:=optional,
               org.apache.commons.httpclient.protocol;resolution:=optional,
               org.apache.commons.httpclient.util;resolution:=optional,
+              org.apache.commons.vfs2;resolution:=optional,
+              org.apache.commons.vfs2.provider;resolution:=optional,
+              org.apache.commons.vfs2.util;resolution:=optional,
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,

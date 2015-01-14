@@ -212,6 +212,11 @@
       <artifactId>java-libpst</artifactId>
       <version>0.8.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.github.junrar</groupId>
+      <artifactId>junrar</artifactId>
+      <version>0.7</version>
+    </dependency>
 
     <!-- Test dependencies -->
     <dependency>
