@@ -51,11 +51,11 @@ public class iBooksParserTest {
             /* TODO For some reason, the xhtml files in iBooks-style ePub are not parsed properly, and the content comes back empty.git che
             String content = handler.toString();
             System.out.println("content="+content);
-            assertTrue(content.contains("Plus a simple div"));
-            assertTrue(content.contains("First item"));
-            assertTrue(content.contains("The previous headings were subchapters"));
-            assertTrue(content.contains("Table data"));
-            assertTrue(content.contains("Lorem ipsum dolor rutur amet"));
+            assertContains("Plus a simple div", content);
+            assertContains("First item", content);
+            assertContains("The previous headings were subchapters", content);
+            assertContains("Table data", content);
+            assertContains("Lorem ipsum dolor rutur amet", content);
             */
         } finally {
             input.close();

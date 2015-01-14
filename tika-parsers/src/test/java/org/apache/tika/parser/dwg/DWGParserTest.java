@@ -18,7 +18,7 @@ package org.apache.tika.parser.dwg;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
 
 import java.io.InputStream;
 
@@ -133,9 +133,9 @@ public class DWGParserTest {
                   metadata.get(Metadata.SUBJECT));
 
             String content = handler.toString();
-            assertTrue(content.contains("The quick brown fox jumps over the lazy dog"));
-            assertTrue(content.contains("Gym class"));
-            assertTrue(content.contains("www.alfresco.com"));
+            assertContains("The quick brown fox jumps over the lazy dog", content);
+            assertContains("Gym class", content);
+            assertContains("www.alfresco.com", content);
         } finally {
             input.close();
         }
@@ -159,7 +159,7 @@ public class DWGParserTest {
             assertNull(metadata.get(TikaCoreProperties.RELATION));
 
             String content = handler.toString();
-            assertTrue(content.contains(""));
+            assertEquals("", content);
         } finally {
             input.close();
         }
@@ -196,8 +196,8 @@ public class DWGParserTest {
                   metadata.get("MyCustomProperty"));
 
             String content = handler.toString();
-            assertTrue(content.contains("This is a comment"));
-            assertTrue(content.contains("mycompany"));
+            assertContains("This is a comment", content);
+            assertContains("mycompany", content);
         } finally {
             input.close();
         }

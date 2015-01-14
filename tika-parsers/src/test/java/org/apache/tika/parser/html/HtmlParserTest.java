@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.html;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -138,9 +139,9 @@ public class HtmlParserTest {
 
         assertEquals("Tika Developers", metadata.get("Author"));
         assertEquals("5", metadata.get("refresh"));
-        assertTrue(content.contains("ability of Apache Tika"));
-        assertTrue(content.contains("extract content"));
-        assertTrue(content.contains("an XHTML document"));
+        assertContains("ability of Apache Tika", content);
+        assertContains("extract content", content);
+        assertContains("an XHTML document", content);
     }
 
     @Test
@@ -243,8 +244,8 @@ public class HtmlParserTest {
             "<html><body><table><tr><td>a</td><td>b</td></table></body></html>";
         String content = new Tika().parseToString(
                 new ByteArrayInputStream(test.getBytes("UTF-8")));
-        assertTrue(content.contains("a"));
-        assertTrue(content.contains("b"));
+        assertContains("a", content);
+        assertContains("b", content);
         assertFalse(content.contains("ab"));
     }
 
@@ -845,10 +846,10 @@ public class HtmlParserTest {
         assertFalse(content.contains("item_aitem_b"));
 
         // Should contain the two list items with a newline in between.
-        assertTrue(content.contains("item_a\nitem_b"));
+        assertContains("item_a\nitem_b", content);
 
         // Should contain 有什么需要我帮你的 (can i help you) without whitespace
-        assertTrue(content.contains("有什么需要我帮你的"));
+        assertContains("有什么需要我帮你的", content);
     }
 
     /**

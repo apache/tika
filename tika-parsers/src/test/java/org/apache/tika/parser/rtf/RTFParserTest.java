@@ -125,7 +125,7 @@ public class RTFParserTest extends TikaTest {
         File file = getResourceAsFile("/test-documents/testRTFTableCellSeparation.rtf");
         String content = tika.parseToString(file);
         content = content.replaceAll("\\s+"," ");
-        assertTrue(content.contains("a b c d \u00E4 \u00EB \u00F6 \u00FC"));
+        assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
     }
     

@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.mp4;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
@@ -67,12 +67,12 @@ public class MP4ParserTest {
 
         // Check the textual contents
         String content = handler.toString();
-        assertTrue(content.contains("Test Title"));
-        assertTrue(content.contains("Test Artist"));
-        assertTrue(content.contains("Test Album"));
-        assertTrue(content.contains("2008"));
-        assertTrue(content.contains("Test Comment"));
-        assertTrue(content.contains("Test Genre"));
+        assertContains("Test Title", content);
+        assertContains("Test Artist", content);
+        assertContains("Test Album", content);
+        assertContains("2008", content);
+        assertContains("Test Comment", content);
+        assertContains("Test Genre", content);
         
         // Check XMPDM-typed audio properties
         assertEquals("Test Album", metadata.get(XMPDM.ALBUM));

@@ -50,8 +50,8 @@ public class PowerPointParserTest extends TikaTest {
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
             String content = handler.toString();
-            assertTrue(content.contains("Sample Powerpoint Slide"));
-            assertTrue(content.contains("Powerpoint X for Mac"));
+            assertContains("Sample Powerpoint Slide", content);
+            assertContains("Powerpoint X for Mac", content);
         } finally {
             input.close();
         }

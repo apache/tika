@@ -53,7 +53,7 @@ public class WordParserTest extends TikaTest {
             assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
-            assertTrue(handler.toString().contains("Sample Word Document"));
+            assertContains("Sample Word Document", handler.toString());
         } finally {
             input.close();
         }
@@ -68,7 +68,7 @@ public class WordParserTest extends TikaTest {
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
-            assertTrue(handler.toString().contains("MSj00974840000[1].wav"));
+            assertContains("MSj00974840000[1].wav", handler.toString());
         } finally {
             input.close();
         }
@@ -192,7 +192,7 @@ public class WordParserTest extends TikaTest {
             assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(Metadata.SUBJECT));
             assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
-            assertTrue(handler.toString().contains("The quick brown fox jumps over the lazy dog"));
+            assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
         } finally {
             input.close();
         }

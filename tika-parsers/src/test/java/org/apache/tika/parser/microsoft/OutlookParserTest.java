@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -80,11 +81,10 @@ public class OutlookParserTest {
                 metadata.get(TikaCoreProperties.CREATED));
 
         String content = handler.toString();
-        assertTrue(content.contains(""));
-        assertTrue(content.contains("Microsoft Outlook Express 6"));
-        assertTrue(content.contains("L'\u00C9quipe Microsoft Outlook Express"));
-        assertTrue(content.contains("Nouvel utilisateur de Outlook Express"));
-        assertTrue(content.contains("Messagerie et groupes de discussion"));
+        assertContains("Microsoft Outlook Express 6", content);
+        assertContains("L'\u00C9quipe Microsoft Outlook Express", content);
+        assertContains("Nouvel utilisateur de Outlook Express", content);
+        assertContains("Messagerie et groupes de discussion", content);
     }
 
     /**
@@ -144,9 +144,9 @@ public class OutlookParserTest {
                 metadata.get(TikaCoreProperties.TITLE));
 
         String content = handler.toString();
-        assertTrue(content.contains("Outlook 2003"));
-        assertTrue(content.contains("Streamlined Mail Experience"));
-        assertTrue(content.contains("Navigation Pane"));
+        assertContains("Outlook 2003", content);
+        assertContains("Streamlined Mail Experience", content);
+        assertContains("Navigation Pane", content);
     }
      
     @Test
@@ -174,10 +174,10 @@ public class OutlookParserTest {
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString();
-        assertTrue(content.contains("<dd>tests.chang@fengttt.com</dd>"));
-        assertTrue(content.contains("<p>Alfresco MSG format testing"));
-        assertTrue(content.contains("<li>1"));
-        assertTrue(content.contains("<li>2"));
+        assertContains("<dd>tests.chang@fengttt.com</dd>", content);
+        assertContains("<p>Alfresco MSG format testing", content);
+        assertContains("<li>1", content);
+        assertContains("<li>2", content);
         
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
@@ -237,15 +237,15 @@ public class OutlookParserTest {
         // As the HTML version should have been processed, ensure
         //  we got some of the links
         String content = sw.toString().replaceAll("<p>\\s+","<p>");
-        assertTrue(content.contains("<dd>New Outlook User</dd>"));
-        assertTrue(content.contains("designed <i>to help you"));
-        assertTrue(content.contains("<p><a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>"));
+        assertContains("<dd>New Outlook User</dd>", content);
+        assertContains("designed <i>to help you", content);
+        assertContains("<p><a href=\"http://r.office.microsoft.com/r/rlidOutlookWelcomeMail10?clid=1033\">Cached Exchange Mode</a>", content);
         
         // Link - check text around it, and the link itself
-        assertTrue(content.contains("sign up for a free subscription"));
-        assertTrue(content.contains("Office Newsletter"));
-        assertTrue(content.contains("newsletter will be sent to you"));
-        assertTrue(content.contains("http://r.office.microsoft.com/r/rlidNewsletterSignUp?clid=1033"));
+        assertContains("sign up for a free subscription", content);
+        assertContains("Office Newsletter", content);
+        assertContains("newsletter will be sent to you", content);
+        assertContains("http://r.office.microsoft.com/r/rlidNewsletterSignUp?clid=1033", content);
         
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);

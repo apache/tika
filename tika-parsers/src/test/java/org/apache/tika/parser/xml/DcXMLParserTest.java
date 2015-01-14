@@ -76,7 +76,7 @@ public class DcXMLParserTest extends TikaTest {
             assertTrue(metadata.get(TikaCoreProperties.RIGHTS).contains("testing chars"));
 
             String content = handler.toString();
-            assertTrue(content.contains("Tika test document"));
+            assertContains("Tika test document", content);
             
             assertEquals("2000-12-01T00:00:00.000Z", metadata.get(TikaCoreProperties.CREATED));
         } finally {

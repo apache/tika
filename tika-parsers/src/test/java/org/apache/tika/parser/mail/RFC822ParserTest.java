@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.mail;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -147,7 +148,7 @@ public class RFC822ParserTest {
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
             //tests correct decoding of base64 text, including ISO-8859-1 bytes into Unicode
-            assertTrue(handler.toString().contains("Here is some text, with international characters, voil\u00E0!"));
+            assertContains("Here is some text, with international characters, voil\u00E0!", handler.toString());
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -251,7 +252,7 @@ public class RFC822ParserTest {
        assertEquals("def", metadata.getValues(Metadata.MESSAGE_TO)[1]);
        assertEquals("abcd", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("abcd", metadata.get(Metadata.SUBJECT));
-       assertTrue(handler.toString().contains("bar biz bat"));
+       assertContains("bar biz bat", handler.toString());
     }
 
     private static InputStream getStream(String name) {

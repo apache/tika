@@ -16,19 +16,20 @@
  */
 package org.apache.tika.parser.xml;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+
+import java.io.InputStream;
 
 import org.apache.tika.TikaTest.TrackingHandler;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-
-import java.io.InputStream;
 
 public class FictionBookParserTest {
   
@@ -38,10 +39,10 @@ public class FictionBookParserTest {
         try {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
-            new FictionBookParser().parse(input, handler, metadata);
+            new FictionBookParser().parse(input, handler, metadata, new ParseContext());
             String content = handler.toString();
 
-            assertTrue(content.contains("1812"));
+            assertContains("1812", content);
         } finally {
             input.close();
         }
