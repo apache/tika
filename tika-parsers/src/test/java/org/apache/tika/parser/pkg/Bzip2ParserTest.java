@@ -95,6 +95,7 @@ public class Bzip2ParserTest extends AbstractPkgTest {
        
        assertEquals(null, tracker.filenames.get(0));
        assertEquals(null, tracker.mediatypes.get(0));
+       assertEquals(null, tracker.createdAts.get(0));
        assertEquals(null, tracker.modifiedAts.get(0));
 
        // Tar file starts with the directory name

@@ -28,7 +28,6 @@ import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
@@ -81,28 +80,21 @@ public class RarParser extends AbstractParser {
 
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
-
                 if (!header.isDirectory()) {
-
                     InputStream subFile = null;
                     try {
-
                         subFile = rar.getInputStream(header);
 
-                        Metadata entrydata = new Metadata();
-                        entrydata.set(Metadata.RESOURCE_NAME_KEY, header
-                                .getFileNameString().replace("\\", "/"));
-                        entrydata.set(TikaCoreProperties.CREATED,
-                                header.getCTime());
-                        entrydata.set(TikaCoreProperties.MODIFIED,
-                                header.getMTime());
-                        entrydata.set(Metadata.CONTENT_LENGTH,
-                                Long.toString(header.getFullUnpackSize()));
+                        Metadata entrydata = PackageParser.handleEntryMetadata(
+                                header.getFileNameString(),
+                                header.getCTime(), header.getMTime(),
+                                header.getFullUnpackSize(),
+                                xhtml
+                        );
 
-                        if (extractor.shouldParseEmbedded(entrydata))
-                            extractor.parseEmbedded(subFile, handler,
-                                    entrydata, true);
-
+                        if (extractor.shouldParseEmbedded(entrydata)) {
+                            extractor.parseEmbedded(subFile, handler, entrydata, true);
+                        }
                     } finally {
                         if (subFile != null)
                             subFile.close();
