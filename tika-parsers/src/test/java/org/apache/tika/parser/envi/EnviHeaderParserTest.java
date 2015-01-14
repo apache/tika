@@ -17,51 +17,47 @@
 
 package org.apache.tika.parser.envi;
 
-//Junit imports
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
-import org.apache.tika.sax.ToXMLContentHandler;
-import org.junit.Test;
+import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.junit.Test;
 
-import java.io.InputStream;
-
-/*
+/**
  * Test cases to exercise the {@link EnviHeaderParser}.
- * 
  */
 public class EnviHeaderParserTest {
-	@Test
-	public void testParseGlobalMetadata() throws Exception {
-		if (System.getProperty("java.version").startsWith("1.5")) {
-			return;
-		}
+    @Test
+    public void testParseGlobalMetadata() throws Exception {
+        if (System.getProperty("java.version").startsWith("1.5")) {
+            return;
+        }
 
-		Parser parser = new EnviHeaderParser();
-		ToXMLContentHandler handler = new ToXMLContentHandler();
-		Metadata metadata = new Metadata();
+        Parser parser = new EnviHeaderParser();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        Metadata metadata = new Metadata();
 
-		InputStream stream = EnviHeaderParser.class
-				.getResourceAsStream("/test-documents/envi_test_header.hdr");
-		assertNotNull("Test ENVI file not found", stream);
-		try {
-			parser.parse(stream, handler, metadata, new ParseContext());
-		} finally {
-			stream.close();
-		}
+        InputStream stream = EnviHeaderParser.class
+                .getResourceAsStream("/test-documents/envi_test_header.hdr");
+        assertNotNull("Test ENVI file not found", stream);
+        try {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
 
-		// Check content of test file
-		String content = handler.toString();
-        assertTrue(content.contains("<body><p>ENVI</p>"));
-		assertTrue(content.contains("<p>samples = 2400</p>"));
-		assertTrue(content.contains("<p>lines   = 2400</p>"));
-		assertTrue(content.contains("<p>map info = {Sinusoidal, 1.5000, 1.5000, -10007091.3643, 5559289.2856, 4.6331271653e+02, 4.6331271653e+02, , units=Meters}</p>"));
-		assertTrue(content.contains("content=\"application/envi.hdr\""));
-		assertTrue(content
-				.contains("projection info = {16, 6371007.2, 0.000000, 0.0, 0.0, Sinusoidal, units=Meters}"));
-	}
+        // Check content of test file
+        String content = handler.toString();
+        assertContains("<body><p>ENVI</p>", content);
+        assertContains("<p>samples = 2400</p>", content);
+        assertContains("<p>lines   = 2400</p>", content);
+        assertContains("<p>map info = {Sinusoidal, 1.5000, 1.5000, -10007091.3643, 5559289.2856, 4.6331271653e+02, 4.6331271653e+02, , units=Meters}</p>", content);
+        assertContains("content=\"application/envi.hdr\"", content);
+        assertContains("projection info = {16, 6371007.2, 0.000000, 0.0, 0.0, Sinusoidal, units=Meters}", content);
+    }
 }
