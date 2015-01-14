@@ -109,6 +109,9 @@ public class TarParserTest extends AbstractPkgTest {
        for(String type : tracker.mediatypes) {
           assertNull(type);
        }
+       for(String crt : tracker.createdAts) {
+           assertNull(crt);
+       }
        for(String mod : tracker.modifiedAts) {
            assertNotNull(mod);
            assertTrue("Modified at " + mod, mod.startsWith("20"));

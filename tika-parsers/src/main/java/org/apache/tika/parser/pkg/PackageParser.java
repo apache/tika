@@ -19,6 +19,7 @@ package org.apache.tika.parser.pkg;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.Set;
 
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -175,20 +176,10 @@ public class PackageParser extends AbstractParser {
         String name = entry.getName();
         if (archive.canReadEntryData(entry)) {
             // Fetch the metadata on the entry contained in the archive
-            Metadata entrydata = new Metadata();
-            entrydata.set(TikaCoreProperties.MODIFIED, entry.getLastModifiedDate());
-            entrydata.set(Metadata.CONTENT_LENGTH, Long.toString(entry.getSize()));
-            if (name != null && name.length() > 0) {
-                entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
-                AttributesImpl attributes = new AttributesImpl();
-                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-                attributes.addAttribute("", "id", "id", "CDATA", name);
-                xhtml.startElement("div", attributes);
-                xhtml.endElement("div");
-
-                entrydata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, name);
-            }
+            Metadata entrydata = handleEntryMetadata(name, null, 
+                    entry.getLastModifiedDate(), entry.getSize(), xhtml);
             
+            // Recurse into the entry if desired
             if (extractor.shouldParseEmbedded(entrydata)) {
                 // For detectors to work, we need a mark/reset supporting
                 // InputStream, which ArchiveInputStream isn't, so wrap
@@ -203,6 +194,34 @@ public class PackageParser extends AbstractParser {
         } else if (name != null && name.length() > 0) {
             xhtml.element("p", name);
         }
+    }
+    
+    protected static Metadata handleEntryMetadata(
+            String name, Date createAt, Date modifiedAt,
+            Long size, XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
+        Metadata entrydata = new Metadata();
+        if (createAt != null) {
+            entrydata.set(TikaCoreProperties.CREATED, createAt);
+        }
+        if (modifiedAt != null) {
+            entrydata.set(TikaCoreProperties.MODIFIED, modifiedAt);
+        }
+        if (size != null) {
+            entrydata.set(Metadata.CONTENT_LENGTH, Long.toString(size));
+        }
+        if (name != null && name.length() > 0) {
+            name = name.replace("\\", "/");
+            entrydata.set(Metadata.RESOURCE_NAME_KEY, name);
+            AttributesImpl attributes = new AttributesImpl();
+            attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+            attributes.addAttribute("", "id", "id", "CDATA", name);
+            xhtml.startElement("div", attributes);
+            xhtml.endElement("div");
+
+            entrydata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, name);
+        }
+        return entrydata;
     }
 
     // Pending a fix for COMPRESS-269, we have to wrap ourselves

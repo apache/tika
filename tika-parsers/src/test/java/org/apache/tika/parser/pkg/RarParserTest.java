@@ -109,9 +109,24 @@ public class RarParserTest extends AbstractPkgTest {
        for(String type : tracker.mediatypes) {
           assertNull(type);
        }
+       for(String crt : tracker.createdAts) {
+           assertNull(crt);
+       }
        for(String mod : tracker.modifiedAts) {
            assertNotNull(mod);
            assertTrue("Modified at " + mod, mod.startsWith("20"));
        }
+       
+       // Should have filenames in the content string
+       String content = handler.toString();
+       assertContains("test-documents/testHTML.html", content);
+       assertContains("test-documents/testEXCEL.xls", content);
+       assertContains("test-documents/testOpenOffice2.odt", content);
+       assertContains("test-documents/testPDF.pdf", content);
+       assertContains("test-documents/testPPT.ppt", content);
+       assertContains("test-documents/testRTF.rtf", content);
+       assertContains("test-documents/testTXT.txt", content);
+       assertContains("test-documents/testWORD.doc", content);
+       assertContains("test-documents/testXML.xml", content);
     }
 }

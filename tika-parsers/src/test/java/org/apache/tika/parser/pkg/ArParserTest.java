@@ -97,6 +97,9 @@ public class ArParserTest extends AbstractPkgTest {
         for (String type : tracker.mediatypes) {
             assertNull(type);
         }
+        for(String crt : tracker.createdAts) {
+            assertNull(crt);
+        }
 
         tracker.reset();
         stream = ArParserTest.class.getResourceAsStream(
@@ -117,6 +120,9 @@ public class ArParserTest extends AbstractPkgTest {
         
         for (String type : tracker.mediatypes) {
             assertNull(type);
+        }
+        for(String crt : tracker.createdAts) {
+            assertNull(crt);
         }
     }
 }
