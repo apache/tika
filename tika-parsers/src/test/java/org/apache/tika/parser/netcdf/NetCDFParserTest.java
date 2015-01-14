@@ -28,8 +28,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Test cases to exercise the {@link NetCDFParser}.
@@ -61,11 +61,11 @@ public class NetCDFParserTest {
                 "720 ppm stabilization experiment (SRESA1B)");
 
         String content = handler.toString();
-        assertTrue(content.contains("long_name = \"Surface area\""));
-        assertTrue(content.contains("float area(lat=128, lon=256)"));
-        assertTrue(content.contains("float lat(lat=128)"));
-        assertTrue(content.contains("double lat_bnds(lat=128, bnds=2)"));
-        assertTrue(content.contains("double lon_bnds(lon=256, bnds=2)"));
+        assertContains("long_name = \"Surface area\"", content);
+        assertContains("float area(lat=128, lon=256)", content);
+        assertContains("float lat(lat=128)", content);
+        assertContains("double lat_bnds(lat=128, bnds=2)", content);
+        assertContains("double lon_bnds(lon=256, bnds=2)", content);
 
 
     }

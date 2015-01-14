@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
@@ -45,7 +45,7 @@ public class VisioParserTest {
             assertEquals("", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Hogwarts", metadata.get(TikaCoreProperties.CREATOR));
             String content = handler.toString();
-            assertTrue(content.contains("Some random text, on a page"));
+            assertContains("Some random text, on a page", content);
         } finally {
             input.close();
         }

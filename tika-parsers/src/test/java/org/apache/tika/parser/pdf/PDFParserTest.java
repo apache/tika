@@ -84,10 +84,10 @@ public class PDFParserTest extends TikaTest {
 //        assertEquals("Sat Sep 15 10:02:31 BST 2007", metadata.get(Metadata.CREATION_DATE));
 //        assertEquals("Sat Sep 15 10:02:31 BST 2007", metadata.get(Metadata.LAST_MODIFIED));
 
-        assertTrue(content.contains("Apache Tika"));
-        assertTrue(content.contains("Tika - Content Analysis Toolkit"));
-        assertTrue(content.contains("incubator"));
-        assertTrue(content.contains("Apache Software Foundation"));
+        assertContains("Apache Tika", content);
+        assertContains("Tika - Content Analysis Toolkit", content);
+        assertContains("incubator", content);
+        assertContains("Apache Software Foundation", content);
         // testing how the end of one paragraph is separated from start of the next one
         assertTrue("should have word boundary after headline", 
                 !content.contains("ToolkitApache"));
@@ -137,7 +137,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Array Entry 1", metadata.getValues("Custom Array")[0]);
         assertEquals("Array Entry 2", metadata.getValues("Custom Array")[1]);
         
-        assertTrue(content.contains("Hello World!"));
+        assertContains("Hello World!", content);
     }
     
     /**
@@ -169,9 +169,9 @@ public class PDFParserTest extends TikaTest {
        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
        String content = handler.toString();
-       assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
-       assertTrue(content.contains("On 16 November 2002"));
-       assertTrue(content.contains("In many important respects"));
+       assertContains("RETHINKING THE FINANCIAL NETWORK", content);
+       assertContains("On 16 November 2002", content);
+       assertContains("In many important respects", content);
        
        
        // Try again with an explicit empty password
@@ -200,9 +200,9 @@ public class PDFParserTest extends TikaTest {
        assertEquals("Speeches by Andrew G Haldane", metadata.get(Metadata.SUBJECT));
        assertEquals("Rethinking the Financial Network, Speech by Andrew G Haldane, Executive Director, Financial Stability delivered at the Financial Student Association, Amsterdam on 28 April 2009", metadata.get(TikaCoreProperties.TITLE));
 
-       assertTrue(content.contains("RETHINKING THE FINANCIAL NETWORK"));
-       assertTrue(content.contains("On 16 November 2002"));
-       assertTrue(content.contains("In many important respects"));
+       assertContains("RETHINKING THE FINANCIAL NETWORK", content);
+       assertContains("On 16 November 2002", content);
+       assertContains("In many important respects", content);
     }
 
     @Test
@@ -212,7 +212,7 @@ public class PDFParserTest extends TikaTest {
                 "/test-documents/testPDFTwoTextBoxes.pdf");
         String content = getText(stream, parser);
         content = content.replaceAll("\\s+"," ");
-        assertTrue(content.contains("Left column line 1 Left column line 2 Right column line 1 Right column line 2"));
+        assertContains("Left column line 1 Left column line 2 Right column line 1 Right column line 2", content);
     }
 
     @Test

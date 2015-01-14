@@ -62,11 +62,11 @@ public class ODFParserTest extends TikaTest {
                    metadata.get(Metadata.CONTENT_TYPE));
 
              String content = handler.toString();
-             assertTrue(content.contains("Tika is part of the Lucene project."));
-             assertTrue(content.contains("Solr"));
-             assertTrue(content.contains("one embedded"));
-             assertTrue(content.contains("Rectangle Title"));
-             assertTrue(content.contains("a blue background and dark border"));        
+             assertContains("Tika is part of the Lucene project.", content);
+             assertContains("Solr", content);
+             assertContains("one embedded", content);
+             assertContains("Rectangle Title", content);
+             assertContains("a blue background and dark border", content);        
           } finally {
              input.close();
           }
@@ -346,7 +346,7 @@ public class ODFParserTest extends TikaTest {
                    metadata.get(Metadata.CONTENT_TYPE));
 
            String content = handler.toString();
-           assertTrue(content.contains("Tika is part of the Lucene project."));
+           assertContains("Tika is part of the Lucene project.", content);
        } finally {
            tis.close();
        }
@@ -368,7 +368,7 @@ public class ODFParserTest extends TikaTest {
                   metadata.get(Metadata.CONTENT_TYPE));
 
           String content = handler.toString();
-          assertTrue(content.contains("primero hay que generar un par de claves"));
+          assertContains("primero hay que generar un par de claves", content);
         } finally {
           tis.close();
         }

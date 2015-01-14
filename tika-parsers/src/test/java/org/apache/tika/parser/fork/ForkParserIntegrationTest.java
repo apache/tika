@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.fork;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -66,8 +66,8 @@ public class ForkParserIntegrationTest {
           parser.parse(stream, output, new Metadata(), context);
 
           String content = output.toString();
-          assertTrue(content.contains("Test d'indexation"));
-          assertTrue(content.contains("http://www.apache.org"));
+          assertContains("Test d'indexation", content);
+          assertContains("http://www.apache.org", content);
        } finally {
           parser.close();
        }
@@ -233,8 +233,8 @@ public class ForkParserIntegrationTest {
                     "/test-documents/testTXT.txt");
             parser.parse(stream, body, new Metadata(), context);
             String content = body.toString();
-            assertTrue(content.contains("Test d'indexation"));
-            assertTrue(content.contains("http://www.apache.org"));
+            assertContains("Test d'indexation", content);
+            assertContains("http://www.apache.org", content);
         } finally {
             parser.close();
         }
@@ -257,10 +257,10 @@ public class ForkParserIntegrationTest {
             parser.parse(stream, output, new Metadata(), context);
 
             String content = output.toString();
-            assertTrue(content.contains("Apache Tika"));
-            assertTrue(content.contains("Tika - Content Analysis Toolkit"));
-            assertTrue(content.contains("incubator"));
-            assertTrue(content.contains("Apache Software Foundation"));
+            assertContains("Apache Tika", content);
+            assertContains("Tika - Content Analysis Toolkit", content);
+            assertContains("incubator", content);
+            assertContains("Apache Software Foundation", content);
         } finally {
             parser.close();
         }

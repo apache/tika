@@ -17,7 +17,7 @@
 package org.apache.tika.parser.font;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
 
 import java.util.TimeZone;
 
@@ -73,9 +73,9 @@ public class FontParsersTest {
         String content = handler.toString();
 
         // Test that the comments got extracted
-        assertTrue(content.contains("Comments"));
-        assertTrue(content.contains("This is a comment in a sample file"));
-        assertTrue(content.contains("UniqueID 12345"));
+        assertContains("Comments", content);
+        assertContains("This is a comment in a sample file", content);
+        assertContains("UniqueID 12345", content);
     }
     
     @Test

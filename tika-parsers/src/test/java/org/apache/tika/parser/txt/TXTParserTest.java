@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.txt;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
@@ -59,10 +59,10 @@ public class TXTParserTest {
         assertNull(metadata.get(Metadata.CONTENT_LANGUAGE));
         assertNull(metadata.get(TikaCoreProperties.LANGUAGE));
 
-        assertTrue(content.contains("Hello"));
-        assertTrue(content.contains("World"));
-        assertTrue(content.contains("autodetection"));
-        assertTrue(content.contains("stream"));
+        assertContains("Hello", content);
+        assertContains("World", content);
+        assertContains("autodetection", content);
+        assertContains("stream", content);
     }
     
     @Test
@@ -77,7 +77,7 @@ public class TXTParserTest {
         assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 
-        assertTrue(handler.toString().contains(text));
+        assertContains(text, handler.toString());
     }
 
     @Test

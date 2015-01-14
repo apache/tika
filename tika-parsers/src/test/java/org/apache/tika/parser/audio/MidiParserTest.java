@@ -17,7 +17,7 @@
 package org.apache.tika.parser.audio;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
 
 import org.apache.tika.Tika;
 import org.apache.tika.metadata.Metadata;
@@ -37,6 +37,6 @@ public class MidiParserTest {
         assertEquals("0", metadata.get("patches"));
         assertEquals("PPQ", metadata.get("divisionType"));
 
-        assertTrue(content.contains("Untitled"));
+        assertContains("Untitled", content);
     }
 }

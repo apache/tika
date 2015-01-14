@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.mp3;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream; 
+import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -70,12 +70,12 @@ public class Mp3ParserTest {
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
-        assertTrue(content.contains("Test Title"));
-        assertTrue(content.contains("Test Artist"));
-        assertTrue(content.contains("Test Album"));
-        assertTrue(content.contains("2008"));
-        assertTrue(content.contains("Test Comment"));
-        assertTrue(content.contains("Rock"));
+        assertContains("Test Title", content);
+        assertContains("Test Artist", content);
+        assertContains("Test Album", content);
+        assertContains("2008", content);
+        assertContains("Test Comment", content);
+        assertContains("Rock", content);
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -109,14 +109,14 @@ public class Mp3ParserTest {
 
         // Check the textual contents
         String content = handler.toString();
-        assertTrue(content.contains("Test Title"));
-        assertTrue(content.contains("Test Artist"));
-        assertTrue(content.contains("Test Album"));
-        assertTrue(content.contains("2008"));
-        assertTrue(content.contains("Test Comment"));
-        assertTrue(content.contains("Rock"));
-        assertTrue(content.contains(", track 1"));
-        assertTrue(content.contains(", disc 1"));
+        assertContains("Test Title", content);
+        assertContains("Test Artist", content);
+        assertContains("Test Album", content);
+        assertContains("2008", content);
+        assertContains("Test Comment", content);
+        assertContains("Rock", content);
+        assertContains(", track 1", content);
+        assertContains(", disc 1", content);
         
         // Check un-typed audio properties
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
@@ -165,12 +165,12 @@ public class Mp3ParserTest {
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
-        assertTrue(content.contains("Test Title"));
-        assertTrue(content.contains("Test Artist"));
-        assertTrue(content.contains("Test Album"));
-        assertTrue(content.contains("2008"));
-        assertTrue(content.contains("Test Comment"));
-        assertTrue(content.contains("Rock"));
+        assertContains("Test Title", content);
+        assertContains("Test Artist", content);
+        assertContains("Test Album", content);
+        assertContains("2008", content);
+        assertContains("Test Comment", content);
+        assertContains("Rock", content);
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -202,13 +202,13 @@ public class Mp3ParserTest {
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
-        assertTrue(content.contains("Test Title"));
-        assertTrue(content.contains("Test Artist"));
-        assertTrue(content.contains("Test Album"));
-        assertTrue(content.contains("2008"));
-        assertTrue(content.contains("Test Comment"));
-        assertTrue(content.contains("Rock"));
-        assertTrue(content.contains(", disc 1"));
+        assertContains("Test Title", content);
+        assertContains("Test Artist", content);
+        assertContains("Test Album", content);
+        assertContains("2008", content);
+        assertContains("Test Comment", content);
+        assertContains("Rock", content);
+        assertContains(", disc 1", content);
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -293,12 +293,12 @@ public class Mp3ParserTest {
         assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
 
         String content = handler.toString();
-        assertTrue(content.contains("Test Title"));
-        assertTrue(content.contains("Test Artist"));
-        assertTrue(content.contains("Test Album"));
-        assertTrue(content.contains("2008"));
-        assertTrue(content.contains("Test Comment"));
-        assertTrue(content.contains("Rock"));
+        assertContains("Test Title", content);
+        assertContains("Test Artist", content);
+        assertContains("Test Album", content);
+        assertContains("2008", content);
+        assertContains("Test Comment", content);
+        assertContains("Rock", content);
         
         assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
         assertEquals("44100", metadata.get("samplerate"));
@@ -362,7 +362,7 @@ public class Mp3ParserTest {
        assertEquals("Merzhin", metadata.get(Metadata.AUTHOR));
 
        String content = handler.toString();
-       assertTrue(content.contains("Plus loin vers l'ouest"));
+       assertContains("Plus loin vers l'ouest", content);
        
        assertEquals("MPEG 3 Layer III Version 1", metadata.get("version"));
        assertEquals("44100", metadata.get("samplerate"));
@@ -399,10 +399,10 @@ public class Mp3ParserTest {
        assertEquals("The White Stripes", metadata.get(Metadata.AUTHOR));
 
        String content = handler.toString();
-       assertTrue(content.contains("Girl you have no faith in medicine"));
-       assertTrue(content.contains("The White Stripes"));
-       assertTrue(content.contains("Elephant"));
-       assertTrue(content.contains("2003"));
+       assertContains("Girl you have no faith in medicine", content);
+       assertContains("The White Stripes", content);
+       assertContains("Elephant", content);
+       assertContains("2003", content);
        
        // File lacks any audio frames, so we can't know these
        assertEquals(null, metadata.get("version"));

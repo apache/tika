@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
@@ -46,8 +46,8 @@ public class PublisherParserTest {
             assertEquals("Nick Burch", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Nick Burch", metadata.get(Metadata.AUTHOR));
             String content = handler.toString();
-            assertTrue(content.contains("0123456789"));
-            assertTrue(content.contains("abcdef"));
+            assertContains("0123456789", content);
+            assertContains("abcdef", content);
         } finally {
             input.close();
         }

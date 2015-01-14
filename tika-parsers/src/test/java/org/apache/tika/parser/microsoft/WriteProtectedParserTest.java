@@ -16,15 +16,15 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
+
+import java.io.InputStream;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-
-import java.io.InputStream;
 
 public class WriteProtectedParserTest {
   
@@ -37,6 +37,6 @@ public class WriteProtectedParserTest {
         ContentHandler handler = new BodyContentHandler();
         new OfficeParser().parse(input, handler, metadata, new ParseContext());
         String content = handler.toString();
-        assertTrue(content.contains("Office"));
+        assertContains("Office", content);
     }
 }
