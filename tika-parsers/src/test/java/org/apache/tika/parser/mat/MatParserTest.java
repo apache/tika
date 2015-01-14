@@ -16,13 +16,11 @@
  */
 package org.apache.tika.parser.mat;
 
-//JDK imports
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 
-//TIKA imports
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -32,13 +30,10 @@ import org.junit.Test;
 
 /**
  * Test cases to exercise the {@link MatParser}.
- *
  */
 public class MatParserTest {
-
     @Test
     public void testParser() throws Exception {
-
         AutoDetectParser parser = new AutoDetectParser();
         ToXMLContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
@@ -52,28 +47,27 @@ public class MatParserTest {
             stream.close();
         }
 
-        //Check Metadata
+        // Check Metadata
         assertEquals("PCWIN64", metadata.get("platform"));
         assertEquals("MATLAB 5.0 MAT-file", metadata.get("fileType"));
         assertEquals("IM", metadata.get("endian"));
         assertEquals("Thu Feb 21 15:52:49 2013", metadata.get("createdOn"));
 
-        //Check Content
+        // Check Content
         String content = handler.toString();
 
-        assertTrue(content.contains("<li>[1x909  double array]</li>"));
-        assertTrue(content.contains("<p>c1:[1x1  struct array]</p>"));
-        assertTrue(content.contains("<li>[1024x1  double array]</li>"));
-        assertTrue(content.contains("<p>b1:[1x1  struct array]</p>"));
-        assertTrue(content.contains("<p>a1:[1x1  struct array]</p>"));
-        assertTrue(content.contains("<li>[1024x1261  double array]</li>"));
-        assertTrue(content.contains("<li>[1x1  double array]</li>"));
-        assertTrue(content.contains("</body></html>"));
+        assertContains("<li>[1x909  double array]</li>", content);
+        assertContains("<p>c1:[1x1  struct array]</p>", content);
+        assertContains("<li>[1024x1  double array]</li>", content);
+        assertContains("<p>b1:[1x1  struct array]</p>", content);
+        assertContains("<p>a1:[1x1  struct array]</p>", content);
+        assertContains("<li>[1024x1261  double array]</li>", content);
+        assertContains("<li>[1x1  double array]</li>", content);
+        assertContains("</body></html>", content);
     }
 
     @Test
     public void testParserForText() throws Exception {
-
         Parser parser = new MatParser();
         ToXMLContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
@@ -87,9 +81,8 @@ public class MatParserTest {
             stream.close();
         }
 
-        //Check Content
+        // Check Content
         String content = handler.toString();
-        assertTrue(content.contains("<p>double:[2x2  double array]</p>"));
+        assertContains("<p>double:[2x2  double array]</p>", content);
     }
-
 }
