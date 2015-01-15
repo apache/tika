@@ -1,3 +1,5 @@
+Release 1.8 - Current Development
+
 Release 1.7 - 1/9/2015
 
   * Fixed resource leak in OutlookPSTParser that caused TikaException 
