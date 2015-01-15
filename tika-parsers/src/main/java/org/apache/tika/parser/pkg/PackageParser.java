@@ -33,7 +33,10 @@ import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
 import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
+import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
@@ -161,6 +164,12 @@ public class PackageParser extends AbstractParser {
                 }
                 entry = ais.getNextEntry();
             }
+        } catch (UnsupportedZipFeatureException zfe) {
+            // If it's an encrypted document of unknown password, report as such
+            if (zfe.getFeature() == Feature.ENCRYPTION) {
+                throw new EncryptedDocumentException(zfe);
+            }
+            // Otherwise fall through to raise the exception as normal
         } finally {
             ais.close();
             tmp.close();
