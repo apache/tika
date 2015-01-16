@@ -20,6 +20,7 @@ import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -254,10 +255,39 @@ public class RFC822ParserTest {
        assertEquals("abcd", metadata.get(Metadata.SUBJECT));
        assertContains("bar biz bat", handler.toString());
     }
-
-    private static InputStream getStream(String name) {
-        return Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(name);
+    
+    /**
+     * Test TIKA-1028 - If the mail contains an encrypted attachment (or
+     *  an attachment that others triggers an error), parsing should carry
+     *  on for the remainder regardless
+     */
+    @Test
+    public void testEncryptedZipAttachment() throws Exception {
+        Parser parser = new RFC822Parser();
+        Metadata metadata = new Metadata();
+        InputStream stream = getStream("test-documents/testRFC822_encrypted_zip");
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(stream, handler, metadata, new ParseContext());
+        
+        // Check we go the metadata
+        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Testing indexing of encrypted files containing useful information", metadata.get(TikaCoreProperties.TITLE));
+        
+        // Check we got the message text
+        assertContains("Please take a look at the file", handler.toString());
+        
+        // But not the contents of the zip file
+        // TODO
+        
+        // Try again, this time with the password supplied
+        // Check that we also get the zip's contents as well
+        // TODO
     }
 
+    private static InputStream getStream(String name) {
+        InputStream stream = Thread.currentThread().getContextClassLoader()
+                                    .getResourceAsStream(name);
+        assertNotNull("Test file not found " + name, stream);
+        return stream;
+    }
 }
