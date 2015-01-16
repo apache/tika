@@ -16,11 +16,10 @@
  */
 package org.apache.tika.parser.mail;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -33,9 +32,14 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import org.apache.james.mime4j.stream.MimeConfig;
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ocr.TesseractOCRParserTest;
@@ -46,7 +50,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class RFC822ParserTest {
+public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testSimple() {
@@ -290,7 +294,30 @@ public class RFC822ParserTest {
      */
     @Test
     public void testGetAttachmentsAsEmbeddedResources() throws Exception {
-        // TODO
+        TrackingHandler tracker = new TrackingHandler();
+        TikaInputStream tis = null;
+        ContainerExtractor ex = new ParserContainerExtractor();
+        try {
+            tis = TikaInputStream.get(getStream("test-documents/testRFC822-multipart"));
+            assertEquals(true, ex.isSupported(tis));
+            ex.extract(tis, ex, tracker);
+        } finally {
+            if (tis != null)
+                tis.close();
+        }
+        
+        // Check we found all 3 parts
+        assertEquals(3, tracker.filenames.size());
+        assertEquals(3, tracker.mediaTypes.size());
+        
+        // No filenames available
+        assertEquals(null, tracker.filenames.get(0));
+        assertEquals(null, tracker.filenames.get(1));
+        assertEquals(null, tracker.filenames.get(2));
+        // Types are available
+        assertEquals(MediaType.TEXT_PLAIN, tracker.mediaTypes.get(0));
+        assertEquals(MediaType.TEXT_HTML, tracker.mediaTypes.get(1));
+        assertEquals(MediaType.image("gif"), tracker.mediaTypes.get(2));
     }
 
     private static InputStream getStream(String name) {
