@@ -36,16 +36,13 @@ import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -81,10 +78,10 @@ class MailContentHandler implements ContentHandler {
         // If there's no EmbeddedDocumentExtractor, then try using a normal parser
         // This will ensure that the contents are made available to the user, so
         //  the see the text, but without fine-grained control/extraction
-        Parser parser = null;
+        // (This also maintains backward compatibility with older versions!)
         if (ex == null) {
             // If the user gave a parser, use that, if not the default
-            parser = context.get(AutoDetectParser.class);
+            Parser parser = context.get(AutoDetectParser.class);
             if (parser == null) {
                parser = context.get(Parser.class);
             }
@@ -97,6 +94,9 @@ class MailContentHandler implements ContentHandler {
                }
                parser = tikaConfig.getParser();
             }
+            ParseContext ctx = new ParseContext();
+            ctx.set(Parser.class, parser);
+            ex = new ParsingEmbeddedDocumentExtractor(ctx);
         }
 
         // use a different metadata object
@@ -108,18 +108,10 @@ class MailContentHandler implements ContentHandler {
         submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
 
         try {
-            BodyContentHandler bch = new BodyContentHandler(handler);
-            if (ex != null) {
-                if (ex.shouldParseEmbedded(submd))
-                    ex.parseEmbedded(is, bch, submd, false);
-            } else {
-                parser.parse(is, new EmbeddedContentHandler(bch), submd, context);
+            if (ex.shouldParseEmbedded(submd)) {
+                ex.parseEmbedded(is, handler, submd, false);
             }
-        } catch (EncryptedDocumentException ede) {
-            // Skip this encrypted attachment and continue
         } catch (SAXException e) {
-            throw new MimeException(e);
-        } catch (TikaException e) {
             throw new MimeException(e);
         }
     }
