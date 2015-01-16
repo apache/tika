@@ -1,0 +1,64 @@
+From juha.haaga@gmail.com Wed Dec 12 17:52:44 2012
+Return-Path: <juha.haaga@gmail.com>
+X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on
+        gw2.clarifiednetworks.com
+X-Spam-Level:
+X-Spam-Status: No, score=-2.6 required=5.0 tests=BAYES_00,FREEMAIL_FROM,
+        HTML_MESSAGE,RCVD_IN_DNSWL_LOW,T_DKIM_INVALID,T_TO_NO_BRKTS_FREEMAIL
+        autolearn=ham version=3.3.1
+Received: from mail-lb0-f177.google.com (mail-lb0-f177.google.com [209.85.217.177])
+        by clarifiednetworks.com (8.13.8/8.13.8) with ESMTP id qBCFqieF011576
+        (version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=OK)
+        for <juha.haaga@clarifiednetworks.com>; Wed, 12 Dec 2012 15:52:44 GMT
+Received: by mail-lb0-f177.google.com with SMTP id n10so783117lbo.36
+        for <juha.haaga@clarifiednetworks.com>; Wed, 12 Dec 2012 07:52:43 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:date:message-id:subject:from:to:content-type;
+        bh=HRAnFyISE4I0zQxPxpzmCmZMDqa4ZgR0JQZB92XgUF8=;
+        b=GXYLUzh/oD39x+kg5hlzV4SHv8MNKxElHhK+TsaJx6XQ1y+RDQd7tZmT9Ysx/8IzEv
+         AGy8jOw0Y0/iay6lbLXvMzIoLhjNkXK5H0ecNAWLAbru7SjExL0Z/fOIlIUDk+d4KMpR
+         NrVkEFsKbtDuhUbIzJaoubJ7EP5r3ONOj0Y6PHe/70SCkUsxcBIP62nE+Tyy/Q79JcMC
+         CGE2LMShIKZwS24iIDmdpQMca77BSjiMASlhHvtPcoO2rn9Ep8fQ9zkvMGbUJVRtMcwu
+         iO8DVcsZlIhu2cv4tFHtIue06RnIzXTVsPb90XuN7BOYsNeEmsy//nj6HRtVQkxzA+P0
+         9mtQ==
+MIME-Version: 1.0
+Received: by 10.112.9.74 with SMTP id x10mr638494lba.59.1355327563697; Wed, 12
+ Dec 2012 07:52:43 -0800 (PST)
+Received: by 10.112.142.162 with HTTP; Wed, 12 Dec 2012 07:52:43 -0800 (PST)
+Date: Wed, 12 Dec 2012 17:52:43 +0200
+Message-ID: <CAO2PydudpVpXHESE4pT7nFJtYnEpKA-S+sArMZ5t7=JNfQfHPA@mail.gmail.com>
+Subject: Testing indexing of encrypted files containing useful information
+From: Juha Haaga <juha.haaga@gmail.com>
+To: juha.haaga@clarifiednetworks.com
+Content-Type: multipart/mixed; boundary=e0cb4efe307afd0d7a04d0a9c9ac
+
+--e0cb4efe307afd0d7a04d0a9c9ac
+Content-Type: multipart/alternative; boundary=e0cb4efe307afd0d7304d0a9c9aa
+
+--e0cb4efe307afd0d7304d0a9c9aa
+Content-Type: text/plain; charset=ISO-8859-1
+
+Please take a look at the file included as attachment for your convenience.
+Received from 51.1.1.7 yesterday.
+
+-- Juha
+
+--e0cb4efe307afd0d7304d0a9c9aa
+Content-Type: text/html; charset=ISO-8859-1
+
+Please take a look at the file included as attachment for your convenience. Received from 51.1.1.7 yesterday.<div><br></div><div>-- Juha</div>
+
+--e0cb4efe307afd0d7304d0a9c9aa--
+--e0cb4efe307afd0d7a04d0a9c9ac
+Content-Type: application/zip; name="encrypted.zip"
+Content-Disposition: attachment; filename="encrypted.zip"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: f_hamn0qps0
+
+UEsDBBQACQAIAPiNjEF4PmBVUAAAAEkAAAAIABwAdGV4dC50eHRVVAkAAyOnyFAjp8hQdXgLAAEE
+9gEAAAQUAAAAWXePvq+MEYJPEWTW9EmdLWx8xgN/NXHJp8JELVz2TTM9DNXLs4xwBTJPncg7/ob7
+SiTZhNYdCI0s0wiGuBpThFV8YjdpWu/S/0Tq3o/19alQSwcIeD5gVVAAAABJAAAAUEsBAh4DFAAJ
+AAgA+I2MQXg+YFVQAAAASQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRleHQudHh0VVQFAAMjp8hQdXgL
+AAEE9gEAAAQUAAAAUEsFBgAAAAABAAEATgAAAKIAAAAAAA==
+--e0cb4efe307afd0d7a04d0a9c9ac--
