@@ -36,6 +36,7 @@ import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -100,6 +101,8 @@ class MailContentHandler implements ContentHandler {
         try {
             BodyContentHandler bch = new BodyContentHandler(handler);
             parser.parse(is, new EmbeddedContentHandler(bch), submd, context);
+        } catch (EncryptedDocumentException ede) {
+            // Skip this encrypted attachment and continue
         } catch (SAXException e) {
             throw new MimeException(e);
         } catch (TikaException e) {
