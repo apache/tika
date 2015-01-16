@@ -38,6 +38,7 @@ import org.apache.james.mime4j.stream.Field;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -73,21 +74,29 @@ class MailContentHandler implements ContentHandler {
 
     public void body(BodyDescriptor body, InputStream is) throws MimeException,
             IOException {
-        // Work out the best underlying parser for the part
-        // Check first for a specified AutoDetectParser (which may have a
-        //  specific Config), then a recursing parser, and finally the default
-        Parser parser = context.get(AutoDetectParser.class);
-        if (parser == null) {
-           parser = context.get(Parser.class);
-        }
-        if (parser == null) {
-           if (tikaConfig == null) {
-              tikaConfig = context.get(TikaConfig.class);
-              if (tikaConfig == null) {
-                 tikaConfig = TikaConfig.getDefaultConfig();
-              }
-           }
-           parser = tikaConfig.getParser();
+        // Was an EmbeddedDocumentExtractor given to explicitly handle/process
+        //  the attachments in the file?
+        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
+        
+        // If there's no EmbeddedDocumentExtractor, then try using a normal parser
+        // This will ensure that the contents are made available to the user, so
+        //  the see the text, but without fine-grained control/extraction
+        Parser parser = null;
+        if (ex == null) {
+            // If the user gave a parser, use that, if not the default
+            parser = context.get(AutoDetectParser.class);
+            if (parser == null) {
+               parser = context.get(Parser.class);
+            }
+            if (parser == null) {
+               if (tikaConfig == null) {
+                  tikaConfig = context.get(TikaConfig.class);
+                  if (tikaConfig == null) {
+                     tikaConfig = TikaConfig.getDefaultConfig();
+                  }
+               }
+               parser = tikaConfig.getParser();
+            }
         }
 
         // use a different metadata object
@@ -100,7 +109,12 @@ class MailContentHandler implements ContentHandler {
 
         try {
             BodyContentHandler bch = new BodyContentHandler(handler);
-            parser.parse(is, new EmbeddedContentHandler(bch), submd, context);
+            if (ex != null) {
+                if (ex.shouldParseEmbedded(submd))
+                    ex.parseEmbedded(is, bch, submd, false);
+            } else {
+                parser.parse(is, new EmbeddedContentHandler(bch), submd, context);
+            }
         } catch (EncryptedDocumentException ede) {
             // Skip this encrypted attachment and continue
         } catch (SAXException e) {
