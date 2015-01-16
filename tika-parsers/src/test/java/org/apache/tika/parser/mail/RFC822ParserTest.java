@@ -283,6 +283,15 @@ public class RFC822ParserTest {
         // Check that we also get the zip's contents as well
         // TODO
     }
+    
+    /**
+     * TIKA-1222 When requested, ensure that the various attachments of
+     *  the mail come through properly as embedded resources
+     */
+    @Test
+    public void testGetAttachmentsAsEmbeddedResources() throws Exception {
+        // TODO
+    }
 
     private static InputStream getStream(String name) {
         InputStream stream = Thread.currentThread().getContextClassLoader()
