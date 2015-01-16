@@ -42,6 +42,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.ocr.TesseractOCRParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -269,23 +270,52 @@ public class RFC822ParserTest extends TikaTest {
     public void testEncryptedZipAttachment() throws Exception {
         Parser parser = new RFC822Parser();
         Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
         InputStream stream = getStream("test-documents/testRFC822_encrypted_zip");
         ContentHandler handler = new BodyContentHandler();
-        parser.parse(stream, handler, metadata, new ParseContext());
+        parser.parse(stream, handler, metadata, context);
         
         // Check we go the metadata
         assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Metadata.MESSAGE_FROM));
-        assertEquals("Testing indexing of encrypted files containing useful information", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Test mail for Tika", metadata.get(TikaCoreProperties.TITLE));
         
-        // Check we got the message text
-        assertContains("Please take a look at the file", handler.toString());
+        // Check we got the message text, for both Plain Text and HTML
+        assertContains("Includes encrypted zip file", handler.toString());
+        assertContains("password is \"test\".", handler.toString());
+        assertContains("This is the Plain Text part", handler.toString());
+        assertContains("This is the HTML part", handler.toString());
         
         // But not the contents of the zip file
-        // TODO
+        // TODO Should the filename of the encrypted file in the zip show up or not?
+        //assertNotContained("text.txt", handler.toString());
+        assertNotContained("ENCRYPTED ZIP FILES", handler.toString());
         
         // Try again, this time with the password supplied
         // Check that we also get the zip's contents as well
-        // TODO
+        context.set(PasswordProvider.class, new PasswordProvider() {
+            public String getPassword(Metadata metadata) {
+                return "test";
+            }
+         });
+        stream = getStream("test-documents/testRFC822_encrypted_zip");
+        handler = new BodyContentHandler();
+        parser.parse(stream, handler, metadata, context);
+        
+        assertContains("Includes encrypted zip file", handler.toString());
+        assertContains("password is \"test\".", handler.toString());
+        assertContains("This is the Plain Text part", handler.toString());
+        assertContains("This is the HTML part", handler.toString());
+        
+        // We do get the name of the file in the encrypted zip file
+        assertContains("text.txt", handler.toString());
+        
+        // But because the RFC822 parser only recurses once, we don't
+        //  get the contents of the text file inside the zip file
+        // TODO Is this correct? Should we see the contents of the encrypted
+        //  zip when a password is given, or not?
+        assertNotContained("TEST DATA FOR TIKA.", handler.toString());
+        assertNotContained("ENCRYPTED ZIP FILES", handler.toString());
+        assertNotContained("TIKA-1028", handler.toString());
     }
     
     /**
