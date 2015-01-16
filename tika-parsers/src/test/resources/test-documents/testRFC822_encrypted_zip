@@ -1,64 +1,61 @@
-From juha.haaga@gmail.com Wed Dec 12 17:52:44 2012
 Return-Path: <juha.haaga@gmail.com>
 X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on
-        gw2.clarifiednetworks.com
-X-Spam-Level:
-X-Spam-Status: No, score=-2.6 required=5.0 tests=BAYES_00,FREEMAIL_FROM,
-        HTML_MESSAGE,RCVD_IN_DNSWL_LOW,T_DKIM_INVALID,T_TO_NO_BRKTS_FREEMAIL
-        autolearn=ham version=3.3.1
-Received: from mail-lb0-f177.google.com (mail-lb0-f177.google.com [209.85.217.177])
-        by clarifiednetworks.com (8.13.8/8.13.8) with ESMTP id qBCFqieF011576
-        (version=TLSv1/SSLv3 cipher=RC4-SHA bits=128 verify=OK)
-        for <juha.haaga@clarifiednetworks.com>; Wed, 12 Dec 2012 15:52:44 GMT
-Received: by mail-lb0-f177.google.com with SMTP id n10so783117lbo.36
-        for <juha.haaga@clarifiednetworks.com>; Wed, 12 Dec 2012 07:52:43 -0800 (PST)
+	virt0003.codenomicon.com
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.7 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FROM,HTML_MESSAGE,RCVD_IN_DNSWL_LOW,
+	SPF_PASS autolearn=ham version=3.3.1
+Received: from mail-wg0-f48.google.com (mail-wg0-f48.google.com [74.125.82.48])
+	by codenomicon.com (8.14.4/8.14.4) with ESMTP id t0G7ZmGs002981
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <juha.haaga@codenomicon.com>; Fri, 16 Jan 2015 07:35:54 GMT
+Received: by mail-wg0-f48.google.com with SMTP id l2so19028230wgh.7
+        for <juha.haaga@codenomicon.com>; Thu, 15 Jan 2015 23:35:48 -0800 (PST)
 DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
         d=gmail.com; s=20120113;
-        h=mime-version:date:message-id:subject:from:to:content-type;
-        bh=HRAnFyISE4I0zQxPxpzmCmZMDqa4ZgR0JQZB92XgUF8=;
-        b=GXYLUzh/oD39x+kg5hlzV4SHv8MNKxElHhK+TsaJx6XQ1y+RDQd7tZmT9Ysx/8IzEv
-         AGy8jOw0Y0/iay6lbLXvMzIoLhjNkXK5H0ecNAWLAbru7SjExL0Z/fOIlIUDk+d4KMpR
-         NrVkEFsKbtDuhUbIzJaoubJ7EP5r3ONOj0Y6PHe/70SCkUsxcBIP62nE+Tyy/Q79JcMC
-         CGE2LMShIKZwS24iIDmdpQMca77BSjiMASlhHvtPcoO2rn9Ep8fQ9zkvMGbUJVRtMcwu
-         iO8DVcsZlIhu2cv4tFHtIue06RnIzXTVsPb90XuN7BOYsNeEmsy//nj6HRtVQkxzA+P0
-         9mtQ==
+        h=mime-version:from:date:message-id:subject:to:content-type;
+        bh=wjcer9ESeBUN8rAEahqeDiOHf3wqBHgaeAboZtkw8qM=;
+        b=S3ezJU84qISP1OzMoH+wLMxn7y1JkcJwlUs4Uvfy+QlaSFcDcG66oxqsxniQ4kWmCC
+         QdQ94iztFvcvTAHuJys+jAH1UeVQKgs6T5lINj73nww3CKGh1B78LpnCRkFS93o19Zvt
+         QDSDtB23y9FlLF/dH6okvTIq7jQXNPuaDDqY8yJtp+DcYfW+QiNIGI83QievgQlWMRiV
+         fHuCbeEofTRP/82vHxUDVoZo/hwx8OAjWqPitrCmxU7Mly8lG5No1CHsKWmWd2Q+yxN3
+         tC3Ptbrig720BdBZKYwWSI6xBS4AY+46+utaloq9Hr0qpaDf5e9eXqq0ef0efDgd2kJT
+         gmyw==
+X-Received: by 10.180.39.204 with SMTP id r12mr3350467wik.11.1421393748083;
+ Thu, 15 Jan 2015 23:35:48 -0800 (PST)
 MIME-Version: 1.0
-Received: by 10.112.9.74 with SMTP id x10mr638494lba.59.1355327563697; Wed, 12
- Dec 2012 07:52:43 -0800 (PST)
-Received: by 10.112.142.162 with HTTP; Wed, 12 Dec 2012 07:52:43 -0800 (PST)
-Date: Wed, 12 Dec 2012 17:52:43 +0200
-Message-ID: <CAO2PydudpVpXHESE4pT7nFJtYnEpKA-S+sArMZ5t7=JNfQfHPA@mail.gmail.com>
-Subject: Testing indexing of encrypted files containing useful information
 From: Juha Haaga <juha.haaga@gmail.com>
-To: juha.haaga@clarifiednetworks.com
-Content-Type: multipart/mixed; boundary=e0cb4efe307afd0d7a04d0a9c9ac
+Date: Fri, 16 Jan 2015 07:35:46 +0000
+Message-ID: <CAO2Pydsg81Q7Pb4SB+2gt02-8pEFgmQ7qVW5zqfe5xage6wP1Q@mail.gmail.com>
+Subject: Test mail for Tika
+To: Juha Haaga <juha.haaga@codenomicon.com>
+Content-Type: multipart/mixed; boundary=001a11c3649c712d2a050cc0050f
 
---e0cb4efe307afd0d7a04d0a9c9ac
-Content-Type: multipart/alternative; boundary=e0cb4efe307afd0d7304d0a9c9aa
+--001a11c3649c712d2a050cc0050f
+Content-Type: multipart/alternative; boundary=001a11c3649c712d27050cc0050d
 
---e0cb4efe307afd0d7304d0a9c9aa
-Content-Type: text/plain; charset=ISO-8859-1
+--001a11c3649c712d27050cc0050d
+Content-Type: text/plain; charset=UTF-8
 
-Please take a look at the file included as attachment for your convenience.
-Received from 51.1.1.7 yesterday.
+Includes encrypted zip file as attachment. password is "test".
+This is the Plain Text part
 
--- Juha
+--001a11c3649c712d27050cc0050d
+Content-Type: text/html; charset=UTF-8
 
---e0cb4efe307afd0d7304d0a9c9aa
-Content-Type: text/html; charset=ISO-8859-1
+Includes encrypted zip file as attachment. password is &quot;test&quot;.<br/>
+This is the HTML part
 
-Please take a look at the file included as attachment for your convenience. Received from 51.1.1.7 yesterday.<div><br></div><div>-- Juha</div>
-
---e0cb4efe307afd0d7304d0a9c9aa--
---e0cb4efe307afd0d7a04d0a9c9ac
-Content-Type: application/zip; name="encrypted.zip"
-Content-Disposition: attachment; filename="encrypted.zip"
+--001a11c3649c712d27050cc0050d--
+--001a11c3649c712d2a050cc0050f
+Content-Type: application/zip; name="test.zip"
+Content-Disposition: attachment; filename="test.zip"
 Content-Transfer-Encoding: base64
-X-Attachment-Id: f_hamn0qps0
+X-Attachment-Id: 14af1ab4e8dbb946bc5
 
-UEsDBBQACQAIAPiNjEF4PmBVUAAAAEkAAAAIABwAdGV4dC50eHRVVAkAAyOnyFAjp8hQdXgLAAEE
-9gEAAAQUAAAAWXePvq+MEYJPEWTW9EmdLWx8xgN/NXHJp8JELVz2TTM9DNXLs4xwBTJPncg7/ob7
-SiTZhNYdCI0s0wiGuBpThFV8YjdpWu/S/0Tq3o/19alQSwcIeD5gVVAAAABJAAAAUEsBAh4DFAAJ
-AAgA+I2MQXg+YFVQAAAASQAAAAgAGAAAAAAAAQAAAKSBAAAAAHRleHQudHh0VVQFAAMjp8hQdXgL
-AAEE9gEAAAQUAAAAUEsFBgAAAAABAAEATgAAAKIAAAAAAA==
---e0cb4efe307afd0d7a04d0a9c9ac--
+UEsDBBQACQAIAP1LMEZzIEVkVQAAAE4AAAAIABwAdGV4dC50eHRVVAkAA26+uFSNvrhUdXgLAAEE
+9gEAAAQUAAAAypmn5/WV8PAdMdAB7WIFh/oQZw9KUG57D9/+Sl/mWzAaa2mMH3uENWiIVoypnqB2
+2GFSwihoRH4krgegW8EXEN3YbDQGBTvfEa6p3d/0V0EfZO4F31BLBwhzIEVkVQAAAE4AAABQSwEC
+HgMUAAkACAD9SzBGcyBFZFUAAABOAAAACAAYAAAAAAABAAAApIEAAAAAdGV4dC50eHRVVAUAA26+
+uFR1eAsAAQT2AQAABBQAAABQSwUGAAAAAAEAAQBOAAAApwAAAAAA
+--001a11c3649c712d2a050cc0050f--
