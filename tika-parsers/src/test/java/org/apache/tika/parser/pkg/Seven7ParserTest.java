@@ -20,13 +20,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.InputStream;
 
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -48,7 +51,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 parser.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
         
         // Parse
-        InputStream stream = TarParserTest.class.getResourceAsStream(
+        InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.7z");
         try {
             parser.parse(stream, handler, metadata, recursingContext);
@@ -88,7 +91,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
+       InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                "/test-documents/test-documents.7z");
        try {
            parser.parse(stream, handler, metadata, trackingContext);
@@ -120,5 +123,76 @@ public class Seven7ParserTest extends AbstractPkgTest {
            assertNotNull(mod);
            assertTrue("Modified at " + mod, mod.startsWith("20"));
        }
+    }
+    
+    @Test
+    public void testPasswordProtected() throws Exception {
+        Parser parser = new AutoDetectParser();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        
+        // No password, will fail with EncryptedDocumentException
+        InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z");
+        try {
+            parser.parse(stream, handler, metadata, recursingContext);
+            fail("Shouldn't be able to read a password protected 7z without the password");
+        } catch (EncryptedDocumentException e) {
+            // Good
+        } finally {
+            stream.close();
+        }
+        
+        
+        // Wrong password currently silently gives no content
+        // Ideally we'd like Commons Compress to give an error, but it doesn't...
+        recursingContext.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "wrong";
+            }
+        });
+        handler = new BodyContentHandler();
+        stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z");
+        try {
+            parser.parse(stream, handler, metadata, recursingContext);
+//            fail("Shouldn't be able to read a password protected 7z with wrong password");
+//        } catch (EncryptedDocumentException e) {
+        } finally {
+            stream.close();
+        }
+        
+        // Will be empty
+        assertEquals("", handler.toString());
+        
+        
+        // Right password works fine
+        recursingContext.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "Tika";
+            }
+        });
+        handler = new BodyContentHandler();
+        stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z");
+        try {
+            parser.parse(stream, handler, metadata, recursingContext);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
+        String content = handler.toString();
+        
+        // Should get filename
+        assertContains("text.txt", content);
+        
+        // Should get contents from the text file in the 7z file
+        assertContains("TEST DATA FOR TIKA.", content);
+        assertContains("This is text inside an encrypted 7zip (7z) file.", content);
+        assertContains("It should be processed by Tika just fine!", content);
+        assertContains("TIKA-1521", content);
     }
 }
