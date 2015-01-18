@@ -954,7 +954,7 @@ public final class MimeTypes implements Detector, Serializable {
 			}
 
 		}
-		return maxProb >= threshold ? this.rootMimeType : bestEstimate;
+		return maxProb < threshold ? this.rootMimeType : bestEstimate;
 
 	}
 
