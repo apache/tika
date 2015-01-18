@@ -56,49 +56,47 @@ class MailContentHandler implements ContentHandler {
     private boolean strictParsing = false;
 
     private XHTMLContentHandler handler;
-    private ParseContext context;
     private Metadata metadata;
-    private TikaConfig tikaConfig = null;
+    private EmbeddedDocumentExtractor extractor;
 
     private boolean inPart = false;
     
     MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context, boolean strictParsing) {
         this.handler = xhtml;
-        this.context = context;
         this.metadata = metadata;
         this.strictParsing = strictParsing;
-    }
-
-    public void body(BodyDescriptor body, InputStream is) throws MimeException,
-            IOException {
-        // Was an EmbeddedDocumentExtractor given to explicitly handle/process
-        //  the attachments in the file?
-        EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
+        
+        // Fetch / Build an EmbeddedDocumentExtractor with which
+        //  to handle/process the parts/attachments
+        
+        // Was an EmbeddedDocumentExtractor explicitly supplied?
+        this.extractor = context.get(EmbeddedDocumentExtractor.class);
         
         // If there's no EmbeddedDocumentExtractor, then try using a normal parser
         // This will ensure that the contents are made available to the user, so
         //  the see the text, but without fine-grained control/extraction
         // (This also maintains backward compatibility with older versions!)
-        if (ex == null) {
+        if (this.extractor == null) {
             // If the user gave a parser, use that, if not the default
             Parser parser = context.get(AutoDetectParser.class);
             if (parser == null) {
                parser = context.get(Parser.class);
             }
             if (parser == null) {
-               if (tikaConfig == null) {
-                  tikaConfig = context.get(TikaConfig.class);
-                  if (tikaConfig == null) {
-                     tikaConfig = TikaConfig.getDefaultConfig();
-                  }
-               }
-               parser = tikaConfig.getParser();
+                TikaConfig tikaConfig = context.get(TikaConfig.class);
+                if (tikaConfig == null) {
+                    tikaConfig = TikaConfig.getDefaultConfig();
+                }
+                parser = new AutoDetectParser(tikaConfig.getParser());
             }
             ParseContext ctx = new ParseContext();
             ctx.set(Parser.class, parser);
-            ex = new ParsingEmbeddedDocumentExtractor(ctx);
+            extractor = new ParsingEmbeddedDocumentExtractor(ctx);
         }
+    }
 
+    public void body(BodyDescriptor body, InputStream is) throws MimeException,
+            IOException {
         // use a different metadata object
         // in order to specify the mime type of the
         // sub part without damaging the main metadata
@@ -108,8 +106,8 @@ class MailContentHandler implements ContentHandler {
         submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
 
         try {
-            if (ex.shouldParseEmbedded(submd)) {
-                ex.parseEmbedded(is, handler, submd, false);
+            if (extractor.shouldParseEmbedded(submd)) {
+                extractor.parseEmbedded(is, handler, submd, false);
             }
         } catch (SAXException e) {
             throw new MimeException(e);

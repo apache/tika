@@ -21,6 +21,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -285,9 +286,8 @@ public class RFC822ParserTest extends TikaTest {
         assertContains("This is the Plain Text part", handler.toString());
         assertContains("This is the HTML part", handler.toString());
         
-        // But not the contents of the zip file
-        // TODO Should the filename of the encrypted file in the zip show up or not?
-        //assertNotContained("text.txt", handler.toString());
+        // We won't get the contents of the zip file, but we will get the name
+        assertContains("text.txt", handler.toString());
         assertNotContained("ENCRYPTED ZIP FILES", handler.toString());
         
         // Try again, this time with the password supplied
@@ -309,13 +309,42 @@ public class RFC822ParserTest extends TikaTest {
         // We do get the name of the file in the encrypted zip file
         assertContains("text.txt", handler.toString());
         
-        // But because the RFC822 parser only recurses once, we don't
-        //  get the contents of the text file inside the zip file
-        // TODO Is this correct? Should we see the contents of the encrypted
-        //  zip when a password is given, or not?
-        assertNotContained("TEST DATA FOR TIKA.", handler.toString());
-        assertNotContained("ENCRYPTED ZIP FILES", handler.toString());
-        assertNotContained("TIKA-1028", handler.toString());
+        // TODO Upgrade to a version of Commons Compress with Encryption
+        //  support, then verify we get the contents of the text file
+        //  held within the encrypted zip
+        assumeTrue(false); // No Zip Encryption support yet
+        assertContains("TEST DATA FOR TIKA.", handler.toString());
+        assertContains("ENCRYPTED ZIP FILES", handler.toString());
+        assertContains("TIKA-1028", handler.toString());
+    }
+    
+    /**
+     * Test TIKA-1028 - Ensure we can get the contents of an
+     *  un-encrypted zip file
+     */
+    @Test
+    public void testNormalZipAttachment() throws Exception {
+        Parser parser = new RFC822Parser();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getStream("test-documents/testRFC822_normal_zip");
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(stream, handler, metadata, context);
+        
+        // Check we go the metadata
+        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Test mail for Tika", metadata.get(TikaCoreProperties.TITLE));
+        
+        // Check we got the message text, for both Plain Text and HTML
+        assertContains("Includes a normal, unencrypted zip file", handler.toString());
+        assertContains("This is the Plain Text part", handler.toString());
+        assertContains("This is the HTML part", handler.toString());
+        
+        // We get both name and contents of the zip file's contents
+        assertContains("text.txt", handler.toString());
+        assertContains("TEST DATA FOR TIKA.", handler.toString());
+        assertContains("This is text inside an unencrypted zip file", handler.toString());
+        assertContains("TIKA-1028", handler.toString());
     }
     
     /**
