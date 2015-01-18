@@ -48,6 +48,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -131,9 +132,22 @@ public class PackageParser extends AbstractParser {
                 stream.reset();
                 TikaInputStream tstream = TikaInputStream.get(stream, tmp);
                 
-                // Pending a fix for COMPRESS-269, this bit is a little nasty
-                ais = new SevenZWrapper(new SevenZFile(tstream.getFile()));
+                // Seven Zip suports passwords, was one given?
+                String password = null;
+                PasswordProvider provider = context.get(PasswordProvider.class);
+                if (provider != null) {
+                    password = provider.getPassword(metadata);
+                }
                 
+                SevenZFile sevenz;
+                if (password == null) {
+                    sevenz = new SevenZFile(tstream.getFile());
+                } else {
+                    sevenz = new SevenZFile(tstream.getFile(), password.getBytes("UnicodeLittleUnmarked"));
+                }
+                
+                // Pending a fix for COMPRESS-269, this bit is a little nasty
+                ais = new SevenZWrapper(sevenz);
             } else {
                 tmp.close();
                 throw new TikaException("Unknown non-streaming format " + sne.getFormat(), sne);
@@ -168,6 +182,13 @@ public class PackageParser extends AbstractParser {
             // If it's an encrypted document of unknown password, report as such
             if (zfe.getFeature() == Feature.ENCRYPTION) {
                 throw new EncryptedDocumentException(zfe);
+            }
+            // Otherwise fall through to raise the exception as normal
+        } catch (IOException ie) {
+            // Is this a password protection error? 
+            // (COMPRESS-298 should give a nicer way when implemented)
+            if ("Cannot read encrypted files without a password".equals(ie.getMessage())) {
+                throw new EncryptedDocumentException();
             }
             // Otherwise fall through to raise the exception as normal
         } finally {
