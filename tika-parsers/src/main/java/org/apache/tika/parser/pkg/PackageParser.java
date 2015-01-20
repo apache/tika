@@ -146,7 +146,7 @@ public class PackageParser extends AbstractParser {
                     sevenz = new SevenZFile(tstream.getFile(), password.getBytes("UnicodeLittleUnmarked"));
                 }
                 
-                // Pending a fix for COMPRESS-269, this bit is a little nasty
+                // Pending a fix for COMPRESS-269 / TIKA-1525, this bit is a little nasty
                 ais = new SevenZWrapper(sevenz);
             } else {
                 tmp.close();
@@ -186,7 +186,7 @@ public class PackageParser extends AbstractParser {
             // Otherwise fall through to raise the exception as normal
         } catch (IOException ie) {
             // Is this a password protection error? 
-            // (COMPRESS-298 should give a nicer way when implemented)
+            // (COMPRESS-298 should give a nicer way when implemented, see TIKA-1525)
             if ("Cannot read encrypted files without a password".equals(ie.getMessage())) {
                 throw new EncryptedDocumentException();
             }
