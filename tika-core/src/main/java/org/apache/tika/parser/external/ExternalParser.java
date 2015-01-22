@@ -335,6 +335,7 @@ public class ExternalParser extends AbstractParser {
     public static boolean check(String checkCmd, int... errorValue) {
        return check(new String[] {checkCmd}, errorValue);
     }
+
     public static boolean check(String[] checkCmd, int... errorValue) {
        if(errorValue.length == 0) {
           errorValue = new int[] { 127 };
@@ -354,6 +355,16 @@ public class ExternalParser extends AbstractParser {
        } catch (InterruptedException ie) {
           // Some problem, command is there or is broken
           return false;
-      }
+       } catch (Error err) {
+           if (err.getMessage() != null && 
+               (err.getMessage().contains("posix_spawn") || 
+               err.getMessage().contains("UNIXProcess"))) {
+               //"Error forking command due to JVM locale bug 
+               //(see TIKA-1526 and SOLR-6387)"
+               return false;
+           }
+           //throw if a different kind of error
+           throw err;
+       }
     }
 }
