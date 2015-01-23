@@ -181,7 +181,7 @@ public class ZipContainerDetector implements Detector {
             if (mimetype != null) {
                 InputStream stream = zip.getInputStream(mimetype);
                 try {
-                    return MediaType.parse(IOUtils.toString(stream, "UTF-8"));
+                    return MediaType.parse(IOUtils.toString(stream, IOUtils.UTF_8.name()));
                 } finally {
                     stream.close();
                 }

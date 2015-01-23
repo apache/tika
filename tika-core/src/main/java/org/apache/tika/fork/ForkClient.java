@@ -263,7 +263,7 @@ class ForkClient {
             String manifest =
                 "Main-Class: " + ForkServer.class.getName() + "\n";
             jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
-            jar.write(manifest.getBytes("UTF-8"));
+            jar.write(manifest.getBytes(IOUtils.UTF_8));
 
             Class<?>[] bootstrap = {
                     ForkServer.class, ForkObjectInputStream.class,

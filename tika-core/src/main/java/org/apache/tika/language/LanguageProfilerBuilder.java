@@ -33,8 +33,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.apache.tika.exception.TikaException;
 
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 /**
  * This class runs a ngram analysis over submitted text, results might be used
  * for automatic language identification.
@@ -341,7 +342,7 @@ public class LanguageProfilerBuilder {
 
         ngrams.clear();
         ngramcounts = new int[maxLength + 1];
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, IOUtils.UTF_8));
         String line = null;
 
         while ((line = reader.readLine()) != null) {
@@ -405,7 +406,7 @@ public class LanguageProfilerBuilder {
      */
     public void save(OutputStream os) throws IOException {
         os.write(("# NgramProfile generated at " + new Date() + 
-                  " for Apache Tika Language Identification\n").getBytes("UTF-8"));
+                  " for Apache Tika Language Identification\n").getBytes(IOUtils.UTF_8));
 
         // And then each ngram
 
@@ -432,7 +433,7 @@ public class LanguageProfilerBuilder {
         for (int i = 0; i < list.size(); i++) {
             NGramEntry e = list.get(i);
             String line = e.toString() + " " + e.getCount() + "\n";
-            os.write(line.getBytes("UTF-8"));
+            os.write(line.getBytes(IOUtils.UTF_8));
         }
         os.flush();
     }

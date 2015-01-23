@@ -16,16 +16,7 @@
  */
 package org.apache.tika.parser.chm;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
-import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
-import org.apache.tika.parser.chm.core.ChmExtractor;
-import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Test;
-import org.xml.sax.SAXException;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -36,12 +27,22 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertTrue;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
+import org.apache.tika.parser.chm.accessor.DirectoryListingEntry;
+import org.apache.tika.parser.chm.core.ChmExtractor;
+import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Test;
+import org.xml.sax.SAXException;
 
 public class TestChmExtraction {
 
@@ -130,7 +131,7 @@ public class TestChmExtraction {
                 throw new TikaException("Warning: File name contains a non ascii char : " + directoryListingEntry.getName());
             }
             
-            final String lowName = directoryListingEntry.getName().toLowerCase();
+            final String lowName = directoryListingEntry.getName().toLowerCase(Locale.ROOT);
             
             //check duplicate entry name which is seen before.
             if (names.contains(lowName)) {
@@ -149,7 +150,7 @@ public class TestChmExtraction {
                 }
 
                 //validate html
-                String html = new String(data);
+                String html = new String(data, "ISO-8859-1");
                 if (! htmlPairP.matcher(html).find()) {
                     System.err.println(lowName + " is invalid.");
                     System.err.println(html);

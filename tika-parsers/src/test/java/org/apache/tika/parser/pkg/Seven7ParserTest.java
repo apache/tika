@@ -124,7 +124,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
            assertTrue("Modified at " + mod, mod.startsWith("20"));
        }
     }
-    
+
     @Test
     public void testPasswordProtected() throws Exception {
         Parser parser = new AutoDetectParser();

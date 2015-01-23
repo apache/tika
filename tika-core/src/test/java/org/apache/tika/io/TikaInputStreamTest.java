@@ -16,6 +16,10 @@
  */
 package org.apache.tika.io;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -27,11 +31,7 @@ import java.io.OutputStream;
 import java.net.URL;
 
 import org.apache.tika.metadata.Metadata;
-
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class TikaInputStreamTest {
 
@@ -62,7 +62,7 @@ public class TikaInputStreamTest {
     @Test
     public void testStreamBased() throws IOException {
         InputStream input =
-            new ByteArrayInputStream("Hello, World!".getBytes("UTF-8"));
+            new ByteArrayInputStream("Hello, World!".getBytes(IOUtils.UTF_8));
         InputStream stream = TikaInputStream.get(input);
 
         File file = TikaInputStream.get(stream).getFile();
@@ -89,7 +89,7 @@ public class TikaInputStreamTest {
         File file = File.createTempFile("tika-", ".tmp");
         OutputStream stream = new FileOutputStream(file);
         try {
-            stream.write(data.getBytes("UTF-8"));
+            stream.write(data.getBytes(IOUtils.UTF_8));
         } finally {
             stream.close();
         }
@@ -108,7 +108,7 @@ public class TikaInputStreamTest {
     private String readStream(InputStream stream) throws IOException {
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
         IOUtils.copy(stream, buffer);
-        return buffer.toString("UTF-8");
+        return buffer.toString(IOUtils.UTF_8.name());
     }
 
     @Test

@@ -20,6 +20,7 @@ import javax.xml.transform.OutputKeys;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -27,9 +28,9 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -1035,13 +1036,13 @@ public class OOXMLParserTest extends TikaTest {
             
             //grab stderr
             ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(errContent, true, "UTF-8"));
+            System.setErr(new PrintStream(errContent, true, IOUtils.UTF_8.name()));
             parser.parse(input, handler, metadata, context);
             
             //return stderr
             System.setErr(origErr);
             
-            String err = errContent.toString("UTF-8");
+            String err = errContent.toString(IOUtils.UTF_8.name());
             assertTrue(err.length() == 0);
             input.close();
         }

@@ -17,8 +17,8 @@
 
 package org.apache.tika.server;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -126,7 +126,7 @@ public abstract class CXFTestBase {
 
         zip.close();
         tempFile.delete();
-		return bos.toString("UTF-8");
+		return bos.toString(IOUtils.UTF_8.name());
 	}
 
 	protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip) throws IOException {

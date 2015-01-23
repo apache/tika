@@ -40,7 +40,7 @@ public class HTMLHelper {
             throw new IllegalArgumentException("Template Not Found - " + PATH);
         }
         try {
-            String html = IOUtils.toString(htmlStr, "UTF-8");
+            String html = IOUtils.toString(htmlStr, IOUtils.UTF_8.name());
             int bodyAt = html.indexOf(BODY_VAR);
             PRE_BODY = html.substring(0, bodyAt);
             POST_BODY = html.substring(bodyAt + BODY_VAR.length());

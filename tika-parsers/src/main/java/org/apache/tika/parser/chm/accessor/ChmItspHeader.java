@@ -16,13 +16,14 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
+import java.io.UnsupportedEncodingException;
+
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * Directory header The directory starts with a header; its format is as
@@ -68,25 +69,17 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
     private int currentPlace = 0;
 
     public ChmItspHeader() {
-        try {
-            signature = ChmConstants.ITSP.getBytes("UTF-8"); /*
+        signature = ChmConstants.ITSP.getBytes(IOUtils.UTF_8); /*
                                                                           * 0
                                                                           * (ITSP
                                                                           * )
                                                                           */
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 not supported.");
-        }
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        try {
-            sb.append("[ signature:=" + new String(getSignature(), "UTF-8")
-                    + System.getProperty("line.separator"));
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 not supported.");
-        }
+        sb.append("[ signature:=" + new String(getSignature(), IOUtils.UTF_8)
+                + System.getProperty("line.separator"));
         sb.append("version:=\t" + getVersion()
                 + System.getProperty("line.separator"));
         sb.append("header_len:=\t" + getHeader_len()
@@ -544,12 +537,9 @@ public class ChmItspHeader implements ChmAccessor<ChmItspHeader> {
                         ChmConstants.BYTE_ARRAY_LENGHT));
 
         /* Checks validity of the itsp header */
-        try {
-            if (!new String(chmItspHeader.getSignature(), "UTF-8").equals(ChmConstants.ITSP))
+        if (!new String(chmItspHeader.getSignature(), IOUtils.UTF_8).equals(ChmConstants.ITSP))
                 throw new ChmParsingException("seems not valid signature");
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 not supported.");
-        }
+
         if (chmItspHeader.getVersion() != ChmConstants.CHM_VER_1)
             throw new ChmParsingException("!=ChmConstants.CHM_VER_1");
 

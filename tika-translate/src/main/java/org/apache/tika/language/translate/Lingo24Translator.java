@@ -17,19 +17,21 @@
 
 package org.apache.tika.language.translate;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.LanguageIdentifier;
-import org.apache.tika.language.LanguageProfile;
-
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.language.LanguageIdentifier;
+import org.apache.tika.language.LanguageProfile;
 
 /**
  * An implementation of a REST client for the
@@ -76,7 +78,7 @@ public class Lingo24Translator implements Translator {
                 .query("user_key", userKey).query("source", sourceLanguage)
                 .query("target", targetLanguage).query("q", text).get();
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                (InputStream) response.getEntity(), "UTF-8"));
+                (InputStream) response.getEntity(), IOUtils.UTF_8));
         String line = null;
         StringBuffer responseText = new StringBuffer();
         while ((line = reader.readLine()) != null) {

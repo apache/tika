@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.apache.tika.io.IOUtils;
 
 /**
  * Internal utility class that Tika uses to look up service providers.
@@ -329,7 +330,7 @@ public class ServiceLoader {
         InputStream stream = resource.openStream();
         try {
             BufferedReader reader =
-                new BufferedReader(new InputStreamReader(stream, "UTF-8"));
+                new BufferedReader(new InputStreamReader(stream, IOUtils.UTF_8));
             String line = reader.readLine();
             while (line != null) {
                 line = COMMENT.matcher(line).replaceFirst("");

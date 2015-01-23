@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
@@ -232,13 +232,10 @@ public class ChmDirectoryListingSet {
                     
                     DirectoryListingEntry dle = new DirectoryListingEntry();
                     dle.setNameLength(strlen);
-                    try {
-                        dle.setName(new String(ChmCommons.copyOfRange(
+                    dle.setName(new String(ChmCommons.copyOfRange(
                                 dir_chunk, placeHolder,
-                                (placeHolder + dle.getNameLength())), "UTF-8"));
-                    } catch (UnsupportedEncodingException ex) {
-                        dle.setName(new String(dir_chunk, placeHolder, placeHolder + dle.getNameLength()));
-                    }
+                                (placeHolder + dle.getNameLength())), IOUtils.UTF_8));
+
                     checkControlData(dle);
                     checkResetTable(dle);
                     setPlaceHolder(placeHolder

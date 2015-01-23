@@ -17,6 +17,15 @@
 
 package org.apache.tika.server;
 
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,15 +37,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 
 import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.lang.mutable.MutableInt;
@@ -116,7 +116,7 @@ public class UnpackerResource {
     ByteArrayOutputStream text = new ByteArrayOutputStream();
 
     if (saveAll) {
-      ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, "UTF-8")));
+      ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, org.apache.tika.io.IOUtils.UTF_8)));
     } else {
       ch = new DefaultHandler();
     }
@@ -155,7 +155,7 @@ public class UnpackerResource {
   }
 
   public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
-    CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, "UTF-8"));
+    CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, org.apache.tika.io.IOUtils.UTF_8));
 
     for (String name : metadata.names()) {
       String[] values = metadata.getValues(name);

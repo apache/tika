@@ -16,22 +16,22 @@
  */
 package org.apache.tika.parser;
 
-import static org.junit.Assert.assertEquals;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.Reader;
-
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 public class ParsingReaderTest {
 
     @Test
     public void testPlainText() throws Exception {
         String data = "test content";
-        InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+        InputStream stream = new ByteArrayInputStream(data.getBytes(IOUtils.UTF_8));
         Reader reader = new ParsingReader(stream, "test.txt");
         assertEquals('t', reader.read());
         assertEquals('e', reader.read());
@@ -54,7 +54,7 @@ public class ParsingReaderTest {
     @Test
     public void testXML() throws Exception {
         String data = "<p>test <span>content</span></p>";
-        InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+        InputStream stream = new ByteArrayInputStream(data.getBytes(IOUtils.UTF_8));
         Reader reader = new ParsingReader(stream, "test.xml");
         assertEquals(' ', (char) reader.read());
         assertEquals('t', (char) reader.read());

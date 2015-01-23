@@ -16,9 +16,8 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
-import java.io.UnsupportedEncodingException;
-
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
@@ -68,15 +67,11 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private int currentPlace = 0;
 
     public ChmPmglHeader() {
-        try {
-            signature = ChmConstants.PMGL.getBytes("UTF-8"); /*
+            signature = ChmConstants.PMGL.getBytes(IOUtils.UTF_8); /*
                                                                           * 0
                                                                           * (PMGL
                                                                           * )
                                                                           */
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 not supported.");
-        }
     }
 
     private int getDataRemained() {
@@ -108,11 +103,7 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        try {
-            sb.append("signatute:=" + new String(getSignature(), "UTF-8") + ", ");
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 not supported.");
-        }
+        sb.append("signatute:=" + new String(getSignature(), IOUtils.UTF_8) + ", ");
         sb.append("free space:=" + getFreeSpace() + ", ");
         sb.append("unknown0008:=" + getUnknown0008() + ", ");
         sb.append("prev block:=" + getBlockPrev() + ", ");
@@ -175,13 +166,9 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data));
 
         /* check structure */
-        try {
-            if (!new String(chmPmglHeader.getSignature(), "UTF-8").equals(ChmConstants.PMGL))
-                throw new ChmParsingException(ChmPmglHeader.class.getName()
-                        + " pmgl != pmgl.signature");
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 not supported.");
-        }
+        if (!new String(chmPmglHeader.getSignature(), IOUtils.UTF_8).equals(ChmConstants.PMGL))
+            throw new ChmParsingException(ChmPmglHeader.class.getName()
+                    + " pmgl != pmgl.signature");
     }
 
     public byte[] getSignature() {

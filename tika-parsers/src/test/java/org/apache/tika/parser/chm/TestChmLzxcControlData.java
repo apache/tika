@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
@@ -28,8 +29,6 @@ import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * Tests all public methods of ChmLzxcControlData block
@@ -62,7 +61,7 @@ public class TestChmLzxcControlData {
         int indexOfControlData = chmDirListCont.getControlDataIndex();
 
         int indexOfResetTable = ChmCommons.indexOfResetTableBlock(data,
-                ChmConstants.LZXC.getBytes("UTF-8"));
+                ChmConstants.LZXC.getBytes(IOUtils.UTF_8));
         byte[] dir_chunk = null;
         if (indexOfResetTable > 0) {
             // dir_chunk = Arrays.copyOfRange( data, indexOfResetTable,
@@ -129,16 +128,16 @@ public class TestChmLzxcControlData {
     }
 
     @Test
-    public void testGetSignature() throws UnsupportedEncodingException {
+    public void testGetSignature() {
         assertEquals(
-                TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes("UTF-8").length,
+                TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes(IOUtils.UTF_8).length,
                 chmLzxcControlData.getSignature().length);
     }
 
     @Test
-    public void testGetSignaure() throws UnsupportedEncodingException {
+    public void testGetSignaure() {
         assertEquals(
-                TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes("UTF-8").length,
+                TestParameters.VP_CONTROL_DATA_SIGNATURE.getBytes(IOUtils.UTF_8).length,
                 chmLzxcControlData.getSignature().length);
     }
 

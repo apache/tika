@@ -16,15 +16,15 @@
  */
 package org.apache.tika.language;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Writer;
 import java.util.HashMap;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import org.apache.tika.io.IOUtils;
 import org.junit.Before;
@@ -139,7 +139,7 @@ public class LanguageIdentifierTest {
         InputStream stream =
             LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
         try {
-            IOUtils.copy(new InputStreamReader(stream, "UTF-8"), writer);
+            IOUtils.copy(new InputStreamReader(stream, IOUtils.UTF_8), writer);
         } finally {
             stream.close();
         }

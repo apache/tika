@@ -30,9 +30,8 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-//Tika imports
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -41,12 +40,13 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 import static org.apache.tika.parser.external.ExternalParser.INPUT_FILE_TOKEN;
 
+//Tika imports
 //SAX imports
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 /**
  * Wraps execution of the <a href="http//gdal.org/">Geospatial Data Abstraction
@@ -385,7 +385,7 @@ public class GDALParser extends AbstractParser {
     private String extractOutput(InputStream stream) throws SAXException,
             IOException {
         StringBuffer sb = new StringBuffer();
-        Reader reader = new InputStreamReader(stream, "UTF-8");
+        Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
         try {
             char[] buffer = new char[1024];
             for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
@@ -400,8 +400,8 @@ public class GDALParser extends AbstractParser {
     private void processOutput(ContentHandler handler, Metadata metadata,
                                String output) throws SAXException, IOException {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        InputStream stream = new ByteArrayInputStream(output.getBytes("UTF-8"));
-        Reader reader = new InputStreamReader(stream, "UTF-8");
+        InputStream stream = new ByteArrayInputStream(output.getBytes(IOUtils.UTF_8));
+        Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
         try {
             xhtml.startDocument();
             xhtml.startElement("p");

@@ -57,6 +57,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
@@ -179,7 +180,8 @@ public class TikaResource {
         field.setBoolean(object, Boolean.parseBoolean(httpHeaders.getFirst(key)));
       }
     } catch (Throwable ex) {
-      throw new WebApplicationException(String.format("%s is an invalid %s header", key, X_TIKA_OCR_HEADER_PREFIX));
+      throw new WebApplicationException(String.format(Locale.ROOT,
+              "%s is an invalid %s header", key, X_TIKA_OCR_HEADER_PREFIX));
     }
   }
 
@@ -256,7 +258,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
 
     return new StreamingOutput() {
       public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-        Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
+        Writer writer = new OutputStreamWriter(outputStream, IOUtils.UTF_8);
 
         BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
@@ -346,7 +348,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
     return new StreamingOutput() {
       public void write(OutputStream outputStream)
         throws IOException, WebApplicationException {
-        Writer writer = new OutputStreamWriter(outputStream, "UTF-8");
+        Writer writer = new OutputStreamWriter(outputStream, IOUtils.UTF_8);
         ContentHandler content;
 
         try {
@@ -354,7 +356,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
           TransformerHandler handler = factory.newTransformerHandler( );
           handler.getTransformer().setOutputProperty(OutputKeys.METHOD, format);
           handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-          handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+          handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, IOUtils.UTF_8.name());
           handler.setResult(new StreamResult(writer));
           content = new ExpandedTitleContentHandler( handler );
         }

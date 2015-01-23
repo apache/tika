@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -130,7 +131,7 @@ public class FLVParser extends AbstractParser {
         int size = input.readUnsignedShort();
         byte[] chars = new byte[size];
         input.readFully(chars);
-        return new String(chars, "UTF-8");
+        return new String(chars, IOUtils.UTF_8);
     }
 
     private Object readAMFObject(DataInputStream input) throws IOException {

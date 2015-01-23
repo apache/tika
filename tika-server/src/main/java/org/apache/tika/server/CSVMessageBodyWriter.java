@@ -17,8 +17,6 @@
 
 package org.apache.tika.server;
 
-import org.apache.tika.metadata.Metadata;
-
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -35,6 +33,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 import au.com.bytecode.opencsv.CSVWriter;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
 
 @Provider
 @Produces("text/csv")
@@ -54,7 +54,7 @@ public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
       MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
       WebApplicationException {
 
-    CSVWriter writer = new CSVWriter(new OutputStreamWriter(entityStream, "UTF-8"));
+    CSVWriter writer = new CSVWriter(new OutputStreamWriter(entityStream, IOUtils.UTF_8));
 
     for (String name : metadata.names()) {
       String[] values = metadata.getValues(name);

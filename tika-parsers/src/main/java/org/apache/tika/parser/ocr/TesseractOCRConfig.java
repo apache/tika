@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -211,7 +212,8 @@ public class TesseractOCRConfig implements Serializable{
 		try {
 			return Integer.parseInt(p);
 		} catch (Throwable ex) {
-			throw new RuntimeException(String.format("Cannot parse TesseractOCRConfig variable %s, invalid integer value", property), ex);
+			throw new RuntimeException(String.format(Locale.ROOT, "Cannot parse TesseractOCRConfig variable %s, invalid integer value",
+					property), ex);
 		}
 	}
 
