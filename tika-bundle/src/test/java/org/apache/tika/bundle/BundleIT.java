@@ -41,6 +41,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.fork.ForkParser;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -101,7 +102,7 @@ public class BundleIT {
         ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
         ClassLoader classLoader = parser.getClass().getClassLoader();
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
-        InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+        InputStream stream = new ByteArrayInputStream(data.getBytes(IOUtils.UTF_8));
         Writer writer = new StringWriter();
         ContentHandler contentHandler = new BodyContentHandler(writer);
         Metadata metadata = new Metadata();

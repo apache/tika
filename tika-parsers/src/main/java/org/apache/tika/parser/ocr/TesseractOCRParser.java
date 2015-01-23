@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.ocr;
 
+import javax.imageio.ImageIO;
+
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -37,8 +39,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
-import javax.imageio.ImageIO;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
@@ -282,7 +282,7 @@ public class TesseractOCRParser extends AbstractParser {
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
 
-        Reader reader = new InputStreamReader(stream, "UTF-8");
+        Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
         xhtml.startDocument();
         xhtml.startElement("div");
         try {
@@ -306,7 +306,7 @@ public class TesseractOCRParser extends AbstractParser {
     private void logStream(final String logType, final InputStream stream, final File file) {
         new Thread() {
             public void run() {
-                Reader reader = new InputStreamReader(stream);
+                Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
                 StringBuilder out = new StringBuilder();
                 char[] buffer = new char[1024];
                 try {

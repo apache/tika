@@ -301,7 +301,7 @@ public class ImageMetadataExtractor {
             @Override
             protected SimpleDateFormat initialValue()
             {
-               return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+               return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
             }
         };
 

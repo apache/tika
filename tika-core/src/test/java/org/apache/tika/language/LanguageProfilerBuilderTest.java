@@ -17,6 +17,9 @@
 
 package org.apache.tika.language;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,11 +30,9 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.junit.After;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class LanguageProfilerBuilderTest {
     /* Test members */
@@ -40,7 +41,6 @@ public class LanguageProfilerBuilderTest {
     private final String profileName = "../tika-core/src/test/resources/org/apache/tika/language/langbuilder/"
             + LanguageProfilerBuilderTest.class.getName();
     private final String corpusName = "langbuilder/welsh_corpus.txt";
-    private final String encoding = "UTF-8";
     private final String FILE_EXTENSION = "ngp";
     private final String LANGUAGE = "welsh";
     private final int maxlen = 1000;
@@ -50,7 +50,7 @@ public class LanguageProfilerBuilderTest {
         InputStream is =
                 LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName);
         try {
-            ngramProfile = LanguageProfilerBuilder.create(profileName, is , encoding);
+            ngramProfile = LanguageProfilerBuilder.create(profileName, is , IOUtils.UTF_8.name());
         } finally {
             is.close();
         }
@@ -82,7 +82,7 @@ public class LanguageProfilerBuilderTest {
                 + FILE_EXTENSION));
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    stream, encoding));
+                    stream, IOUtils.UTF_8));
             String line = reader.readLine();
             while (line != null) {
                 if (line.length() > 0 && !line.startsWith("#")) {// skips the

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertNull;
 import java.io.ByteArrayInputStream;
 import java.io.StringWriter;
 
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -72,7 +73,7 @@ public class TXTParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         parser.parse(
-                new ByteArrayInputStream(text.getBytes("UTF-8")),
+                new ByteArrayInputStream(text.getBytes(IOUtils.UTF_8)),
                 handler, metadata, new ParseContext());
         assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("UTF-8", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
@@ -223,7 +224,7 @@ public class TXTParserTest {
         metadata.set(TikaCoreProperties.LANGUAGE, "en");
 
         parser.parse(
-                new ByteArrayInputStream(test.getBytes("UTF-8")),
+                new ByteArrayInputStream(test.getBytes(IOUtils.UTF_8)),
                 new BodyContentHandler(),  metadata, new ParseContext());
 
         assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
@@ -277,7 +278,7 @@ public class TXTParserTest {
 
         Metadata metadata = new Metadata();
         parser.parse(
-                new ByteArrayInputStream(text.getBytes("UTF-8")),
+                new ByteArrayInputStream(text.getBytes(IOUtils.UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
         
@@ -285,7 +286,7 @@ public class TXTParserTest {
         // we get back (see TIKA-868)
         metadata.set(Metadata.CONTENT_TYPE, "application/binary; charset=UTF-8");
         parser.parse(
-                new ByteArrayInputStream(text.getBytes("UTF-8")),
+                new ByteArrayInputStream(text.getBytes(IOUtils.UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=UTF-8", metadata.get(Metadata.CONTENT_TYPE));
     }

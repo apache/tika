@@ -47,6 +47,7 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -234,7 +235,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           CharacterRun cr = p.getCharacterRun(j);
 
           // FIELD_BEGIN_MARK:
-          if (cr.text().getBytes("UTF-8")[0] == 0x13) {
+          if (cr.text().getBytes(IOUtils.UTF_8)[0] == 0x13) {
              Field field = document.getFields().getFieldByStartOffset(docPart, cr.getStartOffset());
              // 58 is an embedded document
              // 56 is a document link

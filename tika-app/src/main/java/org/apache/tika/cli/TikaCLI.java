@@ -727,7 +727,7 @@ public class TikaCLI {
         } else if (System.getProperty("os.name")
                 .toLowerCase(Locale.ROOT).startsWith("mac os x")) {
             // TIKA-324: Override the default encoding on Mac OS X
-            return new OutputStreamWriter(output, "UTF-8");
+            return new OutputStreamWriter(output, IOUtils.UTF_8);
         } else {
             return new OutputStreamWriter(output, Charset.defaultCharset());
         }

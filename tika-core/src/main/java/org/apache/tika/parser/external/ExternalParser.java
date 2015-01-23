@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -232,7 +231,7 @@ public class ExternalParser extends AbstractParser {
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml)
             throws SAXException, IOException {
-        Reader reader = new InputStreamReader(stream, "UTF-8");
+        Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
         try {
             xhtml.startDocument();
             xhtml.startElement("p");
@@ -293,11 +292,7 @@ public class ExternalParser extends AbstractParser {
        new Thread() {
           public void run() {
              BufferedReader reader;
-             try {
-                 reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"));
-             } catch (UnsupportedEncodingException e) {
-                 throw new AssertionError("UTF-8 not supported.");
-             }
+              reader = new BufferedReader(new InputStreamReader(stream, IOUtils.UTF_8));
              try {
                 String line;
                 while ( (line = reader.readLine()) != null ) {

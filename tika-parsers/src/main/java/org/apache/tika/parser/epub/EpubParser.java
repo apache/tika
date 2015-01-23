@@ -93,7 +93,7 @@ public class EpubParser extends AbstractParser {
         ZipEntry entry = zip.getNextEntry();
         while (entry != null) {
             if (entry.getName().equals("mimetype")) {
-                String type = IOUtils.toString(zip, "UTF-8");
+                String type = IOUtils.toString(zip, IOUtils.UTF_8.name());
                 metadata.set(Metadata.CONTENT_TYPE, type);
             } else if (entry.getName().equals("metadata.xml")) {
                 meta.parse(zip, new DefaultHandler(), metadata, context);

@@ -17,23 +17,22 @@
 
 package org.apache.tika.server;
 
-import au.com.bytecode.opencsv.CSVWriter;
-import org.apache.tika.metadata.Metadata;
-
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
+
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Returns simple text string for a particular metadata value.
@@ -63,7 +62,7 @@ public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
     if (metadata.names().length != 1) {
       throw new WebApplicationException("Metadata object must only have one entry!");
     }
-    Writer writer = new OutputStreamWriter(entityStream, "UTF-8");
+    Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
 
     for (String name : metadata.names()) {
       writer.write(metadata.get(name));

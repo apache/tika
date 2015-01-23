@@ -16,19 +16,19 @@
  */
 package org.apache.tika.cli;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.net.URI;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the Tika's cli
@@ -49,7 +49,7 @@ public class TikaCLITest {
         outContent = new ByteArrayOutputStream();
         resourcePrefix = testDataURI.toString();
         stdout = System.out;
-        System.setOut(new PrintStream(outContent, true, "UTF-8"));
+        System.setOut(new PrintStream(outContent, true, IOUtils.UTF_8.name()));
     }
 
     /**
@@ -73,7 +73,7 @@ public class TikaCLITest {
     public void testListParserDetail() throws Exception{
         String[] params = {"--list-parser-detail"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("application/vnd.oasis.opendocument.text-web"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("application/vnd.oasis.opendocument.text-web"));
     }
 
     /**
@@ -98,7 +98,7 @@ public class TikaCLITest {
     public void testXMLOutput() throws Exception{
         String[] params = {"-x", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
     }
 
     /**
@@ -112,7 +112,7 @@ public class TikaCLITest {
         TikaCLI.main(params);
         assertTrue(outContent.toString("UTF-8").contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
         assertTrue("Expanded <title></title> element should be present",
-                outContent.toString("UTF-8").contains("<title></title>"));
+                outContent.toString(IOUtils.UTF_8.name()).contains("<title></title>"));
     }
 
     /**
@@ -124,7 +124,7 @@ public class TikaCLITest {
     public void testTextOutput() throws Exception{
         String[] params = {"-t", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("finished off the cake"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("finished off the cake"));
     }
 
     /**
@@ -135,7 +135,7 @@ public class TikaCLITest {
     public void testMetadataOutput() throws Exception{
         String[] params = {"-m", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("text/plain"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("text/plain"));
     }
 
     /**
@@ -147,7 +147,7 @@ public class TikaCLITest {
     public void testJsonMetadataOutput() throws Exception {
         String[] params = {"--json", resourcePrefix + "testJsonMultipleInts.html"};
         TikaCLI.main(params);
-        String json = outContent.toString("UTF-8");
+        String json = outContent.toString(IOUtils.UTF_8.name());
         //TIKA-1310
         assertTrue(json.contains("\"fb:admins\":\"1,2,3,4\","));
         
@@ -168,7 +168,7 @@ public class TikaCLITest {
     public void testJsonMetadataPrettyPrintOutput() throws Exception {
         String[] params = {"--json", "-r", resourcePrefix + "testJsonMultipleInts.html"};
         TikaCLI.main(params);
-        String json = outContent.toString("UTF-8");
+        String json = outContent.toString(IOUtils.UTF_8.name());
 
         assertTrue(json.contains("  \"X-Parsed-By\": [\n" +
                 "    \"org.apache.tika.parser.DefaultParser\",\n" +
@@ -191,7 +191,7 @@ public class TikaCLITest {
     public void testLanguageOutput() throws Exception{
         String[] params = {"-l", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("en"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("en"));
     }
 
     /**
@@ -203,7 +203,7 @@ public class TikaCLITest {
     public void testDetectOutput() throws Exception{
         String[] params = {"-d", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("text/plain"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("text/plain"));
     }
 
     /**
@@ -215,7 +215,7 @@ public class TikaCLITest {
     public void testListMetModels() throws Exception{
         String[] params = {"--list-met-models", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("text/plain"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("text/plain"));
     }
 
     /**
@@ -227,7 +227,7 @@ public class TikaCLITest {
     public void testListSupportedTypes() throws Exception{
         String[] params = {"--list-supported-types", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
-        assertTrue(outContent.toString("UTF-8").contains("supertype: application/octet-stream"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("supertype: application/octet-stream"));
     }
 
     /**
@@ -300,7 +300,7 @@ public class TikaCLITest {
     public void testMultiValuedMetadata() throws Exception {
         String[] params = {"-m", resourcePrefix + "testMultipleSheets.numbers"};
         TikaCLI.main(params);
-        String content = outContent.toString("UTF-8");
+        String content = outContent.toString(IOUtils.UTF_8.name());
         assertTrue(content.contains("sheetNames: Checking"));
         assertTrue(content.contains("sheetNames: Secon sheet"));
         assertTrue(content.contains("sheetNames: Logical Sheet 3"));
@@ -314,7 +314,7 @@ public class TikaCLITest {
         new File("subdir/foo.txt").delete();
         new File("subdir").delete();
         TikaCLI.main(params);
-        String content = outContent.toString("UTF-8");
+        String content = outContent.toString(IOUtils.UTF_8.name());
         assertTrue(content.contains("Extracting 'subdir/foo.txt'"));
         // clean up. TODO: These should be in target.
         new File("target/subdir/foo.txt").delete();
@@ -340,7 +340,7 @@ public class TikaCLITest {
     public void testConfig() throws Exception {
         String[] params = new String[]{"--config="+testDataFile.toString()+"/tika-config1.xml", resourcePrefix+"bad_xml.xml"};
         TikaCLI.main(params);
-        String content = outContent.toString("UTF-8");
+        String content = outContent.toString(IOUtils.UTF_8.name());
         assertTrue(content.contains("apple"));
         assertTrue(content.contains("org.apache.tika.parser.html.HtmlParser"));
     }
@@ -349,7 +349,7 @@ public class TikaCLITest {
     public void testJsonRecursiveMetadataParserMetadataOnly() throws Exception {
         String[] params = new String[]{"-m", "-J", "-r", resourcePrefix+"test_recursive_embedded.docx"};
         TikaCLI.main(params);
-        String content = outContent.toString("UTF-8");
+        String content = outContent.toString(IOUtils.UTF_8.name());
         assertTrue(content.contains("[\n" +
                 "  {\n" +
                 "    \"Application-Name\": \"Microsoft Office Word\",\n" +
@@ -365,7 +365,7 @@ public class TikaCLITest {
     public void testJsonRecursiveMetadataParserDefault() throws Exception {
         String[] params = new String[]{"-J", "-r", resourcePrefix+"test_recursive_embedded.docx"};
         TikaCLI.main(params);
-        String content = outContent.toString("UTF-8");
+        String content = outContent.toString(IOUtils.UTF_8.name());
         assertTrue(content.contains("\"X-TIKA:content\": \"\\u003chtml xmlns\\u003d\\\"http://www.w3.org/1999/xhtml"));
     }
 
@@ -373,7 +373,7 @@ public class TikaCLITest {
     public void testJsonRecursiveMetadataParserText() throws Exception {
         String[] params = new String[]{"-J", "-r", "-t", resourcePrefix+"test_recursive_embedded.docx"};
         TikaCLI.main(params);
-        String content = outContent.toString("UTF-8");
+        String content = outContent.toString(IOUtils.UTF_8.name());
         assertTrue(content.contains("\\n\\nembed_4\\n"));
         assertTrue(content.contains("\\n\\nembed_0"));
     }

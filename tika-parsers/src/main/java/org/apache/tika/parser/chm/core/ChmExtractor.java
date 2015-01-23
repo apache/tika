@@ -172,7 +172,7 @@ public class ChmExtractor {
 
             int indexOfControlData = getChmDirList().getControlDataIndex();
             int indexOfResetData = ChmCommons.indexOfResetTableBlock(getData(),
-                    ChmConstants.LZXC.getBytes("UTF-8"));
+                    ChmConstants.LZXC.getBytes(IOUtils.UTF_8));
             byte[] dir_chunk = null;
             if (indexOfResetData > 0)
                 dir_chunk = ChmCommons.copyOfRange( getData(), indexOfResetData, indexOfResetData  

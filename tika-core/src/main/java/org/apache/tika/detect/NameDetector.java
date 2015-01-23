@@ -22,6 +22,7 @@ import java.net.URLDecoder;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 
@@ -119,7 +120,7 @@ public class NameDetector implements Detector {
             int percent = name.indexOf('%');
             if (percent != -1) {
                 try {
-                    name = URLDecoder.decode(name, "UTF-8");
+                    name = URLDecoder.decode(name, IOUtils.UTF_8.name());
                 } catch (UnsupportedEncodingException e) {
                     throw new IllegalStateException("UTF-8 not supported", e);
                 }

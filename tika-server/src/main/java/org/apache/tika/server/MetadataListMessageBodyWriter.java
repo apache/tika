@@ -17,21 +17,23 @@
 
 package org.apache.tika.server;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
@@ -53,7 +55,7 @@ public class MetadataListMessageBodyWriter implements MessageBodyWriter<Metadata
       MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
       WebApplicationException {
         try {
-            Writer writer = new OutputStreamWriter(entityStream, "UTF-8");
+            Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
             JsonMetadataList.toJson(list.getMetadata(), writer);
             writer.flush();
         } catch (TikaException e) {

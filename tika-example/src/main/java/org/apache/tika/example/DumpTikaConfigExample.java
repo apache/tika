@@ -16,10 +16,32 @@ package org.apache.tika.example;
  * limitations under the License.
  */
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.mime.MediaType;
@@ -29,25 +51,6 @@ import org.apache.tika.parser.Parser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 
 /**
@@ -187,19 +190,19 @@ public class DumpTikaConfigExample {
      */
     public static void main(String[] args) throws Exception {
 
-        String encoding = "UTF-8";
+        Charset encoding = IOUtils.UTF_8;
         Writer writer = null;
         if (args.length > 0) {
-            writer = new OutputStreamWriter(new FileOutputStream(new File(args[0])));
+            writer = new OutputStreamWriter(new FileOutputStream(new File(args[0])), encoding);
         } else {
             writer = new StringWriter();
         }
 
         if (args.length > 1) {
-            encoding = args[1];
+            encoding = Charset.forName(args[1]);
         }
         DumpTikaConfigExample ex = new DumpTikaConfigExample();
-        ex.dump(TikaConfig.getDefaultConfig(), writer, encoding);
+        ex.dump(TikaConfig.getDefaultConfig(), writer, encoding.name());
 
         writer.flush();
 

@@ -178,7 +178,7 @@ public class OpenDocumentParser extends AbstractParser {
         if (entry == null) return;
         
         if (entry.getName().equals("mimetype")) {
-            String type = IOUtils.toString(zip, "UTF-8");
+            String type = IOUtils.toString(zip, IOUtils.UTF_8.name());
             metadata.set(Metadata.CONTENT_TYPE, type);
         } else if (entry.getName().equals(META_NAME)) {
             meta.parse(zip, new DefaultHandler(), metadata, context);

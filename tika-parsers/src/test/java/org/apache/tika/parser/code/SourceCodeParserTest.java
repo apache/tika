@@ -24,6 +24,7 @@ import java.io.ByteArrayInputStream;
 import java.util.Set;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -62,7 +63,7 @@ public class SourceCodeParserTest extends TikaTest {
     assertTrue(textContent.length() > 0);
     assertTrue(textContent.indexOf("html") < 0);
     
-    textContent = getText(new ByteArrayInputStream("public class HelloWorld {}".getBytes("UTF-8")), sourceCodeParser, createMetadata("text/x-java-source"));
+    textContent = getText(new ByteArrayInputStream("public class HelloWorld {}".getBytes(IOUtils.UTF_8)), sourceCodeParser, createMetadata("text/x-java-source"));
     assertTrue(textContent.length() > 0);
     assertTrue(textContent.indexOf("html") < 0);
   }

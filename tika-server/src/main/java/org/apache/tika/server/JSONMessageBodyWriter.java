@@ -17,10 +17,6 @@
 
 package org.apache.tika.server;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadata;
-
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -34,6 +30,11 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadata;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
@@ -52,7 +53,7 @@ public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
       MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
       WebApplicationException {
         try {
-            Writer writer = new OutputStreamWriter(entityStream, "UTF-8");
+            Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
             JsonMetadata.toJson(metadata, writer);
             writer.flush();
         } catch (TikaException e) {

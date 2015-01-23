@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -82,7 +83,7 @@ public class LyricsHandler {
             //  size including the LYRICSBEGIN but excluding the 
             //  length+LYRICS200 at the end.
             int length = Integer.parseInt(
-                    new String(tagData, lookat-6, 6, "UTF-8")
+                    new String(tagData, lookat-6, 6, IOUtils.UTF_8)
             );
 
             String lyrics = new String(

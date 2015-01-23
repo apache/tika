@@ -459,7 +459,7 @@ public class TikaGUI extends JFrame
                 InputStream stream = url.openStream();
                 try {
                     StringWriter writer = new StringWriter();
-                    IOUtils.copy(stream, writer, "UTF-8");
+                    IOUtils.copy(stream, writer, IOUtils.UTF_8.name());
 
                     JEditorPane editor =
                         new JEditorPane("text/plain", writer.toString());
