@@ -1,5 +1,7 @@
 Release 1.8 - Current Development
 
+  * Include media duration in metadata parsed by MP4Parser (TIKA-1530).
+
   * Support password protected 7zip files (using a PasswordProvider,
     in keeping with the other password supporting formats) (TIKA-1521)
 
