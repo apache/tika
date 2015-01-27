@@ -164,6 +164,7 @@ public class MP4Parser extends AbstractParser {
 
                // Get the duration
                double durationSeconds = ((double)mHeader.getDuration()) / mHeader.getTimescale();
+               metadata.set(XMPDM.DURATION, durationSeconds);
                // TODO Use this
 
                // The timescale is normally the sampling rate
