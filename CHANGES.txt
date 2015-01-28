@@ -1,4 +1,5 @@
 Release 1.8 - Current Development
+  * Upgrade to Commons Compress 1.9 (TIKA-1534).
 
   * Include media duration in metadata parsed by MP4Parser (TIKA-1530).
 
