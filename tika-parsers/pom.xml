@@ -38,7 +38,7 @@
     <poi.version>3.11</poi.version>
     <codec.version>1.9</codec.version>
     <!-- NOTE: sync with POI -->
-    <compress.version>1.8.1</compress.version>
+    <compress.version>1.9</compress.version>
     <tukaani.version>1.5</tukaani.version>
     <!-- NOTE: sync with commons-compress -->
     <mime4j.version>0.7.2</mime4j.version>
