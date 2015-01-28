@@ -63,11 +63,14 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
+      <artifactId>tika-serialization</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-translate</artifactId>
       <version>${project.version}</version>
     </dependency>
-
-
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers</artifactId>
