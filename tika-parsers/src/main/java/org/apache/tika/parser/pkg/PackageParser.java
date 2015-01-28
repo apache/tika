@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,13 +56,16 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
-
 /**
  * Parser for various packaging formats. Package entries will be written to
  * the XHTML event stream as &lt;div class="package-entry"&gt; elements that
  * contain the (optional) entry name as a &lt;h1&gt; element and the full
  * structured body content of the parsed entry.
+ * <p>
+ * User must have JCE Unlimited Strength jars installed for encryption to
+ * work with 7Z files (see: COMPRESS-299 and TIKA-1521).  If the jars
+ * are not installed, an IOException will be thrown, and potentially
+ * wrapped in a TikaException.
  */
 public class PackageParser extends AbstractParser {
 
@@ -161,7 +166,6 @@ public class PackageParser extends AbstractParser {
         if (!type.equals(MediaType.OCTET_STREAM)) {
             metadata.set(CONTENT_TYPE, type.toString());
         }
-
         // Use the delegate parser to parse the contained document
         EmbeddedDocumentExtractor extractor = context.get(
                 EmbeddedDocumentExtractor.class,
@@ -185,12 +189,13 @@ public class PackageParser extends AbstractParser {
             }
             // Otherwise fall through to raise the exception as normal
         } catch (IOException ie) {
-            // Is this a password protection error? 
+            // Is this a password protection error?
             // (COMPRESS-298 should give a nicer way when implemented, see TIKA-1525)
             if ("Cannot read encrypted files without a password".equals(ie.getMessage())) {
                 throw new EncryptedDocumentException();
             }
             // Otherwise fall through to raise the exception as normal
+            throw ie;
         } finally {
             ais.close();
             tmp.close();
