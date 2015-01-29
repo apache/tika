@@ -44,6 +44,7 @@
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.6</vorbis.version>
     <pdfbox.version>1.8.8</pdfbox.version>
+    <netcdf-java.version>4.5.4</netcdf-java.version>
   </properties>
 
   <dependencies>
@@ -77,11 +78,6 @@
     </dependency>
 
     <!-- Upstream parser libraries -->
-    <dependency>
-      <groupId>edu.ucar</groupId>
-      <artifactId>netcdf</artifactId>
-      <version>4.2.20</version>
-    </dependency>
     <dependency>
       <groupId>net.sourceforge.jmatio</groupId>
       <artifactId>jmatio</artifactId>
@@ -233,6 +229,33 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-log4j12</artifactId>
       <scope>test</scope>
+    </dependency>
+
+    <!-- edu.ucar dependencies -->
+    <dependency>
+      <groupId>edu.ucar</groupId>
+      <artifactId>netcdf4</artifactId>
+      <version>${netcdf-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.ucar</groupId>
+      <artifactId>grib</artifactId>
+      <version>${netcdf-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.ucar</groupId>
+      <artifactId>cdm</artifactId>
+      <version>${netcdf-java.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>edu.ucar</groupId>
+      <artifactId>httpservices</artifactId>
+      <version>${netcdf-java.version}</version>
+   </dependency>
+   <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>10.0.1</version>
     </dependency>
   </dependencies>
 
