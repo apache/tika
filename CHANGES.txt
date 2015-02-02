@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
-  * Build a parser to extract data from GRIB formats (TIKA-1423)
+
+  * Fix out of memory error in surefire plugin. (TIKA-1537)
+
+  * Build a parser to extract data from GRIB formats (TIKA-1423).
 
   * Upgrade to Commons Compress 1.9 (TIKA-1534).
 
