@@ -86,7 +86,7 @@ public class RarParser extends AbstractParser {
                         subFile = rar.getInputStream(header);
 
                         Metadata entrydata = PackageParser.handleEntryMetadata(
-                                header.getFileNameString(),
+                                "".equals(header.getFileNameW())?header.getFileNameString():header.getFileNameW(),
                                 header.getCTime(), header.getMTime(),
                                 header.getFullUnpackSize(),
                                 xhtml
