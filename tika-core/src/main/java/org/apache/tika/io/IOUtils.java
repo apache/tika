@@ -75,7 +75,7 @@ import java.util.List;
  * @author Sandy McArthur
  * @since Apache Tika 0.4, copied (partially) from Commons IO 1.4
  */
-public class IOUtils {
+public final class IOUtils {
 
     /**
      * The default buffer size to use.
@@ -85,8 +85,9 @@ public class IOUtils {
     /**
      * Instances should NOT be constructed in standard programming.
      */
-    public IOUtils() {
-        super();
+    private IOUtils() {
+        //super();
+    	assert false : "Instances should NOT be constructed in standard programming.";
     }
 
     //-----------------------------------------------------------------------
