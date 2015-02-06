@@ -704,7 +704,7 @@ public class TestMimeTypes {
         assertType("audio/x-wav", "testWAV.wav");
         assertType("audio/midi", "testMID.mid");
         assertType("application/x-msaccess", "testACCESS.mdb");
-        assertType("application/x-font-ttf", "testTrueType2.ttf");
+        assertType("application/x-font-ttf", "testTrueType3.ttf");
     }
     
     @Test
