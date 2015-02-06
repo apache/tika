@@ -81,9 +81,12 @@ public class FontParsersTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
+        //Open Sans font is ASL 2.0 according to 
+        //http://www.google.com/fonts/specimen/Open+Sans
+        //...despite the copyright in the file's metadata.
         TikaInputStream stream = TikaInputStream.get(
                 FontParsersTest.class.getResource(
-                        "/test-documents/testTrueType2.ttf"));
+                        "/test-documents/testTrueType3.ttf"));
         
         try {
             parser.parse(stream, handler, metadata, context);
@@ -92,20 +95,19 @@ public class FontParsersTest {
         }
 
         assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("Aclonica", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Open Sans Bold", metadata.get(TikaCoreProperties.TITLE));
 
-        assertEquals("2011-04-21T07:59:00Z",   metadata.get(Metadata.CREATION_DATE));
-        assertEquals("2011-04-21T07:59:00Z",   metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("2011-04-22T19:56:14Z",   metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2010-12-30T11:04:00Z", metadata.get(Metadata.CREATION_DATE));
+        assertEquals("2010-12-30T11:04:00Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2011-05-05T12:37:53Z", metadata.get(TikaCoreProperties.MODIFIED));
         
-        assertEquals("Aclonica", metadata.get(MET_FONT_NAME));
-        assertEquals("Aclonica",         metadata.get(MET_FONT_FAMILY_NAME));
-        assertEquals("Regular",                metadata.get(MET_FONT_SUB_FAMILY_NAME));
-        assertEquals("Aclonica-Regular", metadata.get(MET_PS_NAME));
+        assertEquals("Open Sans Bold", metadata.get(MET_FONT_NAME));
+        assertEquals("Open Sans", metadata.get(MET_FONT_FAMILY_NAME));
+        assertEquals("Bold", metadata.get(MET_FONT_SUB_FAMILY_NAME));
+        assertEquals("OpenSans-Bold", metadata.get(MET_PS_NAME));
         
-        assertEquals("Copyright",           metadata.get("Copyright").substring(0, 9));
-        assertContains("http://www.apache.org/licenses/LICENSE-2.0.html", metadata.get("Copyright"));
-        assertEquals("Aclonica is a trade", metadata.get("Trademark").substring(0, 19));
+        assertEquals("Digitized", metadata.get("Copyright").substring(0, 9));
+        assertEquals("Open Sans", metadata.get("Trademark").substring(0, 9));
         
         // Not extracted
         assertEquals(null, metadata.get(MET_FONT_FULL_NAME));
