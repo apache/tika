@@ -3043,6 +3043,18 @@
     <glob pattern="*.gnumeric"/>
   </mime-type>
 
+  <mime-type type="application/x-grib">
+	 <acronym>GRIB</acronym>
+	 <_comment>General Regularly-distributed Information in Binary form</_comment>
+	 <tika:link>http://en.wikipedia.org/wiki/GRIB</tika:link>
+	 <magic priority="50">
+	   <match value="GRIB" type="string" offset="0"/>
+	 </magic>
+	 <glob pattern="*.grb"/>
+	 <glob pattern="*.grb1"/>
+	 <glob pattern="*.grb2"/>
+  </mime-type>
+  
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
     <magic priority="50">
@@ -3397,6 +3409,13 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/xquery">
+    <_comment>XQuery source code</_comment>
+    <glob pattern="*.xq"/>
+    <glob pattern="*.xquery"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+  
   <mime-type type="application/x-rar-compressed">
     <_comment>RAR archive</_comment>
     <alias type="application/x-rar"/>
@@ -6191,23 +6210,4 @@
     <sub-class-of type="text/plain"/>
   </mime-type>
 
-  <mime-type type="application/xquery">
-    <_comment>XQuery source code</_comment>
-    <glob pattern="*.xq"/>
-    <glob pattern="*.xquery"/>
-    <sub-class-of type="text/plain"/>
-  </mime-type>
-  
-  <mime-type type="application/x-grib">
-	<acronym>GRIB</acronym>
-	<_comment>General Regularly-distributed Information in Binary form</_comment>
-	<tika:link>http://en.wikipedia.org/wiki/GRIB</tika:link>
-	<magic priority="50">
-	<match value="GRIB" type="string" offset="0"/>
-	</magic>
-	<glob pattern="*.grb"/>
-	<glob pattern="*.grb1"/>
-	<glob pattern="*.grb2"/>
-  </mime-type>
-  
 </mime-info>
