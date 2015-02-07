@@ -75,7 +75,7 @@ import java.util.List;
  * @author Sandy McArthur
  * @since Apache Tika 0.4, copied (partially) from Commons IO 1.4
  */
-public class IOUtils {
+public final class IOUtils {
 
     //TODO: switch to StandardCharsets when we move to Java 1.7
     public static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -88,8 +88,9 @@ public class IOUtils {
     /**
      * Instances should NOT be constructed in standard programming.
      */
-    public IOUtils() {
-        super();
+    private IOUtils() {
+        //super();
+    	assert false : "Instances should NOT be constructed in standard programming.";
     }
 
     //-----------------------------------------------------------------------
