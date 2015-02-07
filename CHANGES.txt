@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Add test files and detection mechanism for Gridded
+    Binary (GRIB) files. (TIKA-1539)
+
   * The RAR parser was updated to handle Chinese characters 
     using the functionality provided by allowing encoding to
     be used within ZipArchiveInputStream. (TIKA-936)
