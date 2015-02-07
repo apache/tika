@@ -841,6 +841,11 @@ public class TikaDetectionTest {
         assertEquals("video/x-msvideo", tika.detect("x.avi"));
         assertEquals("video/x-sgi-movie", tika.detect("x.movie"));
         assertEquals("x-conference/x-cooltalk", tika.detect("x.ice"));
+
+        assertEquals("application/x-grib", tika.detect("x.grb"));
+        assertEquals("application/x-grib", tika.detect("x.grb1"));
+        assertEquals("application/x-grib", tika.detect("x.grb2"));
+        
     }
 
 }
