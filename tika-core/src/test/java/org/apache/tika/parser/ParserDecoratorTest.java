@@ -18,12 +18,16 @@ package org.apache.tika.parser;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 
 public class ParserDecoratorTest {
@@ -70,5 +74,47 @@ public class ParserDecoratorTest {
         types = p.getSupportedTypes(context);
         assertEquals(1, types.size());
         assertEquals(types.toString(), true, types.contains(MediaType.OCTET_STREAM));
+    }
+    
+    /**
+     * Testing one proposed implementation for TIKA-1509
+     */
+    @Test
+    public void withFallback() throws Exception {
+        Set<MediaType> onlyOct = Collections.singleton(MediaType.OCTET_STREAM);
+        Set<MediaType> octAndText = new HashSet<MediaType>(Arrays.asList(
+                MediaType.OCTET_STREAM, MediaType.TEXT_PLAIN));
+
+        ParseContext context = new ParseContext();
+        BodyContentHandler handler;
+        Metadata metadata;
+        
+        ErrorParser pFail = new ErrorParser();
+        DummyParser pWork = new DummyParser(onlyOct, new HashMap<String,String>(), "Fell back!");
+        EmptyParser pNothing = new EmptyParser();
+        
+        // Create a combination which will fail first
+        @SuppressWarnings("deprecation")
+        Parser p = ParserDecorator.withFallbacks(Arrays.asList(pFail, pWork), octAndText);
+        
+        // Will claim to support the types given, not those on the child parsers
+        Set<MediaType> types = p.getSupportedTypes(context);
+        assertEquals(2, types.size());
+        assertEquals(types.toString(), true, types.contains(MediaType.TEXT_PLAIN));
+        assertEquals(types.toString(), true, types.contains(MediaType.OCTET_STREAM));
+        
+        // Parsing will make it to the second one
+        metadata = new Metadata();
+        handler = new BodyContentHandler();
+        p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
+        assertEquals("Fell back!", handler.toString());
+        
+        
+        // With a parser that will work with no output, will get nothing
+        p = ParserDecorator.withFallbacks(Arrays.asList(pNothing, pWork), octAndText);
+        metadata = new Metadata();
+        handler = new BodyContentHandler();
+        p.parse(new ByteArrayInputStream(new byte[] {0,1,2,3,4}), handler, metadata, context);
+        assertEquals("", handler.toString());
     }
 }

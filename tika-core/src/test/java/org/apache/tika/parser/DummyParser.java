@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -54,11 +55,12 @@ public class DummyParser extends AbstractParser {
          metadata.add(m.getKey(), m.getValue());
       }
       
-      handler.startDocument();
+      XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+      xhtml.startDocument();
       if (xmlText != null) {
-         handler.characters(xmlText.toCharArray(), 0, xmlText.length());
+          xhtml.characters(xmlText.toCharArray(), 0, xmlText.length());
       }
-      handler.endDocument();
+      xhtml.endDocument();
    }
 
 }
