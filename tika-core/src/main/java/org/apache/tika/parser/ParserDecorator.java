@@ -18,10 +18,12 @@ package org.apache.tika.parser;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.xml.sax.ContentHandler;
@@ -78,6 +80,50 @@ public class ParserDecorator extends AbstractParser {
                 parserTypes.removeAll(excludeTypes);
                 // Return whatever is left
                 return parserTypes;
+            }
+        };
+    }
+    
+    /**
+     * Decorates the given parsers into a virtual parser, where they'll
+     *  be tried in preference order until one works without error.
+     * TODO Is this the right name?
+     * TODO Is this the right place to put this? Should it be in CompositeParser? Elsewhere?
+     * TODO Should we reset the Metadata if we try another parser?
+     * TODO Should we reset the ContentHandler if we try another parser?
+     * TODO Should we log/report failures anywhere?
+     * @deprecated Do not use until the TODOs are resolved, see TIKA-1509
+     */
+    public static final Parser withFallbacks(
+            final Collection<? extends Parser> parsers, final Set<MediaType> types) {
+        Parser parser = EmptyParser.INSTANCE;
+        if (!parsers.isEmpty()) parser = parsers.iterator().next();
+        
+        return new ParserDecorator(parser) {
+            private static final long serialVersionUID = 1625187131782069683L;
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return types;
+            }
+            @Override
+            public void parse(InputStream stream, ContentHandler handler,
+                    Metadata metadata, ParseContext context)
+                    throws IOException, SAXException, TikaException {
+                // Must have a TikaInputStream, so we can re-use it if parsing fails
+                TikaInputStream tstream = TikaInputStream.get(stream);
+                tstream.getFile();
+                // Try each parser in turn
+                for (Parser p : parsers) {
+                    tstream.mark(-1);
+                    try {
+                        p.parse(tstream, handler, metadata, context);
+                        return;
+                    } catch (Exception e) {
+                        // TODO How to log / record this failure?
+                    }
+                    // Prepare for the next parser, if present
+                    tstream.reset();
+                }
             }
         };
     }
