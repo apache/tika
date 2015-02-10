@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * A basic wrapper around the UNIX file command was 
+    added to extract Strings. (TIKA-1541)
+
   * Add test files and detection mechanism for Gridded
     Binary (GRIB) files. (TIKA-1539)
 
