@@ -136,7 +136,7 @@ public class TikaResourceTest extends CXFTestBase {
         WebClient webClient = WebClient.create(endPoint + TIKA_PATH + "/form");
         Response response = webClient.type("multipart/form-data")
                 .accept("text/xml")
-                .put(attachmentPart);
+                .post(attachmentPart);
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
