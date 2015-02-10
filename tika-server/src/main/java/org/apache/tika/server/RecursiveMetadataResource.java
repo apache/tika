@@ -29,6 +29,7 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -49,7 +50,7 @@ public class RecursiveMetadataResource {
     this.tikaConfig = tikaConfig;
   }
 
-  @PUT
+  @POST
   @Consumes("multipart/form-data")
   @Produces({"text/csv", "application/json"})
   @Path("form")

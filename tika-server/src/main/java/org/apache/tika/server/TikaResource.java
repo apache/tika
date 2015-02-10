@@ -21,6 +21,7 @@ import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -232,7 +233,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
     }
   }
 
-  @PUT
+  @POST
   @Consumes("multipart/form-data")
   @Produces("text/plain")
   @Path("form")
@@ -303,7 +304,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
     };
   }
 
-  @PUT
+  @POST
   @Consumes("multipart/form-data")
   @Produces("text/html")
   @Path("form")
@@ -318,7 +319,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
 	  return produceOutput(is, httpHeaders.getRequestHeaders(), info, "html");
   }
 
-  @PUT
+  @POST
   @Consumes("multipart/form-data")
   @Produces("text/xml")
   @Path("form")
