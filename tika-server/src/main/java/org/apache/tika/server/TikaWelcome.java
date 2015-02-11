@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -39,6 +41,7 @@ import javax.ws.rs.Produces;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import sun.misc.Regexp;
 
 /**
  * <p>Provides a basic welcome to the Apache Tika Server.</p>
@@ -129,13 +132,31 @@ public class TikaWelcome {
     @Produces("text/html")
     public String getWelcomeHTML() {
         StringBuffer h = new StringBuffer();
-        html.generateHeader(h, "Welcome to the " + tika.toString() + " Server");
+        String tikaVersion = tika.toString();
+
+        html.generateHeader(h, "Welcome to the " + tikaVersion + " Server");
         
         h.append("<p>For endpoints, please see <a href=\"");
         h.append(DOCS_URL);
         h.append("\">");
         h.append(DOCS_URL);
-        h.append("</a></p>\n");
+        h.append("</a>");
+
+        // TIKA-1269 -- Miredot documentation
+        // As the SNAPSHOT endpoints are updated, please update the website by running
+        // the server tests and doing step 12.6 of https://wiki.apache.org/tika/ReleaseProcess.
+        Pattern p = Pattern.compile("\\d+\\.\\d+");
+        Matcher m = p.matcher(tikaVersion);
+        if (m.find()) {
+            String versionNumber = m.group();
+            String miredot = "http://tika.apache.org/" + versionNumber + "/miredot/index.html";
+            h.append(" and <a href=\"")
+                    .append(miredot)
+                    .append("\">")
+                    .append(miredot)
+                    .append("</a>");
+        }
+        h.append("</p>\n");
 
         h.append("<ul>\n");
         for (Endpoint e : identifyEndpoints()) {
