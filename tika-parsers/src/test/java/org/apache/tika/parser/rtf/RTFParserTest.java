@@ -16,6 +16,22 @@
  */
 package org.apache.tika.parser.rtf;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -37,22 +53,6 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Junit test class for the Tika {@link RTFParser}
@@ -547,7 +547,24 @@ public class RTFParserTest extends TikaTest {
         assertEquals(40, meta_jpg.names().length);
         assertEquals(105, meta_jpg.names().length);
     }
-    
+
+    @Test
+    public void testMultipleNewlines() throws Exception {
+        String content = getXML("testRTFNewlines.rtf").xml;
+        content = content.replaceAll("[\r\n]+", " ");
+        assertContains("<body><p>one</p> " +
+                "<p /> " +
+                "<p>two</p> " +
+                "<p /> " +
+                "<p /> " +
+                "<p>three</p> " +
+                "<p /> " +
+                "<p /> " +
+                "<p /> " +
+                "<p>four</p>", content);
+    }
+
+
     //TIKA-1010 test linked embedded doc
     @Test
     public void testEmbeddedLinkedDocument() throws Exception {
