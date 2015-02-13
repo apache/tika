@@ -33,12 +33,14 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.exceptions.CryptographyException;
 import org.apache.pdfbox.io.RandomAccess;
 import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
-import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.CloseShieldInputStream;
@@ -133,11 +135,7 @@ public class PDFParser extends AbstractParser {
 
             //if using the classic parser and the doc is encrypted, we must manually decrypt
             if (! localConfig.getUseNonSequentialParser() && pdfDocument.isEncrypted()) {
-                try {
-                    pdfDocument.decrypt(password);
-                } catch (Exception e) {
-                    // Ignore
-                }
+                pdfDocument.decrypt(password);
             }
 
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
@@ -146,6 +144,18 @@ public class PDFParser extends AbstractParser {
                 PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
             }
             
+        } catch (CryptographyException e) {
+            //seq parser throws CryptographyException for bad password
+            throw new EncryptedDocumentException(e);
+        } catch (IOException e) {
+            //nonseq parser throws IOException for bad password
+            //At the Tika level, we want the same exception to be thrown
+            if (e.getMessage().contains("Error (CryptographyException)")) {
+                metadata.set("pdf:encrypted", Boolean.toString(true));
+                throw new EncryptedDocumentException(e);
+            }
+            //rethrow any other IOExceptions
+            throw e;
         } finally {
             if (pdfDocument != null) {
                pdfDocument.close();

@@ -16,6 +16,11 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -27,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.DocumentSelector;
@@ -48,11 +54,6 @@ import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 /**
  * Test case for parsing pdf files.
  */
@@ -203,6 +204,67 @@ public class PDFParserTest extends TikaTest {
        assertContains("RETHINKING THE FINANCIAL NETWORK", content);
        assertContains("On 16 November 2002", content);
        assertContains("In many important respects", content);
+
+        //now test wrong password
+        handler = new BodyContentHandler();
+        metadata = new Metadata();
+        context = new ParseContext();
+        context.set(PasswordProvider.class, new PasswordProvider() {
+            public String getPassword(Metadata metadata) {
+                return "WRONG!!!!";
+            }
+        });
+
+        stream = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDF_protected.pdf");
+        boolean ex = false;
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } catch (EncryptedDocumentException e) {
+            ex = true;
+        } finally {
+            stream.close();
+        }
+        content = handler.toString();
+
+        assertTrue("encryption exception", ex);
+        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("true", metadata.get("pdf:encrypted"));
+        //pdf:encrypted, X-Parsed-By and Content-Type
+        assertEquals("very little metadata should be parsed", 3, metadata.names().length);
+        assertEquals(0, content.length());
+
+        //now test wrong password with non sequential parser
+        handler = new BodyContentHandler();
+        metadata = new Metadata();
+        context = new ParseContext();
+        context.set(PasswordProvider.class, new PasswordProvider() {
+            public String getPassword(Metadata metadata) {
+                return "WRONG!!!!";
+            }
+        });
+        PDFParserConfig config = new PDFParserConfig();
+        config.setUseNonSequentialParser(true);
+        context.set(PDFParserConfig.class, config);
+
+        stream = PDFParserTest.class.getResourceAsStream(
+                "/test-documents/testPDF_protected.pdf");
+        ex = false;
+        try {
+            parser.parse(stream, handler, metadata, context);
+        } catch (EncryptedDocumentException e) {
+            ex = true;
+        } finally {
+            stream.close();
+        }
+        content = handler.toString();
+        assertTrue("encryption exception", ex);
+        assertEquals("application/pdf", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("true", metadata.get("pdf:encrypted"));
+
+        //pdf:encrypted, X-Parsed-By and Content-Type
+        assertEquals("very little metadata should be parsed", 3, metadata.names().length);
+        assertEquals(0, content.length());
     }
 
     @Test
