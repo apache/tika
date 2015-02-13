@@ -188,6 +188,12 @@
       <version>${vorbis.version}</version>
     </dependency>
     <dependency>
+        <groupId>org.xerial</groupId>
+        <artifactId>sqlite-jdbc</artifactId>
+        <version>3.8.7</version>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.googlecode.juniversalchardet</groupId>
       <artifactId>juniversalchardet</artifactId>
       <version>1.0.3</version>

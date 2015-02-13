@@ -199,6 +199,7 @@
               org.bouncycastle.operator.bc;resolution:=optional,
               org.bouncycastle.tsp;resolution:=optional,
               org.cyberneko.html.xercesbridge;resolution:=optional,
+              org.ibex.nestedvm;resolution:=optional,
               org.gjt.xpp;resolution:=optional,
               org.jaxen;resolution:=optional,
               org.jaxen.dom4j;resolution:=optional,
@@ -215,7 +216,8 @@
               org.osgi.framework;resolution:=optional,
               org.quartz;resolution:=optional,
               org.quartz.impl;resolution:=optional,
-              org.slf4j;resolution:=optional
+              org.slf4j;resolution:=optional,
+              org.sqlite;resolution:=optional,
               org.w3c.dom;resolution:=optional,
               org.relaxng.datatype;resolution:=optional,
               org.xml.sax;resolution:=optional,
