@@ -39,17 +39,17 @@ import org.junit.Test;
 public class LanguageIdentifierTest {
 
     private static final String[] languages = new String[] {
-        // TODO - currently Estonian and Greek fail these tests.
-        // Enable when language detection works better.
-        "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it",
-        "lt", "nl", "pt", "sv"
+            // TODO - currently Estonian and Greek fail these tests.
+            // Enable when language detection works better.
+            "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it",
+            "lt", "nl", "pt", "sv"
     };
 
     @Before
     public void setUp() {
         LanguageIdentifier.initProfiles();
     }
-    
+
     @Test
     public void testLanguageDetection() throws IOException {
         for (String language : languages) {
@@ -103,10 +103,45 @@ public class LanguageIdentifierTest {
         identifier = new LanguageIdentifier(deProfile);
         assertEquals("de", identifier.getLanguage());
         assertTrue(identifier.isReasonablyCertain());
-  }
+    }
 
-  @Test
-  public void testMixedLanguages() throws IOException {
+    // Enable this to compare performance
+    public void testPerformance() throws IOException {
+        final int MRUNS = 8;
+        final int IRUNS = 10;
+        int detected = 0; // To avoid code removal by JVM or compiler
+        String lastResult = null;
+        for (int m = 0 ; m < MRUNS ; m++) {
+            LanguageProfile.useInterleaved = (m & 1) == 1; // Alternate between standard and interleaved
+            String currentResult = "";
+            final long start = System.nanoTime();
+            for (int i = 0 ; i < IRUNS ; i++) {
+                for (String language : languages) {
+                    ProfilingWriter writer = new ProfilingWriter();
+                    writeTo(language, writer);
+                    LanguageIdentifier identifier = new LanguageIdentifier(writer.getProfile());
+                    if (identifier.isReasonablyCertain()) {
+                        currentResult += identifier.getLanguage();
+                        detected++;
+                    }
+                }
+            }
+            System.out.println(String.format(
+                    "Performed %d detections at %2d ms/test with interleaved=%b",
+                    languages.length*IRUNS, (System.nanoTime()-start)/1000000/(languages.length*IRUNS),
+                    LanguageProfile.useInterleaved));
+            if (lastResult != null) { // Might as well test that they behave the same while we're at it
+                assertEquals("This result should be equal to the last", lastResult, currentResult);
+            }
+            lastResult = currentResult;
+        }
+        if (detected == -1) {
+            System.out.println("Never encountered but keep it to guard against over-eager optimization");
+        }
+    }
+
+    @Test
+    public void testMixedLanguages() throws IOException {
         for (String language : languages) {
             for (String other : languages) {
                 if (!language.equals(other)) {
@@ -131,13 +166,13 @@ public class LanguageIdentifierTest {
         ProfilingWriter writer = new ProfilingWriter();
         writeTo(estonian, writer);
         LanguageIdentifier identifier =
-            new LanguageIdentifier(writer.getProfile());
+                new LanguageIdentifier(writer.getProfile());
         assertEquals(estonian, identifier.getLanguage());
     }
 
     private void writeTo(String language, Writer writer) throws IOException {
         InputStream stream =
-            LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
+                LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
         try {
             IOUtils.copy(new InputStreamReader(stream, IOUtils.UTF_8), writer);
         } finally {
