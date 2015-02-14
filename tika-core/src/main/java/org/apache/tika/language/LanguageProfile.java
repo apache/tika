@@ -212,7 +212,6 @@ public class LanguageProfile {
                 sumOfSquares += square(thatEntry.count/thatCount);
                 thatEntry.next();
             }
-//            System.out.println(thisEntry + " vs " + thatEntry + " sum: " + sumOfSquares);
         }
         return Math.sqrt(sumOfSquares);
     }
