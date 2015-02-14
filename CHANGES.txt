@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Increased the speed of language identification by 
+    a factor of two. (TIKA-1549)
+
   * Added parser for Sqlite3 db files. Users need to add
     org.xerial's sqlite-jdbc to their classpath.  Tika is not
     currently bundling that dependency. (TIKA-1511)
