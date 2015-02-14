@@ -16,7 +16,15 @@
  */
 package org.apache.tika.language;
 
-import java.util.*;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Language profile based on ngram counts.
@@ -32,7 +40,8 @@ public class LanguageProfile {
     /**
      * The ngrams that make up this profile.
      */
-    private final Map<String, Counter> ngrams = new HashMap<String, Counter>();
+    private final Map<String, Counter> ngrams =
+            new HashMap<String, Counter>();
 
     /**
      * Sorted ngram cache for faster distance calculation.

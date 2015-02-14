@@ -39,10 +39,10 @@ import org.junit.Test;
 public class LanguageIdentifierTest {
 
     private static final String[] languages = new String[] {
-            // TODO - currently Estonian and Greek fail these tests.
-            // Enable when language detection works better.
-            "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it",
-            "lt", "nl", "pt", "sv"
+        // TODO - currently Estonian and Greek fail these tests.
+        // Enable when language detection works better.
+        "da", "de", /* "et", "el", */ "en", "es", "fi", "fr", "it",
+        "lt", "nl", "pt", "sv"
     };
 
     @Before
@@ -103,7 +103,7 @@ public class LanguageIdentifierTest {
         identifier = new LanguageIdentifier(deProfile);
         assertEquals("de", identifier.getLanguage());
         assertTrue(identifier.isReasonablyCertain());
-    }
+  }
 
     // Enable this to compare performance
     public void testPerformance() throws IOException {
@@ -172,7 +172,7 @@ public class LanguageIdentifierTest {
 
     private void writeTo(String language, Writer writer) throws IOException {
         InputStream stream =
-                LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
+            LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
         try {
             IOUtils.copy(new InputStreamReader(stream, IOUtils.UTF_8), writer);
         } finally {
