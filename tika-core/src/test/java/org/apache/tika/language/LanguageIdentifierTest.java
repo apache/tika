@@ -166,7 +166,7 @@ public class LanguageIdentifierTest {
         ProfilingWriter writer = new ProfilingWriter();
         writeTo(estonian, writer);
         LanguageIdentifier identifier =
-                new LanguageIdentifier(writer.getProfile());
+            new LanguageIdentifier(writer.getProfile());
         assertEquals(estonian, identifier.getLanguage());
     }
 

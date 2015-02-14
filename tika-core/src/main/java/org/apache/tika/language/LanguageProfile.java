@@ -41,7 +41,7 @@ public class LanguageProfile {
      * The ngrams that make up this profile.
      */
     private final Map<String, Counter> ngrams =
-            new HashMap<String, Counter>();
+        new HashMap<String, Counter>();
 
     /**
      * Sorted ngram cache for faster distance calculation.
