@@ -50,6 +50,7 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
         this.resource = resource;
     }
 
+    @Override
     public void init(DataInputStream input, DataOutputStream output) {
         this.input = input;
         this.output = output;
@@ -101,6 +102,9 @@ class ClassLoaderProxy extends ClassLoader implements ForkProxy {
     @Override
     protected synchronized Class<?> findClass(String name)
             throws ClassNotFoundException {
+        if (org.apache.commons.logging.LogFactory.class.getName().equals(name)) {
+            return org.apache.commons.logging.LogFactory.class;
+        }
         try {
             // Send a request to load the class data
             output.write(ForkServer.RESOURCE);

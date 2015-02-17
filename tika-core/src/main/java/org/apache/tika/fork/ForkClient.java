@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
@@ -148,10 +149,10 @@ class ForkClient {
         }
 
         try {
-           ForkObjectInputStream.sendObject(object, output);
+            ForkObjectInputStream.sendObject(object, output);
         } catch(NotSerializableException nse) {
-           // Build a more friendly error message for this
-           throw new TikaException(
+            // Build a more friendly error message for this
+            throw new TikaException(
                  "Unable to serialize " + object.getClass().getSimpleName() +
                  " to pass to the Forked Parser", nse);
         }
@@ -259,19 +260,20 @@ class ForkClient {
      */
     private static void fillBootstrapJar(File file) throws IOException {
         JarOutputStream jar = new JarOutputStream(new FileOutputStream(file));
+        JarInputStream commonsLoggingJar = new JarInputStream(ForkClient.class.getResourceAsStream("/commons-logging-1.2.jar"));
         try {
-            String manifest =
-                "Main-Class: " + ForkServer.class.getName() + "\n";
+            String manifest
+                    = "Main-Class: " + ForkServer.class.getName() + "\n";
             jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
             jar.write(manifest.getBytes(IOUtils.UTF_8));
 
             Class<?>[] bootstrap = {
-                    ForkServer.class, ForkObjectInputStream.class,
-                    ForkProxy.class, ClassLoaderProxy.class,
-                    MemoryURLConnection.class,
-                    MemoryURLStreamHandler.class,
-                    MemoryURLStreamHandlerFactory.class,
-                    MemoryURLStreamRecord.class
+                ForkServer.class, ForkObjectInputStream.class,
+                ForkProxy.class, ClassLoaderProxy.class,
+                MemoryURLConnection.class,
+                MemoryURLStreamHandler.class,
+                MemoryURLStreamHandlerFactory.class,
+                MemoryURLStreamRecord.class
             };
             ClassLoader loader = ForkServer.class.getClassLoader();
             for (Class<?> klass : bootstrap) {
@@ -284,8 +286,28 @@ class ForkClient {
                     input.close();
                 }
             }
+
+            JarEntry entry;
+            byte[] buffer = new byte[4096];
+            while ((entry = commonsLoggingJar.getNextJarEntry()) != null) {
+
+                // Exclude the manifest file from the old JAR
+                if ("META-INF/MANIFEST.MF".equals(entry.getName())) {
+                    continue;
+                }
+
+                // Write the entry to the output JAR
+                jar.putNextEntry(entry);
+                int read;
+                while ((read = commonsLoggingJar.read(buffer)) != -1) {
+                    jar.write(buffer, 0, read);
+                }
+
+                jar.closeEntry();
+            }
         } finally {
             jar.close();
+            commonsLoggingJar.close();
         }
     }
 
