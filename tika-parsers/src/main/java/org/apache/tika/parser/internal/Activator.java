@@ -20,7 +20,6 @@ import java.util.Properties;
 
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.fork.ForkParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
@@ -33,8 +32,7 @@ public class Activator implements BundleActivator {
 
     private ServiceRegistration parserService;
 
-    private ServiceRegistration forkParserService;
-
+    @Override
     public void start(BundleContext context) throws Exception {
         detectorService = context.registerService(
                 Detector.class.getName(),
@@ -45,16 +43,12 @@ public class Activator implements BundleActivator {
                 Parser.class.getName(),
                 parser,
                 new Properties());
-        forkParserService = context.registerService(
-                ForkParser.class.getName(),
-                new ForkParser(Activator.class.getClassLoader(), parser),
-                new Properties());
     }
 
+    @Override
     public void stop(BundleContext context) throws Exception {
         parserService.unregister();
         detectorService.unregister();
-        forkParserService.unregister();
     }
 
 }

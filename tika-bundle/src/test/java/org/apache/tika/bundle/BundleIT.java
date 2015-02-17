@@ -41,11 +41,11 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.fork.ForkParser;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -99,14 +99,14 @@ public class BundleIT {
 
     @Test
     public void testForkParser(BundleContext bc) throws Exception {
-        ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
-        ClassLoader classLoader = parser.getClass().getClassLoader();
+        Parser defaultParser = (Parser) bc.getService(bc.getServiceReference(Parser.class));
+        ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser);
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
-        InputStream stream = new ByteArrayInputStream(data.getBytes(IOUtils.UTF_8));
+        InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
         Writer writer = new StringWriter();
         ContentHandler contentHandler = new BodyContentHandler(writer);
         Metadata metadata = new Metadata();
-        Detector contentTypeDetector = new DefaultDetector(classLoader);
+        Detector contentTypeDetector = (Detector) bc.getService(bc.getServiceReference(Detector.class));
         MediaType type = contentTypeDetector.detect(stream, metadata);
         assertEquals(type.toString(), "text/html");
         metadata.add(Metadata.CONTENT_TYPE, type.toString());
