@@ -52,16 +52,16 @@ public class XMPMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
     @Override
     public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
-          MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
-        WebApplicationException {
-            try {
-                Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
-                XMPMetadata xmp = new XMPMetadata(metadata);
-                writer.write(xmp.toString());
-                writer.flush();
-            } catch (TikaException e) {
-                throw new IOException(e);
-            }
-            entityStream.flush();
+                        MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
+            WebApplicationException {
+        try {
+            Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
+            XMPMetadata xmp = new XMPMetadata(metadata);
+            writer.write(xmp.toString());
+            writer.flush();
+        } catch (TikaException e) {
+            throw new IOException(e);
+        }
+        entityStream.flush();
     }
 }

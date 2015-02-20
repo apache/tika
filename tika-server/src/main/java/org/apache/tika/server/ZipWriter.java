@@ -17,15 +17,13 @@
 
 package org.apache.tika.server;
 
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
-
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
@@ -37,49 +35,52 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+
 @Provider
 @Produces("application/zip")
 public class ZipWriter implements MessageBodyWriter<Map<String, byte[]>> {
-  private static void zipStoreBuffer(ZipArchiveOutputStream zip, String name, byte[] dataBuffer) throws IOException {
-    ZipEntry zipEntry = new ZipEntry(name!=null?name: UUID.randomUUID().toString());
-    zipEntry.setMethod(ZipOutputStream.STORED);
+    private static void zipStoreBuffer(ZipArchiveOutputStream zip, String name, byte[] dataBuffer) throws IOException {
+        ZipEntry zipEntry = new ZipEntry(name != null ? name : UUID.randomUUID().toString());
+        zipEntry.setMethod(ZipOutputStream.STORED);
 
-    zipEntry.setSize(dataBuffer.length);
-    CRC32 crc32 = new CRC32();
-    crc32.update(dataBuffer);
-    zipEntry.setCrc(crc32.getValue());
+        zipEntry.setSize(dataBuffer.length);
+        CRC32 crc32 = new CRC32();
+        crc32.update(dataBuffer);
+        zipEntry.setCrc(crc32.getValue());
 
-    try {
-      zip.putArchiveEntry(new ZipArchiveEntry(zipEntry));
-    } catch (ZipException ex) {
-      if (name!=null) {
-        zipStoreBuffer(zip, "x-"+name, dataBuffer);
-        return;
-      }
+        try {
+            zip.putArchiveEntry(new ZipArchiveEntry(zipEntry));
+        } catch (ZipException ex) {
+            if (name != null) {
+                zipStoreBuffer(zip, "x-" + name, dataBuffer);
+                return;
+            }
+        }
+
+        zip.write(dataBuffer);
+
+        zip.closeArchiveEntry();
     }
 
-    zip.write(dataBuffer);
-
-    zip.closeArchiveEntry();
-  }
-
-  public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return Map.class.isAssignableFrom(type);
-  }
-
-  public long getSize(Map<String, byte[]> stringMap, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return -1;
-  }
-
-  public void writeTo(Map<String, byte[]> parts, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException, WebApplicationException {
-    ZipArchiveOutputStream zip = new ZipArchiveOutputStream(entityStream);
-
-    zip.setMethod(ZipArchiveOutputStream.STORED);
-
-    for (Map.Entry<String, byte[]> entry : parts.entrySet()) {
-      zipStoreBuffer(zip, entry.getKey(), entry.getValue());
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return Map.class.isAssignableFrom(type);
     }
 
-    zip.close();
-  }
+    public long getSize(Map<String, byte[]> stringMap, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return -1;
+    }
+
+    public void writeTo(Map<String, byte[]> parts, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException, WebApplicationException {
+        ZipArchiveOutputStream zip = new ZipArchiveOutputStream(entityStream);
+
+        zip.setMethod(ZipArchiveOutputStream.STORED);
+
+        for (Map.Entry<String, byte[]> entry : parts.entrySet()) {
+            zipStoreBuffer(zip, entry.getKey(), entry.getValue());
+        }
+
+        zip.close();
+    }
 }

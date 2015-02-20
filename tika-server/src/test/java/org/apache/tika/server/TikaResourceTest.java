@@ -20,11 +20,11 @@ package org.apache.tika.server;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import javax.ws.rs.core.Response;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -33,17 +33,17 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.Test;
 
 public class TikaResourceTest extends CXFTestBase {
-    private static final String TIKA_PATH = "/tika";
     public static final String TEST_DOC = "test.doc";
     public static final String TEST_XLSX = "16637.xlsx";
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
+    private static final String TIKA_PATH = "/tika";
     private static final int UNPROCESSEABLE = 422;
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
         sf.setResourceProvider(TikaResource.class,
-                        new SingletonResourceProvider(new TikaResource(tika)));
+                new SingletonResourceProvider(new TikaResource(tika)));
     }
 
     @Override
@@ -136,8 +136,8 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testSimpleWordMultipartXML() throws Exception {
-        ClassLoader.getSystemResourceAsStream(TEST_DOC);  
-        Attachment attachmentPart = 
+        ClassLoader.getSystemResourceAsStream(TEST_DOC);
+        Attachment attachmentPart =
                 new Attachment("myworddoc", "application/msword", ClassLoader.getSystemResourceAsStream(TEST_DOC));
         WebClient webClient = WebClient.create(endPoint + TIKA_PATH + "/form");
         Response response = webClient.type("multipart/form-data")
@@ -147,5 +147,5 @@ public class TikaResourceTest extends CXFTestBase {
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
     }
-  
+
 }

@@ -16,14 +16,14 @@
  */
 package org.apache.tika.server;
 
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
@@ -32,18 +32,18 @@ import org.eclipse.jetty.util.ajax.JSON;
 
 /**
  * <p>Provides details of all the {@link Detector}s registered with
- *  Apache Tika, similar to <em>--list-detectors</em> with the Tika CLI.
+ * Apache Tika, similar to <em>--list-detectors</em> with the Tika CLI.
  */
 @Path("/detectors")
 public class TikaDetectors {
     private TikaConfig tika;
     private HTMLHelper html;
-    
+
     public TikaDetectors(TikaConfig tika) {
         this.tika = tika;
         this.html = new HTMLHelper();
     }
-    
+
     @GET
     @Produces("text/html")
     public String getDectorsHTML() {
@@ -53,12 +53,13 @@ public class TikaDetectors {
         html.generateFooter(h);
         return h.toString();
     }
+
     private void detectorAsHTML(Detector d, StringBuffer html, int level) {
         html.append("<h");
         html.append(level);
         html.append(">");
         String name = d.getClass().getName();
-        html.append(name.substring(name.lastIndexOf('.')+1));
+        html.append(name.substring(name.lastIndexOf('.') + 1));
         html.append("</h");
         html.append(level);
         html.append(">");
@@ -67,35 +68,36 @@ public class TikaDetectors {
         html.append("</p>");
         if (d instanceof CompositeDetector) {
             html.append("<p>Composite Detector</p>");
-            for (Detector cd : ((CompositeDetector)d).getDetectors()) {
-                detectorAsHTML(cd, html, level+1);
-            }            
+            for (Detector cd : ((CompositeDetector) d).getDetectors()) {
+                detectorAsHTML(cd, html, level + 1);
+            }
         }
     }
-    
+
     @GET
     @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
     public String getDetectorsJSON() {
-        Map<String,Object> details = new HashMap<String, Object>();
+        Map<String, Object> details = new HashMap<String, Object>();
         detectorAsMap(tika.getDetector(), details);
         return JSON.toString(details);
     }
+
     private void detectorAsMap(Detector d, Map<String, Object> details) {
         details.put("name", d.getClass().getName());
-        
+
         boolean isComposite = (d instanceof CompositeDetector);
         details.put("composite", isComposite);
         if (isComposite) {
-            List<Map<String, Object>> c = new ArrayList<Map<String,Object>>();
-            for (Detector cd : ((CompositeDetector)d).getDetectors()) {
-                Map<String,Object> cdet = new HashMap<String, Object>();
+            List<Map<String, Object>> c = new ArrayList<Map<String, Object>>();
+            for (Detector cd : ((CompositeDetector) d).getDetectors()) {
+                Map<String, Object> cdet = new HashMap<String, Object>();
                 detectorAsMap(cd, cdet);
                 c.add(cdet);
             }
             details.put("children", c);
         }
     }
-    
+
     @GET
     @Produces("text/plain")
     public String getDetectorsPlain() {
@@ -103,23 +105,23 @@ public class TikaDetectors {
         renderDetector(tika.getDetector(), text, 0);
         return text.toString();
     }
+
     private void renderDetector(Detector d, StringBuffer text, int indent) {
         boolean isComposite = (d instanceof CompositeDetector);
         String name = d.getClass().getName();
-        
-        for (int i=0; i<indent; i++) {
+
+        for (int i = 0; i < indent; i++) {
             text.append("  ");
         }
         text.append(name);
         if (isComposite) {
             text.append(" (Composite Detector):\n");
 
-            List<Detector> subDetectors = ((CompositeDetector)d).getDetectors();
-            for(Detector sd : subDetectors) {
-                renderDetector(sd, text, indent+1);
+            List<Detector> subDetectors = ((CompositeDetector) d).getDetectors();
+            for (Detector sd : subDetectors) {
+                renderDetector(sd, text, indent + 1);
             }
         } else {
-            text.append("\n");
-        }
+            text.append("\n");        }
     }
 }

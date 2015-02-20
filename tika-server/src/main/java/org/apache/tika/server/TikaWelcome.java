@@ -16,6 +16,15 @@
  */
 package org.apache.tika.server;
 
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
+import javax.ws.rs.OPTIONS;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -29,19 +38,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
-import javax.ws.rs.OPTIONS;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
-import sun.misc.Regexp;
 
 /**
  * <p>Provides a basic welcome to the Apache Tika Server.</p>
@@ -49,22 +48,23 @@ import sun.misc.Regexp;
 @Path("/")
 public class TikaWelcome {
     private static final String DOCS_URL = "https://wiki.apache.org/tika/TikaJAXRS";
-    
+
     private static final Map<Class<? extends Annotation>, String> HTTP_METHODS =
             new HashMap<Class<? extends Annotation>, String>();
+
     static {
-        HTTP_METHODS.put(DELETE.class , "DELETE");
-        HTTP_METHODS.put(GET.class,     "GET");
-        HTTP_METHODS.put(HEAD.class,    "HEAD");
+        HTTP_METHODS.put(DELETE.class, "DELETE");
+        HTTP_METHODS.put(GET.class, "GET");
+        HTTP_METHODS.put(HEAD.class, "HEAD");
         HTTP_METHODS.put(OPTIONS.class, "OPTIONS");
-        HTTP_METHODS.put(POST.class,    "POST");
-        HTTP_METHODS.put(PUT.class,     "PUT");
+        HTTP_METHODS.put(POST.class, "POST");
+        HTTP_METHODS.put(PUT.class, "PUT");
     }
-    
+
     private Tika tika;
     private HTMLHelper html;
     private List<Class<?>> endpoints = new LinkedList<Class<?>>();
-    
+
     public TikaWelcome(TikaConfig tika, List<ResourceProvider> rCoreProviders) {
         this.tika = new Tika(tika);
         this.html = new HTMLHelper();
@@ -72,7 +72,7 @@ public class TikaWelcome {
             this.endpoints.add(rp.getResourceClass());
         }
     }
-    
+
     protected List<Endpoint> identifyEndpoints() {
         List<Endpoint> found = new ArrayList<Endpoint>();
         for (Class<?> endpoint : endpoints) {
@@ -85,7 +85,7 @@ public class TikaWelcome {
                 String httpMethod = null;
                 String methodPath = null;
                 String[] produces = null;
-                
+
                 for (Annotation a : m.getAnnotations()) {
                     for (Class<? extends Annotation> httpMethAnn : HTTP_METHODS.keySet()) {
                         if (httpMethAnn.isInstance(a)) {
@@ -93,13 +93,13 @@ public class TikaWelcome {
                         }
                     }
                     if (a instanceof Path) {
-                        methodPath = ((Path)a).value();
+                        methodPath = ((Path) a).value();
                     }
                     if (a instanceof Produces) {
-                        produces = ((Produces)a).value();
+                        produces = ((Produces) a).value();
                     }
                 }
-                
+
                 if (httpMethod != null) {
                     String mPath = basePath;
                     if (mPath == null) {
@@ -127,7 +127,7 @@ public class TikaWelcome {
         });
         return found;
     }
-    
+
     @GET
     @Produces("text/html")
     public String getWelcomeHTML() {
@@ -135,7 +135,7 @@ public class TikaWelcome {
         String tikaVersion = tika.toString();
 
         html.generateHeader(h, "Welcome to the " + tikaVersion + " Server");
-        
+
         h.append("<p>For endpoints, please see <a href=\"");
         h.append(DOCS_URL);
         h.append("\">");
@@ -187,13 +187,13 @@ public class TikaWelcome {
     @Produces("text/plain")
     public String getWelcomePlain() {
         StringBuffer text = new StringBuffer();
-        
+
         text.append(tika.toString());
         text.append("\n");
         text.append("For endpoints, please see ");
         text.append(DOCS_URL);
         text.append("\n\n");
-        
+
         for (Endpoint e : identifyEndpoints()) {
             text.append(e.httpMethod);
             text.append(" ");
@@ -208,13 +208,14 @@ public class TikaWelcome {
 
         return text.toString();
     }
-    
+
     protected class Endpoint {
         public final String className;
         public final String methodName;
         public final String path;
         public final String httpMethod;
         public final List<String> produces;
+
         protected Endpoint(Class<?> endpoint, Method method, String path,
                            String httpMethod, String[] produces) {
             this.className = endpoint.getCanonicalName();

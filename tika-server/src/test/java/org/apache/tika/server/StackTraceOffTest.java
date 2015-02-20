@@ -86,7 +86,7 @@ public class StackTraceOffTest extends CXFTestBase {
             assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
             String msg = getStringFromInputStream((InputStream) response
                     .getEntity());
-            assertEquals("should be empty: "+path, "", msg);
+            assertEquals("should be empty: " + path, "", msg);
         }
     }
 
@@ -103,7 +103,7 @@ public class StackTraceOffTest extends CXFTestBase {
             assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
             String msg = getStringFromInputStream((InputStream) response
                     .getEntity());
-            assertEquals("should be empty: "+path, "", msg);
+            assertEquals("should be empty: " + path, "", msg);
         }
     }
 
@@ -122,7 +122,7 @@ public class StackTraceOffTest extends CXFTestBase {
             assertEquals("bad type: " + path, 415, response.getStatus());
             String msg = getStringFromInputStream((InputStream) response
                     .getEntity());
-            assertEquals("should be empty: "+path, "", msg);
+            assertEquals("should be empty: " + path, "", msg);
         }
     }
 

@@ -26,13 +26,14 @@ import org.apache.tika.config.TikaConfig;
 @Path("/version")
 public class TikaVersion {
     private Tika tika;
+
     public TikaVersion(TikaConfig tika) {
         this.tika = new Tika(tika);
     }
-    
+
     @GET
     @Produces("text/plain")
     public String getVersion() {
-      return tika.toString();
+        return tika.toString();
     }
 }

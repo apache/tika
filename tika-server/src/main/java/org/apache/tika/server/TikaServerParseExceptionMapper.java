@@ -31,6 +31,7 @@ import org.apache.tika.exception.TikaException;
 
 @Provider
 public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServerParseException> {
+
     private final boolean returnStack;
 
     public TikaServerParseExceptionMapper(boolean returnStack) {
@@ -51,12 +52,12 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
                 //unsupported media type
                 Throwable causeOfCause = cause.getCause();
                 if (causeOfCause instanceof WebApplicationException) {
-                    return ((WebApplicationException)causeOfCause).getResponse();
+                    return ((WebApplicationException) causeOfCause).getResponse();
                 }
                 return buildResponse(cause, 422);
             } else if (cause instanceof IllegalStateException) {
                 return buildResponse(cause, 422);
-            } else if(cause instanceof OldWordFileFormatException) {
+            } else if (cause instanceof OldWordFileFormatException) {
                 return buildResponse(cause, 422);
             } else if (cause instanceof WebApplicationException) {
                 return ((WebApplicationException) e.getCause()).getResponse();

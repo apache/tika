@@ -38,38 +38,38 @@ import org.apache.tika.metadata.Metadata;
  * Returns simple text string for a particular metadata value.
  * This assumes that the metadata object only has one key;
  * if there is more than one key or no keys, this will throw a webapp exception.
- * <p>
+ * <p/>
  * This will choose the first value returned for the one key.
  */
 @Provider
 @Produces(MediaType.TEXT_PLAIN)
 public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
-  public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return mediaType.equals(MediaType.TEXT_PLAIN_TYPE) && Metadata.class.isAssignableFrom(type);
-  }
-
-  public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return -1;
-  }
-
-  @Override
-  @SuppressWarnings("resource")
-  public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
-      MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
-      WebApplicationException {
-
-    if (metadata.names().length != 1) {
-      throw new WebApplicationException("Metadata object must only have one entry!");
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return mediaType.equals(MediaType.TEXT_PLAIN_TYPE) && Metadata.class.isAssignableFrom(type);
     }
-    Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
 
-    for (String name : metadata.names()) {
-      writer.write(metadata.get(name));
+    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return -1;
     }
-    
-    // Don't close, just flush the stream
-    writer.flush();
-  }
+
+    @Override
+    @SuppressWarnings("resource")
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
+                        MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
+            WebApplicationException {
+
+        if (metadata.names().length != 1) {
+            throw new WebApplicationException("Metadata object must only have one entry!");
+        }
+        Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
+
+        for (String name : metadata.names()) {
+            writer.write(metadata.get(name));
+        }
+
+        // Don't close, just flush the stream
+        writer.flush();
+    }
 }
 

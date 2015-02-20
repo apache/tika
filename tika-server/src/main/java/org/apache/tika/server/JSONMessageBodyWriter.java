@@ -40,18 +40,18 @@ import org.apache.tika.metadata.serialization.JsonMetadata;
 @Produces(MediaType.APPLICATION_JSON)
 public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
-  public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return Metadata.class.isAssignableFrom(type);
-  }
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return Metadata.class.isAssignableFrom(type);
+    }
 
-  public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return -1;
-  }
+    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return -1;
+    }
 
-  @Override
-  public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
-      MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
-      WebApplicationException {
+    @Override
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
+                        MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
+            WebApplicationException {
         try {
             Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
             JsonMetadata.toJson(metadata, writer);
@@ -60,5 +60,5 @@ public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
             throw new IOException(e);
         }
         entityStream.flush();
-  }
+    }
 }

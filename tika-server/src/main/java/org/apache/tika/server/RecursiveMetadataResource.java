@@ -43,43 +43,43 @@ import org.xml.sax.helpers.DefaultHandler;
 
 @Path("/rmeta")
 public class RecursiveMetadataResource {
-  private static final Log logger = LogFactory.getLog(RecursiveMetadataResource.class);
+    private static final Log logger = LogFactory.getLog(RecursiveMetadataResource.class);
 
-  private TikaConfig tikaConfig;
+    private TikaConfig tikaConfig;
 
-  public RecursiveMetadataResource(TikaConfig tikaConfig) {
-    this.tikaConfig = tikaConfig;
-  }
+    public RecursiveMetadataResource(TikaConfig tikaConfig) {
+        this.tikaConfig = tikaConfig;
+    }
 
-  @POST
-  @Consumes("multipart/form-data")
-  @Produces({"text/csv", "application/json"})
-  @Path("form")
-  public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-    return Response.ok(
-            parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info)).build();
-  }
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces({"text/csv", "application/json"})
+    @Path("form")
+    public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
+        return Response.ok(
+                parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info)).build();
+    }
 
-  @PUT
-  @Produces("application/json")
-  public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-    return Response.ok(
-            parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
-  }
+    @PUT
+    @Produces("application/json")
+    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        return Response.ok(
+                parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
+    }
 
-  private MetadataList parseMetadata(InputStream is,
-                                 MultivaluedMap<String, String> httpHeaders, UriInfo info) throws Exception {
-    final Metadata metadata = new Metadata();
-    final ParseContext context = new ParseContext();
-    AutoDetectParser parser = TikaResource.createParser(tikaConfig);
-    //TODO: parameterize choice of handler and max chars?
-    BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-    RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser,
-            new BasicContentHandlerFactory(type, -1));
-    TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
-    TikaResource.fillParseContext(context, httpHeaders);
-    TikaResource.logRequest(logger, info, metadata);
-    TikaResource.parse(wrapper, logger, info.getPath(), is, new DefaultHandler(), metadata, context);
-    return new MetadataList(wrapper.getMetadata());
-  }
+    private MetadataList parseMetadata(InputStream is,
+                                       MultivaluedMap<String, String> httpHeaders, UriInfo info) throws Exception {
+        final Metadata metadata = new Metadata();
+        final ParseContext context = new ParseContext();
+        AutoDetectParser parser = TikaResource.createParser(tikaConfig);
+        //TODO: parameterize choice of handler and max chars?
+        BasicContentHandlerFactory.HANDLER_TYPE type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser,
+                new BasicContentHandlerFactory(type, -1));
+        TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
+        TikaResource.fillParseContext(context, httpHeaders);
+        TikaResource.logRequest(logger, info, metadata);
+        TikaResource.parse(wrapper, logger, info.getPath(), is, new DefaultHandler(), metadata, context);
+        return new MetadataList(wrapper.getMetadata());
+    }
 }
