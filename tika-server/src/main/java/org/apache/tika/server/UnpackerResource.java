@@ -35,7 +35,6 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import au.com.bytecode.opencsv.CSVWriter;
@@ -51,7 +50,6 @@ import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -125,18 +123,7 @@ public class UnpackerResource {
     MutableInt count = new MutableInt();
 
     pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
-
-    try {
-      parser.parse(is, ch, metadata, pc);
-    } catch (TikaException ex) {
-      logger.warn(String.format(
-              Locale.ROOT,
-              "%s: Unpacker failed",
-              info.getPath()
-      ), ex);
-
-      throw ex;
-    }
+    TikaResource.parse(parser, logger, info.getPath(), is, ch, metadata, pc);
 
     if (count.intValue() == 0 && !saveAll) {
       throw new WebApplicationException(Response.Status.NO_CONTENT);

@@ -17,17 +17,6 @@
 
 package org.apache.tika.server;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.RecursiveParserWrapper;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.xml.sax.helpers.DefaultHandler;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -38,7 +27,19 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+
 import java.io.InputStream;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.xml.sax.helpers.DefaultHandler;
 
 @Path("/rmeta")
 public class RecursiveMetadataResource {
@@ -78,8 +79,7 @@ public class RecursiveMetadataResource {
     TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
     TikaResource.fillParseContext(context, httpHeaders);
     TikaResource.logRequest(logger, info, metadata);
-
-    wrapper.parse(is, new DefaultHandler(), metadata, context);
+    TikaResource.parse(wrapper, logger, info.getPath(), is, new DefaultHandler(), metadata, context);
     return new MetadataList(wrapper.getMetadata());
   }
 }

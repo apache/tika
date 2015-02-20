@@ -1,3 +1,5 @@
+package org.apache.tika.server;
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,22 +17,19 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
-
-import org.apache.tika.exception.TikaException;
-
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
 
-@Provider
-public class TikaExceptionMapper implements ExceptionMapper<TikaException> {
-  public Response toResponse(TikaException e) {
-    if (e.getCause() !=null && e.getCause() instanceof WebApplicationException) {
-      return ((WebApplicationException) e.getCause()).getResponse();
-    } else {
-      return Response.serverError().build();
+/**
+ * Simple wrapper exception to be thrown for consistent handling
+ * of exceptions that can happen during a parse.
+ */
+public class TikaServerParseException extends WebApplicationException {
+
+    public TikaServerParseException(String msg) {
+        super(msg);
     }
-  }
+
+    public TikaServerParseException(Exception e) {
+        super(e);
+    }
 }
