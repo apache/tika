@@ -40,31 +40,31 @@ import org.apache.tika.metadata.Metadata;
 @Produces("text/csv")
 public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
-  public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return Metadata.class.isAssignableFrom(type);
-  }
-
-  public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-    return -1;
-  }
-
-  @Override
-  @SuppressWarnings("resource")
-  public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
-      MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
-      WebApplicationException {
-
-    CSVWriter writer = new CSVWriter(new OutputStreamWriter(entityStream, IOUtils.UTF_8));
-
-    for (String name : metadata.names()) {
-      String[] values = metadata.getValues(name);
-      ArrayList<String> list = new ArrayList<String>(values.length + 1);
-      list.add(name);
-      list.addAll(Arrays.asList(values));
-      writer.writeNext(list.toArray(values));
+    public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return Metadata.class.isAssignableFrom(type);
     }
-    
-    // Don't close, just flush the stream
-    writer.flush();
-  }
+
+    public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
+        return -1;
+    }
+
+    @Override
+    @SuppressWarnings("resource")
+    public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
+                        MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
+            WebApplicationException {
+
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(entityStream, IOUtils.UTF_8));
+
+        for (String name : metadata.names()) {
+            String[] values = metadata.getValues(name);
+            ArrayList<String> list = new ArrayList<String>(values.length + 1);
+            list.add(name);
+            list.addAll(Arrays.asList(values));
+            writer.writeNext(list.toArray(values));
+        }
+
+        // Don't close, just flush the stream
+        writer.flush();
+    }
 }

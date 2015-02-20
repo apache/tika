@@ -44,93 +44,93 @@ import org.xml.sax.helpers.DefaultHandler;
 
 @Path("/meta")
 public class MetadataResource {
-  private static final Log logger = LogFactory.getLog(MetadataResource.class);
+    private static final Log logger = LogFactory.getLog(MetadataResource.class);
 
-  private TikaConfig tikaConfig;
+    private TikaConfig tikaConfig;
 
-  public MetadataResource(TikaConfig tikaConfig) {
-    this.tikaConfig = tikaConfig;
-  }
-
-  @POST
-  @Consumes("multipart/form-data")
-  @Produces({"text/csv", "application/json", "application/rdf+xml"})
-  @Path("form")
-  public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-    return Response.ok(
-            parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info)).build();
-  }
-
-  @PUT
-  @Produces({"text/csv", "application/json", "application/rdf+xml"})
-  public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-    return Response.ok(
-            parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
-  }
-
-  /**
-   * Get a specific metadata field. If the input stream cannot be parsed, but a
-   * value was found for the given metadata field, then the value of the field
-   * is returned as part of a 200 OK response; otherwise a
-   * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST} is generated. If the stream was successfully
-   * parsed but the specific metadata field was not found, then a
-   * {@link javax.ws.rs.core.Response.Status#NOT_FOUND} is returned.
-   * <p>
-   * Note that this method handles multivalue fields and returns possibly more
-   * metadata value than requested.
-   * <p>
-   * If you want XMP, you must be careful to specify the exact XMP key.
-   * For example, "Author" will return nothing, but "dc:creator" will return the correct value.
-   *
-   * @param is inputstream
-   * @param httpHeaders httpheaders
-   * @param info info
-   * @param field the tika metadata field name
-   * @return one of {@link javax.ws.rs.core.Response.Status#OK}, {@link javax.ws.rs.core.Response.Status#NOT_FOUND}, or
-   *         {@link javax.ws.rs.core.Response.Status#BAD_REQUEST}
-   * @throws Exception
-   */
-  @PUT
-  @Path("{field}")
-  @Produces({"text/csv", "application/json", "application/rdf+xml", "text/plain"})
-  public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders,
-                                   @Context UriInfo info, @PathParam("field") String field) throws Exception {
-
-    // use BAD request to indicate that we may not have had enough data to
-    // process the request
-    Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
-    Metadata metadata = null;
-    try {
-      metadata = parseMetadata(is, httpHeaders.getRequestHeaders(), info);
-      // once we've parsed the document successfully, we should use NOT_FOUND
-      // if we did not see the field
-      defaultErrorResponse = Response.Status.NOT_FOUND;
-    } catch (Exception e) {
-      logger.info("Failed to process field " + field, e);
+    public MetadataResource(TikaConfig tikaConfig) {
+        this.tikaConfig = tikaConfig;
     }
 
-    if (metadata == null || metadata.get(field) == null) {
-      return Response.status(defaultErrorResponse).entity("Failed to get metadata field " + field).build();
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces({"text/csv", "application/json", "application/rdf+xml"})
+    @Path("form")
+    public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
+        return Response.ok(
+                parseMetadata(att.getObject(InputStream.class), att.getHeaders(), info)).build();
     }
 
-    // remove fields we don't care about for the response
-    for (String name : metadata.names()) {
-      if (!field.equals(name)) {
-        metadata.remove(name);
-      }
+    @PUT
+    @Produces({"text/csv", "application/json", "application/rdf+xml"})
+    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        return Response.ok(
+                parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
     }
-    return Response.ok(metadata).build();
-  }
 
-  private Metadata parseMetadata(InputStream is,
-                                 MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
-    final Metadata metadata = new Metadata();
-    final ParseContext context = new ParseContext();
-    AutoDetectParser parser = TikaResource.createParser(tikaConfig);
-    TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
-    TikaResource.fillParseContext(context, httpHeaders);
-    TikaResource.logRequest(logger, info, metadata);
-    TikaResource.parse(parser, logger, info.getPath(), is, new DefaultHandler(), metadata, context);
-    return metadata;
-  }
+    /**
+     * Get a specific metadata field. If the input stream cannot be parsed, but a
+     * value was found for the given metadata field, then the value of the field
+     * is returned as part of a 200 OK response; otherwise a
+     * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST} is generated. If the stream was successfully
+     * parsed but the specific metadata field was not found, then a
+     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND} is returned.
+     * <p/>
+     * Note that this method handles multivalue fields and returns possibly more
+     * metadata value than requested.
+     * <p/>
+     * If you want XMP, you must be careful to specify the exact XMP key.
+     * For example, "Author" will return nothing, but "dc:creator" will return the correct value.
+     *
+     * @param is          inputstream
+     * @param httpHeaders httpheaders
+     * @param info        info
+     * @param field       the tika metadata field name
+     * @return one of {@link javax.ws.rs.core.Response.Status#OK}, {@link javax.ws.rs.core.Response.Status#NOT_FOUND}, or
+     * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST}
+     * @throws Exception
+     */
+    @PUT
+    @Path("{field}")
+    @Produces({"text/csv", "application/json", "application/rdf+xml", "text/plain"})
+    public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders,
+                                     @Context UriInfo info, @PathParam("field") String field) throws Exception {
+
+        // use BAD request to indicate that we may not have had enough data to
+        // process the request
+        Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
+        Metadata metadata = null;
+        try {
+            metadata = parseMetadata(is, httpHeaders.getRequestHeaders(), info);
+            // once we've parsed the document successfully, we should use NOT_FOUND
+            // if we did not see the field
+            defaultErrorResponse = Response.Status.NOT_FOUND;
+        } catch (Exception e) {
+            logger.info("Failed to process field " + field, e);
+        }
+
+        if (metadata == null || metadata.get(field) == null) {
+            return Response.status(defaultErrorResponse).entity("Failed to get metadata field " + field).build();
+        }
+
+        // remove fields we don't care about for the response
+        for (String name : metadata.names()) {
+            if (!field.equals(name)) {
+                metadata.remove(name);
+            }
+        }
+        return Response.ok(metadata).build();
+    }
+
+    private Metadata parseMetadata(InputStream is,
+                                   MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
+        final Metadata metadata = new Metadata();
+        final ParseContext context = new ParseContext();
+        AutoDetectParser parser = TikaResource.createParser(tikaConfig);
+        TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
+        TikaResource.fillParseContext(context, httpHeaders);
+        TikaResource.logRequest(logger, info, metadata);
+        TikaResource.parse(parser, logger, info.getPath(), is, new DefaultHandler(), metadata, context);
+        return metadata;
+    }
 }

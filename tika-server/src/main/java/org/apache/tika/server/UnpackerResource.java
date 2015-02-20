@@ -65,199 +65,200 @@ import org.xml.sax.helpers.DefaultHandler;
 
 @Path("/unpack")
 public class UnpackerResource {
-  private static final Log logger = LogFactory.getLog(UnpackerResource.class);
-  public static final String TEXT_FILENAME = "__TEXT__";
-  private static final String META_FILENAME = "__METADATA__";
+    public static final String TEXT_FILENAME = "__TEXT__";
+    private static final Log logger = LogFactory.getLog(UnpackerResource.class);
+    private static final String META_FILENAME = "__METADATA__";
 
-  private TikaConfig tikaConfig;
-  public UnpackerResource(TikaConfig tikaConfig) {
-      this.tikaConfig = tikaConfig;
-  }
+    private TikaConfig tikaConfig;
 
-  @Path("/{id:(/.*)?}")
-  @PUT
-  @Produces({"application/zip", "application/x-tar"})
-  public Map<String, byte[]> unpack(
-          InputStream is,
-          @Context HttpHeaders httpHeaders,
-          @Context UriInfo info
-  ) throws Exception {
-    return process(is, httpHeaders, info, false);
-  }
-
-  @Path("/all{id:(/.*)?}")
-  @PUT
-  @Produces({"application/zip", "application/x-tar"})
-  public Map<String, byte[]> unpackAll(
-          InputStream is,
-          @Context HttpHeaders httpHeaders,
-          @Context UriInfo info
-  ) throws Exception {
-    return process(is, httpHeaders, info, true);
-  }
-
-  private Map<String, byte[]> process(
-          InputStream is,
-          @Context HttpHeaders httpHeaders,
-          @Context UriInfo info,
-          boolean saveAll
-  ) throws Exception {
-    Metadata metadata = new Metadata();
-    ParseContext pc = new ParseContext();
-
-    AutoDetectParser parser = TikaResource.createParser(tikaConfig);
-
-    TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
-    TikaResource.logRequest(logger, info, metadata);
-
-    ContentHandler ch;
-    ByteArrayOutputStream text = new ByteArrayOutputStream();
-
-    if (saveAll) {
-      ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, org.apache.tika.io.IOUtils.UTF_8)));
-    } else {
-      ch = new DefaultHandler();
+    public UnpackerResource(TikaConfig tikaConfig) {
+        this.tikaConfig = tikaConfig;
     }
 
-    Map<String, byte[]> files = new HashMap<String, byte[]>();
-    MutableInt count = new MutableInt();
+    public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, org.apache.tika.io.IOUtils.UTF_8));
 
-    pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
-    TikaResource.parse(parser, logger, info.getPath(), is, ch, metadata, pc);
-
-    if (count.intValue() == 0 && !saveAll) {
-      throw new WebApplicationException(Response.Status.NO_CONTENT);
-    }
-
-    if (saveAll) {
-      files.put(TEXT_FILENAME, text.toByteArray());
-
-      ByteArrayOutputStream metaStream = new ByteArrayOutputStream();
-      metadataToCsv(metadata, metaStream);
-
-      files.put(META_FILENAME, metaStream.toByteArray());
-    }
-
-    return files;
-  }
-
-  public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
-    CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, org.apache.tika.io.IOUtils.UTF_8));
-
-    for (String name : metadata.names()) {
-      String[] values = metadata.getValues(name);
-      ArrayList<String> list = new ArrayList<String>(values.length+1);
-      list.add(name);
-      list.addAll(Arrays.asList(values));
-      writer.writeNext(list.toArray(values));
-    }
-
-    writer.close();
-  }
-
-  private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
-    private final MutableInt count;
-    private final Map<String, byte[]> zout;
-
-    MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout) {
-      this.count = count;
-      this.zout = zout;
-    }
-
-    public boolean shouldParseEmbedded(Metadata metadata) {
-      return true;
-    }
-
-    public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
-      ByteArrayOutputStream bos = new ByteArrayOutputStream();
-      IOUtils.copy(inputStream, bos);
-      byte[] data = bos.toByteArray();
-
-      String name = metadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY);
-      String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
-
-      if (name == null) {
-        name = Integer.toString(count.intValue());
-      }
-
-      if (!name.contains(".") && contentType!=null) {
-        try {
-          String ext = tikaConfig.getMimeRepository().forName(contentType).getExtension();
-
-          if (ext!=null) {
-            name += ext;
-          }
-        } catch (MimeTypeException e) {
-          logger.warn("Unexpected MimeTypeException", e);
+        for (String name : metadata.names()) {
+            String[] values = metadata.getValues(name);
+            ArrayList<String> list = new ArrayList<String>(values.length + 1);
+            list.add(name);
+            list.addAll(Arrays.asList(values));
+            writer.writeNext(list.toArray(values));
         }
-      }
 
-      if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
-        POIFSFileSystem poifs = new POIFSFileSystem(new ByteArrayInputStream(data));
-        OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
+        writer.close();
+    }
 
-        if (type == OfficeParser.POIFSDocumentType.OLE10_NATIVE) {
-          try {
-            Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
-            if (ole.getDataSize()>0) {
-              String label = ole.getLabel();
+    @Path("/{id:(/.*)?}")
+    @PUT
+    @Produces({"application/zip", "application/x-tar"})
+    public Map<String, byte[]> unpack(
+            InputStream is,
+            @Context HttpHeaders httpHeaders,
+            @Context UriInfo info
+    ) throws Exception {
+        return process(is, httpHeaders, info, false);
+    }
 
-              if (label.startsWith("ole-")) {
-                label = Integer.toString(count.intValue()) + '-' + label;
-              }
+    @Path("/all{id:(/.*)?}")
+    @PUT
+    @Produces({"application/zip", "application/x-tar"})
+    public Map<String, byte[]> unpackAll(
+            InputStream is,
+            @Context HttpHeaders httpHeaders,
+            @Context UriInfo info
+    ) throws Exception {
+        return process(is, httpHeaders, info, true);
+    }
 
-              name = label;
+    private Map<String, byte[]> process(
+            InputStream is,
+            @Context HttpHeaders httpHeaders,
+            @Context UriInfo info,
+            boolean saveAll
+    ) throws Exception {
+        Metadata metadata = new Metadata();
+        ParseContext pc = new ParseContext();
 
-              data = ole.getDataBuffer();
+        AutoDetectParser parser = TikaResource.createParser(tikaConfig);
+
+        TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
+        TikaResource.logRequest(logger, info, metadata);
+
+        ContentHandler ch;
+        ByteArrayOutputStream text = new ByteArrayOutputStream();
+
+        if (saveAll) {
+            ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, org.apache.tika.io.IOUtils.UTF_8)));
+        } else {
+            ch = new DefaultHandler();
+        }
+
+        Map<String, byte[]> files = new HashMap<String, byte[]>();
+        MutableInt count = new MutableInt();
+
+        pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
+        TikaResource.parse(parser, logger, info.getPath(), is, ch, metadata, pc);
+
+        if (count.intValue() == 0 && !saveAll) {
+            throw new WebApplicationException(Response.Status.NO_CONTENT);
+        }
+
+        if (saveAll) {
+            files.put(TEXT_FILENAME, text.toByteArray());
+
+            ByteArrayOutputStream metaStream = new ByteArrayOutputStream();
+            metadataToCsv(metadata, metaStream);
+
+            files.put(META_FILENAME, metaStream.toByteArray());
+        }
+
+        return files;
+    }
+
+    private class MyEmbeddedDocumentExtractor implements EmbeddedDocumentExtractor {
+        private final MutableInt count;
+        private final Map<String, byte[]> zout;
+
+        MyEmbeddedDocumentExtractor(MutableInt count, Map<String, byte[]> zout) {
+            this.count = count;
+            this.zout = zout;
+        }
+
+        public boolean shouldParseEmbedded(Metadata metadata) {
+            return true;
+        }
+
+        public void parseEmbedded(InputStream inputStream, ContentHandler contentHandler, Metadata metadata, boolean b) throws SAXException, IOException {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copy(inputStream, bos);
+            byte[] data = bos.toByteArray();
+
+            String name = metadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY);
+            String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
+
+            if (name == null) {
+                name = Integer.toString(count.intValue());
             }
-          } catch (Ole10NativeException ex) {
-            logger.warn("Skipping invalid part", ex);
-          }
-        } else {
-          name += '.' + type.getExtension();
+
+            if (!name.contains(".") && contentType != null) {
+                try {
+                    String ext = tikaConfig.getMimeRepository().forName(contentType).getExtension();
+
+                    if (ext != null) {
+                        name += ext;
+                    }
+                } catch (MimeTypeException e) {
+                    logger.warn("Unexpected MimeTypeException", e);
+                }
+            }
+
+            if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
+                POIFSFileSystem poifs = new POIFSFileSystem(new ByteArrayInputStream(data));
+                OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
+
+                if (type == OfficeParser.POIFSDocumentType.OLE10_NATIVE) {
+                    try {
+                        Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);
+                        if (ole.getDataSize() > 0) {
+                            String label = ole.getLabel();
+
+                            if (label.startsWith("ole-")) {
+                                label = Integer.toString(count.intValue()) + '-' + label;
+                            }
+
+                            name = label;
+
+                            data = ole.getDataBuffer();
+                        }
+                    } catch (Ole10NativeException ex) {
+                        logger.warn("Skipping invalid part", ex);
+                    }
+                } else {
+                    name += '.' + type.getExtension();
+                }
+            }
+
+            final String finalName = name;
+
+            if (data.length > 0) {
+                zout.put(finalName, data);
+
+                count.increment();
+            } else {
+                if (inputStream instanceof TikaInputStream) {
+                    TikaInputStream tin = (TikaInputStream) inputStream;
+
+                    if (tin.getOpenContainer() != null && tin.getOpenContainer() instanceof DirectoryEntry) {
+                        POIFSFileSystem fs = new POIFSFileSystem();
+                        copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
+                        ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
+                        fs.writeFilesystem(bos2);
+                        bos2.close();
+
+                        zout.put(finalName, bos2.toByteArray());
+                    }
+                }
+            }
         }
-      }
 
-      final String finalName = name;
-
-      if (data.length > 0) {
-        zout.put(finalName, data);
-
-        count.increment();
-      } else {
-        if (inputStream instanceof TikaInputStream) {
-          TikaInputStream tin = (TikaInputStream)  inputStream;
-
-          if (tin.getOpenContainer()!=null && tin.getOpenContainer() instanceof DirectoryEntry) {
-            POIFSFileSystem fs = new POIFSFileSystem();
-            copy((DirectoryEntry) tin.getOpenContainer(), fs.getRoot());
-            ByteArrayOutputStream bos2 = new ByteArrayOutputStream();
-            fs.writeFilesystem(bos2);
-            bos2.close();
-
-            zout.put(finalName, bos2.toByteArray());
-          }
+        protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
+                throws IOException {
+            for (Entry entry : sourceDir) {
+                if (entry instanceof DirectoryEntry) {
+                    // Need to recurse
+                    DirectoryEntry newDir = destDir.createDirectory(entry.getName());
+                    copy((DirectoryEntry) entry, newDir);
+                } else {
+                    // Copy entry
+                    InputStream contents = new DocumentInputStream((DocumentEntry) entry);
+                    try {
+                        destDir.createDocument(entry.getName(), contents);
+                    } finally {
+                        contents.close();
+                    }
+                }
+            }
         }
-      }
     }
-
-    protected void copy(DirectoryEntry sourceDir, DirectoryEntry destDir)
-            throws IOException {
-      for (Entry entry : sourceDir) {
-        if (entry instanceof DirectoryEntry) {
-          // Need to recurse
-          DirectoryEntry newDir = destDir.createDirectory(entry.getName());
-          copy((DirectoryEntry) entry, newDir);
-        } else {
-          // Copy entry
-          InputStream contents = new DocumentInputStream((DocumentEntry) entry);
-          try {
-            destDir.createDocument(entry.getName(), contents);
-          } finally {
-            contents.close();
-          }
-        }
-      }
-    }
-  }
 }

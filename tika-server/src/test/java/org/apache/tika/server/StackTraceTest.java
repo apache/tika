@@ -118,7 +118,7 @@ public class StackTraceTest extends CXFTestBase {
             assertEquals("bad type: " + path, 415, response.getStatus());
             String msg = getStringFromInputStream((InputStream) response
                     .getEntity());
-            assertEquals("should be empty: "+path, "", msg);
+            assertEquals("should be empty: " + path, "", msg);
         }
     }
 
