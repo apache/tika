@@ -50,6 +50,7 @@ public class TikaServerCli {
     options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
     options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
     options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
+    options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
     options.addOption("?", "help", false, "this help message");
 
     return options;
@@ -82,7 +83,12 @@ public class TikaServerCli {
       if (line.hasOption("port")) {
         port = Integer.valueOf(line.getOptionValue("port"));
       }
-      
+
+      boolean returnStackTrace = false;
+      if (line.hasOption("includeStack")) {
+          returnStackTrace = true;
+      }
+
       TikaLoggingFilter logFilter = null;
       if (line.hasOption("log")) {
         String logLevel = line.getOptionValue("log");
@@ -120,7 +126,7 @@ public class TikaServerCli {
       providers.add(new JSONMessageBodyWriter());
       providers.add(new XMPMessageBodyWriter());
       providers.add(new TextMessageBodyWriter());
-      providers.add(new TikaExceptionMapper());
+      providers.add(new TikaServerParseExceptionMapper(returnStackTrace));
       if (logFilter != null) {
     	  providers.add(logFilter);
       }

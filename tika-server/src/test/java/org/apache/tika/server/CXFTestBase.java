@@ -20,6 +20,7 @@ package org.apache.tika.server;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -150,4 +151,19 @@ public abstract class CXFTestBase {
       IOUtils.copy(inputStream, new FileOutputStream(tempFile));
       return tempFile;
 	}
+
+    protected static InputStream copy(InputStream in, int remaining) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        while (remaining > 0) {
+            byte[] bytes = new byte[remaining];
+            int n = in.read(bytes);
+            if (n <= 0) {
+                break;
+            }
+            out.write(bytes, 0, n);
+            remaining -= n;
+        }
+        return new ByteArrayInputStream(out.toByteArray());
+    }
+
 }

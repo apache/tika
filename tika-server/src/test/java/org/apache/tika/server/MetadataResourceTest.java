@@ -222,19 +222,6 @@ public class MetadataResourceTest extends CXFTestBase {
         assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", s);
     }
 
-    private static InputStream copy(InputStream in, int remaining) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        while (remaining > 0) {
-            byte[] bytes = new byte[remaining];
-            int n = in.read(bytes);
-            if (n <= 0) {
-                break;
-            }
-            out.write(bytes, 0, n);
-            remaining -= n;
-        }
-        return new ByteArrayInputStream(out.toByteArray());
-    }
 
 }
 

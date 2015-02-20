@@ -53,11 +53,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.poi.extractor.ExtractorFactory;
-import org.apache.poi.hwpf.OldWordFileFormatException;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -266,37 +264,7 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
         TikaInputStream tis = TikaInputStream.get(is);
 
         try {
-            parser.parse(tis, body, metadata, context);
-        } catch (SAXException e) {
-          throw new WebApplicationException(e);
-        } catch (EncryptedDocumentException e) {
-          logger.warn(String.format(
-                  Locale.ROOT,
-                  "%s: Encrypted document",
-                  info.getPath()
-          ), e);
-
-          throw new WebApplicationException(e, Response.status(422).build());
-        } catch (TikaException e) {
-          logger.warn(String.format(
-            Locale.ROOT,
-            "%s: Text extraction failed",
-            info.getPath()
-          ), e);
-
-          if (e.getCause()!=null && e.getCause() instanceof WebApplicationException) {
-            throw (WebApplicationException) e.getCause();
-          }
-
-          if (e.getCause()!=null && e.getCause() instanceof IllegalStateException) {
-            throw new WebApplicationException(Response.status(422).build());
-          }
-
-          if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException) {
-            throw new WebApplicationException(Response.status(422).build());
-          }
-
-          throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
+            parse(parser, logger, info.getPath(), tis, body, metadata, context);
         } finally {
           tis.close();
         }
@@ -368,43 +336,37 @@ public static void fillMetadata(AutoDetectParser parser, Metadata metadata, Pars
         TikaInputStream tis = TikaInputStream.get(is);
 
         try {
-          parser.parse(tis, content, metadata, context);
-        }
-        catch (SAXException e) {
-          throw new WebApplicationException(e);
-        }
-        catch (EncryptedDocumentException e) {
-          logger.warn(String.format(
-            Locale.ROOT,
-            "%s: Encrypted document",
-            info.getPath()
-          ), e);
-          throw new WebApplicationException(e, Response.status(422).build());
-        }
-        catch (TikaException e) {
-          logger.warn(String.format(
-            Locale.ROOT,
-            "%s: Text extraction failed",
-            info.getPath()
-          ), e);
-
-          if (e.getCause()!=null && e.getCause() instanceof WebApplicationException)
-            throw (WebApplicationException) e.getCause();
-
-          if (e.getCause()!=null && e.getCause() instanceof IllegalStateException)
-            throw new WebApplicationException(Response.status(422).build());
-
-          if (e.getCause()!=null && e.getCause() instanceof OldWordFileFormatException)
-            throw new WebApplicationException(Response.status(422).build());
-
-          throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
-        }
-        finally {
+          parse(parser, logger, info.getPath(), tis, content, metadata, context);
+        } finally {
           tis.close();
         }
       }
     };
   }
+
+    public static void parse(Parser parser, Log logger, String path, InputStream inputStream,
+                             ContentHandler handler, Metadata metadata, ParseContext parseContext) throws IOException {
+        try {
+            parser.parse(inputStream, handler, metadata, parseContext);
+        } catch (SAXException e) {
+                throw new TikaServerParseException(e);
+        } catch (EncryptedDocumentException e) {
+            logger.warn(String.format(
+                        Locale.ROOT,
+                        "%s: Encrypted document",
+                        path
+                ), e);
+                throw new TikaServerParseException(e);
+        } catch (Exception e) {
+            logger.warn(String.format(
+                    Locale.ROOT,
+                    "%s: Text extraction failed",
+                    path
+            ), e);
+            throw new TikaServerParseException(e);
+        }
+    }
+
 
   public static void logRequest(Log logger, UriInfo info, Metadata metadata) {
     if (metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE)==null) {

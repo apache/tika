@@ -21,6 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.ws.rs.core.Response;
 
@@ -45,7 +47,11 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Override
-    protected void setUpProviders(JAXRSServerFactoryBean sf) {}
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+        List<Object> providers = new ArrayList<Object>();
+        providers.add(new TikaServerParseExceptionMapper(false));
+        sf.setProviders(providers);
+    }
 
     @Test
     public void testHelloWorld() throws Exception {
