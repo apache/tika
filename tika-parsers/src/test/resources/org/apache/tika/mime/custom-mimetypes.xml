@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info>
+    <mime-type type="application/evil">
+        <glob pattern="*.evil"/>
+        <sub-class-of type="text/plain"/>
+    </mime-type>
+</mime-info>
