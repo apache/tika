@@ -16,17 +16,9 @@
  */
 package org.apache.tika;
 
-import org.apache.tika.extractor.EmbeddedResourceHandler;
-import org.apache.tika.io.IOUtils;
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.AutoDetectParser;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
-import org.xml.sax.ContentHandler;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -39,9 +31,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.tika.extractor.EmbeddedResourceHandler;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ToXMLContentHandler;
+import org.xml.sax.ContentHandler;
 
 /**
  * Parent class of Tika tests
@@ -97,6 +97,10 @@ public abstract class TikaTest {
             this.xml = xml;
             this.metadata = metadata;
         }
+    }
+
+    protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
+        return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata);
     }
 
     protected XMLResult getXML(String filePath) throws Exception {
