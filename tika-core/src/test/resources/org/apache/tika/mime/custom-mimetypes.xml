@@ -42,4 +42,13 @@
         <match value="Hello, World!" type="string" offset="0:13" />
      </magic>
   </mime-type>
+
+  <mime-type type="application/blacklist">
+    <glob pattern="*.blacklist"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+  <mime-type type="application/blacklist2">
+    <glob pattern="*.blacklist2"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
 </mime-info>
