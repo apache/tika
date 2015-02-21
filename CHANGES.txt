@@ -1,4 +1,7 @@
 Release 1.8 - Current Development
+  * Parsers and other services can now be disabled with a
+    blacklist META-INF file (TIKA-1558).
+
   * Tika's JAX-RS server can now return stacktraces for
     parse exceptions. (TIKA-1323)
 
