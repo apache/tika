@@ -10,6 +10,8 @@ Release 1.8 - Current Development
 
   * The ForkParser service removed from Activator. Rollback of (TIKA-1354).
 
+  * The ForkParser service removed from Activator. Rollback of (TIKA-1354).
+
   * Increased the speed of language identification by 
     a factor of two. (TIKA-1549)
 
