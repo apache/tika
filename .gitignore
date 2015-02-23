@@ -7,3 +7,5 @@ target
 *.iml
 *.ipr
 *.iws
+nbactions.xml
+nb-configuration.xml
