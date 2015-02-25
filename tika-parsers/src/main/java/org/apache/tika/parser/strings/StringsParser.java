@@ -63,7 +63,11 @@ public class StringsParser extends AbstractParser {
 	
 	private static final FileConfig DEFAULT_FILE_CONFIG = new FileConfig();
 	
-	// String -> Boolean[2] (0 -> is_present. 1 -> supports_encoding)
+	/*
+	 * This map is organized as follows:
+	 * command's pathname (String) -> is it present? (Boolean), does it support -e option? (Boolean)
+	 * It stores check results for command and, if present, -e (encoding) option.
+	 */
 	private static Map<String,Boolean[]> STRINGS_PRESENT = new HashMap<String, Boolean[]>();
 
 	@Override
@@ -121,24 +125,32 @@ public class StringsParser extends AbstractParser {
 		}
 
 		String[] checkCmd = { stringsProg, "--version" };
+		try {
+			boolean hasStrings = ExternalParser.check(checkCmd);
 
-		boolean hasStrings = ExternalParser.check(checkCmd);
+			boolean encodingOpt = false;
+
+			// Check if the -e option (encoding) is supported
+			if (!System.getProperty("os.name").startsWith("Windows")) {
+				String[] checkOpt = {stringsProg, "-e", "" + config.getEncoding().get(), "/dev/null"};
+				int[] errorValues = {1, 2}; // Exit status code: 1 = general error; 2 = incorrect usage.
+				encodingOpt = ExternalParser.check(checkOpt, errorValues);
+			}
 		
-		boolean encodingOpt = false;
-		
-		// Check if the -e option (encoding) is supported
-		if (!System.getProperty("os.name").startsWith("Windows")) {
-			String[] checkOpt = {stringsProg, "-e", "" + config.getEncoding().get(), "/dev/null"};
-			int[] errorValues = {1, 2}; // 1: General error. 2: Incorrect usage.
-			encodingOpt = ExternalParser.check(checkOpt, errorValues);
+			Boolean[] values = {hasStrings, encodingOpt};
+			STRINGS_PRESENT.put(stringsProg, values);
+
+			return hasStrings;
+		} catch (NoClassDefFoundError ncdfe) {
+			// This happens under OSGi + Fork Parser - see TIKA-1507
+			// As a workaround for now, just say we can't use strings
+			// TODO Resolve it so we don't need this try/catch block
+			Boolean[] values = {false, false};
+			STRINGS_PRESENT.put(stringsProg, values);
+			return false;
 		}
-		
-		Boolean[] values = {hasStrings, encodingOpt};
-		STRINGS_PRESENT.put(stringsProg, values);
-
-		return hasStrings;
 	}
-	
+
 	/**
 	 * Checks if the "file" command is supported.
 	 * 
@@ -183,7 +195,7 @@ public class StringsParser extends AbstractParser {
 		cmdList.add(stringsProg);
 		cmdList.add("-n");
 		cmdList.add("" + config.getMinLength());;
-		// encoding option is not supported by windows version
+		// Currently, encoding option is not supported by Windows (and other) versions
 		if (STRINGS_PRESENT.get(stringsProg)[1]) {
 			cmdList.add("-e");
 			cmdList.add("" + config.getEncoding().get());
@@ -191,7 +203,7 @@ public class StringsParser extends AbstractParser {
 		cmdList.add(input.getPath());
 		
 		String[] cmd = cmdList.toArray(new String[cmdList.size()]);
-
+		
 		ProcessBuilder pb = new ProcessBuilder(cmd);
 		final Process process = pb.start();
 
@@ -312,10 +324,8 @@ public class StringsParser extends AbstractParser {
 			fileOutput = reader.readLine();
 
 		} catch (IOException ioe) {
-			// TODO
-			System.err
-					.println("An error occurred in reading output of the file command: "
-							+ ioe.getMessage());
+			// file output not available!
+			fileOutput = "";
 		} finally {
 			reader.close();
 		}
