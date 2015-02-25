@@ -18,6 +18,7 @@ import static org.junit.Assert.*;
 import static org.junit.Assume.assumeTrue;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -42,12 +43,15 @@ public class StringsParserTest {
 		String resource = "/test-documents/testOCTET_header.dbase3";
 
 		String[] content = { "CLASSNO", "TITLE", "ITEMNO", "LISTNO", "LISTDATE" };
+		
+		String[] met_attributes = {"min-len", "encoding", "strings:file_output"};
 
 		StringsConfig stringsConfig = new StringsConfig();
 		FileConfig fileConfig = new FileConfig();
 
 		Parser parser = new StringsParser();
 		ContentHandler handler = new BodyContentHandler();
+		Metadata metadata = new Metadata();
 
 		ParseContext context = new ParseContext();
 		context.set(StringsConfig.class, stringsConfig);
@@ -56,15 +60,19 @@ public class StringsParserTest {
 		InputStream stream = StringsParserTest.class.getResourceAsStream(resource);
 
 		try {
-			parser.parse(stream, handler, new Metadata(), context);
+			parser.parse(stream, handler, metadata, context);
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
 			stream.close();
 		}
-		
+
+		// Content
 		for (String word : content) {
 			assertTrue(handler.toString().contains(word));
 		}
+		
+		// Metadata
+		Arrays.equals(met_attributes, metadata.names());
 	}
 }

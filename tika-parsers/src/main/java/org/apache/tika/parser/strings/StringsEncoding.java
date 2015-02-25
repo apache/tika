@@ -18,7 +18,7 @@ package org.apache.tika.parser.strings;
  *
  */
 public enum StringsEncoding {
-	SINGLE_7_BIT('s', "single-7-bit-byte"),
+	SINGLE_7_BIT('s', "single-7-bit-byte"), // default
 	SINGLE_8_BIT('S', "single-8-bit-byte"),
 	BIGENDIAN_16_BIT('b', "16-bit bigendian"),
 	LITTLEENDIAN_16_BIT('l', "16-bit littleendian"),
