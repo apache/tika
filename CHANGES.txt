@@ -1,4 +1,5 @@
 Release 1.8 - Current Development
+
   * Parsers and other services can now be disabled with a
     blacklist META-INF file (TIKA-1558).
 
@@ -21,7 +22,9 @@ Release 1.8 - Current Development
     (TIKA-1547)
 
   * A basic wrapper around the UNIX file command was 
-    added to extract Strings. (TIKA-1541)
+    added to extract Strings. In addition a parse to 
+    handle Strings parsing from octet-streams using Latin1
+    charsets as added. (TIKA-1541, TIKA-1483)
 
   * Add test files and detection mechanism for Gridded
     Binary (GRIB) files. (TIKA-1539)
