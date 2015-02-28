@@ -74,6 +74,9 @@ public class MimeDetectionTest {
         testFile("image/cgm", "plotutils-bin-cgm-v3.cgm");
         // test HTML detection of malformed file, previously identified as image/cgm (TIKA-1170)
         testFile("text/html", "test-malformed-header.html.bin");
+        
+        //test GCMD Directory Interchange Format (.dif) TIKA-1561
+        testFile("text/dif+xml", "brwNIMS_2014.dif");
     }
 
     @Test
