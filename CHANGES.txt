@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Detect Global Change Master Directory (GCMD) Directory
+    Interchange Format (DIF) files (TIKA-1561).
+
   * Parsers and other services can now be disabled with a
     blacklist META-INF file (TIKA-1558).
 
