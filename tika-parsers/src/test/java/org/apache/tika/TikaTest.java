@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -84,10 +85,16 @@ public abstract class TikaTest {
     public static void assertContains(String needle, String haystack) {
        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
     }
+    public static <T> void assertContains(T needle, Collection<? extends T> haystack) {
+        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+    }
 
     public static void assertNotContained(String needle, String haystack) {
         assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
-     }
+    }
+    public static <T> void assertNotContained(T needle, Collection<? extends T> haystack) {
+        assertFalse(needle + " unexpectedly found in:\n" + haystack, haystack.contains(needle));
+    }
 
     protected static class XMLResult {
         public final String xml;
