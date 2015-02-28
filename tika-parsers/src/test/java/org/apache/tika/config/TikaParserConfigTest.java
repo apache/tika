@@ -123,8 +123,6 @@ public class TikaParserConfigTest {
         
         
         // The one from the config won't
-        // TODO - Finish this
-/*
         assertNotContained(PE_EXE, confParser.getSupportedTypes(context));
         assertNotContained(ELF, confParser.getSupportedTypes(context));
         
@@ -132,6 +130,5 @@ public class TikaParserConfigTest {
             if (p instanceof ExecutableParser)
                 fail("Shouldn't have the Executable Parser from config");
         }
-*/
     }
 }
