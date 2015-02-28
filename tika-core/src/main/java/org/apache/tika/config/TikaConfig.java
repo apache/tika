@@ -333,6 +333,7 @@ public class TikaConfig {
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node = (Element) nodes.item(i);
             String name = node.getAttribute("class");
+            Parser parser = null;
 
             try {
                 Class<? extends Parser> parserClass =
@@ -343,7 +344,16 @@ public class TikaConfig {
                             "AutoDetectParser not supported in a <parser>"
                             + " configuration element: " + name);
                 }
-                Parser parser = parserClass.newInstance();
+
+                // Is this a composite parser? If so, support recursion
+                if (CompositeParser.class.isAssignableFrom(parserClass)) {
+                    // TODO Implement
+                    System.err.println("WARNING: Not building " + parserClass + " as composite!");
+                    parser = parserClass.newInstance();
+                } else {
+                    // Regular parser, create as-is
+                    parser = parserClass.newInstance();
+                }
 
                 // Is there an explicit list of mime types for this to handle?
                 Set<MediaType> parserTypes = mediaTypesListFromDomElement(node, "mime");
