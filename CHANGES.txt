@@ -1,5 +1,9 @@
 Release 1.8 - Current Development
 
+  * Support for excluding (blacklisting) certain Parsers from being
+    used by DefaultParser via the Tika Config file, using the new
+    parser-exclude tag (TIKA-1558)
+
   * Detect Global Change Master Directory (GCMD) Directory
     Interchange Format (DIF) files (TIKA-1561).
 
