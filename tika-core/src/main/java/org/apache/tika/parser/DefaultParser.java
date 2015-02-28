@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -69,9 +70,14 @@ public class DefaultParser extends CompositeParser {
 
     private transient final ServiceLoader loader;
 
-    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
-        super(registry, getDefaultParsers(loader));
+    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader,
+                         Collection<Class<? extends Parser>> excludeParsers) {
+        super(registry, getDefaultParsers(loader), excludeParsers);
         this.loader = loader;
+    }
+    
+    public DefaultParser(MediaTypeRegistry registry, ServiceLoader loader) {
+        this(registry, loader, null);
     }
 
     public DefaultParser(MediaTypeRegistry registry, ClassLoader loader) {
