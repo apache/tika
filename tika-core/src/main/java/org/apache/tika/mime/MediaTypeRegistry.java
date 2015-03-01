@@ -82,6 +82,23 @@ public class MediaTypeRegistry implements Serializable {
         }
         return aliases;
     }
+    
+    /**
+     * Returns the set of known children of the given canonical media type
+     * 
+     * @since Apache Tika 1.8
+     * @param type canonical media type
+     * @return known children
+     */
+    public SortedSet<MediaType> getChildTypes(MediaType type) {
+        SortedSet<MediaType> children = new TreeSet<MediaType>();
+        for (Map.Entry<MediaType, MediaType> entry : inheritance.entrySet()) {
+            if (entry.getValue().equals(type)) {
+                children.add(entry.getKey());
+            }
+        }
+        return children;
+    }
 
     public void addType(MediaType type) {
         registry.put(type, type);
