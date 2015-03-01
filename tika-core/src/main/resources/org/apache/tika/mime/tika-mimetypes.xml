@@ -102,7 +102,13 @@
   <mime-type type="application/dca-rft"/>
   <mime-type type="application/dec-dx"/>
   <mime-type type="application/dialog-info+xml"/>
-  <mime-type type="application/dicom"/>
+
+  <mime-type type="application/dicom">
+    <_comment>DICOM medical imaging data</_comment>
+    <magic priority="50">
+      <match value="DICM" type="string" offset="128"/>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/dita+xml">
     <sub-class-of type="application/xml"/>
@@ -2843,9 +2849,11 @@
   </mime-type>
 
   <mime-type type="application/x-debian-package">
+    <alias type="application/vnd.debian.binary-package"/>
     <sub-class-of type="application/x-archive"/>
     <magic priority="60">
       <match value="!&lt;arch&gt;\ndebian-binary" type="string" offset="0"/>
+      <match value="!&lt;arch&gt;\ndebian-split" type="string" offset="0"/>
     </magic>
     <glob pattern="*.deb"/>
     <glob pattern="*.udeb"/>
