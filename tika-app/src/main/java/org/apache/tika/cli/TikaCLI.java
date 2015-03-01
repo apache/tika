@@ -21,10 +21,14 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -46,6 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -78,7 +83,9 @@ import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.NetworkParser;
@@ -356,6 +363,9 @@ public class TikaCLI {
         } else if(arg.equals("--list-supported-types")){
             pipeMode = false;
             displaySupportedTypes();
+        } else if (arg.startsWith("--compare-file-magic=")) {
+            pipeMode = false;
+            compareFileMagic(arg.substring(arg.indexOf('=')+1));
         } else if (arg.equals("--container-aware")
                 || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
@@ -530,6 +540,9 @@ public class TikaCLI {
         out.println("    --list-supported-types");
         out.println("         List all known media types and related information");
         out.println();
+        out.println();
+        out.println("    --compare-file-magic=<dir>");
+        out.println("         Compares Tika's known media types to the File(1) tool's magic directory");
         out.println("Description:");
         out.println("    Apache Tika will parse the file(s) specified on the");
         out.println("    command line and output the extracted text content");
@@ -706,6 +719,115 @@ public class TikaCLI {
                 }
                 System.out.println("  parser:    " + p.getClass().getName());
             }
+        }
+    }
+    
+    /**
+     * Compares our mime types registry with the File(1) tool's 
+     *  directory of (uncompiled) Magic entries. 
+     * (Well, those with mimetypes anyway)
+     * @param magicDir Path to the magic directory
+     */
+    private void compareFileMagic(String magicDir) throws Exception {
+        Set<String> tikaLacking = new TreeSet<String>();
+        Set<String> tikaNoMagic = new TreeSet<String>();
+        
+        // Sanity check
+        File dir = new File(magicDir);
+        if ((new File(dir, "elf")).exists() &&
+            (new File(dir, "mime")).exists() &&
+            (new File(dir, "vorbis")).exists()) {
+            // Looks plausible
+        } else {
+            throw new IllegalArgumentException(
+                    magicDir + " doesn't seem to hold uncompressed file magic entries"); 
+        }
+    
+        // Find all the mimetypes in the directory
+        Set<String> fileMimes = new HashSet<String>();
+        for (File mf : dir.listFiles()) {
+            if (mf.isFile()) {
+                BufferedReader r = new BufferedReader(new InputStreamReader(
+                        new FileInputStream(mf), IOUtils.UTF_8));
+                String line;
+                while ((line = r.readLine()) != null) {
+                    if (line.startsWith("!:mime") ||
+                        line.startsWith("#!:mime")) {
+                        String mime = line.substring(7).trim();
+                        fileMimes.add(mime);
+                    }
+                }
+                r.close();
+            }
+        }
+        
+        // See how those compare to the Tika ones
+        TikaConfig config = TikaConfig.getDefaultConfig();
+        MimeTypes mimeTypes = config.getMimeRepository();
+        MediaTypeRegistry registry = config.getMediaTypeRegistry();
+        for (String mime : fileMimes) {
+            try {
+                MimeType type = mimeTypes.getRegisteredMimeType(mime);
+                
+                if (type == null) {
+                    // Tika doesn't know about this one
+                    tikaLacking.add(mime);
+                } else {
+                    // Tika knows about this one!
+                    // Check for magic on this, or parents
+                    // TODO What about magic on children?
+                    boolean hasMagic = false;
+                    while (type != null && !hasMagic) {
+                        if (type.hasMagic()) {
+                            // Has magic, fine
+                            hasMagic = true;
+                        } else {
+                            // Check the parent next
+                            MediaType parent = registry.getSupertype(type.getType());
+                            if (parent == MediaType.APPLICATION_XML ||
+                                parent == MediaType.TEXT_PLAIN ||
+                                parent == MediaType.OCTET_STREAM) {
+                                // Stop checking parents if we hit a top level type
+                                parent = null;
+                            }
+                            if (parent != null) {
+                                type = mimeTypes.getRegisteredMimeType(parent.toString());
+                            } else {
+                                type = null;
+                            }
+                        }
+                    }
+                    if (!hasMagic) {
+                        tikaNoMagic.add(mime);
+                    }
+                }
+            } catch (MimeTypeException e) {
+                // Broken entry in the file magic directory
+                // Silently skip
+            }
+        }
+        
+        // Check how many tika knows about
+        int tikaTypes = 0;
+        int tikaAliases = 0;
+        for (MediaType type : registry.getTypes()) {
+            tikaTypes++;
+            tikaAliases += registry.getAliases(type).size();
+        }
+        
+        // Report
+        System.out.println("Tika knows about " + tikaTypes + " unique mime types");
+        System.out.println("Tika knows about " + (tikaTypes+tikaAliases) + " mime types including aliases");
+        System.out.println("The File Magic directory knows about " + fileMimes.size() + " unique mime types");
+        System.out.println();
+        System.out.println("The following mime types are known to File but not Tika:");
+        for (String mime : tikaLacking) {
+            System.out.println("  " + mime);
+        }
+        System.out.println();
+        System.out.println("The following mime types from File have no Tika magic (but their children might):");
+        for (String mime : tikaNoMagic) {
+            System.out.println("  " + mime);
         }
     }
 
