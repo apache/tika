@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
@@ -154,6 +155,11 @@ public class MimeTypesReaderTest {
         // Parent has one parameter
         MediaType mtBTree = this.mimeTypes.getMediaTypeRegistry().getSupertype(mtBTree4);
         assertEquals("application/x-berkeley-db; format=btree", mtBTree.toString());
+        
+        // Parent has several children, for versions 2 through 4
+        Set<MediaType> mtBTreeChildren = this.mimeTypes.getMediaTypeRegistry().getChildTypes(mtBTree);
+        assertTrue(mtBTreeChildren.toString(), mtBTreeChildren.size() >= 3);
+        assertTrue(mtBTreeChildren.toString(), mtBTreeChildren.contains(mtBTree4));
         
         // Parent of that has none
         MediaType mtBD = this.mimeTypes.getMediaTypeRegistry().getSupertype(mtBTree);
