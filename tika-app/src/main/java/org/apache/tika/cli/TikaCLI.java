@@ -767,18 +767,31 @@ public class TikaCLI {
         MediaTypeRegistry registry = config.getMediaTypeRegistry();
         for (String mime : fileMimes) {
             try {
-                MimeType type = mimeTypes.getRegisteredMimeType(mime);
+                final MimeType type = mimeTypes.getRegisteredMimeType(mime);
                 
                 if (type == null) {
                     // Tika doesn't know about this one
                     tikaLacking.add(mime);
                 } else {
                     // Tika knows about this one!
-                    // Check for magic on this, or parents
-                    // TODO What about magic on children?
-                    boolean hasMagic = false;
-                    while (type != null && !hasMagic) {
-                        if (type.hasMagic()) {
+                    
+                    // Does Tika have magic for it?
+                    boolean hasMagic = type.hasMagic();
+                    
+                    // How about the children?
+                    if (!hasMagic) {
+                        for (MediaType child : registry.getChildTypes(type.getType())) {
+                            MimeType childType = mimeTypes.getRegisteredMimeType(child.toString());
+                            if (childType != null && childType.hasMagic()) {
+                                hasMagic = true;
+                            }
+                        }
+                    }
+                    
+                    // How about the parents?
+                    MimeType parentType = type;
+                    while (parentType != null && !hasMagic) {
+                        if (parentType.hasMagic()) {
                             // Has magic, fine
                             hasMagic = true;
                         } else {
@@ -791,9 +804,9 @@ public class TikaCLI {
                                 parent = null;
                             }
                             if (parent != null) {
-                                type = mimeTypes.getRegisteredMimeType(parent.toString());
+                                parentType = mimeTypes.getRegisteredMimeType(parent.toString());
                             } else {
-                                type = null;
+                                parentType = null;
                             }
                         }
                     }

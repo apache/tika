@@ -1,5 +1,10 @@
 Release 1.8 - Current Development
 
+  * TikaCLI option --compare-file-magic to report mime types known to
+    the file(1) tool but not known / fully known to Tika
+
+  * MediaTypeRegistry support for returning known child types
+
   * Support for excluding (blacklisting) certain Parsers from being
     used by DefaultParser via the Tika Config file, using the new
     parser-exclude tag (TIKA-1558)
