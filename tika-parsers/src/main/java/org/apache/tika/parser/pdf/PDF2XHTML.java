@@ -395,6 +395,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void writeParagraphStart() throws IOException {
+        super.writeParagraphStart();
         try {
             handler.startElement("p");
         } catch (SAXException e) {
@@ -404,6 +405,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void writeParagraphEnd() throws IOException {
+        super.writeParagraphEnd();
         try {
             handler.endElement("p");
         } catch (SAXException e) {
