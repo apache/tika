@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * XHTMLContentHandler now properly passes along body attributes,
+    contributed by Markus Jelsma (TIKA-995).
+
   * TikaCLI option --compare-file-magic to report mime types known to
     the file(1) tool but not known / fully known to Tika
 
