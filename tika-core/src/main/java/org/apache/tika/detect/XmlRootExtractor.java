@@ -27,6 +27,7 @@ import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.sax.OfflineContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -50,7 +51,14 @@ public class XmlRootExtractor {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setNamespaceAware(true);
             factory.setValidating(false);
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            try {
+                factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            } catch (SAXNotRecognizedException e) {
+                // TIKA-271 and TIKA-1000: Some XML parsers do not support the secure-processing
+                // feature, even though it's required by JAXP in Java 5. Ignoring
+                // the exception is fine here, deployments without this feature
+                // are inherently vulnerable to XML denial-of-service attacks.
+            }
             factory.newSAXParser().parse(
                     new CloseShieldInputStream(stream),
                     new OfflineContentHandler(handler));
