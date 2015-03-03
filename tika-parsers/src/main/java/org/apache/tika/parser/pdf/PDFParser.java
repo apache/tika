@@ -39,6 +39,7 @@ import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -46,6 +47,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
@@ -140,6 +142,9 @@ public class PDFParser extends AbstractParser {
 
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
+
+            AccessChecker checker = localConfig.getAccessChecker();
+            checker.check(metadata);
             if (handler != null) {
                 PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
             }
@@ -191,6 +196,28 @@ public class PDFParser extends AbstractParser {
     private void extractMetadata(PDDocument document, Metadata metadata)
             throws TikaException {
 
+        //first extract AccessPermissions
+        AccessPermission ap = document.getCurrentAccessPermission();
+        metadata.set(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY,
+                Boolean.toString(ap.canExtractForAccessibility()));
+        metadata.set(AccessPermissions.EXTRACT_CONTENT,
+                Boolean.toString(ap.canExtractContent()));
+        metadata.set(AccessPermissions.ASSEMBLE_DOCUMENT,
+                Boolean.toString(ap.canAssembleDocument()));
+        metadata.set(AccessPermissions.FILL_IN_FORM,
+                Boolean.toString(ap.canFillInForm()));
+        metadata.set(AccessPermissions.CAN_MODIFY,
+                Boolean.toString(ap.canModify()));
+        metadata.set(AccessPermissions.CAN_MODIFY_ANNOTATIONS,
+                Boolean.toString(ap.canModifyAnnotations()));
+        metadata.set(AccessPermissions.CAN_PRINT,
+                Boolean.toString(ap.canPrint()));
+        metadata.set(AccessPermissions.CAN_PRINT_DEGRADED,
+                Boolean.toString(ap.canPrintDegraded()));
+
+
+
+        //now go for the XMP stuff
         org.apache.jempbox.xmp.XMPMetadata xmp = null;
         XMPSchemaDublinCore dcSchema = null;
         try{

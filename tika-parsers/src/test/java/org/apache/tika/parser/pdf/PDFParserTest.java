@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -642,16 +643,19 @@ public class PDFParserTest extends TikaTest {
                 continue;
             }
 
-            pdfs++;
-            
             String sequentialContent = null;
             Metadata sequentialMetadata = new Metadata();
             try {
                 sequentialContent = getText(new FileInputStream(f), 
                         sequentialParser, seqContext, sequentialMetadata);
+            } catch (EncryptedDocumentException e) {
+                //silently skip a file that requires a user password
+                continue;
             } catch (Exception e) {
                 throw new TikaException("Sequential Parser failed on test file " + f, e);
             }
+
+            pdfs++;
 
             String nonSequentialContent = null;
             Metadata nonSequentialMetadata = new Metadata();
@@ -1138,6 +1142,202 @@ public class PDFParserTest extends TikaTest {
         assertContains("<div class=\"embedded\" id=\"Excel.xlsx\" />", xml);
     }
 
+    //Access checker tests
+
+    @Test
+    public void testLegacyAccessChecking() throws Exception {
+        //test that default behavior doesn't throw AccessPermissionException
+        for (String file : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
+        }) {
+            String xml = getXML(file).xml;
+            assertContains("Hello World", xml);
+        }
+
+        //now try with the user password
+        PasswordProvider provider = new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "user";
+            }
+        };
+
+        ParseContext context = new ParseContext();
+        context.set(PasswordProvider.class, provider);
+        Parser parser = new AutoDetectParser();
+
+        for (String path : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_user.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_user.pdf",
+        }) {
+            InputStream stream = null;
+            try {
+                stream = TikaInputStream.get(this.getClass().getResource("/test-documents/"+path));
+                String text = getText(stream, parser, context);
+                assertContains("Hello World", text);
+            } finally {
+                IOUtils.closeQuietly(stream);
+            }
+        }
+    }
+
+    @Test
+    public void testAccessCheckingEmptyPassword() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+
+        //don't allow extraction, not even for accessibility
+        config.setAccessChecker(new AccessChecker(false));
+        Parser parser = new AutoDetectParser();
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        //test exception for empty password
+        for (String path : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
+        }) {
+            assertException("/test-documents/"+path, parser, context, AccessPermissionException.class);
+        }
+
+        config.setAccessChecker(new AccessChecker(true));
+        assertException("/test-documents/" + "testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                parser, context, AccessPermissionException.class);
+
+        InputStream is = null;
+        try {
+            is = getResourceAsStream("/test-documents/"+ "testPDF_no_extract_yes_accessibility_owner_empty.pdf");
+            assertContains("Hello World", getText(is, parser, context));
+        } finally {
+            IOUtils.closeQuietly(is);
+        }
+    }
+
+    @Test
+    public void testAccessCheckingUserPassword() throws Exception {
+        ParseContext context = new ParseContext();
+
+        PDFParserConfig config = new PDFParserConfig();
+        //don't allow extraction, not even for accessibility
+        config.setAccessChecker(new AccessChecker(false));
+        PasswordProvider passwordProvider = new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "user";
+            }
+        };
+
+        context.set(PasswordProvider.class, passwordProvider);
+        context.set(PDFParserConfig.class, config);
+
+        Parser parser = new AutoDetectParser();
+
+        //test bad passwords
+        for (String path : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
+        }) {
+            assertException("/test-documents/"+path, parser, context, EncryptedDocumentException.class);
+        }
+
+        //bad password is still a bad password
+        config.setAccessChecker(new AccessChecker(true));
+        for (String path : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
+        }) {
+            assertException("/test-documents/"+path, parser, context, EncryptedDocumentException.class);
+        }
+
+        //now test documents that require this "user" password
+        assertException("/test-documents/"+"testPDF_no_extract_no_accessibility_owner_user.pdf",
+                parser, context, AccessPermissionException.class);
+
+
+        InputStream is = null;
+        try {
+            is = getResourceAsStream("/test-documents/"+ "testPDF_no_extract_yes_accessibility_owner_user.pdf");
+            assertContains("Hello World", getText(is, parser, context));
+        } finally {
+            IOUtils.closeQuietly(is);
+        }
+
+        config.setAccessChecker(new AccessChecker(false));
+        for (String path : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_user.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_user.pdf",
+        }) {
+            assertException("/test-documents/"+path, parser, context, AccessPermissionException.class);
+        }
+    }
+
+    @Test
+    public void testAccessCheckingOwnerPassword() throws Exception {
+        ParseContext context = new ParseContext();
+
+        PDFParserConfig config = new PDFParserConfig();
+        //don't allow extraction, not even for accessibility
+        config.setAccessChecker(new AccessChecker(true));
+        PasswordProvider passwordProvider = new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "owner";
+            }
+        };
+
+        context.set(PasswordProvider.class, passwordProvider);
+        context.set(PDFParserConfig.class, config);
+
+        Parser parser = new AutoDetectParser();
+        //with owner's password, text can be extracted, no matter the AccessibilityChecker's settings
+        for (String path : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_user.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_user.pdf",
+                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
+        }) {
+
+            InputStream is = null;
+            try {
+                is = getResourceAsStream("/test-documents/" + "testPDF_no_extract_yes_accessibility_owner_user.pdf");
+                assertContains("Hello World", getText(is, parser, context));
+            } finally {
+                IOUtils.closeQuietly(is);
+            }
+        }
+
+        //really, with owner's password, all extraction is allowed
+        config.setAccessChecker(new AccessChecker(false));
+        for (String path : new String[] {
+                "testPDF_no_extract_no_accessibility_owner_user.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_user.pdf",
+                "testPDF_no_extract_no_accessibility_owner_empty.pdf",
+                "testPDF_no_extract_yes_accessibility_owner_empty.pdf",
+        }) {
+
+            InputStream is = null;
+            try {
+                is = getResourceAsStream("/test-documents/" + "testPDF_no_extract_yes_accessibility_owner_user.pdf");
+                assertContains("Hello World", getText(is, parser, context));
+            } finally {
+                IOUtils.closeQuietly(is);
+            }
+        }
+    }
+
+    private void assertException(String path, Parser parser, ParseContext context, Class expected) {
+        boolean noEx = false;
+        InputStream is = getResourceAsStream(path);
+        try {
+            String text = getText(is, parser, context);
+            noEx = true;
+        } catch (Exception e) {
+            assertEquals("Not the right exception: "+path, expected, e.getClass());
+        } finally {
+            IOUtils.closeQuietly(is);
+        }
+        assertFalse(path + " should have thrown exception", noEx);
+    }
     /**
      * 
      * Simple class to count end of document events.  If functionality is useful,

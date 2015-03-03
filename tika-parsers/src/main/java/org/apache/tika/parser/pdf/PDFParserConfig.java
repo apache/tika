@@ -17,13 +17,13 @@ package org.apache.tika.parser.pdf;
  * limitations under the License.
  */
 
+import org.apache.pdfbox.util.PDFTextStripper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
-
-import org.apache.pdfbox.util.PDFTextStripper;
 
 /**
  * Config for PDFParser.
@@ -79,6 +79,8 @@ public class PDFParserConfig implements Serializable{
     
     //The space width-based tolerance value used to estimate where spaces in text should be added
     private Float spacingTolerance;
+
+    private AccessChecker accessChecker;
 
     public PDFParserConfig() {
         init(this.getClass().getResourceAsStream("PDFParser.properties"));
@@ -137,6 +139,17 @@ public class PDFParserConfig implements Serializable{
         setExtractUniqueInlineImagesOnly(
                 getProp(props.getProperty("extractUniqueInlineImagesOnly"),
                 getExtractUniqueInlineImagesOnly()));
+
+        boolean checkExtractAccessPermission = getProp(props.getProperty("checkExtractAccessPermission"), false);
+        boolean allowExtractionForAccessibility = getProp(props.getProperty("allowExtractionForAccessibility"), true);
+
+        if (checkExtractAccessPermission == false) {
+            //silently ignore the crazy configuration of checkExtractAccessPermission = false,
+            //but allowExtractionForAccessibility=false
+            accessChecker = new AccessChecker();
+        } else {
+            accessChecker = new AccessChecker(allowExtractionForAccessibility);
+        }
     }
     
     /**
@@ -332,6 +345,14 @@ public class PDFParserConfig implements Serializable{
      */
     public void setSpacingTolerance(Float spacingTolerance) {
         this.spacingTolerance = spacingTolerance;
+    }
+
+    public void setAccessChecker(AccessChecker accessChecker) {
+        this.accessChecker = accessChecker;
+    }
+
+    public AccessChecker getAccessChecker() {
+        return accessChecker;
     }
 
     private boolean getProp(String p, boolean defaultMissing){
