@@ -473,7 +473,10 @@ public class PDFParser extends AbstractParser {
             }
         } else if(value instanceof COSString) {
             addMetadata(metadata, name, ((COSString)value).getString());
-        } else if (value != null) {
+        }
+        // Avoid calling COSDictionary#toString, since it can lead to infinite
+        // recursion. See TIKA-1038 and PDFBOX-1835.
+        else if (value != null && !(value instanceof COSDictionary)) {
             addMetadata(metadata, name, value.toString());
         }
     }

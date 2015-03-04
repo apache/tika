@@ -1,5 +1,7 @@
 Release 1.8 - Current Development
 
+  * Fixed infinite recursion while parsing some PDFs (TIKA-1038).
+
   * XHTMLContentHandler now properly passes along body attributes,
     contributed by Markus Jelsma (TIKA-995).
 
