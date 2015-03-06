@@ -31,6 +31,8 @@ import org.xml.sax.SAXException;
 
 /**
  * A Dummy Parser for use with unit tests.
+ * <p>
+ * See also {@link org.apache.tika.parser.mock.MockParser}.
  */
 public class DummyParser extends AbstractParser {
    private Set<MediaType> types;

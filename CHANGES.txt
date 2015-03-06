@@ -23,7 +23,7 @@ Release 1.8 - Current Development
   * Tika's JAX-RS server can now return stacktraces for
     parse exceptions. (TIKA-1323)
 
-  * Added EvilParser for testing handling of exceptions, errors
+  * Added MockParser for testing handling of exceptions, errors
     and hangs in code that uses parsers. (TIKA-1533)
 
   * The ForkParser service removed from Activator. Rollback of (TIKA-1354).
