@@ -31,6 +31,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -53,6 +55,8 @@ import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 /**
@@ -65,6 +69,20 @@ public class PDFParserTest extends TikaTest {
     public static final MediaType TYPE_PDF = MediaType.application("pdf");
     public static final MediaType TYPE_DOCX = MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document");
     public static final MediaType TYPE_DOC = MediaType.application("msword");
+    public static Level PDFBOX_LOG_LEVEL = Level.INFO;
+
+    @BeforeClass
+    public static void setup() {
+        //remember default logging level, but turn off for PDFParserTest
+        PDFBOX_LOG_LEVEL = Logger.getLogger("org.apache.pdfbox").getLevel();
+        Logger.getLogger("org.apache.pdfbox").setLevel(Level.OFF);
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        //return to regular logging level
+        Logger.getLogger("org.apache.pdfbox").setLevel(PDFBOX_LOG_LEVEL);
+    }
 
     @Test
     public void testPdfParsing() throws Exception {
