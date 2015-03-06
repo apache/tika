@@ -34,7 +34,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class StackTraceTest extends CXFTestBase {
-    public static final String TEST_NULL = "evil/null_pointer.evil";
+    public static final String TEST_NULL = "mock/null_pointer.xml";
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
 
     private static final String[] PATHS = new String[]{
@@ -91,8 +91,6 @@ public class StackTraceTest extends CXFTestBase {
             Response response = WebClient
                     .create(endPoint + path)
                     .accept("*/*")
-                    .header("Content-Disposition",
-                            "attachment; filename=null_pointer.evil")
                     .put(ClassLoader.getSystemResourceAsStream(TEST_NULL));
             assertNotNull("null response: " + path, response);
             assertEquals("unprocessable: " + path, UNPROCESSEABLE, response.getStatus());
