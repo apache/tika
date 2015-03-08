@@ -34,11 +34,16 @@ import org.junit.Test;
 public class TikaWelcomeTest extends CXFTestBase {
     protected static final String WELCOME_PATH = "/";
     private static final String VERSION_PATH = TikaVersionTest.VERSION_PATH;
+    protected static final String PATH_RESOURCE = "/detect/stream"; // TIKA-1567
+    protected static final String PATH_RESOURCE_2 = "/meta/form"; //TIKA-1567
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rpsCore =
-                Collections.<ResourceProvider>singletonList(new SingletonResourceProvider(new TikaVersion(tika)));
+	    new ArrayList<ResourceProvider>();
+	rpsCore.add(new SingletonResourceProvider(new TikaVersion(tika)));
+	rpsCore.add(new SingletonResourceProvider(new DetectorResource(tika)));
+	rpsCore.add(new SingletonResourceProvider(new MetadataResource(tika)));
         List<ResourceProvider> all = new ArrayList<ResourceProvider>(rpsCore);
         all.add(new SingletonResourceProvider(new TikaWelcome(tika, rpsCore)));
         sf.setResourceProviders(all);
@@ -50,13 +55,12 @@ public class TikaWelcomeTest extends CXFTestBase {
 
     @Test
     public void testGetHTMLWelcome() throws Exception {
-        Response response = WebClient
+        String html  = WebClient
                 .create(endPoint + WELCOME_PATH)
                 .type("text/html")
                 .accept("text/html")
-                .get();
+                .get(String.class);
 
-        String html = getStringFromInputStream((InputStream) response.getEntity());
 
         assertContains(new Tika().toString(), html);
         assertContains("href=\"http", html);
@@ -87,5 +91,19 @@ public class TikaWelcomeTest extends CXFTestBase {
 
         // Check that the Tika Version details come through too
         assertContains("GET " + VERSION_PATH, text);
+    }
+
+
+    @Test
+    public void testProperPathWelcome() throws Exception{
+         Response response = WebClient
+	     .create(endPoint + WELCOME_PATH)
+             .type("text/html")
+             .accept("text/html")
+             .get();
+
+         String html = getStringFromInputStream((InputStream) response.getEntity());
+         assertContains(PATH_RESOURCE, html);
+         assertContains(PATH_RESOURCE_2, html);
     }
 }
