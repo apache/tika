@@ -1,5 +1,7 @@
 Release 1.8 - Current Development
 
+  * Fix Paths in Tika server welcome page (TIKA-1567).
+
   * Fixed infinite recursion while parsing some PDFs (TIKA-1038).
 
   * XHTMLContentHandler now properly passes along body attributes,

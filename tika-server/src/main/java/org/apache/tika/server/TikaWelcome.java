@@ -79,7 +79,7 @@ public class TikaWelcome {
             Path p = endpoint.getAnnotation(Path.class);
             String basePath = null;
             if (p != null)
-                basePath = p.value();
+                basePath = p.value().endsWith("/") ? p.value().substring(0, p.value().length()-2):p.value();
 
             for (Method m : endpoint.getMethods()) {
                 String httpMethod = null;
@@ -106,7 +106,12 @@ public class TikaWelcome {
                         mPath = "";
                     }
                     if (methodPath != null) {
-                        mPath += methodPath;
+			if(methodPath.startsWith("/")){
+			    mPath += methodPath;
+			}
+			else{
+			    mPath += "/"+ methodPath;
+			}
                     }
                     if (produces == null) {
                         produces = new String[0];
