@@ -21,8 +21,10 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.Date;
 
 import org.apache.tika.TikaTest;
@@ -51,8 +53,27 @@ public class MockParserTest extends TikaTest {
     @Test
     public void testExample() throws Exception {
         Metadata m = new Metadata();
-        assertThrowable("example.xml", m, IOException.class, "not another IOException");
-        assertMockParser(m);
+        PrintStream out = System.out;
+        PrintStream err = System.err;
+        ByteArrayOutputStream outBos = new ByteArrayOutputStream();
+        ByteArrayOutputStream errBos = new ByteArrayOutputStream();
+        PrintStream tmpOut = new PrintStream(outBos, true, IOUtils.UTF_8.toString());
+        PrintStream tmpErr = new PrintStream(errBos, true, IOUtils.UTF_8.toString());
+        System.setOut(tmpOut);
+        System.setErr(tmpErr);
+        try {
+            assertThrowable("example.xml", m, IOException.class, "not another IOException");
+            assertMockParser(m);
+        } finally {
+            System.setOut(out);
+            System.setErr(err);
+        }
+        String outString = new String(outBos.toByteArray(), IOUtils.UTF_8);
+        assertContains("writing to System.out", outString);
+
+        String errString = new String(errBos.toByteArray(), IOUtils.UTF_8);
+        assertContains("writing to System.err", errString);
+
     }
 
     @Test

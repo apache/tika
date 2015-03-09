@@ -110,11 +110,23 @@ public class MockParser extends AbstractParser {
             hang(action);
         } else if ("oom".equals(name)) {
             kabOOM();
+        } else if ("print_out".equals(name) || "print_err".equals(name)){
+            print(action, name);
         } else {
-            throw new RuntimeException("Didn't recognize mock action: "+name);
+            throw new IllegalArgumentException("Didn't recognize mock action: "+name);
         }
     }
 
+    private void print(Node action, String name) {
+        String content = action.getTextContent();
+        if ("print_out".equals(name)) {
+            System.out.println(content);
+        } else if ("print_err".equals(name)) {
+            System.err.println(content);
+        } else {
+            throw new IllegalArgumentException("must be print_out or print_err");
+        }
+    }
     private void hang(Node action) {
         boolean interruptible = true;
         boolean heavy = false;
