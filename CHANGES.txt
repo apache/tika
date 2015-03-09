@@ -26,7 +26,7 @@ Release 1.8 - Current Development
     parse exceptions. (TIKA-1323)
 
   * Added MockParser for testing handling of exceptions, errors
-    and hangs in code that uses parsers. (TIKA-1533)
+    and hangs in code that uses parsers. (TIKA-1553)
 
   * The ForkParser service removed from Activator. Rollback of (TIKA-1354).
 

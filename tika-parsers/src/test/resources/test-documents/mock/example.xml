@@ -29,10 +29,13 @@
     <!-- element is the name of the sax event to write, p=paragraph
         if the element is not specified, the default is <p> -->
     <write element="p">some content</write>
+    <!-- write something to System.out -->
+    <print_out>writing to System.out</print_out>
+    <!-- write something to System.err -->
+    <print_err>writing to System.err</print_err>
     <!-- hang
         millis: how many milliseconds to pause.  The actual hang time will probably
-            be a bit longer than the value specified.
-        heavy: whether or not the hang should do something computationally expensive.
+            be a bit longer than the value specified.        heavy: whether or not the hang should do something computationally expensive.
             If the value is false, this just does a Thread.sleep(millis).
             This attribute is optional, with default of heavy=false.
         pulse_millis: (required if "heavy" is true), how often to check to see
