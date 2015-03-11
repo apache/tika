@@ -282,6 +282,40 @@ public class TestMimeTypes {
         assertTypeByNameAndData("application/vnd.ms-powerpoint.template.macroenabled.12", "testPPT.potm");
         assertTypeByNameAndData("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "testPPT.ppsm");
     }
+    
+    /**
+     * Note - container based formats, needs container detection
+     *  to be properly correct
+     */
+    @Test
+    public void testVisioDetection() throws Exception {
+        // By Name, should get it right
+        assertTypeByName("application/vnd.visio", "testVISIO.vsd");
+        assertTypeByName("application/vnd.ms-visio.drawing.macroenabled.main+xml", "testVISIO.vsdm");
+        assertTypeByName("application/vnd.ms-visio.drawing.main+xml", "testVISIO.vsdx");
+        assertTypeByName("application/vnd.ms-visio.stencil.macroenabled.main+xml", "testVISIO.vssm");
+        assertTypeByName("application/vnd.ms-visio.stencil.main+xml", "testVISIO.vssx");
+        assertTypeByName("application/vnd.ms-visio.template.macroenabled.main+xml", "testVISIO.vstm");
+        assertTypeByName("application/vnd.ms-visio.template.main+xml", "testVISIO.vstx");
+        
+        // By Name and Data, should get it right
+        assertTypeByNameAndData("application/vnd.visio", "testVISIO.vsd");
+        assertTypeByNameAndData("application/vnd.ms-visio.drawing.macroenabled.main+xml", "testVISIO.vsdm");
+        assertTypeByNameAndData("application/vnd.ms-visio.drawing.main+xml", "testVISIO.vsdx");
+        assertTypeByNameAndData("application/vnd.ms-visio.stencil.macroenabled.main+xml", "testVISIO.vssm");
+        assertTypeByNameAndData("application/vnd.ms-visio.stencil.main+xml", "testVISIO.vssx");
+        assertTypeByNameAndData("application/vnd.ms-visio.template.macroenabled.main+xml", "testVISIO.vstm");
+        assertTypeByNameAndData("application/vnd.ms-visio.template.main+xml", "testVISIO.vstx");
+        
+        // By Data only, will get the container parent
+        assertTypeByData("application/x-tika-msoffice", "testVISIO.vsd");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vsdm");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vsdx");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vssm");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vssx");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vstm");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vstx");
+    }
 
     /**
      * Note - detecting container formats by mime magic is very very
