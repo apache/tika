@@ -2389,32 +2389,32 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
-  <mime-type type="application/vnd.ms-visio.drawing.main+xml">
+  <mime-type type="application/vnd.ms-visio.drawing">
     <_comment>Office Open XML Visio Drawing (macro-free)</_comment>
     <glob pattern="*.vsdx"/>
     <sub-class-of type="application/x-tika-visio-ooxml"/>
   </mime-type>
-  <mime-type type="application/vnd.ms-visio.template.main+xml">
+  <mime-type type="application/vnd.ms-visio.template">
     <_comment>Office Open XML Visio Template (macro-free)</_comment>
     <glob pattern="*.vstx"/>
     <sub-class-of type="application/x-tika-visio-ooxml"/>
   </mime-type>
-  <mime-type type="application/vnd.ms-visio.stencil.main+xml">
+  <mime-type type="application/vnd.ms-visio.stencil">
     <_comment>Office Open XML Visio Stencil (macro-free)</_comment>
     <glob pattern="*.vssx"/>
     <sub-class-of type="application/x-tika-visio-ooxml"/>
   </mime-type>
-  <mime-type type="application/vnd.ms-visio.drawing.macroEnabled.main+xml">
+  <mime-type type="application/vnd.ms-visio.drawing.macroEnabled.12">
     <_comment>Office Open XML Visio Drawing (macro-enabled)</_comment>
     <glob pattern="*.vsdm"/>
     <sub-class-of type="application/x-tika-visio-ooxml"/>
   </mime-type>
-  <mime-type type="application/vnd.ms-visio.template.macroEnabled.main+xml">
+  <mime-type type="application/vnd.ms-visio.template.macroEnabled.12">
     <_comment>Office Open XML Visio Template (macro-enabled)</_comment>
     <glob pattern="*.vstm"/>
     <sub-class-of type="application/x-tika-visio-ooxml"/>
   </mime-type>
-  <mime-type type="application/vnd.ms-visio.stencil.macroEnabled.main+xml">
+  <mime-type type="application/vnd.ms-visio.stencil.macroEnabled.12">
     <_comment>Office Open XML Visio Stencil (macro-enabled)</_comment>
     <glob pattern="*.vssm"/>
     <sub-class-of type="application/x-tika-visio-ooxml"/>

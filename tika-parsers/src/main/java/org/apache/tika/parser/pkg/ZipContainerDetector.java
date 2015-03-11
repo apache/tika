@@ -58,6 +58,10 @@ import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 public class ZipContainerDetector implements Detector {
     private static final Pattern MACRO_TEMPLATE_PATTERN = Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
 
+    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, it is defined in ExtractorFactory there
+    private static final String VISIO_DOCUMENT_REL =
+            "http://schemas.microsoft.com/visio/2010/relationships/document";
+    
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
 
@@ -231,8 +235,15 @@ public class ZipContainerDetector implements Detector {
      *  opened Package 
      */
     public static MediaType detectOfficeOpenXML(OPCPackage pkg) {
+        // Check for the normal Office core document
         PackageRelationshipCollection core = 
            pkg.getRelationshipsByType(ExtractorFactory.CORE_DOCUMENT_REL);
+        // Otherwise check for some other Office core document types
+        if (core.size() == 0) {
+            core = pkg.getRelationshipsByType(VISIO_DOCUMENT_REL);
+        }
+        
+        // If we didn't find a single core document of any type, skip detection
         if (core.size() != 1) {
             // Invalid OOXML Package received
             return null;
