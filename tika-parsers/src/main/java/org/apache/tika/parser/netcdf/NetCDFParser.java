@@ -18,7 +18,6 @@ package org.apache.tika.parser.netcdf;
 
 //JDK imports
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -26,7 +25,6 @@ import java.util.Set;
 import java.util.List;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -90,7 +88,7 @@ public class NetCDFParser extends AbstractParser {
 
             // first parse out the set of global attributes
             for (Attribute attr : ncFile.getGlobalAttributes()) {
-                Property property = resolveMetadataKey(attr.getName());
+                Property property = resolveMetadataKey(attr.getFullName());
                 if (attr.getDataType().isString()) {
                     metadata.add(property, attr.getStringValue());
                 } else if (attr.getDataType().isNumeric()) {
@@ -107,7 +105,7 @@ public class NetCDFParser extends AbstractParser {
             xhtml.startElement("ul");
             xhtml.newline();
             for (Dimension dim : ncFile.getDimensions()) {
-                xhtml.element("li", dim.getName() + " = " + dim.getLength());
+                xhtml.element("li", dim.getFullName() + " = " + dim.getLength());
             }
             xhtml.endElement("ul");
 

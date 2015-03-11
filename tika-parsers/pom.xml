@@ -44,7 +44,7 @@
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.6</vorbis.version>
     <pdfbox.version>1.8.8</pdfbox.version>
-    <netcdf-java.version>4.5.4</netcdf-java.version>
+    <netcdf-java.version>4.5.5</netcdf-java.version>
   </properties>
 
   <dependencies>
