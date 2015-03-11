@@ -1,5 +1,7 @@
 Release 1.8 - Current Development
 
+  * Upgrade UCAR dependencies to 4.5.5 (TIKA-1571)
+  
   * Fix Paths in Tika server welcome page (TIKA-1567).
 
   * Fixed infinite recursion while parsing some PDFs (TIKA-1038).
