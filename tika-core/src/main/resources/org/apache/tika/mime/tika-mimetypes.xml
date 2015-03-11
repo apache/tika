@@ -2380,12 +2380,44 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.visio -->
   <mime-type type="application/vnd.visio">
+    <alias type="application/vnd.ms-visio"/>
     <_comment>Microsoft Visio Diagram</_comment>
     <glob pattern="*.vsd"/>
     <glob pattern="*.vst"/>
     <glob pattern="*.vss"/>
     <glob pattern="*.vsw"/>
     <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-visio.drawing.main+xml">
+    <_comment>Office Open XML Visio Drawing (macro-free)</_comment>
+    <glob pattern="*.vsdx"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.template.main+xml">
+    <_comment>Office Open XML Visio Template (macro-free)</_comment>
+    <glob pattern="*.vstx"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.stencil.main+xml">
+    <_comment>Office Open XML Visio Stencil (macro-free)</_comment>
+    <glob pattern="*.vssx"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.drawing.macroEnabled.main+xml">
+    <_comment>Office Open XML Visio Drawing (macro-enabled)</_comment>
+    <glob pattern="*.vsdm"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.template.macroEnabled.main+xml">
+    <_comment>Office Open XML Visio Template (macro-enabled)</_comment>
+    <glob pattern="*.vstm"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.stencil.macroEnabled.main+xml">
+    <_comment>Office Open XML Visio Stencil (macro-enabled)</_comment>
+    <glob pattern="*.vssm"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.visionary">
@@ -3735,6 +3767,11 @@
   <mime-type type="application/x-tika-ooxml-protected">
     <sub-class-of type="application/x-tika-ooxml"/>
     <_comment>Password Protected OOXML File</_comment>
+  </mime-type>
+
+  <mime-type type="application/x-tika-visio-ooxml">
+    <sub-class-of type="application/x-tika-ooxml"/>
+    <_comment>Visio OOXML File</_comment>
   </mime-type>
 
   <!-- Older StarOffice formats extend up the Microsoft OLE2 format -->
