@@ -138,7 +138,6 @@ public class XHTMLContentHandlerTest {
         xhtmlContentHandler.endElement("body");
         xhtmlContentHandler.endDocument();
 
-        System.err.println("Content: " + toHTMLContentHandler.toString());
         assertTrue(toHTMLContentHandler.toString().contains("itemscope"));
     }
 
