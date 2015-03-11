@@ -291,21 +291,21 @@ public class TestMimeTypes {
     public void testVisioDetection() throws Exception {
         // By Name, should get it right
         assertTypeByName("application/vnd.visio", "testVISIO.vsd");
-        assertTypeByName("application/vnd.ms-visio.drawing.macroenabled.main+xml", "testVISIO.vsdm");
-        assertTypeByName("application/vnd.ms-visio.drawing.main+xml", "testVISIO.vsdx");
-        assertTypeByName("application/vnd.ms-visio.stencil.macroenabled.main+xml", "testVISIO.vssm");
-        assertTypeByName("application/vnd.ms-visio.stencil.main+xml", "testVISIO.vssx");
-        assertTypeByName("application/vnd.ms-visio.template.macroenabled.main+xml", "testVISIO.vstm");
-        assertTypeByName("application/vnd.ms-visio.template.main+xml", "testVISIO.vstx");
+        assertTypeByName("application/vnd.ms-visio.drawing.macroenabled.12", "testVISIO.vsdm");
+        assertTypeByName("application/vnd.ms-visio.drawing", "testVISIO.vsdx");
+        assertTypeByName("application/vnd.ms-visio.stencil.macroenabled.12", "testVISIO.vssm");
+        assertTypeByName("application/vnd.ms-visio.stencil", "testVISIO.vssx");
+        assertTypeByName("application/vnd.ms-visio.template.macroenabled.12", "testVISIO.vstm");
+        assertTypeByName("application/vnd.ms-visio.template", "testVISIO.vstx");
         
         // By Name and Data, should get it right
         assertTypeByNameAndData("application/vnd.visio", "testVISIO.vsd");
-        assertTypeByNameAndData("application/vnd.ms-visio.drawing.macroenabled.main+xml", "testVISIO.vsdm");
-        assertTypeByNameAndData("application/vnd.ms-visio.drawing.main+xml", "testVISIO.vsdx");
-        assertTypeByNameAndData("application/vnd.ms-visio.stencil.macroenabled.main+xml", "testVISIO.vssm");
-        assertTypeByNameAndData("application/vnd.ms-visio.stencil.main+xml", "testVISIO.vssx");
-        assertTypeByNameAndData("application/vnd.ms-visio.template.macroenabled.main+xml", "testVISIO.vstm");
-        assertTypeByNameAndData("application/vnd.ms-visio.template.main+xml", "testVISIO.vstx");
+        assertTypeByNameAndData("application/vnd.ms-visio.drawing.macroenabled.12", "testVISIO.vsdm");
+        assertTypeByNameAndData("application/vnd.ms-visio.drawing", "testVISIO.vsdx");
+        assertTypeByNameAndData("application/vnd.ms-visio.stencil.macroenabled.12", "testVISIO.vssm");
+        assertTypeByNameAndData("application/vnd.ms-visio.stencil", "testVISIO.vssx");
+        assertTypeByNameAndData("application/vnd.ms-visio.template.macroenabled.12", "testVISIO.vstm");
+        assertTypeByNameAndData("application/vnd.ms-visio.template", "testVISIO.vstx");
         
         // By Data only, will get the container parent
         assertTypeByData("application/x-tika-msoffice", "testVISIO.vsd");

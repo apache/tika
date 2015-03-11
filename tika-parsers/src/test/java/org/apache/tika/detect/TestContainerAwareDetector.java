@@ -215,15 +215,12 @@ public class TestContainerAwareDetector {
         assertTypeByData("testDOTM.dotm", "application/vnd.ms-word.template.macroEnabled.12");
         assertTypeByData("testPPT.xps", "application/vnd.ms-xpsdocument");
 
-        // TODO Support detecting the Visio OOXML files
-/*
-        assertTypeByData("testVISIO.vsdm", "application/vnd.ms-visio.drawing.macroenabled.main+xml");
-        assertTypeByData("testVISIO.vsdx", "application/vnd.ms-visio.drawing.main+xml");
-        assertTypeByData("testVISIO.vssm", "application/vnd.ms-visio.stencil.macroenabled.main+xml");
-        assertTypeByData("testVISIO.vssx", "application/vnd.ms-visio.stencil.main+xml");
-        assertTypeByData("testVISIO.vstm", "application/vnd.ms-visio.template.macroenabled.main+xml");
-        assertTypeByData("testVISIO.vstx", "application/vnd.ms-visio.template.main+xml");
-*/
+        assertTypeByData("testVISIO.vsdm", "application/vnd.ms-visio.drawing.macroenabled.12");
+        assertTypeByData("testVISIO.vsdx", "application/vnd.ms-visio.drawing");
+        assertTypeByData("testVISIO.vssm", "application/vnd.ms-visio.stencil.macroenabled.12");
+        assertTypeByData("testVISIO.vssx", "application/vnd.ms-visio.stencil");
+        assertTypeByData("testVISIO.vstm", "application/vnd.ms-visio.template.macroenabled.12");
+        assertTypeByData("testVISIO.vstx", "application/vnd.ms-visio.template");
         
         // .xlsb is an OOXML file containing the binary parts, and not
         //  an OLE2 file as you might initially expect!
