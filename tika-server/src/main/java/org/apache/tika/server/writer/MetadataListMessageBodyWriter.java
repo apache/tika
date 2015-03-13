@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.writer;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -34,6 +34,7 @@ import java.lang.reflect.Type;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.server.MetadataList;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)

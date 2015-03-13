@@ -31,6 +31,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.parser.pdf.PDFParser;
 import org.apache.tika.parser.pkg.PackageParser;
+import org.apache.tika.server.resource.TikaParsers;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.gagravarr.tika.OpusParser;
 import org.junit.Test;

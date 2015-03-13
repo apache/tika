@@ -27,6 +27,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
+import org.apache.tika.server.resource.TikaVersion;
 import org.junit.Test;
 
 public class TikaVersionTest extends CXFTestBase {

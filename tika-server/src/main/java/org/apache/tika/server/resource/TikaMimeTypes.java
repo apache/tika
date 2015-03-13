@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server;
+package org.apache.tika.server.resource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -32,6 +32,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.server.HTMLHelper;
 import org.eclipse.jetty.util.ajax.JSON;
 
 /**

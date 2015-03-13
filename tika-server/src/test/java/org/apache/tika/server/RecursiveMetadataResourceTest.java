@@ -34,6 +34,8 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.server.resource.RecursiveMetadataResource;
+import org.apache.tika.server.writer.MetadataListMessageBodyWriter;
 import org.junit.Test;
 
 public class RecursiveMetadataResourceTest extends CXFTestBase {

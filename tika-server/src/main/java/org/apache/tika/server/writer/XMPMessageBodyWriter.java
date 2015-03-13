@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.writer;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -34,14 +34,16 @@ import java.lang.reflect.Type;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.xmp.XMPMetadata;
 
 @Provider
-@Produces(MediaType.APPLICATION_JSON)
-public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
+@Produces("application/rdf+xml")
+public class XMPMessageBodyWriter implements MessageBodyWriter<Metadata> {
+
+    private static MediaType RDF_XML = MediaType.valueOf("application/rdf+xml");
 
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return Metadata.class.isAssignableFrom(type);
+        return mediaType.equals(RDF_XML) && Metadata.class.isAssignableFrom(type);
     }
 
     public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
@@ -54,7 +56,8 @@ public class JSONMessageBodyWriter implements MessageBodyWriter<Metadata> {
             WebApplicationException {
         try {
             Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
-            JsonMetadata.toJson(metadata, writer);
+            XMPMetadata xmp = new XMPMetadata(metadata);
+            writer.write(xmp.toString());
             writer.flush();
         } catch (TikaException e) {
             throw new IOException(e);

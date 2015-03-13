@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Move Tika server resources and writers to separate
+    org.apache.tika.server.resource and writer packages (TIKA-1564).
+
   * Upgrade UCAR dependencies to 4.5.5 (TIKA-1571)
   
   * Fix Paths in Tika server welcome page (TIKA-1567).

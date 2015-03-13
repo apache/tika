@@ -21,7 +21,6 @@ import javax.ws.rs.core.Response;
 
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -29,6 +28,10 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
+import org.apache.tika.server.resource.DetectorResource;
+import org.apache.tika.server.resource.MetadataResource;
+import org.apache.tika.server.resource.TikaVersion;
+import org.apache.tika.server.resource.TikaWelcome;
 import org.junit.Test;
 
 public class TikaWelcomeTest extends CXFTestBase {

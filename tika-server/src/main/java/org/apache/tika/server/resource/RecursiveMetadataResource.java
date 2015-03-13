@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.resource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -39,6 +39,7 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.server.MetadataList;
 import org.xml.sax.helpers.DefaultHandler;
 
 @Path("/rmeta")

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.writer;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
