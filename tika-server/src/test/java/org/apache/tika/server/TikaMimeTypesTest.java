@@ -28,6 +28,7 @@ import java.util.Map;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.server.resource.TikaMimeTypes;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.junit.Test;
 

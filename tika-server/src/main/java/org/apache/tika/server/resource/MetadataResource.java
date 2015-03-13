@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.resource;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;

@@ -38,6 +38,11 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadata;
+import org.apache.tika.server.resource.MetadataResource;
+import org.apache.tika.server.writer.CSVMessageBodyWriter;
+import org.apache.tika.server.writer.JSONMessageBodyWriter;
+import org.apache.tika.server.writer.TextMessageBodyWriter;
+import org.apache.tika.server.writer.XMPMessageBodyWriter;
 import org.junit.Assert;
 import org.junit.Test;
 

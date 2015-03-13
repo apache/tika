@@ -41,6 +41,7 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.server.resource.UnpackerResource;
 import org.junit.After;
 import org.junit.Before;
 

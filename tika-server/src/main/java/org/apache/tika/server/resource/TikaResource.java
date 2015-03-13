@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.resource;
 
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
@@ -70,6 +70,8 @@ import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
+import org.apache.tika.server.RichTextContentHandler;
+import org.apache.tika.server.TikaServerParseException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 

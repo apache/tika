@@ -37,6 +37,23 @@ import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.server.resource.DetectorResource;
+import org.apache.tika.server.resource.MetadataResource;
+import org.apache.tika.server.resource.RecursiveMetadataResource;
+import org.apache.tika.server.resource.TarWriter;
+import org.apache.tika.server.resource.TikaDetectors;
+import org.apache.tika.server.resource.TikaMimeTypes;
+import org.apache.tika.server.resource.TikaParsers;
+import org.apache.tika.server.resource.TikaResource;
+import org.apache.tika.server.resource.TikaVersion;
+import org.apache.tika.server.resource.TikaWelcome;
+import org.apache.tika.server.resource.UnpackerResource;
+import org.apache.tika.server.writer.CSVMessageBodyWriter;
+import org.apache.tika.server.writer.JSONMessageBodyWriter;
+import org.apache.tika.server.writer.MetadataListMessageBodyWriter;
+import org.apache.tika.server.writer.TextMessageBodyWriter;
+import org.apache.tika.server.writer.XMPMessageBodyWriter;
+import org.apache.tika.server.writer.ZipWriter;
 
 public class TikaServerCli {
     public static final int DEFAULT_PORT = 9998;

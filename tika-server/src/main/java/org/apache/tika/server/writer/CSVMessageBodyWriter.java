@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.server.writer;
 
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -27,23 +27,21 @@ import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
 
-import org.apache.tika.exception.TikaException;
+import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.xmp.XMPMetadata;
 
 @Provider
-@Produces("application/rdf+xml")
-public class XMPMessageBodyWriter implements MessageBodyWriter<Metadata> {
-
-    private static MediaType RDF_XML = MediaType.valueOf("application/rdf+xml");
+@Produces("text/csv")
+public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return mediaType.equals(RDF_XML) && Metadata.class.isAssignableFrom(type);
+        return Metadata.class.isAssignableFrom(type);
     }
 
     public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
@@ -51,17 +49,22 @@ public class XMPMessageBodyWriter implements MessageBodyWriter<Metadata> {
     }
 
     @Override
+    @SuppressWarnings("resource")
     public void writeTo(Metadata metadata, Class<?> type, Type genericType, Annotation[] annotations,
                         MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
             WebApplicationException {
-        try {
-            Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
-            XMPMetadata xmp = new XMPMetadata(metadata);
-            writer.write(xmp.toString());
-            writer.flush();
-        } catch (TikaException e) {
-            throw new IOException(e);
+
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(entityStream, IOUtils.UTF_8));
+
+        for (String name : metadata.names()) {
+            String[] values = metadata.getValues(name);
+            ArrayList<String> list = new ArrayList<String>(values.length + 1);
+            list.add(name);
+            list.addAll(Arrays.asList(values));
+            writer.writeNext(list.toArray(values));
         }
-        entityStream.flush();
+
+        // Don't close, just flush the stream
+        writer.flush();
     }
 }

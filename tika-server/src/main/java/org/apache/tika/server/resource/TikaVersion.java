@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server;
+package org.apache.tika.server.resource;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

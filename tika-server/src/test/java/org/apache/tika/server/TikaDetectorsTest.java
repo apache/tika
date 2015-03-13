@@ -31,6 +31,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.microsoft.POIFSContainerDetector;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
+import org.apache.tika.server.resource.TikaDetectors;
 import org.eclipse.jetty.util.ajax.JSON;
 import org.gagravarr.tika.OggDetector;
 import org.junit.Test;

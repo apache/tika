@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.server;
+package org.apache.tika.server.resource;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -41,6 +41,7 @@ import java.util.regex.Pattern;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.server.HTMLHelper;
 
 /**
  * <p>Provides a basic welcome to the Apache Tika Server.</p>

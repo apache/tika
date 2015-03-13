@@ -31,6 +31,15 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.server.resource.DetectorResource;
+import org.apache.tika.server.resource.MetadataResource;
+import org.apache.tika.server.resource.RecursiveMetadataResource;
+import org.apache.tika.server.resource.TikaResource;
+import org.apache.tika.server.resource.UnpackerResource;
+import org.apache.tika.server.writer.CSVMessageBodyWriter;
+import org.apache.tika.server.writer.JSONMessageBodyWriter;
+import org.apache.tika.server.writer.TextMessageBodyWriter;
+import org.apache.tika.server.writer.XMPMessageBodyWriter;
 import org.junit.Assert;
 import org.junit.Test;
 
