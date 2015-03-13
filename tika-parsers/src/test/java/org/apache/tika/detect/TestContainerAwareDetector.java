@@ -213,6 +213,7 @@ public class TestContainerAwareDetector {
         assertTypeByData("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
         assertTypeByData("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
         assertTypeByData("testDOTM.dotm", "application/vnd.ms-word.template.macroEnabled.12");
+        assertTypeByData("testEXCEL.strict.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         assertTypeByData("testPPT.xps", "application/vnd.ms-xpsdocument");
 
         assertTypeByData("testVISIO.vsdm", "application/vnd.ms-visio.drawing.macroenabled.12");

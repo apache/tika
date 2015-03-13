@@ -28,6 +28,7 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.IOUtils;
@@ -44,6 +45,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.WordParserTest;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -160,6 +162,38 @@ public class OOXMLParserTest extends TikaTest {
             // Custom Number ("At" h:mm AM/PM "on" dddd mmmm d"," yyyy)
             assertContains("At 4:20 AM on Thursday May 17, 2007", content);
             **************************************************************************/
+        } finally {
+            input.close();
+        }
+    }
+
+    @Test
+    @Ignore("OOXML-Strict not currently supported by POI, see #57699")
+    public void testExcelStrict() throws Exception {
+        Metadata metadata = new Metadata(); 
+        ContentHandler handler = new BodyContentHandler();
+        ParseContext context = new ParseContext();
+        context.set(Locale.class, Locale.US);
+
+        InputStream input = getTestDocument("testEXCEL.strict.xlsx");
+        try {
+            parser.parse(input, handler, metadata, context);
+
+            assertEquals(
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("Sample Spreadsheet", metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("Nick Burch", metadata.get(TikaCoreProperties.CREATOR));
+            assertEquals("Spreadsheet for testing", metadata.get(TikaCoreProperties.DESCRIPTION));
+            
+            String content = handler.toString();
+            assertContains("Test spreadsheet", content);
+            assertContains("This one is red", content);
+            assertContains("cb=10", content);
+            assertNotContained("10.0", content);
+            assertContains("cb=sum", content);
+            assertNotContained("13.0", content);
+            assertEquals("false", metadata.get(TikaMetadataKeys.PROTECTED));
         } finally {
             input.close();
         }
