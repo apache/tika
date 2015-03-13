@@ -23,7 +23,7 @@ import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-class RichTextContentHandler extends WriteOutContentHandler {
+public class RichTextContentHandler extends WriteOutContentHandler {
     public RichTextContentHandler(Writer writer) {
         super(writer);
     }
