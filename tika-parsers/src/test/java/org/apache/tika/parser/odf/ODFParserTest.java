@@ -373,4 +373,15 @@ public class ODFParserTest extends TikaTest {
           tis.close();
         }
     }
+
+    @Test
+    public void testODTStyles() throws Exception {
+        String xml = getXML("testStyles.odt").xml;
+        assertContains("This <i>is</i> <b>just</b> a <u>test</u>", xml);
+        assertContains("<p>And <b>another <i>test</i> is</b> here.</p>", xml);
+        assertContains("<ol>\t<li><p>One</p>", xml);
+        assertContains("</ol>", xml);
+        assertContains("<ul>\t<li><p>First</p>", xml);
+        assertContains("</ul>", xml);
+    }
 }
