@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Added basic style support for ODF documents, contributed by
+    Axel Dörfler (TIKA-1063).
+
   * Move Tika server resources and writers to separate
     org.apache.tika.server.resource and writer packages (TIKA-1564).
 

@@ -54,6 +54,22 @@ import org.xml.sax.helpers.DefaultHandler;
  * Parser for ODF <code>content.xml</code> files.
  */
 public class OpenDocumentContentParser extends AbstractParser {
+    private interface Style {
+    }
+
+    private static class TextStyle implements Style {
+        public boolean italic;
+        public boolean bold;
+        public boolean underlined;
+    }
+    
+    private static class ListStyle implements Style {
+        public boolean ordered;
+        
+        public String getTag() {
+            return ordered ? "ol" : "ul";
+        }
+    }
 
     private static final class OpenDocumentElementMappingContentHandler extends
 			ElementMappingContentHandler {
@@ -62,6 +78,12 @@ public class OpenDocumentContentParser extends AbstractParser {
 		private int nodeDepth = 0;
 		private int completelyFiltered = 0;
 		private Stack<String> headingStack = new Stack<String>();
+		private Map<String, TextStyle> textStyleMap = new HashMap<String, TextStyle>();
+        private Map<String, ListStyle> listStyleMap = new HashMap<String, ListStyle>();
+        private TextStyle textStyle;
+        private TextStyle lastTextStyle;
+        private Stack<ListStyle> listStyleStack = new Stack<ListStyle>();
+        private ListStyle listStyle;
 
 		private OpenDocumentElementMappingContentHandler(ContentHandler handler,
 				Map<QName, TargetElement> mappings) {
@@ -75,6 +97,7 @@ public class OpenDocumentContentParser extends AbstractParser {
 		    // only forward content of tags from text:-namespace
 		    if (completelyFiltered == 0 && nodeDepth > 0
 		            && textNodeStack.get(nodeDepth - 1)) {
+		        lazyEndSpan();
 		        super.characters(ch,start,length);
 		    }
 		}
@@ -86,11 +109,8 @@ public class OpenDocumentContentParser extends AbstractParser {
 		    if (TEXT_NS.equals(namespaceURI)) {
 		        return localName.endsWith("-template")
 		            || localName.endsWith("-style");
-		    } else if (TABLE_NS.equals(namespaceURI)) {
-		        return "covered-table-cell".equals(localName);
-		    } else {
-		        return false;
 		    }
+            return TABLE_NS.equals(namespaceURI) && "covered-table-cell".equals(localName);
 		}
 
 		// map the heading level to <hX> HTML tags
@@ -124,16 +144,127 @@ public class OpenDocumentContentParser extends AbstractParser {
 		    return false;
 		}
 
+		private void startList(String name) throws SAXException {
+		    String elementName = "ul";
+		    if (name != null) {
+		        ListStyle style = listStyleMap.get(name);
+		        elementName = style != null ? style.getTag() : "ul";
+	            listStyleStack.push(style);
+		    }
+            handler.startElement(XHTML, elementName, elementName, EMPTY_ATTRIBUTES);
+		}
+
+		private void endList() throws SAXException {
+            String elementName = "ul";
+            if (!listStyleStack.isEmpty()) {
+                ListStyle style = listStyleStack.pop();
+                elementName = style != null ? style.getTag() : "ul";
+            }
+            handler.endElement(XHTML, elementName, elementName);
+		}
+
+		private void startSpan(String name) throws SAXException {
+		    if (name == null) {
+		        return;
+		    }
+
+            TextStyle style = textStyleMap.get(name);
+
+            // End tags that refer to no longer valid styles
+            if (!style.underlined && lastTextStyle != null && lastTextStyle.underlined) {
+                handler.endElement(XHTML, "u", "u");
+            }
+            if (!style.italic && lastTextStyle != null && lastTextStyle.italic) {
+                handler.endElement(XHTML, "i", "i");
+            }
+            if (!style.bold && lastTextStyle != null && lastTextStyle.bold) {
+                handler.endElement(XHTML, "b", "b");
+            }
+
+            // Start tags for new styles
+            if (style.bold && (lastTextStyle == null || !lastTextStyle.bold)) {
+                handler.startElement(XHTML, "b", "b", EMPTY_ATTRIBUTES);
+            }
+            if (style.italic && (lastTextStyle == null || !lastTextStyle.italic)) {
+                handler.startElement(XHTML, "i", "i", EMPTY_ATTRIBUTES);
+            }
+            if (style.underlined && (lastTextStyle == null || !lastTextStyle.underlined)) {
+                handler.startElement(XHTML, "u", "u", EMPTY_ATTRIBUTES);
+            }
+
+            textStyle = style;
+            lastTextStyle = null;
+		}
+
+		private void endSpan() throws SAXException {
+		    lastTextStyle = textStyle;
+		    textStyle = null;
+		}
+		
+		private void lazyEndSpan() throws SAXException {
+		    if (lastTextStyle == null) {
+		        return;
+		    }
+
+            if (lastTextStyle.underlined) {
+                handler.endElement(XHTML, "u", "u");
+            }
+            if (lastTextStyle.italic) {
+                handler.endElement(XHTML, "i", "i");
+            }
+            if (lastTextStyle.bold) {
+                handler.endElement(XHTML, "b", "b");
+            }
+
+            lastTextStyle = null;
+		}
+
 		@Override
 		public void startElement(
 		        String namespaceURI, String localName, String qName,
-		        Attributes atts) throws SAXException {
+		        Attributes attrs) throws SAXException {
 		    // keep track of current node type. If it is a text node,
 		    // a bit at the current depth ist set in textNodeStack.
 		    // characters() checks the top bit to determine, if the
 		    // actual node is a text node to print out nodeDepth contains
 		    // the depth of the current node and also marks top of stack.
 		    assert nodeDepth >= 0;
+
+		    // Set styles
+		    if (STYLE_NS.equals(namespaceURI) && "style".equals(localName)) {
+		        String family = attrs.getValue(STYLE_NS, "family");
+		        if ("text".equals(family)) {
+		            textStyle = new TextStyle();
+	                String name = attrs.getValue(STYLE_NS, "name");
+		            textStyleMap.put(name, textStyle);
+		        }
+		    } else if (TEXT_NS.equals(namespaceURI) && "list-style".equals(localName)) {
+		        listStyle = new ListStyle();
+                String name = attrs.getValue(STYLE_NS, "name");
+                listStyleMap.put(name, listStyle);
+		    } else if (textStyle != null && STYLE_NS.equals(namespaceURI)
+		            && "text-properties".equals(localName)) {
+		        String fontStyle = attrs.getValue(FORMATTING_OBJECTS_NS, "font-style");
+		        if ("italic".equals(fontStyle) || "oblique".equals(fontStyle)) {
+		            textStyle.italic = true;
+		        }
+		        String fontWeight = attrs.getValue(FORMATTING_OBJECTS_NS, "font-weight");
+		        if ("bold".equals(fontWeight) || "bolder".equals(fontWeight)
+		                || (fontWeight!=null && Character.isDigit(fontWeight.charAt(0))
+		                && Integer.valueOf(fontWeight) > 500)) {
+		            textStyle.bold = true;
+		        }
+		        String underlineStyle = attrs.getValue(STYLE_NS, "text-underline-style");
+		        if (underlineStyle != null) {
+		            textStyle.underlined = true;
+		        }
+		    } else if (listStyle != null && TEXT_NS.equals(namespaceURI)) {
+		        if ("list-level-style-bullet".equals(localName)) {
+		            listStyle.ordered = false;
+		        } else if ("list-level-style-number".equals(localName)) {
+		            listStyle.ordered = true;
+		        }
+		    }
 
 		    textNodeStack.set(nodeDepth++, 
 		            isTextNode(namespaceURI, localName));
@@ -148,11 +279,14 @@ public class OpenDocumentContentParser extends AbstractParser {
 		        // special handling of text:h, that are directly passed
 		        // to incoming handler
 		        if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
-		            final String el = headingStack.push(getXHTMLHeaderTagName(atts));
+		            final String el = headingStack.push(getXHTMLHeaderTagName(attrs));
 		            handler.startElement(XHTMLContentHandler.XHTML, el, el, EMPTY_ATTRIBUTES);
+		        } else if (TEXT_NS.equals(namespaceURI) && "list".equals(localName)) {
+		            startList(attrs.getValue(TEXT_NS, "style-name"));
+                } else if (TEXT_NS.equals(namespaceURI) && "span".equals(localName)) {
+                    startSpan(attrs.getValue(TEXT_NS, "style-name"));
 		        } else {
-		            super.startElement(
-		                    namespaceURI, localName, qName, atts);
+		            super.startElement(namespaceURI, localName, qName, attrs);
 		        }
 		    }
 		}
@@ -161,6 +295,12 @@ public class OpenDocumentContentParser extends AbstractParser {
 		public void endElement(
 		        String namespaceURI, String localName, String qName)
 		        throws SAXException {
+            if (STYLE_NS.equals(namespaceURI) && "style".equals(localName)) {
+                textStyle = null;
+            } else if (TEXT_NS.equals(namespaceURI) && "list-style".equals(localName)) {
+                listStyle = null;
+            }
+
 		    // call next handler if no filtering
 		    if (completelyFiltered == 0) {
 		        // special handling of text:h, that are directly passed
@@ -168,7 +308,14 @@ public class OpenDocumentContentParser extends AbstractParser {
 		        if (TEXT_NS.equals(namespaceURI) && "h".equals(localName)) {
 		            final String el = headingStack.pop();
 		            handler.endElement(XHTMLContentHandler.XHTML, el, el);
+		        } else if (TEXT_NS.equals(namespaceURI) && "list".equals(localName)) {
+		            endList();
+                } else if (TEXT_NS.equals(namespaceURI) && "span".equals(localName)) {
+                    endSpan();
 		        } else {
+		            if (TEXT_NS.equals(namespaceURI) && "p".equals(localName)) {
+		                lazyEndSpan();
+		            }
 		            super.endElement(namespaceURI,localName,qName);
 		        }
 
@@ -208,6 +355,12 @@ public class OpenDocumentContentParser extends AbstractParser {
     public static final String TABLE_NS =
         "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
 
+    public static final String STYLE_NS =
+        "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
+
+    public static final String FORMATTING_OBJECTS_NS =
+        "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0";
+
     public static final String OFFICE_NS =
         "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
 
@@ -243,9 +396,6 @@ public class OpenDocumentContentParser extends AbstractParser {
         MAPPINGS.put(
                 new QName(TEXT_NS, "line-break"),
                 new TargetElement(XHTML, "br"));
-        MAPPINGS.put(
-                new QName(TEXT_NS, "list"),
-                new TargetElement(XHTML, "ul"));
         MAPPINGS.put(
                 new QName(TEXT_NS, "list-item"),
                 new TargetElement(XHTML, "li"));
