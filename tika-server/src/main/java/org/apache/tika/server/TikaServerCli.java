@@ -40,7 +40,7 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.MetadataResource;
 import org.apache.tika.server.resource.RecursiveMetadataResource;
-import org.apache.tika.server.resource.TarWriter;
+import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.resource.TikaDetectors;
 import org.apache.tika.server.resource.TikaMimeTypes;
 import org.apache.tika.server.resource.TikaParsers;
