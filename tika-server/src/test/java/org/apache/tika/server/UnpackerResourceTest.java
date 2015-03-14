@@ -33,7 +33,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.server.resource.TarWriter;
+import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.apache.tika.server.writer.ZipWriter;
 import org.junit.Test;

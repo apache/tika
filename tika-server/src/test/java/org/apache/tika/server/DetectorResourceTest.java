@@ -30,7 +30,7 @@ import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.server.resource.DetectorResource;
-import org.apache.tika.server.resource.TarWriter;
+import org.apache.tika.server.writer.TarWriter;
 import org.apache.tika.server.writer.ZipWriter;
 import org.junit.Test;
 
