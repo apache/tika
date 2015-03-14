@@ -216,7 +216,7 @@ public class IWorkPackageParser extends AbstractParser {
             
             entry = zip.getNextZipEntry();
         }
-        zip.close();
+        // Don't close the zip InputStream (TIKA-1117).
     }
 
 }
