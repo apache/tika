@@ -49,6 +49,20 @@ public class IWorkParserTest {
         parseContext.set(Parser.class, new AutoDetectParser());
     }
 
+    /**
+     * Check the given InputStream is not closed by the Parser (TIKA-1117).
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStreamNotClosed() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        iWorkParser.parse(input, handler, metadata, parseContext);
+        input.read();   // Will throw an Exception if the stream was already closed.
+    }
+
     @Test
     public void testParseKeynote() throws Exception {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
