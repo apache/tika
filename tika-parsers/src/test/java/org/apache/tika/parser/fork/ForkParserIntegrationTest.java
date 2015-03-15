@@ -120,6 +120,7 @@ public class ForkParserIntegrationTest {
           for (StackTraceElement ste : e.getStackTrace()) {
              if (ste.getClassName().equals(ForkParser.class.getName())) {
                 found = true;
+                break;
              }
           }
           if (!found) {
