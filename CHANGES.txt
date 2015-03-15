@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Upgraded the Drew Noakes metadata-extractor to version 2.7.2
+    (TIKA-1576).
+
   * Added basic style support for ODF documents, contributed by
     Axel Dörfler (TIKA-1063).
 
