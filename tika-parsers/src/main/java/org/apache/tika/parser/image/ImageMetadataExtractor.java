@@ -28,6 +28,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.drew.imaging.jpeg.JpegSegmentType;
+import com.drew.imaging.tiff.TiffProcessingException;
 import org.apache.poi.util.IOUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.IPTC;
@@ -39,7 +41,6 @@ import org.xml.sax.SAXException;
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.imaging.tiff.TiffMetadataReader;
-import com.drew.lang.BufferReader;
 import com.drew.lang.ByteArrayReader;
 import com.drew.lang.GeoLocation;
 import com.drew.lang.Rational;
@@ -110,6 +111,8 @@ public class ImageMetadataExtractor {
             handle(tiffMetadata);
         } catch (MetadataException e) {
             throw new TikaException("Can't read TIFF metadata", e);
+        } catch (TiffProcessingException e) {
+            throw new TikaException("Can't read TIFF metadata", e);
         }
     }
     
@@ -131,11 +134,9 @@ public class ImageMetadataExtractor {
     }
     public void parseRawExif(byte[] exifData)
             throws IOException, SAXException, TikaException {
-        BufferReader exifReader = new ByteArrayReader(exifData);
-        
         com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
         ExifReader reader = new ExifReader();
-        reader.extract(exifReader, metadata);
+        reader.extract(exifData, metadata, JpegSegmentType.APP1);
         
         try {
             handle(metadata);
@@ -145,11 +146,9 @@ public class ImageMetadataExtractor {
     }
     public void parseRawXMP(byte[] xmpData)
             throws IOException, SAXException, TikaException {
-        BufferReader xmpReader = new ByteArrayReader(xmpData);
-        
         com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
         XmpReader reader = new XmpReader();
-        reader.extract(xmpReader, metadata);
+        reader.extract(xmpData, metadata);
         
         try {
             handle(metadata);
@@ -265,11 +264,11 @@ public class ImageMetadataExtractor {
             //Exif.Image.ImageLength                       Short       1  75
             // and the values are found in "Thumbnail Image Width" (and Height) from Metadata Extractor
             set(directory, metadata, ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_WIDTH, Metadata.IMAGE_WIDTH);
-            set(directory, metadata, JpegDirectory.TAG_JPEG_IMAGE_WIDTH, Metadata.IMAGE_WIDTH);
+            set(directory, metadata, JpegDirectory.TAG_IMAGE_WIDTH, Metadata.IMAGE_WIDTH);
             set(directory, metadata, ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_HEIGHT, Metadata.IMAGE_LENGTH);
-            set(directory, metadata, JpegDirectory.TAG_JPEG_IMAGE_HEIGHT, Metadata.IMAGE_LENGTH);
+            set(directory, metadata, JpegDirectory.TAG_IMAGE_HEIGHT, Metadata.IMAGE_LENGTH);
             // Bits per sample, two methods of extracting, exif overrides jpeg
-            set(directory, metadata, JpegDirectory.TAG_JPEG_DATA_PRECISION, Metadata.BITS_PER_SAMPLE);
+            set(directory, metadata, JpegDirectory.TAG_DATA_PRECISION, Metadata.BITS_PER_SAMPLE);
             set(directory, metadata, ExifSubIFDDirectory.TAG_BITS_PER_SAMPLE, Metadata.BITS_PER_SAMPLE);
             // Straightforward
             set(directory, metadata, ExifSubIFDDirectory.TAG_SAMPLES_PER_PIXEL, Metadata.SAMPLES_PER_PIXEL);
@@ -289,8 +288,8 @@ public class ImageMetadataExtractor {
             return directoryType == JpegCommentDirectory.class;
         }
         public void handle(Directory directory, Metadata metadata) throws MetadataException {
-            if (directory.containsTag(JpegCommentDirectory.TAG_JPEG_COMMENT)) {
-                metadata.add(TikaCoreProperties.COMMENTS, directory.getString(JpegCommentDirectory.TAG_JPEG_COMMENT));
+            if (directory.containsTag(JpegCommentDirectory.TAG_COMMENT)) {
+                metadata.add(TikaCoreProperties.COMMENTS, directory.getString(JpegCommentDirectory.TAG_COMMENT));
             }
         }
     }
