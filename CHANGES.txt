@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Tika has improved delineation in XML and HTML MIME detection
+    (TIKA-1365).
+
   * Upgraded the Drew Noakes metadata-extractor to version 2.7.2
     (TIKA-1576).
 

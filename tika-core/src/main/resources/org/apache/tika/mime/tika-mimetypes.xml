@@ -3878,13 +3878,18 @@
     <magic priority="50">
       <match value="&lt;?xml" type="string" offset="0"/>
       <match value="&lt;?XML" type="string" offset="0"/>
-      <match value="&lt;!--" type="string" offset="0"/>
       <!-- UTF-8 BOM -->
       <match value="0xEFBBBF3C3F786D6C" type="string" offset="0"/>
       <!-- UTF-16 LE/BE -->
       <match value="0xFFFE3C003F0078006D006C00" type="string" offset="0"/>
       <match value="0xFEFF003C003F0078006D006C" type="string" offset="0"/>
       <!-- TODO: Add matches for the other possible XML encoding schemes -->
+    </magic>
+    <!-- XML files can start with a comment but then must not contain processing instructions.
+         This should be rare so we assign lower priority here. Priority is also lower than text/html magics
+         for them to be preferred for HTML starting with comment.-->
+    <magic priority="30">
+      <match value="&lt;!--" type="string" offset="0"/>
     </magic>
     <glob pattern="*.xml"/>
     <glob pattern="*.xsl"/>

@@ -561,6 +561,22 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testXmlAndHtmlDetection() throws Exception {
+        assertTypeByData("application/xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><records><record/></records>"
+                .getBytes("UTF-8"));
+        assertTypeByData("application/xml", "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
+                .getBytes("UTF-16LE"));
+        assertTypeByData("application/xml", "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
+                .getBytes("UTF-16BE"));
+        assertTypeByData("application/xml", "<!-- XML without processing instructions --><records><record/></records>"
+                .getBytes("UTF-8"));
+        assertTypeByData("text/html", "<html><body>HTML</body></html>"
+                .getBytes("UTF-8"));
+        assertTypeByData("text/html", "<!-- HTML comment --><html><body>HTML</body></html>"
+                .getBytes("UTF-8"));
+    }
+
+    @Test
     public void testWmfDetection() throws Exception {
         assertTypeByName("application/x-msmetafile", "x.wmf");
         assertTypeByData("application/x-msmetafile", "testWMF.wmf");
