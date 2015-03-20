@@ -17,6 +17,7 @@
 
 package org.apache.tika.language.translate;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
 
@@ -91,7 +92,7 @@ public abstract class ExternalTranslator implements Translator {
      * @throws Exception
      */
     @Override
-    public String translate(String text, String targetLanguage) throws Exception {
+    public String translate(String text, String targetLanguage) throws TikaException, IOException {
         LanguageIdentifier language = new LanguageIdentifier(
                 new LanguageProfile(text));
         String sourceLanguage = language.getLanguage();
