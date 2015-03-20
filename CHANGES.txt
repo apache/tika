@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Translator.translate() Exceptions are now restricted to
+    TikaException and IOException (TIKA-1416).
+
   * Tika now supports MIME detection for Microsoft Extended 
     Makefiles (EMF) (TIKA-1554).
 

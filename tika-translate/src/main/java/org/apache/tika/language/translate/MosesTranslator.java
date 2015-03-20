@@ -17,6 +17,8 @@
 
 package org.apache.tika.language.translate;
 
+import org.apache.tika.exception.TikaException;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -75,7 +77,7 @@ public class MosesTranslator extends ExternalTranslator {
     }
 
     @Override
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         if (!isAvailable() || !checkCommand(buildCheckCommand(smtPath), 1)) return text;
         File tmpFile = new File(TMP_FILE_NAME);
         OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(tmpFile), Charset.defaultCharset());

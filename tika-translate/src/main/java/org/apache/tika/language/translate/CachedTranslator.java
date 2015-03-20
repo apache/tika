@@ -18,9 +18,11 @@
 package org.apache.tika.language.translate;
 
 import com.fasterxml.jackson.databind.util.LRUMap;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
 
+import java.io.IOException;
 import java.util.HashMap;
 
 /**
@@ -47,7 +49,7 @@ public class CachedTranslator implements Translator {
     }
 
     @Override
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         HashMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
         String translatedText = translationCache.get(text);
         if (translatedText == null) {
@@ -58,7 +60,7 @@ public class CachedTranslator implements Translator {
     }
 
     @Override
-    public String translate(String text, String targetLanguage) throws Exception {
+    public String translate(String text, String targetLanguage) throws TikaException, IOException {
         LanguageIdentifier language = new LanguageIdentifier(
                 new LanguageProfile(text));
         String sourceLanguage = language.getLanguage();

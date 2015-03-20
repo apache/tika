@@ -21,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
@@ -71,7 +72,7 @@ public class Lingo24Translator implements Translator {
 
     @Override
     public String translate(String text, String sourceLanguage,
-                            String targetLanguage) throws Exception {
+                            String targetLanguage) throws TikaException, IOException {
         if (!this.isAvailable)
             return text;
         Response response = client.accept(MediaType.APPLICATION_JSON)
@@ -96,7 +97,7 @@ public class Lingo24Translator implements Translator {
 
     @Override
     public String translate(String text, String targetLanguage)
-            throws Exception {
+            throws TikaException, IOException {
         if (!this.isAvailable)
             return text;
         LanguageIdentifier language = new LanguageIdentifier(

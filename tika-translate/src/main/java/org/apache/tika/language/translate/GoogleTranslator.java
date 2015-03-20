@@ -21,6 +21,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Properties;
@@ -29,6 +30,7 @@ import java.util.logging.Logger;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
@@ -78,7 +80,7 @@ public class GoogleTranslator implements Translator {
 
 	@Override
 	public String translate(String text, String sourceLanguage,
-			String targetLanguage) throws Exception {
+			String targetLanguage) throws TikaException, IOException {
 		if (!this.isAvailable)
 			return text;
 		Response response = client.accept(MediaType.APPLICATION_JSON)
@@ -99,7 +101,7 @@ public class GoogleTranslator implements Translator {
 
 	@Override
 	public String translate(String text, String targetLanguage)
-			throws Exception {
+			throws TikaException, IOException {
 		if (!this.isAvailable)
 			return text;
 		LanguageIdentifier language = new LanguageIdentifier(

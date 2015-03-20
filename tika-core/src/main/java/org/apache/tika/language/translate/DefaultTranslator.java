@@ -18,6 +18,9 @@
 package org.apache.tika.language.translate;
 
 import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.exception.TikaException;
+
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -56,11 +59,11 @@ public class DefaultTranslator implements Translator{
         return translators;
     }
 
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         return getDefaultTranslators(loader).get(0).translate(text, sourceLanguage, targetLanguage);
     }
 
-    public String translate(String text, String targetLanguage) throws Exception {
+    public String translate(String text, String targetLanguage) throws TikaException, IOException {
         return getDefaultTranslators(loader).get(0).translate(text, targetLanguage);
     }
 
