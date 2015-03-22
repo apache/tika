@@ -40,6 +40,7 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.logging.LogFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
@@ -319,8 +320,7 @@ public class TesseractOCRParser extends AbstractParser {
                 }
 
                 String msg = out.toString();
-                // log or discard message?
-
+                LogFactory.getLog(TesseractOCRParser.class).debug(msg);
             }
         }.start();
     }
