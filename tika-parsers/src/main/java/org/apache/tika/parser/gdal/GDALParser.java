@@ -86,7 +86,7 @@ public class GDALParser extends AbstractParser {
         TikaInputStream tis = (TikaInputStream) stream;
         String pCommand = this.command;
         try {
-            if (this.command.indexOf(INPUT_FILE_TOKEN) != -1) {
+            if (this.command.contains(INPUT_FILE_TOKEN)) {
                 pCommand = this.command.replace(INPUT_FILE_TOKEN, tis.getFile()
                         .getPath());
             }
@@ -376,15 +376,14 @@ public class GDALParser extends AbstractParser {
                 process.waitFor();
             } catch (InterruptedException ignore) {
             }
-
-            return output;
         }
+        return output;
 
     }
 
     private String extractOutput(InputStream stream) throws SAXException,
             IOException {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
         try {
             char[] buffer = new char[1024];
@@ -393,8 +392,8 @@ public class GDALParser extends AbstractParser {
             }
         } finally {
             reader.close();
-            return sb.toString();
         }
+        return sb.toString();
     }
 
     private void processOutput(ContentHandler handler, Metadata metadata,
