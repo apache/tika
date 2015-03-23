@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration debug="true">
+  <appender name="stdout" class="org.apache.log4j.ConsoleAppender"> 
+    <layout class="org.apache.log4j.PatternLayout"> 
+      <!-- Pattern to output the caller's file name and line number -->
+      <!--<param name="ConversionPattern" value="%5p [%t] (%F:%L) - %m%n"/>--> 
+      <param name="ConversionPattern" value="%m%n"/> 
+    </layout> 
+  </appender> 
+
+    <appender name="default.file" class="org.apache.log4j.FileAppender">
+        <param name="file" value="logs/tika-batch-driver.log" />
+        <param name="append" value="true" />
+        <param name="threshold" value="trace" />
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%-4r %d [%t] %-5p %c %x - %m%n" />
+        </layout>
+    </appender>
+
+<!--
+  <logger name="org.apache.tika.batch.FSBatchProcessDriverCLI" additivity="true">
+    <level value="trace"/>
+    <appender-ref ref="stdout"/>
+  </logger>
+-->
+<!--  <logger name="org.apache.tika.batch.FSBatchProcessDriverCLI" additivity="false">
+	  <level value="warn"/>
+  	<appender-ref ref="default.file"/>
+  </logger>
+-->    <root>
+        <priority value="trace" />
+        <appender-ref ref="stdout" />
+    </root>
+
+</log4j:configuration>
+
