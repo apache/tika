@@ -1,5 +1,8 @@
 Release 1.8 - Current Development
 
+  * Added tika-batch module for directory to directory batch
+    processing (TIKA-1330).
+
   * Translator.translate() Exceptions are now restricted to
     TikaException and IOException (TIKA-1416).
 
