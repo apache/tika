@@ -1,4 +1,8 @@
 Release 1.8 - Current Development
+
+  * Updated HDF and NetCDF parsers to output file version in 
+    metadata (TIKA-1578 and TIKA-1579).
+
   * Upgraded to POI 3.12-beta1 (TIKA-1531).
 
   * Added tika-batch module for directory to directory batch
