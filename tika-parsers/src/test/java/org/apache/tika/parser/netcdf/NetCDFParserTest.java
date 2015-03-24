@@ -59,6 +59,8 @@ public class NetCDFParserTest {
         assertEquals(metadata.get(Metadata.REALIZATION), "1");
         assertEquals(metadata.get(Metadata.EXPERIMENT_ID),
                 "720 ppm stabilization experiment (SRESA1B)");
+        assertEquals(metadata.get("File-Type-Description"), 
+                "NetCDF-3/CDM");
 
         String content = handler.toString();
         assertContains("long_name = \"Surface area\"", content);
@@ -66,6 +68,7 @@ public class NetCDFParserTest {
         assertContains("float lat(lat=128)", content);
         assertContains("double lat_bnds(lat=128, bnds=2)", content);
         assertContains("double lon_bnds(lon=256, bnds=2)", content);
+        
 
 
     }
