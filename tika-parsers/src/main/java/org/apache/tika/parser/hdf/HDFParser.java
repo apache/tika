@@ -101,6 +101,8 @@ public class HDFParser extends AbstractParser {
             group = ncFile.getRootGroup();
         }
 
+        // get file type
+        met.set("File-Type-Description", ncFile.getFileTypeDescription());
         // unravel its string attrs
         for (Attribute attribute : group.getAttributes()) {
             if (attribute.isString()) {
