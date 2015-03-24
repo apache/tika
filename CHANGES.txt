@@ -1,4 +1,5 @@
 Release 1.8 - Current Development
+  * Upgraded to POI 3.12-beta1 (TIKA-1531).
 
   * Added tika-batch module for directory to directory batch
     processing (TIKA-1330).

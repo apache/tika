@@ -212,6 +212,7 @@
               org.bouncycastle.operator.bc;resolution:=optional,
               org.bouncycastle.tsp;resolution:=optional,
               org.cyberneko.html.xercesbridge;resolution:=optional,
+              org.etsi.uri.x01903.v14;resolution:=optional,
               org.ibex.nestedvm;resolution:=optional,
               org.gjt.xpp;resolution:=optional,
               org.jaxen;resolution:=optional,
