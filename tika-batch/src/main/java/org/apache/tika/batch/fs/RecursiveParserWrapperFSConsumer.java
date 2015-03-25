@@ -17,7 +17,6 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -27,9 +26,7 @@ import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.log4j.Level;
-import org.apache.tika.batch.BatchNoRestartError;
 import org.apache.tika.batch.FileResource;
-import org.apache.tika.batch.FileResourceConsumer;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.config.TikaConfig;

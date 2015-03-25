@@ -22,9 +22,9 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tika.util.DurationFormatUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Basic class to use for reporting status from both the crawler and the consumers.
@@ -33,7 +33,7 @@ import org.apache.tika.util.DurationFormatUtils;
 
 public class StatusReporter implements Callable<IFileProcessorFutureResult> {
 
-    private final Log logger = LogFactory.getLog(StatusReporter.class);
+    private final Logger logger = LoggerFactory.getLogger(StatusReporter.class);
 
     //require references to these so that the
     //StatusReporter can query them when it wakes up

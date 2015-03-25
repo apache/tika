@@ -22,8 +22,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.Callable;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -35,7 +36,7 @@ import org.apache.tika.io.IOUtils;
  */
 public class Interrupter implements Callable<IFileProcessorFutureResult> {
 
-    private Logger logger = Logger.getLogger(Interrupter.class);
+    private Logger logger = LoggerFactory.getLogger(Interrupter.class);
 	public IFileProcessorFutureResult call(){
 		try{
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in, IOUtils.UTF_8));

@@ -35,7 +35,6 @@ import org.apache.commons.cli.Options;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
@@ -44,11 +43,14 @@ import org.apache.tika.batch.builders.BatchProcessBuilder;
 import org.apache.tika.batch.builders.CommandLineParserBuilder;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 public class FSBatchProcessCLI {
     public static String FINISHED_STRING = "Main thread in TikaFSBatchCLI has finished processing.";
 
-    private static Logger logger = Logger.getLogger(FSBatchProcessCLI.class);
+    private static Logger logger = LoggerFactory.getLogger(FSBatchProcessCLI.class);
     private final Options options;
 
     public FSBatchProcessCLI(String[] args) throws IOException {
@@ -139,20 +141,22 @@ public class FSBatchProcessCLI {
     public static void main(String[] args) throws Exception {
         //if no log4j config file has been set via
         //sysprops, use BasicConfigurator
+        //TODO: figure out if this can cleanly be moved to pure slf4j?
         String log4jFile = System.getProperty("log4j.configuration");
         if (log4jFile == null || log4jFile.trim().length()==0) {
             ConsoleAppender appender = new ConsoleAppender();
             appender.setLayout(new PatternLayout("%m%n"));
             appender.setWriter(new OutputStreamWriter(System.out, IOUtils.UTF_8.name()));
             BasicConfigurator.configure(appender);
-            Logger.getRootLogger().setLevel(Level.INFO);
+            org.apache.log4j.Logger.getRootLogger().setLevel(Level.INFO);
         }
         try{
             FSBatchProcessCLI cli = new FSBatchProcessCLI(args);
             cli.execute(args);
         } catch (Throwable t) {
             t.printStackTrace();
-            logger.fatal("Fatal exception from FSBatchProcessCLI: "+t.getMessage(), t);
+            logger.error(MarkerFactory.getMarker("FATAL"),
+                    "Fatal exception from FSBatchProcessCLI: " + t.getMessage(), t);
             System.exit(BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE);
         }
     }

@@ -68,7 +68,7 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
         try {
             is = fileResource.openInputStream();
         } catch (IOException e) {
-            logWithResourceId(Level.ERROR, "ioe_opening_is",
+            logWithResourceId(Level.FATAL, "ioe_opening_is",
                     fileResource.getResourceId(), e);
             flushAndClose(is);
         }
@@ -90,7 +90,7 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
                 logWithResourceId(Level.ERROR, "parse_err",
                         resourceId, t);
             } else {
-                logWithResourceId(Level.ERROR, "parse_ex",
+                logWithResourceId(Level.WARN, "parse_ex",
                         resourceId, t);
                 incrementHandledExceptions();
             }

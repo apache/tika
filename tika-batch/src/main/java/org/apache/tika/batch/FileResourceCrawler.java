@@ -22,9 +22,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.metadata.Metadata;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class FileResourceCrawler implements Callable<IFileProcessorFutureResult> {
 
@@ -40,7 +41,7 @@ public abstract class FileResourceCrawler implements Callable<IFileProcessorFutu
     //how long to pause if can't add to queue
     private static final long PAUSE_INCREMENT_MILLIS = 1000;
 
-    protected static Logger logger = Logger.getLogger(FileResourceCrawler.class.toString());
+    protected static Logger logger = LoggerFactory.getLogger(FileResourceCrawler.class.toString());
 
     private int maxFilesToAdd = -1;
     private int maxFilesToConsider = -1;
