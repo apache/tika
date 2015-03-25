@@ -32,7 +32,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 
 /**
@@ -60,7 +62,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     public static String ELAPSED_MILLIS = "elapsedMS";
 
     private static AtomicInteger numConsumers = new AtomicInteger(-1);
-    protected static Logger logger = Logger.getLogger(FileResourceConsumer.class);
+    protected static Logger logger = LoggerFactory.getLogger(FileResourceConsumer.class);
 
     private long maxConsecWaitInMillis = 10*60*1000;// 10 minutes
 
@@ -297,8 +299,23 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         } catch (XMLStreamException e) {
             logger.error("error writing xml stream for: " + resourceId, t);
         }
-
-        logger.log(level, writer.toString());
+        switch (level.toInt()) {
+            case Level.FATAL_INT:
+                logger.error(MarkerFactory.getMarker("FATAL"), writer.toString());
+                break;
+            case Level.ERROR_INT:
+                logger.error(writer.toString());
+                break;
+            case Level.WARN_INT:
+                logger.warn(writer.toString());
+                break;
+            case Level.DEBUG_INT :
+                logger.debug(writer.toString());
+                break;
+            case Level.TRACE_INT :
+                logger.trace(writer.toString());
+                break;
+        };
     }
 
     private FileResource getNextFileResource() throws InterruptedException {

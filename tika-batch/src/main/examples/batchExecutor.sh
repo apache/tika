@@ -1,1 +1,0 @@
-java -Dlog4j.configuration=file:bin/log4j_driver.xml -cp "bin/*" org.apache.tika.batch.BatchProcessDriverCLI java -Dlog4j.configuration=file:bin/log4j.xml -cp "bin/*" -Xmx6g org.apache.tika.batch.fs.FSBatchProcessCLI -c tika-batch-config-basic-test.xml -outputDir output -inputDir input

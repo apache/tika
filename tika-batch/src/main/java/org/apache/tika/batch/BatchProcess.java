@@ -31,9 +31,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.tika.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -68,9 +68,9 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         BATCH_PROCESS_ALIVE_TOO_LONG,
     }
 
-    private static final Log logger;
+    private static final Logger logger;
     static {
-        logger = LogFactory.getLog(BatchProcess.class);
+        logger = LoggerFactory.getLogger(BatchProcess.class);
     }
 
     private PrintStream outputStreamWriter;
@@ -231,7 +231,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                 } else {
                     causeForTermination = CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION;
                 }
-                logger.fatal("Main loop execution exception: " + e.getMessage());
+                logger.error("Main loop execution exception: " + e.getMessage());
                 break;
             }
         }
@@ -341,7 +341,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         timeoutChecker.checkForTimedOutConsumers();
 
         for (FileStarted fs : timedOuts) {
-            logger.fatal("A parser was still working on >" + fs.getResourceId() +
+            logger.warn("A parser was still working on >" + fs.getResourceId() +
                     "< for " + fs.getElapsedMillis() + " milliseconds after it started." +
                     " This exceeds the maxTimeoutMillis parameter");
         }
@@ -383,7 +383,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             logger.warn("interruption exception during consumers manager shutdown");
         }
         if (timed.isAlive()) {
-            logger.fatal("ConsumersManager did not start within " + consumersManagerMaxMillis + "ms");
+            logger.error("ConsumersManager did not start within " + consumersManagerMaxMillis + "ms");
             throw new BatchNoRestartError("ConsumersManager did not start within "+consumersManagerMaxMillis+"ms");
         }
     }
@@ -452,7 +452,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
 
     private int getExitStatus(CAUSE_FOR_TERMINATION causeForTermination, String restartMsg) {
         if (causeForTermination == CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION_NO_RESTART) {
-            logger.info(CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION_NO_RESTART);
+            logger.info(CAUSE_FOR_TERMINATION.MAIN_LOOP_EXCEPTION_NO_RESTART.name());
             return BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE;
         }
 
@@ -460,7 +460,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
             if (restartMsg.equals(BATCH_CONSTANTS.BATCH_PROCESS_EXCEEDED_MAX_ALIVE_TIME.toString())) {
                 logger.warn(restartMsg);
             } else {
-                logger.fatal(restartMsg);
+                logger.error(restartMsg);
             }
 
             //send over stdout wrapped in outputStreamWriter

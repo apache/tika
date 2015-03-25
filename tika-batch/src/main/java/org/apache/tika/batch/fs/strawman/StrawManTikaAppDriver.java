@@ -34,8 +34,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 /**
  * Simple single-threaded class that calls tika-app against every file in a directory.
@@ -55,7 +57,7 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
     private File inputDir = null;
     private File outputDir = null;
     private String[] args = null;
-    private Logger logger = Logger.getLogger(StrawManTikaAppDriver.class);
+    private Logger logger = LoggerFactory.getLogger(StrawManTikaAppDriver.class);
 
 
     public StrawManTikaAppDriver(File inputDir, File outputDir, int totalThreads, String[] args) {
@@ -98,7 +100,8 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         File outputFile = new File(outputDir, f.getAbsolutePath().substring(rootLen)+".txt");
         outputFile.getAbsoluteFile().getParentFile().mkdirs();
         if (! outputFile.getParentFile().exists()) {
-            logger.fatal("parent directory for "+ outputFile + " was not made!");
+            logger.error(MarkerFactory.getMarker("FATAL"),
+                    "parent directory for "+ outputFile + " was not made!");
             throw new RuntimeException("couldn't make parent file for " + outputFile);
         }
         List<String> commandLine = new ArrayList<String>();

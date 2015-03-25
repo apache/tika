@@ -29,8 +29,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.log4j.Logger;
 import org.apache.tika.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BatchProcessDriverCLI {
 
@@ -44,7 +45,7 @@ public class BatchProcessDriverCLI {
     //should restart the process.
     public static final int PROCESS_NO_RESTART_EXIT_CODE = 254;
     public static final int PROCESS_COMPLETED_SUCCESSFULLY = 0;
-    private static Logger logger = Logger.getLogger(BatchProcessDriverCLI.class);
+    private static Logger logger = LoggerFactory.getLogger(BatchProcessDriverCLI.class);
 
     private int maxProcessRestarts = -1;
     private long pulseMillis = 1000;
