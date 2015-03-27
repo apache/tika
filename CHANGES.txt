@@ -1,5 +1,7 @@
 Release 1.8 - Current Development
 
+  * Update jhighlight dependence to avoid using LGPL license (TIKA-1581)
+  
   * Updated HDF and NetCDF parsers to output file version in 
     metadata (TIKA-1578 and TIKA-1579).
 
