@@ -207,15 +207,9 @@
       <version>1.0.3</version>
     </dependency>
     <dependency>
-      <groupId>com.uwyn</groupId>
+      <groupId>org.codelibs</groupId>
       <artifactId>jhighlight</artifactId>
-      <version>1.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.servlet</groupId>
-          <artifactId>servlet-api</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>1.0.2</version>
     </dependency>
     <dependency>
       <groupId>com.pff</groupId>

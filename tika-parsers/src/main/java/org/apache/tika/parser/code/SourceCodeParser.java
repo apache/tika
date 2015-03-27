@@ -48,7 +48,8 @@ import org.xml.sax.SAXException;
 import com.uwyn.jhighlight.renderer.Renderer;
 import com.uwyn.jhighlight.renderer.XhtmlRendererFactory;
 /**
- * Generic Source code parser for Java, Groovy, C++
+ * Generic Source code parser for Java, Groovy, C++.
+ * Aware: This parser uses JHightlight library (https://github.com/codelibs/jhighlight) under CDDL/LGPL dual license
  *
  * @author Hong-Thai.Nguyen
  * @since 1.6
