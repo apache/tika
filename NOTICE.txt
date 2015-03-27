@@ -10,6 +10,8 @@ This software contains code derived from UCAR/Unidata's NetCDF library.
 Tika-server compoment uses CDDL-licensed dependencies: jersey (http://jersey.java.net/) and 
 Grizzly (http://grizzly.java.net/)
 
+Tika-server parsers uses CDDL/LGPL dual-licensed dependencies: jhighlight (https://github.com/codelibs/jhighlight)
+
 OpenCSV: Copyright 2005 Bytecode Pty Ltd. Licensed under the Apache License, Version 2.0
 
 IPTC Photo Metadata descriptions Copyright 2010 International Press Telecommunications Council.
