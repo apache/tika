@@ -56,13 +56,14 @@ public abstract class TrainedModelDetector implements Detector {
 		if (input != null) {
 			input.mark(getMinLength());
 			float[] histogram = readByteFrequencies(input);
-			// writeHisto(histogram);
-			// iterate the map to find out the one that gives the higher
-			// prediction
-			// value.
+			// writeHisto(histogram); //on testing purpose
+			/*
+			 * iterate the map to find out the one that gives the higher
+			 * prediction value.
+			 */
 			Iterator<MediaType> iter = MODEL_MAP.keySet().iterator();
-			float threshold = 0.5f;// probability threshold, with anything below
-									// that, we will consider
+			float threshold = 0.5f;// probability threshold, any value below the
+									// threshold will be considered as
 									// MediaType.OCTET_STREAM
 			float maxprob = threshold;
 			MediaType maxType = MediaType.OCTET_STREAM;
@@ -76,7 +77,6 @@ public abstract class TrainedModelDetector implements Detector {
 				}
 			}
 			input.reset();
-			// System.out.println(filename + ", "+maxprob);
 			return maxType;
 		}
 		return null;
@@ -139,7 +139,7 @@ public abstract class TrainedModelDetector implements Detector {
 	}
 
 	/**
-	 * testing purpose this method write the histogram vector to a file.
+	 * on testing purpose; this method write the histogram vector to a file.
 	 * 
 	 * @param histogram
 	 * @throws IOException
