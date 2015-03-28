@@ -37,9 +37,6 @@ import org.apache.tika.mime.MediaType;
 public abstract class TrainedModelDetector implements Detector {
 	private final Map<MediaType, TrainedModel> MODEL_MAP = new HashMap<MediaType, TrainedModel>();
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 
 	public TrainedModelDetector() {
