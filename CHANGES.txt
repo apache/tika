@@ -1,5 +1,9 @@
 Release 1.8 - Current Development
 
+  * Tika now supports the IsaTab data standard for bioinformatics
+    both in terms of MIME identification and in terms of parsing
+    (TIKA-1580).
+
   * Tika server can now enable CORS requests with the command line
     "--cors" option (TIKA-1586).
 

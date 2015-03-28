@@ -124,7 +124,7 @@
             </Bundle-Activator>
             <Embed-Dependency>
               tika-parsers;inline=true,
-              commons-compress, xz, commons-codec, junrar,
+              commons-compress, xz, commons-codec, commons-csv, junrar,
               pdfbox,fontbox,jempbox,bcmail-jdk15,bcprov-jdk15,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               xmlbeans,

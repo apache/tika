@@ -271,6 +271,12 @@
       <artifactId>guava</artifactId>
       <version>10.0.1</version>
     </dependency>
+    <!-- Apache Commons CSV -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-csv</artifactId>
+      <version>1.0</version>
+    </dependency>
   </dependencies>
 
   <build>
