@@ -1,5 +1,3 @@
-package org.apache.tika.detect;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,6 +14,7 @@ package org.apache.tika.detect;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.detect;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -160,9 +159,7 @@ public abstract class TrainedModelDetector implements Detector {
 		writer.flush();
 	}
 
-	
-
-	public void loadDefaultModels(final File modelFile){
+	public void loadDefaultModels(final File modelFile) {
 		FileInputStream in = null;
 		try {
 			in = new FileInputStream(modelFile);
@@ -179,8 +176,9 @@ public abstract class TrainedModelDetector implements Detector {
 			}
 		}
 	}
-	
+
 	public abstract void loadDefaultModels(final InputStream modelStream);
+
 	public abstract void loadDefaultModels(final ClassLoader classLoader);
 
 	protected void registerModels(MediaType type, TrainedModel model) {

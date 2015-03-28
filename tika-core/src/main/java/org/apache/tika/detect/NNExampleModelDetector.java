@@ -1,4 +1,3 @@
-package org.apache.tika.detect;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -16,6 +15,9 @@ package org.apache.tika.detect;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+package org.apache.tika.detect;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
