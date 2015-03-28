@@ -3215,6 +3215,31 @@
     <glob pattern="*.ibooks"/>
   </mime-type>
 
+  <mime-type type="application/x-isatab-investigation">
+    <_comment>ISA-Tab Investigation file</_comment>
+    <magic priority="50">
+      <match value="ONTOLOGY SOURCE REFERENCE" type="string" offset="0"/>
+    </magic>
+    <glob pattern="i_*.txt"/>
+  </mime-type>
+
+  <!--<mime-type type="application/x-isatab-study">-->
+  <mime-type type="application/x-isatab">
+    <_comment>ISA-Tab Study file</_comment>
+    <magic priority="50">
+      <match value="Source Name" type="string" offset="1"/>
+    </magic>
+    <glob pattern="s_*.txt"/>
+  </mime-type>
+
+  <mime-type type="application/x-isatab-assay">
+    <_comment>ISA-Tab Assay file</_comment>
+    <magic priority="50">
+      <match value="Sample Name" type="string" offset="1"/>
+    </magic>
+    <glob pattern="a_*.txt"/>
+  </mime-type>
+
   <mime-type type="application/x-iso9660-image">
     <acronym>ISO</acronym>
     <_comment>ISO 9660 CD-ROM filesystem data</_comment>
