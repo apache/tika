@@ -35,6 +35,7 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.server.resource.DetectorResource;
@@ -64,6 +65,7 @@ public class TikaServerCli {
 
     private static Options getOptions() {
         Options options = new Options();
+        options.addOption("c", "cors", true, "origin allowed to make CORS requests (default=NONE)\nall allowed if \"all\"");
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
         options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
@@ -116,6 +118,16 @@ public class TikaServerCli {
                     logger.info("Unsupported request URI log level: " + logLevel);
                 }
             }
+
+            CrossOriginResourceSharingFilter corsFilter = null;
+            if (line.hasOption("cors")) {
+                corsFilter = new CrossOriginResourceSharingFilter();
+                String url = line.getOptionValue("cors");
+                List<String> origins = new ArrayList<String>();
+                if (!url.equals("*")) origins.add(url);         // Empty list allows all origins.
+                corsFilter.setAllowOrigins(origins);
+            }
+
             // The Tika Configuration to use throughout
             TikaConfig tika = TikaConfig.getDefaultConfig();
 
@@ -146,6 +158,9 @@ public class TikaServerCli {
             providers.add(new TikaServerParseExceptionMapper(returnStackTrace));
             if (logFilter != null) {
                 providers.add(logFilter);
+            }
+            if (corsFilter != null) {
+                providers.add(corsFilter);
             }
             sf.setProviders(providers);
 
