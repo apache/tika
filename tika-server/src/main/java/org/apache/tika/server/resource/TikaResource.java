@@ -138,7 +138,8 @@ public class TikaResource {
         return httpHeaders.getFirst("File-Name");
     }
 
-    public static void fillParseContext(ParseContext parseContext, MultivaluedMap<String, String> httpHeaders) {
+    public static void fillParseContext(ParseContext parseContext, MultivaluedMap<String, String> httpHeaders,
+                                        Parser embeddedParser) {
         TesseractOCRConfig ocrConfig = new TesseractOCRConfig();
         PDFParserConfig pdfParserConfig = new PDFParserConfig();
         for (String key : httpHeaders.keySet()) {
@@ -150,6 +151,9 @@ public class TikaResource {
         }
         parseContext.set(TesseractOCRConfig.class, ocrConfig);
         parseContext.set(PDFParserConfig.class, pdfParserConfig);
+        if (embeddedParser != null) {
+            parseContext.set(Parser.class, embeddedParser);
+        }
     }
 
     /**
@@ -295,7 +299,7 @@ public class TikaResource {
         final ParseContext context = new ParseContext();
 
         fillMetadata(parser, metadata, context, httpHeaders);
-        fillParseContext(context, httpHeaders);
+        fillParseContext(context, httpHeaders, parser);
 
         logRequest(logger, info, metadata);
 
@@ -353,7 +357,7 @@ public class TikaResource {
         final ParseContext context = new ParseContext();
 
         fillMetadata(parser, metadata, context, httpHeaders);
-        fillParseContext(context, httpHeaders);
+        fillParseContext(context, httpHeaders, parser);
 
 
         logRequest(logger, info, metadata);
