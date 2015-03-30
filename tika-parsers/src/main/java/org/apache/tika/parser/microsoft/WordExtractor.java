@@ -405,10 +405,13 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
           if((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK"))
                  && text.indexOf('"') > -1) {
-             String url = text.substring(
-                   text.indexOf('"') + 1,
-                   text.lastIndexOf('"')
-             );
+              int start = text.indexOf('"') + 1;
+              int end = findHyperlinkEnd(text, start);
+              String url = "";
+              if (start >= 0 && start < end && end <= text.length()) {
+                  url = text.substring(start, end);
+              }
+
              xhtml.startElement("a", "href", url);
              for(CharacterRun cr : texts) {
                 handleCharacterRun(cr, skipStyling, xhtml);
@@ -435,6 +438,31 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
        // Tell them how many to skip over
        return i-index;
+    }
+
+    //temporary work around for TIKA-1512
+    private int findHyperlinkEnd(String text, int start) {
+        int end = text.lastIndexOf('"');
+        if (end > start) {
+            return end;
+        }
+        end = text.lastIndexOf('\u201D');//smart right double quote
+        if (end > start) {
+            return end;
+        }
+        end = text.lastIndexOf('\r');
+        if (end > start) {
+            return end;
+        }
+        //if nothing so far, take the full length of the string
+        //If the full string is > 256 characters, it appears
+        //that the url is truncated in the .doc file.  This
+        //will return the value as it is in the file, which
+        //may be incorrect; but it is the same behavior as opening
+        //the link in MSWord.
+        //This code does not currently check that length is actually >= 256.
+        //we might want to add that?
+        return text.length();
     }
 
     private void handlePictureCharacterRun(CharacterRun cr, Picture picture, PicturesSource pictures, XHTMLContentHandler xhtml)
