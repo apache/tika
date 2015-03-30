@@ -18,7 +18,9 @@ package org.apache.tika.fork;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -97,9 +99,27 @@ public class ForkParser extends AbstractParser {
      * Returns the command used to start the forked server process.
      *
      * @return java command line
+     * @deprecated since 1.8
+     * @see ForkParser#getJavaCommandAsList()
      */
-    public List<String> getJavaCommand() {
-        return java;
+    @Deprecated
+    public String getJavaCommand() {
+        StringBuilder sb = new StringBuilder();
+        for (String part : getJavaCommandAsList()) {
+            sb.append(part).append(' ');
+        }
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
+    }
+
+    /**
+     * Returns the command used to start the forked server process.
+     * <p/>
+     * Returned list is unmodifiable.
+     * @return java command line args
+     */
+    public List<String> getJavaCommandAsList() {
+        return Collections.unmodifiableList(java);
     }
 
     /**
@@ -107,11 +127,27 @@ public class ForkParser extends AbstractParser {
      * The arguments "-jar" and "/path/to/bootstrap.jar" are
      * appended to the given command when starting the process.
      * The default setting is {"java", "-Xmx32m"}.
-     *
+     * <p/>
+     * Creates a defensive copy.
      * @param java java command line
      */
     public void setJavaCommand(List<String> java) {
-        this.java = java;
+        this.java = new ArrayList<String>(java);
+    }
+
+    /**
+     * Sets the command used to start the forked server process.
+     * The given command line is split on whitespace and the arguments
+2    * "-jar" and "/path/to/bootstrap.jar" are appended to it when starting
+2    * the process. The default setting is "java -Xmx32m".
+     *
+     * @param java java command line
+     * @deprecated since 1.8
+     * @see ForkParser#setJavaCommand(List)
+     */
+    @Deprecated
+    public void setJavaCommand(String java) {
+        setJavaCommand(Arrays.asList(java.split(" ")));
     }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
