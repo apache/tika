@@ -225,9 +225,8 @@ public class ForkParserIntegrationTest {
         ForkParser parser = new ForkParser(
                 ForkParserIntegrationTest.class.getClassLoader(),
                 tika.getParser());
-        parser.setJavaCommand(
-                "java -Xmx32m -Xdebug -Xrunjdwp:"
-                + "transport=dt_socket,address=54321,server=y,suspend=n");
+        parser.setJavaCommand(Arrays.asList("java", "-Xmx32m", "-Xdebug",
+                                            "-Xrunjdwp:transport=dt_socket,address=54321,server=y,suspend=n"));
         try {
             ContentHandler body = new BodyContentHandler();
             InputStream stream = ForkParserIntegrationTest.class.getResourceAsStream(

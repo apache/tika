@@ -18,7 +18,9 @@ package org.apache.tika.fork;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 
@@ -43,7 +45,7 @@ public class ForkParser extends AbstractParser {
     private final Parser parser;
 
     /** Java command line */
-    private String java = "java -Xmx32m";
+    private List<String> java = Arrays.asList("java", "-Xmx32m");
 
     /** Process pool size */
     private int poolSize = 5;
@@ -96,19 +98,19 @@ public class ForkParser extends AbstractParser {
      *
      * @return java command line
      */
-    public String getJavaCommand() {
+    public List<String> getJavaCommand() {
         return java;
     }
 
     /**
      * Sets the command used to start the forked server process.
-     * The given command line is split on whitespace and the arguments
-     * "-jar" and "/path/to/bootstrap.jar" are appended to it when starting
-     * the process. The default setting is "java -Xmx32m".
+     * The arguments "-jar" and "/path/to/bootstrap.jar" are
+     * appended to the given command when starting the process.
+     * The default setting is {"java", "-Xmx32m"}.
      *
      * @param java java command line
      */
-    public void setJavaCommand(String java) {
+    public void setJavaCommand(List<String> java) {
         this.java = java;
     }
 
