@@ -8,7 +8,8 @@ Release 1.8 - Current Development
   * Tika server can now enable CORS requests with the command line
     "--cors" option (TIKA-1586).
 
-  * Update jhighlight dependency to avoid using LGPL license (TIKA-1581)
+  * Update jhighlight dependency to avoid using LGPL license (TIKA-1581).
+  Thank @kkrugler for his great contribution
   
   * Updated HDF and NetCDF parsers to output file version in 
     metadata (TIKA-1578 and TIKA-1579).
