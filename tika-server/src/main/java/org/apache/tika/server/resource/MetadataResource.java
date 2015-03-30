@@ -128,7 +128,8 @@ public class MetadataResource {
         final ParseContext context = new ParseContext();
         AutoDetectParser parser = TikaResource.createParser(tikaConfig);
         TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
-        TikaResource.fillParseContext(context, httpHeaders);
+        //no need to pass parser for embedded document parsing
+        TikaResource.fillParseContext(context, httpHeaders, null);
         TikaResource.logRequest(logger, info, metadata);
         TikaResource.parse(parser, logger, info.getPath(), is, new DefaultHandler(), metadata, context);
         return metadata;

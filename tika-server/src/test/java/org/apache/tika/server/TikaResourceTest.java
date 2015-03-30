@@ -37,6 +37,8 @@ public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test.doc";
     public static final String TEST_XLSX = "16637.xlsx";
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
+    private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
+
     private static final String TIKA_PATH = "/tika";
     private static final int UNPROCESSEABLE = 422;
 
@@ -147,6 +149,25 @@ public class TikaResourceTest extends CXFTestBase {
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
+    }
+
+    @Test
+    public void testEmbedded() throws Exception {
+        //first try text
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("Course of human events"));
+
+        //now go for xml -- different call than text
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/xml")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("Course of human events"));
     }
 
 }
