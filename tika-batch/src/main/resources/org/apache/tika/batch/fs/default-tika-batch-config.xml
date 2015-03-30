@@ -104,11 +104,10 @@
     />
 -->
     <consumers builderClass="org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder"
-               recursiveParserWrapper="false">
+               recursiveParserWrapper="false" consumersManagerMaxMillis="60000">
         <parser class="org.apache.tika.batch.AutoDetectParserFactory" parseRecursively="true"/>
         <contenthandler builderClass="org.apache.tika.batch.builders.DefaultContentHandlerFactoryBuilder"
                         basicHandlerType="xml" writeLimit="-1"/>
-
         <!-- overwritePolicy: "skip" a file if output file exists, "rename" a output file, "overwrite" -->
         <!-- can include e.g. outputDir="output", but we don't want to include this in the default! -->
         <outputstream class="FSOutputStreamFactory" encoding="UTF-8" outputSuffix="xml"/>

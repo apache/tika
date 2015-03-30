@@ -69,7 +69,7 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             consumersManagerMaxMillis = PropsUtil.getLong(consumersManagerMaxMillisString, null);
         } else {
             Node consumersManagerMaxMillisNode = node.getAttributes().getNamedItem("consumersManagerMaxMillis");
-            if (consumersManagerMaxMillis == null) {
+            if (consumersManagerMaxMillis == null && consumersManagerMaxMillisNode != null) {
                 consumersManagerMaxMillis = PropsUtil.getLong(consumersManagerMaxMillisNode.getNodeValue(),
                         null);
             }
