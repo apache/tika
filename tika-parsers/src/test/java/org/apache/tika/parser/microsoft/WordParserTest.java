@@ -33,6 +33,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -396,5 +397,31 @@ public class WordParserTest extends TikaTest {
 
         assertContains("<p>1. Organisering av vakten:</p>", xml);
 
+    }
+
+    @Test
+    public void testHyperlinkStringIOOBESmartQuote() throws Exception {
+        //TIKA-1512, one cause: closing double quote is a smart quote
+        //test file contributed by user
+        XMLResult result = getXML("testWORD_closingSmartQInHyperLink.doc");
+        assertContains("href=\"https://issues.apache.org/jira/browse/TIKA-1512", result.xml);
+    }
+
+    @Test
+    @Ignore //until we determine whether we can include test docs or not
+    public void testHyperlinkStringLongNoCloseQuote() throws Exception {
+        //TIKA-1512, one cause: no closing quote on really long string
+        //test file derived from govdocs1 012152.doc
+        XMLResult result = getXML("testWORD_longHyperLinkNoCloseQuote.doc");
+        assertContains("href=\"http://www.lexis.com", result.xml);
+    }
+
+    @Test
+    @Ignore //until we determine whether we can include test docs or not
+    public void testHyperlinkStringLongCarriageReturn() throws Exception {
+        //TIKA-1512, one cause: no closing quote, but carriage return
+        //test file derived from govdocs1 040044.doc
+        XMLResult result = getXML("testWORD_hyperLinkCarriageReturn.doc");
+        assertContains("href=\"http://www.nib.org", result.xml);
     }
 }
