@@ -366,3 +366,7 @@ JUnRAR (https://github.com/edmund-wagner/junrar/)
       utility.
 
       Thank you for your interest in RAR and UnRAR.  Alexander L. Roshal
+
+Sqlite (bundled in org.xerial's sqlite-jdbc)
+    This product bundles Sqlite, which is in the Public Domain.  For details
+    see: https://www.sqlite.org/copyright.html
