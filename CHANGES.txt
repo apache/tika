@@ -1,4 +1,6 @@
 Release 1.8 - Current Development
+  * Duration extracted from MP3s with no ID3 tags (TIKA-1589)
+
   * Upgraded to PDFBox 1.8.9 (TIKA-1575).
 
   * Tika now supports the IsaTab data standard for bioinformatics
