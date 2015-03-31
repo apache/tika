@@ -16,13 +16,6 @@
  */
 package org.apache.tika.parser.mp3;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +28,13 @@ import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information
@@ -70,6 +70,8 @@ public class Mp3Parser extends AbstractParser {
         // Create handlers for the various kinds of ID3 tags
         ID3TagsAndAudio audioAndTags = getAllTagHandlers(stream, handler);
 
+        metadata.set(XMPDM.DURATION, audioAndTags.duration);
+
         if (audioAndTags.tags.length > 0) {
            CompositeTagHandler tag = new CompositeTagHandler(audioAndTags.tags);
 
@@ -82,7 +84,6 @@ public class Mp3Parser extends AbstractParser {
            metadata.set(XMPDM.COMPILATION, tag.getCompilation());
            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
            metadata.set(XMPDM.GENRE, tag.getGenre());
-           metadata.set(XMPDM.DURATION, audioAndTags.duration);
 
            List<String> comments = new ArrayList<String>();
            for (ID3Comment comment : tag.getComments()) {
