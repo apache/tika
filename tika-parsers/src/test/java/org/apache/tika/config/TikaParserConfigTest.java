@@ -152,14 +152,14 @@ public class TikaParserConfigTest {
         }
         assertTrue("Default config should include an XMLParser.", hasXML);
 
-        // This custom TikaConfig should exclude all AbstractParsers.
+        // This custom TikaConfig should exclude XMLParser and all of its subclasses.
         config = getConfig("TIKA-1558-blacklistsub.xml");
         cp = (CompositeParser) config.getParser();
         parsers = cp.getAllComponentParsers();
 
         for (Parser p : parsers) {
             if (p instanceof XMLParser)
-                fail("Custom config should not include an XMLParser.");
+                fail("Custom config should not include an XMLParser (" + p.getClass() + ").");
         }
     }
 }
