@@ -328,6 +328,23 @@ public class Mp3ParserTest {
        assertEquals("", ID3v2Frame.getTagString(new byte[] {0,0,0,0}, 0, 3));
        assertEquals("A", ID3v2Frame.getTagString(new byte[] {(byte)'A',0,0,0}, 0, 3));
     }
+
+    @Test
+    public void testTIKA1589_noId3ReturnsDurationCorrectly() throws Exception {
+        Parser parser = new AutoDetectParser(); // Should auto-detect!
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+
+        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3noid3.mp3");
+        try {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("2455.510986328125", metadata.get(XMPDM.DURATION));
+    }
     
     /**
      * This test will do nothing, unless you've downloaded the
