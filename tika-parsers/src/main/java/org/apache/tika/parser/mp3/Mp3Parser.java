@@ -70,6 +70,7 @@ public class Mp3Parser extends AbstractParser {
         // Create handlers for the various kinds of ID3 tags
         ID3TagsAndAudio audioAndTags = getAllTagHandlers(stream, handler);
 
+        // Process tags metadata if the file has supported tags
         if (audioAndTags.tags.length > 0) {
            CompositeTagHandler tag = new CompositeTagHandler(audioAndTags.tags);
 
@@ -82,7 +83,6 @@ public class Mp3Parser extends AbstractParser {
            metadata.set(XMPDM.COMPILATION, tag.getCompilation());
            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
            metadata.set(XMPDM.GENRE, tag.getGenre());
-           metadata.set(XMPDM.DURATION, audioAndTags.duration);
 
            List<String> comments = new ArrayList<String>();
            for (ID3Comment comment : tag.getComments()) {
@@ -127,6 +127,9 @@ public class Mp3Parser extends AbstractParser {
             for (String comment : comments) {
                xhtml.element("p", comment);
             }
+        }
+        if (audioAndTags.duration > 0) {
+            metadata.set(XMPDM.DURATION, audioAndTags.duration);
         }
         if (audioAndTags.audio != null) {
             metadata.set("samplerate", String.valueOf(audioAndTags.audio.getSampleRate()));
