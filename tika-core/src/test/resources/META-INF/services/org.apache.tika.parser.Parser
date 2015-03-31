@@ -1,2 +1,0 @@
-org.apache.tika.parser.BlacklistedParser
-org.apache.tika.parser.BlacklistedParserSubclass

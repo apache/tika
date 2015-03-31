@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URL;
+import java.util.List;
 
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
@@ -33,6 +34,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.executable.ExecutableParser;
+import org.apache.tika.parser.xml.XMLParser;
 import org.junit.After;
 import org.junit.Test;
 
@@ -129,6 +131,35 @@ public class TikaParserConfigTest {
         for (Parser p : confParser.getParsers().values()) {
             if (p instanceof ExecutableParser)
                 fail("Shouldn't have the Executable Parser from config");
+        }
+    }
+    /**
+     * TIKA-1558 It should be possible to exclude Parsers from being picked up by
+     * DefaultParser.
+     */
+    @Test
+    public void defaultParserBlacklist() throws Exception {
+        TikaConfig config = new TikaConfig();
+        CompositeParser cp = (CompositeParser) config.getParser();
+        List<Parser> parsers = cp.getAllComponentParsers();
+
+        boolean hasXML = false;
+        for (Parser p : parsers) {
+            if (p instanceof XMLParser) {
+                hasXML = true;
+                break;
+            }
+        }
+        assertTrue("Default config should include an XMLParser.", hasXML);
+
+        // This custom TikaConfig should exclude all AbstractParsers.
+        config = getConfig("TIKA-1558-blacklistsub.xml");
+        cp = (CompositeParser) config.getParser();
+        parsers = cp.getAllComponentParsers();
+
+        for (Parser p : parsers) {
+            if (p instanceof XMLParser)
+                fail("Custom config should not include an XMLParser.");
         }
     }
 }
