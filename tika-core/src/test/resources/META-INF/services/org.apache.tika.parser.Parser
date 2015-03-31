@@ -1,2 +1,2 @@
-org.apache.tika.parser.BlacklistedParser
-org.apache.tika.parser.BlacklistedParserSubclass
+org.apache.tika.parser.DummyParser
+org.apache.tika.parser.DummyParserSubclass

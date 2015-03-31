@@ -70,7 +70,7 @@ public class CompositeParser extends AbstractParser {
         } else {
             this.parsers = new ArrayList<Parser>();
             for (Parser p : parsers) {
-                if (! excludeParsers.contains(p.getClass())) {
+                if (!excludeParsers.contains(p.getClass()) && !assignableFrom(excludeParsers, p.getClass())) {
                     this.parsers.add(p);
                 }
             }
@@ -97,6 +97,13 @@ public class CompositeParser extends AbstractParser {
             }
         }
         return map;
+    }
+
+    private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
+        for (Class<? extends Parser> e : excludeParsers) {
+            if (e.isAssignableFrom(p)) return true;
+        }
+        return false;
     }
 
     /**

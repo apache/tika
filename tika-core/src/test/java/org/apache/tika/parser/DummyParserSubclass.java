@@ -1,5 +1,3 @@
-package org.apache.tika.parser;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,32 +15,20 @@ package org.apache.tika.parser;
  * limitations under the License.
  */
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
+package org.apache.tika.parser;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashSet;
+import org.apache.tika.mime.MediaType;
+
+import java.util.Map;
 import java.util.Set;
 
 /**
- * DummyParser used to test ServiceLoader blacklisting (TIKA-1558).
+ * Dummy Parser used to test Parser exclusion (TIKA-1558).
+ *
+ * See also {@link DummyParser} and {@link org.apache.tika.parser.mock.MockParser}.
  */
-public class BlacklistedParser implements Parser {
-
-    @Override
-    public Set<MediaType> getSupportedTypes(ParseContext context) {
-        Set<MediaType> types = new HashSet<MediaType>();
-        MediaType type = MediaType.application("blacklist");
-        types.add(type);
-        return types;
-    }
-
-    @Override
-    public void parse(InputStream stream, ContentHandler handler, Metadata metadata, ParseContext context) throws IOException, SAXException, TikaException {
-        throw new TikaException("Should never get called");
+public class DummyParserSubclass extends DummyParser {
+    public DummyParserSubclass(Set<MediaType> types, Map<String, String> metadata, String xmlText){
+        super(types, metadata, xmlText);
     }
 }
