@@ -16,16 +16,26 @@
  */
 package org.apache.tika.cli;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.Reader;
 import java.net.URI;
+import java.util.List;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.parser.RecursiveParserWrapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -378,4 +388,96 @@ public class TikaCLITest {
         assertTrue(content.contains("\\n\\nembed_0"));
     }
 
+    @Test
+    public void testSimplestBatchIntegration() throws Exception {
+        File tempDir = File.createTempFile("tika-cli-test-batch-", "");
+        tempDir.delete();
+        tempDir.mkdir();
+        ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+        PrintStream writer = new PrintStream(outBuffer, true, IOUtils.UTF_8.name());
+        OutputStream os = System.out;
+        System.setOut(writer);
+        try {
+            String[] params = {escape(testDataFile.getAbsolutePath()),
+                    escape(tempDir.getAbsolutePath())};
+            TikaCLI.main(params);
+
+            StringBuffer allFiles = new StringBuffer();
+            assertTrue("bad_xml.xml.xml", new File(tempDir, "bad_xml.xml.xml").isFile());
+            assertTrue("coffee.xls.xml", new File(tempDir, "coffee.xls.xml").exists());
+        } finally {
+            //reset in case something went horribly wrong
+            System.setOut(new PrintStream(os, true, IOUtils.UTF_8.name()));
+            FileUtils.deleteDirectory(tempDir);
+        }
+    }
+
+    @Test
+    public void testBasicBatchIntegration() throws Exception {
+        File tempDir = File.createTempFile("tika-cli-test-batch-", "");
+        tempDir.delete();
+        tempDir.mkdir();
+        ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+        PrintStream writer = new PrintStream(outBuffer, true, IOUtils.UTF_8.name());
+        OutputStream os = System.out;
+        System.setOut(writer);
+        try {
+            String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
+                    "-o", escape(tempDir.getAbsolutePath()),
+                    "-numConsumers", "2",
+                    "-reporterSleepMillis", "100"};//report often to make sure
+            TikaCLI.main(params);
+
+            StringBuffer allFiles = new StringBuffer();
+            assertTrue("bad_xml.xml.xml", new File(tempDir, "bad_xml.xml.xml").isFile());
+            assertTrue("coffee.xls.xml", new File(tempDir, "coffee.xls.xml").exists());
+            String sysOutString = new String(outBuffer.toByteArray(), IOUtils.UTF_8);
+
+            assertEquals(-1, sysOutString.indexOf("There are 3 file processors still active"));
+            assertTrue(sysOutString.indexOf("There are 2 file processors") > -1);
+        } finally {
+            //reset in case something went horribly wrong
+            System.setOut(new PrintStream(os, true, IOUtils.UTF_8.name()));
+            FileUtils.deleteDirectory(tempDir);
+        }
+    }
+
+    @Test
+    public void testJsonRecursiveBatchIntegration() throws Exception {
+        File tempDir = File.createTempFile("tika-cli-test-batch-", "");
+        tempDir.delete();
+        tempDir.mkdir();
+        ByteArrayOutputStream outBuffer = new ByteArrayOutputStream();
+        PrintStream writer = new PrintStream(outBuffer, true, IOUtils.UTF_8.name());
+        OutputStream os = System.out;
+        System.setOut(writer);
+        Reader reader = null;
+        try {
+            String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
+                    "-o", escape(tempDir.getAbsolutePath()),
+                    "-numConsumers", "10",
+                    "-J", //recursive Json
+                    "-t" //plain text in content
+            };
+            TikaCLI.main(params);
+            reader = new InputStreamReader(
+                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), IOUtils.UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(12, metadataList.size());
+            assertTrue(metadataList.get(6).get(RecursiveParserWrapper.TIKA_CONTENT).contains("human events"));
+        } finally {
+            IOUtils.closeQuietly(reader);
+            //reset in case something went horribly wrong
+            System.setOut(new PrintStream(os, true, IOUtils.UTF_8.name()));
+            FileUtils.deleteDirectory(tempDir);
+        }
+    }
+
+
+    public static String escape(String path) {
+        if (path.indexOf(' ') > -1){
+            return '"'+path+'"';
+        }
+        return path;
+    }
 }

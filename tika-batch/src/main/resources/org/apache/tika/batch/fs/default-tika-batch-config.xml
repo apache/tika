@@ -29,7 +29,7 @@
         timeoutThresholdMillis="300000"
         timeoutCheckPulseMillis="1000"
         maxQueueSize="10000"
-        numConsumers="5">
+        numConsumers="default"> <!-- numConsumers = number of file consumers, "default" = number of processors -1 -->
 
     <!-- options to allow on the commandline -->
     <commandline>
@@ -75,6 +75,8 @@
                 description="regex that specifies which files to process"/>
         <option opt="excludeFilePat" hasArg="true"
                 description="regex that specifies which files to avoid processing"/>
+        <option opt="reporterSleepMillis" hasArg="true"
+                description="millisecond between reports by the reporter"/>
     </commandline>
 
 
@@ -114,7 +116,7 @@
     </consumers>
 
     <!-- reporter and interrupter are optional -->
-    <reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" sleepMillis="1000"
+    <reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" reporterSleepMillis="1000"
               reporterStaleThresholdMillis="60000"/>
     <interrupter builderClass="org.apache.tika.batch.builders.InterrupterBuilder"/>
 </tika-batch-config>
