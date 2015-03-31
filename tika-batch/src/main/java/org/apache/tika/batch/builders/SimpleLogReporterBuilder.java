@@ -33,7 +33,7 @@ public class SimpleLogReporterBuilder implements StatusReporterBuilder {
                                 Node n, Map<String, String> commandlineArguments) {
 
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(n, commandlineArguments);
-        long sleepMillis = PropsUtil.getLong(attributes.get("sleepMillis"), 1000L);
+        long sleepMillis = PropsUtil.getLong(attributes.get("reporterSleepMillis"), 1000L);
         long staleThresholdMillis = PropsUtil.getLong(attributes.get("reporterStaleThresholdMillis"), 500000L);
         StatusReporter reporter = new StatusReporter(crawler, consumersManager);
         reporter.setSleepMillis(sleepMillis);
