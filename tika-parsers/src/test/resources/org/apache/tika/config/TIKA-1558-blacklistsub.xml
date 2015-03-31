@@ -15,11 +15,10 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 -->
-
 <properties>
   <parsers>
     <parser class="org.apache.tika.parser.DefaultParser">
-      <parser-exclude class="org.apache.tika.parser.DummyParser"/>
+      <parser-exclude class="org.apache.tika.parser.xml.XMLParser"/>
     </parser>
   </parsers>
 </properties>
