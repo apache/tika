@@ -57,6 +57,7 @@ public class TikaExceptionFilter {
         StringWriter stringWriter = new StringWriter();
         PrintWriter w = new PrintWriter(stringWriter);
         filtered.printStackTrace(w);
+        w.flush();
         stringWriter.flush();
         return stringWriter.toString();
     }
