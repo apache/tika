@@ -300,6 +300,8 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                 StringWriter stackWriter = new StringWriter();
                 PrintWriter printWriter = new PrintWriter(stackWriter);
                 t.printStackTrace(printWriter);
+                printWriter.flush();
+                stackWriter.flush();
                 xml.writeCharacters(stackWriter.toString());
             }
             xml.writeEndElement();
