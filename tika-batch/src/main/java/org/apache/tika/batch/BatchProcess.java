@@ -130,9 +130,11 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         if (alreadyExecuted) {
             throw new IllegalStateException("Can only execute BatchRunner once.");
         }
-        //redirect streams
+        //redirect streams; all organic warnings should go to System.err;
+        //System.err should be redirected to System.out
+        PrintStream sysErr = System.err;
         try {
-            outputStreamWriter = new PrintStream(System.err, true, IOUtils.UTF_8.toString());
+            outputStreamWriter = new PrintStream(sysErr, true, IOUtils.UTF_8.toString());
         } catch (IOException e) {
             throw new RuntimeException("Can't redirect streams");
         }
@@ -155,7 +157,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                 startConsumersManager();
             } catch (BatchNoRestartError e) {
                 return new
-                        ParallelFileProcessingResult(0, 0, 0,
+                        ParallelFileProcessingResult(0, 0, 0, 0,
                         0, BatchProcessDriverCLI.PROCESS_NO_RESTART_EXIT_CODE,
                         CAUSE_FOR_TERMINATION.CONSUMERS_MANAGER_DIDNT_INIT_IN_TIME_NO_RESTART.toString());
 
@@ -201,7 +203,6 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                     IFileProcessorFutureResult result = futureResult.get();
                     if (result instanceof FileConsumerFutureResult) {
                         state.consumersRemoved++;
-                        state.processed += ((FileConsumerFutureResult) result).getFilesProcessed();
                     } else if (result instanceof FileResourceCrawlerFutureResult) {
                         state.crawlersRemoved++;
                         if (fileResourceCrawler.wasTimedOut()) {
@@ -293,7 +294,6 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                 IFileProcessorFutureResult result = future.get();
                 if (result instanceof FileConsumerFutureResult) {
                     FileConsumerFutureResult consumerResult = (FileConsumerFutureResult) result;
-                    state.processed += consumerResult.getFilesProcessed();
                     FileStarted fileStarted = consumerResult.getFileStarted();
                     if (fileStarted != null
                             && fileStarted.getElapsedMillis() > timeoutThresholdMillis) {
@@ -346,14 +346,19 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
                     " This exceeds the maxTimeoutMillis parameter");
         }
         double elapsed = ((double) new Date().getTime() - (double) state.start) / 1000.0;
+        int processed = 0;
+        int numExceptions = 0;
+        for (FileResourceConsumer c : consumersManager.getConsumers()) {
+            processed += c.getNumResourcesConsumed();
+            numExceptions += c.getNumHandledExceptions();
+        }
         return new
-            ParallelFileProcessingResult(considered, added, state.processed,
+            ParallelFileProcessingResult(considered, added, processed, numExceptions,
                 elapsed, exitStatus, state.causeForTermination.toString());
     }
 
     private class State {
         long start = -1;
-        int processed = 0;
         int numConsumers = 0;
         int numNonConsumers = 0;
         int removed = 0;
@@ -577,6 +582,8 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
     }
 
     private class TimeoutFutureResult implements IFileProcessorFutureResult {
+        //used to be used when more than one timeout was allowed
+        //TODO: get rid of this?
         private final int timedOutCount;
 
         private TimeoutFutureResult(final int timedOutCount) {

@@ -21,16 +21,20 @@ public class ParallelFileProcessingResult {
     private final int considered;
     private final int added;
     private final int consumed;
+    private final int numberHandledExceptions;
     private final double secondsElapsed;
     private final int exitStatus;
     private final String causeForTermination;
 
-    public ParallelFileProcessingResult(int considered, int added, int consumed, double secondsElapsed,
+    public ParallelFileProcessingResult(int considered, int added,
+                                        int consumed, int numberHandledExceptions,
+                                        double secondsElapsed,
                                         int exitStatus,
                                         String causeForTermination) {
         this.considered = considered;
         this.added = added;
         this.consumed = consumed;
+        this.numberHandledExceptions = numberHandledExceptions;
         this.secondsElapsed = secondsElapsed;
         this.exitStatus = exitStatus;
         this.causeForTermination = causeForTermination;
@@ -78,6 +82,10 @@ public class ParallelFileProcessingResult {
         return secondsElapsed;
     }
 
+    public int getNumberHandledExceptions() {
+        return numberHandledExceptions;
+    }
+
     /**
      *
      * @return intendedExitStatus
@@ -92,6 +100,7 @@ public class ParallelFileProcessingResult {
                 "considered=" + considered +
                 ", added=" + added +
                 ", consumed=" + consumed +
+                ", numberHandledExceptions=" + numberHandledExceptions +
                 ", secondsElapsed=" + secondsElapsed +
                 ", exitStatus=" + exitStatus +
                 ", causeForTermination='" + causeForTermination + '\'' +

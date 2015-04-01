@@ -105,7 +105,7 @@ public class BatchProcessDriverCLI {
 
         interruptWatcherThread.setDaemon(true);
         interruptWatcherThread.start();
-        logger.trace("about to start");
+        logger.info("about to start driver");
         start();
         int loopsAfterRestartMessageReceived = 0;
         while (!userInterrupted) {
@@ -113,7 +113,7 @@ public class BatchProcessDriverCLI {
             try {
                 logger.trace("about to check exit value");
                 exit = process.exitValue();
-                logger.trace("exit value:" + exit);
+                logger.info("The child process has finished with an exit value of: "+exit);
                 stop();
             } catch (IllegalThreadStateException e) {
                 //hasn't exited
@@ -138,7 +138,7 @@ public class BatchProcessDriverCLI {
             //chance
             if (receivedRestartMsg && exit == null) {
                 loopsAfterRestartMessageReceived++;
-                logger.trace("Must restart, still not exited; loops after restart: " +
+                logger.warn("Must restart, still not exited; loops after restart: " +
                             loopsAfterRestartMessageReceived);
                 continue;
             }
@@ -156,7 +156,7 @@ public class BatchProcessDriverCLI {
                 logger.trace("About to try to restart because:" +
                             " exit=" + exit + " receivedRestartMsg=" + receivedRestartMsg);
 
-                if (exit != null && exit == BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE) {
+                if (exit == BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE) {
                     logger.info("Restarting on expected restart code");
                 } else {
                     logger.warn("Restarting on unexpected restart code: "+exit);
@@ -173,11 +173,12 @@ public class BatchProcessDriverCLI {
         }
         logger.trace("about to call shutdown driver now");
         shutdownDriverNow();
+        logger.info("Process driver has completed");
     }
 
     private void shutdownDriverNow() {
         if (process != null) {
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 60; i++) {
 
                 logger.trace("trying to shut down: "+i);
                 try {
@@ -195,7 +196,7 @@ public class BatchProcessDriverCLI {
                     //swallow
                 }
             }
-            logger.error("Process didn't stop after 10 seconds after shutdown. " +
+            logger.error("Process didn't stop after 60 seconds after shutdown. " +
                     "I am forcefully killing it.");
         }
         interruptWatcherThread.interrupt();
@@ -263,6 +264,11 @@ public class BatchProcessDriverCLI {
 
     }
 
+    /**
+     * Typically only used for testing.  This determines whether or not
+     * to redirect child process's stdOut to driver's stdout
+     * @param redirectChildProcessToStdOut should the driver redirect the child's stdout
+     */
     public void setRedirectChildProcessToStdOut(boolean redirectChildProcessToStdOut) {
         this.redirectChildProcessToStdOut = redirectChildProcessToStdOut;
     }

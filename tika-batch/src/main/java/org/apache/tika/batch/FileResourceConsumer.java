@@ -23,6 +23,7 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Date;
@@ -31,10 +32,12 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.log4j.Level;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MarkerFactory;
+import org.xml.sax.ContentHandler;
 
 
 /**
@@ -45,7 +48,7 @@ import org.slf4j.MarkerFactory;
  */
 public abstract class FileResourceConsumer implements Callable<IFileProcessorFutureResult> {
 
-    private static enum STATE {
+    private enum STATE {
         NOT_YET_STARTED,
         ACTIVELY_CONSUMING,
         SWALLOWED_POISON,
@@ -58,7 +61,13 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         COMPLETED
     }
 
-    public static String TIME_OUT = "timeout";
+    public static String TIMED_OUT = "timed_out";
+    public static String OOM = "oom";
+    public static String IO_IS = "io_on_inputstream";
+    public static String IO_OS = "io_on_outputstream";
+    public static String PARSE_ERR = "parse_err";
+    public static String PARSE_EX = "parse_ex";
+
     public static String ELAPSED_MILLIS = "elapsedMS";
 
     private static AtomicInteger numConsumers = new AtomicInteger(-1);
@@ -251,28 +260,29 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             }
             if (tmp.getElapsedMillis() > staleThresholdMillis) {
                 setEndedState(STATE.TIMED_OUT);
-                logWithResourceId(Level.FATAL, TIME_OUT,
-                        tmp.getResourceId(), ELAPSED_MILLIS, Long.toString(tmp.getElapsedMillis()));
+                logger.error("{}", getXMLifiedLogMsg(
+                        TIMED_OUT,
+                        tmp.getResourceId(),
+                        ELAPSED_MILLIS, Long.toString(tmp.getElapsedMillis())));
                 return tmp;
             }
         }
         return null;
     }
 
-    protected void logWithResourceId(Level level, String type, String resourceId, String... attrs) {
-        logWithResourceId(level, type, resourceId, null, attrs);
+    protected String getXMLifiedLogMsg(String type, String resourceId, String... attrs) {
+        return getXMLifiedLogMsg(type, resourceId, null, attrs);
     }
 
     /**
      * Use this for structured output that captures resourceId and other attributes.
      *
-     * @param level level
      * @param type entity name for exception
      * @param resourceId resourceId string
      * @param t throwable can be null
      * @param attrs (array of key0, value0, key1, value1, etc.)
      */
-    protected void logWithResourceId(Level level, String type, String resourceId, Throwable t, String... attrs) {
+    protected String getXMLifiedLogMsg(String type, String resourceId, Throwable t, String... attrs) {
 
         StringWriter writer = new StringWriter();
         try {
@@ -299,23 +309,7 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
         } catch (XMLStreamException e) {
             logger.error("error writing xml stream for: " + resourceId, t);
         }
-        switch (level.toInt()) {
-            case Level.FATAL_INT:
-                logger.error(MarkerFactory.getMarker("FATAL"), writer.toString());
-                break;
-            case Level.ERROR_INT:
-                logger.error(writer.toString());
-                break;
-            case Level.WARN_INT:
-                logger.warn(writer.toString());
-                break;
-            case Level.DEBUG_INT :
-                logger.debug(writer.toString());
-                break;
-            case Level.TRACE_INT :
-                logger.trace(writer.toString());
-                break;
-        };
+        return writer.toString();
     }
 
     private FileResource getNextFileResource() throws InterruptedException {
@@ -391,6 +385,45 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
                     currentState == STATE.ASKED_TO_SHUTDOWN) {
                 currentState = cause;
             }
+        }
+    }
+
+    /**
+     * Utility method to handle logging equivalently among all
+     * implementing classes.  Use, override or avoid as desired.
+     * <p>
+     * This will throw Errors, but it will catch all Exceptions and log them
+     * @param resourceId resourceId
+     * @param parser parser to use
+     * @param is inputStream (will be closed by this method!)
+     * @param handler handler for the content
+     * @param m metadata
+     * @param parseContext parse context
+     * @throws Throwable
+     */
+    protected void parse(final String resourceId, final Parser parser, InputStream is,
+                         final ContentHandler handler,
+                         final Metadata m, final ParseContext parseContext) throws Throwable {
+
+        try {
+            parser.parse(is, handler, m, parseContext);
+        } catch (Throwable t) {
+            if (t instanceof OutOfMemoryError) {
+                logger.error(getXMLifiedLogMsg(OOM,
+                        resourceId, t));
+                throw t;
+            } else if (t instanceof Error) {
+                logger.error(getXMLifiedLogMsg(PARSE_ERR,
+                        resourceId, t));
+                throw t;
+            } else {
+                //warn, but do not rethrow
+                logger.warn(getXMLifiedLogMsg(PARSE_EX,
+                        resourceId, t));
+                incrementHandledExceptions();
+            }
+        } finally {
+            close(is);
         }
     }
 
