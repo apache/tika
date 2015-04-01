@@ -22,7 +22,6 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.log4j.Level;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.batch.ParserFactory;
@@ -90,8 +89,8 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
             handler = contentHandlerFactory.getNewContentHandler(os, getOutputEncoding());
         } catch (UnsupportedEncodingException e) {
             incrementHandledExceptions();
-            logWithResourceId(Level.FATAL, "output_encoding_ex",
-                    fileResource.getResourceId(), e);
+            logger.error(getXMLifiedLogMsg("output_encoding_ex",
+                    fileResource.getResourceId(), e));
             flushAndClose(os);
             throw new RuntimeException(e.getMessage());
         }

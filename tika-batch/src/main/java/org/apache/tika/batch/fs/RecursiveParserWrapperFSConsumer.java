@@ -25,7 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.log4j.Level;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.batch.ParserFactory;
@@ -133,8 +132,10 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
             writer = new OutputStreamWriter(os, getOutputEncoding());
             JsonMetadataList.toJson(metadataList, writer);
         } catch (Exception e) {
-            logWithResourceId(Level.ERROR, "json_ex",
-                    fileResource.getResourceId(), e);
+            //this is a stop the world kind of thing
+            logger.error("{}", getXMLifiedLogMsg(IO_OS+"json",
+                    fileResource.getResourceId(), e));
+            throw new RuntimeException(e);
         } finally {
             flushAndClose(writer);
         }

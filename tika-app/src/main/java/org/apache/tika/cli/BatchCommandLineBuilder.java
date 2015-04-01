@@ -42,7 +42,7 @@ class BatchCommandLineBuilder {
         Map<String, String> processArgs = new LinkedHashMap<String, String>();
         Map<String, String> jvmOpts = new LinkedHashMap<String,String>();
         //take the args, and divide them into process args and options for
-        //the parent jvm process (i.e. log files, etc)
+        //the child jvm process (i.e. log files, etc)
         mapifyArgs(args, processArgs, jvmOpts);
 
         //now modify processArgs in place
@@ -59,6 +59,17 @@ class BatchCommandLineBuilder {
             jvmOpts.put("-cp", cp);
         }
 
+        boolean hasLog4j = false;
+        for (String k : jvmOpts.keySet()) {
+            if (k.startsWith("-Dlog4j.configuration=")) {
+                hasLog4j = true;
+                break;
+            }
+        }
+        //use the log4j config file inside the app /resources/log4j_batch_process.properties
+        if (! hasLog4j) {
+            jvmOpts.put("-Dlog4j.configuration=\"log4j_batch_process.properties\"", "");
+        }
         //now build the full command line
         List<String> fullCommand = new ArrayList<String>();
         fullCommand.add("java");
@@ -82,10 +93,10 @@ class BatchCommandLineBuilder {
 
     /**
      * Take the input args and separate them into args that belong on the commandline
-     * and those that belong as jvm args for the parent process.
+     * and those that belong as jvm args for the child process.
      * @param args -- literal args from TikaCLI commandline
      * @param commandLine args that should be part of the batch commandline
-     * @param jvmArgs args that belong as jvm arguments for the parent process
+     * @param jvmArgs args that belong as jvm arguments for the child process
      */
     private static void mapifyArgs(final String[] args,
                                    final Map<String, String> commandLine,
@@ -190,5 +201,6 @@ class BatchCommandLineBuilder {
             String v = (v1 == null) ? v2 : v1;
             map.put("-outputDir", v);
         }
+
     }
 }

@@ -21,7 +21,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,7 +64,6 @@ import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.Tika;
 import org.apache.tika.batch.BatchProcessDriverCLI;
-import org.apache.tika.batch.fs.FSBatchProcessCLI;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
@@ -115,10 +113,17 @@ public class TikaCLI {
     private static final Log logger = LogFactory.getLog(TikaCLI.class);
 
     public static void main(String[] args) throws Exception {
+
+        String log4jFile = System.getProperty("log4j.configuration");
+        if (log4jFile == null || log4jFile.trim().length()==0) {
+            BasicConfigurator.configure(
+                    new WriterAppender(new SimpleLayout(), System.err));
+            Logger.getRootLogger().setLevel(Level.INFO);
+        }
+
         TikaCLI cli = new TikaCLI();
 
         if (cli.testForHelp(args)) {
-            FSBatchProcessCLI batchProcessCLI = new FSBatchProcessCLI(args);
             cli.usage();
             return;
         } else if (cli.testForBatch(args)) {
@@ -127,10 +132,6 @@ public class TikaCLI {
             batchDriver.execute();
             return;
         }
-
-        BasicConfigurator.configure(
-                new WriterAppender(new SimpleLayout(), System.err));
-        Logger.getRootLogger().setLevel(Level.INFO);
 
         if (args.length > 0) {
             for (int i = 0; i < args.length; i++) {
@@ -587,7 +588,7 @@ public class TikaCLI {
         out.println();
         out.println("    Simplest method.");
         out.println("    Specify two directories as args with no other args:");
-        out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory");
+        out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory>");
         out.println();
         out.println("Batch Options:");
         out.println("    -i  or --inputDir          Input directory");
@@ -610,7 +611,6 @@ public class TikaCLI {
         out.println();
         out.println("    To modify child process jvm args, prepend \"J\" as in:");
         out.println("    -JXmx4g or -JDlog4j.configuration=file:log4j.xml.");
-
     }
 
     private void version() {

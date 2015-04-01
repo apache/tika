@@ -22,7 +22,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.apache.log4j.Level;
 import org.apache.tika.batch.BatchNoRestartError;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.FileResourceConsumer;
@@ -55,51 +54,29 @@ public abstract class AbstractFSConsumer extends FileResourceConsumer {
         } catch (IOException e) {
             //This can happen if the disk has run out of space,
             //or if there was a failure with mkdirs in fsOSFactory
-            logWithResourceId(Level.FATAL, "ioe_opening_os",
-                    fileResource.getResourceId(), e);
+            logger.error("{}", getXMLifiedLogMsg(IO_OS,
+                    fileResource.getResourceId(), e));
             throw new BatchNoRestartError("IOException trying to open output stream for " +
                     fileResource.getResourceId() + " :: " + e.getMessage());
         }
         return os;
     }
 
+    /**
+     *
+     * @param fileResource
+     * @return inputStream, can be null if there is an exception opening IS
+     */
     protected InputStream getInputStream(FileResource fileResource) {
         InputStream is = null;
         try {
             is = fileResource.openInputStream();
         } catch (IOException e) {
-            logWithResourceId(Level.FATAL, "ioe_opening_is",
-                    fileResource.getResourceId(), e);
+            logger.warn("{}", getXMLifiedLogMsg(IO_IS,
+                    fileResource.getResourceId(), e));
             flushAndClose(is);
         }
         return is;
     }
 
-    protected void parse(final String resourceId, final Parser parser, InputStream is,
-                         final ContentHandler handler,
-                         final Metadata m, final ParseContext parseContext) throws Throwable {
-
-        Throwable thrown = null;
-        try {
-            parser.parse(is, handler, m, parseContext);
-        } catch (Throwable t) {
-            if (t instanceof OutOfMemoryError) {
-                logWithResourceId(Level.ERROR, "oom",
-                        resourceId, t);
-            } else if (t instanceof Error) {
-                logWithResourceId(Level.ERROR, "parse_err",
-                        resourceId, t);
-            } else {
-                logWithResourceId(Level.WARN, "parse_ex",
-                        resourceId, t);
-                incrementHandledExceptions();
-            }
-            thrown = t;
-        } finally {
-            close(is);
-        }
-        if (thrown != null) {
-            throw thrown;
-        }
-    }
 }
