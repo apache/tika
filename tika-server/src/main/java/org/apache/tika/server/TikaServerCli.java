@@ -65,7 +65,7 @@ public class TikaServerCli {
 
     private static Options getOptions() {
         Options options = new Options();
-        options.addOption("c", "cors", true, "origin allowed to make CORS requests (default=NONE)\nall allowed if \"all\"");
+        options.addOption("C", "cors", true, "origin allowed to make CORS requests (default=NONE)\nall allowed if \"all\"");
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
         options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
