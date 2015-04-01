@@ -391,15 +391,14 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
     /**
      * Utility method to handle logging equivalently among all
      * implementing classes.  Use, override or avoid as desired.
-     * <p>
-     * This will throw Errors, but it will catch all Exceptions and log them
+     *
      * @param resourceId resourceId
      * @param parser parser to use
      * @param is inputStream (will be closed by this method!)
      * @param handler handler for the content
      * @param m metadata
      * @param parseContext parse context
-     * @throws Throwable
+     * @throws Throwable (logs and then throws whatever was thrown (if anything)
      */
     protected void parse(final String resourceId, final Parser parser, InputStream is,
                          final ContentHandler handler,
@@ -411,17 +410,15 @@ public abstract class FileResourceConsumer implements Callable<IFileProcessorFut
             if (t instanceof OutOfMemoryError) {
                 logger.error(getXMLifiedLogMsg(OOM,
                         resourceId, t));
-                throw t;
             } else if (t instanceof Error) {
                 logger.error(getXMLifiedLogMsg(PARSE_ERR,
                         resourceId, t));
-                throw t;
             } else {
-                //warn, but do not rethrow
                 logger.warn(getXMLifiedLogMsg(PARSE_EX,
                         resourceId, t));
                 incrementHandledExceptions();
             }
+            throw t;
         } finally {
             close(is);
         }
