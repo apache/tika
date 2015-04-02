@@ -42,6 +42,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,11 +54,10 @@ import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
-import org.apache.log4j.WriterAppender;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -114,14 +114,10 @@ public class TikaCLI {
 
     public static void main(String[] args) throws Exception {
 
-        String log4jFile = System.getProperty("log4j.configuration");
-        if (log4jFile == null || log4jFile.trim().length()==0) {
-            BasicConfigurator.configure(
-                    new WriterAppender(new SimpleLayout(), System.err));
-            Logger.getRootLogger().setLevel(Level.INFO);
-        }
-
         TikaCLI cli = new TikaCLI();
+        if (! isConfigured()) {
+            PropertyConfigurator.configure(cli.getClass().getResourceAsStream("/log4j.properties"));
+        }
 
         if (cli.testForHelp(args)) {
             cli.usage();
@@ -155,6 +151,22 @@ public class TikaCLI {
         }
     }
 
+    private static boolean isConfigured() {
+        //Borrowed from: http://wiki.apache.org/logging-log4j/UsefulCode
+        Enumeration appenders = LogManager.getRootLogger().getAllAppenders();
+        if (appenders.hasMoreElements()) {
+            return true;
+        }
+        else {
+            Enumeration loggers = LogManager.getCurrentLoggers() ;
+            while (loggers.hasMoreElements()) {
+                Logger c = (Logger) loggers.nextElement();
+                if (c.getAllAppenders().hasMoreElements())
+                    return true;
+            }
+        }
+        return false;
+    }
     private class OutputType {
 
         public void process(
