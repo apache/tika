@@ -21,6 +21,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -72,6 +74,13 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
             Writer result = new StringWriter();
             PrintWriter writer = new PrintWriter(result);
             cause.printStackTrace(writer);
+            writer.flush();
+            try {
+                result.flush();
+            } catch (IOException e) {
+                //something went seriously wrong
+                return Response.status(500).build();
+            }
             return Response.status(i).entity(result.toString()).type("text/plain").build();
         } else {
             return Response.status(i).build();
