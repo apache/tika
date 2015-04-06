@@ -65,6 +65,17 @@ public interface TikaCoreProperties {
      */
     public static String TIKA_META_EXCEPTION_PREFIX = TIKA_META_PREFIX+"EXCEPTION"+
             Metadata.NAMESPACE_PREFIX_DELIMITER;
+
+    /**
+     * This is currently used to identify Content-Type that may be
+     * included within a document, such as in html documents
+     * (e.g. <meta http-equiv="content-type" content="text/html; charset=UTF-8">)
+     , or the value might come from outside the document.  This information
+     * may be faulty and should be treated only as a hint.
+     */
+    public static final Property CONTENT_TYPE_HINT =
+            Property.internalText(HttpHeaders.CONTENT_TYPE+"_Hint");
+
     /**
      * @see DublinCore#FORMAT
      */
