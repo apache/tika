@@ -16,6 +16,15 @@
  */
 package org.apache.tika.parser.html;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -25,15 +34,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 class HtmlHandler extends TextContentHandler {
 
@@ -160,11 +160,12 @@ class HtmlHandler extends TextContentHandler {
                 metadata.set("ICBM", value);
             }
         } else if (name.equalsIgnoreCase(Metadata.CONTENT_TYPE)){
+            //don't overwrite Metadata.CONTENT_TYPE!
             MediaType type = MediaType.parse(value);
             if (type != null) {
-                metadata.set(Metadata.CONTENT_TYPE, type.toString());
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_HINT, type.toString());
             } else {
-                metadata.set(Metadata.CONTENT_TYPE, value);
+                metadata.set(TikaCoreProperties.CONTENT_TYPE_HINT, value);
             }
         } else {
             metadata.add(name, value);

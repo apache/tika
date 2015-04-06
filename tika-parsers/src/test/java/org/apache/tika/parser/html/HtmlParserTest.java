@@ -1016,5 +1016,41 @@ public class HtmlParserTest {
         //Expecting first title to be set in meta data and second one to be ignored.
         assertEquals("Simple Content", metadata.get(TikaCoreProperties.TITLE));
     }
-    
+
+    @Test
+    public void testMisleadingMetaContentTypeTags() throws Exception {
+        //TIKA-1519
+
+        String test = "<html><head><meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-ELEVEN\">"+
+                "</head><title>title</title><body>body</body></html>";
+        Metadata metadata = new Metadata();
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes(IOUtils.UTF_8)),
+                new BodyContentHandler(), metadata, new ParseContext());
+        assertEquals("text/html; charset=UTF-ELEVEN", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
+        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+
+        test = "<html><head><meta http-equiv=\"content-type\" content=\"application/pdf\">"+
+                "</head><title>title</title><body>body</body></html>";
+        metadata = new Metadata();
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes(IOUtils.UTF_8)),
+                new BodyContentHandler(), metadata, new ParseContext());
+        assertEquals("application/pdf", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
+        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+
+        //test two content values
+        test = "<html><head><meta http-equiv=\"content-type\" content=\"application/pdf\" content=\"application/ms-word\">"+
+                "</head><title>title</title><body>body</body></html>";
+        metadata = new Metadata();
+
+        new HtmlParser().parse(
+                new ByteArrayInputStream(test.getBytes(IOUtils.UTF_8)),
+                new BodyContentHandler(), metadata, new ParseContext());
+        assertEquals("application/ms-word", metadata.get(TikaCoreProperties.CONTENT_TYPE_HINT));
+        assertEquals("text/html; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
+
+    }
 }
