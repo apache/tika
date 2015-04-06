@@ -74,7 +74,7 @@ public interface TikaCoreProperties {
      * may be faulty and should be treated only as a hint.
      */
     public static final Property CONTENT_TYPE_HINT =
-            Property.internalText(HttpHeaders.CONTENT_TYPE+"_Hint");
+            Property.internalText(HttpHeaders.CONTENT_TYPE+"-Hint");
 
     /**
      * @see DublinCore#FORMAT
