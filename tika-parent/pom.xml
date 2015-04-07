@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.8-SNAPSHOT</version>
+  <version>1.8</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -377,7 +377,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore/>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -427,8 +427,8 @@
   </profiles>
 
   <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/trunk/tika-parent</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/1.8-rc1/tika-parent</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/1.8-rc1/tika-parent</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/1.8-rc1/tika-parent</url>
   </scm>
 </project>
