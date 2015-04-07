@@ -1,4 +1,4 @@
-Release 1.8 - Current Development
+Release 1.8 - 4/7/2015
   * Duration extracted from MP3s with no ID3 tags (TIKA-1589).
 
   * Upgraded to PDFBox 1.8.9 (TIKA-1575).
