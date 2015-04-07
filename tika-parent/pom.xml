@@ -221,6 +221,14 @@
         <role>committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Konstantin Gribov</name>
+      <id>grossws</id>
+      <timezone>+3</timezone>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
   </developers>
   <contributors>
     <contributor>
