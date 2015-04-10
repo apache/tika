@@ -78,11 +78,9 @@ public class RTFParser extends AbstractParser {
         throws IOException, SAXException, TikaException {
         TaggedInputStream tagged = new TaggedInputStream(stream);
         try {
-            RTFEmbObjHandler embObjHandler = new RTFEmbObjHandler(handler,
-                    metadata, context);
-            final TextExtractor ert = 
-                    new TextExtractor(new XHTMLContentHandler(handler, 
-                    metadata), metadata, embObjHandler);
+            XHTMLContentHandler xhtmlHandler = new XHTMLContentHandler(handler, metadata);
+            RTFEmbObjHandler embObjHandler = new RTFEmbObjHandler(xhtmlHandler, metadata, context);
+            final TextExtractor ert = new TextExtractor(xhtmlHandler, metadata, embObjHandler);
             ert.extract(stream);
             metadata.add(Metadata.CONTENT_TYPE, "application/rtf");
         } catch (IOException e) {
