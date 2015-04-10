@@ -83,3 +83,12 @@ JUnRAR (https://github.com/edmund-wagner/junrar/)
 Sqlite (bundled in org.xerial's sqlite-jdbc)
     This product bundles Sqlite, which is in the Public Domain.  For details
     see: https://www.sqlite.org/copyright.html
+
+Two photos in test-documents (testWebp_Alpha_Lossy.webp and testWebp_Alpha_Lossless.webp)
+    are in the public domain.  These files were retrieved from:
+    https://github.com/drewnoakes/metadata-extractor-images/tree/master/webp
+    These photos are also available here:
+    https://developers.google.com/speed/webp/gallery2#webp_links
+    Credits for the photo:
+    "Free Stock Photo in High Resolution - Yellow Rose 3 - Flowers"
+    Image Author: Jon Sullivan

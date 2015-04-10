@@ -1,3 +1,7 @@
+Release 1.9 - ???
+  * Upgrade to com.drewnoakes' metadata-extractor to 2.0 and
+    add parser for webp metadata (TIKA-1594).
+
 Release 1.8 - 4/7/2015
   * Duration extracted from MP3s with no ID3 tags (TIKA-1589).
 

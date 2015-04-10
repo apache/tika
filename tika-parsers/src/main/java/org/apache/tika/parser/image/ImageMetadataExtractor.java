@@ -28,19 +28,13 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.poi.util.IOUtils;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.metadata.IPTC;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.xml.sax.SAXException;
-
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
-import com.drew.imaging.jpeg.JpegSegmentType;
+import com.drew.imaging.riff.RiffProcessingException;
 import com.drew.imaging.tiff.TiffMetadataReader;
 import com.drew.imaging.tiff.TiffProcessingException;
+import com.drew.imaging.webp.WebpMetadataReader;
+import com.drew.lang.ByteArrayReader;
 import com.drew.lang.GeoLocation;
 import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
@@ -55,12 +49,20 @@ import com.drew.metadata.iptc.IptcDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import com.drew.metadata.jpeg.JpegDirectory;
 import com.drew.metadata.xmp.XmpReader;
+import org.apache.poi.util.IOUtils;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.IPTC;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.xml.sax.SAXException;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
  * to read EXIF and IPTC image metadata and map to Tika fields.
  * <p/>
  * As of 2.4.0 the library supports jpeg and tiff.
+ * As of 2.8.0 the library supports webp.
  */
 public class ImageMetadataExtractor {
 
@@ -115,6 +117,21 @@ public class ImageMetadataExtractor {
         }
     }
 
+    public void parseWebP(File file) throws IOException, TikaException {
+
+        try {
+            com.drew.metadata.Metadata webPMetadata = new com.drew.metadata.Metadata();
+            webPMetadata = WebpMetadataReader.readMetadata(file);
+            handle(webPMetadata);
+        } catch (IOException e) {
+            throw e;
+        } catch (RiffProcessingException e) {
+            throw new TikaException("Can't process Riff data", e);
+        } catch (MetadataException e) {
+            throw new TikaException("Can't process Riff data", e);
+        }
+    }
+
     public void parseRawExif(InputStream stream, int length, boolean needsExifHeader)
             throws IOException, SAXException, TikaException {
         byte[] exif;
@@ -136,7 +153,7 @@ public class ImageMetadataExtractor {
             throws IOException, SAXException, TikaException {
         com.drew.metadata.Metadata metadata = new com.drew.metadata.Metadata();
         ExifReader reader = new ExifReader();
-        reader.extract(exifData, metadata, JpegSegmentType.APP1);
+        reader.extract(new ByteArrayReader(exifData), metadata, ExifReader.JPEG_SEGMENT_PREAMBLE.length());
 
         try {
             handle(metadata);
@@ -184,6 +201,15 @@ public class ImageMetadataExtractor {
                 }
             }
         }
+    }
+
+    private static String trimPixels(String s) {
+        //if height/width appears as "100 pixels", trim " pixels"
+        if (s != null) {
+            int i = s.lastIndexOf(" pixels");
+            s = s.substring(0, i);
+        }
+        return s;
     }
 
     /**
@@ -271,9 +297,7 @@ public class ImageMetadataExtractor {
             //Exif.Image.ImageWidth                        Short       1  100
             //Exif.Image.ImageLength                       Short       1  75
             // and the values are found in "Thumbnail Image Width" (and Height) from Metadata Extractor
-            set(directory, metadata, ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_WIDTH, Metadata.IMAGE_WIDTH);
             set(directory, metadata, JpegDirectory.TAG_IMAGE_WIDTH, Metadata.IMAGE_WIDTH);
-            set(directory, metadata, ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_HEIGHT, Metadata.IMAGE_LENGTH);
             set(directory, metadata, JpegDirectory.TAG_IMAGE_HEIGHT, Metadata.IMAGE_LENGTH);
             // Bits per sample, two methods of extracting, exif overrides jpeg
             set(directory, metadata, JpegDirectory.TAG_DATA_PRECISION, Metadata.BITS_PER_SAMPLE);
@@ -426,11 +450,13 @@ public class ImageMetadataExtractor {
             if (directory.containsTag(ExifIFD0Directory.TAG_RESOLUTION_UNIT)) {
                 metadata.set(Metadata.RESOLUTION_UNIT, directory.getDescription(ExifIFD0Directory.TAG_RESOLUTION_UNIT));
             }
-            if (directory.containsTag(ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_WIDTH)) {
-                metadata.set(Metadata.IMAGE_WIDTH, directory.getDescription(ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_WIDTH));
+            if (directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)) {
+                        metadata.set(Metadata.IMAGE_WIDTH,
+                                trimPixels(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)));
             }
-            if (directory.containsTag(ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_HEIGHT)) {
-                metadata.set(Metadata.IMAGE_LENGTH, directory.getDescription(ExifThumbnailDirectory.TAG_THUMBNAIL_IMAGE_HEIGHT));
+            if (directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)) {
+                metadata.set(Metadata.IMAGE_LENGTH,
+                        trimPixels(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)));
             }
         }
 
