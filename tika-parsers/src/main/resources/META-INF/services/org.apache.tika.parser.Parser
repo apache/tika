@@ -28,6 +28,7 @@ org.apache.tika.parser.image.BPGParser
 org.apache.tika.parser.image.ImageParser
 org.apache.tika.parser.image.PSDParser
 org.apache.tika.parser.image.TiffParser
+org.apache.tika.parser.image.WebPParser
 org.apache.tika.parser.iptc.IptcAnpaParser
 org.apache.tika.parser.iwork.IWorkPackageParser
 org.apache.tika.parser.jpeg.JpegParser
