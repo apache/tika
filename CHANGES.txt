@@ -1,8 +1,11 @@
 Release 1.9 - ???
+
+
+Release 1.8 - 4/7/2015
+
   * Upgrade to com.drewnoakes' metadata-extractor to 2.0 and
     add parser for webp metadata (TIKA-1594).
 
-Release 1.8 - 4/7/2015
   * Duration extracted from MP3s with no ID3 tags (TIKA-1589).
 
   * Upgraded to PDFBox 1.8.9 (TIKA-1575).
@@ -76,7 +79,7 @@ Release 1.8 - 4/7/2015
   * Increased the speed of language identification by 
     a factor of two -- contributed by Toke Eskildsen (TIKA-1549).
 
-  * Added parser for Sqlite3 db files. Beware: the org.xerial 
+  * Added parser for Sqlite3 db files. BEWARE: the org.xerial 
     dependency includes native libs. Some users may need to 
     exclude this dependency or configure it specially for 
     their environment (TIKA-1511).
