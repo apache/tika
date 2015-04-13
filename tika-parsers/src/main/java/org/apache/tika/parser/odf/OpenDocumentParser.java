@@ -46,47 +46,49 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class OpenDocumentParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -6410276875438618287L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                MediaType.application("vnd.sun.xml.writer"),
-                MediaType.application("vnd.oasis.opendocument.text"),
-                MediaType.application("vnd.oasis.opendocument.graphics"),
-                MediaType.application("vnd.oasis.opendocument.presentation"),
-                MediaType.application("vnd.oasis.opendocument.spreadsheet"),
-                MediaType.application("vnd.oasis.opendocument.chart"),
-                MediaType.application("vnd.oasis.opendocument.image"),
-                MediaType.application("vnd.oasis.opendocument.formula"),
-                MediaType.application("vnd.oasis.opendocument.text-master"),
-                MediaType.application("vnd.oasis.opendocument.text-web"),
-                MediaType.application("vnd.oasis.opendocument.text-template"),
-                MediaType.application("vnd.oasis.opendocument.graphics-template"),
-                MediaType.application("vnd.oasis.opendocument.presentation-template"),
-                MediaType.application("vnd.oasis.opendocument.spreadsheet-template"),
-                MediaType.application("vnd.oasis.opendocument.chart-template"),
-                MediaType.application("vnd.oasis.opendocument.image-template"),
-                MediaType.application("vnd.oasis.opendocument.formula-template"),
-                MediaType.application("x-vnd.oasis.opendocument.text"),
-                MediaType.application("x-vnd.oasis.opendocument.graphics"),
-                MediaType.application("x-vnd.oasis.opendocument.presentation"),
-                MediaType.application("x-vnd.oasis.opendocument.spreadsheet"),
-                MediaType.application("x-vnd.oasis.opendocument.chart"),
-                MediaType.application("x-vnd.oasis.opendocument.image"),
-                MediaType.application("x-vnd.oasis.opendocument.formula"),
-                MediaType.application("x-vnd.oasis.opendocument.text-master"),
-                MediaType.application("x-vnd.oasis.opendocument.text-web"),
-                MediaType.application("x-vnd.oasis.opendocument.text-template"),
-                MediaType.application("x-vnd.oasis.opendocument.graphics-template"),
-                MediaType.application("x-vnd.oasis.opendocument.presentation-template"),
-                MediaType.application("x-vnd.oasis.opendocument.spreadsheet-template"),
-                MediaType.application("x-vnd.oasis.opendocument.chart-template"),
-                MediaType.application("x-vnd.oasis.opendocument.image-template"),
-                MediaType.application("x-vnd.oasis.opendocument.formula-template"))));
+            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                    MediaType.application("vnd.sun.xml.writer"),
+                    MediaType.application("vnd.oasis.opendocument.text"),
+                    MediaType.application("vnd.oasis.opendocument.graphics"),
+                    MediaType.application("vnd.oasis.opendocument.presentation"),
+                    MediaType.application("vnd.oasis.opendocument.spreadsheet"),
+                    MediaType.application("vnd.oasis.opendocument.chart"),
+                    MediaType.application("vnd.oasis.opendocument.image"),
+                    MediaType.application("vnd.oasis.opendocument.formula"),
+                    MediaType.application("vnd.oasis.opendocument.text-master"),
+                    MediaType.application("vnd.oasis.opendocument.text-web"),
+                    MediaType.application("vnd.oasis.opendocument.text-template"),
+                    MediaType.application("vnd.oasis.opendocument.graphics-template"),
+                    MediaType.application("vnd.oasis.opendocument.presentation-template"),
+                    MediaType.application("vnd.oasis.opendocument.spreadsheet-template"),
+                    MediaType.application("vnd.oasis.opendocument.chart-template"),
+                    MediaType.application("vnd.oasis.opendocument.image-template"),
+                    MediaType.application("vnd.oasis.opendocument.formula-template"),
+                    MediaType.application("x-vnd.oasis.opendocument.text"),
+                    MediaType.application("x-vnd.oasis.opendocument.graphics"),
+                    MediaType.application("x-vnd.oasis.opendocument.presentation"),
+                    MediaType.application("x-vnd.oasis.opendocument.spreadsheet"),
+                    MediaType.application("x-vnd.oasis.opendocument.chart"),
+                    MediaType.application("x-vnd.oasis.opendocument.image"),
+                    MediaType.application("x-vnd.oasis.opendocument.formula"),
+                    MediaType.application("x-vnd.oasis.opendocument.text-master"),
+                    MediaType.application("x-vnd.oasis.opendocument.text-web"),
+                    MediaType.application("x-vnd.oasis.opendocument.text-template"),
+                    MediaType.application("x-vnd.oasis.opendocument.graphics-template"),
+                    MediaType.application("x-vnd.oasis.opendocument.presentation-template"),
+                    MediaType.application("x-vnd.oasis.opendocument.spreadsheet-template"),
+                    MediaType.application("x-vnd.oasis.opendocument.chart-template"),
+                    MediaType.application("x-vnd.oasis.opendocument.image-template"),
+                    MediaType.application("x-vnd.oasis.opendocument.formula-template"))));
 
     private static final String META_NAME = "meta.xml";
-    
+
     private Parser meta = new OpenDocumentMetaParser();
 
     private Parser content = new OpenDocumentContentParser();
@@ -126,7 +128,7 @@ public class OpenDocumentParser extends AbstractParser {
             if (container instanceof ZipFile) {
                 zipFile = (ZipFile) container;
             } else if (tis.hasFile()) {
-                zipFile = new ZipFile(tis.getFile());                
+                zipFile = new ZipFile(tis.getFile());
             } else {
                 zipStream = new ZipInputStream(stream);
             }
@@ -139,9 +141,9 @@ public class OpenDocumentParser extends AbstractParser {
 
         // As we don't know which of the metadata or the content
         //  we'll hit first, catch the endDocument call initially
-        EndDocumentShieldingContentHandler handler = 
-          new EndDocumentShieldingContentHandler(xhtml);
-        
+        EndDocumentShieldingContentHandler handler =
+                new EndDocumentShieldingContentHandler(xhtml);
+
         // If we can, process the metadata first, then the
         //  rest of the file afterwards
         // Only possible to guarantee that when opened from a file not a stream
@@ -153,7 +155,7 @@ public class OpenDocumentParser extends AbstractParser {
             Enumeration<? extends ZipEntry> entries = zipFile.entries();
             while (entries.hasMoreElements()) {
                 entry = entries.nextElement();
-                if (! META_NAME.equals(entry.getName())) {
+                if (!META_NAME.equals(entry.getName())) {
                     handleZipEntry(entry, zipFile.getInputStream(entry), metadata, context, handler);
                 }
             }
@@ -165,18 +167,18 @@ public class OpenDocumentParser extends AbstractParser {
             } while (entry != null);
             zipStream.close();
         }
-        
+
         // Only now call the end document
-        if(handler.getEndDocumentWasCalled()) {
-           handler.reallyEndDocument();
+        if (handler.getEndDocumentWasCalled()) {
+            handler.reallyEndDocument();
         }
     }
-    
-    private void handleZipEntry(ZipEntry entry, InputStream zip, Metadata metadata, 
-            ParseContext context, EndDocumentShieldingContentHandler handler)
+
+    private void handleZipEntry(ZipEntry entry, InputStream zip, Metadata metadata,
+                                ParseContext context, EndDocumentShieldingContentHandler handler)
             throws IOException, SAXException, TikaException {
         if (entry == null) return;
-        
+
         if (entry.getName().equals("mimetype")) {
             String type = IOUtils.toString(zip, IOUtils.UTF_8.name());
             metadata.set(Metadata.CONTENT_TYPE, type);
