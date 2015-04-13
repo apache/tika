@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.8</version>
+  <version>1.9-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -427,8 +427,8 @@
   </profiles>
 
   <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/1.8-rc2/tika-parent</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/1.8-rc2/tika-parent</developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/tags/1.8-rc2/tika-parent</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/trunk/tika-parent</url>
   </scm>
 </project>
