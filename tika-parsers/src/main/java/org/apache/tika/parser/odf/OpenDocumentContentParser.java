@@ -169,6 +169,9 @@ public class OpenDocumentContentParser extends AbstractParser {
 		    }
 
             TextStyle style = textStyleMap.get(name);
+            if (style == null) {
+              return;
+            }
 
             // End tags that refer to no longer valid styles
             if (!style.underlined && lastTextStyle != null && lastTextStyle.underlined) {
@@ -224,7 +227,7 @@ public class OpenDocumentContentParser extends AbstractParser {
 		        String namespaceURI, String localName, String qName,
 		        Attributes attrs) throws SAXException {
 		    // keep track of current node type. If it is a text node,
-		    // a bit at the current depth ist set in textNodeStack.
+		    // a bit at the current depth its set in textNodeStack.
 		    // characters() checks the top bit to determine, if the
 		    // actual node is a text node to print out nodeDepth contains
 		    // the depth of the current node and also marks top of stack.
