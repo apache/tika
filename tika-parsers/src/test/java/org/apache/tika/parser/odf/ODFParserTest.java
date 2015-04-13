@@ -374,6 +374,7 @@ public class ODFParserTest extends TikaTest {
         }
     }
 
+    // TIKA-1063: Test basic style support.
     @Test
     public void testODTStyles() throws Exception {
         String xml = getXML("testStyles.odt").xml;
@@ -383,5 +384,28 @@ public class ODFParserTest extends TikaTest {
         assertContains("</ol>", xml);
         assertContains("<ul>\t<li><p>First</p>", xml);
         assertContains("</ul>", xml);
+    }
+
+    //TIKA-1600: Test that null pointer doesn't break parsing.
+    @Test
+    public void testNullStylesInODTFooter() throws Exception {
+        Parser parser = new OpenDocumentParser();
+        InputStream input = ODFParserTest.class.getResourceAsStream("/test-documents/testODT-TIKA-6000.odt");
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            parser.parse(input, handler, metadata, new ParseContext());
+
+            assertEquals("application/vnd.oasis.opendocument.text", metadata.get(Metadata.CONTENT_TYPE));
+
+            String content = handler.toString();
+
+            assertContains("Utilisation de ce document", content);
+            assertContains("Copyright and License", content);
+            assertContains("Changer la langue", content);
+            assertContains("La page d’accueil permet de faire une recherche simple", content);
+        } finally {
+            input.close();
+        }
     }
 }

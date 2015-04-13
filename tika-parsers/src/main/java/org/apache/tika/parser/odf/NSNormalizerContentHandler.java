@@ -36,13 +36,13 @@ import org.xml.sax.helpers.AttributesImpl;
 public class NSNormalizerContentHandler extends ContentHandlerDecorator {
 
     private static final String OLD_NS =
-        "http://openoffice.org/2000/";
+            "http://openoffice.org/2000/";
 
     private static final String NEW_NS =
-        "urn:oasis:names:tc:opendocument:xmlns:";
+            "urn:oasis:names:tc:opendocument:xmlns:";
 
     private static final String DTD_PUBLIC_ID =
-        "-//OpenOffice.org//DTD OfficeDocument 1.0//EN";
+            "-//OpenOffice.org//DTD OfficeDocument 1.0//EN";
 
     public NSNormalizerContentHandler(ContentHandler handler) {
         super(handler);
