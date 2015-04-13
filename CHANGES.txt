@@ -1,7 +1,6 @@
-Release 1.9 - ???
+Release 1.8 - 4/13/2015
 
-
-Release 1.8 - 4/7/2015
+  * Fix null pointer when processing ODT footer styles (TIKA-1600).
 
   * Upgrade to com.drewnoakes' metadata-extractor to 2.0 and
     add parser for webp metadata (TIKA-1594).
