@@ -285,7 +285,9 @@ public class PDFParser extends AbstractParser {
                 xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
                 XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
                 if( pdfaxmp != null ) {
-                    metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
+                    if (pdfaxmp.getPart() != null) {
+                        metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
+                    }
                     if (pdfaxmp.getConformance() != null) {
                         metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
                         String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase(Locale.ROOT);
