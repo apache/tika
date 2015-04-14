@@ -49,8 +49,8 @@ public class FilenameUtilsTest {
             FilenameUtils.normalize(null);
             fail("missing check for null parameters");
         } catch (IllegalArgumentException x) {
-            assertTrue(x.getMessage().contains("name"));
-            assertTrue(x.getMessage().contains("not be null"));
+            assertTrue(x.getMessage() != null && x.getMessage().contains("name"));
+            assertTrue(x.getMessage() != null && x.getMessage().contains("not be null"));
         }
     }
 

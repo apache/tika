@@ -111,7 +111,8 @@ public class OOXMLExtractorFactory {
             // Extract the text, along with any in-document metadata
             extractor.getXHTML(baseHandler, metadata, context);
         } catch (IllegalArgumentException e) {
-            if (e.getMessage().startsWith("No supported documents found")) {
+            if (e.getMessage() != null &&
+                    e.getMessage().startsWith("No supported documents found")) {
                 throw new TikaException(
                         "TIKA-418: RuntimeException while getting content"
                         + " for thmx and xps file types", e);
