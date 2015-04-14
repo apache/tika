@@ -190,7 +190,8 @@ public class RecursiveParserWrapper implements Parser {
      * @return
      */
     private boolean isWriteLimitReached(Throwable t) {
-        if (t.getMessage().indexOf("Your document contained more than") == 0) {
+        if (t.getMessage() != null && 
+                t.getMessage().indexOf("Your document contained more than") == 0) {
             return true;
         } else {
             return t.getCause() != null && isWriteLimitReached(t.getCause());

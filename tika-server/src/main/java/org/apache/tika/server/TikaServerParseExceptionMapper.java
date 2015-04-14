@@ -41,7 +41,8 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
     }
 
     public Response toResponse(TikaServerParseException e) {
-        if (e.getMessage().equals(Response.Status.UNSUPPORTED_MEDIA_TYPE.toString())) {
+        if (e.getMessage() != null &&
+                e.getMessage().equals(Response.Status.UNSUPPORTED_MEDIA_TYPE.toString())) {
             return buildResponse(e, 415);
         }
         Throwable cause = e.getCause();

@@ -111,7 +111,9 @@ public class ImageParser extends AbstractParser {
             } catch (IIOException e) {
                 // TIKA-619: There is a known bug in the Sun API when dealing with GIF images
                 //  which Tika will just ignore.
-                if (!(e.getMessage().equals("Unexpected block type 0!") && type.equals("image/gif"))) {
+                if (!(e.getMessage() != null && 
+                        e.getMessage().equals("Unexpected block type 0!") && 
+                        type.equals("image/gif"))) {
                     throw new TikaException(type + " parse error", e);
                 }
             }
