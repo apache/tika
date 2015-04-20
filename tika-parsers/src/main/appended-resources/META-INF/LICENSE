@@ -80,8 +80,8 @@ JUnRAR (https://github.com/edmund-wagner/junrar/)
 
       Thank you for your interest in RAR and UnRAR.  Alexander L. Roshal
 
-Sqlite (bundled in org.xerial's sqlite-jdbc)
-    This product bundles Sqlite, which is in the Public Domain.  For details
+Sqlite (included in the "provided" org.xerial's sqlite-jdbc)
+    Sqlite is in the Public Domain.  For details
     see: https://www.sqlite.org/copyright.html
 
 Two photos in test-documents (testWebp_Alpha_Lossy.webp and testWebp_Alpha_Lossless.webp)
