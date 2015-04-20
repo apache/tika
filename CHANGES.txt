@@ -78,10 +78,11 @@ Release 1.8 - 4/13/2015
   * Increased the speed of language identification by 
     a factor of two -- contributed by Toke Eskildsen (TIKA-1549).
 
-  * Added parser for Sqlite3 db files. BEWARE: the org.xerial 
-    dependency includes native libs. Some users may need to 
-    exclude this dependency or configure it specially for 
-    their environment (TIKA-1511).
+  * Added parser for Sqlite3 db files. Because the org.xerial
+    dependency includes native libs, we have not included it
+    in tika-app or tika-server. Users who want to parse Sqlite3 db
+    files must "provide" the jar -- see tika-parsers/pom.xml
+    for the correct version. (TIKA-1511).
 
   * Use POST instead of PUT for tika-server form methods
     (TIKA-1547).
