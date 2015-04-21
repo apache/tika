@@ -67,9 +67,9 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), IOUtils.UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
-        assertEquals(11, metadataList.size());
+        assertEquals(12, metadataList.size());
         assertEquals("Microsoft Office Word", metadataList.get(0).get("Application-Name"));
-        assertContains("plundered our seas", metadataList.get(5).get("X-TIKA:content"));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
     }
 
     @Test
