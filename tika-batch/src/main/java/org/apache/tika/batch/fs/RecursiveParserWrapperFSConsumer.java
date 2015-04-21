@@ -37,7 +37,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.util.TikaExceptionFilter;
+import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -55,8 +55,6 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
     private final OutputStreamFactory fsOSFactory;
     private final TikaConfig tikaConfig;
     private String outputEncoding = "UTF-8";
-    //TODO: parameterize this
-    private TikaExceptionFilter exceptionFilter = new TikaExceptionFilter();
 
 
     public RecursiveParserWrapperFSConsumer(ArrayBlockingQueue<FileResource> queue,
@@ -119,7 +117,7 @@ public class RecursiveParserWrapperFSConsumer extends AbstractFSConsumer {
                 //take the top metadata item
                 m = metadataList.remove(0);
             }
-            String stackTrace = exceptionFilter.getStackTrace(t);
+            String stackTrace = ExceptionUtils.getFilteredStackTrace(t);
             m.add(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"runtime", stackTrace);
             metadataList.add(0, m);
         } finally {

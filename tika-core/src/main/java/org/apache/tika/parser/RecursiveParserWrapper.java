@@ -32,6 +32,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.utils.ExceptionUtils;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -78,12 +79,14 @@ public class RecursiveParserWrapper implements Parser {
 
     //move this to TikaCoreProperties?
     public final static Property TIKA_CONTENT = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"content");
-    public final static Property PARSE_TIME_MILLIS = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"parse_time_millis");
+    public final static Property PARSE_TIME_MILLIS = Property.internalText(TikaCoreProperties.TIKA_META_PREFIX + "parse_time_millis");
     public final static Property WRITE_LIMIT_REACHED =
-                Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"write_limit_reached");
+                Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "write_limit_reached");
     public final static Property EMBEDDED_RESOURCE_LIMIT_REACHED = 
-                Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX+"embedded_resource_limit_reached");
+                Property.internalBoolean(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_resource_limit_reached");
 
+    public final static Property EMBEDDED_EXCEPTION =
+            Property.internalText(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "embedded_exception");
     //move this to TikaCoreProperties?
     public final static Property EMBEDDED_RESOURCE_PATH = 
                 Property.internalText(TikaCoreProperties.TIKA_META_PREFIX+"embedded_resource_path");
@@ -92,16 +95,42 @@ public class RecursiveParserWrapper implements Parser {
     private final ContentHandlerFactory contentHandlerFactory;
     private final List<Metadata> metadatas = new LinkedList<Metadata>();
 
+    private final boolean catchEmbeddedExceptions;
+
     //used in naming embedded resources that don't have a name.
     private int unknownCount = 0;   
     private int maxEmbeddedResources = -1;
     private boolean hitMaxEmbeddedResources = false;
-    
+
+    /**
+     * Initialize the wrapper with {@link #catchEmbeddedExceptions} set
+     * to <code>true</code> as default.
+     *
+     * @param wrappedParser parser to use for the container documents and the embedded documents
+     * @param contentHandlerFactory factory to use to generate a new content handler for
+     *                              the container document and each embedded document
+     */
     public RecursiveParserWrapper(Parser wrappedParser, ContentHandlerFactory contentHandlerFactory) {
+        this(wrappedParser, contentHandlerFactory, true);
+    }
+
+    /**
+     * Initialize the wrapper.
+     *
+     * @param wrappedParser parser to use for the container documents and the embedded documents
+     * @param contentHandlerFactory factory to use to generate a new content handler for
+     *                              the container document and each embedded document
+     * @param catchEmbeddedExceptions whether or not to catch the embedded exceptions.
+     *                                If set to <code>true</code>, the stack traces will be stored in
+     *                                the metadata object with key: {@link #EMBEDDED_EXCEPTION}.
+     */
+    public RecursiveParserWrapper(Parser wrappedParser,
+                                  ContentHandlerFactory contentHandlerFactory, boolean catchEmbeddedExceptions) {
         this.wrappedParser = wrappedParser;
         this.contentHandlerFactory = contentHandlerFactory;
+        this.catchEmbeddedExceptions = catchEmbeddedExceptions;
     }
-    
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return wrappedParser.getSupportedTypes(context);
@@ -244,12 +273,6 @@ public class RecursiveParserWrapper implements Parser {
         }
 
     }
-    
-    /**
-     * Override for different behavior.
-     * 
-     * @return handler to be used for each document
-     */
 
     
     private class EmbeddedParserDecorator extends ParserDecorator {
@@ -282,7 +305,7 @@ public class RecursiveParserWrapper implements Parser {
             String objectLocation = this.location + objectName;
       
             metadata.add(EMBEDDED_RESOURCE_PATH, objectLocation);
-            
+
             //ignore the content handler that is passed in
             //and get a fresh handler
             ContentHandler localHandler = contentHandlerFactory.getNewContentHandler();
@@ -296,6 +319,25 @@ public class RecursiveParserWrapper implements Parser {
                 boolean wlr = isWriteLimitReached(e);
                 if (wlr == true) {
                     metadata.add(WRITE_LIMIT_REACHED, "true");
+                } else {
+                    if (catchEmbeddedExceptions) {
+                        String trace = ExceptionUtils.getStackTrace(e);
+                        metadata.set(EMBEDDED_EXCEPTION, trace);
+                    } else {
+                        throw e;
+                    }
+                }
+            } catch (IOException e) {
+                if (catchEmbeddedExceptions) {
+                    String trace = ExceptionUtils.getStackTrace(e);
+                    metadata.set(EMBEDDED_EXCEPTION, trace);
+                } else {
+                    throw e;
+                }
+            } catch (TikaException e) {
+                if (catchEmbeddedExceptions) {
+                    String trace = ExceptionUtils.getStackTrace(e);
+                    metadata.set(EMBEDDED_EXCEPTION, trace);
                 } else {
                     throw e;
                 }

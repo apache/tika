@@ -18,20 +18,22 @@ package org.apache.tika.parser;
  */
 
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.sax.BasicContentHandlerFactory;
-import org.apache.tika.sax.ContentHandlerFactory;
-import org.junit.Test;
-import org.xml.sax.helpers.DefaultHandler;
+import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.junit.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 public class RecursiveParserWrapperTest {
 
@@ -188,15 +190,56 @@ public class RecursiveParserWrapperTest {
         }
         assertEquals(targets, seen);
     }
-    
-    private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory)
-            throws Exception{
+
+    @Test
+    public void testEmbeddedNPE() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded_npe.docx");
+        List<Metadata> list = getMetadata(metadata,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        //default behavior (user doesn't specify whether or not to catch embedded exceptions
+        //is to catch the exception
+        assertEquals(13, list.size());
+        Metadata mockNPEMetadata = list.get(10);
+        assertContains("java.lang.NullPointerException", mockNPEMetadata.get(RecursiveParserWrapper.EMBEDDED_EXCEPTION));
+
+        metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded_npe.docx");
+        list = getMetadata(metadata,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+                false);
+
+        //Composite parser swallows caught TikaExceptions, IOExceptions and SAXExceptions
+        //and just doesn't bother to report that there was an exception.
+        assertEquals(12, list.size());
+    }
+
+    private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory,
+                                       boolean catchEmbeddedExceptions) throws Exception {
         ParseContext context = new ParseContext();
         Parser wrapped = new AutoDetectParser();
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped, contentHandlerFactory);
-        InputStream stream = RecursiveParserWrapperTest.class.getResourceAsStream(
-                "/test-documents/test_recursive_embedded.docx");
-        wrapper.parse(stream, new DefaultHandler(), metadata, context);
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped,
+                contentHandlerFactory, catchEmbeddedExceptions);
+        String path = metadata.get(Metadata.RESOURCE_NAME_KEY);
+        if (path == null) {
+            path = "/test-documents/test_recursive_embedded.docx";
+        } else {
+            path = "/test-documents/"+path;
+        }
+        InputStream stream = null;
+        try {
+            stream = RecursiveParserWrapperTest.class.getResourceAsStream(
+                    path);
+            wrapper.parse(stream, new DefaultHandler(), metadata, context);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
         return wrapper.getMetadata();
+
+    }
+
+    private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory)
+            throws Exception {
+        return getMetadata(metadata, contentHandlerFactory, true);
     }
 }
