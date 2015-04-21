@@ -17,11 +17,12 @@
 package org.apache.tika.bundle;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.ops4j.pax.exam.CoreOptions.*;
+import static org.ops4j.pax.exam.CoreOptions.bundle;
+import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.options;
 
+import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,13 +32,9 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import javax.inject.Inject;
-
 import org.apache.tika.Tika;
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -48,7 +45,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ops4j.pax.exam.Configuration;
@@ -58,6 +54,7 @@ import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerMethod;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.xml.sax.ContentHandler;
 
 @RunWith(PaxExam.class)
@@ -131,7 +128,6 @@ public class BundleIT {
     }
 
 
-    @Ignore // TODO Fix this test
     @Test
     public void testBundleSimpleText() throws Exception {
         Tika tika = new Tika();
@@ -142,33 +138,40 @@ public class BundleIT {
     }
 
 
-    @Ignore // TODO Fix this test
     @Test
     public void testBundleDetectors() throws Exception {
-        // Get the raw detectors list
-        // TODO Why is this not finding the detector service resource files?
-        TestingServiceLoader loader = new TestingServiceLoader();
-        List<String> rawDetectors = loader.identifyStaticServiceProviders(Detector.class);
-
-        // Check we did get a few, just in case...
-        assertNotNull(rawDetectors);
-        assertTrue("Should have several Detector names, found " + rawDetectors.size(),
-                rawDetectors.size() > 3);
+        //For some reason, the detector created by OSGi has a flat
+        //list of detectors, whereas the detector created by the traditional
+        //service loading method has children: DefaultDetector, MimeTypes.
+        //We have to flatten the service loaded DefaultDetector to get equivalence.
+        //Detection behavior should all be the same.
 
         // Get the classes found within OSGi
-        DefaultDetector detector = new DefaultDetector();
+        ServiceReference<Detector> detectorRef = bc.getServiceReference(Detector.class);
+        DefaultDetector detectorService = (DefaultDetector)bc.getService(detectorRef);
+        
         Set<String> osgiDetectors = new HashSet<String>();
-        for (Detector d : detector.getDetectors()) {
+        for (Detector d : detectorService.getDetectors()) {
             osgiDetectors.add(d.getClass().getName());
         }
 
-        // Check that OSGi didn't miss any
-        for (String detectorName : rawDetectors) {
-            if (!osgiDetectors.contains(detectorName)) {
-                fail("Detector " + detectorName
-                        + " not found within OSGi Detector list: " + osgiDetectors);
+        // Check we did get a few, just in case...
+        assertTrue("Should have several Detector names, found " + osgiDetectors.size(),
+                osgiDetectors.size() > 3);
+
+        // Get the raw detectors list from the traditional service loading mechanism
+        DefaultDetector detector = new DefaultDetector();
+        Set<String> rawDetectors = new HashSet<String>();
+        for (Detector d : detector.getDetectors()) {
+            if (d instanceof DefaultDetector) {
+                for (Detector dChild : ((DefaultDetector)d).getDetectors()) {
+                    rawDetectors.add(dChild.getClass().getName());
+                }
+            } else {
+                rawDetectors.add(d.getClass().getName());
             }
         }
+        assertEquals(osgiDetectors, rawDetectors);
     }
 
 
@@ -180,7 +183,6 @@ public class BundleIT {
     }
 
 
-    @Ignore // TODO Fix this test
     @Test
     public void testTikaBundle() throws Exception {
         Tika tika = new Tika();
@@ -219,20 +221,5 @@ public class BundleIT {
         assertTrue(content.contains("This is a sample Microsoft Word Document"));
         assertTrue(content.contains("testXML.xml"));
         assertTrue(content.contains("Rida Benjelloun"));
-    }
-
-    /**
-     * Alternate ServiceLoader which works outside of OSGi, so we can compare between the two environments
-     */
-    private static class TestingServiceLoader extends ServiceLoader {
-
-        private TestingServiceLoader() {
-            super();
-        }
-
-
-        public <T> List<String> identifyStaticServiceProviders(Class<T> iface) {
-            return super.identifyStaticServiceProviders(iface);
-        }
     }
 }
