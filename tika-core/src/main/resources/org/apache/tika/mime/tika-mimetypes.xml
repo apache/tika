@@ -79,6 +79,7 @@
     <magic priority="40">
       <match value="0xd9d9f7" type="string" offset="0" />
     </magic>
+    <glob pattern="*.cbor"/>
   </mime-type>
 
   <mime-type type="application/ccxml+xml">
