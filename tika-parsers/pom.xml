@@ -219,6 +219,41 @@
       <artifactId>junrar</artifactId>
       <version>0.7</version>
     </dependency>
+    <dependency>
+  <groupId>org.apache.lucene</groupId>
+  <artifactId>lucene-core</artifactId>
+  <version>5.0.0</version>
+</dependency>
+
+<dependency>
+  <groupId>org.apache.lucene</groupId>
+  <artifactId>lucene-analyzers-common</artifactId>
+  <version>5.0.0</version>
+</dependency>
+
+<dependency>
+  <groupId>org.apache.lucene</groupId>
+  <artifactId>lucene-queryparser</artifactId>
+  <version>5.0.0</version>
+</dependency>
+
+<dependency>
+  <groupId>org.apache.opennlp</groupId>
+  <artifactId>opennlp-tools</artifactId>
+  <version>1.5.3</version>
+</dependency>
+
+<dependency>
+  <groupId>commons-io</groupId>
+  <artifactId>commons-io</artifactId>
+  <version>2.4</version>
+</dependency>
+
+<dependency>
+  <groupId>commons-lang</groupId>
+  <artifactId>commons-lang</artifactId>
+  <version>2.6</version>
+</dependency>
 
     <!-- Test dependencies -->
     <dependency>
@@ -342,6 +377,17 @@
             </lifecycleMappingMetadata>
           </configuration>
         </plugin>
+        <!-- for geoparser -->
+              <plugin>
+                 <artifactId>maven-compiler-plugin</artifactId>
+                 <version>2.3.2</version>
+                 <configuration>
+                     <source>1.6</source>
+                     <target>1.6</target>
+                     <compilerArgument></compilerArgument>
+                 </configuration>
+             </plugin>
+             
       </plugins>
     </pluginManagement>
   </build>

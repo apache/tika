@@ -9,3 +9,7 @@ target
 *.iws
 nbactions.xml
 nb-configuration.xml
+.~
+tika-parsers/src/main/java/org/apache/tika/parser/geo/topic/model/indexDirectory/
+tika-parsers/src/main/java/org/apache/tika/parser/geo/topic/model/allCountries.txt
+
