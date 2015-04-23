@@ -35,7 +35,7 @@ public class ISArchiveParserTest {
 	public void testParseArchive() throws Exception {
 		String path = "/test-documents/testISATab_BII-I-1/s_BII-S-1.txt";
 		
-		Parser parser = new ISArchiveParser(ISArchiveParserTest.class.getResource("/test-documents/testISATab_BII-I-1/").getPath());
+		Parser parser = new ISArchiveParser(ISArchiveParserTest.class.getResource("/test-documents/testISATab_BII-I-1/").toURI().getPath());
 		//Parser parser = new AutoDetectParser();
 		
 		ContentHandler handler = new BodyContentHandler();
