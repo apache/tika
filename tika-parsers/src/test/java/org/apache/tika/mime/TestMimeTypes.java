@@ -905,6 +905,15 @@ public class TestMimeTypes {
                 "application/x-berkeley-db; format=hash; version=5", 
                 "testBDB_hash_5.db");
     }
+    
+    /**
+     * CBOR typically contains HTML
+     */
+    @Test
+    public void testCBOR() throws IOException {
+        assertTypeByNameAndData("application/cbor", "NUTCH-1997.cbor");
+        assertTypeByData("application/cbor", "NUTCH-1997.cbor");
+    }
 
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
