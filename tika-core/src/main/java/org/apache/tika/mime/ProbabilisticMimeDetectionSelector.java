@@ -71,7 +71,11 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
 	public ProbabilisticMimeDetectionSelector(final Builder builder) {
 		this(MimeTypes.getDefaultMimeTypes(), builder);
 	}
-
+	
+	public ProbabilisticMimeDetectionSelector(final MimeTypes mimeTypes) {
+		this(mimeTypes, null);
+	} 
+	
 	public ProbabilisticMimeDetectionSelector(final MimeTypes mimeTypes,
 			final Builder builder) {
 		this.mimeTypes = mimeTypes;
@@ -458,7 +462,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
 	 * 
 	 * 
 	 */
-	public class Builder {
+	public static class Builder {
 		/*
 		 * the following are the prior probabilities for the file type
 		 * identified by each method.

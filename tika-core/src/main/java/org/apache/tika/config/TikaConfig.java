@@ -66,7 +66,7 @@ public class TikaConfig {
         return MimeTypes.getDefaultMimeTypes(loader);
     }
 
-    private static Detector getDefaultDetector(
+    protected Detector getDefaultDetector(
             MimeTypes types, ServiceLoader loader) {
         return new DefaultDetector(types, loader);
     }
@@ -487,7 +487,7 @@ public class TikaConfig {
            }
        }
        if (detectors.isEmpty()) {
-           return getDefaultDetector(mimeTypes, loader);
+    	   return new DefaultDetector(mimeTypes, loader);
        } else {
            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
            return new CompositeDetector(registry, detectors);
