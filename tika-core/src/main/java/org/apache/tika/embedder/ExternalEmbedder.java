@@ -413,7 +413,7 @@ public class ExternalEmbedder implements Embedder {
             if (process.exitValue() != 0) {
                 throw new TikaException("There was an error executing the command line" +
                         "\nExecutable Command:\n\n" + cmd +
-                        "\nExecutable Error:\n\n" + stdErrOutputStream.toString("UTF-8"));
+                        "\nExecutable Error:\n\n" + stdErrOutputStream.toString(IOUtils.UTF_8.name()));
             }
         }
     }

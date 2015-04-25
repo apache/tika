@@ -33,17 +33,21 @@ import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.exceptions.CryptographyException;
 import org.apache.pdfbox.io.RandomAccess;
 import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
-import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
+import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
@@ -133,19 +137,31 @@ public class PDFParser extends AbstractParser {
 
             //if using the classic parser and the doc is encrypted, we must manually decrypt
             if (! localConfig.getUseNonSequentialParser() && pdfDocument.isEncrypted()) {
-                try {
-                    pdfDocument.decrypt(password);
-                } catch (Exception e) {
-                    // Ignore
-                }
+                pdfDocument.decrypt(password);
             }
 
             metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
             extractMetadata(pdfDocument, metadata);
+
+            AccessChecker checker = localConfig.getAccessChecker();
+            checker.check(metadata);
             if (handler != null) {
                 PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
             }
             
+        } catch (CryptographyException e) {
+            //seq parser throws CryptographyException for bad password
+            throw new EncryptedDocumentException(e);
+        } catch (IOException e) {
+            //nonseq parser throws IOException for bad password
+            //At the Tika level, we want the same exception to be thrown
+            if (e.getMessage() != null && 
+                    e.getMessage().contains("Error (CryptographyException)")) {
+                metadata.set("pdf:encrypted", Boolean.toString(true));
+                throw new EncryptedDocumentException(e);
+            }
+            //rethrow any other IOExceptions
+            throw e;
         } finally {
             if (pdfDocument != null) {
                pdfDocument.close();
@@ -181,6 +197,28 @@ public class PDFParser extends AbstractParser {
     private void extractMetadata(PDDocument document, Metadata metadata)
             throws TikaException {
 
+        //first extract AccessPermissions
+        AccessPermission ap = document.getCurrentAccessPermission();
+        metadata.set(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY,
+                Boolean.toString(ap.canExtractForAccessibility()));
+        metadata.set(AccessPermissions.EXTRACT_CONTENT,
+                Boolean.toString(ap.canExtractContent()));
+        metadata.set(AccessPermissions.ASSEMBLE_DOCUMENT,
+                Boolean.toString(ap.canAssembleDocument()));
+        metadata.set(AccessPermissions.FILL_IN_FORM,
+                Boolean.toString(ap.canFillInForm()));
+        metadata.set(AccessPermissions.CAN_MODIFY,
+                Boolean.toString(ap.canModify()));
+        metadata.set(AccessPermissions.CAN_MODIFY_ANNOTATIONS,
+                Boolean.toString(ap.canModifyAnnotations()));
+        metadata.set(AccessPermissions.CAN_PRINT,
+                Boolean.toString(ap.canPrint()));
+        metadata.set(AccessPermissions.CAN_PRINT_DEGRADED,
+                Boolean.toString(ap.canPrintDegraded()));
+
+
+
+        //now go for the XMP stuff
         org.apache.jempbox.xmp.XMPMetadata xmp = null;
         XMPSchemaDublinCore dcSchema = null;
         try{
@@ -247,7 +285,9 @@ public class PDFParser extends AbstractParser {
                 xmp.addXMLNSMapping(XMPSchemaPDFAId.NAMESPACE, XMPSchemaPDFAId.class);
                 XMPSchemaPDFAId pdfaxmp = (XMPSchemaPDFAId) xmp.getSchemaByClass(XMPSchemaPDFAId.class);
                 if( pdfaxmp != null ) {
-                    metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
+                    if (pdfaxmp.getPart() != null) {
+                        metadata.set("pdfaid:part", Integer.toString(pdfaxmp.getPart()));
+                    }
                     if (pdfaxmp.getConformance() != null) {
                         metadata.set("pdfaid:conformance", pdfaxmp.getConformance());
                         String version = "A-"+pdfaxmp.getPart()+pdfaxmp.getConformance().toLowerCase(Locale.ROOT);
@@ -436,7 +476,10 @@ public class PDFParser extends AbstractParser {
             }
         } else if(value instanceof COSString) {
             addMetadata(metadata, name, ((COSString)value).getString());
-        } else if (value != null) {
+        }
+        // Avoid calling COSDictionary#toString, since it can lead to infinite
+        // recursion. See TIKA-1038 and PDFBOX-1835.
+        else if (value != null && !(value instanceof COSDictionary)) {
             addMetadata(metadata, name, value.toString());
         }
     }

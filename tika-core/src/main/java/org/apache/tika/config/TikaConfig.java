@@ -20,8 +20,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -332,50 +335,112 @@ public class TikaConfig {
         NodeList nodes = element.getElementsByTagName("parser");
         for (int i = 0; i < nodes.getLength(); i++) {
             Element node = (Element) nodes.item(i);
-            String name = node.getAttribute("class");
-
-            try {
-                Class<? extends Parser> parserClass =
-                        loader.getServiceClass(Parser.class, name);
-                // https://issues.apache.org/jira/browse/TIKA-866
-                if (AutoDetectParser.class.isAssignableFrom(parserClass)) {
-                    throw new TikaException(
-                            "AutoDetectParser not supported in a <parser>"
-                            + " configuration element: " + name);
-                }
-                Parser parser = parserClass.newInstance();
-
-                // Is there an explicit list of mime types for this to handle?
-                Set<MediaType> parserTypes = mediaTypesListFromDomElement(node, "mime");
-                if (! parserTypes.isEmpty()) {
-                    parser = ParserDecorator.withTypes(parser, parserTypes);
-                }
-                // Is there an explicit list of mime types this shouldn't handle?
-                Set<MediaType> parserExclTypes = mediaTypesListFromDomElement(node, "mime-exclude");
-                if (! parserExclTypes.isEmpty()) {
-                    parser = ParserDecorator.withoutTypes(parser, parserExclTypes);
-                }
-
-                // All done with setup
-                parsers.add(parser);
-            } catch (ClassNotFoundException e) {
-                throw new TikaException(
-                        "Unable to find a parser class: " + name, e);
-            } catch (IllegalAccessException e) {
-                throw new TikaException(
-                        "Unable to access a parser class: " + name, e);
-            } catch (InstantiationException e) {
-                throw new TikaException(
-                        "Unable to instantiate a parser class: " + name, e);
-            }
+            parsers.add(parserFromParserDomElement(node, mimeTypes, loader));
         }
+        
         if (parsers.isEmpty()) {
+            // No parsers defined, create a DefaultParser
             return getDefaultParser(mimeTypes, loader);
+        } else if (parsers.size() == 1 && parsers.get(0) instanceof CompositeParser) {
+            // Single Composite defined, use that
+            return (CompositeParser)parsers.get(0);
         } else {
+            // Wrap the defined parsers up in a Composite
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
             return new CompositeParser(registry, parsers);
         }
     }
+    private static Parser parserFromParserDomElement(
+            Element parserNode, MimeTypes mimeTypes, ServiceLoader loader)
+            throws TikaException, IOException {
+        String name = parserNode.getAttribute("class");
+        Parser parser = null;
+
+        try {
+            Class<? extends Parser> parserClass =
+                    loader.getServiceClass(Parser.class, name);
+            // https://issues.apache.org/jira/browse/TIKA-866
+            if (AutoDetectParser.class.isAssignableFrom(parserClass)) {
+                throw new TikaException(
+                        "AutoDetectParser not supported in a <parser>"
+                        + " configuration element: " + name);
+            }
+
+            // Is this a composite parser? If so, support recursion
+            if (CompositeParser.class.isAssignableFrom(parserClass)) {
+                // Get the child parsers for it
+                List<Parser> childParsers = new ArrayList<Parser>();
+                NodeList childParserNodes = parserNode.getElementsByTagName("parser");
+                if (childParserNodes.getLength() > 0) {
+                    for (int i = 0; i < childParserNodes.getLength(); i++) {
+                        childParsers.add(parserFromParserDomElement(
+                                (Element)childParserNodes.item(i), mimeTypes, loader
+                        ));
+                    }
+                }
+                
+                // Get the list of parsers to exclude
+                Set<Class<? extends Parser>> excludeParsers = new HashSet<Class<? extends Parser>>();
+                NodeList excludeParserNodes = parserNode.getElementsByTagName("parser-exclude");
+                if (excludeParserNodes.getLength() > 0) {
+                    for (int i = 0; i < excludeParserNodes.getLength(); i++) {
+                        Element excl = (Element)excludeParserNodes.item(i);
+                        String exclName = excl.getAttribute("class");
+                        excludeParsers.add(loader.getServiceClass(Parser.class, exclName));
+                    }
+                }
+                
+                // Create the Composite Parser
+                Constructor<? extends Parser> c = null;
+                if (c == null) {
+                    try {
+                        c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class, Collection.class);
+                        parser = c.newInstance(mimeTypes.getMediaTypeRegistry(), loader, excludeParsers);
+                    } 
+                    catch (NoSuchMethodException me) {}
+                }
+                if (c == null) {
+                    try {
+                        c = parserClass.getConstructor(MediaTypeRegistry.class, List.class, Collection.class);
+                        parser = c.newInstance(mimeTypes.getMediaTypeRegistry(), childParsers, excludeParsers);
+                    } catch (NoSuchMethodException me) {}
+                }
+                if (c == null) {
+                    parser = parserClass.newInstance();
+                }
+            } else {
+                // Regular parser, create as-is
+                parser = parserClass.newInstance();
+            }
+
+            // Is there an explicit list of mime types for this to handle?
+            Set<MediaType> parserTypes = mediaTypesListFromDomElement(parserNode, "mime");
+            if (! parserTypes.isEmpty()) {
+                parser = ParserDecorator.withTypes(parser, parserTypes);
+            }
+            // Is there an explicit list of mime types this shouldn't handle?
+            Set<MediaType> parserExclTypes = mediaTypesListFromDomElement(parserNode, "mime-exclude");
+            if (! parserExclTypes.isEmpty()) {
+                parser = ParserDecorator.withoutTypes(parser, parserExclTypes);
+            }
+            
+            // All done with setup
+            return parser;
+        } catch (ClassNotFoundException e) {
+            throw new TikaException(
+                    "Unable to find a parser class: " + name, e);
+        } catch (IllegalAccessException e) {
+            throw new TikaException(
+                    "Unable to access a parser class: " + name, e);
+        } catch (InvocationTargetException e) {
+            throw new TikaException(
+                    "Unable to create a parser class: " + name, e);
+        } catch (InstantiationException e) {
+            throw new TikaException(
+                    "Unable to instantiate a parser class: " + name, e);
+        }
+    }
+    
     private static Set<MediaType> mediaTypesListFromDomElement(
             Element node, String tag) 
             throws TikaException, IOException {

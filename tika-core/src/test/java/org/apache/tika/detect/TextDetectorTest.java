@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.junit.Test;
@@ -54,8 +55,8 @@ public class TextDetectorTest {
 
     @Test
     public void testDetectText() throws Exception {
-        assertText("Hello, World!".getBytes("UTF-8"));
-        assertText(" \t\r\n".getBytes("UTF-8"));
+        assertText("Hello, World!".getBytes(IOUtils.UTF_8));
+        assertText(" \t\r\n".getBytes(IOUtils.UTF_8));
         assertNotText(new byte[] { -1, -2, -3, 0x09, 0x0A, 0x0C, 0x0D, 0x1B });
         assertNotText(new byte[] { 0 });
         assertNotText(new byte[] { 'H', 'e', 'l', 'l', 'o', 0 });

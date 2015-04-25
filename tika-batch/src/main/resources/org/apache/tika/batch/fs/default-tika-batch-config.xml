@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<!-- NOTE: tika-batch is still an experimental feature.
+    The configuration file will likely change and be backward incompatible
+    with new versions of Tika.  Please stay tuned.
+    -->
+
+<tika-batch-config
+        maxAliveTimeSeconds="-1"
+        pauseOnEarlyTerminationMillis="10000"
+        timeoutThresholdMillis="300000"
+        timeoutCheckPulseMillis="1000"
+        maxQueueSize="10000"
+        numConsumers="default"> <!-- numConsumers = number of file consumers, "default" = number of processors -1 -->
+
+    <!-- options to allow on the commandline -->
+    <commandline>
+        <option opt="c" longOpt="tika-config" hasArg="true"
+                description="TikaConfig file"/>
+        <option opt="bc" longOpt="batch-config" hasArg="true"
+                description="xml batch config file"/>
+        <!-- We needed sorted for testing.  We added random for performance.
+             Where crawling a directory is slow, it might be beneficial to
+             go randomly so that the parsers are triggered earlier.  The
+             default is operating system's choice ("os") which means whatever order
+             the os returns files in .listFiles(). -->
+        <option opt="crawlOrder" hasArg="true"
+                description="how does the crawler sort the directories and files:
+                                (random|sorted|os)"/>
+        <option opt="numConsumers" hasArg="true"
+                description="number of fileConsumers threads"/>
+        <option opt="maxFileSizeBytes" hasArg="true"
+                description="maximum file size to process; do not process files larger than this"/>
+        <option opt="maxQueueSize" hasArg="true"
+                description="maximum queue size for FileResources"/>
+        <option opt="fileList" hasArg="true"
+                description="file that contains a list of files (relative to inputDir) to process"/>
+        <option opt="fileListEncoding" hasArg="true"
+                description="encoding for fileList"/>
+        <option opt="inputDir" hasArg="true"
+                description="root directory for the files to be processed"/>
+        <option opt="startDir" hasArg="true"
+                description="directory (under inputDir) at which to start crawling"/>
+        <option opt="outputDir" hasArg="true"
+                description="output directory for output"/> <!-- do we want to make this mandatory -->
+        <option opt="recursiveParserWrapper"
+                description="use the RecursiveParserWrapper or not (default = false)"/>
+        <option opt="handleExisting" hasArg="true"
+                description="if an output file already exists, do you want to: overwrite, rename or skip"/>
+        <option opt="basicHandlerType" hasArg="true"
+                description="what type of content handler: xml, text, html, body"/>
+        <option opt="outputSuffix" hasArg="true"
+                description="suffix to add to the end of the output file name"/>
+        <option opt="timeoutThresholdMillis" hasArg="true"
+                description="how long to wait before determining that a consumer is stale"/>
+        <option opt="includeFilePat" hasArg="true"
+                description="regex that specifies which files to process"/>
+        <option opt="excludeFilePat" hasArg="true"
+                description="regex that specifies which files to avoid processing"/>
+        <option opt="reporterSleepMillis" hasArg="true"
+                description="millisecond between reports by the reporter"/>
+    </commandline>
+
+
+    <!-- can specify inputDir="input", but the default config should not include this -->
+    <!-- can also specify startDir="input/someDir" to specify which child directory
+         to start processing -->
+	<crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
+        crawlOrder="random"
+		maxFilesToAdd="-1" 
+		maxFilesToConsider="-1" 
+		includeFilePat=""
+		excludeFilePat=""
+		maxFileSizeBytes="-1"
+        />
+<!--
+    This is an example of a crawler that reads a list of files to be processed from a
+    file.  This assumes that the files in the list are relative to inputDir.
+    <crawler class="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
+             fileList="files.txt"
+             fileListEncoding="UTF-8"
+             maxFilesToAdd="-1"
+             maxFilesToConsider="-1"
+             includeFilePat="(?i).pdf$"
+             excludeFilePat="(?i).msg$"
+             maxFileSizeBytes="-1"
+             inputDir="input"
+    />
+-->
+    <consumers builderClass="org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder"
+               recursiveParserWrapper="false" consumersManagerMaxMillis="60000">
+        <parser class="org.apache.tika.batch.AutoDetectParserFactory" parseRecursively="true"/>
+        <contenthandler builderClass="org.apache.tika.batch.builders.DefaultContentHandlerFactoryBuilder"
+                        basicHandlerType="xml" writeLimit="-1"/>
+        <!-- overwritePolicy: "skip" a file if output file exists, "rename" a output file, "overwrite" -->
+        <!-- can include e.g. outputDir="output", but we don't want to include this in the default! -->
+        <outputstream class="FSOutputStreamFactory" encoding="UTF-8" outputSuffix="xml"/>
+    </consumers>
+
+    <!-- reporter and interrupter are optional -->
+    <reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" reporterSleepMillis="1000"
+              reporterStaleThresholdMillis="60000"/>
+    <interrupter builderClass="org.apache.tika.batch.builders.InterrupterBuilder"/>
+</tika-batch-config>

@@ -17,12 +17,12 @@
 
 package org.apache.tika.server;
 
-import java.io.IOException;
-
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.ext.Provider;
+
+import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,20 +30,22 @@ import org.apache.commons.logging.LogFactory;
 @Provider
 @PreMatching
 public class TikaLoggingFilter implements ContainerRequestFilter {
-	private static final Log logger = LogFactory.getLog(TikaLoggingFilter.class);
-	private boolean infoLevel;
-	public TikaLoggingFilter(boolean infoLevel) {
-		this.infoLevel = infoLevel;
-	}
-	@Override
-	public void filter(ContainerRequestContext requestContext) throws IOException {
-		String requestUri = requestContext.getUriInfo().getRequestUri().toString();
-		String logMessage = "Request URI: " + requestUri;
-		if (infoLevel) {
-			logger.info(logMessage);
-		} else {
-			logger.debug(logMessage);
-		}
-	}
-  
+    private static final Log logger = LogFactory.getLog(TikaLoggingFilter.class);
+    private boolean infoLevel;
+
+    public TikaLoggingFilter(boolean infoLevel) {
+        this.infoLevel = infoLevel;
+    }
+
+    @Override
+    public void filter(ContainerRequestContext requestContext) throws IOException {
+        String requestUri = requestContext.getUriInfo().getRequestUri().toString();
+        String logMessage = "Request URI: " + requestUri;
+        if (infoLevel) {
+            logger.info(logMessage);
+        } else {
+            logger.debug(logMessage);
+        }
+    }
+
 }

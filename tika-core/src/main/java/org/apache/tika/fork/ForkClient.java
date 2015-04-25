@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.NotSerializableException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -51,7 +50,7 @@ class ForkClient {
 
     private final InputStream error;
 
-    public ForkClient(ClassLoader loader, Object object, String java)
+    public ForkClient(ClassLoader loader, Object object, List<String> java)
             throws IOException, TikaException {
         boolean ok = false;
         try {
@@ -60,7 +59,7 @@ class ForkClient {
 
             ProcessBuilder builder = new ProcessBuilder();
             List<String> command = new ArrayList<String>();
-            command.addAll(Arrays.asList(java.split("\\s+")));
+            command.addAll(java);
             command.add("-jar");
             command.add(jar.getPath());
             builder.command(command);
@@ -263,7 +262,7 @@ class ForkClient {
             String manifest =
                 "Main-Class: " + ForkServer.class.getName() + "\n";
             jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
-            jar.write(manifest.getBytes("UTF-8"));
+            jar.write(manifest.getBytes(IOUtils.UTF_8));
 
             Class<?>[] bootstrap = {
                     ForkServer.class, ForkObjectInputStream.class,

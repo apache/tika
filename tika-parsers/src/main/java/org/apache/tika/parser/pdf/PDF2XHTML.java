@@ -94,10 +94,6 @@ class PDF2XHTML extends PDFTextStripper {
      */
     private final static int MAX_ACROFORM_RECURSIONS = 10;
 
-
-    // TODO: remove once PDFBOX-2160 is fixed:
-    private boolean inParagraph = false;
-
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.  If {@link PDFParserConfig#getExtractUniqueInlineImagesOnly()
@@ -399,13 +395,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void writeParagraphStart() throws IOException {
-        // TODO: remove once PDFBOX-2160 is fixed
-        if (inParagraph) {
-            // Close last paragraph
-            writeParagraphEnd();
-        }
-        assert !inParagraph;
-        inParagraph = true;
+        super.writeParagraphStart();
         try {
             handler.startElement("p");
         } catch (SAXException e) {
@@ -415,12 +405,7 @@ class PDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void writeParagraphEnd() throws IOException {
-        // TODO: remove once PDFBOX-2160 is fixed
-        if (!inParagraph) {
-            writeParagraphStart();
-        }
-        assert inParagraph;
-        inParagraph = false;
+        super.writeParagraphEnd();
         try {
             handler.endElement("p");
         } catch (SAXException e) {
@@ -661,8 +646,6 @@ class PDF2XHTML extends PDFTextStripper {
             }
         } catch (IOException e) {
             //swallow
-        } catch (NullPointerException e) {
-            //TODO: remove once PDFBOX-2161 is fixed
         }
 
         if (attrs.getLength() > 0 || sb.length() > 0) {

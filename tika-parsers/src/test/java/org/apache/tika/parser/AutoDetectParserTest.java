@@ -33,6 +33,7 @@ import java.util.zip.ZipOutputStream;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -389,7 +390,7 @@ public class AutoDetectParserTest {
     public void testSpecificParserList() throws Exception {
         AutoDetectParser parser = new AutoDetectParser(new MyDetector(), new MyParser());
         
-        InputStream is = new ByteArrayInputStream("test".getBytes("UTF-8"));
+        InputStream is = new ByteArrayInputStream("test".getBytes(IOUtils.UTF_8));
         Metadata metadata = new Metadata();
         parser.parse(is, new BodyContentHandler(), metadata, new ParseContext());
         

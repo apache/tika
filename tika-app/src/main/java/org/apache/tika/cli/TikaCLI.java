@@ -21,10 +21,13 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
@@ -39,6 +42,7 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -46,19 +50,20 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.apache.log4j.SimpleLayout;
-import org.apache.log4j.WriterAppender;
+import org.apache.log4j.PropertyConfigurator;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.Tika;
+import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
@@ -78,7 +83,9 @@ import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.NetworkParser;
@@ -106,11 +113,22 @@ public class TikaCLI {
     private static final Log logger = LogFactory.getLog(TikaCLI.class);
 
     public static void main(String[] args) throws Exception {
-        BasicConfigurator.configure(
-                new WriterAppender(new SimpleLayout(), System.err));
-        Logger.getRootLogger().setLevel(Level.INFO);
 
         TikaCLI cli = new TikaCLI();
+        if (! isConfigured()) {
+            PropertyConfigurator.configure(cli.getClass().getResourceAsStream("/log4j.properties"));
+        }
+
+        if (cli.testForHelp(args)) {
+            cli.usage();
+            return;
+        } else if (cli.testForBatch(args)) {
+            String[] batchArgs = BatchCommandLineBuilder.build(args);
+            BatchProcessDriverCLI batchDriver = new BatchProcessDriverCLI(batchArgs);
+            batchDriver.execute();
+            return;
+        }
+
         if (args.length > 0) {
             for (int i = 0; i < args.length; i++) {
                 cli.process(args[i]);
@@ -133,6 +151,22 @@ public class TikaCLI {
         }
     }
 
+    private static boolean isConfigured() {
+        //Borrowed from: http://wiki.apache.org/logging-log4j/UsefulCode
+        Enumeration appenders = LogManager.getRootLogger().getAllAppenders();
+        if (appenders.hasMoreElements()) {
+            return true;
+        }
+        else {
+            Enumeration loggers = LogManager.getCurrentLoggers() ;
+            while (loggers.hasMoreElements()) {
+                Logger c = (Logger) loggers.nextElement();
+                if (c.getAllAppenders().hasMoreElements())
+                    return true;
+            }
+        }
+        return false;
+    }
     private class OutputType {
 
         public void process(
@@ -356,6 +390,9 @@ public class TikaCLI {
         } else if(arg.equals("--list-supported-types")){
             pipeMode = false;
             displaySupportedTypes();
+        } else if (arg.startsWith("--compare-file-magic=")) {
+            pipeMode = false;
+            compareFileMagic(arg.substring(arg.indexOf('=')+1));
         } else if (arg.equals("--container-aware")
                 || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
@@ -530,6 +567,9 @@ public class TikaCLI {
         out.println("    --list-supported-types");
         out.println("         List all known media types and related information");
         out.println();
+        out.println();
+        out.println("    --compare-file-magic=<dir>");
+        out.println("         Compares Tika's known media types to the File(1) tool's magic directory");
         out.println("Description:");
         out.println("    Apache Tika will parse the file(s) specified on the");
         out.println("    command line and output the extracted text content");
@@ -556,11 +596,66 @@ public class TikaCLI {
         out.println("    Apache Tika server. The server will listen to the");
         out.println("    ports you specify as one or more arguments.");
         out.println();
+        out.println("- Batch mode");
+        out.println();
+        out.println("    Simplest method.");
+        out.println("    Specify two directories as args with no other args:");
+        out.println("         java -jar tika-app.jar <inputDirectory> <outputDirectory>");
+        out.println();
+        out.println("Batch Options:");
+        out.println("    -i  or --inputDir          Input directory");
+        out.println("    -o  or --outputDir         Output directory");
+        out.println("    -numConsumers              Number of processing threads");
+        out.println("    -bc                        Batch config file");
+        out.println("    -maxRestarts               Maximum number of times the ");
+        out.println("                               watchdog process will restart the child process.");
+        out.println("    -timeoutThresholdMillis    Number of milliseconds allowed to a parse");
+        out.println("                               before the process is killed and restarted");
+        out.println("    -fileList                  List of files to process, with");
+        out.println("                               paths relative to the input directory");
+        out.println("    -includeFilePat            Regular expression to determine which");
+        out.println("                               files to process, e.g. \"(?i)\\.pdf\"");
+        out.println("    -excludeFilePat            Regular expression to determine which");
+        out.println("                               files to avoid processing, e.g. \"(?i)\\.pdf\"");
+        out.println("    -maxFileSizeBytes          Skip files longer than this value");
+        out.println();
+        out.println("    Control the type of output with -x, -h, -t and/or -J.");
+        out.println();
+        out.println("    To modify child process jvm args, prepend \"J\" as in:");
+        out.println("    -JXmx4g or -JDlog4j.configuration=file:log4j.xml.");
     }
 
     private void version() {
         System.out.println(new Tika().toString());
     }
+
+    private boolean testForHelp(String[] args) {
+        for (String s : args) {
+            if (s.equals("-?") || s.equals("--help")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean testForBatch(String[] args) {
+        if (args.length == 2 && ! args[0].startsWith("-")
+                && ! args[1].startsWith("-")) {
+            File inputCand = new File(args[0]);
+            File outputCand = new File(args[1]);
+            if (inputCand.isDirectory() && !outputCand.isFile()) {
+                return true;
+            }
+        }
+
+        for (String s : args) {
+            if (s.equals("-inputDir") || s.equals("--inputDir") || s.equals("-i")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 
     private void configure(String configFilePath) throws Exception {
@@ -708,6 +803,128 @@ public class TikaCLI {
             }
         }
     }
+    
+    /**
+     * Compares our mime types registry with the File(1) tool's 
+     *  directory of (uncompiled) Magic entries. 
+     * (Well, those with mimetypes anyway)
+     * @param magicDir Path to the magic directory
+     */
+    private void compareFileMagic(String magicDir) throws Exception {
+        Set<String> tikaLacking = new TreeSet<String>();
+        Set<String> tikaNoMagic = new TreeSet<String>();
+        
+        // Sanity check
+        File dir = new File(magicDir);
+        if ((new File(dir, "elf")).exists() &&
+            (new File(dir, "mime")).exists() &&
+            (new File(dir, "vorbis")).exists()) {
+            // Looks plausible
+        } else {
+            throw new IllegalArgumentException(
+                    magicDir + " doesn't seem to hold uncompressed file magic entries"); 
+        }
+    
+        // Find all the mimetypes in the directory
+        Set<String> fileMimes = new HashSet<String>();
+        for (File mf : dir.listFiles()) {
+            if (mf.isFile()) {
+                BufferedReader r = new BufferedReader(new InputStreamReader(
+                        new FileInputStream(mf), IOUtils.UTF_8));
+                String line;
+                while ((line = r.readLine()) != null) {
+                    if (line.startsWith("!:mime") ||
+                        line.startsWith("#!:mime")) {
+                        String mime = line.substring(7).trim();
+                        fileMimes.add(mime);
+                    }
+                }
+                r.close();
+            }
+        }
+        
+        // See how those compare to the Tika ones
+        TikaConfig config = TikaConfig.getDefaultConfig();
+        MimeTypes mimeTypes = config.getMimeRepository();
+        MediaTypeRegistry registry = config.getMediaTypeRegistry();
+        for (String mime : fileMimes) {
+            try {
+                final MimeType type = mimeTypes.getRegisteredMimeType(mime);
+                
+                if (type == null) {
+                    // Tika doesn't know about this one
+                    tikaLacking.add(mime);
+                } else {
+                    // Tika knows about this one!
+                    
+                    // Does Tika have magic for it?
+                    boolean hasMagic = type.hasMagic();
+                    
+                    // How about the children?
+                    if (!hasMagic) {
+                        for (MediaType child : registry.getChildTypes(type.getType())) {
+                            MimeType childType = mimeTypes.getRegisteredMimeType(child.toString());
+                            if (childType != null && childType.hasMagic()) {
+                                hasMagic = true;
+                            }
+                        }
+                    }
+                    
+                    // How about the parents?
+                    MimeType parentType = type;
+                    while (parentType != null && !hasMagic) {
+                        if (parentType.hasMagic()) {
+                            // Has magic, fine
+                            hasMagic = true;
+                        } else {
+                            // Check the parent next
+                            MediaType parent = registry.getSupertype(type.getType());
+                            if (parent == MediaType.APPLICATION_XML ||
+                                parent == MediaType.TEXT_PLAIN ||
+                                parent == MediaType.OCTET_STREAM) {
+                                // Stop checking parents if we hit a top level type
+                                parent = null;
+                            }
+                            if (parent != null) {
+                                parentType = mimeTypes.getRegisteredMimeType(parent.toString());
+                            } else {
+                                parentType = null;
+                            }
+                        }
+                    }
+                    if (!hasMagic) {
+                        tikaNoMagic.add(mime);
+                    }
+                }
+            } catch (MimeTypeException e) {
+                // Broken entry in the file magic directory
+                // Silently skip
+            }
+        }
+        
+        // Check how many tika knows about
+        int tikaTypes = 0;
+        int tikaAliases = 0;
+        for (MediaType type : registry.getTypes()) {
+            tikaTypes++;
+            tikaAliases += registry.getAliases(type).size();
+        }
+        
+        // Report
+        System.out.println("Tika knows about " + tikaTypes + " unique mime types");
+        System.out.println("Tika knows about " + (tikaTypes+tikaAliases) + " mime types including aliases");
+        System.out.println("The File Magic directory knows about " + fileMimes.size() + " unique mime types");
+        System.out.println();
+        System.out.println("The following mime types are known to File but not Tika:");
+        for (String mime : tikaLacking) {
+            System.out.println("  " + mime);
+        }
+        System.out.println();
+        System.out.println("The following mime types from File have no Tika magic (but their children might):");
+        for (String mime : tikaNoMagic) {
+            System.out.println("  " + mime);
+        }
+    }
 
     /**
      * Returns a output writer with the given encoding.
@@ -727,7 +944,7 @@ public class TikaCLI {
         } else if (System.getProperty("os.name")
                 .toLowerCase(Locale.ROOT).startsWith("mac os x")) {
             // TIKA-324: Override the default encoding on Mac OS X
-            return new OutputStreamWriter(output, "UTF-8");
+            return new OutputStreamWriter(output, IOUtils.UTF_8);
         } else {
             return new OutputStreamWriter(output, Charset.defaultCharset());
         }

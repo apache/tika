@@ -18,10 +18,13 @@ package org.apache.tika.parser.mp4;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,6 +81,12 @@ import com.googlecode.mp4parser.boxes.apple.Utf8AppleDataBox;
 public class MP4Parser extends AbstractParser {
     /** Serial version UID */
     private static final long serialVersionUID = 84011216792285L;
+    /** TODO Replace this with a 2dp Duration Property Converter */
+    private static final DecimalFormat DURATION_FORMAT = 
+            (DecimalFormat)NumberFormat.getNumberInstance(Locale.ROOT); 
+    static {
+        DURATION_FORMAT.applyPattern("0.0#");
+    }
     
     // Ensure this stays in Sync with the entries in tika-mimetypes.xml
     private static final Map<MediaType,List<String>> typesMap = new HashMap<MediaType, List<String>>();
@@ -164,7 +173,7 @@ public class MP4Parser extends AbstractParser {
 
                // Get the duration
                double durationSeconds = ((double)mHeader.getDuration()) / mHeader.getTimescale();
-               // TODO Use this
+               metadata.set(XMPDM.DURATION, DURATION_FORMAT.format(durationSeconds));
 
                // The timescale is normally the sampling rate
                metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int)mHeader.getTimescale());

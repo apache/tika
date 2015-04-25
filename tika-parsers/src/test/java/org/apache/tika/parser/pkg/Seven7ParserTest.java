@@ -20,13 +20,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import javax.crypto.Cipher;
 
 import java.io.InputStream;
+import java.security.NoSuchAlgorithmException;
 
+import org.apache.tika.exception.EncryptedDocumentException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
@@ -48,7 +55,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 parser.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
         
         // Parse
-        InputStream stream = TarParserTest.class.getResourceAsStream(
+        InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                 "/test-documents/test-documents.7z");
         try {
             parser.parse(stream, handler, metadata, recursingContext);
@@ -58,24 +65,24 @@ public class Seven7ParserTest extends AbstractPkgTest {
 
         assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
-        assertTrue(content.contains("test-documents/testEXCEL.xls"));
-        assertTrue(content.contains("Sample Excel Worksheet"));
-        assertTrue(content.contains("test-documents/testHTML.html"));
-        assertTrue(content.contains("Test Indexation Html"));
-        assertTrue(content.contains("test-documents/testOpenOffice2.odt"));
-        assertTrue(content.contains("This is a sample Open Office document"));
-        assertTrue(content.contains("test-documents/testPDF.pdf"));
-        assertTrue(content.contains("Apache Tika"));
-        assertTrue(content.contains("test-documents/testPPT.ppt"));
-        assertTrue(content.contains("Sample Powerpoint Slide"));
-        assertTrue(content.contains("test-documents/testRTF.rtf"));
-        assertTrue(content.contains("indexation Word"));
-        assertTrue(content.contains("test-documents/testTXT.txt"));
-        assertTrue(content.contains("Test d'indexation de Txt"));
-        assertTrue(content.contains("test-documents/testWORD.doc"));
-        assertTrue(content.contains("This is a sample Microsoft Word Document"));
-        assertTrue(content.contains("test-documents/testXML.xml"));
-        assertTrue(content.contains("Rida Benjelloun"));
+        assertContains("test-documents/testEXCEL.xls", content);
+        assertContains("Sample Excel Worksheet", content);
+        assertContains("test-documents/testHTML.html", content);
+        assertContains("Test Indexation Html", content);
+        assertContains("test-documents/testOpenOffice2.odt", content);
+        assertContains("This is a sample Open Office document", content);
+        assertContains("test-documents/testPDF.pdf", content);
+        assertContains("Apache Tika", content);
+        assertContains("test-documents/testPPT.ppt", content);
+        assertContains("Sample Powerpoint Slide", content);
+        assertContains("test-documents/testRTF.rtf", content);
+        assertContains("indexation Word", content);
+        assertContains("test-documents/testTXT.txt", content);
+        assertContains("Test d'indexation de Txt", content);
+        assertContains("test-documents/testWORD.doc", content);
+        assertContains("This is a sample Microsoft Word Document", content);
+        assertContains("test-documents/testXML.xml", content);
+        assertContains("Rida Benjelloun", content);
     }
 
     /**
@@ -88,7 +95,7 @@ public class Seven7ParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
+       InputStream stream = Seven7ParserTest.class.getResourceAsStream(
                "/test-documents/test-documents.7z");
        try {
            parser.parse(stream, handler, metadata, trackingContext);
@@ -120,5 +127,111 @@ public class Seven7ParserTest extends AbstractPkgTest {
            assertNotNull(mod);
            assertTrue("Modified at " + mod, mod.startsWith("20"));
        }
+    }
+
+    @Test
+    public void testPasswordProtected() throws Exception {
+        Parser parser = new AutoDetectParser();
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        
+        // No password, will fail with EncryptedDocumentException
+        InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z");
+        boolean ex = false;
+        try {
+            parser.parse(stream, handler, metadata, recursingContext);
+            fail("Shouldn't be able to read a password protected 7z without the password");
+        } catch (EncryptedDocumentException e) {
+            // Good
+            ex = true;
+        } finally {
+            stream.close();
+        }
+        
+        assertTrue("test no password", ex);
+
+        ex = false;
+        
+        // Wrong password currently silently gives no content
+        // Ideally we'd like Commons Compress to give an error, but it doesn't...
+        recursingContext.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "wrong";
+            }
+        });
+        handler = new BodyContentHandler();
+        stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z");
+        try {
+            parser.parse(stream, handler, metadata, recursingContext);
+            fail("Shouldn't be able to read a password protected 7z with wrong password");
+        } catch (TikaException e) {
+            //if JCE is installed, the cause will be: Caused by: org.tukaani.xz.CorruptedInputException: Compressed data is corrupt
+            //if JCE is not installed, the message will include
+            // "(do you have the JCE  Unlimited Strength Jurisdiction Policy Files installed?")
+            ex = true;
+        } finally {
+            stream.close();
+        }
+        assertTrue("TikaException for bad password", ex);
+        // Will be empty
+        assertEquals("", handler.toString());
+
+        ex = false;
+        // Right password works fine if JCE Unlimited Strength has been installed!!!
+        if (isStrongCryptoAvailable()) {
+            recursingContext.set(PasswordProvider.class, new PasswordProvider() {
+                @Override
+                public String getPassword(Metadata metadata) {
+                    return "Tika";
+                }
+            });
+            handler = new BodyContentHandler();
+            stream = Seven7ParserTest.class.getResourceAsStream(
+                    "/test-documents/test7Z_protected_passTika.7z");
+            try {
+                parser.parse(stream, handler, metadata, recursingContext);
+            } finally {
+                stream.close();
+            }
+
+            assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
+            String content = handler.toString();
+
+            // Should get filename
+            assertContains("text.txt", content);
+
+            // Should get contents from the text file in the 7z file
+            assertContains("TEST DATA FOR TIKA.", content);
+            assertContains("This is text inside an encrypted 7zip (7z) file.", content);
+            assertContains("It should be processed by Tika just fine!", content);
+            assertContains("TIKA-1521", content);
+        } else {
+            //if jce is not installed, test for IOException wrapped in TikaException
+            boolean ioe = false;
+            recursingContext.set(PasswordProvider.class, new PasswordProvider() {
+                @Override
+                public String getPassword(Metadata metadata) {
+                    return "Tika";
+                }
+            });
+            handler = new BodyContentHandler();
+            stream = Seven7ParserTest.class.getResourceAsStream(
+                    "/test-documents/test7Z_protected_passTika.7z");
+            try {
+                parser.parse(stream, handler, metadata, recursingContext);
+            } catch (TikaException e) {
+                ioe = true;
+            } finally {
+                stream.close();
+            }
+            assertTrue("IOException because JCE was not installed", ioe);
+        }
+    }
+
+    private static boolean isStrongCryptoAvailable() throws NoSuchAlgorithmException {
+        return Cipher.getMaxAllowedKeyLength("AES/ECB/PKCS5Padding") >= 256;
     }
 }

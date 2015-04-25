@@ -19,40 +19,42 @@ package org.apache.tika.server;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.InputStream;
-
 import javax.ws.rs.core.Response;
+
+import java.io.InputStream;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
+import org.apache.tika.server.resource.TikaVersion;
 import org.junit.Test;
 
 public class TikaVersionTest extends CXFTestBase {
-   protected static final String VERSION_PATH = "/version";
+    protected static final String VERSION_PATH = "/version";
 
-   @Override
-   protected void setUpResources(JAXRSServerFactoryBean sf) {
-       sf.setResourceClasses(TikaVersion.class);
-       sf.setResourceProvider(
-           TikaVersion.class,
-           new SingletonResourceProvider(new TikaVersion(tika))
-       );
-   }
+    @Override
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        sf.setResourceClasses(TikaVersion.class);
+        sf.setResourceProvider(
+                TikaVersion.class,
+                new SingletonResourceProvider(new TikaVersion(tika))
+        );
+    }
 
-   @Override
-   protected void setUpProviders(JAXRSServerFactoryBean sf) {}
+    @Override
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+    }
 
-   @Test
-   public void testGetVersion() throws Exception {
-       Response response = WebClient
-               .create(endPoint + VERSION_PATH)
-               .type("text/plain")
-               .accept("text/plain")
-               .get();
+    @Test
+    public void testGetVersion() throws Exception {
+        Response response = WebClient
+                .create(endPoint + VERSION_PATH)
+                .type("text/plain")
+                .accept("text/plain")
+                .get();
 
-       assertEquals(new Tika().toString(),
-               getStringFromInputStream((InputStream) response.getEntity()));
-   }
+        assertEquals(new Tika().toString(),
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
 }

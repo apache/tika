@@ -16,6 +16,10 @@
  */
 package org.apache.tika.sax;
 
+import static junit.framework.Assert.assertFalse;
+import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +27,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -34,15 +39,12 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
-import static junit.framework.Assert.assertFalse;
-import static junit.framework.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-
 /**
  * Test cases for the {@link org.apache.tika.sax.BodyContentHandler} class.
  */
 public class BasicContentHandlerFactoryTest {
-    private static final String ENCODING = "UTF-8";
+
+    private static final String ENCODING = IOUtils.UTF_8.name();
     //default max char len (at least in WriteOutContentHandler is 100k)
     private static final int OVER_DEFAULT = 120000;
 
@@ -53,7 +55,8 @@ public class BasicContentHandlerFactoryTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1).getNewContentHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
-        assertTrue(handler.toString().contains(""));
+        //unfortunatley, the DefaultHandler does not return "",
+        assertContains("org.xml.sax.helpers.DefaultHandler", handler.toString());
 
         //tests that no write limit exception is thrown
         p = new MockParser(100);
@@ -61,7 +64,7 @@ public class BasicContentHandlerFactoryTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, 5).getNewContentHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
-        assertTrue(handler.toString().contains(""));
+        assertContains("org.xml.sax.helpers.DefaultHandler", handler.toString());
     }
 
     @Test
@@ -74,18 +77,20 @@ public class BasicContentHandlerFactoryTest {
 
         assertTrue(handler instanceof ToTextContentHandler);
         p.parse(null, handler, null, null);
-        assertTrue(handler.toString().contains("This is the title"));
-        assertTrue(handler.toString().contains("aaaaaaaaaa"));
-        assertFalse(handler.toString().toLowerCase().contains("<body"));
-        assertFalse(handler.toString().toLowerCase().contains("<html"));
-        assertTrue(handler.toString().length() > 110000);
+        String extracted = handler.toString();
+        assertContains("This is the title", extracted);
+        assertContains("aaaaaaaaaa", extracted);
+        assertNotContains("<body", extracted);
+        assertNotContains("<html", extracted);
+        assertTrue(extracted.length() > 110000);
         //now test write limit
         p = new MockParser(10);
         handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
-        assertTrue(handler.toString().contains("This "));
-        assertFalse(handler.toString().toLowerCase().contains("aaaa"));
+        extracted = handler.toString();
+        assertContains("This ", extracted);
+        assertNotContains("aaaa", extracted);
 
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
@@ -120,17 +125,19 @@ public class BasicContentHandlerFactoryTest {
 
         assertTrue(handler instanceof ToHTMLContentHandler);
         p.parse(null, handler, null, null);
-        assertTrue(handler.toString().contains("<head><title>This is the title"));
-        assertTrue(handler.toString().contains("aaaaaaaaaa"));
-        assertTrue(handler.toString().length() > 110000);
+        String extracted = handler.toString();
+        assertContains("<head><title>This is the title", extracted);
+        assertContains("aaaaaaaaaa", extracted);
+        assertTrue(extracted.length() > 110000);
 
         //now test write limit
         p = new MockParser(10);
         handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
-        assertTrue(handler.toString().contains("This "));
-        assertFalse(handler.toString().toLowerCase().contains("aaaa"));
+        extracted = handler.toString();
+        assertContains("This ", extracted);
+        assertNotContains("aaaa", extracted);
 
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
@@ -163,8 +170,9 @@ public class BasicContentHandlerFactoryTest {
 
         assertTrue(handler instanceof ToXMLContentHandler);
         p.parse(null, handler, new Metadata(), null);
-        assertTrue(handler.toString().contains("<head><title>This is the title"));
-        assertTrue(handler.toString().contains("aaaaaaaaaa"));
+        String extracted = handler.toString();
+        assertContains("<head><title>This is the title", extracted);
+        assertContains("aaaaaaaaaa", extracted);
         assertTrue(handler.toString().length() > 110000);
 
         //now test write limit
@@ -172,8 +180,9 @@ public class BasicContentHandlerFactoryTest {
         handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
         assertTrue(handler instanceof WriteOutContentHandler);
         assertWriteLimitReached(p, (WriteOutContentHandler) handler);
-        assertTrue(handler.toString().contains("This "));
-        assertFalse(handler.toString().toLowerCase().contains("aaaa"));
+        extracted = handler.toString();
+        assertContains("This ", extracted);
+        assertNotContains("aaaa", extracted);
 
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
@@ -181,6 +190,7 @@ public class BasicContentHandlerFactoryTest {
         handler = new BasicContentHandlerFactory(type, -1).getNewContentHandler(os, ENCODING);
         assertTrue(handler instanceof ToXMLContentHandler);
         p.parse(null, handler, null, null);
+
         assertContains("This is the title", os.toByteArray());
         assertContains("aaaaaaaaaa", os.toByteArray());
         assertContains("<body", os.toByteArray());
@@ -208,17 +218,19 @@ public class BasicContentHandlerFactoryTest {
         assertTrue(handler instanceof BodyContentHandler);
 
         p.parse(null, handler, null, null);
-        assertFalse(handler.toString().contains("title"));
-        assertTrue(handler.toString().contains("aaaaaaaaaa"));
-        assertTrue(handler.toString().length() > 110000);
+        String extracted = handler.toString();
+        assertNotContains("title", extracted);
+        assertContains("aaaaaaaaaa", extracted);
+        assertTrue(extracted.length() > 110000);
 
         //now test write limit
         p = new MockParser(10);
         handler = new BasicContentHandlerFactory(type, 5).getNewContentHandler();
         assertTrue(handler instanceof BodyContentHandler);
         assertWriteLimitReached(p, (BodyContentHandler)handler);
-        assertFalse(handler.toString().contains("This "));
-        assertTrue(handler.toString().toLowerCase().contains("aaaa"));
+        extracted = handler.toString();
+        assertNotContains("This ", extracted);
+        assertContains("aaaa", extracted);
 
         //now test outputstream call
         p = new MockParser(OVER_DEFAULT);
@@ -267,16 +279,24 @@ public class BasicContentHandlerFactoryTest {
         assertTrue("WriteLimitReached", wlr);
     }
 
-    private void assertNotContains(String needle, byte[] hayStack)
-            throws UnsupportedEncodingException {
-        String s  = new String(hayStack, ENCODING);
-        assertFalse(s.toLowerCase().contains(needle));
+
+    //copied from TikaTest in tika-parsers package
+    public static void assertNotContains(String needle, String haystack) {
+        assertFalse(needle + " found in:\n" + haystack, haystack.contains(needle));
     }
 
-    private void assertContains(String needle, byte[] hayStack)
+    public static void assertNotContains(String needle, byte[] hayStack)
             throws UnsupportedEncodingException {
-        String s  = new String(hayStack, ENCODING);
-        assertTrue(s.contains(needle));
+        assertNotContains(needle, new String(hayStack, ENCODING));
+    }
+
+    public static void assertContains(String needle, String haystack) {
+        assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+    }
+
+    public static void assertContains(String needle, byte[] hayStack)
+            throws UnsupportedEncodingException {
+        assertContains(needle, new String(hayStack, ENCODING));
     }
 
     //Simple mockparser that writes a title

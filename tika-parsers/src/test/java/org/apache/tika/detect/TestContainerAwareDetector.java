@@ -92,6 +92,7 @@ public class TestContainerAwareDetector {
         assertTypeByData("testPUBLISHER.pub", "application/x-mspublisher");
         assertTypeByData("testWORKS.wps", "application/vnd.ms-works");
         assertTypeByData("testWORKS2000.wps", "application/vnd.ms-works");
+        
         // older Works Word Processor files can't be recognized
         // they were created with Works Word Processor 7.0 (hence the text inside)
         // and exported to the older formats with the "Save As" feature
@@ -100,6 +101,7 @@ public class TestContainerAwareDetector {
         assertTypeByData("testWORKSSpreadsheet7.0.xlr", "application/x-tika-msworks-spreadsheet");
         assertTypeByData("testPROJECT2003.mpp", "application/vnd.ms-project");
         assertTypeByData("testPROJECT2007.mpp", "application/vnd.ms-project");
+        
         // Excel95 can be detected by not parsed
         assertTypeByData("testEXCEL_95.xls", "application/vnd.ms-excel");
 
@@ -211,8 +213,16 @@ public class TestContainerAwareDetector {
         assertTypeByData("testPPT.ppsx", "application/vnd.openxmlformats-officedocument.presentationml.slideshow");
         assertTypeByData("testPPT.ppsm", "application/vnd.ms-powerpoint.slideshow.macroEnabled.12");
         assertTypeByData("testDOTM.dotm", "application/vnd.ms-word.template.macroEnabled.12");
+        assertTypeByData("testEXCEL.strict.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         assertTypeByData("testPPT.xps", "application/vnd.ms-xpsdocument");
 
+        assertTypeByData("testVISIO.vsdm", "application/vnd.ms-visio.drawing.macroenabled.12");
+        assertTypeByData("testVISIO.vsdx", "application/vnd.ms-visio.drawing");
+        assertTypeByData("testVISIO.vssm", "application/vnd.ms-visio.stencil.macroenabled.12");
+        assertTypeByData("testVISIO.vssx", "application/vnd.ms-visio.stencil");
+        assertTypeByData("testVISIO.vstm", "application/vnd.ms-visio.template.macroenabled.12");
+        assertTypeByData("testVISIO.vstx", "application/vnd.ms-visio.template");
+        
         // .xlsb is an OOXML file containing the binary parts, and not
         //  an OLE2 file as you might initially expect!
         assertTypeByData("testEXCEL.xlsb", "application/vnd.ms-excel.sheet.binary.macroEnabled.12");

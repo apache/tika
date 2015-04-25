@@ -17,7 +17,7 @@
 package org.apache.tika.parser.mbox;
 
 import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
 
 import java.io.InputStream;
 import java.util.Map;
@@ -64,8 +64,8 @@ public class MboxParserTest {
     }
 
     String content = handler.toString();
-    assertTrue(content.contains("Test content 1"));
-    assertTrue(content.contains("Test content 2"));
+    assertContains("Test content 1", content);
+    assertContains("Test content 2", content);
     assertEquals("application/mbox", metadata.get(Metadata.CONTENT_TYPE));
 
     Map<Integer, Metadata> mailsMetadata = mboxParser.getTrackingMetadata();
@@ -92,7 +92,7 @@ public class MboxParserTest {
       stream.close();
     }
 
-    assertTrue(handler.toString().contains("Test content"));
+    assertContains("Test content", handler.toString());
     assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
 
     Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
@@ -136,8 +136,8 @@ public class MboxParserTest {
       stream.close();
     }
 
-    assertTrue(handler.toString().contains("Test content"));
-    assertTrue(handler.toString().contains("> quoted stuff"));
+    assertContains("Test content", handler.toString());
+    assertContains("> quoted stuff", handler.toString());
   }
 
   @Test
@@ -161,7 +161,7 @@ public class MboxParserTest {
     assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(TikaCoreProperties.CREATOR));
     assertEquals("core-user@hadoop.apache.org", firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
 
-    assertTrue(handler.toString().contains("When a Mapper completes"));
+    assertContains("When a Mapper completes", handler.toString());
   }
 
   private static InputStream getStream(String name) {

@@ -19,6 +19,7 @@ package org.apache.tika.parser.chm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
 import org.apache.tika.parser.chm.core.ChmCommons;
@@ -26,8 +27,6 @@ import org.apache.tika.parser.chm.core.ChmConstants;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.UnsupportedEncodingException;
 
 /**
  * Tests all public methods of the ChmItspHeader
@@ -136,9 +135,9 @@ public class TestChmItspHeader {
     }
 
     @Test
-    public void testGetSignature() throws UnsupportedEncodingException {
+    public void testGetSignature() {
         assertEquals(TestParameters.VP_ISTP_SIGNATURE, new String(
-                chmItspHeader.getSignature(), "UTF-8"));
+                chmItspHeader.getSignature(), IOUtils.UTF_8));
     }
 
     @Test

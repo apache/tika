@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -62,9 +63,22 @@ public class CompositeParser extends AbstractParser {
      */
     private Parser fallback = new EmptyParser();
 
-    public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers) {
-        this.parsers = parsers;
+    public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers,
+                           Collection<Class<? extends Parser>> excludeParsers) {
+        if (excludeParsers == null || excludeParsers.isEmpty()) {
+            this.parsers = parsers;
+        } else {
+            this.parsers = new ArrayList<Parser>();
+            for (Parser p : parsers) {
+                if (!isExcluded(excludeParsers, p.getClass())) {
+                    this.parsers.add(p);
+                }
+            }
+        }
         this.registry = registry;
+    }
+    public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers) {
+        this(registry, parsers, null);
     }
 
     public CompositeParser(MediaTypeRegistry registry, Parser... parsers) {
@@ -83,6 +97,17 @@ public class CompositeParser extends AbstractParser {
             }
         }
         return map;
+    }
+
+    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p){
+        return excludeParsers.contains(p) || assignableFrom(excludeParsers, p);
+    }
+
+    private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
+        for (Class<? extends Parser> e : excludeParsers) {
+            if (e.isAssignableFrom(p)) return true;
+        }
+        return false;
     }
 
     /**

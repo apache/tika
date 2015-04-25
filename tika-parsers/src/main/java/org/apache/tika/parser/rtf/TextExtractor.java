@@ -622,6 +622,10 @@ final class TextExtractor {
 
     private void endParagraph(boolean preserveStyles) throws IOException, SAXException, TikaException {
         pushText();
+        //maintain consecutive new lines
+        if (!inParagraph) {
+            lazyStartParagraph();
+        }
         if (inParagraph) {
             if (groupState.italic) {
                 end("i");

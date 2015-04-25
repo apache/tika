@@ -1,3 +1,123 @@
+Release 1.9 - Current Development
+
+  * Improvements to detect CBOR files by extension (TIKA-1610).
+
+  * Change xerial.org's sqlite-jdbc jar to "provided" (TIKA-1511).
+    Users will now need to add sqlite-jdbc to their classpath for
+    the Sqlite3Parser to work.
+
+Release 1.8 - 4/13/2015
+
+  * Fix null pointer when processing ODT footer styles (TIKA-1600).
+
+  * Upgrade to com.drewnoakes' metadata-extractor to 2.0 and
+    add parser for webp metadata (TIKA-1594).
+
+  * Duration extracted from MP3s with no ID3 tags (TIKA-1589).
+
+  * Upgraded to PDFBox 1.8.9 (TIKA-1575).
+
+  * Tika now supports the IsaTab data standard for bioinformatics
+    both in terms of MIME identification and in terms of parsing
+    (TIKA-1580).
+
+  * Tika server can now enable CORS requests with the command line
+    "--cors" or "-C" option (TIKA-1586).
+
+  * Update jhighlight dependency to avoid using LGPL license. Thank
+    @kkrugler for his great contribution (TIKA-1581).
+  
+  * Updated HDF and NetCDF parsers to output file version in 
+    metadata (TIKA-1578 and TIKA-1579).
+
+  * Upgraded to POI 3.12-beta1 (TIKA-1531).
+
+  * Added tika-batch module for directory to directory batch
+    processing.  This is a new, experimental capability, and the API will 
+    likely change in future releases (TIKA-1330).
+
+  * Translator.translate() Exceptions are now restricted to
+    TikaException and IOException (TIKA-1416).
+
+  * Tika now supports MIME detection for Microsoft Extended 
+    Makefiles (EMF) (TIKA-1554).
+
+  * Tika has improved delineation in XML and HTML MIME detection
+    (TIKA-1365).
+
+  * Upgraded the Drew Noakes metadata-extractor to version 2.7.2
+    (TIKA-1576).
+
+  * Added basic style support for ODF documents, contributed by
+    Axel Dörfler (TIKA-1063).
+
+  * Move Tika server resources and writers to separate
+    org.apache.tika.server.resource and writer packages (TIKA-1564).
+
+  * Upgrade UCAR dependencies to 4.5.5 (TIKA-1571).
+  
+  * Fix Paths in Tika server welcome page (TIKA-1567).
+
+  * Fixed infinite recursion while parsing some PDFs (TIKA-1038).
+
+  * XHTMLContentHandler now properly passes along body attributes,
+    contributed by Markus Jelsma (TIKA-995).
+
+  * TikaCLI option --compare-file-magic to report mime types known to
+    the file(1) tool but not known / fully known to Tika.
+
+  * MediaTypeRegistry support for returning known child types.
+
+  * Support for excluding (blacklisting) certain Parsers from being
+    used by DefaultParser via the Tika Config file, using the new
+    parser-exclude tag (TIKA-1558).
+
+  * Detect Global Change Master Directory (GCMD) Directory
+    Interchange Format (DIF) files (TIKA-1561).
+
+  * Tika's JAX-RS server can now return stacktraces for
+    parse exceptions (TIKA-1323).
+
+  * Added MockParser for testing handling of exceptions, errors
+    and hangs in code that uses parsers (TIKA-1553).
+
+  * The ForkParser service removed from Activator. Rollback of (TIKA-1354).
+
+  * Increased the speed of language identification by 
+    a factor of two -- contributed by Toke Eskildsen (TIKA-1549).
+
+  * Added parser for Sqlite3 db files. Some users will need to 
+    exclude the dependency on xerial.org's sqlite-jdbc because
+    it contains native libs (TIKA-1511).
+
+  * Use POST instead of PUT for tika-server form methods
+    (TIKA-1547).
+
+  * A basic wrapper around the UNIX file command was 
+    added to extract Strings. In addition a parse to 
+    handle Strings parsing from octet-streams using Latin1
+    charsets as added (TIKA-1541, TIKA-1483).
+
+  * Add test files and detection mechanism for Gridded
+    Binary (GRIB) files (TIKA-1539).
+
+  * The RAR parser was updated to handle Chinese characters 
+    using the functionality provided by allowing encoding to
+    be used within ZipArchiveInputStream (TIKA-936).
+
+  * Fix out of memory error in surefire plugin (TIKA-1537).
+
+  * Build a parser to extract data from GRIB formats (TIKA-1423).
+
+  * Upgrade to Commons Compress 1.9 (TIKA-1534).
+
+  * Include media duration in metadata parsed by MP4Parser (TIKA-1530).
+
+  * Support password protected 7zip files (using a PasswordProvider,
+    in keeping with the other password supporting formats) (TIKA-1521).
+
+  * Password protected Zip files should not trigger an exception (TIKA-1028).
+
 Release 1.7 - 1/9/2015
 
   * Fixed resource leak in OutlookPSTParser that caused TikaException 

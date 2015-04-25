@@ -19,6 +19,7 @@ package org.apache.tika.language.translate;
 
 import com.memetix.mst.language.Language;
 import com.memetix.mst.translate.Translate;
+import org.apache.tika.exception.TikaException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -77,13 +78,17 @@ public class MicrosoftTranslator implements Translator {
      * @see org.apache.tika.language.translate.Translator
      * @since Tika 1.6
      */
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws Exception {
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
         if (!available) return text;
         Language source = Language.fromString(sourceLanguage);
         Language target = Language.fromString(targetLanguage);
         Translate.setClientId(clientId);
         Translate.setClientSecret(clientSecret);
-        return Translate.execute(text, source, target);
+        try {
+            return Translate.execute(text, source, target);
+        } catch (Exception e) {
+            throw new TikaException("Error with Microsoft Translation: " + e.getMessage());
+        }
     }
 
     /**
@@ -96,12 +101,16 @@ public class MicrosoftTranslator implements Translator {
      * @see org.apache.tika.language.translate.Translator
      * @since Tika 1.6
      */
-    public String translate(String text, String targetLanguage) throws Exception {
+    public String translate(String text, String targetLanguage) throws TikaException, IOException {
         if (!available) return text;
         Language target = Language.fromString(targetLanguage);
         Translate.setClientId(clientId);
         Translate.setClientSecret(clientSecret);
-        return Translate.execute(text, target);
+        try {
+            return Translate.execute(text, target);
+        } catch (Exception e) {
+            throw new TikaException("Error with Microsoft Translation: " + e.getMessage());
+        }
     }
 
     /**

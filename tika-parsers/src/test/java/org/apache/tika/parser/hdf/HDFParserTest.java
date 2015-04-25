@@ -94,5 +94,7 @@ public class HDFParserTest {
       assertNotNull(metadata);
       assertEquals("Direct read of HDF4 file through CDM library", metadata.get("_History"));
       assertEquals("Ascending", metadata.get("Pass"));
+      assertEquals("Hierarchical Data Format, version 4",
+      metadata.get("File-Type-Description"));
     }
 }

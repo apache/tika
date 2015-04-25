@@ -17,12 +17,12 @@
 package org.apache.tika.bundle;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
+import static org.ops4j.pax.exam.CoreOptions.options;
 
+import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,11 +32,9 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.Tika;
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -45,33 +43,45 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.internal.Activator;
 import org.apache.tika.sax.BodyContentHandler;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.ops4j.pax.exam.CoreOptions;
+import org.ops4j.pax.exam.Configuration;
 import org.ops4j.pax.exam.Option;
-import org.ops4j.pax.exam.junit.Configuration;
-import org.ops4j.pax.exam.junit.JUnit4TestRunner;
+import org.ops4j.pax.exam.junit.PaxExam;
+import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
+import org.ops4j.pax.exam.spi.reactors.PerMethod;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.ServiceReference;
 import org.xml.sax.ContentHandler;
 
-@RunWith( JUnit4TestRunner.class )
+@RunWith(PaxExam.class)
+@ExamReactorStrategy(PerMethod.class)
 public class BundleIT {
+
     private final File TARGET = new File("target");
+
+    @Inject
+    private Parser defaultParser;
+    @Inject
+    private Detector contentTypeDetector;
+    @Inject
+    private BundleContext bc;
 
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException {
         File base = new File(TARGET, "test-bundles");
-        return CoreOptions.options(
+        return options(
                 junitBundles(),
                 bundle(new File(base, "tika-core.jar").toURI().toURL().toString()),
                 bundle(new File(base, "tika-bundle.jar").toURI().toURL().toString()));
     }
 
+
     @Test
-    public void testBundleLoaded(BundleContext bc) throws Exception {
+    public void testBundleLoaded() throws Exception {
         boolean hasCore = false, hasBundle = false;
         for (Bundle b : bc.getBundles()) {
             if ("org.apache.tika.core".equals(b.getSymbolicName())) {
@@ -87,8 +97,9 @@ public class BundleIT {
         assertTrue("Bundle bundle not found", hasBundle);
     }
 
+
     @Test
-    public void testBundleDetection(BundleContext bc) throws Exception {
+    public void testBundleDetection() throws Exception {
         Tika tika = new Tika();
 
         // Simple type detection
@@ -96,16 +107,15 @@ public class BundleIT {
         assertEquals("application/pdf", tika.detect("test.pdf"));
     }
 
+
     @Test
-    public void testForkParser(BundleContext bc) throws Exception {
-        ForkParser parser = (ForkParser) bc.getService(bc.getServiceReference(ForkParser.class.getName()));
-        ClassLoader classLoader = parser.getClass().getClassLoader();
+    public void testForkParser() throws Exception {
+        ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser);
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
         InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
         Writer writer = new StringWriter();
         ContentHandler contentHandler = new BodyContentHandler(writer);
         Metadata metadata = new Metadata();
-        Detector contentTypeDetector = new DefaultDetector(classLoader);
         MediaType type = contentTypeDetector.detect(stream, metadata);
         assertEquals(type.toString(), "text/html");
         metadata.add(Metadata.CONTENT_TYPE, type.toString());
@@ -117,9 +127,9 @@ public class BundleIT {
         assertEquals("test content", content.trim());
     }
 
-    @Ignore // TODO Fix this test
+
     @Test
-    public void testBundleSimpleText(BundleContext bc) throws Exception {
+    public void testBundleSimpleText() throws Exception {
         Tika tika = new Tika();
 
         // Simple text extraction
@@ -127,45 +137,54 @@ public class BundleIT {
         assertTrue(xml.contains("tika-bundle"));
     }
 
-    @Ignore // TODO Fix this test
-    @Test
-    public void testBundleDetectors(BundleContext bc) throws Exception {
-        // Get the raw detectors list
-        // TODO Why is this not finding the detector service resource files?
-        TestingServiceLoader loader = new TestingServiceLoader();
-        List<String> rawDetectors = loader.identifyStaticServiceProviders(Detector.class);
 
-        // Check we did get a few, just in case...
-        assertNotNull(rawDetectors);
-        assertTrue("Should have several Detector names, found " + rawDetectors.size(),
-                rawDetectors.size() > 3);
+    @Test
+    public void testBundleDetectors() throws Exception {
+        //For some reason, the detector created by OSGi has a flat
+        //list of detectors, whereas the detector created by the traditional
+        //service loading method has children: DefaultDetector, MimeTypes.
+        //We have to flatten the service loaded DefaultDetector to get equivalence.
+        //Detection behavior should all be the same.
 
         // Get the classes found within OSGi
-        DefaultDetector detector = new DefaultDetector();
+        ServiceReference<Detector> detectorRef = bc.getServiceReference(Detector.class);
+        DefaultDetector detectorService = (DefaultDetector)bc.getService(detectorRef);
+        
         Set<String> osgiDetectors = new HashSet<String>();
-        for (Detector d : detector.getDetectors()) {
+        for (Detector d : detectorService.getDetectors()) {
             osgiDetectors.add(d.getClass().getName());
         }
 
-        // Check that OSGi didn't miss any
-        for (String detectorName : rawDetectors) {
-            if (!osgiDetectors.contains(detectorName)) {
-                fail("Detector " + detectorName + 
-                     " not found within OSGi Detector list: " + osgiDetectors);
+        // Check we did get a few, just in case...
+        assertTrue("Should have several Detector names, found " + osgiDetectors.size(),
+                osgiDetectors.size() > 3);
+
+        // Get the raw detectors list from the traditional service loading mechanism
+        DefaultDetector detector = new DefaultDetector();
+        Set<String> rawDetectors = new HashSet<String>();
+        for (Detector d : detector.getDetectors()) {
+            if (d instanceof DefaultDetector) {
+                for (Detector dChild : ((DefaultDetector)d).getDetectors()) {
+                    rawDetectors.add(dChild.getClass().getName());
+                }
+            } else {
+                rawDetectors.add(d.getClass().getName());
             }
         }
+        assertEquals(osgiDetectors, rawDetectors);
     }
 
+
     @Test
-    public void testBundleParsers(BundleContext bc) throws Exception {
+    public void testBundleParsers() throws Exception {
         TikaConfig tika = new TikaConfig();
 
         // TODO Implement as with Detectors
     }
 
-    @Ignore // TODO Fix this test
+
     @Test
-    public void testTikaBundle(BundleContext bc) throws Exception {
+    public void testTikaBundle() throws Exception {
         Tika tika = new Tika();
 
         // Package extraction
@@ -175,8 +194,8 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        InputStream stream =
-                new FileInputStream("src/test/resources/test-documents.zip");
+        InputStream stream
+                = new FileInputStream("src/test/resources/test-documents.zip");
         try {
             parser.parse(stream, handler, new Metadata(), context);
         } finally {
@@ -202,18 +221,5 @@ public class BundleIT {
         assertTrue(content.contains("This is a sample Microsoft Word Document"));
         assertTrue(content.contains("testXML.xml"));
         assertTrue(content.contains("Rida Benjelloun"));
-    }
-
-    /**
-     * Alternate ServiceLoader which works outside of OSGi, so we
-     * can compare between the two environments
-     */
-    private static class TestingServiceLoader extends ServiceLoader {
-        private TestingServiceLoader() {
-            super();
-        }
-        public <T> List<String> identifyStaticServiceProviders(Class<T> iface) {
-            return super.identifyStaticServiceProviders(iface);
-        }
     }
 }

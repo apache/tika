@@ -35,12 +35,12 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
@@ -58,6 +58,13 @@ import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 public class ZipContainerDetector implements Detector {
     private static final Pattern MACRO_TEMPLATE_PATTERN = Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
 
+    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes 
+    private static final String VISIO_DOCUMENT =
+            "http://schemas.microsoft.com/visio/2010/relationships/document";
+    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes 
+    private static final String STRICT_CORE_DOCUMENT = 
+            "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument";
+    
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
 
@@ -181,7 +188,7 @@ public class ZipContainerDetector implements Detector {
             if (mimetype != null) {
                 InputStream stream = zip.getInputStream(mimetype);
                 try {
-                    return MediaType.parse(IOUtils.toString(stream, "UTF-8"));
+                    return MediaType.parse(IOUtils.toString(stream, IOUtils.UTF_8.name()));
                 } finally {
                     stream.close();
                 }
@@ -231,8 +238,18 @@ public class ZipContainerDetector implements Detector {
      *  opened Package 
      */
     public static MediaType detectOfficeOpenXML(OPCPackage pkg) {
+        // Check for the normal Office core document
         PackageRelationshipCollection core = 
-           pkg.getRelationshipsByType(ExtractorFactory.CORE_DOCUMENT_REL);
+               pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
+        // Otherwise check for some other Office core document types
+        if (core.size() == 0) {
+            core = pkg.getRelationshipsByType(STRICT_CORE_DOCUMENT);
+        }
+        if (core.size() == 0) {
+            core = pkg.getRelationshipsByType(VISIO_DOCUMENT);
+        }
+        
+        // If we didn't find a single core document of any type, skip detection
         if (core.size() != 1) {
             // Invalid OOXML Package received
             return null;

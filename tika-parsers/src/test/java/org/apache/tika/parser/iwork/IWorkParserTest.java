@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.iwork;
 
+import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -48,6 +49,20 @@ public class IWorkParserTest {
         parseContext.set(Parser.class, new AutoDetectParser());
     }
 
+    /**
+     * Check the given InputStream is not closed by the Parser (TIKA-1117).
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testStreamNotClosed() throws Exception {
+        InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        iWorkParser.parse(input, handler, metadata, parseContext);
+        input.read();   // Will throw an Exception if the stream was already closed.
+    }
+
     @Test
     public void testParseKeynote() throws Exception {
         InputStream input = IWorkParserTest.class.getResourceAsStream("/test-documents/testKeynote.key");
@@ -74,23 +89,23 @@ public class IWorkParserTest {
         assertEquals("Apache tika", metadata.get(TikaCoreProperties.TITLE));
 
         String content = handler.toString();
-        assertTrue(content.contains("A sample presentation"));
-        assertTrue(content.contains("For the Apache Tika project"));
-        assertTrue(content.contains("Slide 1"));
-        assertTrue(content.contains("Some random text for the sake of testability."));
-        assertTrue(content.contains("A nice comment"));
-        assertTrue(content.contains("A nice note"));
+        assertContains("A sample presentation", content);
+        assertContains("For the Apache Tika project", content);
+        assertContains("Slide 1", content);
+        assertContains("Some random text for the sake of testability.", content);
+        assertContains("A nice comment", content);
+        assertContains("A nice note", content);
 
         // test table data
-        assertTrue(content.contains("Cell one"));
-        assertTrue(content.contains("Cell two"));
-        assertTrue(content.contains("Cell three"));
-        assertTrue(content.contains("Cell four"));
-        assertTrue(content.contains("Cell 5"));
-        assertTrue(content.contains("Cell six"));
-        assertTrue(content.contains("7"));
-        assertTrue(content.contains("Cell eight"));
-        assertTrue(content.contains("5/5/1985"));
+        assertContains("Cell one", content);
+        assertContains("Cell two", content);
+        assertContains("Cell three", content);
+        assertContains("Cell four", content);
+        assertContains("Cell 5", content);
+        assertContains("Cell six", content);
+        assertContains("7", content);
+        assertContains("Cell eight", content);
+        assertContains("5/5/1985", content);
     }
 
     // TIKA-910
@@ -127,7 +142,7 @@ public class IWorkParserTest {
 
         String content = handler.toString();
         content = content.replaceAll("\\s+", " ");
-        assertTrue(content.contains("row 1 row 2 row 3"));
+        assertContains("row 1 row 2 row 3", content);
     }
 
     // TIKA-923
@@ -140,9 +155,9 @@ public class IWorkParserTest {
 
         String content = handler.toString();
         content = content.replaceAll("\\s+", " ");
-        assertTrue(content.contains("master row 1"));
-        assertTrue(content.contains("master row 2"));
-        assertTrue(content.contains("master row 3"));
+        assertContains("master row 1", content);
+        assertContains("master row 2", content);
+        assertContains("master row 3", content);
     }
 
     @Test
@@ -175,22 +190,22 @@ public class IWorkParserTest {
         String content = handler.toString();
 
         // text on page 1
-        assertTrue(content.contains("Sample pages document"));
-        assertTrue(content.contains("Some plain text to parse."));
-        assertTrue(content.contains("Cell one"));
-        assertTrue(content.contains("Cell two"));
-        assertTrue(content.contains("Cell three"));
-        assertTrue(content.contains("Cell four"));
-        assertTrue(content.contains("Cell five"));
-        assertTrue(content.contains("Cell six"));
-        assertTrue(content.contains("Cell seven"));
-        assertTrue(content.contains("Cell eight"));
-        assertTrue(content.contains("Cell nine"));
-        assertTrue(content.contains("Both Pages 1.x and Keynote 2.x")); // ...
+        assertContains("Sample pages document", content);
+        assertContains("Some plain text to parse.", content);
+        assertContains("Cell one", content);
+        assertContains("Cell two", content);
+        assertContains("Cell three", content);
+        assertContains("Cell four", content);
+        assertContains("Cell five", content);
+        assertContains("Cell six", content);
+        assertContains("Cell seven", content);
+        assertContains("Cell eight", content);
+        assertContains("Cell nine", content);
+        assertContains("Both Pages 1.x and Keynote 2.x", content); // ...
 
         // text on page 2
-        assertTrue(content.contains("A second page...."));
-        assertTrue(content.contains("Extensible Markup Language")); // ...
+        assertContains("A second page....", content);
+        assertContains("Extensible Markup Language", content); // ...
     }
 
     // TIKA-904
@@ -203,11 +218,11 @@ public class IWorkParserTest {
         iWorkParser.parse(input, handler, metadata, parseContext);
 
         String content = handler.toString();
-        assertTrue(content.contains("text box 1 - here is some text"));
-        assertTrue(content.contains("created in a text box in layout mode"));
-        assertTrue(content.contains("text box 2 - more text!@!$@#"));
-        assertTrue(content.contains("this is text inside of a green box"));
-        assertTrue(content.contains("text inside of a green circle"));
+        assertContains("text box 1 - here is some text", content);
+        assertContains("created in a text box in layout mode", content);
+        assertContains("text box 2 - more text!@!$@#", content);
+        assertContains("this is text inside of a green box", content);
+        assertContains("text inside of a green circle", content);
     }
 
     @Test
@@ -236,17 +251,17 @@ public class IWorkParserTest {
         assertEquals("a comment", metadata.get(TikaCoreProperties.COMMENTS));
 
         String content = handler.toString();
-        assertTrue(content.contains("Category"));
-        assertTrue(content.contains("Home"));
-        assertTrue(content.contains("-226"));
-        assertTrue(content.contains("-137.5"));
-        assertTrue(content.contains("Checking Account: 300545668"));
-        assertTrue(content.contains("4650"));
-        assertTrue(content.contains("Credit Card"));
-        assertTrue(content.contains("Groceries"));
-        assertTrue(content.contains("-210"));
-        assertTrue(content.contains("Food"));
-        assertTrue(content.contains("Try adding your own account transactions to this table."));
+        assertContains("Category", content);
+        assertContains("Home", content);
+        assertContains("-226", content);
+        assertContains("-137.5", content);
+        assertContains("Checking Account: 300545668", content);
+        assertContains("4650", content);
+        assertContains("Credit Card", content);
+        assertContains("Groceries", content);
+        assertContains("-210", content);
+        assertContains("Food", content);
+        assertContains("Try adding your own account transactions to this table.", content);
     }
 
     // TIKA- 924
@@ -257,7 +272,7 @@ public class IWorkParserTest {
         ContentHandler handler = new BodyContentHandler();
         iWorkParser.parse(input, handler, metadata, parseContext);
         String content = handler.toString();
-        assertTrue(content.contains("This is the main table"));
+        assertContains("This is the main table", content);
     }
         
     @Test
@@ -269,10 +284,10 @@ public class IWorkParserTest {
 
         String content = handler.toString();
         for(int header=1;header<=5;header++) {
-          assertTrue(content.contains("header" + header));
+          assertContains("header" + header, content);
         }
         for(int row=1;row<=3;row++) {
-          assertTrue(content.contains("row" + row));
+          assertContains("row" + row, content);
         }
     }
 
@@ -316,15 +331,15 @@ public class IWorkParserTest {
        String contents = handler.toString();
 
        // Check regular text
-       assertContains(contents, "Both Pages 1.x"); // P1
-       assertContains(contents, "understanding the Pages document"); // P1
-       assertContains(contents, "should be page 2"); // P2
+       assertContains("Both Pages 1.x", contents); // P1
+       assertContains("understanding the Pages document", contents); // P1
+       assertContains("should be page 2", contents); // P2
        
        // Check for headers, footers and footnotes
-       assertContains(contents, header);
-       assertContains(contents, footer);
-       assertContains(contents, footer2);
-       assertContains(contents, footnote);
+       assertContains(header, contents);
+       assertContains(footer, contents);
+       assertContains(footer2, contents);
+       assertContains(footnote, contents);
     }
     
     /**
@@ -343,9 +358,9 @@ public class IWorkParserTest {
        String contents = handler.toString();
        
        // Check for headers, footers and footnotes
-       assertContains(contents, header);
-       assertContains(contents, footer);
-       assertContains(contents, footer2);
+       assertContains(header, contents);
+       assertContains(footer, contents);
+       assertContains(footer2, contents);
     }
     
     /**
@@ -364,9 +379,9 @@ public class IWorkParserTest {
        String contents = handler.toString();
        
        // Check for headers, footers and footnotes
-       assertContains(contents, header);
-       assertContains(contents, footer);
-       assertContains(contents, footer2);
+       assertContains(header, contents);
+       assertContains(footer, contents);
+       assertContains(footer2, contents);
     }
 
     /**
@@ -385,9 +400,9 @@ public class IWorkParserTest {
        String contents = handler.toString();
        
        // Check for headers, footers and footnotes
-       assertContains(contents, header);
-       assertContains(contents, footer);
-       assertContains(contents, footer2);
+       assertContains(header, contents);
+       assertContains(footer, contents);
+       assertContains(footer2, contents);
     }
  
     /**
@@ -406,9 +421,9 @@ public class IWorkParserTest {
        String contents = handler.toString();
        
        // Check for headers, footers and footnotes
-       assertContains(contents, header);
-       assertContains(contents, footer);
-       assertContains(contents, footer2);
+       assertContains(header, contents);
+       assertContains(footer, contents);
+       assertContains(footer2, contents);
     }
     
     /**
@@ -427,13 +442,13 @@ public class IWorkParserTest {
        String contents = handler.toString();
 
        // Check regular text
-       assertContains(contents, "Both Pages 1.x"); // P1
-       assertContains(contents, "understanding the Pages document"); // P1
-       assertContains(contents, "should be page 2"); // P2
+       assertContains("Both Pages 1.x", contents); // P1
+       assertContains("understanding the Pages document", contents); // P1
+       assertContains("should be page 2", contents); // P2
        
        // Check for comments
-       assertContains(contents, commentA);
-       assertContains(contents, commentB);
+       assertContains(commentA, contents);
+       assertContains(commentB, contents);
     }
     
     // TIKA-918
@@ -444,12 +459,8 @@ public class IWorkParserTest {
        ContentHandler handler = new BodyContentHandler();
        iWorkParser.parse(input, handler, metadata, parseContext);
        String contents = handler.toString();
-       assertContains(contents, "Expenditure by Category");
-       assertContains(contents, "Currency Chart name");
-       assertContains(contents, "Chart 2");
-    }
-    
-    public void assertContains(String haystack, String needle) {
-       assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
+       assertContains("Expenditure by Category", contents);
+       assertContains("Currency Chart name", contents);
+       assertContains("Chart 2", contents);
     }
 }

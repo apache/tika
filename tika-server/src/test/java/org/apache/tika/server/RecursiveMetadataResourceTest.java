@@ -17,22 +17,26 @@
 
 package org.apache.tika.server;
 
-import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.serialization.JsonMetadataList;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import javax.ws.rs.core.Response;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.io.IOUtils;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.serialization.JsonMetadataList;
+import org.apache.tika.server.resource.RecursiveMetadataResource;
+import org.apache.tika.server.writer.MetadataListMessageBodyWriter;
+import org.junit.Test;
 
 public class RecursiveMetadataResourceTest extends CXFTestBase {
     private static final String META_PATH = "/rmeta";
@@ -42,7 +46,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
         sf.setResourceProvider(RecursiveMetadataResource.class,
-                        new SingletonResourceProvider(new RecursiveMetadataResource(tika)));
+                new SingletonResourceProvider(new RecursiveMetadataResource(tika)));
     }
 
     @Override
@@ -60,12 +64,12 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .put(ClassLoader
                         .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), IOUtils.UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
-        assertEquals(11, metadataList.size());
+        assertEquals(12, metadataList.size());
         assertEquals("Microsoft Office Word", metadataList.get(0).get("Application-Name"));
-        assertContains("plundered our seas", metadataList.get(5).get("X-TIKA:content"));
+        assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
     }
 
     @Test
@@ -76,10 +80,10 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .put(ClassLoader
                         .getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
-        
+
         // Won't work, no password given
         assertEquals(500, response.getStatus());
-        
+
         // Try again, this time with the password
         response = WebClient
                 .create(endPoint + META_PATH)
@@ -87,12 +91,12 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .header("Password", "password")
                 .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED));
-        
+
         // Will work
         assertEquals(200, response.getStatus());
 
         // Check results
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), "UTF-8");
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), IOUtils.UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertNotNull(metadataList.get(0).get("Author"));
         assertEquals("pavel", metadataList.get(0).get("Author"));

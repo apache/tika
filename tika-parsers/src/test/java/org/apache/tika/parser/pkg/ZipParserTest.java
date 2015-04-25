@@ -60,24 +60,24 @@ public class ZipParserTest extends AbstractPkgTest {
 
         assertEquals("application/zip", metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
-        assertTrue(content.contains("testEXCEL.xls"));
-        assertTrue(content.contains("Sample Excel Worksheet"));
-        assertTrue(content.contains("testHTML.html"));
-        assertTrue(content.contains("Test Indexation Html"));
-        assertTrue(content.contains("testOpenOffice2.odt"));
-        assertTrue(content.contains("This is a sample Open Office document"));
-        assertTrue(content.contains("testPDF.pdf"));
-        assertTrue(content.contains("Apache Tika"));
-        assertTrue(content.contains("testPPT.ppt"));
-        assertTrue(content.contains("Sample Powerpoint Slide"));
-        assertTrue(content.contains("testRTF.rtf"));
-        assertTrue(content.contains("indexation Word"));
-        assertTrue(content.contains("testTXT.txt"));
-        assertTrue(content.contains("Test d'indexation de Txt"));
-        assertTrue(content.contains("testWORD.doc"));
-        assertTrue(content.contains("This is a sample Microsoft Word Document"));
-        assertTrue(content.contains("testXML.xml"));
-        assertTrue(content.contains("Rida Benjelloun"));
+        assertContains("testEXCEL.xls", content);
+        assertContains("Sample Excel Worksheet", content);
+        assertContains("testHTML.html", content);
+        assertContains("Test Indexation Html", content);
+        assertContains("testOpenOffice2.odt", content);
+        assertContains("This is a sample Open Office document", content);
+        assertContains("testPDF.pdf", content);
+        assertContains("Apache Tika", content);
+        assertContains("testPPT.ppt", content);
+        assertContains("Sample Powerpoint Slide", content);
+        assertContains("testRTF.rtf", content);
+        assertContains("indexation Word", content);
+        assertContains("testTXT.txt", content);
+        assertContains("Test d'indexation de Txt", content);
+        assertContains("testWORD.doc", content);
+        assertContains("This is a sample Microsoft Word Document", content);
+        assertContains("testXML.xml", content);
+        assertContains("Rida Benjelloun", content);
     }
 
     /**
@@ -118,6 +118,9 @@ public class ZipParserTest extends AbstractPkgTest {
        for(String type : tracker.mediatypes) {
           assertNull(type);
        }
+       for(String crt : tracker.createdAts) {
+           assertNull(crt);
+       }
        for(String mod : tracker.modifiedAts) {
            assertNotNull(mod);
            assertTrue("Modified at " + mod, mod.startsWith("20"));
@@ -136,7 +139,7 @@ public class ZipParserTest extends AbstractPkgTest {
         String content = new Tika().parseToString(
                 ZipParserTest.class.getResourceAsStream(
                         "/test-documents/moby.zip"));
-        assertTrue(content.contains("README"));
+        assertContains("README", content);
     }
 
     private class GatherRelIDsDocumentExtractor implements EmbeddedDocumentExtractor {

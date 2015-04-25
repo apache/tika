@@ -60,7 +60,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
      * skip them if they get sent to startElement/endElement by mistake.
      */
     private static final Set<String> AUTO =
-        unmodifiableSet("html", "head", "body", "frameset");
+        unmodifiableSet("html", "head", "frameset");
 
     /**
      * The elements that get prepended with the {@link #TAB} character.

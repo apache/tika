@@ -49,9 +49,9 @@ public class ArParserTest extends AbstractPkgTest {
         assertEquals("application/x-archive",
                      metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
-        assertTrue(content.contains("testTXT.txt"));
-        assertTrue(content.contains("Test d'indexation de Txt"));
-        assertTrue(content.contains("http://www.apache.org"));
+        assertContains("testTXT.txt", content);
+        assertContains("Test d'indexation de Txt", content);
+        assertContains("http://www.apache.org", content);
 
         stream = ArParserTest.class.getResourceAsStream(
                 "/test-documents/testARofSND.ar");
@@ -64,7 +64,7 @@ public class ArParserTest extends AbstractPkgTest {
         assertEquals("application/x-archive",
                      metadata.get(Metadata.CONTENT_TYPE));
         content = handler.toString();
-        assertTrue(content.contains("testAU.au"));
+        assertContains("testAU.au", content);
     }
 
     /**
@@ -97,6 +97,9 @@ public class ArParserTest extends AbstractPkgTest {
         for (String type : tracker.mediatypes) {
             assertNull(type);
         }
+        for(String crt : tracker.createdAts) {
+            assertNull(crt);
+        }
 
         tracker.reset();
         stream = ArParserTest.class.getResourceAsStream(
@@ -117,6 +120,9 @@ public class ArParserTest extends AbstractPkgTest {
         
         for (String type : tracker.mediatypes) {
             assertNull(type);
+        }
+        for(String crt : tracker.createdAts) {
+            assertNull(crt);
         }
     }
 }

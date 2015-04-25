@@ -282,6 +282,40 @@ public class TestMimeTypes {
         assertTypeByNameAndData("application/vnd.ms-powerpoint.template.macroenabled.12", "testPPT.potm");
         assertTypeByNameAndData("application/vnd.ms-powerpoint.slideshow.macroenabled.12", "testPPT.ppsm");
     }
+    
+    /**
+     * Note - container based formats, needs container detection
+     *  to be properly correct
+     */
+    @Test
+    public void testVisioDetection() throws Exception {
+        // By Name, should get it right
+        assertTypeByName("application/vnd.visio", "testVISIO.vsd");
+        assertTypeByName("application/vnd.ms-visio.drawing.macroenabled.12", "testVISIO.vsdm");
+        assertTypeByName("application/vnd.ms-visio.drawing", "testVISIO.vsdx");
+        assertTypeByName("application/vnd.ms-visio.stencil.macroenabled.12", "testVISIO.vssm");
+        assertTypeByName("application/vnd.ms-visio.stencil", "testVISIO.vssx");
+        assertTypeByName("application/vnd.ms-visio.template.macroenabled.12", "testVISIO.vstm");
+        assertTypeByName("application/vnd.ms-visio.template", "testVISIO.vstx");
+        
+        // By Name and Data, should get it right
+        assertTypeByNameAndData("application/vnd.visio", "testVISIO.vsd");
+        assertTypeByNameAndData("application/vnd.ms-visio.drawing.macroenabled.12", "testVISIO.vsdm");
+        assertTypeByNameAndData("application/vnd.ms-visio.drawing", "testVISIO.vsdx");
+        assertTypeByNameAndData("application/vnd.ms-visio.stencil.macroenabled.12", "testVISIO.vssm");
+        assertTypeByNameAndData("application/vnd.ms-visio.stencil", "testVISIO.vssx");
+        assertTypeByNameAndData("application/vnd.ms-visio.template.macroenabled.12", "testVISIO.vstm");
+        assertTypeByNameAndData("application/vnd.ms-visio.template", "testVISIO.vstx");
+        
+        // By Data only, will get the container parent
+        assertTypeByData("application/x-tika-msoffice", "testVISIO.vsd");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vsdm");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vsdx");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vssm");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vssx");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vstm");
+        assertTypeByData("application/x-tika-ooxml", "testVISIO.vstx");
+    }
 
     /**
      * Note - detecting container formats by mime magic is very very
@@ -527,6 +561,22 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testXmlAndHtmlDetection() throws Exception {
+        assertTypeByData("application/xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><records><record/></records>"
+                .getBytes("UTF-8"));
+        assertTypeByData("application/xml", "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
+                .getBytes("UTF-16LE"));
+        assertTypeByData("application/xml", "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
+                .getBytes("UTF-16BE"));
+        assertTypeByData("application/xml", "<!-- XML without processing instructions --><records><record/></records>"
+                .getBytes("UTF-8"));
+        assertTypeByData("text/html", "<html><body>HTML</body></html>"
+                .getBytes("UTF-8"));
+        assertTypeByData("text/html", "<!-- HTML comment --><html><body>HTML</body></html>"
+                .getBytes("UTF-8"));
+    }
+
+    @Test
     public void testWmfDetection() throws Exception {
         assertTypeByName("application/x-msmetafile", "x.wmf");
         assertTypeByData("application/x-msmetafile", "testWMF.wmf");
@@ -704,7 +754,7 @@ public class TestMimeTypes {
         assertType("audio/x-wav", "testWAV.wav");
         assertType("audio/midi", "testMID.mid");
         assertType("application/x-msaccess", "testACCESS.mdb");
-        assertType("application/x-font-ttf", "testTrueType.ttf");
+        assertType("application/x-font-ttf", "testTrueType3.ttf");
     }
     
     @Test
@@ -854,6 +904,15 @@ public class TestMimeTypes {
         assertTypeByData(
                 "application/x-berkeley-db; format=hash; version=5", 
                 "testBDB_hash_5.db");
+    }
+    
+    /**
+     * CBOR typically contains HTML
+     */
+    @Test
+    public void testCBOR() throws IOException {
+        assertTypeByNameAndData("application/cbor", "NUTCH-1997.cbor");
+        assertTypeByData("application/cbor", "NUTCH-1997.cbor");
     }
 
     private void assertText(byte[] prefix) throws IOException {

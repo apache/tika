@@ -20,32 +20,41 @@ package org.apache.tika.server;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.InputStream;
-
 import javax.ws.rs.core.Response;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.tika.server.resource.TikaResource;
 import org.junit.Test;
 
 public class TikaResourceTest extends CXFTestBase {
-    private static final String TIKA_PATH = "/tika";
     public static final String TEST_DOC = "test.doc";
     public static final String TEST_XLSX = "16637.xlsx";
     public static final String TEST_PASSWORD_PROTECTED = "password.xls";
+    private static final String TEST_RECURSIVE_DOC = "test_recursive_embedded.docx";
+
+    private static final String TIKA_PATH = "/tika";
     private static final int UNPROCESSEABLE = 422;
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
         sf.setResourceProvider(TikaResource.class,
-                        new SingletonResourceProvider(new TikaResource(tika)));
+                new SingletonResourceProvider(new TikaResource(tika)));
     }
 
     @Override
-    protected void setUpProviders(JAXRSServerFactoryBean sf) {}
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+        List<Object> providers = new ArrayList<Object>();
+        providers.add(new TikaServerParseExceptionMapper(false));
+        sf.setProviders(providers);
+    }
 
     @Test
     public void testHelloWorld() throws Exception {
@@ -130,16 +139,35 @@ public class TikaResourceTest extends CXFTestBase {
 
     @Test
     public void testSimpleWordMultipartXML() throws Exception {
-        ClassLoader.getSystemResourceAsStream(TEST_DOC);  
-        Attachment attachmentPart = 
+        ClassLoader.getSystemResourceAsStream(TEST_DOC);
+        Attachment attachmentPart =
                 new Attachment("myworddoc", "application/msword", ClassLoader.getSystemResourceAsStream(TEST_DOC));
         WebClient webClient = WebClient.create(endPoint + TIKA_PATH + "/form");
         Response response = webClient.type("multipart/form-data")
                 .accept("text/xml")
-                .put(attachmentPart);
+                .post(attachmentPart);
         String responseMsg = getStringFromInputStream((InputStream) response
                 .getEntity());
         assertTrue(responseMsg.contains("test"));
     }
-  
+
+    @Test
+    public void testEmbedded() throws Exception {
+        //first try text
+        Response response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("Course of human events"));
+
+        //now go for xml -- different call than text
+        response = WebClient.create(endPoint + TIKA_PATH)
+                .accept("text/xml")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
+        responseMsg = getStringFromInputStream((InputStream) response
+                .getEntity());
+        assertTrue(responseMsg.contains("Course of human events"));
+    }
+
 }

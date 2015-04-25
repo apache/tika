@@ -17,19 +17,22 @@
 
 package org.apache.tika.language.translate;
 
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Properties;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.Properties;
 
 /**
  * An implementation of a REST client for the
@@ -69,14 +72,14 @@ public class Lingo24Translator implements Translator {
 
     @Override
     public String translate(String text, String sourceLanguage,
-                            String targetLanguage) throws Exception {
+                            String targetLanguage) throws TikaException, IOException {
         if (!this.isAvailable)
             return text;
         Response response = client.accept(MediaType.APPLICATION_JSON)
                 .query("user_key", userKey).query("source", sourceLanguage)
                 .query("target", targetLanguage).query("q", text).get();
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                (InputStream) response.getEntity(), "UTF-8"));
+                (InputStream) response.getEntity(), IOUtils.UTF_8));
         String line = null;
         StringBuffer responseText = new StringBuffer();
         while ((line = reader.readLine()) != null) {
@@ -94,7 +97,7 @@ public class Lingo24Translator implements Translator {
 
     @Override
     public String translate(String text, String targetLanguage)
-            throws Exception {
+            throws TikaException, IOException {
         if (!this.isAvailable)
             return text;
         LanguageIdentifier language = new LanguageIdentifier(

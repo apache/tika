@@ -71,6 +71,17 @@
   </mime-type>
 
   <mime-type type="application/cals-1840"/>
+
+  <mime-type type="application/cbor">
+    <acronym>CBOR</acronym>
+    <_comment>Concise Binary Object Representation container</_comment>
+    <tika:link>http://tools.ietf.org/html/rfc7049</tika:link>
+    <magic priority="60">
+      <match value="0xd9d9f7" type="string" offset="0" />
+    </magic>
+    <glob pattern="*.cbor"/>
+  </mime-type>
+
   <mime-type type="application/ccxml+xml">
     <glob pattern="*.ccxml"/>
   </mime-type>
@@ -92,7 +103,13 @@
   <mime-type type="application/dca-rft"/>
   <mime-type type="application/dec-dx"/>
   <mime-type type="application/dialog-info+xml"/>
-  <mime-type type="application/dicom"/>
+
+  <mime-type type="application/dicom">
+    <_comment>DICOM medical imaging data</_comment>
+    <magic priority="50">
+      <match value="DICM" type="string" offset="128"/>
+    </magic>
+  </mime-type>
 
   <mime-type type="application/dita+xml">
     <sub-class-of type="application/xml"/>
@@ -202,6 +219,19 @@
   <mime-type type="application/index.obj"/>
   <mime-type type="application/index.response"/>
   <mime-type type="application/index.vnd"/>
+
+  <mime-type type="application/inf">
+    <_comment>Windows setup INFormation</_comment>
+    <tika:link>http://msdn.microsoft.com/en-us/library/windows/hardware/ff549520(v=vs.85).aspx</tika:link>
+    <alias type="application/x-setupscript"/>
+    <alias type="application/x-wine-extension-inf"/>
+    <sub-class-of type="text/plain"/>
+    <magic priority="30">
+      <match value="[version]" type="string" offset="0" />
+      <match value="[strings]" type="string" offset="0" />
+    </magic>
+  </mime-type>
+
   <mime-type type="application/iotp"/>
   <mime-type type="application/ipp"/>
   <mime-type type="application/isup"/>
@@ -598,6 +628,37 @@
   <mime-type type="application/sdp">
     <glob pattern="*.sdp"/>
   </mime-type>
+
+  <mime-type type="application/sereal">
+    <_comment>Sereal binary serialization format</_comment>
+    <tika:link>https://github.com/Sereal/Sereal/blob/master/sereal_spec.pod</tika:link>
+    <glob pattern="*.srl"/>
+  </mime-type>
+  <mime-type type="application/sereal;version=1">
+    <sub-class-of type="application/sereal"/>
+    <magic priority="50">
+      <match value="0x6C72733D" type="little32" offset="0">
+        <match value="0x01" mask="0x0F" type="string" offset="4"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/sereal;version=2">
+    <sub-class-of type="application/sereal"/>
+    <magic priority="50">
+      <match value="0x6C72733D" type="little32" offset="0">
+        <match value="0x02" mask="0x0F" type="string" offset="4"/>
+      </match>
+    </magic>
+  </mime-type>
+  <mime-type type="application/sereal;version=3">
+    <sub-class-of type="application/sereal"/>
+    <magic priority="50">
+      <match value="0x6C72F33D" type="little32" offset="0">
+        <match value="0x03" mask="0x0F" type="string" offset="4"/>
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="application/set-payment"/>
   <mime-type type="application/set-payment-initiation">
     <glob pattern="*.setpay"/>
@@ -2320,12 +2381,44 @@
 
   <!-- http://www.iana.org/assignments/media-types/application/vnd.visio -->
   <mime-type type="application/vnd.visio">
+    <alias type="application/vnd.ms-visio"/>
     <_comment>Microsoft Visio Diagram</_comment>
     <glob pattern="*.vsd"/>
     <glob pattern="*.vst"/>
     <glob pattern="*.vss"/>
     <glob pattern="*.vsw"/>
     <sub-class-of type="application/x-tika-msoffice"/>
+  </mime-type>
+
+  <mime-type type="application/vnd.ms-visio.drawing">
+    <_comment>Office Open XML Visio Drawing (macro-free)</_comment>
+    <glob pattern="*.vsdx"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.template">
+    <_comment>Office Open XML Visio Template (macro-free)</_comment>
+    <glob pattern="*.vstx"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.stencil">
+    <_comment>Office Open XML Visio Stencil (macro-free)</_comment>
+    <glob pattern="*.vssx"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.drawing.macroEnabled.12">
+    <_comment>Office Open XML Visio Drawing (macro-enabled)</_comment>
+    <glob pattern="*.vsdm"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.template.macroEnabled.12">
+    <_comment>Office Open XML Visio Template (macro-enabled)</_comment>
+    <glob pattern="*.vstm"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
+  </mime-type>
+  <mime-type type="application/vnd.ms-visio.stencil.macroEnabled.12">
+    <_comment>Office Open XML Visio Stencil (macro-enabled)</_comment>
+    <glob pattern="*.vssm"/>
+    <sub-class-of type="application/x-tika-visio-ooxml"/>
   </mime-type>
 
   <mime-type type="application/vnd.visionary">
@@ -2789,9 +2882,11 @@
   </mime-type>
 
   <mime-type type="application/x-debian-package">
+    <alias type="application/vnd.debian.binary-package"/>
     <sub-class-of type="application/x-archive"/>
     <magic priority="60">
       <match value="!&lt;arch&gt;\ndebian-binary" type="string" offset="0"/>
+      <match value="!&lt;arch&gt;\ndebian-split" type="string" offset="0"/>
     </magic>
     <glob pattern="*.deb"/>
     <glob pattern="*.udeb"/>
@@ -2931,9 +3026,12 @@
   <mime-type type="application/x-emf">
     <acronym>EMF</acronym>
     <_comment>Extended Metafile</_comment>
+    <tika:link>https://msdn.microsoft.com/en-us/library/cc230711.aspx</tika:link>
     <glob pattern="*.emf"/>
     <magic priority="50">
-      <match value="0x01000000" type="string" offset="0"/>
+      <match value="0x01000000" type="string" offset="0">
+        <match value="0x464D4520" type="little32" offset="40"/>
+      </match>
     </magic>
   </mime-type>
 
@@ -3043,6 +3141,18 @@
     <glob pattern="*.gnumeric"/>
   </mime-type>
 
+  <mime-type type="application/x-grib">
+	 <acronym>GRIB</acronym>
+	 <_comment>General Regularly-distributed Information in Binary form</_comment>
+	 <tika:link>http://en.wikipedia.org/wiki/GRIB</tika:link>
+	 <magic priority="50">
+	   <match value="GRIB" type="string" offset="0"/>
+	 </magic>
+	 <glob pattern="*.grb"/>
+	 <glob pattern="*.grb1"/>
+	 <glob pattern="*.grb2"/>
+  </mime-type>
+  
   <mime-type type="application/x-gtar">
     <_comment>GNU tar Compressed File Archive (GNU Tape Archive)</_comment>
     <magic priority="50">
@@ -3065,8 +3175,8 @@
       <match value="\037\213" type="string" offset="0" />
       <match value="\x1f\x8b" type="string" offset="0" />
     </magic>
-    <glob pattern="*.tgz" />
     <glob pattern="*.gz" />
+    <glob pattern="*.tgz" />
     <glob pattern="*-gz" />
     <glob pattern="*.emz" />
   </mime-type>
@@ -3104,6 +3214,31 @@
       </match>
     </magic>
     <glob pattern="*.ibooks"/>
+  </mime-type>
+
+  <mime-type type="application/x-isatab-investigation">
+    <_comment>ISA-Tab Investigation file</_comment>
+    <magic priority="50">
+      <match value="ONTOLOGY SOURCE REFERENCE" type="string" offset="0"/>
+    </magic>
+    <glob pattern="i_*.txt"/>
+  </mime-type>
+
+  <!--<mime-type type="application/x-isatab-study">-->
+  <mime-type type="application/x-isatab">
+    <_comment>ISA-Tab Study file</_comment>
+    <magic priority="50">
+      <match value="Source Name" type="string" offset="1"/>
+    </magic>
+    <glob pattern="s_*.txt"/>
+  </mime-type>
+
+  <mime-type type="application/x-isatab-assay">
+    <_comment>ISA-Tab Assay file</_comment>
+    <magic priority="50">
+      <match value="Sample Name" type="string" offset="1"/>
+    </magic>
+    <glob pattern="a_*.txt"/>
   </mime-type>
 
   <mime-type type="application/x-iso9660-image">
@@ -3397,6 +3532,13 @@
     <sub-class-of type="application/x-tika-msoffice"/>
   </mime-type>
 
+  <mime-type type="application/xquery">
+    <_comment>XQuery source code</_comment>
+    <glob pattern="*.xq"/>
+    <glob pattern="*.xquery"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+  
   <mime-type type="application/x-rar-compressed">
     <_comment>RAR archive</_comment>
     <alias type="application/x-rar"/>
@@ -3656,6 +3798,11 @@
     <_comment>Password Protected OOXML File</_comment>
   </mime-type>
 
+  <mime-type type="application/x-tika-visio-ooxml">
+    <sub-class-of type="application/x-tika-ooxml"/>
+    <_comment>Visio OOXML File</_comment>
+  </mime-type>
+
   <!-- Older StarOffice formats extend up the Microsoft OLE2 format -->
   <mime-type type="application/x-tika-staroffice">
     <sub-class-of type="application/x-tika-msoffice"/>
@@ -3760,13 +3907,18 @@
     <magic priority="50">
       <match value="&lt;?xml" type="string" offset="0"/>
       <match value="&lt;?XML" type="string" offset="0"/>
-      <match value="&lt;!--" type="string" offset="0"/>
       <!-- UTF-8 BOM -->
       <match value="0xEFBBBF3C3F786D6C" type="string" offset="0"/>
       <!-- UTF-16 LE/BE -->
       <match value="0xFFFE3C003F0078006D006C00" type="string" offset="0"/>
       <match value="0xFEFF003C003F0078006D006C" type="string" offset="0"/>
       <!-- TODO: Add matches for the other possible XML encoding schemes -->
+    </magic>
+    <!-- XML files can start with a comment but then must not contain processing instructions.
+         This should be rare so we assign lower priority here. Priority is also lower than text/html magics
+         for them to be preferred for HTML starting with comment.-->
+    <magic priority="30">
+      <match value="&lt;!--" type="string" offset="0"/>
     </magic>
     <glob pattern="*.xml"/>
     <glob pattern="*.xsl"/>
@@ -4998,10 +5150,24 @@
   <mime-type type="multipart/signed"/>
   <mime-type type="multipart/voice-message"/>
 
+  <mime-type type="text/dif+xml">
+    <root-XML localName="DIF"/>
+    <root-XML localName="DIF" namespaceURI="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"/>
+    <glob pattern="*.dif"/>
+    <sub-class-of type="application/xml"/>
+  </mime-type>
+
   <mime-type type="text/x-actionscript">
     <_comment>ActionScript source code</_comment>
     <glob pattern="*.as"/>
     <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/dif+xml">
+    <root-XML localName="DIF"/>
+    <root-XML localName="DIF" namespaceURI="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"/>
+    <glob pattern="*.dif"/>
+    <sub-class-of type="application/xml"/>
   </mime-type>
 
   <mime-type type="text/x-ada">
@@ -6188,13 +6354,6 @@
   <mime-type type="text/x-rsrc">
     <_comment>R source code</_comment>
     <glob pattern="*.r"/>
-    <sub-class-of type="text/plain"/>
-  </mime-type>
-
-  <mime-type type="application/xquery">
-    <_comment>XQuery source code</_comment>
-    <glob pattern="*.xq"/>
-    <glob pattern="*.xquery"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 

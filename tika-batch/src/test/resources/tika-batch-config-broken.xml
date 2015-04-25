@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<!-- NOTE: tika-batch is still an experimental feature.
+    The configuration file will likely change and be backward incompatible
+    with new versions of Tika.  Please stay tuned.
+    -->
+<tika-batch-config
+        maxAliveTimeSeconds="-1"
+        pauseOnEarlyTerminationMillis="500"
+        timeoutThresholdMillis="3000"
+        timeoutCheckPulseMillis="1000"
+        maxQueueSize="10000"
+        numConsumers="3"/>
+    <!-- options to allow on the commandline -->
+    <commandline/>
+        <option opt="c" longOpt="tika-config" hasArg="true"
+                description="TikaConfig file"/>
+        <option opt="bc" longOpt="batch-config" hasArg="true"
+                description="xml batch config file" required="true"/>
+        <option opt="randomCrawl" hasArg="false"
+                description="file crawler crawls directories randomly"/>
+        <option opt="numConsumers" hasArg="true"
+                description="number of fileConsumers threads"/>
+        <option opt="minFileSizeBytes" hasArg="true"
+                description="minimum file size to process; do not process files smaller than this"/>
+        <option opt="maxFileSizeBytes" hasArg="true"
+                description="maximum file size to process; do not process files larger than this"/>
+        <option opt="maxQueueSize" hasArg="true"
+                description="maximum queue size for FileResources"/>
+        <option opt="fileList" hasArg="true"
+                description="file that contains a list of files (relative to inputDir) to process"/>
+        <option opt="fileListEncoding" hasArg="true"
+                description="encoding for fileList"/>
+        <option opt="inputDir" hasArg="true"
+                description="root directory for the files to be processed"
+                required="true"/>
+        <option opt="startDir" hasArg="true"
+                description="directory (under inputDir) at which to start crawling"/>
+        <option opt="outputDir" hasArg="true"
+                description="output directory"
+                required="true"/>
+        <option opt="recursiveParserWrapper"
+                description="use the RecursiveParserWrapper or not (default = false)"/>
+        <option opt="handleExisting" hasArg="true"
+                description="if an output file already exists, do you want to: overwrite, rename or skip"/>
+        <option opt="basicHandlerType" hasArg="true"
+                description="what type of content handler: xml, text, html, body"/>
+        <option opt="outputSuffix" hasArg="true"
+                description="suffix to add to the end of the output file name"/>
+        <option opt="timeoutThresholdMillis" hasArg="true"
+                description="how long to wait before determining that a consumer should be timed out"/>
+        <option opt="pauseOnEarlyTerminationMillis" hasArg="true"
+                description="how long to wait for parsers to finish if there is an early termination from the main loop."/>
+        <!-- in long running process, might be good to restart every hour or so to avoid memory leaks-->
+        <option opt="maxAliveTimeSeconds" hasArg="true"
+                description="how long should this process run in seconds."/>
+    </commandline>
+    <!--
+        Can also add startDir: this tells the crawler to start indexing a
+        child directory of the inputDir directory.
+    -->
+	<crawler builderClass="org.apache.tika.batch.fs.builders.FSCrawlerBuilder"
+        crawlOrder="sorted"
+        maxConsecWaitMillis="5000"
+        maxFilesToAdd="-1"
+		maxFilesToConsider="-1" 
+		includeFilePat=""
+		excludeFilePat=""
+		maxFileSizeBytes="-1"
+        />
+<!--        inputDir="tika-batch/src/test/resources/test-input" -->
+
+	<consumers builderClass="org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder"
+               recursiveParserWrapper="false">
+		<parser class="org.apache.tika.parser.mock.MockParserFactory" parseRecursively="true"/>
+		<contenthandler builderClass="org.apache.tika.batch.builders.DefaultContentHandlerFactoryBuilder"
+                        basicHandlerType="xml" writeLimit="-1"/>
+
+
+		<outputstream class="FSOutputStreamFactory"
+                encoding="UTF-8" outputSuffix="xml"/>
+	</consumers>
+	
+	<!-- reporter and interrupter are optional -->
+	<reporter builderClass="org.apache.tika.batch.builders.SimpleLogReporterBuilder" reporterSleepMillis="1000"
+              reporterStaleThresholdMillis="500000"/>
+	<interrupter builderClass="org.apache.tika.batch.builders.InterrupterBuilder"/>
+</tika-batch-config>

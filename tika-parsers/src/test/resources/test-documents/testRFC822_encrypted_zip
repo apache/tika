@@ -1,0 +1,61 @@
+Return-Path: <juha.haaga@gmail.com>
+X-Spam-Checker-Version: SpamAssassin 3.3.1 (2010-03-16) on
+	virt0003.codenomicon.com
+X-Spam-Level: 
+X-Spam-Status: No, score=-2.7 required=5.0 tests=BAYES_00,DKIM_SIGNED,
+	DKIM_VALID,DKIM_VALID_AU,FREEMAIL_FROM,HTML_MESSAGE,RCVD_IN_DNSWL_LOW,
+	SPF_PASS autolearn=ham version=3.3.1
+Received: from mail-wg0-f48.google.com (mail-wg0-f48.google.com [74.125.82.48])
+	by codenomicon.com (8.14.4/8.14.4) with ESMTP id t0G7ZmGs002981
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <juha.haaga@codenomicon.com>; Fri, 16 Jan 2015 07:35:54 GMT
+Received: by mail-wg0-f48.google.com with SMTP id l2so19028230wgh.7
+        for <juha.haaga@codenomicon.com>; Thu, 15 Jan 2015 23:35:48 -0800 (PST)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=gmail.com; s=20120113;
+        h=mime-version:from:date:message-id:subject:to:content-type;
+        bh=wjcer9ESeBUN8rAEahqeDiOHf3wqBHgaeAboZtkw8qM=;
+        b=S3ezJU84qISP1OzMoH+wLMxn7y1JkcJwlUs4Uvfy+QlaSFcDcG66oxqsxniQ4kWmCC
+         QdQ94iztFvcvTAHuJys+jAH1UeVQKgs6T5lINj73nww3CKGh1B78LpnCRkFS93o19Zvt
+         QDSDtB23y9FlLF/dH6okvTIq7jQXNPuaDDqY8yJtp+DcYfW+QiNIGI83QievgQlWMRiV
+         fHuCbeEofTRP/82vHxUDVoZo/hwx8OAjWqPitrCmxU7Mly8lG5No1CHsKWmWd2Q+yxN3
+         tC3Ptbrig720BdBZKYwWSI6xBS4AY+46+utaloq9Hr0qpaDf5e9eXqq0ef0efDgd2kJT
+         gmyw==
+X-Received: by 10.180.39.204 with SMTP id r12mr3350467wik.11.1421393748083;
+ Thu, 15 Jan 2015 23:35:48 -0800 (PST)
+MIME-Version: 1.0
+From: Juha Haaga <juha.haaga@gmail.com>
+Date: Fri, 16 Jan 2015 07:35:46 +0000
+Message-ID: <CAO2Pydsg81Q7Pb4SB+2gt02-8pEFgmQ7qVW5zqfe5xage6wP1Q@mail.gmail.com>
+Subject: Test mail for Tika
+To: Juha Haaga <juha.haaga@codenomicon.com>
+Content-Type: multipart/mixed; boundary=001a11c3649c712d2a050cc0050f
+
+--001a11c3649c712d2a050cc0050f
+Content-Type: multipart/alternative; boundary=001a11c3649c712d27050cc0050d
+
+--001a11c3649c712d27050cc0050d
+Content-Type: text/plain; charset=UTF-8
+
+Includes encrypted zip file as attachment. password is "test".
+This is the Plain Text part
+
+--001a11c3649c712d27050cc0050d
+Content-Type: text/html; charset=UTF-8
+
+Includes encrypted zip file as attachment. password is &quot;test&quot;.<br/>
+This is the HTML part
+
+--001a11c3649c712d27050cc0050d--
+--001a11c3649c712d2a050cc0050f
+Content-Type: application/zip; name="test.zip"
+Content-Disposition: attachment; filename="test.zip"
+Content-Transfer-Encoding: base64
+X-Attachment-Id: 14af1ab4e8dbb946bc5
+
+UEsDBBQACQAIAP1LMEZzIEVkVQAAAE4AAAAIABwAdGV4dC50eHRVVAkAA26+uFSNvrhUdXgLAAEE
+9gEAAAQUAAAAypmn5/WV8PAdMdAB7WIFh/oQZw9KUG57D9/+Sl/mWzAaa2mMH3uENWiIVoypnqB2
+2GFSwihoRH4krgegW8EXEN3YbDQGBTvfEa6p3d/0V0EfZO4F31BLBwhzIEVkVQAAAE4AAABQSwEC
+HgMUAAkACAD9SzBGcyBFZFUAAABOAAAACAAYAAAAAAABAAAApIEAAAAAdGV4dC50eHRVVAUAA26+
+uFR1eAsAAQT2AQAABBQAAABQSwUGAAAAAAEAAQBOAAAApwAAAAAA
+--001a11c3649c712d2a050cc0050f--

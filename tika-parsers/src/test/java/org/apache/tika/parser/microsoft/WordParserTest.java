@@ -33,6 +33,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
@@ -53,7 +54,7 @@ public class WordParserTest extends TikaTest {
             assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
-            assertTrue(handler.toString().contains("Sample Word Document"));
+            assertContains("Sample Word Document", handler.toString());
         } finally {
             input.close();
         }
@@ -68,7 +69,7 @@ public class WordParserTest extends TikaTest {
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
-            assertTrue(handler.toString().contains("MSj00974840000[1].wav"));
+            assertContains("MSj00974840000[1].wav", handler.toString());
         } finally {
             input.close();
         }
@@ -192,7 +193,7 @@ public class WordParserTest extends TikaTest {
             assertEquals("Gym class featuring a brown fox and lazy dog", metadata.get(Metadata.SUBJECT));
             assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
-            assertTrue(handler.toString().contains("The quick brown fox jumps over the lazy dog"));
+            assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
         } finally {
             input.close();
         }
@@ -396,5 +397,31 @@ public class WordParserTest extends TikaTest {
 
         assertContains("<p>1. Organisering av vakten:</p>", xml);
 
+    }
+
+    @Test
+    public void testHyperlinkStringIOOBESmartQuote() throws Exception {
+        //TIKA-1512, one cause: closing double quote is a smart quote
+        //test file contributed by user
+        XMLResult result = getXML("testWORD_closingSmartQInHyperLink.doc");
+        assertContains("href=\"https://issues.apache.org/jira/browse/TIKA-1512", result.xml);
+    }
+
+    @Test
+    @Ignore //until we determine whether we can include test docs or not
+    public void testHyperlinkStringLongNoCloseQuote() throws Exception {
+        //TIKA-1512, one cause: no closing quote on really long string
+        //test file derived from govdocs1 012152.doc
+        XMLResult result = getXML("testWORD_longHyperLinkNoCloseQuote.doc");
+        assertContains("href=\"http://www.lexis.com", result.xml);
+    }
+
+    @Test
+    @Ignore //until we determine whether we can include test docs or not
+    public void testHyperlinkStringLongCarriageReturn() throws Exception {
+        //TIKA-1512, one cause: no closing quote, but carriage return
+        //test file derived from govdocs1 040044.doc
+        XMLResult result = getXML("testWORD_hyperLinkCarriageReturn.doc");
+        assertContains("href=\"http://www.nib.org", result.xml);
     }
 }

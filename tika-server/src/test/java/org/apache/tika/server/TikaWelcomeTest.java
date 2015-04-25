@@ -17,74 +17,96 @@
 
 package org.apache.tika.server;
 
+import javax.ws.rs.core.Response;
+
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-
-import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.tika.Tika;
+import org.apache.tika.server.resource.DetectorResource;
+import org.apache.tika.server.resource.MetadataResource;
+import org.apache.tika.server.resource.TikaVersion;
+import org.apache.tika.server.resource.TikaWelcome;
 import org.junit.Test;
 
 public class TikaWelcomeTest extends CXFTestBase {
-   protected static final String WELCOME_PATH = "/";
-   private static final String VERSION_PATH = TikaVersionTest.VERSION_PATH;
+    protected static final String WELCOME_PATH = "/";
+    private static final String VERSION_PATH = TikaVersionTest.VERSION_PATH;
+    protected static final String PATH_RESOURCE = "/detect/stream"; // TIKA-1567
+    protected static final String PATH_RESOURCE_2 = "/meta/form"; //TIKA-1567
 
-   @Override
-   protected void setUpResources(JAXRSServerFactoryBean sf) {
-       List<ResourceProvider> rpsCore = 
-           Collections.<ResourceProvider>singletonList(new SingletonResourceProvider(new TikaVersion(tika)));
-       List<ResourceProvider> all = new ArrayList<ResourceProvider>(rpsCore); 
-       all.add(new SingletonResourceProvider(new TikaWelcome(tika, rpsCore)));
-       sf.setResourceProviders(all);
-   }
+    @Override
+    protected void setUpResources(JAXRSServerFactoryBean sf) {
+        List<ResourceProvider> rpsCore =
+	    new ArrayList<ResourceProvider>();
+	rpsCore.add(new SingletonResourceProvider(new TikaVersion(tika)));
+	rpsCore.add(new SingletonResourceProvider(new DetectorResource(tika)));
+	rpsCore.add(new SingletonResourceProvider(new MetadataResource(tika)));
+        List<ResourceProvider> all = new ArrayList<ResourceProvider>(rpsCore);
+        all.add(new SingletonResourceProvider(new TikaWelcome(tika, rpsCore)));
+        sf.setResourceProviders(all);
+    }
 
-   @Override
-   protected void setUpProviders(JAXRSServerFactoryBean sf) {}
+    @Override
+    protected void setUpProviders(JAXRSServerFactoryBean sf) {
+    }
 
-   @Test
-   public void testGetHTMLWelcome() throws Exception {
-       Response response = WebClient
-               .create(endPoint + WELCOME_PATH)
-               .type("text/html")
-               .accept("text/html")
-               .get();
+    @Test
+    public void testGetHTMLWelcome() throws Exception {
+        String html  = WebClient
+                .create(endPoint + WELCOME_PATH)
+                .type("text/html")
+                .accept("text/html")
+                .get(String.class);
 
-       String html = getStringFromInputStream((InputStream) response.getEntity());
-       
-       assertContains(new Tika().toString(), html);
-       assertContains("href=\"http", html);
-       
-       // Check our details were found
-       assertContains("GET", html);
-       assertContains(WELCOME_PATH, html);
-       assertContains("text/plain", html);
-       
-       // Check that the Tika Version details come through too
-       assertContains(VERSION_PATH, html);
-   }
-   
-   @Test
-   public void testGetTextWelcome() throws Exception {
-       Response response = WebClient
-               .create(endPoint + WELCOME_PATH)
-               .type("text/plain")
-               .accept("text/plain")
-               .get();
 
-       String text = getStringFromInputStream((InputStream) response.getEntity());
-       assertContains(new Tika().toString(), text);
-       
-       // Check our details were found
-       assertContains("GET " + WELCOME_PATH, text);
-       assertContains("=> text/plain", text);
-       
-       // Check that the Tika Version details come through too
-       assertContains("GET " + VERSION_PATH, text);
-   }
+        assertContains(new Tika().toString(), html);
+        assertContains("href=\"http", html);
+
+        // Check our details were found
+        assertContains("GET", html);
+        assertContains(WELCOME_PATH, html);
+        assertContains("text/plain", html);
+
+        // Check that the Tika Version details come through too
+        assertContains(VERSION_PATH, html);
+    }
+
+    @Test
+    public void testGetTextWelcome() throws Exception {
+        Response response = WebClient
+                .create(endPoint + WELCOME_PATH)
+                .type("text/plain")
+                .accept("text/plain")
+                .get();
+
+        String text = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains(new Tika().toString(), text);
+
+        // Check our details were found
+        assertContains("GET " + WELCOME_PATH, text);
+        assertContains("=> text/plain", text);
+
+        // Check that the Tika Version details come through too
+        assertContains("GET " + VERSION_PATH, text);
+    }
+
+
+    @Test
+    public void testProperPathWelcome() throws Exception{
+         Response response = WebClient
+	     .create(endPoint + WELCOME_PATH)
+             .type("text/html")
+             .accept("text/html")
+             .get();
+
+         String html = getStringFromInputStream((InputStream) response.getEntity());
+         assertContains(PATH_RESOURCE, html);
+         assertContains(PATH_RESOURCE_2, html);
+    }
 }

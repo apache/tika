@@ -24,7 +24,7 @@ import org.apache.tika.io.IOUtils;
 
 /**
  * Helps produce user facing HTML output.
- * 
+ * <p/>
  * TODO Decide if this would be better done as a MessageBodyWriter
  */
 public class HTMLHelper {
@@ -33,14 +33,14 @@ public class HTMLHelper {
     private static final String BODY_VAR = "[[BODY]]";
     private String PRE_BODY;
     private String POST_BODY;
-    
+
     public HTMLHelper() {
         InputStream htmlStr = getClass().getResourceAsStream(PATH);
         if (htmlStr == null) {
             throw new IllegalArgumentException("Template Not Found - " + PATH);
         }
         try {
-            String html = IOUtils.toString(htmlStr, "UTF-8");
+            String html = IOUtils.toString(htmlStr, IOUtils.UTF_8.name());
             int bodyAt = html.indexOf(BODY_VAR);
             PRE_BODY = html.substring(0, bodyAt);
             POST_BODY = html.substring(bodyAt + BODY_VAR.length());
@@ -48,15 +48,15 @@ public class HTMLHelper {
             throw new IllegalStateException("Unable to read template");
         }
     }
-    
+
     /**
      * Generates the HTML Header for the user facing page, adding
-     *  in the given title as required
+     * in the given title as required
      */
     public void generateHeader(StringBuffer html, String title) {
         html.append(PRE_BODY.replace(TITLE_VAR, title));
     }
+
     public void generateFooter(StringBuffer html) {
         html.append(POST_BODY);
-    }
-}
+    }}

@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.apache.tika.io.IOUtils;
+
 /**
  * Identifier of the language that best matches a given content profile.
  * The content profile is compared to generic language profiles based on
@@ -44,7 +46,6 @@ public class LanguageIdentifier {
     private static final Map<String, LanguageProfile> PROFILES =
         new HashMap<String, LanguageProfile>();
     private static final String PROFILE_SUFFIX = ".ngp";
-    private static final String PROFILE_ENCODING = "UTF-8";
 
     private static Properties props = new Properties();
     private static String errors = "";
@@ -76,7 +77,7 @@ public class LanguageIdentifier {
                 LanguageIdentifier.class.getResourceAsStream(language + PROFILE_SUFFIX);
             try {
                 BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(stream, PROFILE_ENCODING));
+                    new BufferedReader(new InputStreamReader(stream, IOUtils.UTF_8));
                 String line = reader.readLine();
                 while (line != null) {
                     if (line.length() > 0 && !line.startsWith("#")) {

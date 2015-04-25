@@ -61,12 +61,14 @@ public abstract class AbstractPkgTest extends TikaTest {
    protected static class EmbeddedTrackingParser extends AbstractParser {
       protected List<String> filenames = new ArrayList<String>();
       protected List<String> mediatypes = new ArrayList<String>();
+      protected List<String> createdAts = new ArrayList<String>();
       protected List<String> modifiedAts = new ArrayList<String>();
       protected byte[] lastSeenStart;
       
       public void reset() {
          filenames.clear();
          mediatypes.clear();
+         createdAts.clear();
          modifiedAts.clear();
       }
       
@@ -80,6 +82,7 @@ public abstract class AbstractPkgTest extends TikaTest {
             SAXException, TikaException {
          filenames.add(metadata.get(Metadata.RESOURCE_NAME_KEY));
          mediatypes.add(metadata.get(Metadata.CONTENT_TYPE));
+         createdAts.add(metadata.get(TikaCoreProperties.CREATED));
          modifiedAts.add(metadata.get(TikaCoreProperties.MODIFIED));
          
          lastSeenStart = new byte[32];

@@ -25,9 +25,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 
+import com.pff.PSTAttachment;
+import com.pff.PSTFile;
+import com.pff.PSTFolder;
+import com.pff.PSTMessage;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -39,11 +44,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
-
-import com.pff.PSTAttachment;
-import com.pff.PSTFile;
-import com.pff.PSTFolder;
-import com.pff.PSTMessage;
 
 /**
  * @author Tran Nam Quang
@@ -149,7 +149,7 @@ public class OutlookPSTParser extends AbstractParser {
     mailMetadata.set("priority", valueOf(pstMail.getPriority()));
     mailMetadata.set("flagged", valueOf(pstMail.isFlagged()));
 
-    byte[] mailContent = pstMail.getBody().getBytes("UTF-8");
+    byte[] mailContent = pstMail.getBody().getBytes(IOUtils.UTF_8);
     embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
   }
 

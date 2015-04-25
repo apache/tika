@@ -17,7 +17,7 @@
 package org.apache.tika.parser.epub;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.apache.tika.TikaTest.assertContains;
 
 import java.io.InputStream;
 
@@ -49,10 +49,10 @@ public class EpubParserTest {
                     metadata.get(TikaCoreProperties.PUBLISHER));
 
             String content = handler.toString();
-            assertTrue(content.contains("Plus a simple div"));
-            assertTrue(content.contains("First item"));
-            assertTrue(content.contains("The previous headings were subchapters"));
-            assertTrue(content.contains("Table data"));
+            assertContains("Plus a simple div", content);
+            assertContains("First item", content);
+            assertContains("The previous headings were subchapters", content);
+            assertContains("Table data", content);
         } finally {
             input.close();
         }

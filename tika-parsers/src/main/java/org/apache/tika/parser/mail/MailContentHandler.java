@@ -36,14 +36,13 @@ import org.apache.james.mime4j.parser.ContentHandler;
 import org.apache.james.mime4j.stream.BodyDescriptor;
 import org.apache.james.mime4j.stream.Field;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.BodyContentHandler;
-import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
@@ -57,38 +56,47 @@ class MailContentHandler implements ContentHandler {
     private boolean strictParsing = false;
 
     private XHTMLContentHandler handler;
-    private ParseContext context;
     private Metadata metadata;
-    private TikaConfig tikaConfig = null;
+    private EmbeddedDocumentExtractor extractor;
 
     private boolean inPart = false;
     
     MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context, boolean strictParsing) {
         this.handler = xhtml;
-        this.context = context;
         this.metadata = metadata;
         this.strictParsing = strictParsing;
+        
+        // Fetch / Build an EmbeddedDocumentExtractor with which
+        //  to handle/process the parts/attachments
+        
+        // Was an EmbeddedDocumentExtractor explicitly supplied?
+        this.extractor = context.get(EmbeddedDocumentExtractor.class);
+        
+        // If there's no EmbeddedDocumentExtractor, then try using a normal parser
+        // This will ensure that the contents are made available to the user, so
+        //  the see the text, but without fine-grained control/extraction
+        // (This also maintains backward compatibility with older versions!)
+        if (this.extractor == null) {
+            // If the user gave a parser, use that, if not the default
+            Parser parser = context.get(AutoDetectParser.class);
+            if (parser == null) {
+               parser = context.get(Parser.class);
+            }
+            if (parser == null) {
+                TikaConfig tikaConfig = context.get(TikaConfig.class);
+                if (tikaConfig == null) {
+                    tikaConfig = TikaConfig.getDefaultConfig();
+                }
+                parser = new AutoDetectParser(tikaConfig.getParser());
+            }
+            ParseContext ctx = new ParseContext();
+            ctx.set(Parser.class, parser);
+            extractor = new ParsingEmbeddedDocumentExtractor(ctx);
+        }
     }
 
     public void body(BodyDescriptor body, InputStream is) throws MimeException,
             IOException {
-        // Work out the best underlying parser for the part
-        // Check first for a specified AutoDetectParser (which may have a
-        //  specific Config), then a recursing parser, and finally the default
-        Parser parser = context.get(AutoDetectParser.class);
-        if (parser == null) {
-           parser = context.get(Parser.class);
-        }
-        if (parser == null) {
-           if (tikaConfig == null) {
-              tikaConfig = context.get(TikaConfig.class);
-              if (tikaConfig == null) {
-                 tikaConfig = TikaConfig.getDefaultConfig();
-              }
-           }
-           parser = tikaConfig.getParser();
-        }
-
         // use a different metadata object
         // in order to specify the mime type of the
         // sub part without damaging the main metadata
@@ -98,11 +106,10 @@ class MailContentHandler implements ContentHandler {
         submd.set(Metadata.CONTENT_ENCODING, body.getCharset());
 
         try {
-            BodyContentHandler bch = new BodyContentHandler(handler);
-            parser.parse(is, new EmbeddedContentHandler(bch), submd, context);
+            if (extractor.shouldParseEmbedded(submd)) {
+                extractor.parseEmbedded(is, handler, submd, false);
+            }
         } catch (SAXException e) {
-            throw new MimeException(e);
-        } catch (TikaException e) {
             throw new MimeException(e);
         }
     }

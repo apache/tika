@@ -24,14 +24,14 @@ import java.util.List;
 /**
  * wrapper class to make isWriteable in MetadataListMBW simpler
  */
-class MetadataList {
+public class MetadataList {
     private final List<Metadata> metadata;
 
-    MetadataList(List<Metadata> metadata) {
+    public MetadataList(List<Metadata> metadata) {
         this.metadata = metadata;
     }
 
-    List<Metadata> getMetadata() {
+    public List<Metadata> getMetadata() {
         return metadata;
     }
 }

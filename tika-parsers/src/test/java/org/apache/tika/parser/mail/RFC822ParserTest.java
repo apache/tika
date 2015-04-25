@@ -18,8 +18,10 @@ package org.apache.tika.parser.mail;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -31,11 +33,17 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import org.apache.james.mime4j.stream.MimeConfig;
+import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.ContainerExtractor;
+import org.apache.tika.extractor.ParserContainerExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.ocr.TesseractOCRParserTest;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -44,7 +52,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class RFC822ParserTest {
+public class RFC822ParserTest extends TikaTest {
 
     @Test
     public void testSimple() {
@@ -147,7 +155,7 @@ public class RFC822ParserTest {
         try {
             parser.parse(stream, handler, metadata, new ParseContext());
             //tests correct decoding of base64 text, including ISO-8859-1 bytes into Unicode
-            assertTrue(handler.toString().contains("Here is some text, with international characters, voil\u00E0!"));
+            assertContains("Here is some text, with international characters, voil\u00E0!", handler.toString());
         } catch (Exception e) {
             fail("Exception thrown: " + e.getMessage());
         }
@@ -251,12 +259,130 @@ public class RFC822ParserTest {
        assertEquals("def", metadata.getValues(Metadata.MESSAGE_TO)[1]);
        assertEquals("abcd", metadata.get(TikaCoreProperties.TITLE));
        assertEquals("abcd", metadata.get(Metadata.SUBJECT));
-       assertTrue(handler.toString().contains("bar biz bat"));
+       assertContains("bar biz bat", handler.toString());
+    }
+    
+    /**
+     * Test TIKA-1028 - If the mail contains an encrypted attachment (or
+     *  an attachment that others triggers an error), parsing should carry
+     *  on for the remainder regardless
+     */
+    @Test
+    public void testEncryptedZipAttachment() throws Exception {
+        Parser parser = new RFC822Parser();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getStream("test-documents/testRFC822_encrypted_zip");
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(stream, handler, metadata, context);
+        
+        // Check we go the metadata
+        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Test mail for Tika", metadata.get(TikaCoreProperties.TITLE));
+        
+        // Check we got the message text, for both Plain Text and HTML
+        assertContains("Includes encrypted zip file", handler.toString());
+        assertContains("password is \"test\".", handler.toString());
+        assertContains("This is the Plain Text part", handler.toString());
+        assertContains("This is the HTML part", handler.toString());
+        
+        // We won't get the contents of the zip file, but we will get the name
+        assertContains("text.txt", handler.toString());
+        assertNotContained("ENCRYPTED ZIP FILES", handler.toString());
+        
+        // Try again, this time with the password supplied
+        // Check that we also get the zip's contents as well
+        context.set(PasswordProvider.class, new PasswordProvider() {
+            public String getPassword(Metadata metadata) {
+                return "test";
+            }
+         });
+        stream = getStream("test-documents/testRFC822_encrypted_zip");
+        handler = new BodyContentHandler();
+        parser.parse(stream, handler, metadata, context);
+        
+        assertContains("Includes encrypted zip file", handler.toString());
+        assertContains("password is \"test\".", handler.toString());
+        assertContains("This is the Plain Text part", handler.toString());
+        assertContains("This is the HTML part", handler.toString());
+        
+        // We do get the name of the file in the encrypted zip file
+        assertContains("text.txt", handler.toString());
+        
+        // TODO Upgrade to a version of Commons Compress with Encryption
+        //  support, then verify we get the contents of the text file
+        //  held within the encrypted zip
+        assumeTrue(false); // No Zip Encryption support yet
+        assertContains("TEST DATA FOR TIKA.", handler.toString());
+        assertContains("ENCRYPTED ZIP FILES", handler.toString());
+        assertContains("TIKA-1028", handler.toString());
+    }
+    
+    /**
+     * Test TIKA-1028 - Ensure we can get the contents of an
+     *  un-encrypted zip file
+     */
+    @Test
+    public void testNormalZipAttachment() throws Exception {
+        Parser parser = new RFC822Parser();
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        InputStream stream = getStream("test-documents/testRFC822_normal_zip");
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(stream, handler, metadata, context);
+        
+        // Check we go the metadata
+        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Test mail for Tika", metadata.get(TikaCoreProperties.TITLE));
+        
+        // Check we got the message text, for both Plain Text and HTML
+        assertContains("Includes a normal, unencrypted zip file", handler.toString());
+        assertContains("This is the Plain Text part", handler.toString());
+        assertContains("This is the HTML part", handler.toString());
+        
+        // We get both name and contents of the zip file's contents
+        assertContains("text.txt", handler.toString());
+        assertContains("TEST DATA FOR TIKA.", handler.toString());
+        assertContains("This is text inside an unencrypted zip file", handler.toString());
+        assertContains("TIKA-1028", handler.toString());
+    }
+    
+    /**
+     * TIKA-1222 When requested, ensure that the various attachments of
+     *  the mail come through properly as embedded resources
+     */
+    @Test
+    public void testGetAttachmentsAsEmbeddedResources() throws Exception {
+        TrackingHandler tracker = new TrackingHandler();
+        TikaInputStream tis = null;
+        ContainerExtractor ex = new ParserContainerExtractor();
+        try {
+            tis = TikaInputStream.get(getStream("test-documents/testRFC822-multipart"));
+            assertEquals(true, ex.isSupported(tis));
+            ex.extract(tis, ex, tracker);
+        } finally {
+            if (tis != null)
+                tis.close();
+        }
+        
+        // Check we found all 3 parts
+        assertEquals(3, tracker.filenames.size());
+        assertEquals(3, tracker.mediaTypes.size());
+        
+        // No filenames available
+        assertEquals(null, tracker.filenames.get(0));
+        assertEquals(null, tracker.filenames.get(1));
+        assertEquals(null, tracker.filenames.get(2));
+        // Types are available
+        assertEquals(MediaType.TEXT_PLAIN, tracker.mediaTypes.get(0));
+        assertEquals(MediaType.TEXT_HTML, tracker.mediaTypes.get(1));
+        assertEquals(MediaType.image("gif"), tracker.mediaTypes.get(2));
     }
 
     private static InputStream getStream(String name) {
-        return Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream(name);
+        InputStream stream = Thread.currentThread().getContextClassLoader()
+                                    .getResourceAsStream(name);
+        assertNotNull("Test file not found " + name, stream);
+        return stream;
     }
-
 }
