@@ -1,6 +1,6 @@
 Release 1.9 - Current Development
 
-  * Improvements to detect CBOR files by extension (TIKA-1610). 
+  * Improvements to detect CBOR files by extension (TIKA-1610).
 
   * Change xerial.org's sqlite-jdbc jar to "provided" (TIKA-1511).
     Users will now need to add sqlite-jdbc to their classpath for

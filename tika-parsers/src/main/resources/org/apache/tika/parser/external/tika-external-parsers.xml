@@ -30,8 +30,6 @@
      <mime-types>
        <mime-type>video/avi</mime-type>
        <mime-type>video/mpeg</mime-type>
-       <mime-type>video/x-msvideo</mime-type>
-       <mime-type>video/mp4</mime-type>
      </mime-types>
      <metadata>
        <match key="xmpDM:audioChannelType">Stream.*? Audio:.*? Hz, (\w+),</match>
