@@ -100,11 +100,15 @@ public class BundleIT {
 
     @Test
     public void testBundleDetection() throws Exception {
-        Tika tika = new Tika();
+        Metadata metadataTXT = new Metadata();
+        metadataTXT.set(Metadata.RESOURCE_NAME_KEY, "test.txt");
+        
+        Metadata metadataPDF = new Metadata();
+        metadataPDF.set(Metadata.RESOURCE_NAME_KEY, "test.pdf");
 
         // Simple type detection
-        assertEquals("text/plain", tika.detect("test.txt"));
-        assertEquals("application/pdf", tika.detect("test.pdf"));
+        assertEquals(MediaType.TEXT_PLAIN, contentTypeDetector.detect(null, metadataTXT));
+        assertEquals(MediaType.application("pdf"), contentTypeDetector.detect(null, metadataPDF));
     }
 
 
