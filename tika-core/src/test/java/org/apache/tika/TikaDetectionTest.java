@@ -845,7 +845,7 @@ public class TikaDetectionTest {
         assertEquals("application/x-grib", tika.detect("x.grb"));
         assertEquals("application/x-grib", tika.detect("x.grb1"));
         assertEquals("application/x-grib", tika.detect("x.grb2"));
-        assertEquals("text/dif+xml", tika.detect("x.dif"));
+        assertEquals("application/dif+xml", tika.detect("x.dif"));
     }
 
 }

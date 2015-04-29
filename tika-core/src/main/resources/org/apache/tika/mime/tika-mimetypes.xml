@@ -5150,7 +5150,7 @@
   <mime-type type="multipart/signed"/>
   <mime-type type="multipart/voice-message"/>
 
-  <mime-type type="text/dif+xml">
+  <mime-type type="application/dif+xml">
     <root-XML localName="DIF"/>
     <root-XML localName="DIF" namespaceURI="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"/>
     <glob pattern="*.dif"/>
@@ -5161,13 +5161,6 @@
     <_comment>ActionScript source code</_comment>
     <glob pattern="*.as"/>
     <sub-class-of type="text/plain"/>
-  </mime-type>
-
-  <mime-type type="text/dif+xml">
-    <root-XML localName="DIF"/>
-    <root-XML localName="DIF" namespaceURI="http://gcmd.gsfc.nasa.gov/Aboutus/xml/dif/"/>
-    <glob pattern="*.dif"/>
-    <sub-class-of type="application/xml"/>
   </mime-type>
 
   <mime-type type="text/x-ada">
