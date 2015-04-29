@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -116,4 +117,13 @@ public class DefaultParser extends CompositeParser {
         return map;
     }
 
+    @Override
+    public List<Parser> getAllComponentParsers() {
+        List<Parser> parsers = super.getAllComponentParsers();
+        if (loader != null) {
+            parsers = new ArrayList<Parser>(parsers);
+            parsers.addAll(loader.loadDynamicServiceProviders(Parser.class));
+        }
+        return parsers;
+    }
 }
