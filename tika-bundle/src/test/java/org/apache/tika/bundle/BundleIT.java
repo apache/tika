@@ -23,6 +23,7 @@ import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
 
 import javax.inject.Inject;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,12 +36,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.internal.Activator;
@@ -181,9 +183,32 @@ public class BundleIT {
 
     @Test
     public void testBundleParsers() throws Exception {
-        TikaConfig tika = new TikaConfig();
+        // Get the classes found within OSGi
+        ServiceReference<Parser> parserRef = bc.getServiceReference(Parser.class);
+        DefaultParser parserService = (DefaultParser)bc.getService(parserRef);
+        
+        Set<String> osgiParsers = new HashSet<String>();
+        for (Parser p : parserService.getAllComponentParsers()) {
+            osgiParsers.add(p.getClass().getName());
+        }
 
-        // TODO Implement as with Detectors
+        // Check we did get a few, just in case...
+        assertTrue("Should have lots Parser names, found " + osgiParsers.size(),
+                osgiParsers.size() > 15);
+
+        // Get the raw parsers list from the traditional service loading mechanism
+        CompositeParser parser = (CompositeParser)defaultParser;
+        Set<String> rawParsers = new HashSet<String>();
+        for (Parser p : parser.getAllComponentParsers()) {
+            if (p instanceof DefaultParser) {
+                for (Parser pChild : ((DefaultParser)p).getAllComponentParsers()) {
+                    rawParsers.add(pChild.getClass().getName());
+                }
+            } else {
+                rawParsers.add(p.getClass().getName());
+            }
+        }
+        assertEquals(rawParsers, osgiParsers);
     }
 
 
