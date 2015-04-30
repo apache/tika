@@ -172,7 +172,7 @@ public final class MimeTypes implements Detector, Serializable {
      * @param data first few bytes of a document stream
      * @return matching MIME type
      */
-    private List<MimeType> getMimeType(byte[] data) {
+    List<MimeType> getMimeType(byte[] data) {
         if (data == null) {
             throw new IllegalArgumentException("Data is missing");
         } else if (data.length == 0) {
@@ -247,7 +247,7 @@ public final class MimeTypes implements Detector, Serializable {
      * @return first {@link #getMinLength()} (or fewer) bytes of the stream
      * @throws IOException if the stream can not be read
      */
-    private byte[] readMagicHeader(InputStream stream) throws IOException {
+    byte[] readMagicHeader(InputStream stream) throws IOException {
         if (stream == null) {
             throw new IllegalArgumentException("InputStream is missing");
         }
