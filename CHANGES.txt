@@ -1,5 +1,9 @@
 Release 1.9 - Current Development
 
+  * Provide ability to parse and identify Global Change 
+    Master Directory Interchange Format (GCMD DIF) 
+    scientific data files (TIKA-1532).
+
   * Improvements to detect CBOR files by extension (TIKA-1610).
 
   * Change xerial.org's sqlite-jdbc jar to "provided" (TIKA-1511).

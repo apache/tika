@@ -76,7 +76,7 @@ public class MimeDetectionTest {
         testFile("text/html", "test-malformed-header.html.bin");
         
         //test GCMD Directory Interchange Format (.dif) TIKA-1561
-        testFile("text/dif+xml", "brwNIMS_2014.dif");
+        testFile("application/dif+xml", "brwNIMS_2014.dif");
     }
 
     @Test
