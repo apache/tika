@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * Update the MimeTypes code to support inheritance
+    (TIKA-1535).
+
   * Provide ability to parse and identify Global Change 
     Master Directory Interchange Format (GCMD DIF) 
     scientific data files (TIKA-1532).
