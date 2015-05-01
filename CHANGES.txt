@@ -1,5 +1,10 @@
 Release 1.9 - Current Development
 
+  * Tika now incorporates the Apache Spatial Information
+    System capability of parsing Geographic ISO 19139 
+    files (TIKA-443). It can also detect those files as
+    well.
+
   * Update the MimeTypes code to support inheritance
     (TIKA-1535).
 
