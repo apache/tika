@@ -291,10 +291,7 @@ public class GeographicInformationParser extends AbstractParser{
                 for(Restriction r:c.getUseConstraints()) {
                     metadata.add("UserConstraints ",r.name());
                 }
-                //System.out.println(c.get);
-                              /*  for(InternationalString s:c.getUseLimitations()) {
-                                    System.out.println("UserConstraints-->" + s);
-                                }*/
+              
             }
             Collection<Extent> extentList=((DefaultDataIdentification) i).getExtents();
             for(Extent e:extentList){
