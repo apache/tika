@@ -47,6 +47,14 @@
     <glob pattern="*.aw"/>
   </mime-type>
 
+  <mime-type type="text/iso19139+xml">
+	  <root-XML localName="MD_metadata"/>
+	  <root-XML localName="MD_metadata" namespaceURI="http://www.isotc211.org/2005/gmd"/>
+	  <glob pattern="*.iso19139"/>
+	  <sub-class-of type="application/xml"/>
+   </mime-type>
+
+  
   <mime-type type="application/atom+xml">
     <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#"/>
     <root-XML localName="feed" namespaceURI="http://www.w3.org/2005/Atom"/>

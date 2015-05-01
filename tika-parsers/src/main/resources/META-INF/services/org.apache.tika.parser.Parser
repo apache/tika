@@ -62,3 +62,4 @@ org.apache.tika.parser.gdal.GDALParser
 org.apache.tika.parser.grib.GribParser
 org.apache.tika.parser.jdbc.SQLite3Parser
 org.apache.tika.parser.isatab.ISArchiveParser
+org.apache.tika.parser.geoinfo.GeographicInformationParser

@@ -279,6 +279,27 @@
       <artifactId>commons-csv</artifactId>
       <version>1.0</version>
     </dependency>
+	
+	<dependency>
+		<groupId>org.apache.sis.core</groupId>
+		<artifactId>sis-utility</artifactId>
+		<version>0.5</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.sis.storage</groupId>
+		<artifactId>sis-netcdf</artifactId>
+		<version>0.5</version>
+	</dependency>
+	<dependency>
+		<groupId>org.apache.sis.core</groupId>
+		<artifactId>sis-metadata</artifactId>
+		<version>0.5</version>
+	</dependency>
+	<dependency>
+		<groupId>org.opengis</groupId>
+		<artifactId>geoapi</artifactId>
+		<version>3.0.0</version>
+	</dependency>
   </dependencies>
 
   <build>
