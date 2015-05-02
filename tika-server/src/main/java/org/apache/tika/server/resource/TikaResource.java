@@ -82,7 +82,7 @@ public class TikaResource {
     public static final String X_TIKA_PDF_HEADER_PREFIX = "X-Tika-PDF";
 
 
-    private final Log logger = LogFactory.getLog(TikaResource.class);
+    private static final Log logger = LogFactory.getLog(TikaResource.class);
 
     private TikaConfig tikaConfig;
 
@@ -131,6 +131,12 @@ public class TikaResource {
                 }
             } catch (ParseException e) {
                 // not a valid content-disposition field
+            	e.printStackTrace();
+            	logger.warn(String.format(
+                        Locale.ROOT,
+                        "Parse exception %s determining content disposition",
+                        e.getMessage()
+                ), e);
             }
         }
 
