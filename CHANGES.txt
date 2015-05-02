@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * Tika server now logs errors determining ContentDisposition
+    (TIKA-1621).
+
   * An algorithm for using Byte Histogram frequencies to construct
     a Neural Network and to perform MIME detection was added
     (TIKA-1582).
