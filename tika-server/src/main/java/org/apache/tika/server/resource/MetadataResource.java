@@ -31,11 +31,13 @@ import javax.ws.rs.core.UriInfo;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -64,6 +66,11 @@ public class MetadataResource {
     @PUT
     @Produces({"text/csv", "application/json", "application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        if(is.available() == 0 && !"".equals(httpHeaders.getHeaderString("fileUrl"))){
+            Metadata metadata = new Metadata();
+            is = TikaInputStream.get(new URL(httpHeaders.getHeaderString("fileUrl")), metadata);
+        }
+
         return Response.ok(
                 parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
     }
