@@ -16,13 +16,12 @@
  */
 package org.apache.tika.detect;
 
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.ProbabilisticMimeDetectionSelector;
+import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * A version of {@link DefaultDetector} for probabilistic mime
@@ -37,22 +36,7 @@ public class DefaultProbDetector extends CompositeDetector {
     private static List<Detector> getDefaultDetectors(
             ProbabilisticMimeDetectionSelector sel, ServiceLoader loader) {
         List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class);
-        Collections.sort(detectors, new Comparator<Detector>() {
-            public int compare(Detector d1, Detector d2) {
-                String n1 = d1.getClass().getName();
-                String n2 = d2.getClass().getName();
-                boolean t1 = n1.startsWith("org.apache.tika.");
-                boolean t2 = n2.startsWith("org.apache.tika.");
-                if (t1 == t2) {
-                    return n1.compareTo(n2);
-                } else if (t1) {
-                    return 1;
-                } else {
-                    return -1;
-                }
-            }
-        });
-
+        ServiceLoaderUtils.sortLoadedClasses(detectors);
         detectors.add(sel);
         return detectors;
     }
