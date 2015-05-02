@@ -19,13 +19,13 @@ package org.apache.tika.parser;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * A composite parser based on all the {@link Parser} implementations
@@ -49,23 +49,8 @@ public class DefaultParser extends CompositeParser {
      * @return ordered list of statically loadable parsers
      */
     private static List<Parser> getDefaultParsers(ServiceLoader loader) {
-        List<Parser> parsers =
-                loader.loadStaticServiceProviders(Parser.class);
-        Collections.sort(parsers, new Comparator<Parser>() {
-            public int compare(Parser p1, Parser p2) {
-                String n1 = p1.getClass().getName();
-                String n2 = p2.getClass().getName();
-                boolean t1 = n1.startsWith("org.apache.tika.");
-                boolean t2 = n2.startsWith("org.apache.tika.");
-                if (t1 == t2) {
-                    return n1.compareTo(n2);
-                } else if (t1) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            }
-        });
+        List<Parser> parsers = loader.loadStaticServiceProviders(Parser.class);
+        ServiceLoaderUtils.sortLoadedClasses(parsers);
         return parsers;
     }
 
