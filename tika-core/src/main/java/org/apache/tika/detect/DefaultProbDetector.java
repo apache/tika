@@ -35,63 +35,62 @@ public class DefaultProbDetector extends CompositeDetector {
     private static final long serialVersionUID = -8836240060532323352L;
 
     private static List<Detector> getDefaultDetectors(
-			ProbabilisticMimeDetectionSelector sel, ServiceLoader loader) {
-		List<Detector> detectors = loader
-				.loadStaticServiceProviders(Detector.class);
-		Collections.sort(detectors, new Comparator<Detector>() {
-			public int compare(Detector d1, Detector d2) {
-				String n1 = d1.getClass().getName();
-				String n2 = d2.getClass().getName();
-				boolean t1 = n1.startsWith("org.apache.tika.");
-				boolean t2 = n2.startsWith("org.apache.tika.");
-				if (t1 == t2) {
-					return n1.compareTo(n2);
-				} else if (t1) {
-					return 1;
-				} else {
-					return -1;
-				}
-			}
-		});
-	
-		detectors.add(sel);
-		return detectors;
-	}
+            ProbabilisticMimeDetectionSelector sel, ServiceLoader loader) {
+        List<Detector> detectors = loader.loadStaticServiceProviders(Detector.class);
+        Collections.sort(detectors, new Comparator<Detector>() {
+            public int compare(Detector d1, Detector d2) {
+                String n1 = d1.getClass().getName();
+                String n2 = d2.getClass().getName();
+                boolean t1 = n1.startsWith("org.apache.tika.");
+                boolean t2 = n2.startsWith("org.apache.tika.");
+                if (t1 == t2) {
+                    return n1.compareTo(n2);
+                } else if (t1) {
+                    return 1;
+                } else {
+                    return -1;
+                }
+            }
+        });
 
-	private transient final ServiceLoader loader;
+        detectors.add(sel);
+        return detectors;
+    }
 
-	public DefaultProbDetector(ProbabilisticMimeDetectionSelector sel,
-			ServiceLoader loader) {
-		super(sel.getMediaTypeRegistry(), getDefaultDetectors(sel, loader));
-		this.loader = loader;
-	}
+    private transient final ServiceLoader loader;
 
-	public DefaultProbDetector(ProbabilisticMimeDetectionSelector sel,
-			ClassLoader loader) {
-		this(sel, new ServiceLoader(loader));
-	}
+    public DefaultProbDetector(ProbabilisticMimeDetectionSelector sel,
+            ServiceLoader loader) {
+        super(sel.getMediaTypeRegistry(), getDefaultDetectors(sel, loader));
+        this.loader = loader;
+    }
 
-	public DefaultProbDetector(ClassLoader loader) {
-		this(new ProbabilisticMimeDetectionSelector(), loader);
-	}
+    public DefaultProbDetector(ProbabilisticMimeDetectionSelector sel,
+            ClassLoader loader) {
+        this(sel, new ServiceLoader(loader));
+    }
 
-	public DefaultProbDetector(MimeTypes types) {
-		this(new ProbabilisticMimeDetectionSelector(types), new ServiceLoader());
-	}
+    public DefaultProbDetector(ClassLoader loader) {
+        this(new ProbabilisticMimeDetectionSelector(), loader);
+    }
 
-	public DefaultProbDetector() {
-		this(MimeTypes.getDefaultMimeTypes());
-	}
+    public DefaultProbDetector(MimeTypes types) {
+        this(new ProbabilisticMimeDetectionSelector(types), new ServiceLoader());
+    }
 
-	@Override
-	public List<Detector> getDetectors() {
-		if (loader != null) {
-			List<Detector> detectors = loader
-					.loadDynamicServiceProviders(Detector.class);
-			detectors.addAll(super.getDetectors());
-			return detectors;
-		} else {
-			return super.getDetectors();
-		}
-	}
+    public DefaultProbDetector() {
+        this(MimeTypes.getDefaultMimeTypes());
+    }
+
+    @Override
+    public List<Detector> getDetectors() {
+        if (loader != null) {
+            List<Detector> detectors = loader
+                    .loadDynamicServiceProviders(Detector.class);
+            detectors.addAll(super.getDetectors());
+            return detectors;
+        } else {
+            return super.getDetectors();
+        }
+    }
 }

@@ -30,12 +30,14 @@ import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 
+/**
+ * Selector for combining different mime detection results
+ *  based on probability
+ */
 public class ProbabilisticMimeDetectionSelector implements Detector {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private MimeTypes mimeTypes;
+    private static final long serialVersionUID = 224589862960269260L;
+
+    private MimeTypes mimeTypes;
 
 	private final MediaType rootMediaType;
 
