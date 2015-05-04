@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * All of the example code from the Tika in Action book has 
+    been donated to Tika and added to tika-examples (TIKA-1562).
+
   * Tika server now logs errors determining ContentDisposition
     (TIKA-1621).
 
