@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * Tika REST server now supports language identification
+    (TIKA-1622).
+
   * All of the example code from the Tika in Action book has 
     been donated to Tika and added to tika-examples (TIKA-1562).
 
