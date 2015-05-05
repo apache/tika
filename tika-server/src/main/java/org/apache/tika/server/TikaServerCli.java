@@ -42,6 +42,7 @@ import org.apache.tika.server.resource.DetectorResource;
 import org.apache.tika.server.resource.MetadataResource;
 import org.apache.tika.server.resource.RecursiveMetadataResource;
 import org.apache.tika.server.writer.TarWriter;
+import org.apache.tika.server.resource.LanguageResource;
 import org.apache.tika.server.resource.TikaDetectors;
 import org.apache.tika.server.resource.TikaMimeTypes;
 import org.apache.tika.server.resource.TikaParsers;
@@ -137,6 +138,7 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
+            rCoreProviders.add(new SingletonResourceProvider(new LanguageResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));
