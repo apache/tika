@@ -44,7 +44,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -290,13 +289,8 @@ public class TikaResource {
     @PUT
     @Consumes("*/*")
     @Produces("text/plain")
-    public StreamingOutput getText(InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws IOException {
-        if(is.available() == 0 && !"".equals(httpHeaders.getHeaderString("fileUrl"))){
-            Metadata metadata = new Metadata();
-            is = TikaInputStream.get(new URL(httpHeaders.getHeaderString("fileUrl")), metadata);
-        }
-
-        return produceText(is, httpHeaders.getRequestHeaders(), info);
+    public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws IOException {
+        return produceText(TikaUtils.getInputSteam(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
     }
 
     public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
