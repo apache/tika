@@ -37,7 +37,7 @@ public class DefaultTranslator implements Translator{
      * rather than discovery order.
      *
      * @param loader service loader
-     * @return ordered list of statically loadable parsers
+     * @return ordered list of statically loadable translators
      */
     private static List<Translator> getDefaultTranslators(ServiceLoader loader) {
         List<Translator> translators = loader.loadStaticServiceProviders(Translator.class);
