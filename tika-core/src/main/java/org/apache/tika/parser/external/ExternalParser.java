@@ -168,6 +168,7 @@ public class ExternalParser extends AbstractParser {
            if(cmd[i].indexOf(OUTPUT_FILE_TOKEN) != -1) {
               output = tmp.createTemporaryFile();
               outputFromStdOut = false;
+              cmd[i] = cmd[i].replace(OUTPUT_FILE_TOKEN, output.getPath());
            }
         }
 
