@@ -68,7 +68,7 @@ public class GoogleTranslator implements Translator {
 			config.load(GoogleTranslator.class
 					.getClassLoader()
 					.getResourceAsStream(
-							"org/apache/tika/language/translate/translator.google.properties"));
+							"translator.google.properties"));
 			this.apiKey = config.getProperty("translator.client-secret");
 			if (this.apiKey.equals(DEFAULT_KEY))
 				this.isAvailable = false;
