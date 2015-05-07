@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * OUTPUT_FILE_TOKEN not being replaced in ExternalParser 
+    contributed by Pascal Essiembre (TIKA-1620).
+
   * Tika REST server now supports language identification
     (TIKA-1622).
 
