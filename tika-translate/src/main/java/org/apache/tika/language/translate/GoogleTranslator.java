@@ -66,7 +66,6 @@ public class GoogleTranslator implements Translator {
 		Properties config = new Properties();
 		try {
 			config.load(GoogleTranslator.class
-					.getClassLoader()
 					.getResourceAsStream(
 							"translator.google.properties"));
 			this.apiKey = config.getProperty("translator.client-secret");
