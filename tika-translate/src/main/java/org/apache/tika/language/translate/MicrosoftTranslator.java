@@ -35,7 +35,7 @@ public class MicrosoftTranslator implements Translator {
     boolean available;              // Flag for whether or not translation is available.
     String clientId, clientSecret;  // Keys used for the API calls.
 
-    public static final String PROPERTIES_FILE = "org/apache/tika/language/translate/translator.microsoft.properties";
+    public static final String PROPERTIES_FILE = "translator.microsoft.properties";
     public static final String ID_PROPERTY = "translator.client-id";
     public static final String SECRET_PROPERTY = "translator.client-secret";
     public static final String DEFAULT_ID = "dummy-id";
