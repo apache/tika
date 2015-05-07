@@ -55,7 +55,7 @@ public class MosesTranslator extends ExternalTranslator {
         try {
             config.load(MosesTranslator.class
                     .getClassLoader()
-                    .getResourceAsStream("org/apache/tika/language/translate/translator.moses.properties"));
+                    .getResourceAsStream("translator.moses.properties"));
             new MosesTranslator(
                     config.getProperty("translator.smt_path"),
                     config.getProperty("translator.script_path"));
