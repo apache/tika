@@ -18,6 +18,8 @@
 package org.apache.tika.language.translate;
 
 import com.fasterxml.jackson.databind.util.LRUMap;
+
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
@@ -36,6 +38,13 @@ public class CachedTranslator implements Translator {
     // Old entries are removed from the cache when it reaches its limit.
     // For example, {en:fr -> {hello -> salut}}.
     private HashMap<String, LRUMap<String, String>> cache;
+    
+    /**
+     * Create a new CachedTranslator (must set the {@link Translator} with {@link #setTranslator(Translator)} before use!)
+     */
+    public CachedTranslator(){
+    	this(null);
+    }
 
     /**
      * Create a new CachedTranslator.
@@ -48,9 +57,24 @@ public class CachedTranslator implements Translator {
         cache = new HashMap<String, LRUMap<String, String>>();
     }
 
-    @Override
+    /**
+	 * @return the translator
+	 */
+	public Translator getTranslator() {
+		return translator;
+	}
+
+	/**
+	 * @param translator the translator to set
+	 */
+	public void setTranslator(Translator translator) {
+		this.translator = translator;
+	}
+
+	@Override
     public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        HashMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
+        if (translator == null) return text;
+		HashMap<String, String> translationCache = getTranslationCache(sourceLanguage, targetLanguage);
         String translatedText = translationCache.get(text);
         if (translatedText == null) {
             translatedText = translator.translate(text, sourceLanguage, targetLanguage);
