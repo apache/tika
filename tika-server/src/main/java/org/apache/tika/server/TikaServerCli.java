@@ -49,6 +49,7 @@ import org.apache.tika.server.resource.TikaParsers;
 import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.resource.TikaVersion;
 import org.apache.tika.server.resource.TikaWelcome;
+import org.apache.tika.server.resource.TranslateResource;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.apache.tika.server.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.writer.JSONMessageBodyWriter;
@@ -139,6 +140,7 @@ public class TikaServerCli {
             rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new LanguageResource(tika)));
+            rCoreProviders.add(new SingletonResourceProvider(new TranslateResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
             rCoreProviders.add(new SingletonResourceProvider(new TikaMimeTypes(tika)));

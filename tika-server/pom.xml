@@ -47,6 +47,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-translate</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -54,7 +59,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-xmp</artifactId>
       <version>${project.version}</version>
-    </dependency>
+    </dependency>    
     <dependency>
       <groupId>net.sf.opencsv</groupId>
       <artifactId>opencsv</artifactId>
@@ -105,7 +110,6 @@
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-client</artifactId>
       <version>${cxf.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
