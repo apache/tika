@@ -1,5 +1,10 @@
 Release 1.9 - Current Development
 
+  * Tika Server now allows for metadata extraction from remote
+    URLs and in addition it outputs the detected language as a
+    metadata field (TIKA-1625).
+
+
   * OUTPUT_FILE_TOKEN not being replaced in ExternalParser 
     contributed by Pascal Essiembre (TIKA-1620).
 

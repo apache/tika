@@ -36,6 +36,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -65,7 +66,7 @@ public class MetadataResource {
     @Produces({"text/csv", "application/json", "application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         return Response.ok(
-                parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
+                parseMetadata(TikaUtils.getInputSteam(is, httpHeaders), httpHeaders.getRequestHeaders(), info)).build();
     }
 
     /**
@@ -101,7 +102,7 @@ public class MetadataResource {
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
         Metadata metadata = null;
         try {
-            metadata = parseMetadata(is, httpHeaders.getRequestHeaders(), info);
+            metadata = parseMetadata(TikaUtils.getInputSteam(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
             // once we've parsed the document successfully, we should use NOT_FOUND
             // if we did not see the field
             defaultErrorResponse = Response.Status.NOT_FOUND;
@@ -131,7 +132,12 @@ public class MetadataResource {
         //no need to pass parser for embedded document parsing
         TikaResource.fillParseContext(context, httpHeaders, null);
         TikaResource.logRequest(logger, info, metadata);
-        TikaResource.parse(parser, logger, info.getPath(), is, new DefaultHandler(), metadata, context);
+        TikaResource.parse(parser, logger, info.getPath(), is,
+                new ProfilingHandler() {
+                    public void endDocument() {
+                        metadata.set("language", getLanguage().getLanguage());
+                    }},
+                metadata, context);
         return metadata;
     }
 }
