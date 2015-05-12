@@ -351,6 +351,9 @@ public class ExternalParser extends AbstractParser {
        } catch (InterruptedException ie) {
           // Some problem, command is there or is broken
           return false;
+       } catch (SecurityException se) {
+          // External process execution is banned by the security manager
+          return false;
        } catch (Error err) {
            if (err.getMessage() != null && 
                (err.getMessage().contains("posix_spawn") || 
