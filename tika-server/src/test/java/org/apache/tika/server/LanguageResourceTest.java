@@ -40,7 +40,7 @@ public class LanguageResourceTest extends CXFTestBase {
 	private static final String LANG_STREAM_PATH = LANG_PATH + "/stream";
 	private static final String LANG_STRING_PATH = LANG_PATH + "/string";
 	private static final String ENGLISH_STRING = "This is English!";
-	private static final String FRENCH_STRING = "comme çi comme ça";
+	private static final String FRENCH_STRING = "c’est comme ci comme ça";
 
 	@Override
 	protected void setUpResources(JAXRSServerFactoryBean sf) {
