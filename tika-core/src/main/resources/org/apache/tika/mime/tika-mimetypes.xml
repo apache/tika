@@ -4005,6 +4005,19 @@
     <glob pattern="*.zip"/>
   </mime-type>
 
+  <mime-type type="application/zlib">
+    <_comment>ZLIB Compressed Data Format</_comment>
+    <tika:link>http://tools.ietf.org/html/rfc1950</tika:link>
+    <magic priority="45">
+      <!-- Low compression -->
+      <match value="\x78\x01" type="string" offset="0" />
+      <!-- Default compression -->
+      <match value="\x78\x9c" type="string" offset="0" />
+      <!-- Best compression -->
+      <match value="\x78\xda" type="string" offset="0" />
+    </magic>
+  </mime-type>
+
   <mime-type type="application/x-7z-compressed">
     <acronym>7zip</acronym>
     <_comment>7-zip archive</_comment>
