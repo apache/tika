@@ -501,10 +501,17 @@ public class TestMimeTypes {
 
     @Test
     public void testPdfDetection() throws Exception {
-        assertType("application/pdf", "testPDF.pdf");
-        assertTypeByData("application/pdf", "testPDF.pdf");
+        // PDF extension by name is enough
         assertTypeByName("application/pdf", "x.pdf");
         assertTypeByName("application/pdf", "x.PDF");
+
+        // For normal PDFs, can get by name or data or both
+        assertType("application/pdf", "testPDF.pdf");
+        assertTypeByData("application/pdf", "testPDF.pdf");
+
+        // PDF with a BoM works both ways too
+        assertType("application/pdf", "testPDF_bom.pdf");
+        assertTypeByData("application/pdf", "testPDF_bom.pdf");
     }
 
     @Test
