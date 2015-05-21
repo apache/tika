@@ -652,6 +652,8 @@ public class PDFParserTest extends TikaTest {
         knownMetadataDiffs.add("testAnnotations.pdf");
         // Added for TIKA-93.
         knownMetadataDiffs.add("testOCR.pdf");
+        // Added for TIKA-1085
+        knownMetadataDiffs.add("testPDF_bom.pdf");
 
         //empty for now
         Set<String> knownContentDiffs = new HashSet<String>();
