@@ -4009,8 +4009,10 @@
     <_comment>ZLIB Compressed Data Format</_comment>
     <tika:link>http://tools.ietf.org/html/rfc1950</tika:link>
     <magic priority="45">
-      <!-- Low compression -->
+      <!-- Low/No compression -->
       <match value="\x78\x01" type="string" offset="0" />
+      <!-- Medium compression -->
+      <match value="\x78\x5e" type="string" offset="0" />
       <!-- Default compression -->
       <match value="\x78\x9c" type="string" offset="0" />
       <!-- Best compression -->

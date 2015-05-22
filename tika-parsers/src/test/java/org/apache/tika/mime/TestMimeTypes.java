@@ -921,6 +921,15 @@ public class TestMimeTypes {
         assertTypeByNameAndData("application/cbor", "NUTCH-1997.cbor");
         assertTypeByData("application/cbor", "NUTCH-1997.cbor");
     }
+    
+    @Test
+    public void testZLIB() throws IOException {
+        // ZLIB encoded versions of testTXT.txt
+        assertTypeByData("application/zlib", "testTXT.zlib");
+        assertTypeByData("application/zlib", "testTXT.zlib0");
+        assertTypeByData("application/zlib", "testTXT.zlib5");
+        assertTypeByData("application/zlib", "testTXT.zlib9");
+    }
 
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
