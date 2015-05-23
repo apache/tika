@@ -4006,6 +4006,7 @@
   </mime-type>
 
   <mime-type type="application/zlib">
+    <alias type="application/x-deflate"/>
     <_comment>ZLIB Compressed Data Format</_comment>
     <tika:link>http://tools.ietf.org/html/rfc1950</tika:link>
     <magic priority="45">
