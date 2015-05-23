@@ -930,6 +930,15 @@ public class TestMimeTypes {
         assertTypeByData("application/zlib", "testTXT.zlib5");
         assertTypeByData("application/zlib", "testTXT.zlib9");
     }
+    
+    @Test
+    public void testCodeFormats() throws Exception {
+        assertType("text/x-csrc", "testC.c");
+        
+        assertType("text/x-matlab", "testMATLAB.m");
+        assertType("text/x-matlab", "testMATLAB_wtsgaus.m");
+        assertType("text/x-matlab", "testMATLAB_barcast.m");
+    }
 
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
