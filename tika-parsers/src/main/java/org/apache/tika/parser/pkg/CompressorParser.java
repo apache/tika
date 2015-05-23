@@ -27,6 +27,7 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
@@ -57,6 +58,8 @@ public class CompressorParser extends AbstractParser {
     private static final MediaType GZIP_ALT = MediaType.application("x-gzip");
     private static final MediaType XZ = MediaType.application("x-xz");
     private static final MediaType PACK = MediaType.application("application/x-java-pack200");
+    // TODO Not yet supported by CompressorStreamFactory, see COMPRESS-316
+    private static final MediaType ZLIB = MediaType.application("zlib");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, XZ, PACK);
@@ -73,6 +76,8 @@ public class CompressorParser extends AbstractParser {
             return GZIP;
         } else if (stream instanceof XZCompressorInputStream) {
             return XZ;
+        } else if (stream instanceof DeflateCompressorInputStream) {
+            return ZLIB;
         } else if (stream instanceof Pack200CompressorInputStream) {
             return PACK;
         } else {
@@ -133,6 +138,8 @@ public class CompressorParser extends AbstractParser {
                     name = name.substring(0, name.length() - 4);
                 } else if (name.endsWith(".xz")) {
                     name = name.substring(0, name.length() - 3);
+                } else if (name.endsWith(".zlib")) {
+                    name = name.substring(0, name.length() - 5);
                 } else if (name.endsWith(".pack")) {
                     name = name.substring(0, name.length() - 5);
                 } else if (name.length() > 0) {
