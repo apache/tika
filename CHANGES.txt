@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * Fixes have been applied to the ExternalParser to make
+    it functional (TIKA-1638).
+
   * Tika service loading can now be more verbose with the 
     org.apache.tika.service.error.warn system property (TIKA-1636).
 
