@@ -121,7 +121,7 @@ public class ServiceLoader {
     private final LoadErrorHandler handler;
 
     private final boolean dynamic;
-
+    
     public ServiceLoader(
             ClassLoader loader, LoadErrorHandler handler, boolean dynamic) {
         this.loader = loader;
@@ -134,11 +134,13 @@ public class ServiceLoader {
     }
 
     public ServiceLoader(ClassLoader loader) {
-        this(loader, LoadErrorHandler.IGNORE);
+    	this(loader, Boolean.getBoolean("org.apache.tika.service.error.warn") 
+    			? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE);
     }
 
     public ServiceLoader() {
-        this(getContextClassLoader(), LoadErrorHandler.IGNORE, true);
+    	this(getContextClassLoader(), Boolean.getBoolean("org.apache.tika.service.error.warn") 
+    			? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE, true);
     }
 
     /**
@@ -207,7 +209,7 @@ public class ServiceLoader {
      *  service files.
      */
     public Enumeration<URL> findServiceResources(String filePattern) {
-       try {
+       try {    	  
           Enumeration<URL> resources = loader.getResources(filePattern);
           return resources;
        } catch (IOException ignore) {
