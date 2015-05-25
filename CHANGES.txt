@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * Tika service loading can now be more verbose with the 
+    org.apache.tika.service.error.warn system property (TIKA-1636).
+
   * Tika Server now allows for metadata extraction from remote
     URLs and in addition it outputs the detected language as a
     metadata field (TIKA-1625).
