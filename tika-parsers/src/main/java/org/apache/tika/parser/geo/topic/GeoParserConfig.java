@@ -27,29 +27,28 @@ public class GeoParserConfig implements Serializable {
 	private String nerModelPath = null;
 
 	public GeoParserConfig() {
-	       try {
-		   if (GeoParserConfig.class.getResource(
-							 "en-ner-location.bin") != null){
-		       this.nerModelPath = new File(GeoParserConfig.class.getResource(
-										      "en-ner-location.bin").toURI()).getAbsolutePath();
-		   }
-		   } catch (URISyntaxException e) {
-		       e.printStackTrace();
-		   }
+		try {
+			if (GeoParserConfig.class.getResource("en-ner-location.bin") != null) {
+				this.nerModelPath = new File(GeoParserConfig.class.getResource(
+						"en-ner-location.bin").toURI()).getAbsolutePath();
+			}
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void setNERModelPath(String path) {
-	       if (path == null)
-	       	  	return;
-				File file = new File(path);
-				     if (file.isDirectory() || !file.exists()) {
-				     			    return;
-								}
-									nerModelPath = path;
-									}
+		if (path == null)
+			return;
+		File file = new File(path);
+		if (file.isDirectory() || !file.exists()) {
+			return;
+		}
+		nerModelPath = path;
+	}
 
 	public String getNERPath() {
-	       return nerModelPath;
-	       }
+		return nerModelPath;
+	}
 
 }
