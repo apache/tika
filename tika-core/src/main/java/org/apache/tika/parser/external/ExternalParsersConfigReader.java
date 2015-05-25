@@ -184,7 +184,7 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
             }
             if (child.getTagName().equals(ERROR_CODES_TAG)) {
                String errs = getString(child);
-               StringTokenizer st = new StringTokenizer(errs);
+               StringTokenizer st = new StringTokenizer(errs, ",");
                while(st.hasMoreElements()) {
                   try {
                      String s = st.nextToken();
@@ -196,12 +196,13 @@ public final class ExternalParsersConfigReader implements ExternalParsersConfigR
       }
       
       if(command != null) {
+    	 String [] theCommand = command.split(" ");
          int[] errVals = new int[errorVals.size()];
          for(int i=0; i<errVals.length; i++) {
             errVals[i] = errorVals.get(i);
          }
          
-         return ExternalParser.check(command, errVals);
+         return ExternalParser.check(theCommand, errVals);
       }
       
       // No check command, so assume it's there
