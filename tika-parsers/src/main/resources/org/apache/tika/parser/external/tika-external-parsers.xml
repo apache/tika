@@ -38,7 +38,7 @@
        <match key="xmpDM:audioCompressor">\s*Stream.*:.+Audio:\s+([A-Za-z0-9_\(\)/\[\] ]+),.*</match>
        <match key="xmpDM:duration">\s*Duration:\s*([0-9:\.]+),.*</match>
        <match key="xmpDM:fileDataRate">\s*Duration:.*,\s*bitrate:\s+([0-9A-Za-z/ ]+).*</match>
-       <match key="xmpDM:videoColorSpace">\s*Stream.*:\s+Video:.*,\s+([A-Za-z0-9\(\), ]+),.*</match>
+       <match key="xmpDM:videoColorSpace">\s*Stream.*:\s+Video:\s+[A-Za-z0-9\(\)/ ]+,\s+([A-Za-z0-9\(\) ,]+),\s+[0-9x]+,.*</match>
        <match key="xmpDM:videoCompressor">\s*Stream.*:\s+Video:\s+([A-Za-z0-9\(\)/ ]+),.*</match>
        <match key="xmpDM:videoFrameRate">\s*Stream.*:\s+Video:.*,\s+([0-9]+)\s+fps,.*</match>
        <match key="encoder">\s*encoder\s*\:\s*(\w+).*</match>
