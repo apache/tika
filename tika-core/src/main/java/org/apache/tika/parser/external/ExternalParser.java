@@ -158,8 +158,7 @@ public class ExternalParser extends AbstractParser {
         File output = null;
 
         // Build our command
-        String[] cmd = new String[command.length];
-        System.arraycopy(command, 0, cmd, 0, command.length);
+        String[] cmd = command[0].split(" ");
         for(int i=0; i<cmd.length; i++) {
            if(cmd[i].indexOf(INPUT_FILE_TOKEN) != -1) {
               cmd[i] = cmd[i].replace(INPUT_FILE_TOKEN, stream.getFile().getPath());
@@ -173,12 +172,17 @@ public class ExternalParser extends AbstractParser {
         }
 
         // Execute
-        Process process;
+        Process process = null;
+      try{
         if(cmd.length == 1) {
            process = Runtime.getRuntime().exec( cmd[0] );
         } else {
            process = Runtime.getRuntime().exec( cmd );
         }
+      }
+      catch(Exception e){
+    	  e.printStackTrace();
+      }
 
         try {
             if(inputToStdIn) {
@@ -258,7 +262,7 @@ public class ExternalParser extends AbstractParser {
      * @param stream input stream
      */
     private void sendInput(final Process process, final InputStream stream) {
-        new Thread() {
+        Thread t = new Thread() {
             public void run() {
                 OutputStream stdin = process.getOutputStream();
                 try {
@@ -266,7 +270,12 @@ public class ExternalParser extends AbstractParser {
                 } catch (IOException e) {
                 }
             }
-        }.start();
+        };
+        t.start();
+        try{
+     	   t.join();
+        }
+        catch(InterruptedException ignore){}        
     }
 
     /**
@@ -277,7 +286,7 @@ public class ExternalParser extends AbstractParser {
      * @param process process
      */
     private void ignoreStream(final InputStream stream) {
-        new Thread() {
+        Thread t = new Thread() {
             public void run() {
                 try {
                     IOUtils.copy(stream, new NullOutputStream());
@@ -286,11 +295,16 @@ public class ExternalParser extends AbstractParser {
                     IOUtils.closeQuietly(stream);
                 }
             }
-        }.start();
+        };
+        t.start();
+        try{
+     	   t.join();
+        }
+        catch(InterruptedException ignore){}
     }
     
     private void extractMetadata(final InputStream stream, final Metadata metadata) {
-       new Thread() {
+       Thread t = new Thread() {
           public void run() {
              BufferedReader reader;
               reader = new BufferedReader(new InputStreamReader(stream, IOUtils.UTF_8));
@@ -317,7 +331,12 @@ public class ExternalParser extends AbstractParser {
                 IOUtils.closeQuietly(stream);
             }
           }
-       }.start();
+       };
+	   t.start();
+       try{
+    	   t.join();
+       }
+       catch(InterruptedException ignore){}
     }
     
     /**
@@ -339,8 +358,7 @@ public class ExternalParser extends AbstractParser {
        
        try {
           Process process= Runtime.getRuntime().exec(checkCmd);
-          int result = process.waitFor();
-          
+          int result = process.waitFor(); 
           for(int err : errorValue) {
              if(result == err) return false;
           }
