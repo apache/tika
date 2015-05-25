@@ -141,22 +141,25 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals("org.apache.tika.parser.DefaultParser", json.get("name"));
             assertEquals(Boolean.TRUE, json.get("composite"));
 
-            // At least 20 child parsers which aren't composite
+            // At least 20 child parsers which aren't composite, except for CompositeExternalParser
             Object[] children = (Object[]) (Object) json.get("children");
             assertTrue(children.length >= 20);
             boolean hasOpus = false, hasOOXML = false, hasPDF = false, hasZip = false;
             int nonComposite = 0;
+            int composite = 0;
             for (Object o : children) {
                 Map<String, Object> d = (Map<String, Object>) o;
                 assertEquals(true, d.containsKey("name"));
                 assertEquals(true, d.containsKey("composite"));
-                assertEquals(Boolean.FALSE, d.get("composite"));
-                assertEquals(false, d.containsKey("children"));
 
-                if (d.get("composite") == Boolean.FALSE) nonComposite++;
-
+                if (d.get("composite") == Boolean.FALSE)
+                	nonComposite++;
+                else
+                	composite++;
+                
                 // Will only have mime types if requested
-                assertEquals(details, d.containsKey("supportedTypes"));
+                if (d.get("composite") == Boolean.FALSE)
+                	assertEquals(details, d.containsKey("supportedTypes"));
 
                 String name = (String) d.get("name");
                 if (OpusParser.class.getName().equals(name)) {
@@ -177,6 +180,7 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(true, hasPDF);
             assertEquals(true, hasZip);
             assertTrue(nonComposite > 20);
+            assertEquals(1, composite);
         }
     }
 }
