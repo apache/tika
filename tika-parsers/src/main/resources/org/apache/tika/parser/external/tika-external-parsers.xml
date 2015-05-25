@@ -30,10 +30,19 @@
      <mime-types>
        <mime-type>video/avi</mime-type>
        <mime-type>video/mpeg</mime-type>
+       <mime-type>video/x-msvideo</mime-type>
      </mime-types>
      <metadata>
-       <match key="xmpDM:audioChannelType">Stream.*? Audio:.*? Hz, (\w+),</match>
-       <match key="xmpDM:audioCompressor">Stream.*? Audio: (\w+),</match>
+       <match key="xmpDM:audioSampleRate">\s*Stream.*:.+Audio:.*,\s+(\d+)\s+Hz,.*</match>
+       <match key="xmpDM:audioChannelType">\s*Stream.*:.+Audio:.*\d+\s+Hz,\s+(\d{1,2})\s+channels.*</match>
+       <match key="xmpDM:audioCompressor">\s*Stream.*:.+Audio:\s+([A-Za-z0-9_\(\)/\[\] ]+),.*</match>
+       <match key="xmpDM:duration">\s*Duration:\s*([0-9:\.]+),.*</match>
+       <match key="xmpDM:fileDataRate">\s*Duration:.*,\s*bitrate:\s+([0-9A-Za-z/ ]+).*</match>
+       <match key="xmpDM:videoColorSpace">\s*Stream.*:\s+Video:.*,\s+([A-Za-z0-9\(\), ]+),.*</match>
+       <match key="xmpDM:videoCompressor">\s*Stream.*:\s+Video:\s+([A-Za-z0-9\(\)/ ]+),.*</match>
+       <match key="xmpDM:videoFrameRate">\s*Stream.*:\s+Video:.*,\s+([0-9]+)\s+fps,.*</match>
+       <match key="encoder">\s*encoder\s*\:\s*(\w+).*</match>
+       <match key="videoResolution">\s*Stream.*:\s+Video:.*,\s+([0-9x]+),.*</match>
      </metadata>
   </parser>
 </external-parsers>
