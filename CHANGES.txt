@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * If FFMPEG is installed and on the PATH, it is a 
+    usable Parser in Tika now (TIKA-1510).
+
   * Fixes have been applied to the ExternalParser to make
     it functional (TIKA-1638).
 
