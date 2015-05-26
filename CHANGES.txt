@@ -1,5 +1,8 @@
 Release 1.9 - Current Development
 
+  * The EXIFTool was added as an External parser
+    (TIKA-1639).
+
   * If FFMPEG is installed and on the PATH, it is a 
     usable Parser in Tika now (TIKA-1510).
 
