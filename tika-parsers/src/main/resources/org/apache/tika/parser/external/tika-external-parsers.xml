@@ -45,4 +45,20 @@
        <match key="videoResolution">\s*Stream.*:\s+Video:.*,\s+([0-9x]+),.*</match>
      </metadata>
   </parser>
+  <parser>
+     <check>
+       <command>exiftool -ver</command>
+       <error-codes>126,127</error-codes>
+     </check>
+     <command>env FOO=${OUTPUT} exiftool ${INPUT}</command>
+     <mime-types>
+       <mime-type>video/avi</mime-type>
+       <mime-type>video/mpeg</mime-type>
+       <mime-type>video/x-msvideo</mime-type>
+       <mime-type>video/mp4</mime-type>
+     </mime-types>
+     <metadata>
+       <match>\s*([A-Za-z0-9/ \(\)]+\S{1})\s+:\s+([A-Za-z0-9\(\)\[\] \:\-\.]+)\s*</match>
+     </metadata>
+  </parser>
 </external-parsers>
