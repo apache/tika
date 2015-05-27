@@ -180,7 +180,7 @@ public class TikaParsersTest extends CXFTestBase {
             assertEquals(true, hasPDF);
             assertEquals(true, hasZip);
             assertTrue(nonComposite > 20);
-            assertEquals(1, composite);
+            assertTrue(composite == 0 || composite == 1); // if CompositeExternalParser is available it will be 1
         }
     }
 }
