@@ -58,6 +58,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
     private static final char UNICODECHAR_NONBREAKING_HYPHEN = '\u2011';
     private static final char UNICODECHAR_ZERO_WIDTH_SPACE = '\u200b';
+    // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
+    private static final String LIST_DELIMITER = " "; 
 
     public WordExtractor(ParseContext context) {
         super(context);
@@ -101,9 +103,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         // Do the main paragraph text
         Range r = document.getRange();
+        ListManager listManager = new ListManager(document);
         for(int i=0; i<r.numParagraphs(); i++) {
            Paragraph p = r.getParagraph(i);
-           i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable, xhtml);
+           i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable, listManager, xhtml);
         }
 
         // Do everything else
@@ -162,13 +165,14 @@ public class WordExtractor extends AbstractPOIFSExtractor {
           throws SAXException, IOException, TikaException {
         if (countParagraphs(ranges) > 0) {
             xhtml.startElement("div", "class", type);
+            ListManager listManager = new ListManager(document);
             for (Range r : ranges) {
                 if (r != null) {
                     for(int i=0; i<r.numParagraphs(); i++) {
                         Paragraph p = r.getParagraph(i);
 
                         i += handleParagraph(p, 0, r, document,
-                                FieldsDocumentPart.HEADER, pictures, pictureTable, xhtml);
+                                FieldsDocumentPart.HEADER, pictures, pictureTable, listManager, xhtml);
                      }
                 }
             }
@@ -177,7 +181,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     private int handleParagraph(Paragraph p, int parentTableLevel, Range r, HWPFDocument document,
-          FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable,
+          FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable, ListManager listManager,
           XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
        // Note - a poi bug means we can't currently properly recurse
        //  into nested tables, so currently we don't
@@ -194,7 +198,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
                 for(int pn=0; pn<cell.numParagraphs(); pn++) {
                    Paragraph cellP = cell.getParagraph(pn);
-                   handleParagraph(cellP, p.getTableLevel(), cell, document, docPart, pictures, pictureTable, xhtml);
+                   handleParagraph(cellP, p.getTableLevel(), cell, document, docPart, pictures, pictureTable, listManager, xhtml);
                 }
                 xhtml.endElement("td");
              }
@@ -212,11 +216,15 @@ public class WordExtractor extends AbstractPOIFSExtractor {
        }
 
        TagAndStyle tas;
+       String numbering = null;
 
        if (document.getStyleSheet().numStyles()>p.getStyleIndex()) {
            StyleDescription style =
               document.getStyleSheet().getStyleDescription(p.getStyleIndex());
            if (style != null && style.getName() != null && style.getName().length() > 0) {
+               if (p.isInList()) {
+                   numbering = listManager.getFormattedNumber(p);
+               }
                tas = buildParagraphTagAndStyle(style.getName(), (parentTableLevel>0));
            } else {
                tas = new TagAndStyle("p", null);
@@ -229,6 +237,10 @@ public class WordExtractor extends AbstractPOIFSExtractor {
            xhtml.startElement(tas.getTag(), "class", tas.getStyleClass());
        } else {
            xhtml.startElement(tas.getTag());
+       }
+
+       if (numbering != null) {
+           xhtml.characters(numbering);
        }
 
        for(int j=0; j<p.numCharacterRuns(); j++) {
