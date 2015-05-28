@@ -61,6 +61,11 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
+
+    // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
+    private static final String LIST_DELIMITER = " "; 
+
+
     private XWPFDocument document;
     private XWPFStyles styles;
 
@@ -78,31 +83,32 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
-
+        XWPFListManager listManager = new XWPFListManager(document);
         // headers
         if (hfPolicy!=null) {
-            extractHeaders(xhtml, hfPolicy);
+            extractHeaders(xhtml, hfPolicy, listManager);
         }
 
         // process text in the order that it occurs in
-        extractIBodyText(document, xhtml);
+        extractIBodyText(document, listManager, xhtml);
 
         // then all document tables
         if (hfPolicy!=null) {
-            extractFooters(xhtml, hfPolicy);
+            extractFooters(xhtml, hfPolicy, listManager);
         }
     }
 
-    private void extractIBodyText(IBody bodyElement, XHTMLContentHandler xhtml)
+    private void extractIBodyText(IBody bodyElement, XWPFListManager listManager,
+            XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
        for(IBodyElement element : bodyElement.getBodyElements()) {
           if(element instanceof XWPFParagraph) {
              XWPFParagraph paragraph = (XWPFParagraph)element;
-             extractParagraph(paragraph, xhtml);
+             extractParagraph(paragraph, listManager, xhtml);
           }
           if(element instanceof XWPFTable) {
              XWPFTable table = (XWPFTable)element;
-             extractTable(table, xhtml);
+             extractTable(table, listManager, xhtml);
           }
           if (element instanceof XWPFSDT){
              extractSDT((XWPFSDT) element, xhtml);
@@ -120,7 +126,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
        xhtml.endElement(tag);
     }
     
-    private void extractParagraph(XWPFParagraph paragraph, XHTMLContentHandler xhtml)
+    private void extractParagraph(XWPFParagraph paragraph, XWPFListManager listManager,
+            XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
        // If this paragraph is actually a whole new section, then
        //  it could have its own headers and footers
@@ -131,7 +138,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
            if(ctSectPr != null) {
               headerFooterPolicy =
                   new XWPFHeaderFooterPolicy(document, ctSectPr);
-              extractHeaders(xhtml, headerFooterPolicy);
+              extractHeaders(xhtml, headerFooterPolicy, listManager);
            }
        }
        
@@ -158,6 +165,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           xhtml.startElement(tag, "class", styleClass);
        }
 
+        writeParagraphNumber(paragraph, listManager, xhtml);
        // Output placeholder for any embedded docs:
 
        // TODO: replace w/ XPath/XQuery:
@@ -234,15 +242,28 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
        // Also extract any paragraphs embedded in text boxes:
        for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent/w:p")) {
-           extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), xhtml);
+           extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), listManager, xhtml);
        }
 
        // Finish this paragraph
        xhtml.endElement(tag);
 
        if (headerFooterPolicy != null) {
-           extractFooters(xhtml, headerFooterPolicy);
+           extractFooters(xhtml, headerFooterPolicy, listManager);
        }
+    }
+
+    private void writeParagraphNumber(XWPFParagraph paragraph,
+                                      XWPFListManager listManager,
+                                      XHTMLContentHandler xhtml) throws SAXException {
+        if (paragraph.getNumIlvl() == null) {
+            return;
+        }
+        String number = listManager.getFormattedNumber(paragraph);
+        if (number != null) {
+            xhtml.characters(number);
+        }
+
     }
 
     private TmpFormatting closeStyleTags(XHTMLContentHandler xhtml,
@@ -328,7 +349,8 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
        xhtml.characters(run.getContent().getText());
     }
 
-    private void extractTable(XWPFTable table, XHTMLContentHandler xhtml)
+    private void extractTable(XWPFTable table, XWPFListManager listManager, 
+            XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
        xhtml.startElement("table");
        xhtml.startElement("tbody");
@@ -337,7 +359,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
           for(ICell cell : row.getTableICells()){
               xhtml.startElement("td");
               if (cell instanceof XWPFTableCell) {
-                  extractIBodyText((XWPFTableCell)cell, xhtml);
+                  extractIBodyText((XWPFTableCell)cell, listManager, xhtml);
               } else if (cell instanceof XWPFSDTCell) {
                   xhtml.characters(((XWPFSDTCell)cell).getContent().getText());
               }
@@ -350,45 +372,46 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
     
     private void extractFooters(
-            XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
+            XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy,
+            XWPFListManager listManager)
             throws SAXException, XmlException, IOException {
         // footers
         if (hfPolicy.getFirstPageFooter() != null) {
-            extractHeaderText(xhtml, hfPolicy.getFirstPageFooter());
+            extractHeaderText(xhtml, hfPolicy.getFirstPageFooter(), listManager);
         }
         if (hfPolicy.getEvenPageFooter() != null) {
-            extractHeaderText(xhtml, hfPolicy.getEvenPageFooter());
+            extractHeaderText(xhtml, hfPolicy.getEvenPageFooter(), listManager);
         }
         if (hfPolicy.getDefaultFooter() != null) {
-            extractHeaderText(xhtml, hfPolicy.getDefaultFooter());
+            extractHeaderText(xhtml, hfPolicy.getDefaultFooter(), listManager);
         }
     }
 
     private void extractHeaders(
-            XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy)
+            XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy, XWPFListManager listManager)
             throws SAXException, XmlException, IOException {
         if (hfPolicy == null) return;
        
         if (hfPolicy.getFirstPageHeader() != null) {
-            extractHeaderText(xhtml, hfPolicy.getFirstPageHeader());
+            extractHeaderText(xhtml, hfPolicy.getFirstPageHeader(), listManager);
         }
 
         if (hfPolicy.getEvenPageHeader() != null) {
-            extractHeaderText(xhtml, hfPolicy.getEvenPageHeader());
+            extractHeaderText(xhtml, hfPolicy.getEvenPageHeader(), listManager);
         }
 
         if (hfPolicy.getDefaultHeader() != null) {
-            extractHeaderText(xhtml, hfPolicy.getDefaultHeader());
+            extractHeaderText(xhtml, hfPolicy.getDefaultHeader(), listManager);
         }
     }
 
-    private void extractHeaderText(XHTMLContentHandler xhtml, XWPFHeaderFooter header) throws SAXException, XmlException, IOException {
+    private void extractHeaderText(XHTMLContentHandler xhtml, XWPFHeaderFooter header, XWPFListManager listManager) throws SAXException, XmlException, IOException {
 
         for (IBodyElement e : header.getBodyElements()){
            if (e instanceof XWPFParagraph){
-              extractParagraph((XWPFParagraph)e, xhtml);
+              extractParagraph((XWPFParagraph)e, listManager, xhtml);
            } else if (e instanceof XWPFTable){
-              extractTable((XWPFTable)e, xhtml);
+              extractTable((XWPFTable)e, listManager, xhtml);
            } else if (e instanceof XWPFSDT){
               extractSDT((XWPFSDT)e, xhtml);
            }

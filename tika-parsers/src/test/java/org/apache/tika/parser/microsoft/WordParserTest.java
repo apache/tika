@@ -424,4 +424,78 @@ public class WordParserTest extends TikaTest {
         XMLResult result = getXML("testWORD_hyperLinkCarriageReturn.doc");
         assertContains("href=\"http://www.nib.org", result.xml);
     }
+
+    @Test
+    public void testDOCParagraphNumbering() throws Exception {
+        String xml = getXML("testWORD_numbered_list.doc").xml;
+        assertContains("1) This", xml);
+        assertContains("a) Is", xml);
+        assertContains("i) A multi", xml);
+        assertContains("ii) Level", xml);
+        assertContains("1. Within cell 1", xml);
+        assertContains("b. Cell b", xml);
+        assertContains("iii) List", xml);
+        assertContains("2) foo", xml);
+        assertContains("ii) baz", xml);
+        assertContains("ii) foo", xml);
+        assertContains("II. bar", xml);
+        assertContains("6. six", xml);
+        assertContains("7. seven", xml);
+        assertContains("a. seven a", xml);
+        assertContains("e. seven e", xml);
+        assertContains("2. A ii 2", xml);
+        assertContains("3. page break list 3", xml);
+        assertContains("Some-1-CrazyFormat Greek numbering with crazy format - alpha", xml);
+        assertContains("1.1.1. 1.1.1", xml);
+        assertContains("1.1. 1.2-&gt;1.1  //set the value", xml);
+
+        assertContains("add a list here", xml);
+        //TODO: not currently pulling numbers out of comments
+        assertContains(">comment list 1", xml);
+
+    }
+
+    @Test
+    public void testDOCOverrideParagraphNumbering() throws Exception {
+        String xml = getXML("testWORD_override_list_numbering.doc").xml;
+
+        //Test 1
+        assertContains("1.1.1.1...1 1.1.1.1...1", xml);
+        assertContains("1st.2.3someText 1st.2.3someText", xml);
+        assertContains("1st.2.2someOtherText.1 1st.2.2someOtherText.1", xml);
+        assertContains("5th 5th", xml);
+
+
+        //Test 2
+        assertContains("1.a.I 1.a.I", xml);
+        //test no reset because level 2 is not sufficient to reset
+        assertContains("1.b.III 1.b.III", xml);
+        //test restarted because of level 0's increment to 2
+        assertContains("2.a.I 2.a.I", xml);
+        //test handling of skipped level
+        assertContains("2.b 2.b", xml);
+
+        //Test 3
+        assertContains("(1)) (1))", xml);
+        //tests start level 1 at 17 and
+        assertContains("2.17 2.17", xml);
+        //tests that isLegal turns everything into decimal
+        assertContains("2.18.2.1 2.18.2.1", xml);
+        assertContains(">2 2", xml);
+
+        //Test4
+        assertContains(">1 1", xml);
+        assertContains(">A A", xml);
+        assertContains(">B B", xml);
+        assertContains(">C C", xml);
+        assertContains(">4 4", xml);
+
+        //Test5
+        assertContains(">00 00", xml);
+        assertContains(">01 01", xml);
+        assertContains(">01. 01.", xml);
+        assertContains(">01..1 01..1", xml);
+        assertContains(">02 02", xml);
+    }
 }
+

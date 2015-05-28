@@ -1178,5 +1178,78 @@ public class OOXMLParserTest extends TikaTest {
         }
 
     }
+
+    @Test
+    public void testDOCXParagraphNumbering() throws Exception {
+        String xml = getXML("testWORD_numbered_list.docx").xml;
+        assertContains("1) This", xml);
+        assertContains("a) Is", xml);
+        assertContains("i) A multi", xml);
+        assertContains("ii) Level", xml);
+        assertContains("1. Within cell 1", xml);
+        assertContains("b. Cell b", xml);
+        assertContains("iii) List", xml);
+        assertContains("2) foo", xml);
+        assertContains("ii) baz", xml);
+        assertContains("ii) foo", xml);
+        assertContains("II. bar", xml);
+        assertContains("6. six", xml);
+        assertContains("7. seven", xml);
+        assertContains("a. seven a", xml);
+        assertContains("e. seven e", xml);
+        assertContains("2. A ii 2", xml);
+        assertContains("3. page break list 3", xml);
+        assertContains("Some-1-CrazyFormat Greek numbering with crazy format - alpha", xml);
+        assertContains("1.1.1. 1.1.1", xml);
+        assertContains("1.1. 1.2-&gt;1.1  //set the value", xml);
+
+        //TODO: comment is not being extracted!
+        //assertContains("add a list here", xml);
+    }
+
+    @Test
+    public void testDOCXOverrideParagraphNumbering() throws Exception {
+        String xml = getXML("testWORD_override_list_numbering.docx").xml;
+
+        //Test 1
+        assertContains("<p>1.1.1.1...1 1.1.1.1...1</p>", xml);
+        assertContains("1st.2.3someText 1st.2.3someText", xml);
+        assertContains("1st.2.2someOtherText.1 1st.2.2someOtherText.1", xml);
+        assertContains("5th 5th", xml);
+
+
+        //Test 2
+        assertContains("1.a.I 1.a.I", xml);
+        //test no reset because level 2 is not sufficient to reset
+        assertContains("<p>1.b.III 1.b.III</p>", xml);
+        //test restarted because of level 0's increment to 2
+        assertContains("2.a.I 2.a.I", xml);
+        //test handling of skipped level
+        assertContains("<p>2.b 2.b</p>", xml);
+
+        //Test 3
+        assertContains("(1)) (1))", xml);
+        //tests start level 1 at 17 and
+        assertContains("2.17 2.17", xml);
+        //tests that isLegal turns everything into decimal
+        assertContains("2.18.2.1 2.18.2.1", xml);
+        assertContains("<p>2 2</p>", xml);
+
+        //Test4
+        assertContains("<p>1 1</p>", xml);
+        assertContains("<p>A A</p>", xml);
+        assertContains("<p>B B</p>", xml);
+        //TODO: add this back in once overrides are available via CTNumLvl
+        //assertContains("<p>C C</p>", xml);
+        assertContains("<p>4 4</p>", xml);
+
+        //Test5
+        assertContains(">00 00", xml);
+        assertContains(">01 01", xml);
+        assertContains(">01. 01.", xml);
+        assertContains(">01..1 01..1", xml);
+        assertContains(">02 02", xml);
+    }
 }
+
 
