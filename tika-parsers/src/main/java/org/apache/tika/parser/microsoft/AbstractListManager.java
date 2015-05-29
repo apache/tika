@@ -34,15 +34,13 @@ public abstract class AbstractListManager {
     //helper class that is docx/doc format agnostic
     protected class ParagraphLevelCounter {
 
-        Pattern LEVEL_INTERPOLATOR = Pattern.compile("%(\\d+)");
-
         //counts can == 0 if the format is decimal, make sure
         //that flag values are < 0
         private final Integer NOT_SEEN_YET = -1;
         private final Integer FIRST_SKIPPED = -2;
-        private List<Integer> counts = new ArrayList<Integer>();
         private final LevelTuple[] levelTuples;
-
+        Pattern LEVEL_INTERPOLATOR = Pattern.compile("%(\\d+)");
+        private List<Integer> counts = new ArrayList<Integer>();
         private int lastLevel = -1;
 
         public ParagraphLevelCounter(LevelTuple[] levelTuples) {
@@ -52,16 +50,17 @@ public abstract class AbstractListManager {
         public int getNumberOfLevels() {
             return levelTuples.length;
         }
+
         /**
          * Apply this to every numbered paragraph in order.
          *
-         * @param levelNumber     level number that is being incremented
+         * @param levelNumber level number that is being incremented
          * @return the new formatted number string for this level
          */
         public String incrementLevel(int levelNumber, LevelTuple[] overrideLevelTuples) {
 
-            for (int i = lastLevel+1; i < levelNumber; i++) {
-                if (i >= counts.size()){
+            for (int i = lastLevel + 1; i < levelNumber; i++) {
+                if (i >= counts.size()) {
                     int val = getStart(i, overrideLevelTuples);
                     counts.add(i, val);
                 } else {
@@ -104,7 +103,7 @@ public abstract class AbstractListManager {
             //short circuit bullet
             String numFmt = getNumFormat(level, isLegal, overrideLevelTuples);
             if ("bullet".equals(numFmt)) {
-                return BULLET+" ";
+                return BULLET + " ";
             }
 
             String lvlText = (overrideLevelTuples == null || overrideLevelTuples[level].lvlText == null) ?
@@ -163,7 +162,7 @@ public abstract class AbstractListManager {
             } else if ("ordinal".equals(numFmt)) {
                 return ordinalize(count);
             } else if ("decimalZero".equals(numFmt)) {
-                return "0"+NumberFormatter.getNumber(count, 0);
+                return "0" + NumberFormatter.getNumber(count, 0);
             } else if ("none".equals(numFmt)) {
                 return "";
             }
@@ -174,13 +173,13 @@ public abstract class AbstractListManager {
             //this is only good for locale == English
             String countString = Integer.toString(count);
             if (countString.endsWith("1")) {
-                return countString+"st";
+                return countString + "st";
             } else if (countString.endsWith("2")) {
-                return countString+"nd";
+                return countString + "nd";
             } else if (countString.endsWith("3")) {
-                return countString+"rd";
+                return countString + "rd";
             }
-            return countString+"th";
+            return countString + "th";
         }
 
         private String getNumFormat(int lvlNum, boolean isLegal, LevelTuple[] overrideLevelTuples) {
@@ -218,7 +217,7 @@ public abstract class AbstractListManager {
                     if (restart == 0) {
                         return;
                     } else if (restart == -1 ||
-                            startlevelNumber <= restart - 1 ) {
+                            startlevelNumber <= restart - 1) {
                         counts.set(levelNumber, NOT_SEEN_YET);
                     } else {
                         //do nothing/don't reset

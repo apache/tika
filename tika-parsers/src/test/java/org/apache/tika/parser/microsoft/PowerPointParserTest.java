@@ -5,9 +5,9 @@
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.Locale;
@@ -148,9 +147,9 @@ public class PowerPointParserTest extends TikaTest {
 
         // Make sure boilerplate text didn't come through:
         assertEquals(-1, content.indexOf("Click to edit Master"));
- 
-       //TIKA-1171
-       assertEquals(-1, content.indexOf("*"));
+
+        //TIKA-1171
+        assertEquals(-1, content.indexOf("*"));
     }
 
     /**
@@ -207,54 +206,54 @@ public class PowerPointParserTest extends TikaTest {
      */
     @Test
     public void testCustomProperties() throws Exception {
-       InputStream input = PowerPointParserTest.class.getResourceAsStream(
-             "/test-documents/testPPT_custom_props.ppt");
-       Metadata metadata = new Metadata();
-       
-       try {
-          ContentHandler handler = new BodyContentHandler(-1);
-          ParseContext context = new ParseContext();
-          context.set(Locale.class, Locale.US);
-          new OfficeParser().parse(input, handler, metadata, context);
-       } finally {
-          input.close();
-       }
-       
-       assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));
-       assertEquals("JOUVIN ETIENNE",       metadata.get(TikaCoreProperties.CREATOR));
-       assertEquals("EJ04325S",             metadata.get(TikaCoreProperties.MODIFIER));
-       assertEquals("EJ04325S",             metadata.get(Metadata.LAST_AUTHOR));
-       assertEquals("2011-08-22T13:32:58Z", metadata.get(TikaCoreProperties.MODIFIED));
-       assertEquals("2011-08-22T13:32:58Z", metadata.get(Metadata.DATE));
-       assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
-       assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
-       assertEquals("1",                    metadata.get(Office.SLIDE_COUNT));
-       assertEquals("3",                    metadata.get(Office.WORD_COUNT));
-       assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));
-       assertEquals("true",                 metadata.get("custom:myCustomBoolean"));
-       assertEquals("3",                    metadata.get("custom:myCustomNumber"));
-       assertEquals("MyStringValue",        metadata.get("custom:MyCustomString"));
-       assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
-       assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
+        InputStream input = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_custom_props.ppt");
+        Metadata metadata = new Metadata();
+
+        try {
+            ContentHandler handler = new BodyContentHandler(-1);
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.US);
+            new OfficeParser().parse(input, handler, metadata, context);
+        } finally {
+            input.close();
+        }
+
+        assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("JOUVIN ETIENNE", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("EJ04325S", metadata.get(TikaCoreProperties.MODIFIER));
+        assertEquals("EJ04325S", metadata.get(Metadata.LAST_AUTHOR));
+        assertEquals("2011-08-22T13:32:58Z", metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2011-08-22T13:32:58Z", metadata.get(Metadata.DATE));
+        assertEquals("2011-08-22T13:30:53Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2011-08-22T13:30:53Z", metadata.get(Metadata.CREATION_DATE));
+        assertEquals("1", metadata.get(Office.SLIDE_COUNT));
+        assertEquals("3", metadata.get(Office.WORD_COUNT));
+        assertEquals("Test extraction properties pptx", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("true", metadata.get("custom:myCustomBoolean"));
+        assertEquals("3", metadata.get("custom:myCustomNumber"));
+        assertEquals("MyStringValue", metadata.get("custom:MyCustomString"));
+        assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
+        assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
 
     // TIKA-1025
     @Test
     public void testEmbeddedPlacedholder() throws Exception {
-       XMLResult result = getXML("testPPT_embedded2.ppt");
-       assertContains("<div class=\"embedded\" id=\"1\" />", result.xml);
-       assertContains("<div class=\"embedded\" id=\"14\" />", result.xml);
+        XMLResult result = getXML("testPPT_embedded2.ppt");
+        assertContains("<div class=\"embedded\" id=\"1\" />", result.xml);
+        assertContains("<div class=\"embedded\" id=\"14\" />", result.xml);
     }
 
     // TIKA-817
     @Test
     public void testAutoDatePPT() throws Exception {
-       //decision was made in POI-52367 not to generate
-       //autodate automatically.  For pptx, where value is stored,
-       //value is extracted.  For ppt, however, no date is extracted.
-       XMLResult result = getXML("testPPT_autodate.ppt");
-       assertContains(
-               "<p class=\"slide-content\">Now<br />\n*<br />\n*<br />",
-               result.xml);
+        //decision was made in POI-52367 not to generate
+        //autodate automatically.  For pptx, where value is stored,
+        //value is extracted.  For ppt, however, no date is extracted.
+        XMLResult result = getXML("testPPT_autodate.ppt");
+        assertContains(
+                "<p class=\"slide-content\">Now<br />\n*<br />\n*<br />",
+                result.xml);
     }
 }

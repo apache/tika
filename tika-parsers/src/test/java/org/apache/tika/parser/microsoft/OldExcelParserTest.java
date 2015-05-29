@@ -65,12 +65,12 @@ public class OldExcelParserTest extends TikaTest {
 
         // We can get the content type
         assertEquals("application/vnd.ms-excel.sheet.4", metadata.get(Metadata.CONTENT_TYPE));
-        
+
         // But no other metadata
         assertEquals(null, metadata.get(TikaCoreProperties.TITLE));
         assertEquals(null, metadata.get(Metadata.SUBJECT));
     }
-    
+
     /**
      * Check we can get the plain text properly
      */
@@ -85,9 +85,9 @@ public class OldExcelParserTest extends TikaTest {
         } finally {
             stream.close();
         }
-        
+
         String text = handler.toString();
-        
+
         // Check we find a few words we expect in there
         assertContains("Size", text);
         assertContains("Returns", text);
@@ -104,15 +104,15 @@ public class OldExcelParserTest extends TikaTest {
     public void testHTML() throws Exception {
         XMLResult result = getXML(file);
         String xml = result.xml;
-        
+
         // Sheet name not found - only 5+ have sheet names
         assertNotContained("<p>Sheet 1</p>", xml);
-        
+
         // String cells
         assertContains("<p>Table 10 -", xml);
         assertContains("<p>Tax</p>", xml);
         assertContains("<p>N/A</p>", xml);
-        
+
         // Number cells
         assertContains("<p>(1)</p>", xml);
         assertContains("<p>5.0</p>", xml);

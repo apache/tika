@@ -37,19 +37,38 @@ import org.xml.sax.SAXException;
 
 /**
  * A POI-powered Tika Parser for very old versions of Excel, from
- *  pre-OLE2 days, such as Excel 4.
+ * pre-OLE2 days, such as Excel 4.
  */
 public class OldExcelParser extends AbstractParser {
-   private static final long serialVersionUID = 4611820730372823452L;
-   
-   private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-              MediaType.application("vnd.ms-excel.sheet.4"),
-              MediaType.application("vnd.ms-excel.workspace.4"),
-              MediaType.application("vnd.ms-excel.sheet.3"),
-              MediaType.application("vnd.ms-excel.workspace.3"),
-              MediaType.application("vnd.ms-excel.sheet.2")
-         )));
+    private static final long serialVersionUID = 4611820730372823452L;
+
+    private static final Set<MediaType> SUPPORTED_TYPES =
+            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                    MediaType.application("vnd.ms-excel.sheet.4"),
+                    MediaType.application("vnd.ms-excel.workspace.4"),
+                    MediaType.application("vnd.ms-excel.sheet.3"),
+                    MediaType.application("vnd.ms-excel.workspace.3"),
+                    MediaType.application("vnd.ms-excel.sheet.2")
+            )));
+
+    protected static void parse(OldExcelExtractor extractor,
+                                XHTMLContentHandler xhtml) throws TikaException, IOException, SAXException {
+        // Get the whole text, as a single string
+        String text = extractor.getText();
+
+        // Split and output
+        xhtml.startDocument();
+
+        String line;
+        BufferedReader reader = new BufferedReader(new StringReader(text));
+        while ((line = reader.readLine()) != null) {
+            xhtml.startElement("p");
+            xhtml.characters(line);
+            xhtml.endElement("p");
+        }
+
+        xhtml.endDocument();
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -62,36 +81,17 @@ public class OldExcelParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-       // Open the POI provided extractor
-       OldExcelExtractor extractor = new OldExcelExtractor(stream);
-       
-       // We can't do anything about metadata, as these old formats
-       //  didn't have any stored with them
-       
-       // Set the content type
-       // TODO Get the version and type, to set as the Content Type
-       
-       // Have the text extracted and given to our Content Handler
-       XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-       parse(extractor, xhtml);
-    }
-    
-    protected static void parse(OldExcelExtractor extractor, 
-            XHTMLContentHandler xhtml) throws TikaException, IOException, SAXException {
-        // Get the whole text, as a single string
-        String text = extractor.getText();
-        
-        // Split and output
-        xhtml.startDocument();
-        
-        String line;
-        BufferedReader reader = new BufferedReader(new StringReader(text));
-        while ((line = reader.readLine()) != null) {
-            xhtml.startElement("p");
-            xhtml.characters(line);
-            xhtml.endElement("p");
-        }
-        
-        xhtml.endDocument();
+        // Open the POI provided extractor
+        OldExcelExtractor extractor = new OldExcelExtractor(stream);
+
+        // We can't do anything about metadata, as these old formats
+        //  didn't have any stored with them
+
+        // Set the content type
+        // TODO Get the version and type, to set as the Content Type
+
+        // Have the text extracted and given to our Content Handler
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        parse(extractor, xhtml);
     }
 }

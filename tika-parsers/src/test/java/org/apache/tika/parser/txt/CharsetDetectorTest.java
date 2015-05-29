@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.txt;
 
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -24,48 +23,50 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 
-public class CharsetDetectorTest {
-  
-  @Test
-  public void testTagDropper() throws IOException {
-    InputStream in = CharsetDetectorTest.class.getResourceAsStream( "/test-documents/resume.html" );
+import org.junit.Test;
 
-    try {
-      CharsetDetector detector = new CharsetDetector();
-      detector.enableInputFilter(true);
-      detector.setText(in);
-      CharsetMatch [] matches = detector.detectAll();
-      CharsetMatch mm = null;
-      for ( CharsetMatch m : matches ) {
-        if ( mm == null || mm.getConfidence() < m.getConfidence() ) {
-          mm = m;
+public class CharsetDetectorTest {
+
+    @Test
+    public void testTagDropper() throws IOException {
+        InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html");
+
+        try {
+            CharsetDetector detector = new CharsetDetector();
+            detector.enableInputFilter(true);
+            detector.setText(in);
+            CharsetMatch[] matches = detector.detectAll();
+            CharsetMatch mm = null;
+            for (CharsetMatch m : matches) {
+                if (mm == null || mm.getConfidence() < m.getConfidence()) {
+                    mm = m;
+                }
+            }
+            assertTrue(mm != null);
+            assertEquals("UTF-8", mm.getName());
+        } finally {
+            in.close();
         }
-      }
-      assertTrue( mm != null );
-      assertEquals( "UTF-8", mm.getName() );
-    } finally {
-      in.close();
     }
-  }
   
   /* https://issues.apache.org/jira/browse/TIKA-1248
    * Verify empty or null declaredEncoding doesn't cause an exception
    * 
    */
-  
-  @Test
-  public void testEmptyOrNullDeclaredCharset() throws IOException {
-    InputStream in = CharsetDetectorTest.class.getResourceAsStream( "/test-documents/resume.html" );
-      
-    try {
-      CharsetDetector detector = new CharsetDetector();
-      Reader reader = detector.getReader(in, null);
-      assertTrue(reader.ready());
-      
-      reader = detector.getReader(in, "");
-      assertTrue(reader.ready());
-    } finally {
-      in.close();
+
+    @Test
+    public void testEmptyOrNullDeclaredCharset() throws IOException {
+        InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html");
+
+        try {
+            CharsetDetector detector = new CharsetDetector();
+            Reader reader = detector.getReader(in, null);
+            assertTrue(reader.ready());
+
+            reader = detector.getReader(in, "");
+            assertTrue(reader.ready());
+        } finally {
+            in.close();
+        }
     }
-  }
 }

@@ -40,20 +40,22 @@ import org.xml.sax.SAXException;
  * beginning of the stream and the given document metadata, most
  * notably the <code>charset</code> parameter of a
  * {@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE} value.
- * <p>
+ * <p/>
  * This parser sets the following output metadata entries:
  * <dl>
- *   <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE}</dt>
- *   <dd><code>text/plain; charset=...</code></dd>
+ * <dt>{@link org.apache.tika.metadata.HttpHeaders#CONTENT_TYPE}</dt>
+ * <dd><code>text/plain; charset=...</code></dd>
  * </dl>
  */
 public class TXTParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -6656102320836888910L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.TEXT_PLAIN);
+            Collections.singleton(MediaType.TEXT_PLAIN);
 
     private static final ServiceLoader LOADER =
             new ServiceLoader(TXTParser.class.getClassLoader());

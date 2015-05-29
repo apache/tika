@@ -28,7 +28,7 @@ import org.junit.Test;
 public class AccessCheckerTest {
 
     @Test
-    public void testLegacy() throws AccessPermissionException{
+    public void testLegacy() throws AccessPermissionException {
 
         Metadata m = getMetadata(false, false);
         //legacy behavior; don't bother checking

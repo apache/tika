@@ -63,7 +63,7 @@ import org.xml.sax.helpers.AttributesImpl;
 public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
-    private static final String LIST_DELIMITER = " "; 
+    private static final String LIST_DELIMITER = " ";
 
 
     private XWPFDocument document;
@@ -71,7 +71,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     public XWPFWordExtractorDecorator(ParseContext context, XWPFWordExtractor extractor) {
         super(context, extractor);
-        
+
         document = (XWPFDocument) extractor.getDocument();
         styles = document.getStyles();
     }
@@ -85,7 +85,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         XWPFHeaderFooterPolicy hfPolicy = document.getHeaderFooterPolicy();
         XWPFListManager listManager = new XWPFListManager(document);
         // headers
-        if (hfPolicy!=null) {
+        if (hfPolicy != null) {
             extractHeaders(xhtml, hfPolicy, listManager);
         }
 
@@ -93,164 +93,164 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         extractIBodyText(document, listManager, xhtml);
 
         // then all document tables
-        if (hfPolicy!=null) {
+        if (hfPolicy != null) {
             extractFooters(xhtml, hfPolicy, listManager);
         }
     }
 
     private void extractIBodyText(IBody bodyElement, XWPFListManager listManager,
-            XHTMLContentHandler xhtml)
+                                  XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
-       for(IBodyElement element : bodyElement.getBodyElements()) {
-          if(element instanceof XWPFParagraph) {
-             XWPFParagraph paragraph = (XWPFParagraph)element;
-             extractParagraph(paragraph, listManager, xhtml);
-          }
-          if(element instanceof XWPFTable) {
-             XWPFTable table = (XWPFTable)element;
-             extractTable(table, listManager, xhtml);
-          }
-          if (element instanceof XWPFSDT){
-             extractSDT((XWPFSDT) element, xhtml);
-          }
+        for (IBodyElement element : bodyElement.getBodyElements()) {
+            if (element instanceof XWPFParagraph) {
+                XWPFParagraph paragraph = (XWPFParagraph) element;
+                extractParagraph(paragraph, listManager, xhtml);
+            }
+            if (element instanceof XWPFTable) {
+                XWPFTable table = (XWPFTable) element;
+                extractTable(table, listManager, xhtml);
+            }
+            if (element instanceof XWPFSDT) {
+                extractSDT((XWPFSDT) element, xhtml);
+            }
 
-      }
+        }
     }
-    
-    private void extractSDT(XWPFSDT element, XHTMLContentHandler xhtml) throws SAXException, 
-    XmlException, IOException {
-       ISDTContent content = element.getContent();
-       String tag = "p";
-       xhtml.startElement(tag);
-       xhtml.characters(content.getText());
-       xhtml.endElement(tag);
+
+    private void extractSDT(XWPFSDT element, XHTMLContentHandler xhtml) throws SAXException,
+            XmlException, IOException {
+        ISDTContent content = element.getContent();
+        String tag = "p";
+        xhtml.startElement(tag);
+        xhtml.characters(content.getText());
+        xhtml.endElement(tag);
     }
-    
+
     private void extractParagraph(XWPFParagraph paragraph, XWPFListManager listManager,
-            XHTMLContentHandler xhtml)
+                                  XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
-       // If this paragraph is actually a whole new section, then
-       //  it could have its own headers and footers
-       // Check and handle if so
-       XWPFHeaderFooterPolicy headerFooterPolicy = null;
-       if (paragraph.getCTP().getPPr() != null) {
-           CTSectPr ctSectPr = paragraph.getCTP().getPPr().getSectPr();
-           if(ctSectPr != null) {
-              headerFooterPolicy =
-                  new XWPFHeaderFooterPolicy(document, ctSectPr);
-              extractHeaders(xhtml, headerFooterPolicy, listManager);
-           }
-       }
-       
-       // Is this a paragraph, or a heading?
-       String tag = "p";
-       String styleClass = null;
-       if(paragraph.getStyleID() != null) {
-          XWPFStyle style = styles.getStyle(
-                paragraph.getStyleID()
-          );
+        // If this paragraph is actually a whole new section, then
+        //  it could have its own headers and footers
+        // Check and handle if so
+        XWPFHeaderFooterPolicy headerFooterPolicy = null;
+        if (paragraph.getCTP().getPPr() != null) {
+            CTSectPr ctSectPr = paragraph.getCTP().getPPr().getSectPr();
+            if (ctSectPr != null) {
+                headerFooterPolicy =
+                        new XWPFHeaderFooterPolicy(document, ctSectPr);
+                extractHeaders(xhtml, headerFooterPolicy, listManager);
+            }
+        }
 
-          if (style != null && style.getName() != null) {
-             TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
-                   style.getName(), paragraph.getPartType() == BodyType.TABLECELL
-             );
-             tag = tas.getTag();
-             styleClass = tas.getStyleClass();
-          }
-       }
-       
-       if(styleClass == null) {
-          xhtml.startElement(tag);
-       } else {
-          xhtml.startElement(tag, "class", styleClass);
-       }
+        // Is this a paragraph, or a heading?
+        String tag = "p";
+        String styleClass = null;
+        if (paragraph.getStyleID() != null) {
+            XWPFStyle style = styles.getStyle(
+                    paragraph.getStyleID()
+            );
+
+            if (style != null && style.getName() != null) {
+                TagAndStyle tas = WordExtractor.buildParagraphTagAndStyle(
+                        style.getName(), paragraph.getPartType() == BodyType.TABLECELL
+                );
+                tag = tas.getTag();
+                styleClass = tas.getStyleClass();
+            }
+        }
+
+        if (styleClass == null) {
+            xhtml.startElement(tag);
+        } else {
+            xhtml.startElement(tag, "class", styleClass);
+        }
 
         writeParagraphNumber(paragraph, listManager, xhtml);
-       // Output placeholder for any embedded docs:
+        // Output placeholder for any embedded docs:
 
-       // TODO: replace w/ XPath/XQuery:
-       for(XWPFRun run : paragraph.getRuns()) {
-          XmlCursor c = run.getCTR().newCursor();
-          c.selectPath("./*");
-          while (c.toNextSelection()) {
-             XmlObject o = c.getObject();
-             if (o instanceof CTObject) {
-                XmlCursor c2 = o.newCursor();
-                c2.selectPath("./*");
-                while (c2.toNextSelection()) {
-                   XmlObject o2 = c2.getObject();
+        // TODO: replace w/ XPath/XQuery:
+        for (XWPFRun run : paragraph.getRuns()) {
+            XmlCursor c = run.getCTR().newCursor();
+            c.selectPath("./*");
+            while (c.toNextSelection()) {
+                XmlObject o = c.getObject();
+                if (o instanceof CTObject) {
+                    XmlCursor c2 = o.newCursor();
+                    c2.selectPath("./*");
+                    while (c2.toNextSelection()) {
+                        XmlObject o2 = c2.getObject();
 
-                   XmlObject embedAtt = o2.selectAttribute(new QName("Type"));
-                   if (embedAtt != null && embedAtt.getDomNode().getNodeValue().equals("Embed")) {
-                      // Type is "Embed"
-                      XmlObject relIDAtt = o2.selectAttribute(new QName("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
-                      if (relIDAtt != null) {
-                         String relID = relIDAtt.getDomNode().getNodeValue();
-                         AttributesImpl attributes = new AttributesImpl();
-                         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-                         attributes.addAttribute("", "id", "id", "CDATA", relID);
-                         xhtml.startElement("div", attributes);
-                         xhtml.endElement("div");
-                      }
-                   }
+                        XmlObject embedAtt = o2.selectAttribute(new QName("Type"));
+                        if (embedAtt != null && embedAtt.getDomNode().getNodeValue().equals("Embed")) {
+                            // Type is "Embed"
+                            XmlObject relIDAtt = o2.selectAttribute(new QName("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
+                            if (relIDAtt != null) {
+                                String relID = relIDAtt.getDomNode().getNodeValue();
+                                AttributesImpl attributes = new AttributesImpl();
+                                attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                                attributes.addAttribute("", "id", "id", "CDATA", relID);
+                                xhtml.startElement("div", attributes);
+                                xhtml.endElement("div");
+                            }
+                        }
+                    }
+                    c2.dispose();
                 }
-                c2.dispose();
-             }
-          }
+            }
 
-          c.dispose();
-       }
-       
-       // Attach bookmarks for the paragraph
-       // (In future, we might put them in the right place, for now
-       //  we just put them in the correct paragraph)
-       for (int i = 0; i < paragraph.getCTP().sizeOfBookmarkStartArray(); i++) {
-          CTBookmark bookmark = paragraph.getCTP().getBookmarkStartArray(i);
-          xhtml.startElement("a", "name", bookmark.getName());
-          xhtml.endElement("a");
-       }
-       
-       TmpFormatting fmtg = new TmpFormatting(false, false);
-       
-       // Do the iruns
-       for(IRunElement run : paragraph.getIRuns()) {
-          if (run instanceof XWPFSDT){
-             fmtg = closeStyleTags(xhtml, fmtg);
-             processSDTRun((XWPFSDT)run, xhtml);
-             //for now, we're ignoring formatting in sdt
-             //if you hit an sdt reset to false
-             fmtg.setBold(false);
-             fmtg.setItalic(false);
-          } else {
-             fmtg = processRun((XWPFRun)run, paragraph, xhtml, fmtg);
-          }
-       }
-       closeStyleTags(xhtml, fmtg);
-       
-       
-       // Now do any comments for the paragraph
-       XWPFCommentsDecorator comments = new XWPFCommentsDecorator(paragraph, null);
-       String commentText = comments.getCommentText();
-       if(commentText != null && commentText.length() > 0) {
-          xhtml.characters(commentText);
-       }
+            c.dispose();
+        }
 
-       String footnameText = paragraph.getFootnoteText();
-       if(footnameText != null && footnameText.length() > 0) {
-          xhtml.characters(footnameText + "\n");
-       }
+        // Attach bookmarks for the paragraph
+        // (In future, we might put them in the right place, for now
+        //  we just put them in the correct paragraph)
+        for (int i = 0; i < paragraph.getCTP().sizeOfBookmarkStartArray(); i++) {
+            CTBookmark bookmark = paragraph.getCTP().getBookmarkStartArray(i);
+            xhtml.startElement("a", "name", bookmark.getName());
+            xhtml.endElement("a");
+        }
 
-       // Also extract any paragraphs embedded in text boxes:
-       for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent/w:p")) {
-           extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), listManager, xhtml);
-       }
+        TmpFormatting fmtg = new TmpFormatting(false, false);
 
-       // Finish this paragraph
-       xhtml.endElement(tag);
+        // Do the iruns
+        for (IRunElement run : paragraph.getIRuns()) {
+            if (run instanceof XWPFSDT) {
+                fmtg = closeStyleTags(xhtml, fmtg);
+                processSDTRun((XWPFSDT) run, xhtml);
+                //for now, we're ignoring formatting in sdt
+                //if you hit an sdt reset to false
+                fmtg.setBold(false);
+                fmtg.setItalic(false);
+            } else {
+                fmtg = processRun((XWPFRun) run, paragraph, xhtml, fmtg);
+            }
+        }
+        closeStyleTags(xhtml, fmtg);
 
-       if (headerFooterPolicy != null) {
-           extractFooters(xhtml, headerFooterPolicy, listManager);
-       }
+
+        // Now do any comments for the paragraph
+        XWPFCommentsDecorator comments = new XWPFCommentsDecorator(paragraph, null);
+        String commentText = comments.getCommentText();
+        if (commentText != null && commentText.length() > 0) {
+            xhtml.characters(commentText);
+        }
+
+        String footnameText = paragraph.getFootnoteText();
+        if (footnameText != null && footnameText.length() > 0) {
+            xhtml.characters(footnameText + "\n");
+        }
+
+        // Also extract any paragraphs embedded in text boxes:
+        for (XmlObject embeddedParagraph : paragraph.getCTP().selectPath("declare namespace w='http://schemas.openxmlformats.org/wordprocessingml/2006/main' declare namespace wps='http://schemas.microsoft.com/office/word/2010/wordprocessingShape' .//*/wps:txbx/w:txbxContent/w:p")) {
+            extractParagraph(new XWPFParagraph(CTP.Factory.parse(embeddedParagraph.xmlText()), paragraph.getBody()), listManager, xhtml);
+        }
+
+        // Finish this paragraph
+        xhtml.endElement(tag);
+
+        if (headerFooterPolicy != null) {
+            extractFooters(xhtml, headerFooterPolicy, listManager);
+        }
     }
 
     private void writeParagraphNumber(XWPFParagraph paragraph,
@@ -267,110 +267,110 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private TmpFormatting closeStyleTags(XHTMLContentHandler xhtml,
-          TmpFormatting fmtg) throws SAXException {
-       // Close any still open style tags
-       if (fmtg.isItalic()) {
-          xhtml.endElement("i");
-          fmtg.setItalic(false);
-       }
-       if (fmtg.isBold()) {
-          xhtml.endElement("b");
-          fmtg.setBold(false);
-       }
-       return fmtg;
+                                         TmpFormatting fmtg) throws SAXException {
+        // Close any still open style tags
+        if (fmtg.isItalic()) {
+            xhtml.endElement("i");
+            fmtg.setItalic(false);
+        }
+        if (fmtg.isBold()) {
+            xhtml.endElement("b");
+            fmtg.setBold(false);
+        }
+        return fmtg;
     }
 
-    private TmpFormatting processRun(XWPFRun run, XWPFParagraph paragraph, 
-          XHTMLContentHandler xhtml, TmpFormatting tfmtg) 
-          throws SAXException, XmlException, IOException{
-       // True if we are currently in the named style tag:
-       if (run.isBold() != tfmtg.isBold()) {
-          if (tfmtg.isItalic()) {
-             xhtml.endElement("i");
-             tfmtg.setItalic(false);
-          }
-          if (run.isBold()) {
-             xhtml.startElement("b");
-          } else {
-             xhtml.endElement("b");
-          }
-          tfmtg.setBold(run.isBold());
-       }
+    private TmpFormatting processRun(XWPFRun run, XWPFParagraph paragraph,
+                                     XHTMLContentHandler xhtml, TmpFormatting tfmtg)
+            throws SAXException, XmlException, IOException {
+        // True if we are currently in the named style tag:
+        if (run.isBold() != tfmtg.isBold()) {
+            if (tfmtg.isItalic()) {
+                xhtml.endElement("i");
+                tfmtg.setItalic(false);
+            }
+            if (run.isBold()) {
+                xhtml.startElement("b");
+            } else {
+                xhtml.endElement("b");
+            }
+            tfmtg.setBold(run.isBold());
+        }
 
-       if (run.isItalic() != tfmtg.isItalic()) {
-          if (run.isItalic()) {
-             xhtml.startElement("i");
-          } else {
-             xhtml.endElement("i");
-          }
-          tfmtg.setItalic(run.isItalic());
-       }
+        if (run.isItalic() != tfmtg.isItalic()) {
+            if (run.isItalic()) {
+                xhtml.startElement("i");
+            } else {
+                xhtml.endElement("i");
+            }
+            tfmtg.setItalic(run.isItalic());
+        }
 
-       boolean addedHREF = false;
-       if(run instanceof XWPFHyperlinkRun) {
-          XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun)run;
-          XWPFHyperlink link = linkRun.getHyperlink(document);
-          if(link != null && link.getURL() != null) {
-             xhtml.startElement("a", "href", link.getURL());
-             addedHREF = true;
-          } else if(linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
-             xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
-             addedHREF = true;
-          }
-       }
+        boolean addedHREF = false;
+        if (run instanceof XWPFHyperlinkRun) {
+            XWPFHyperlinkRun linkRun = (XWPFHyperlinkRun) run;
+            XWPFHyperlink link = linkRun.getHyperlink(document);
+            if (link != null && link.getURL() != null) {
+                xhtml.startElement("a", "href", link.getURL());
+                addedHREF = true;
+            } else if (linkRun.getAnchor() != null && linkRun.getAnchor().length() > 0) {
+                xhtml.startElement("a", "href", "#" + linkRun.getAnchor());
+                addedHREF = true;
+            }
+        }
 
-       xhtml.characters(run.toString());
+        xhtml.characters(run.toString());
 
-       // If we have any pictures, output them
-       for(XWPFPicture picture : run.getEmbeddedPictures()) {
-          if(paragraph.getDocument() != null) {
-             XWPFPictureData data = picture.getPictureData();
-             if(data != null) {
-                AttributesImpl attr = new AttributesImpl();
+        // If we have any pictures, output them
+        for (XWPFPicture picture : run.getEmbeddedPictures()) {
+            if (paragraph.getDocument() != null) {
+                XWPFPictureData data = picture.getPictureData();
+                if (data != null) {
+                    AttributesImpl attr = new AttributesImpl();
 
-                attr.addAttribute("", "src", "src", "CDATA", "embedded:" + data.getFileName());
-                attr.addAttribute("", "alt", "alt", "CDATA", picture.getDescription());
+                    attr.addAttribute("", "src", "src", "CDATA", "embedded:" + data.getFileName());
+                    attr.addAttribute("", "alt", "alt", "CDATA", picture.getDescription());
 
-                xhtml.startElement("img", attr);
-                xhtml.endElement("img");
-             }
-          }
-       }
+                    xhtml.startElement("img", attr);
+                    xhtml.endElement("img");
+                }
+            }
+        }
 
-       if (addedHREF) {
-          xhtml.endElement("a");
-       }
+        if (addedHREF) {
+            xhtml.endElement("a");
+        }
 
-       return tfmtg;
+        return tfmtg;
     }
 
     private void processSDTRun(XWPFSDT run, XHTMLContentHandler xhtml)
-          throws SAXException, XmlException, IOException{
-       xhtml.characters(run.getContent().getText());
+            throws SAXException, XmlException, IOException {
+        xhtml.characters(run.getContent().getText());
     }
 
-    private void extractTable(XWPFTable table, XWPFListManager listManager, 
-            XHTMLContentHandler xhtml)
+    private void extractTable(XWPFTable table, XWPFListManager listManager,
+                              XHTMLContentHandler xhtml)
             throws SAXException, XmlException, IOException {
-       xhtml.startElement("table");
-       xhtml.startElement("tbody");
-       for(XWPFTableRow row : table.getRows()) {
-          xhtml.startElement("tr");
-          for(ICell cell : row.getTableICells()){
-              xhtml.startElement("td");
-              if (cell instanceof XWPFTableCell) {
-                  extractIBodyText((XWPFTableCell)cell, listManager, xhtml);
-              } else if (cell instanceof XWPFSDTCell) {
-                  xhtml.characters(((XWPFSDTCell)cell).getContent().getText());
-              }
-              xhtml.endElement("td");
-          }
-          xhtml.endElement("tr");
-       }
-       xhtml.endElement("tbody");
-       xhtml.endElement("table");
+        xhtml.startElement("table");
+        xhtml.startElement("tbody");
+        for (XWPFTableRow row : table.getRows()) {
+            xhtml.startElement("tr");
+            for (ICell cell : row.getTableICells()) {
+                xhtml.startElement("td");
+                if (cell instanceof XWPFTableCell) {
+                    extractIBodyText((XWPFTableCell) cell, listManager, xhtml);
+                } else if (cell instanceof XWPFSDTCell) {
+                    xhtml.characters(((XWPFSDTCell) cell).getContent().getText());
+                }
+                xhtml.endElement("td");
+            }
+            xhtml.endElement("tr");
+        }
+        xhtml.endElement("tbody");
+        xhtml.endElement("table");
     }
-    
+
     private void extractFooters(
             XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy,
             XWPFListManager listManager)
@@ -391,7 +391,7 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             XHTMLContentHandler xhtml, XWPFHeaderFooterPolicy hfPolicy, XWPFListManager listManager)
             throws SAXException, XmlException, IOException {
         if (hfPolicy == null) return;
-       
+
         if (hfPolicy.getFirstPageHeader() != null) {
             extractHeaderText(xhtml, hfPolicy.getFirstPageHeader(), listManager);
         }
@@ -407,48 +407,53 @@ public class XWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
     private void extractHeaderText(XHTMLContentHandler xhtml, XWPFHeaderFooter header, XWPFListManager listManager) throws SAXException, XmlException, IOException {
 
-        for (IBodyElement e : header.getBodyElements()){
-           if (e instanceof XWPFParagraph){
-              extractParagraph((XWPFParagraph)e, listManager, xhtml);
-           } else if (e instanceof XWPFTable){
-              extractTable((XWPFTable)e, listManager, xhtml);
-           } else if (e instanceof XWPFSDT){
-              extractSDT((XWPFSDT)e, xhtml);
-           }
+        for (IBodyElement e : header.getBodyElements()) {
+            if (e instanceof XWPFParagraph) {
+                extractParagraph((XWPFParagraph) e, listManager, xhtml);
+            } else if (e instanceof XWPFTable) {
+                extractTable((XWPFTable) e, listManager, xhtml);
+            } else if (e instanceof XWPFSDT) {
+                extractSDT((XWPFSDT) e, xhtml);
+            }
         }
     }
 
     /**
      * Word documents are simple, they only have the one
-     *  main part
+     * main part
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() {
-       List<PackagePart> parts = new ArrayList<PackagePart>();
-       parts.add( document.getPackagePart() );
-       return parts;
+        List<PackagePart> parts = new ArrayList<PackagePart>();
+        parts.add(document.getPackagePart());
+        return parts;
     }
-    
-    private class TmpFormatting{
-       private boolean bold = false;
-       private boolean italic = false;
-       private TmpFormatting(boolean bold, boolean italic){
-          this.bold = bold;
-          this.italic = italic;
-       }
-       public boolean isBold() {
-          return bold;
-       }
-       public void setBold(boolean bold) {
-          this.bold = bold;
-       }
-       public boolean isItalic() {
-          return italic;
-       }
-       public void setItalic(boolean italic) {
-          this.italic = italic;
-       }
-       
+
+    private class TmpFormatting {
+        private boolean bold = false;
+        private boolean italic = false;
+
+        private TmpFormatting(boolean bold, boolean italic) {
+            this.bold = bold;
+            this.italic = italic;
+        }
+
+        public boolean isBold() {
+            return bold;
+        }
+
+        public void setBold(boolean bold) {
+            this.bold = bold;
+        }
+
+        public boolean isItalic() {
+            return italic;
+        }
+
+        public void setItalic(boolean italic) {
+            this.italic = italic;
+        }
+
     }
 
 }

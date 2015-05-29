@@ -60,18 +60,18 @@ class MailContentHandler implements ContentHandler {
     private EmbeddedDocumentExtractor extractor;
 
     private boolean inPart = false;
-    
+
     MailContentHandler(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context, boolean strictParsing) {
         this.handler = xhtml;
         this.metadata = metadata;
         this.strictParsing = strictParsing;
-        
+
         // Fetch / Build an EmbeddedDocumentExtractor with which
         //  to handle/process the parts/attachments
-        
+
         // Was an EmbeddedDocumentExtractor explicitly supplied?
         this.extractor = context.get(EmbeddedDocumentExtractor.class);
-        
+
         // If there's no EmbeddedDocumentExtractor, then try using a normal parser
         // This will ensure that the contents are made available to the user, so
         //  the see the text, but without fine-grained control/extraction
@@ -80,7 +80,7 @@ class MailContentHandler implements ContentHandler {
             // If the user gave a parser, use that, if not the default
             Parser parser = context.get(AutoDetectParser.class);
             if (parser == null) {
-               parser = context.get(Parser.class);
+                parser = context.get(Parser.class);
             }
             if (parser == null) {
                 TikaConfig tikaConfig = context.get(TikaConfig.class);
@@ -151,10 +151,10 @@ class MailContentHandler implements ContentHandler {
 
     /**
      * Header for the whole message or its parts
-     * 
+     *
      * @see http://james.apache.org/mime4j/apidocs/org/apache/james/mime4j/parser/
-     *      Field.html
-     **/
+     * Field.html
+     */
     public void field(Field field) throws MimeException {
         // inPart indicates whether these metadata correspond to the
         // whole message or its parts
@@ -207,7 +207,7 @@ class MailContentHandler implements ContentHandler {
     }
 
     private void processAddressList(ParsedField field, String addressListType,
-            String metadataField) throws MimeException {
+                                    String metadataField) throws MimeException {
         AddressListField toField = (AddressListField) field;
         if (toField.isValidField()) {
             AddressList addressList = toField.getAddressList();
@@ -265,7 +265,7 @@ class MailContentHandler implements ContentHandler {
     private String stripOutFieldPrefix(Field field, String fieldname) {
         String temp = field.getRaw().toString();
         int loc = fieldname.length();
-        while (temp.charAt(loc) ==' ') {
+        while (temp.charAt(loc) == ' ') {
             loc++;
         }
         return temp.substring(loc);

@@ -76,12 +76,12 @@ public class RecursiveParserWrapperTest {
         assertNull(content);
     }
 
-    
+
     @Test
     public void testCharLimit() throws Exception {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
-      
+
         Parser wrapped = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, 60));
@@ -89,19 +89,20 @@ public class RecursiveParserWrapperTest {
                 "/test-documents/test_recursive_embedded.docx");
         wrapper.parse(stream, new DefaultHandler(), metadata, context);
         List<Metadata> list = wrapper.getMetadata();
-        
+
         assertEquals(5, list.size());
-        
+
         int wlr = 0;
         for (Metadata m : list) {
             String limitReached = m.get(RecursiveParserWrapper.WRITE_LIMIT_REACHED);
-            if (limitReached != null && limitReached.equals("true")){
+            if (limitReached != null && limitReached.equals("true")) {
                 wlr++;
             }
         }
         assertEquals(1, wlr);
 
     }
+
     @Test
     public void testMaxEmbedded() throws Exception {
         int maxEmbedded = 4;
@@ -109,7 +110,7 @@ public class RecursiveParserWrapperTest {
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
         String limitReached = null;
-        
+
         Parser wrapped = new AutoDetectParser();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
@@ -124,7 +125,7 @@ public class RecursiveParserWrapperTest {
         limitReached = list.get(0).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_LIMIT_REACHED);
         assertNull(limitReached);
 
-        
+
         wrapper.reset();
         stream.close();
 
@@ -137,29 +138,29 @@ public class RecursiveParserWrapperTest {
         list = wrapper.getMetadata();
 
         //add 1 for outer container file
-        assertEquals(maxEmbedded+1, list.size());
-        
+        assertEquals(maxEmbedded + 1, list.size());
+
         limitReached = list.get(0).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_LIMIT_REACHED);
         assertEquals("true", limitReached);
 
         wrapper.reset();
         stream.close();
-        
+
         //test setting value < 0
         metadata = new Metadata();
         stream = RecursiveParserWrapperTest.class.getResourceAsStream(
                 "/test-documents/test_recursive_embedded.docx");
-        
+
         wrapper.setMaxEmbeddedResources(-2);
         wrapper.parse(stream, new DefaultHandler(), metadata, context);
         assertEquals(totalNoLimit, list.size());
         limitReached = list.get(0).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_LIMIT_REACHED);
         assertNull(limitReached);
     }
-    
+
     @Test
     public void testEmbeddedResourcePath() throws Exception {
-        
+
         Set<String> targets = new HashSet<String>();
         targets.add("test_recursive_embedded.docx/embed1.zip");
         targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip");
@@ -172,15 +173,15 @@ public class RecursiveParserWrapperTest {
         targets.add("test_recursive_embedded.docx/embed1.zip/embed1b.txt");
         targets.add("test_recursive_embedded.docx/embed1.zip/embed1a.txt");
         targets.add("test_recursive_embedded.docx/image1.emf");
-        
+
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         List<Metadata> list = getMetadata(metadata,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
         Metadata container = list.get(0);
         String content = container.get(RecursiveParserWrapper.TIKA_CONTENT);
-        assertTrue(content.indexOf("<p class=\"header\" />") > -1);        
-        
+        assertTrue(content.indexOf("<p class=\"header\" />") > -1);
+
         Set<String> seen = new HashSet<String>();
         for (Metadata m : list) {
             String path = m.get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH);
@@ -224,7 +225,7 @@ public class RecursiveParserWrapperTest {
         if (path == null) {
             path = "/test-documents/test_recursive_embedded.docx";
         } else {
-            path = "/test-documents/"+path;
+            path = "/test-documents/" + path;
         }
         InputStream stream = null;
         try {

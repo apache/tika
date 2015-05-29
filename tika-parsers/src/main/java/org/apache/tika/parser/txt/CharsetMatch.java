@@ -1,9 +1,9 @@
 /**
-*******************************************************************************
-* Copyright (C) 2005-2007, International Business Machines Corporation and    *
-* others. All Rights Reserved.                                                *
-*******************************************************************************
-*/
+ * ******************************************************************************
+ * Copyright (C) 2005-2007, International Business Machines Corporation and    *
+ * others. All Rights Reserved.                                                *
+ * ******************************************************************************
+ */
 package org.apache.tika.parser.txt;
 
 import java.io.ByteArrayInputStream;
@@ -28,13 +28,70 @@ import java.io.Reader;
  */
 public class CharsetMatch implements Comparable<CharsetMatch> {
 
-    
+
+    /**
+     * Bit flag indicating the match is based on the the encoding scheme.
+     *
+     * @see #getMatchType
+     * @stable ICU 3.4
+     */
+    static public final int ENCODING_SCHEME = 1;
+    /**
+     * Bit flag indicating the match is based on the presence of a BOM.
+     *
+     * @see #getMatchType
+     * @stable ICU 3.4
+     */
+    static public final int BOM = 2;
+    /**
+     * Bit flag indicating he match is based on the declared encoding.
+     *
+     * @see #getMatchType
+     * @stable ICU 3.4
+     */
+    static public final int DECLARED_ENCODING = 4;
+    /**
+     * Bit flag indicating the match is based on language statistics.
+     *
+     * @see #getMatchType
+     * @stable ICU 3.4
+     */
+    static public final int LANG_STATISTICS = 8;
+    //
+    //   Private Data
+    //
+    private int fConfidence;
+    private CharsetRecognizer fRecognizer;
+    private byte[] fRawInput = null;     // Original, untouched input bytes.
+    //  If user gave us a byte array, this is it.
+    private int fRawLength;           // Length of data in fRawInput array.
+    private InputStream fInputStream = null;  // User's input stream, or null if the user
+
+    /*
+     *  Constructor.  Implementation internal
+     */
+    CharsetMatch(CharsetDetector det, CharsetRecognizer rec, int conf) {
+        fRecognizer = rec;
+        fConfidence = conf;
+
+        // The references to the original aplication input data must be copied out
+        //   of the charset recognizer to here, in case the application resets the
+        //   recognizer before using this CharsetMatch.
+        if (det.fInputStream == null) {
+            // We only want the existing input byte data if it came straight from the user,
+            //   not if is just the head of a stream.
+            fRawInput = det.fRawInput;
+            fRawLength = det.fRawLength;
+        }
+        fInputStream = det.fInputStream;
+    }
+
     /**
      * Create a java.io.Reader for reading the Unicode character data corresponding
      * to the original byte data supplied to the Charset detect operation.
      * <p/>
      * CAUTION:  if the source of the byte data was an InputStream, a Reader
-     * can be created for only one matching char set using this method.  If more 
+     * can be created for only one matching char set using this method.  If more
      * than one charset needs to be tried, the caller will need to reset
      * the InputStream and create InputStreamReaders itself, based on the charset name.
      *
@@ -44,11 +101,11 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      */
     public Reader getReader() {
         InputStream inputStream = fInputStream;
-        
+
         if (inputStream == null) {
             inputStream = new ByteArrayInputStream(fRawInput, 0, fRawLength);
         }
-        
+
         try {
             inputStream.reset();
             return new InputStreamReader(inputStream, getName());
@@ -65,7 +122,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
      *
      * @stable ICU 3.4
      */
-    public String getString()  throws java.io.IOException {
+    public String getString() throws java.io.IOException {
         return getString(-1);
 
     }
@@ -90,24 +147,24 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
             StringBuffer sb = new StringBuffer();
             char[] buffer = new char[1024];
             Reader reader = getReader();
-            int max = maxLength < 0? Integer.MAX_VALUE : maxLength;
+            int max = maxLength < 0 ? Integer.MAX_VALUE : maxLength;
             int bytesRead = 0;
-            
+
             while ((bytesRead = reader.read(buffer, 0, Math.min(max, 1024))) >= 0) {
                 sb.append(buffer, 0, bytesRead);
                 max -= bytesRead;
             }
-            
+
             reader.close();
-            
+
             return sb.toString();
         } else {
-            result = new String(fRawInput, getName());            
+            result = new String(fRawInput, getName());
         }
         return result;
 
     }
-    
+
     /**
      * Get an indication of the confidence in the charset detected.
      * Confidence values range from 0-100, with larger numbers indicating
@@ -121,42 +178,9 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     public int getConfidence() {
         return fConfidence;
     }
-    
 
     /**
-     * Bit flag indicating the match is based on the the encoding scheme.
-     *
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int ENCODING_SCHEME    = 1;
-    
-    /**
-     * Bit flag indicating the match is based on the presence of a BOM.
-     * 
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int BOM                = 2;
-    
-    /**
-     * Bit flag indicating he match is based on the declared encoding.
-     * 
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int DECLARED_ENCODING  = 4;
-    
-    /**
-     * Bit flag indicating the match is based on language statistics.
-     *
-     * @see #getMatchType
-     * @stable ICU 3.4
-     */
-    static public final int LANG_STATISTICS    = 8;
-    
-    /**
-     * Return flags indicating what it was about the input data 
+     * Return flags indicating what it was about the input data
      * that caused this charset to be considered as a possible match.
      * The result is a bitfield containing zero or more of the flags
      * ENCODING_SCHEME, BOM, DECLARED_ENCODING, and LANG_STATISTICS.
@@ -176,7 +200,7 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     }
 
     /**
-     * Get the name of the detected charset.  
+     * Get the name of the detected charset.
      * The name will be one that can be used with other APIs on the
      * platform that accept charset names.  It is the "Canonical name"
      * as defined by the class java.nio.charset.Charset; for
@@ -193,9 +217,9 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     public String getName() {
         return fRecognizer.getName();
     }
-    
+
     /**
-     * Get the ISO code for the language of the detected charset.  
+     * Get the ISO code for the language of the detected charset.
      *
      * @return The ISO code for the language or <code>null</code> if the language cannot be determined.
      *
@@ -207,11 +231,11 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
 
     /**
      * Compare to other CharsetMatch objects.
-     * Comparison is based on the match confidence value, which 
-     *   allows CharsetDetector.detectAll() to order its results. 
+     * Comparison is based on the match confidence value, which
+     *   allows CharsetDetector.detectAll() to order its results.
      *
      * @param o the CharsetMatch object to compare against.
-     * @return  a negative integer, zero, or a positive integer as the 
+     * @return a negative integer, zero, or a positive integer as the
      *          confidence level of this CharsetMatch
      *          is less than, equal to, or greater than that of
      *          the argument.
@@ -249,45 +273,14 @@ public class CharsetMatch implements Comparable<CharsetMatch> {
     public int hashCode() {
         return fConfidence;
     }
-    
-    /*
-     *  Constructor.  Implementation internal
-     */
-    CharsetMatch(CharsetDetector det, CharsetRecognizer rec, int conf) {
-        fRecognizer = rec;
-        fConfidence = conf;
-        
-        // The references to the original aplication input data must be copied out
-        //   of the charset recognizer to here, in case the application resets the
-        //   recognizer before using this CharsetMatch.
-        if (det.fInputStream == null) {
-            // We only want the existing input byte data if it came straight from the user,
-            //   not if is just the head of a stream.
-            fRawInput    = det.fRawInput;
-            fRawLength   = det.fRawLength;
-        }
-        fInputStream = det.fInputStream;
-    }
-
-    
-    //
-    //   Private Data
-    //
-    private int                 fConfidence;
-    private CharsetRecognizer   fRecognizer;
-    private byte[]              fRawInput = null;     // Original, untouched input bytes.
-                                                      //  If user gave us a byte array, this is it.
-    private int                 fRawLength;           // Length of data in fRawInput array.
-
-    private InputStream         fInputStream = null;  // User's input stream, or null if the user
-                                                      //   gave us a byte array.
+    //   gave us a byte array.
 
     public String toString() {
-       String s = "Match of " + fRecognizer.getName();
-       if(fRecognizer.getLanguage() != null) {
-          s += " in " + fRecognizer.getLanguage();
-       }
-       s += " with confidence " + fConfidence;
-       return s;
+        String s = "Match of " + fRecognizer.getName();
+        if (fRecognizer.getLanguage() != null) {
+            s += " in " + fRecognizer.getLanguage();
+        }
+        s += " with confidence " + fConfidence;
+        return s;
     }
 }

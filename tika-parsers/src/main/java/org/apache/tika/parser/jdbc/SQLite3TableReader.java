@@ -33,14 +33,13 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 
-
 /**
  * Concrete class for SQLLite table parsing.  This overrides
  * column type handling from JDBCRowHandler.
- * <p>
+ * <p/>
  * This class is not designed to be thread safe (because of DateFormat)!
  * Need to call a new instance for each parse, as AbstractDBParser does.
- * <p>
+ * <p/>
  * For now, this silently skips cells of type CLOB, because xerial's jdbc connector
  * does not currently support them.
  */

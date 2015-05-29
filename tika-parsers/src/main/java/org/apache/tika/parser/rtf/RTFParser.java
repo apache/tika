@@ -43,15 +43,19 @@ public class RTFParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("rtf"));
-
-    public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return SUPPORTED_TYPES;
-    }
-
     /**
      * maximum number of bytes per embedded object/pict (default: 20MB)
      */
     private static int EMB_OBJ_MAX_BYTES = 20 * 1024 * 1024; //20MB
+
+    /**
+     * See {@link #setMaxBytesForEmbeddedObject(int)}.
+     *
+     * @return maximum number of bytes allowed for an embedded object.
+     */
+    public static int getMaxBytesForEmbeddedObject() {
+        return EMB_OBJ_MAX_BYTES;
+    }
 
     /**
      * Bytes for embedded objects are currently cached in memory.
@@ -66,19 +70,14 @@ public class RTFParser extends AbstractParser {
         EMB_OBJ_MAX_BYTES = max;
     }
 
-    /**
-     * See {@link #setMaxBytesForEmbeddedObject(int)}.
-     *
-     * @return maximum number of bytes allowed for an embedded object.
-     */
-    public static int getMaxBytesForEmbeddedObject() {
-        return EMB_OBJ_MAX_BYTES;
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
     }
 
     public void parse(
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
-        throws IOException, SAXException, TikaException {
+            throws IOException, SAXException, TikaException {
         TaggedInputStream tagged = new TaggedInputStream(stream);
         try {
             XHTMLContentHandler xhtmlHandler = new XHTMLContentHandler(handler, metadata);

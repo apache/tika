@@ -61,27 +61,17 @@ public class RTFParserTest extends TikaTest {
 
     private Tika tika = new Tika();
 
-    private static class Result {
-        public final String text;
-        public final Metadata metadata;
-
-        public Result(String text, Metadata metadata) {
-            this.text = text;
-            this.metadata = metadata;
-        }
-    }
-
     @Test
     public void testBasicExtraction() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTF.rtf");
-        
+
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
         tika.getParser().parse(
-                     new FileInputStream(file),
-                     new WriteOutContentHandler(writer),
-                     metadata,
-                     new ParseContext());
+                new FileInputStream(file),
+                new WriteOutContentHandler(writer),
+                metadata,
+                new ParseContext());
         String content = writer.toString();
 
         assertEquals("application/rtf", metadata.get(Metadata.CONTENT_TYPE));
@@ -124,16 +114,16 @@ public class RTFParserTest extends TikaTest {
     public void testTableCellSeparation() throws Exception {
         File file = getResourceAsFile("/test-documents/testRTFTableCellSeparation.rtf");
         String content = tika.parseToString(file);
-        content = content.replaceAll("\\s+"," ");
+        content = content.replaceAll("\\s+", " ");
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
         assertContains("a b c d \u00E4 \u00EB \u00F6 \u00FC", content);
     }
-    
+
     @Test
     public void testTableCellSeparation2() throws Exception {
         String content = getText("testRTFTableCellSeparation2.rtf");
         // TODO: why do we insert extra whitespace...?
-        content = content.replaceAll("\\s+"," ");
+        content = content.replaceAll("\\s+", " ");
         assertContains("Station Fax", content);
     }
 
@@ -187,14 +177,14 @@ public class RTFParserTest extends TikaTest {
         // Verify title -- this title uses upr escape inside
         // title info field:
         assertEquals("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f\u3000",
-                     r.metadata.get(TikaCoreProperties.TITLE));
+                r.metadata.get(TikaCoreProperties.TITLE));
         assertEquals("VMazel", r.metadata.get(TikaCoreProperties.CREATOR));
         assertEquals("VMazel", r.metadata.get(Metadata.AUTHOR));
         assertEquals("StarWriter", r.metadata.get(TikaCoreProperties.COMMENTS));
-       
+
         // Special version of (GHQ)
         assertContains("\uff08\uff27\uff28\uff31\uff09", content);
-       
+
         // 6 other characters
         assertContains("\u6771\u4eac\u90fd\u4e09\u9df9\u5e02", content);
     }
@@ -216,11 +206,11 @@ public class RTFParserTest extends TikaTest {
         localTika.setMaxStringLength(200);
         stream = TikaInputStream.get(file, metadata);
         content = localTika.parseToString(stream, metadata);
-        
+
         // parseToString closes for convenience:
         //stream.close();
         assertTrue(content.length() <= 200);
-        
+
         // Test setting max length per-call:
         stream = TikaInputStream.get(file, metadata);
         content = localTika.parseToString(stream, metadata, 100);
@@ -277,35 +267,35 @@ public class RTFParserTest extends TikaTest {
         assertContains("(Kramer)", content);
 
         // Table
-        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+"," "));
+        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+", " "));
 
         // 2-columns
-        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+"," "));
+        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+", " "));
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             assertContains("Bullet " + row, content);
         }
         assertContains("Here is a numbered list:", content);
-        for(int row=1;row<=3;row++) {
+        for (int row = 1; row <= 3; row++) {
             assertContains("Number bullet " + row, content);
         }
 
-        for(int row=1;row<=2;row++) {
-            for(int col=1;col<=3;col++) {
+        for (int row = 1; row <= 2; row++) {
+            for (int col = 1; col <= 3; col++) {
                 assertContains("Row " + row + " Col " + col, content);
             }
         }
 
         assertContains("Keyword1 Keyword2", content);
         assertEquals("Keyword1 Keyword2",
-                     r.metadata.get(TikaCoreProperties.KEYWORDS));
+                r.metadata.get(TikaCoreProperties.KEYWORDS));
 
         assertContains("Subject is here", content);
         assertEquals("Subject is here",
-                     r.metadata.get(OfficeOpenXMLCore.SUBJECT));
+                r.metadata.get(OfficeOpenXMLCore.SUBJECT));
         assertEquals("Subject is here",
-                     r.metadata.get(Metadata.SUBJECT));
+                r.metadata.get(Metadata.SUBJECT));
 
         assertContains("Suddenly some Japanese text:", content);
         // Special version of (GHQ)
@@ -314,7 +304,7 @@ public class RTFParserTest extends TikaTest {
         assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", content);
 
         assertContains("And then some Gothic text:", content);
-    	assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
     }
 
     @Test
@@ -350,7 +340,7 @@ public class RTFParserTest extends TikaTest {
     @Test
     public void testFontAfterBufferedText() throws Exception {
         assertContains("\u0423\u0432\u0430\u0436\u0430\u0435\u043c\u044b\u0439 \u043a\u043b\u0438\u0435\u043d\u0442!",
-                       getXML("testFontAfterBufferedText.rtf").xml);
+                getXML("testFontAfterBufferedText.rtf").xml);
     }
 
     @Test
@@ -380,28 +370,28 @@ public class RTFParserTest extends TikaTest {
             ContainerExtractor ex = new ParserContainerExtractor();
             tis = TikaInputStream.get(getResourceAsStream("/test-documents/testBinControlWord.rtf"));
             assertEquals(true, ex.isSupported(tis));
-            ex.extract(tis, ex, embHandler);            
+            ex.extract(tis, ex, embHandler);
         } finally {
             tis.close();
         }
         assertEquals(1, embHandler.bytes.size());
-        
+
         byte[] bytes = embHandler.bytes.get(0);
         assertEquals(10, bytes.length);
         //}
-        assertEquals(125, (int)bytes[4]);
+        assertEquals(125, (int) bytes[4]);
         //make sure that at least the last value is correct
-        assertEquals(-1, (int)bytes[9]);
+        assertEquals(-1, (int) bytes[9]);
     }
 
     // TIKA-999
     @Test
     public void testMetaDataCounts() throws Exception {
-      XMLResult xml = getXML("test_embedded_package.rtf");
-      assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
-      assertEquals("7", xml.metadata.get(Office.WORD_COUNT));
-      assertEquals("36", xml.metadata.get(Office.CHARACTER_COUNT));
-      assertTrue(xml.metadata.get(Office.CREATION_DATE).startsWith("2012-09-02T"));
+        XMLResult xml = getXML("test_embedded_package.rtf");
+        assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
+        assertEquals("7", xml.metadata.get(Office.WORD_COUNT));
+        assertEquals("36", xml.metadata.get(Office.CHARACTER_COUNT));
+        assertTrue(xml.metadata.get(Office.CREATION_DATE).startsWith("2012-09-02T"));
     }
 
     // TIKA-1192
@@ -420,15 +410,14 @@ public class RTFParserTest extends TikaTest {
         assertContains("apple", content);
     }
 
-
     // TIKA-1010
     @Test
     public void testEmbeddedMonster() throws Exception {
         Set<MediaType> skipTypes = new HashSet<MediaType>();
         skipTypes.add(MediaType.parse("application/x-emf"));
         skipTypes.add(MediaType.parse("application/x-msmetafile"));
-        
-        
+
+
         List<String> trueNames = new ArrayList<String>();
         trueNames.add("file_0.doc");
         trueNames.add("Hw.txt");
@@ -468,7 +457,7 @@ public class RTFParserTest extends TikaTest {
         trueTypes.add("application/msword");
         trueTypes.add("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
         trueTypes.add("image/jpeg");
-        
+
         TrackingHandler tracker = new TrackingHandler(skipTypes);
         TikaInputStream tis = null;
         try {
@@ -491,12 +480,12 @@ public class RTFParserTest extends TikaTest {
                 assertNotNull(tracker.filenames.get(i));
                 //necessary to getName() because MSOffice extractor includes
                 //directory: _1457338524/HW.txt
-                assertEquals("filename equals ", 
+                assertEquals("filename equals ",
                         expectedName, FilenameUtils.getName(tracker.filenames.get(i)));
             }
             assertEquals(trueTypes.get(i), tracker.mediaTypes.get(i).toString());
         }
-        
+
         tracker = new TrackingHandler();
         tis = null;
         try {
@@ -512,7 +501,7 @@ public class RTFParserTest extends TikaTest {
         assertEquals("thumbnail_26.emf", tracker.filenames.get(45));
         assertEquals("thumbnail_27.wmf", tracker.filenames.get(46));
     }
-    
+
     //TIKA-1010 test regular (not "embedded") images/picts
     public void testRegularImages() throws Exception {
         Parser base = new AutoDetectParser();
@@ -526,15 +515,15 @@ public class RTFParserTest extends TikaTest {
         rootMetadata.add(Metadata.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
         try {
             tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFRegularImages.rtf"));
-            parser.parse(tis, handler, rootMetadata, ctx);            
+            parser.parse(tis, handler, rootMetadata, ctx);
         } finally {
             tis.close();
         }
-        List<Metadata> metadatas =  parser.getMetadata();
+        List<Metadata> metadatas = parser.getMetadata();
 
         Metadata meta_jpg_exif = metadatas.get(0);//("testJPEG_EXIF_\u666E\u6797\u65AF\u987F.jpg");
         Metadata meta_jpg = metadatas.get(2);//("testJPEG_\u666E\u6797\u65AF\u987F.jpg");
-        
+
         assertTrue(meta_jpg_exif != null);
         assertTrue(meta_jpg != null);
         assertTrue(Arrays.asList(meta_jpg_exif.getValues("dc:subject")).contains("serbor"));
@@ -543,7 +532,7 @@ public class RTFParserTest extends TikaTest {
         assertFalse(Arrays.asList(meta_jpg.getValues("dc:subject")).contains("serbor"));
         assertEquals("false", meta_jpg.get(RTFMetadata.THUMBNAIL));
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
-        
+
         assertEquals(40, meta_jpg.names().length);
         assertEquals(105, meta_jpg.names().length);
     }
@@ -563,7 +552,6 @@ public class RTFParserTest extends TikaTest {
                 "<p /> " +
                 "<p>four</p>", content);
     }
-
 
     //TIKA-1010 test linked embedded doc
     @Test
@@ -602,19 +590,29 @@ public class RTFParserTest extends TikaTest {
 
     private Result getResult(String filename) throws Exception {
         File file = getResourceAsFile("/test-documents/" + filename);
-       
+
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
         tika.getParser().parse(
-                     new FileInputStream(file),
-                     new WriteOutContentHandler(writer),
-                     metadata,
-                     new ParseContext());
+                new FileInputStream(file),
+                new WriteOutContentHandler(writer),
+                metadata,
+                new ParseContext());
         String content = writer.toString();
         return new Result(content, metadata);
     }
 
     private String getText(String filename) throws Exception {
         return getResult(filename).text;
+    }
+
+    private static class Result {
+        public final String text;
+        public final Metadata metadata;
+
+        public Result(String text, Metadata metadata) {
+            this.text = text;
+            this.metadata = metadata;
+        }
     }
 }

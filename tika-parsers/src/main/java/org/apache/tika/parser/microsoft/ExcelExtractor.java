@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import java.awt.Point;
+import java.awt.*;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -74,11 +74,11 @@ import org.xml.sax.SAXException;
 /**
  * Excel parser implementation which uses POI's Event API
  * to handle the contents of a Workbook.
- * <p>
+ * <p/>
  * The Event API uses a much smaller memory footprint than
  * <code>HSSFWorkbook</code> when processing excel files
  * but at the cost of more complexity.
- * <p>
+ * <p/>
  * With the Event API a <i>listener</i> is registered for
  * specific record types and those records are created,
  * fired off to the listener and then discarded as the stream
@@ -90,6 +90,8 @@ import org.xml.sax.SAXException;
  */
 public class ExcelExtractor extends AbstractPOIFSExtractor {
 
+    private static final String WORKBOOK_ENTRY = "Workbook";
+    private static final String BOOK_ENTRY = "Book";
     /**
      * <code>true</code> if the HSSFListener should be registered
      * to listen for all records or <code>false</code> (the default)
@@ -97,9 +99,6 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
      * records.
      */
     private boolean listenForAllRecords = false;
-    
-    private static final String WORKBOOK_ENTRY = "Workbook";
-    private static final String BOOK_ENTRY = "Book";
 
     public ExcelExtractor(ParseContext context, Metadata metadata) {
         super(context, metadata);
@@ -116,14 +115,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     /**
      * Specifies whether this parser should to listen for all
      * records or just for the specified few.
-     * <p>
+     * <p/>
      * <strong>Note:</strong> Under normal operation this setting should
      * be <code>false</code> (the default), but you can experiment with
      * this setting for testing and debugging purposes.
      *
      * @param listenForAllRecords <code>true</code> if the HSSFListener
-     * should be registered to listen for all records or <code>false</code>
-     * if the listener should be configured to only receive specified records.
+     *                            should be registered to listen for all records or <code>false</code>
+     *                            if the listener should be configured to only receive specified records.
      */
     public void setListenForAllRecords(boolean listenForAllRecords) {
         this.listenForAllRecords = listenForAllRecords;
@@ -135,7 +134,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
      *
      * @param filesystem POI file system
      * @throws IOException if an error occurs processing the workbook
-     * or writing the extracted content
+     *                     or writing the extracted content
      */
     protected void parse(
             NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml,
@@ -146,7 +145,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
     protected void parse(
             DirectoryNode root, XHTMLContentHandler xhtml,
             Locale locale) throws IOException, SAXException, TikaException {
-        if (! root.hasEntry(WORKBOOK_ENTRY)) {
+        if (!root.hasEntry(WORKBOOK_ENTRY)) {
             if (root.hasEntry(BOOK_ENTRY)) {
                 // Excel 5 / Excel 95 file
                 // Records are in a different structure so needs a
@@ -155,14 +154,14 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 OldExcelParser.parse(extractor, xhtml);
                 return;
             } else {
-               // Corrupt file / very old file, just skip text extraction
-               return;
+                // Corrupt file / very old file, just skip text extraction
+                return;
             }
         }
-        
+
         // If a password was supplied, use it, otherwise the default
         Biff8EncryptionKey.setCurrentUserPassword(getPassword());
-       
+
         // Have the file processed in event mode
         TikaHSSFListener listener = new TikaHSSFListener(xhtml, locale, this);
         listener.processFile(root, isListenForAllRecords());
@@ -177,7 +176,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     // ignore parse errors from embedded documents
                 }
             }
-         }
+        }
     }
 
     // ======================================================================
@@ -191,54 +190,11 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * XHTML content handler to which the document content is rendered.
          */
         private final XHTMLContentHandler handler;
-        
+
         /**
          * The POIFS Extractor, used for embeded resources.
          */
         private final AbstractPOIFSExtractor extractor;
-
-        /**
-         * Potential exception thrown by the content handler. When set to
-         * non-<code>null</code>, causes all subsequent HSSF records to be
-         * ignored and the stored exception to be thrown when
-         * {@link #throwStoredException()} is invoked.
-         */
-        private Exception exception = null;
-
-        private SSTRecord sstRecord;
-        private FormulaRecord stringFormulaRecord;
-        
-        private short previousSid;
-
-        /**
-         * Internal <code>FormatTrackingHSSFListener</code> to handle cell
-         * formatting within the extraction.
-         */
-        private FormatTrackingHSSFListener formatListener;
-
-        /**
-         * List of worksheet names.
-         */
-        private List<String> sheetNames = new ArrayList<String>();
-
-        /**
-         * Index of the current worksheet within the workbook.
-         * Used to find the worksheet name in the {@link #sheetNames} list.
-         */
-        private short currentSheetIndex;
-
-        /**
-         * Content of the current worksheet, or <code>null</code> if no
-         * worksheet is currently active.
-         */
-        private SortedMap<Point, Cell> currentSheet = null;
-        
-        /**
-         * Extra text or cells that crops up, typically as part of a
-         *  worksheet but not always.
-         */
-        private List<Cell> extraTextCells = new ArrayList<Cell>();
-
         /**
          * Format for rendering numbers in the worksheet. Currently we just
          * use the platform default formatting.
@@ -246,11 +202,44 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * @see <a href="https://issues.apache.org/jira/browse/TIKA-103">TIKA-103</a>
          */
         private final NumberFormat format;
-        
+        /**
+         * Potential exception thrown by the content handler. When set to
+         * non-<code>null</code>, causes all subsequent HSSF records to be
+         * ignored and the stored exception to be thrown when
+         * {@link #throwStoredException()} is invoked.
+         */
+        private Exception exception = null;
+        private SSTRecord sstRecord;
+        private FormulaRecord stringFormulaRecord;
+        private short previousSid;
+        /**
+         * Internal <code>FormatTrackingHSSFListener</code> to handle cell
+         * formatting within the extraction.
+         */
+        private FormatTrackingHSSFListener formatListener;
+        /**
+         * List of worksheet names.
+         */
+        private List<String> sheetNames = new ArrayList<String>();
+        /**
+         * Index of the current worksheet within the workbook.
+         * Used to find the worksheet name in the {@link #sheetNames} list.
+         */
+        private short currentSheetIndex;
+        /**
+         * Content of the current worksheet, or <code>null</code> if no
+         * worksheet is currently active.
+         */
+        private SortedMap<Point, Cell> currentSheet = null;
+        /**
+         * Extra text or cells that crops up, typically as part of a
+         * worksheet but not always.
+         */
+        private List<Cell> extraTextCells = new ArrayList<Cell>();
         /**
          * These aren't complete when we first see them, as the
-         *  depend on continue records that aren't always
-         *  contiguous. Collect them for later processing.
+         * depend on continue records that aren't always
+         * contiguous. Collect them for later processing.
          */
         private List<DrawingGroupRecord> drawingGroups = new ArrayList<DrawingGroupRecord>();
 
@@ -270,21 +259,21 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
         /**
          * Entry point to listener to start the processing of a file.
          *
-         * @param filesystem POI file system.
+         * @param filesystem          POI file system.
          * @param listenForAllRecords sets whether the listener is configured to listen
-         * for all records types or not.
-         * @throws IOException on any IO errors.
+         *                            for all records types or not.
+         * @throws IOException  on any IO errors.
          * @throws SAXException on any SAX parsing errors.
          */
-    	public void processFile(NPOIFSFileSystem filesystem, boolean listenForAllRecords)
-    		throws IOException, SAXException, TikaException {
+        public void processFile(NPOIFSFileSystem filesystem, boolean listenForAllRecords)
+                throws IOException, SAXException, TikaException {
             processFile(filesystem.getRoot(), listenForAllRecords);
         }
 
-    	public void processFile(DirectoryNode root, boolean listenForAllRecords)
-    		throws IOException, SAXException, TikaException {
+        public void processFile(DirectoryNode root, boolean listenForAllRecords)
+                throws IOException, SAXException, TikaException {
 
-    		// Set up listener and register the records we want to process
+            // Set up listener and register the records we want to process
             HSSFRequest hssfRequest = new HSSFRequest();
             if (listenForAllRecords) {
                 hssfRequest.addListenerForAllRecords(formatListener);
@@ -317,17 +306,17 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             } catch (org.apache.poi.EncryptedDocumentException e) {
                 throw new EncryptedDocumentException(e);
             }
-            
+
             // Output any extra text that came after all the sheets
-            processExtraText(); 
-            
+            processExtraText();
+
             // Look for embeded images, now that the drawing records
             //  have been fully matched with their continue data
-            for(DrawingGroupRecord dgr : drawingGroups) {
-               dgr.decode();
-               findPictures(dgr.getEscherRecords());
+            for (DrawingGroupRecord dgr : drawingGroups) {
+                dgr.decode();
+                findPictures(dgr.getEscherRecords());
             }
-    	}
+        }
 
         /**
          * Process a HSSF record.
@@ -339,7 +328,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 try {
                     internalProcessRecord(record);
                 } catch (TikaException te) {
-                   exception = te;
+                    exception = te;
                 } catch (IOException ie) {
                     exception = ie;
                 } catch (SAXException se) {
@@ -350,142 +339,142 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
 
         public void throwStoredException() throws TikaException, SAXException, IOException {
             if (exception != null) {
-                if(exception instanceof IOException)
-                   throw (IOException)exception;
-                if(exception instanceof SAXException)
-                   throw (SAXException)exception;
-                if(exception instanceof TikaException)
-                   throw (TikaException)exception;
+                if (exception instanceof IOException)
+                    throw (IOException) exception;
+                if (exception instanceof SAXException)
+                    throw (SAXException) exception;
+                if (exception instanceof TikaException)
+                    throw (TikaException) exception;
                 throw new TikaException(exception.getMessage());
             }
         }
 
         private void internalProcessRecord(Record record) throws SAXException, TikaException, IOException {
             switch (record.getSid()) {
-            case BOFRecord.sid: // start of workbook, worksheet etc. records
-                BOFRecord bof = (BOFRecord) record;
-                if (bof.getType() == BOFRecord.TYPE_WORKBOOK) {
-                    currentSheetIndex = -1;
-                } else if (bof.getType() == BOFRecord.TYPE_CHART) {
-                    if(previousSid == EOFRecord.sid) {
-                        // This is a sheet which contains only a chart
-                        newSheet();
-                    } else {
-                        // This is a chart within a normal sheet
-                        // Handling of this is a bit hacky...
-                        if (currentSheet != null) {
-                            processSheet();
-                            currentSheetIndex--;
+                case BOFRecord.sid: // start of workbook, worksheet etc. records
+                    BOFRecord bof = (BOFRecord) record;
+                    if (bof.getType() == BOFRecord.TYPE_WORKBOOK) {
+                        currentSheetIndex = -1;
+                    } else if (bof.getType() == BOFRecord.TYPE_CHART) {
+                        if (previousSid == EOFRecord.sid) {
+                            // This is a sheet which contains only a chart
                             newSheet();
-                        }
-                    }
-                } else if (bof.getType() == BOFRecord.TYPE_WORKSHEET) {
-                    newSheet();
-                }
-                break;
-
-            case EOFRecord.sid: // end of workbook, worksheet etc. records
-                if (currentSheet != null) {
-                    processSheet();
-                }
-                currentSheet = null;
-                break;
-
-            case BoundSheetRecord.sid: // Worksheet index record
-                BoundSheetRecord boundSheetRecord = (BoundSheetRecord) record;
-                sheetNames.add(boundSheetRecord.getSheetname());
-                break;
-
-            case SSTRecord.sid: // holds all the strings for LabelSSTRecords
-                sstRecord = (SSTRecord) record;
-                break;
-
-            case FormulaRecord.sid: // Cell value from a formula
-                FormulaRecord formula = (FormulaRecord) record;
-                if (formula.hasCachedResultString()) {
-                   // The String itself should be the next record
-                   stringFormulaRecord = formula;
-                } else {
-                   addTextCell(record, formatListener.formatNumberDateCell(formula));
-                }
-                break;
-                
-            case StringRecord.sid:
-                if (previousSid == FormulaRecord.sid) {
-                   // Cached string value of a string formula
-                   StringRecord sr = (StringRecord) record;
-                   addTextCell(stringFormulaRecord, sr.getString());
-                } else {
-                   // Some other string not associated with a cell, skip
-                }
-                break;
-
-            case LabelRecord.sid: // strings stored directly in the cell
-                LabelRecord label = (LabelRecord) record;
-                addTextCell(record, label.getValue());
-                break;
-
-            case LabelSSTRecord.sid: // Ref. a string in the shared string table
-                LabelSSTRecord sst = (LabelSSTRecord) record;
-                UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
-                addTextCell(record, unicode.getString());
-                break;
-
-            case NumberRecord.sid: // Contains a numeric cell value
-                NumberRecord number = (NumberRecord) record;
-                addTextCell(record, formatListener.formatNumberDateCell(number));
-                break;
-
-            case RKRecord.sid: // Excel internal number record
-                RKRecord rk = (RKRecord) record;
-                addCell(record, new NumberCell(rk.getRKNumber(), format));
-                break;
-
-            case HyperlinkRecord.sid: // holds a URL associated with a cell
-                if (currentSheet != null) {
-                    HyperlinkRecord link = (HyperlinkRecord) record;
-                    Point point =
-                        new Point(link.getFirstColumn(), link.getFirstRow());
-                    Cell cell = currentSheet.get(point);
-                    if (cell != null) {
-                        String address = link.getAddress();
-                        if (address != null) {
-                            addCell(record, new LinkedCell(cell, address));
                         } else {
-                            addCell(record, cell);
+                            // This is a chart within a normal sheet
+                            // Handling of this is a bit hacky...
+                            if (currentSheet != null) {
+                                processSheet();
+                                currentSheetIndex--;
+                                newSheet();
+                            }
+                        }
+                    } else if (bof.getType() == BOFRecord.TYPE_WORKSHEET) {
+                        newSheet();
+                    }
+                    break;
+
+                case EOFRecord.sid: // end of workbook, worksheet etc. records
+                    if (currentSheet != null) {
+                        processSheet();
+                    }
+                    currentSheet = null;
+                    break;
+
+                case BoundSheetRecord.sid: // Worksheet index record
+                    BoundSheetRecord boundSheetRecord = (BoundSheetRecord) record;
+                    sheetNames.add(boundSheetRecord.getSheetname());
+                    break;
+
+                case SSTRecord.sid: // holds all the strings for LabelSSTRecords
+                    sstRecord = (SSTRecord) record;
+                    break;
+
+                case FormulaRecord.sid: // Cell value from a formula
+                    FormulaRecord formula = (FormulaRecord) record;
+                    if (formula.hasCachedResultString()) {
+                        // The String itself should be the next record
+                        stringFormulaRecord = formula;
+                    } else {
+                        addTextCell(record, formatListener.formatNumberDateCell(formula));
+                    }
+                    break;
+
+                case StringRecord.sid:
+                    if (previousSid == FormulaRecord.sid) {
+                        // Cached string value of a string formula
+                        StringRecord sr = (StringRecord) record;
+                        addTextCell(stringFormulaRecord, sr.getString());
+                    } else {
+                        // Some other string not associated with a cell, skip
+                    }
+                    break;
+
+                case LabelRecord.sid: // strings stored directly in the cell
+                    LabelRecord label = (LabelRecord) record;
+                    addTextCell(record, label.getValue());
+                    break;
+
+                case LabelSSTRecord.sid: // Ref. a string in the shared string table
+                    LabelSSTRecord sst = (LabelSSTRecord) record;
+                    UnicodeString unicode = sstRecord.getString(sst.getSSTIndex());
+                    addTextCell(record, unicode.getString());
+                    break;
+
+                case NumberRecord.sid: // Contains a numeric cell value
+                    NumberRecord number = (NumberRecord) record;
+                    addTextCell(record, formatListener.formatNumberDateCell(number));
+                    break;
+
+                case RKRecord.sid: // Excel internal number record
+                    RKRecord rk = (RKRecord) record;
+                    addCell(record, new NumberCell(rk.getRKNumber(), format));
+                    break;
+
+                case HyperlinkRecord.sid: // holds a URL associated with a cell
+                    if (currentSheet != null) {
+                        HyperlinkRecord link = (HyperlinkRecord) record;
+                        Point point =
+                                new Point(link.getFirstColumn(), link.getFirstRow());
+                        Cell cell = currentSheet.get(point);
+                        if (cell != null) {
+                            String address = link.getAddress();
+                            if (address != null) {
+                                addCell(record, new LinkedCell(cell, address));
+                            } else {
+                                addCell(record, cell);
+                            }
                         }
                     }
-                }
-                break;
+                    break;
 
-            case TextObjectRecord.sid:
-                TextObjectRecord tor = (TextObjectRecord) record;
-                addTextCell(record, tor.getStr().getString());
-                break;
+                case TextObjectRecord.sid:
+                    TextObjectRecord tor = (TextObjectRecord) record;
+                    addTextCell(record, tor.getStr().getString());
+                    break;
 
-            case SeriesTextRecord.sid: // Chart label or title
-                SeriesTextRecord str = (SeriesTextRecord) record;
-                addTextCell(record, str.getText());
-                break;
+                case SeriesTextRecord.sid: // Chart label or title
+                    SeriesTextRecord str = (SeriesTextRecord) record;
+                    addTextCell(record, str.getText());
+                    break;
 
-            case DrawingGroupRecord.sid:
-               // Collect this now, we'll process later when all
-               //  the continue records are in
-               drawingGroups.add( (DrawingGroupRecord)record );
-               break;
+                case DrawingGroupRecord.sid:
+                    // Collect this now, we'll process later when all
+                    //  the continue records are in
+                    drawingGroups.add((DrawingGroupRecord) record);
+                    break;
 
             }
 
             previousSid = record.getSid();
-            
+
             if (stringFormulaRecord != record) {
-               stringFormulaRecord = null;
+                stringFormulaRecord = null;
             }
         }
 
         private void processExtraText() throws SAXException {
-            if(extraTextCells.size() > 0) {
-                for(Cell cell : extraTextCells) {
+            if (extraTextCells.size() > 0) {
+                for (Cell cell : extraTextCells) {
                     handler.startElement("div", "class", "outside");
                     cell.render(handler);
                     handler.endElement("div");
@@ -501,7 +490,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * worksheet (if any) at the position (if any) of the given record.
          *
          * @param record record that holds the cell value
-         * @param cell cell value (or <code>null</code>)
+         * @param cell   cell value (or <code>null</code>)
          */
         private void addCell(Record record, Cell cell) throws SAXException {
             if (cell == null) {
@@ -510,7 +499,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     && record instanceof CellValueRecordInterface) {
                 // Normal cell inside a worksheet
                 CellValueRecordInterface value =
-                    (CellValueRecordInterface) record;
+                        (CellValueRecordInterface) record;
                 Point point = new Point(value.getColumn(), value.getRow());
                 currentSheet.put(point, cell);
             } else {
@@ -524,7 +513,7 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
          * is trimmed, and ignored if <code>null</code> or empty.
          *
          * @param record record that holds the text value
-         * @param text text content, may be <code>null</code>
+         * @param text   text content, may be <code>null</code>
          * @throws SAXException
          */
         private void addTextCell(Record record, String text) throws SAXException {
@@ -584,32 +573,32 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
             // Sheet End
             handler.endElement("tbody");
             handler.endElement("table");
-            
+
             // Finish up
             processExtraText();
             handler.endElement("div");
         }
 
         private void findPictures(List<EscherRecord> records) throws IOException, SAXException, TikaException {
-           for(EscherRecord escherRecord : records) {
-              if (escherRecord instanceof EscherBSERecord) {
-                 EscherBlipRecord blip = ((EscherBSERecord) escherRecord).getBlipRecord();
-                 if (blip != null) {
-                    HSSFPictureData picture = new HSSFPictureData(blip);
-                    String mimeType = picture.getMimeType();
-                    TikaInputStream stream = TikaInputStream.get(picture.getData());
-                    
-                    // Handle the embeded resource
-                    extractor.handleEmbeddedResource(
-                          stream, null, null, mimeType,
-                          handler, true
-                    );
-                 }
-              }
+            for (EscherRecord escherRecord : records) {
+                if (escherRecord instanceof EscherBSERecord) {
+                    EscherBlipRecord blip = ((EscherBSERecord) escherRecord).getBlipRecord();
+                    if (blip != null) {
+                        HSSFPictureData picture = new HSSFPictureData(blip);
+                        String mimeType = picture.getMimeType();
+                        TikaInputStream stream = TikaInputStream.get(picture.getData());
 
-              // Recursive call.
-              findPictures(escherRecord.getChildRecords());
-           }
+                        // Handle the embeded resource
+                        extractor.handleEmbeddedResource(
+                                stream, null, null, mimeType,
+                                handler, true
+                        );
+                    }
+                }
+
+                // Recursive call.
+                findPictures(escherRecord.getChildRecords());
+            }
         }
     }
 

@@ -47,56 +47,59 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
 
 abstract class AbstractPOIFSExtractor {
+    private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
     private final EmbeddedDocumentExtractor extractor;
     private PasswordProvider passwordProvider;
     private TikaConfig tikaConfig;
     private MimeTypes mimeTypes;
     private Detector detector;
     private Metadata metadata;
-    private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
 
     protected AbstractPOIFSExtractor(ParseContext context) {
         this(context, null);
     }
+
     protected AbstractPOIFSExtractor(ParseContext context, Metadata metadata) {
         EmbeddedDocumentExtractor ex = context.get(EmbeddedDocumentExtractor.class);
 
-        if (ex==null) {
+        if (ex == null) {
             this.extractor = new ParsingEmbeddedDocumentExtractor(context);
         } else {
             this.extractor = ex;
         }
-        
+
         this.passwordProvider = context.get(PasswordProvider.class);
         this.tikaConfig = context.get(TikaConfig.class);
         this.mimeTypes = context.get(MimeTypes.class);
         this.detector = context.get(Detector.class);
         this.metadata = metadata;
     }
-    
+
     // Note - these cache, but avoid creating the default TikaConfig if not needed
     protected TikaConfig getTikaConfig() {
-       if (tikaConfig == null) {
-          tikaConfig = TikaConfig.getDefaultConfig();
-       }
-       return tikaConfig;
+        if (tikaConfig == null) {
+            tikaConfig = TikaConfig.getDefaultConfig();
+        }
+        return tikaConfig;
     }
+
     protected Detector getDetector() {
-       if (detector != null) return detector;
-       
-       detector = getTikaConfig().getDetector();
-       return detector;
+        if (detector != null) return detector;
+
+        detector = getTikaConfig().getDetector();
+        return detector;
     }
+
     protected MimeTypes getMimeTypes() {
-       if (mimeTypes != null) return mimeTypes;
-       
-       mimeTypes = getTikaConfig().getMimeRepository();
-       return mimeTypes;
+        if (mimeTypes != null) return mimeTypes;
+
+        mimeTypes = getTikaConfig().getMimeRepository();
+        return mimeTypes;
     }
-    
+
     /**
      * Returns the password to be used for this file, or null
-     *  if no / default password should be used
+     * if no / default password should be used
      */
     protected String getPassword() {
         if (passwordProvider != null) {
@@ -104,30 +107,30 @@ abstract class AbstractPOIFSExtractor {
         }
         return null;
     }
-    
+
     protected void handleEmbeddedResource(TikaInputStream resource, String filename,
                                           String relationshipID, String mediaType, XHTMLContentHandler xhtml,
                                           boolean outputHtml)
-          throws IOException, SAXException, TikaException {
-       try {
-           Metadata metadata = new Metadata();
-           if(filename != null) {
-               metadata.set(Metadata.TIKA_MIME_FILE, filename);
-               metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
-           }
-           if (relationshipID != null) {
-               metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, relationshipID);
-           }
-           if(mediaType != null) {
-               metadata.set(Metadata.CONTENT_TYPE, mediaType);
-           }
+            throws IOException, SAXException, TikaException {
+        try {
+            Metadata metadata = new Metadata();
+            if (filename != null) {
+                metadata.set(Metadata.TIKA_MIME_FILE, filename);
+                metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+            }
+            if (relationshipID != null) {
+                metadata.set(Metadata.EMBEDDED_RELATIONSHIP_ID, relationshipID);
+            }
+            if (mediaType != null) {
+                metadata.set(Metadata.CONTENT_TYPE, mediaType);
+            }
 
-           if (extractor.shouldParseEmbedded(metadata)) {
-               extractor.parseEmbedded(resource, xhtml, metadata, outputHtml);
-           }
-       } finally {
-           resource.close();
-       }
+            if (extractor.shouldParseEmbedded(metadata)) {
+                extractor.parseEmbedded(resource, xhtml, metadata, outputHtml);
+            }
+        } finally {
+            resource.close();
+        }
     }
 
     /**
@@ -167,7 +170,7 @@ abstract class AbstractPOIFSExtractor {
             if (type == POIFSDocumentType.OLE10_NATIVE) {
                 try {
                     // Try to un-wrap the OLE10Native record:
-                    Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode)dir);
+                    Ole10Native ole = Ole10Native.createFromEmbeddedOleObject((DirectoryNode) dir);
                     if (ole.getLabel() != null) {
                         metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + '/' + ole.getLabel());
                     }
@@ -180,33 +183,33 @@ abstract class AbstractPOIFSExtractor {
                 }
             } else if (type == POIFSDocumentType.COMP_OBJ) {
                 try {
-                   // Grab the contents and process
-                   DocumentEntry contentsEntry;
-                   try {
-                     contentsEntry = (DocumentEntry)dir.getEntry("CONTENTS");
-                   } catch (FileNotFoundException ioe) {
-                     contentsEntry = (DocumentEntry)dir.getEntry("Contents");
-                   }
-                   DocumentInputStream inp = new DocumentInputStream(contentsEntry);
-                   byte[] contents = new byte[contentsEntry.getSize()];
-                   inp.readFully(contents);
-                   embedded = TikaInputStream.get(contents);
-                   
-                   // Try to work out what it is
-                   MediaType mediaType = getDetector().detect(embedded, new Metadata());
-                   String extension = type.getExtension();
-                   try {
-                      MimeType mimeType = getMimeTypes().forName(mediaType.toString());
-                      extension = mimeType.getExtension();
-                   } catch(MimeTypeException mte) {
-                      // No details on this type are known
-                   }
-                   
-                   // Record what we can do about it
-                   metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
-                   metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + extension);
-                } catch(Exception e) {
-                   throw new TikaException("Invalid embedded resource", e);
+                    // Grab the contents and process
+                    DocumentEntry contentsEntry;
+                    try {
+                        contentsEntry = (DocumentEntry) dir.getEntry("CONTENTS");
+                    } catch (FileNotFoundException ioe) {
+                        contentsEntry = (DocumentEntry) dir.getEntry("Contents");
+                    }
+                    DocumentInputStream inp = new DocumentInputStream(contentsEntry);
+                    byte[] contents = new byte[contentsEntry.getSize()];
+                    inp.readFully(contents);
+                    embedded = TikaInputStream.get(contents);
+
+                    // Try to work out what it is
+                    MediaType mediaType = getDetector().detect(embedded, new Metadata());
+                    String extension = type.getExtension();
+                    try {
+                        MimeType mimeType = getMimeTypes().forName(mediaType.toString());
+                        extension = mimeType.getExtension();
+                    } catch (MimeTypeException mte) {
+                        // No details on this type are known
+                    }
+
+                    // Record what we can do about it
+                    metadata.set(Metadata.CONTENT_TYPE, mediaType.getType().toString());
+                    metadata.set(Metadata.RESOURCE_NAME_KEY, dir.getName() + extension);
+                } catch (Exception e) {
+                    throw new TikaException("Invalid embedded resource", e);
                 }
             } else {
                 metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());

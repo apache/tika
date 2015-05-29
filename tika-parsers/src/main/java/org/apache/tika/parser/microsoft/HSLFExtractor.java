@@ -45,198 +45,198 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 public class HSLFExtractor extends AbstractPOIFSExtractor {
-   public HSLFExtractor(ParseContext context) {
-      super(context);
-   }
-	
-   protected void parse(
-         NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
-         throws IOException, SAXException, TikaException {
-       parse(filesystem.getRoot(), xhtml);
-   }
-    
-   protected void parse(
-         DirectoryNode root, XHTMLContentHandler xhtml)
-         throws IOException, SAXException, TikaException {
-      HSLFSlideShow ss = new HSLFSlideShow(root);
-      SlideShow _show = new SlideShow(ss);
-      Slide[] _slides = _show.getSlides();
+    public HSLFExtractor(ParseContext context) {
+        super(context);
+    }
 
-      xhtml.startElement("div", "class", "slideShow");
+    protected void parse(
+            NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
+        parse(filesystem.getRoot(), xhtml);
+    }
+
+    protected void parse(
+            DirectoryNode root, XHTMLContentHandler xhtml)
+            throws IOException, SAXException, TikaException {
+        HSLFSlideShow ss = new HSLFSlideShow(root);
+        SlideShow _show = new SlideShow(ss);
+        Slide[] _slides = _show.getSlides();
+
+        xhtml.startElement("div", "class", "slideShow");
 
       /* Iterate over slides and extract text */
-      for( Slide slide : _slides ) {
-         xhtml.startElement("div", "class", "slide");
+        for (Slide slide : _slides) {
+            xhtml.startElement("div", "class", "slide");
 
-         // Slide header, if present
-         HeadersFooters hf = slide.getHeadersFooters();
-         if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
-            xhtml.startElement("p", "class", "slide-header");
+            // Slide header, if present
+            HeadersFooters hf = slide.getHeadersFooters();
+            if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
+                xhtml.startElement("p", "class", "slide-header");
 
-            xhtml.characters( hf.getHeaderText() );
+                xhtml.characters(hf.getHeaderText());
 
-            xhtml.endElement("p");
-         }
-
-         // Slide master, if present
-         extractMaster(xhtml, slide.getMasterSheet());
-
-         // Slide text
-         {
-            xhtml.startElement("p", "class", "slide-content");
-
-            textRunsToText(xhtml, slide.getTextRuns());
-
-            xhtml.endElement("p");
-         }
-
-         // Table text
-         for (Shape shape: slide.getShapes()){
-            if (shape instanceof Table){
-               extractTableText(xhtml, (Table)shape);
+                xhtml.endElement("p");
             }
-         }
 
-         // Slide footer, if present
-         if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
-            xhtml.startElement("p", "class", "slide-footer");
+            // Slide master, if present
+            extractMaster(xhtml, slide.getMasterSheet());
 
-            xhtml.characters( hf.getFooterText() );
+            // Slide text
+            {
+                xhtml.startElement("p", "class", "slide-content");
 
-            xhtml.endElement("p");
-         }
+                textRunsToText(xhtml, slide.getTextRuns());
 
-         // Comments, if present
-         for( Comment comment : slide.getComments() ) {
-            xhtml.startElement("p", "class", "slide-comment");
-            if (comment.getAuthor() != null) {
-               xhtml.startElement("b");
-               xhtml.characters( comment.getAuthor() );
-               xhtml.endElement("b");
-               
-               if (comment.getText() != null) {
-                  xhtml.characters( " - ");
-               }
+                xhtml.endElement("p");
             }
-            if (comment.getText() != null) {
-               xhtml.characters( comment.getText() );
+
+            // Table text
+            for (Shape shape : slide.getShapes()) {
+                if (shape instanceof Table) {
+                    extractTableText(xhtml, (Table) shape);
+                }
             }
-            xhtml.endElement("p");
-         }
 
-         // Now any embedded resources
-         handleSlideEmbeddedResources(slide, xhtml);
+            // Slide footer, if present
+            if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
+                xhtml.startElement("p", "class", "slide-footer");
 
-         // TODO Find the Notes for this slide and extract inline
+                xhtml.characters(hf.getFooterText());
 
-         // Slide complete
-         xhtml.endElement("div");
-      }
+                xhtml.endElement("p");
+            }
 
-      // All slides done
-      xhtml.endElement("div");
+            // Comments, if present
+            for (Comment comment : slide.getComments()) {
+                xhtml.startElement("p", "class", "slide-comment");
+                if (comment.getAuthor() != null) {
+                    xhtml.startElement("b");
+                    xhtml.characters(comment.getAuthor());
+                    xhtml.endElement("b");
+
+                    if (comment.getText() != null) {
+                        xhtml.characters(" - ");
+                    }
+                }
+                if (comment.getText() != null) {
+                    xhtml.characters(comment.getText());
+                }
+                xhtml.endElement("p");
+            }
+
+            // Now any embedded resources
+            handleSlideEmbeddedResources(slide, xhtml);
+
+            // TODO Find the Notes for this slide and extract inline
+
+            // Slide complete
+            xhtml.endElement("div");
+        }
+
+        // All slides done
+        xhtml.endElement("div");
 
       /* notes */
-      xhtml.startElement("div", "class", "slideNotes");
-      HashSet<Integer> seenNotes = new HashSet<Integer>();
-      HeadersFooters hf = _show.getNotesHeadersFooters();
+        xhtml.startElement("div", "class", "slideNotes");
+        HashSet<Integer> seenNotes = new HashSet<Integer>();
+        HeadersFooters hf = _show.getNotesHeadersFooters();
 
-      for (Slide slide : _slides) {
-         Notes notes = slide.getNotesSheet();
-         if (notes == null) {
-            continue;
-         }
-         Integer id = notes._getSheetNumber();
-         if (seenNotes.contains(id)) {
-            continue;
-         }
-         seenNotes.add(id);
-
-         // Repeat the Notes header, if set
-         if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
-            xhtml.startElement("p", "class", "slide-note-header");
-            xhtml.characters( hf.getHeaderText() );
-            xhtml.endElement("p");
-         }
-
-         // Notes text
-         textRunsToText(xhtml, notes.getTextRuns());
-
-         // Repeat the notes footer, if set
-         if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
-            xhtml.startElement("p", "class", "slide-note-footer");
-            xhtml.characters( hf.getFooterText() );
-            xhtml.endElement("p");
-         }
-      }
-
-      handleSlideEmbeddedPictures(_show, xhtml);
-
-      xhtml.endElement("div");
-   }
-
-   private void extractMaster(XHTMLContentHandler xhtml, MasterSheet master) throws SAXException {
-      if (master == null){
-         return;
-      }
-      Shape[] shapes = master.getShapes();
-      if (shapes == null || shapes.length == 0){
-         return;
-      }
-
-      xhtml.startElement("div", "class", "slide-master-content");
-      for (Shape shape : shapes){
-         if (shape != null && ! MasterSheet.isPlaceholder(shape)){
-            if (shape instanceof TextShape){
-               TextShape tsh = (TextShape)shape;
-               String text = tsh.getText();
-               if (text != null){
-                  xhtml.element("p", text);
-               }
+        for (Slide slide : _slides) {
+            Notes notes = slide.getNotesSheet();
+            if (notes == null) {
+                continue;
             }
-         }
-      }
-      xhtml.endElement("div");
-   }
-
-   private void extractTableText(XHTMLContentHandler xhtml, Table shape) throws SAXException {
-      xhtml.startElement("table");
-      for (int row = 0; row < shape.getNumberOfRows(); row++){
-         xhtml.startElement("tr");
-         for (int col = 0; col < shape.getNumberOfColumns(); col++){
-            TableCell cell = shape.getCell(row, col);
-            //insert empty string for empty cell if cell is null
-            String txt = "";
-            if (cell != null){
-               txt = cell.getText();
+            Integer id = notes._getSheetNumber();
+            if (seenNotes.contains(id)) {
+                continue;
             }
-            xhtml.element("td", txt);
-         }
-         xhtml.endElement("tr");
-      }
-      xhtml.endElement("table");   
-   }
+            seenNotes.add(id);
 
-   private void textRunsToText(XHTMLContentHandler xhtml, TextRun[] runs) throws SAXException {
-      if (runs==null) {
-         return;
-      }
+            // Repeat the Notes header, if set
+            if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
+                xhtml.startElement("p", "class", "slide-note-header");
+                xhtml.characters(hf.getHeaderText());
+                xhtml.endElement("p");
+            }
 
-      for (TextRun run : runs) {
-         if (run != null) {
-           // Leaving in wisdom from TIKA-712 for easy revert.
-           // Avoid boiler-plate text on the master slide (0
-           // = TextHeaderAtom.TITLE_TYPE, 1 = TextHeaderAtom.BODY_TYPE):
-           //if (!isMaster || (run.getRunType() != 0 && run.getRunType() != 1)) {
-           String txt = run.getText();
-           if (txt != null){
-               xhtml.characters(txt);
-               xhtml.startElement("br");
-               xhtml.endElement("br");
-           }
-         }
-      }
-   }
+            // Notes text
+            textRunsToText(xhtml, notes.getTextRuns());
+
+            // Repeat the notes footer, if set
+            if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
+                xhtml.startElement("p", "class", "slide-note-footer");
+                xhtml.characters(hf.getFooterText());
+                xhtml.endElement("p");
+            }
+        }
+
+        handleSlideEmbeddedPictures(_show, xhtml);
+
+        xhtml.endElement("div");
+    }
+
+    private void extractMaster(XHTMLContentHandler xhtml, MasterSheet master) throws SAXException {
+        if (master == null) {
+            return;
+        }
+        Shape[] shapes = master.getShapes();
+        if (shapes == null || shapes.length == 0) {
+            return;
+        }
+
+        xhtml.startElement("div", "class", "slide-master-content");
+        for (Shape shape : shapes) {
+            if (shape != null && !MasterSheet.isPlaceholder(shape)) {
+                if (shape instanceof TextShape) {
+                    TextShape tsh = (TextShape) shape;
+                    String text = tsh.getText();
+                    if (text != null) {
+                        xhtml.element("p", text);
+                    }
+                }
+            }
+        }
+        xhtml.endElement("div");
+    }
+
+    private void extractTableText(XHTMLContentHandler xhtml, Table shape) throws SAXException {
+        xhtml.startElement("table");
+        for (int row = 0; row < shape.getNumberOfRows(); row++) {
+            xhtml.startElement("tr");
+            for (int col = 0; col < shape.getNumberOfColumns(); col++) {
+                TableCell cell = shape.getCell(row, col);
+                //insert empty string for empty cell if cell is null
+                String txt = "";
+                if (cell != null) {
+                    txt = cell.getText();
+                }
+                xhtml.element("td", txt);
+            }
+            xhtml.endElement("tr");
+        }
+        xhtml.endElement("table");
+    }
+
+    private void textRunsToText(XHTMLContentHandler xhtml, TextRun[] runs) throws SAXException {
+        if (runs == null) {
+            return;
+        }
+
+        for (TextRun run : runs) {
+            if (run != null) {
+                // Leaving in wisdom from TIKA-712 for easy revert.
+                // Avoid boiler-plate text on the master slide (0
+                // = TextHeaderAtom.TITLE_TYPE, 1 = TextHeaderAtom.BODY_TYPE):
+                //if (!isMaster || (run.getRunType() != 0 && run.getRunType() != 1)) {
+                String txt = run.getText();
+                if (txt != null) {
+                    xhtml.characters(txt);
+                    xhtml.startElement("br");
+                    xhtml.endElement("br");
+                }
+            }
+        }
+    }
 
     private void handleSlideEmbeddedPictures(SlideShow slideshow, XHTMLContentHandler xhtml)
             throws TikaException, SAXException, IOException {
@@ -262,60 +262,60 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
 
             handleEmbeddedResource(
-                  TikaInputStream.get(pic.getData()), null, null,
-                  mediaType, xhtml, false);
+                    TikaInputStream.get(pic.getData()), null, null,
+                    mediaType, xhtml, false);
         }
     }
 
     private void handleSlideEmbeddedResources(Slide slide, XHTMLContentHandler xhtml)
-                throws TikaException, SAXException, IOException {
-      Shape[] shapes;
-      try {
-         shapes = slide.getShapes();
-      } catch(NullPointerException e) {
-         // Sometimes HSLF hits problems
-         // Please open POI bugs for any you come across!
-         return;
-      }
-      
-      for( Shape shape : shapes ) {
-         if( shape instanceof OLEShape ) {
-            OLEShape oleShape = (OLEShape)shape;
-            ObjectData data = null;
-            try {
-                data = oleShape.getObjectData();
-            } catch( NullPointerException e ) { 
+            throws TikaException, SAXException, IOException {
+        Shape[] shapes;
+        try {
+            shapes = slide.getShapes();
+        } catch (NullPointerException e) {
+            // Sometimes HSLF hits problems
+            // Please open POI bugs for any you come across!
+            return;
+        }
+
+        for (Shape shape : shapes) {
+            if (shape instanceof OLEShape) {
+                OLEShape oleShape = (OLEShape) shape;
+                ObjectData data = null;
+                try {
+                    data = oleShape.getObjectData();
+                } catch (NullPointerException e) {
                 /* getObjectData throws NPE some times. */
-            }
- 
-            if (data != null) {
-               String objID = Integer.toString(oleShape.getObjectID());
+                }
 
-               // Embedded Object: add a <div
-               // class="embedded" id="X"/> so consumer can see where
-               // in the main text each embedded document
-               // occurred:
-               AttributesImpl attributes = new AttributesImpl();
-               attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-               attributes.addAttribute("", "id", "id", "CDATA", objID);
-               xhtml.startElement("div", attributes);
-               xhtml.endElement("div");
+                if (data != null) {
+                    String objID = Integer.toString(oleShape.getObjectID());
 
-               TikaInputStream stream =
-                    TikaInputStream.get(data.getData());
-               try {
-                  String mediaType = null;
-                  if ("Excel.Chart.8".equals(oleShape.getProgID())) {
-                     mediaType = "application/vnd.ms-excel";
-                  }
-                  handleEmbeddedResource(
-                        stream, objID, objID,
-                        mediaType, xhtml, false);
-               } finally {
-                  stream.close();
-               }
+                    // Embedded Object: add a <div
+                    // class="embedded" id="X"/> so consumer can see where
+                    // in the main text each embedded document
+                    // occurred:
+                    AttributesImpl attributes = new AttributesImpl();
+                    attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                    attributes.addAttribute("", "id", "id", "CDATA", objID);
+                    xhtml.startElement("div", attributes);
+                    xhtml.endElement("div");
+
+                    TikaInputStream stream =
+                            TikaInputStream.get(data.getData());
+                    try {
+                        String mediaType = null;
+                        if ("Excel.Chart.8".equals(oleShape.getProgID())) {
+                            mediaType = "application/vnd.ms-excel";
+                        }
+                        handleEmbeddedResource(
+                                stream, objID, objID,
+                                mediaType, xhtml, false);
+                    } finally {
+                        stream.close();
+                    }
+                }
             }
-         }
-      }
-   }
+        }
+    }
 }

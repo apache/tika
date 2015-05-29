@@ -41,11 +41,11 @@ public class HtmlEncodingDetector implements EncodingDetector {
     // TIKA-357 - use bigger buffer for meta tag sniffing (was 4K)
     private static final int META_TAG_BUFFER_SIZE = 8192;
 
-  
+
     private static final Pattern HTTP_META_PATTERN = Pattern.compile(
-          "(?is)<\\s*meta\\s+([^<>]+)"
-          );
-    
+            "(?is)<\\s*meta\\s+([^<>]+)"
+    );
+
     //this should match both the older:
     //<meta http-equiv="content-type" content="text/html; charset=xyz"/>
     //and 
@@ -57,9 +57,9 @@ public class HtmlEncodingDetector implements EncodingDetector {
     //For a more general "not" matcher, try:
     //("(?is)charset\\s*=\\s*['\\\"]?\\s*([^<>\\s'\\\";]+)")
     private static final Pattern FLEXIBLE_CHARSET_ATTR_PATTERN = Pattern.compile(
-          ("(?is)charset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)")
-          );
-    
+            ("(?is)charset\\s*=\\s*(?:['\\\"]\\s*)?([-_:\\.a-z0-9]+)")
+    );
+
     private static final Charset ASCII = Charset.forName("US-ASCII");
 
     public Charset detect(InputStream input, Metadata metadata)
@@ -81,27 +81,27 @@ public class HtmlEncodingDetector implements EncodingDetector {
 
         // Interpret the head as ASCII and try to spot a meta tag with
         // a possible character encoding hint
-        
+
         String head = ASCII.decode(ByteBuffer.wrap(buffer, 0, n)).toString();
 
         Matcher equiv = HTTP_META_PATTERN.matcher(head);
         Matcher charsetMatcher = FLEXIBLE_CHARSET_ATTR_PATTERN.matcher("");
         //iterate through meta tags
         while (equiv.find()) {
-           String attrs = equiv.group(1);
-           charsetMatcher.reset(attrs);
-           //iterate through charset= and return the first match
-           //that is valid
-           while (charsetMatcher.find()){
-              String candCharset = charsetMatcher.group(1);
-              if (CharsetUtils.isSupported(candCharset)){
-                 try{
-                    return CharsetUtils.forName(candCharset);
-                 } catch (Exception e){
-                    //ignore
-                 }
-              }
-           }
+            String attrs = equiv.group(1);
+            charsetMatcher.reset(attrs);
+            //iterate through charset= and return the first match
+            //that is valid
+            while (charsetMatcher.find()) {
+                String candCharset = charsetMatcher.group(1);
+                if (CharsetUtils.isSupported(candCharset)) {
+                    try {
+                        return CharsetUtils.forName(candCharset);
+                    } catch (Exception e) {
+                        //ignore
+                    }
+                }
+            }
         }
         return null;
     }

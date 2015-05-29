@@ -46,6 +46,11 @@ abstract class AbstractDBParser extends AbstractParser {
 
     private Connection connection;
 
+    protected static EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
+        return context.get(EmbeddedDocumentExtractor.class,
+                new ParsingEmbeddedDocumentExtractor(context));
+    }
+
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return null;
@@ -90,7 +95,7 @@ abstract class AbstractDBParser extends AbstractParser {
             }
         } finally {
             if (xHandler != null) {
-               xHandler.endDocument();
+                xHandler.endDocument();
             }
             try {
                 close();
@@ -98,11 +103,6 @@ abstract class AbstractDBParser extends AbstractParser {
                 //swallow
             }
         }
-    }
-
-    protected static EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
-       return context.get(EmbeddedDocumentExtractor.class,
-               new ParsingEmbeddedDocumentExtractor(context));
     }
 
     /**
@@ -119,9 +119,9 @@ abstract class AbstractDBParser extends AbstractParser {
      * Override this for special configuration of the connection, such as limiting
      * the number of rows to be held in memory.
      *
-     * @param stream stream to use
+     * @param stream   stream to use
      * @param metadata metadata that could be used in parameterizing the connection
-     * @param context parsecontext that could be used in parameterizing the connection
+     * @param context  parsecontext that could be used in parameterizing the connection
      * @return connection
      * @throws java.io.IOException
      * @throws org.apache.tika.exception.TikaException
@@ -135,7 +135,7 @@ abstract class AbstractDBParser extends AbstractParser {
         } catch (ClassNotFoundException e) {
             throw new TikaException(e.getMessage());
         }
-        try{
+        try {
             connection = DriverManager.getConnection(connectionString);
         } catch (SQLException e) {
             throw new IOExceptionWithCause(e);
@@ -145,31 +145,32 @@ abstract class AbstractDBParser extends AbstractParser {
 
     /**
      * Implement for db specific connection information, e.g. "jdbc:sqlite:/docs/mydb.db"
-     * <p>
+     * <p/>
      * Include any optimization settings, user name, password, etc.
-     * <p>
-     * @param stream stream for processing
-     * @param metadata metadata might be useful in determining connection info
+     * <p/>
+     *
+     * @param stream       stream for processing
+     * @param metadata     metadata might be useful in determining connection info
      * @param parseContext context to use to help create connectionString
      * @return connection string to be used by {@link #getConnection}.
      * @throws java.io.IOException
-    */
+     */
     abstract protected String getConnectionString(InputStream stream,
-                                               Metadata metadata, ParseContext parseContext) throws IOException;
+                                                  Metadata metadata, ParseContext parseContext) throws IOException;
 
     /**
      * JDBC class name, e.g. org.sqlite.JDBC
+     *
      * @return jdbc class name
      */
     abstract protected String getJDBCClassName();
 
     /**
-     *
      * Returns the names of the tables to process
      *
      * @param connection Connection to use to make the sql call(s) to get the names of the tables
-     * @param metadata Metadata to use (potentially) in decision about which tables to extract
-     * @param context ParseContext to use (potentially) in decision about which tables to extract
+     * @param metadata   Metadata to use (potentially) in decision about which tables to extract
+     * @param context    ParseContext to use (potentially) in decision about which tables to extract
      * @return
      * @throws java.sql.SQLException
      */

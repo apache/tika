@@ -16,6 +16,9 @@
  */
 package org.apache.tika.parser.image;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
@@ -28,10 +31,6 @@ import org.apache.tika.parser.Parser;
 import org.junit.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 public class BPGParserTest {
     private final Parser parser = new BPGParser();
 
@@ -43,7 +42,7 @@ public class BPGParserTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-bpg");
         InputStream stream =
-            getClass().getResourceAsStream("/test-documents/testBPG.bpg");
+                getClass().getResourceAsStream("/test-documents/testBPG.bpg");
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
@@ -60,14 +59,14 @@ public class BPGParserTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-bpg");
         InputStream stream =
-            getClass().getResourceAsStream("/test-documents/testBPG_commented.bpg");
+                getClass().getResourceAsStream("/test-documents/testBPG_commented.bpg");
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("103", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("77", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("10", metadata.get(Metadata.BITS_PER_SAMPLE));
         assertEquals("YCbCr Colour", metadata.get(Photoshop.COLOR_MODE));
-        
+
         // TODO Get the exif comment data to be properly extracted, see TIKA-1495
         if (false) {
             assertEquals("Tosteberga \u00C4ngar", metadata.get(TikaCoreProperties.TITLE));
@@ -77,7 +76,7 @@ public class BPGParserTest {
             assertTrue(keywords.contains("bird watching"));
             assertEquals(keywords, Arrays.asList(metadata.getValues(TikaCoreProperties.KEYWORDS)));
         }
-        
+
         // TODO Get the exif data to be properly extracted, see TIKA-1495
         if (false) {
             assertEquals("1.0E-6", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1000000
@@ -90,7 +89,7 @@ public class BPGParserTest {
             assertEquals("1", metadata.get(Metadata.ORIENTATION));
             assertEquals("300.0", metadata.get(Metadata.RESOLUTION_HORIZONTAL));
             assertEquals("300.0", metadata.get(Metadata.RESOLUTION_VERTICAL));
-            assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));          
+            assertEquals("Inch", metadata.get(Metadata.RESOLUTION_UNIT));
         }
     }
 
@@ -102,20 +101,20 @@ public class BPGParserTest {
         Metadata metadata = new Metadata();
         metadata.set(Metadata.CONTENT_TYPE, "image/x-bpg");
         InputStream stream =
-            getClass().getResourceAsStream("/test-documents/testBPG_GEO.bpg");
+                getClass().getResourceAsStream("/test-documents/testBPG_GEO.bpg");
         parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
 
         assertEquals("100", metadata.get(Metadata.IMAGE_WIDTH));
         assertEquals("68", metadata.get(Metadata.IMAGE_LENGTH));
         assertEquals("10", metadata.get(Metadata.BITS_PER_SAMPLE));
         assertEquals("YCbCr Colour", metadata.get(Photoshop.COLOR_MODE));
-        
+
         // TODO Get the geographic data to be properly extracted, see TIKA-1495
         if (false) {
             assertEquals("12.54321", metadata.get(Metadata.LATITUDE));
             assertEquals("-54.1234", metadata.get(Metadata.LONGITUDE));
         }
-        
+
         // TODO Get the exif data to be properly extracted, see TIKA-1495
         if (false) {
             assertEquals("6.25E-4", metadata.get(Metadata.EXPOSURE_TIME)); // 1/1600

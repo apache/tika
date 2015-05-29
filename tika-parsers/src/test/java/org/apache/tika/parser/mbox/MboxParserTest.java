@@ -35,137 +35,137 @@ import org.xml.sax.ContentHandler;
 
 public class MboxParserTest {
 
-  protected ParseContext recursingContext;
-  private Parser autoDetectParser;
-  private TypeDetector typeDetector;
-  private MboxParser mboxParser;
+    protected ParseContext recursingContext;
+    private Parser autoDetectParser;
+    private TypeDetector typeDetector;
+    private MboxParser mboxParser;
 
-  @Before
-  public void setUp() throws Exception {
-    typeDetector = new TypeDetector();
-    autoDetectParser = new AutoDetectParser(typeDetector);
-    recursingContext = new ParseContext();
-    recursingContext.set(Parser.class, autoDetectParser);
-
-    mboxParser = new MboxParser();
-    mboxParser.setTracking(true);
-  }
-
-  @Test
-  public void testSimple() throws Exception {
-    ContentHandler handler = new BodyContentHandler();
-    Metadata metadata = new Metadata();
-    InputStream stream = getStream("/test-documents/simple.mbox");
-
-    try {
-      mboxParser.parse(stream, handler, metadata, recursingContext);
-    } finally {
-      stream.close();
+    private static InputStream getStream(String name) {
+        return MboxParserTest.class.getClass().getResourceAsStream(name);
     }
 
-    String content = handler.toString();
-    assertContains("Test content 1", content);
-    assertContains("Test content 2", content);
-    assertEquals("application/mbox", metadata.get(Metadata.CONTENT_TYPE));
+    @Before
+    public void setUp() throws Exception {
+        typeDetector = new TypeDetector();
+        autoDetectParser = new AutoDetectParser(typeDetector);
+        recursingContext = new ParseContext();
+        recursingContext.set(Parser.class, autoDetectParser);
 
-    Map<Integer, Metadata> mailsMetadata = mboxParser.getTrackingMetadata();
-    assertEquals("Nb. Of mails", 2, mailsMetadata.size());
-
-    Metadata mail1 = mailsMetadata.get(0);
-    assertEquals("message/rfc822", mail1.get(Metadata.CONTENT_TYPE));
-    assertEquals("envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009", mail1.get("MboxParser-from"));
-
-    Metadata mail2 = mailsMetadata.get(1);
-    assertEquals("message/rfc822", mail2.get(Metadata.CONTENT_TYPE));
-    assertEquals("envelope-sender-mailbox-name Mon Jun 01 11:00:00 2010", mail2.get("MboxParser-from"));
-  }
-
-  @Test
-  public void testHeaders() throws Exception {
-    ContentHandler handler = new BodyContentHandler();
-    Metadata metadata = new Metadata();
-    InputStream stream = getStream("/test-documents/headers.mbox");
-
-    try {
-      mboxParser.parse(stream, handler, metadata, recursingContext);
-    } finally {
-      stream.close();
+        mboxParser = new MboxParser();
+        mboxParser.setTracking(true);
     }
 
-    assertContains("Test content", handler.toString());
-    assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
+    @Test
+    public void testSimple() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        InputStream stream = getStream("/test-documents/simple.mbox");
 
-    Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
+        try {
+            mboxParser.parse(stream, handler, metadata, recursingContext);
+        } finally {
+            stream.close();
+        }
 
-    assertEquals("2009-06-10T03:58:45Z", mailMetadata.get(TikaCoreProperties.CREATED));
-    assertEquals("<author@domain.com>", mailMetadata.get(TikaCoreProperties.CREATOR));
-    assertEquals("subject", mailMetadata.get(Metadata.SUBJECT));
-    assertEquals("<author@domain.com>", mailMetadata.get(Metadata.AUTHOR));
-    assertEquals("message/rfc822", mailMetadata.get(Metadata.CONTENT_TYPE));
-    assertEquals("author@domain.com", mailMetadata.get("Message-From"));
-    assertEquals("<name@domain.com>", mailMetadata.get("MboxParser-return-path"));
-  }
+        String content = handler.toString();
+        assertContains("Test content 1", content);
+        assertContains("Test content 2", content);
+        assertEquals("application/mbox", metadata.get(Metadata.CONTENT_TYPE));
 
-  @Test
-  public void testMultilineHeader() throws Exception {
-    ContentHandler handler = new BodyContentHandler();
-    Metadata metadata = new Metadata();
-    InputStream stream = getStream("/test-documents/multiline.mbox");
+        Map<Integer, Metadata> mailsMetadata = mboxParser.getTrackingMetadata();
+        assertEquals("Nb. Of mails", 2, mailsMetadata.size());
 
-    try {
-      mboxParser.parse(stream, handler, metadata, recursingContext);
-    } finally {
-      stream.close();
+        Metadata mail1 = mailsMetadata.get(0);
+        assertEquals("message/rfc822", mail1.get(Metadata.CONTENT_TYPE));
+        assertEquals("envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009", mail1.get("MboxParser-from"));
+
+        Metadata mail2 = mailsMetadata.get(1);
+        assertEquals("message/rfc822", mail2.get(Metadata.CONTENT_TYPE));
+        assertEquals("envelope-sender-mailbox-name Mon Jun 01 11:00:00 2010", mail2.get("MboxParser-from"));
     }
 
-    assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
+    @Test
+    public void testHeaders() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        InputStream stream = getStream("/test-documents/headers.mbox");
 
-    Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
-    assertEquals("from xxx by xxx with xxx; date", mailMetadata.get("MboxParser-received"));
-  }
+        try {
+            mboxParser.parse(stream, handler, metadata, recursingContext);
+        } finally {
+            stream.close();
+        }
 
-  @Test
-  public void testQuoted() throws Exception {
-    ContentHandler handler = new BodyContentHandler();
-    Metadata metadata = new Metadata();
-    InputStream stream = getStream("/test-documents/quoted.mbox");
+        assertContains("Test content", handler.toString());
+        assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
 
-    try {
-      mboxParser.parse(stream, handler, metadata, recursingContext);
-    } finally {
-      stream.close();
+        Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
+
+        assertEquals("2009-06-10T03:58:45Z", mailMetadata.get(TikaCoreProperties.CREATED));
+        assertEquals("<author@domain.com>", mailMetadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("subject", mailMetadata.get(Metadata.SUBJECT));
+        assertEquals("<author@domain.com>", mailMetadata.get(Metadata.AUTHOR));
+        assertEquals("message/rfc822", mailMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("author@domain.com", mailMetadata.get("Message-From"));
+        assertEquals("<name@domain.com>", mailMetadata.get("MboxParser-return-path"));
     }
 
-    assertContains("Test content", handler.toString());
-    assertContains("> quoted stuff", handler.toString());
-  }
+    @Test
+    public void testMultilineHeader() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        InputStream stream = getStream("/test-documents/multiline.mbox");
 
-  @Test
-  public void testComplex() throws Exception {
-    ContentHandler handler = new BodyContentHandler();
-    Metadata metadata = new Metadata();
-    InputStream stream = getStream("/test-documents/complex.mbox");
+        try {
+            mboxParser.parse(stream, handler, metadata, recursingContext);
+        } finally {
+            stream.close();
+        }
 
-    try {
-      mboxParser.parse(stream, handler, metadata, recursingContext);
-    } finally {
-      stream.close();
+        assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
+
+        Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
+        assertEquals("from xxx by xxx with xxx; date", mailMetadata.get("MboxParser-received"));
     }
 
-    assertEquals("Nb. Of mails", 3, mboxParser.getTrackingMetadata().size());
+    @Test
+    public void testQuoted() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        InputStream stream = getStream("/test-documents/quoted.mbox");
 
-    Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
-    assertEquals("Re: question about when shuffle/sort start working", firstMail.get(Metadata.SUBJECT));
-    assertEquals("Re: question about when shuffle/sort start working", firstMail.get(TikaCoreProperties.TITLE));
-    assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(Metadata.AUTHOR));
-    assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(TikaCoreProperties.CREATOR));
-    assertEquals("core-user@hadoop.apache.org", firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+        try {
+            mboxParser.parse(stream, handler, metadata, recursingContext);
+        } finally {
+            stream.close();
+        }
 
-    assertContains("When a Mapper completes", handler.toString());
-  }
+        assertContains("Test content", handler.toString());
+        assertContains("> quoted stuff", handler.toString());
+    }
 
-  private static InputStream getStream(String name) {
-    return MboxParserTest.class.getClass().getResourceAsStream(name);
-  }
+    @Test
+    public void testComplex() throws Exception {
+        ContentHandler handler = new BodyContentHandler();
+        Metadata metadata = new Metadata();
+        InputStream stream = getStream("/test-documents/complex.mbox");
+
+        try {
+            mboxParser.parse(stream, handler, metadata, recursingContext);
+        } finally {
+            stream.close();
+        }
+
+        assertEquals("Nb. Of mails", 3, mboxParser.getTrackingMetadata().size());
+
+        Metadata firstMail = mboxParser.getTrackingMetadata().get(0);
+        assertEquals("Re: question about when shuffle/sort start working", firstMail.get(Metadata.SUBJECT));
+        assertEquals("Re: question about when shuffle/sort start working", firstMail.get(TikaCoreProperties.TITLE));
+        assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(Metadata.AUTHOR));
+        assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>", firstMail.get(TikaCoreProperties.CREATOR));
+        assertEquals("core-user@hadoop.apache.org", firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+
+        assertContains("When a Mapper completes", handler.toString());
+    }
 
 }

@@ -16,6 +16,11 @@
  */
 package org.apache.tika.parser.image;
 
+import javax.imageio.IIOException;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.ImageInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -23,12 +28,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-
-import javax.imageio.IIOException;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.metadata.IIOMetadata;
-import javax.imageio.stream.ImageInputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CloseShieldInputStream;
@@ -46,98 +45,38 @@ import org.xml.sax.SAXException;
 
 public class ImageParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = 7852529269245520335L;
 
     private static final MediaType CANONICAL_BMP_TYPE = MediaType.image("x-ms-bmp");
     private static final MediaType JAVA_BMP_TYPE = MediaType.image("bmp");
-    
+
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
-                CANONICAL_BMP_TYPE,
-                JAVA_BMP_TYPE,
-                MediaType.image("gif"),
-                MediaType.image("png"),
-                MediaType.image("vnd.wap.wbmp"),
-                MediaType.image("x-icon"),
-                MediaType.image("x-xcf"))));
-
-    public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return SUPPORTED_TYPES;
-    }
-
-    public void parse(
-            InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context)
-            throws IOException, SAXException, TikaException {
-        String type = metadata.get(Metadata.CONTENT_TYPE);
-        if (type != null) {
-            // Java has a different idea of the BMP mime type to
-            //  what the canonical one is, fix this up.
-            if (CANONICAL_BMP_TYPE.toString().equals(type)) {
-               type = JAVA_BMP_TYPE.toString();
-            }
-           
-            try {
-                Iterator<ImageReader> iterator =
-                    ImageIO.getImageReadersByMIMEType(type);
-                if (iterator.hasNext()) {
-                    ImageReader reader = iterator.next();
-                    try {
-                        ImageInputStream imageStream = ImageIO.createImageInputStream(
-                                new CloseShieldInputStream(stream));
-                        try {
-                            reader.setInput(imageStream);
-                            
-                            metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
-                            metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
-                            metadata.set("height", Integer.toString(reader.getHeight(0)));
-                            metadata.set("width", Integer.toString(reader.getWidth(0)));
-
-                            loadMetadata(reader.getImageMetadata(0), metadata);
-                        } finally {
-                            imageStream.close();
-                        }
-                    } finally {
-                        reader.dispose();
-                    }
-                }
-                
-                // Translate certain Metadata tags from the ImageIO
-                //  specific namespace into the general Tika one
-                setIfPresent(metadata, "CommentExtensions CommentExtension", TikaCoreProperties.COMMENTS);
-                setIfPresent(metadata, "markerSequence com", TikaCoreProperties.COMMENTS);
-                setIfPresent(metadata, "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
-            } catch (IIOException e) {
-                // TIKA-619: There is a known bug in the Sun API when dealing with GIF images
-                //  which Tika will just ignore.
-                if (!(e.getMessage() != null && 
-                        e.getMessage().equals("Unexpected block type 0!") && 
-                        type.equals("image/gif"))) {
-                    throw new TikaException(type + " parse error", e);
-                }
-            }
-        }
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.endDocument();
-    }
-
+            Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(
+                    CANONICAL_BMP_TYPE,
+                    JAVA_BMP_TYPE,
+                    MediaType.image("gif"),
+                    MediaType.image("png"),
+                    MediaType.image("vnd.wap.wbmp"),
+                    MediaType.image("x-icon"),
+                    MediaType.image("x-xcf"))));
 
     private static void setIfPresent(Metadata metadata, String imageIOkey, String tikaKey) {
-	if(metadata.get(imageIOkey) != null) {
-	    metadata.set(tikaKey, metadata.get(imageIOkey));
-	}
+        if (metadata.get(imageIOkey) != null) {
+            metadata.set(tikaKey, metadata.get(imageIOkey));
+        }
     }
+
     private static void setIfPresent(Metadata metadata, String imageIOkey, Property tikaProp) {
-	if(metadata.get(imageIOkey) != null) {
-	    String v = metadata.get(imageIOkey);
-	    if(v.endsWith(" ")) {
-		v = v.substring(0, v.lastIndexOf(' '));
-	    }
-	    metadata.set(tikaProp, v);
-	}
+        if (metadata.get(imageIOkey) != null) {
+            String v = metadata.get(imageIOkey);
+            if (v.endsWith(" ")) {
+                v = v.substring(0, v.lastIndexOf(' '));
+            }
+            metadata.set(tikaProp, v);
+        }
     }
 
     private static void loadMetadata(IIOMetadata imageMetadata, Metadata metadata) {
@@ -200,6 +139,68 @@ public class ImageParser extends AbstractParser {
             return Boolean.FALSE.toString();
         }
         return value;
+    }
+
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return SUPPORTED_TYPES;
+    }
+
+    public void parse(
+            InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context)
+            throws IOException, SAXException, TikaException {
+        String type = metadata.get(Metadata.CONTENT_TYPE);
+        if (type != null) {
+            // Java has a different idea of the BMP mime type to
+            //  what the canonical one is, fix this up.
+            if (CANONICAL_BMP_TYPE.toString().equals(type)) {
+                type = JAVA_BMP_TYPE.toString();
+            }
+
+            try {
+                Iterator<ImageReader> iterator =
+                        ImageIO.getImageReadersByMIMEType(type);
+                if (iterator.hasNext()) {
+                    ImageReader reader = iterator.next();
+                    try {
+                        ImageInputStream imageStream = ImageIO.createImageInputStream(
+                                new CloseShieldInputStream(stream));
+                        try {
+                            reader.setInput(imageStream);
+
+                            metadata.set(Metadata.IMAGE_WIDTH, Integer.toString(reader.getWidth(0)));
+                            metadata.set(Metadata.IMAGE_LENGTH, Integer.toString(reader.getHeight(0)));
+                            metadata.set("height", Integer.toString(reader.getHeight(0)));
+                            metadata.set("width", Integer.toString(reader.getWidth(0)));
+
+                            loadMetadata(reader.getImageMetadata(0), metadata);
+                        } finally {
+                            imageStream.close();
+                        }
+                    } finally {
+                        reader.dispose();
+                    }
+                }
+
+                // Translate certain Metadata tags from the ImageIO
+                //  specific namespace into the general Tika one
+                setIfPresent(metadata, "CommentExtensions CommentExtension", TikaCoreProperties.COMMENTS);
+                setIfPresent(metadata, "markerSequence com", TikaCoreProperties.COMMENTS);
+                setIfPresent(metadata, "Data BitsPerSample", Metadata.BITS_PER_SAMPLE);
+            } catch (IIOException e) {
+                // TIKA-619: There is a known bug in the Sun API when dealing with GIF images
+                //  which Tika will just ignore.
+                if (!(e.getMessage() != null &&
+                        e.getMessage().equals("Unexpected block type 0!") &&
+                        type.equals("image/gif"))) {
+                    throw new TikaException(type + " parse error", e);
+                }
+            }
+        }
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.endDocument();
     }
 
 }

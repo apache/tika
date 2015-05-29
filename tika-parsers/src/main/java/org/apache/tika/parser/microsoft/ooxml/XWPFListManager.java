@@ -30,13 +30,8 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNum;
 
 public class XWPFListManager extends AbstractListManager {
     private final static boolean OVERRIDE_AVAILABLE;
-    private final static String SKIP_FORMAT = Character.toString((char)61623);//if this shows up as the lvlText, don't show a number
+    private final static String SKIP_FORMAT = Character.toString((char) 61623);//if this shows up as the lvlText, don't show a number
 
-    private final XWPFNumbering numbering;
-    //map of numId (which paragraph series is this a member of?), levelcounts
-    public XWPFListManager(XWPFDocument document) {
-        numbering = document.getNumbering();
-    }
     static {
         boolean b = false;
         try {
@@ -47,6 +42,14 @@ public class XWPFListManager extends AbstractListManager {
         b = OVERRIDE_AVAILABLE = false;
 
     }
+
+    private final XWPFNumbering numbering;
+
+    //map of numId (which paragraph series is this a member of?), levelcounts
+    public XWPFListManager(XWPFDocument document) {
+        numbering = document.getNumbering();
+    }
+
     public String getFormattedNumber(final XWPFParagraph paragraph) {
         int currNumId = paragraph.getNumID().intValue();
         CTNum ctNum = numbering.getNum(paragraph.getNumID()).getCTNum();
@@ -74,7 +77,8 @@ public class XWPFListManager extends AbstractListManager {
      * WARNING: currently always returns null.
      * TODO: Once CTNumLvl is available to Tika,
      * we can turn this back on.
-     * @param ctNum number on which to build the overrides
+     *
+     * @param ctNum  number on which to build the overrides
      * @param length length of intended array
      * @return null or an array of override tuples of length {@param length}
      */
@@ -121,7 +125,7 @@ public class XWPFListManager extends AbstractListManager {
         boolean isLegal = false;
         int start = 1;
         int restart = -1;
-        String lvlText = "%"+level+".";
+        String lvlText = "%" + level + ".";
         String numFmt = "decimal";
 
 

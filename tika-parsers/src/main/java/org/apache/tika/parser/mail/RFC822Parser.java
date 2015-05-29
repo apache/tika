@@ -37,7 +37,7 @@ import org.xml.sax.SAXException;
 /**
  * Uses apache-mime4j to parse emails. Each part is treated with the
  * corresponding parser and displayed within elements.
- * <p>
+ * <p/>
  * A {@link MimeEntityConfig} object can be passed in the parsing context
  * to better control the parsing process.
  *
@@ -45,7 +45,9 @@ import org.xml.sax.SAXException;
  */
 public class RFC822Parser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -5504243905998074168L;
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections
@@ -56,7 +58,7 @@ public class RFC822Parser extends AbstractParser {
     }
 
     public void parse(InputStream stream, ContentHandler handler,
-            Metadata metadata, ParseContext context) throws IOException,
+                      Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
         // Get the mime4j configuration, or use a default one
         MimeConfig config = new MimeConfig();

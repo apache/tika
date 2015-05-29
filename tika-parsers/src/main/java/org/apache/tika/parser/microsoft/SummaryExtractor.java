@@ -50,10 +50,10 @@ public class SummaryExtractor {
     private static final Log logger = LogFactory.getLog(AbstractPOIFSExtractor.class);
 
     private static final String SUMMARY_INFORMATION =
-        SummaryInformation.DEFAULT_STREAM_NAME;
+            SummaryInformation.DEFAULT_STREAM_NAME;
 
     private static final String DOCUMENT_SUMMARY_INFORMATION =
-        DocumentSummaryInformation.DEFAULT_STREAM_NAME;
+            DocumentSummaryInformation.DEFAULT_STREAM_NAME;
 
     private final Metadata metadata;
 
@@ -77,9 +77,9 @@ public class SummaryExtractor {
             throws IOException, TikaException {
         try {
             DocumentEntry entry =
-                (DocumentEntry) root.getEntry(entryName);
+                    (DocumentEntry) root.getEntry(entryName);
             PropertySet properties =
-                new PropertySet(new DocumentInputStream(entry));
+                    new PropertySet(new DocumentInputStream(entry));
             if (properties.isSummaryInformation()) {
                 parse(new SummaryInformation(properties));
             }
@@ -115,7 +115,7 @@ public class SummaryExtractor {
         set(TikaCoreProperties.PRINT_DATE, summary.getLastPrinted());
         set(Metadata.EDIT_TIME, summary.getEditTime());
         set(OfficeOpenXMLExtended.DOC_SECURITY, summary.getSecurity());
-        
+
         // New style counts
         set(Office.WORD_COUNT, summary.getWordCount());
         set(Office.CHARACTER_COUNT, summary.getCharCount());
@@ -123,7 +123,7 @@ public class SummaryExtractor {
         if (summary.getPageCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getPageCount());
         }
-        
+
         // Old style, Tika 1.0 properties
         // TODO Remove these in Tika 2.0
         set(Metadata.TEMPLATE, summary.getTemplate());
@@ -140,7 +140,7 @@ public class SummaryExtractor {
         set(OfficeOpenXMLExtended.MANAGER, summary.getManager());
         set(TikaCoreProperties.LANGUAGE, getLanguage(summary));
         set(OfficeOpenXMLCore.CATEGORY, summary.getCategory());
-        
+
         // New style counts
         set(Office.SLIDE_COUNT, summary.getSlideCount());
         if (summary.getSlideCount() > 0) {
@@ -152,7 +152,7 @@ public class SummaryExtractor {
         set(Metadata.MANAGER, summary.getManager());
         set(MSOffice.SLIDE_COUNT, summary.getSlideCount());
         set(Metadata.CATEGORY, summary.getCategory());
-        
+
         parse(summary.getCustomProperties());
     }
 
@@ -169,6 +169,7 @@ public class SummaryExtractor {
 
     /**
      * Attempt to parse custom document properties and add to the collection of metadata
+     *
      * @param customProperties
      */
     private void parse(CustomProperties customProperties) {
@@ -179,23 +180,23 @@ public class SummaryExtractor {
 
                 // Get, convert and save property value
                 Object value = customProperties.get(name);
-                if (value instanceof String){
-                    set(key, (String)value);
+                if (value instanceof String) {
+                    set(key, (String) value);
                 } else if (value instanceof Date) {
                     Property prop = Property.externalDate(key);
-                    metadata.set(prop, (Date)value);
+                    metadata.set(prop, (Date) value);
                 } else if (value instanceof Boolean) {
                     Property prop = Property.externalBoolean(key);
                     metadata.set(prop, value.toString());
                 } else if (value instanceof Long) {
                     Property prop = Property.externalInteger(key);
-                    metadata.set(prop, ((Long)value).intValue());
+                    metadata.set(prop, ((Long) value).intValue());
                 } else if (value instanceof Double) {
                     Property prop = Property.externalReal(key);
-                    metadata.set(prop, (Double)value);
+                    metadata.set(prop, (Double) value);
                 } else if (value instanceof Integer) {
                     Property prop = Property.externalInteger(key);
-                    metadata.set(prop, ((Integer)value).intValue());
+                    metadata.set(prop, ((Integer) value).intValue());
                 }
             }
         }
@@ -206,7 +207,7 @@ public class SummaryExtractor {
             metadata.set(name, value);
         }
     }
-    
+
     private void set(Property property, String value) {
         if (value != null) {
             metadata.set(property, value);

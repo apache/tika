@@ -46,7 +46,8 @@ import org.xml.sax.ContentHandler;
 
 public class SQLite3ParserTest extends TikaTest {
     private final static String TEST_FILE_NAME = "testSqlite3b.db";
-    private final static String TEST_FILE1 = "/test-documents/"+TEST_FILE_NAME;;
+    private final static String TEST_FILE1 = "/test-documents/" + TEST_FILE_NAME;
+    ;
 
     @Test
     public void testBasic() throws Exception {
@@ -98,7 +99,7 @@ public class SQLite3ParserTest extends TikaTest {
     //make sure that table cells and rows are properly marked to
     //yield \t and \n at the appropriate places
     @Test
-    public void testSpacesInBodyContentHandler()  throws Exception {
+    public void testSpacesInBodyContentHandler() throws Exception {
         Parser p = new AutoDetectParser();
         InputStream stream = null;
         Metadata metadata = new Metadata();
@@ -188,20 +189,20 @@ public class SQLite3ParserTest extends TikaTest {
         String[] strings = new String[4];
         for (int i = 1; i < byteCopier.bytes.size(); i++) {
             byte[] byteArr = byteCopier.bytes.get(i);
-            String s = new String(byteArr, 0, Math.min(byteArr.length,1000), "UTF-8");
+            String s = new String(byteArr, 0, Math.min(byteArr.length, 1000), "UTF-8");
             strings[i] = s;
         }
         byte[] oleBytes = new byte[]{
-                (byte)-48,
-                (byte)-49,
-                (byte)17,
-                (byte)-32,
-                (byte)-95,
-                (byte)-79,
-                (byte)26,
-                (byte)-31,
-                (byte)0,
-                (byte)0,
+                (byte) -48,
+                (byte) -49,
+                (byte) 17,
+                (byte) -32,
+                (byte) -95,
+                (byte) -79,
+                (byte) 26,
+                (byte) -31,
+                (byte) 0,
+                (byte) 0,
         };
         //test OLE
         for (int i = 0; i < 10; i++) {
@@ -231,7 +232,6 @@ public class SQLite3ParserTest extends TikaTest {
     }
 
 
-
     public static class InputStreamResettingHandler implements EmbeddedResourceHandler {
 
         public List<byte[]> bytes = new ArrayList<byte[]>();
@@ -240,7 +240,7 @@ public class SQLite3ParserTest extends TikaTest {
         public void handle(String filename, MediaType mediaType,
                            InputStream stream) {
             ByteArrayOutputStream os = new ByteArrayOutputStream();
-            if (! stream.markSupported()) {
+            if (!stream.markSupported()) {
                 stream = TikaInputStream.get(stream);
             }
             stream.mark(1000000);

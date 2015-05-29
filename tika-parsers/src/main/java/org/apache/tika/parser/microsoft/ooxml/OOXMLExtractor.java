@@ -29,14 +29,14 @@ import org.xml.sax.SAXException;
 
 /**
  * Interface implemented by all Tika OOXML extractors.
- * 
+ *
  * @see org.apache.poi.POIXMLTextExtractor
  */
 public interface OOXMLExtractor {
 
     /**
      * Returns the opened document.
-     * 
+     *
      * @see POIXMLTextExtractor#getDocument()
      */
     POIXMLDocument getDocument();

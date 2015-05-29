@@ -17,33 +17,32 @@ package org.apache.tika.parser.pdf;
  * limitations under the License.
  */
 
-import org.apache.pdfbox.util.PDFTextStripper;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.Properties;
 
+import org.apache.pdfbox.util.PDFTextStripper;
+
 /**
  * Config for PDFParser.
- * 
+ * <p/>
  * This allows parameters to be set programmatically:
  * <ol>
  * <li>Calls to PDFParser, i.e. parser.getPDFParserConfig().setEnableAutoSpace() (as before)</li>
  * <li>Constructor of PDFParser</li>
  * <li>Passing to PDFParser through a ParseContext: context.set(PDFParserConfig.class, config);</li>
  * </ol>
- * 
+ * <p/>
  * Parameters can also be set by modifying the PDFParserConfig.properties file,
  * which lives in the expected places, in trunk:
  * tika-parsers/src/main/resources/org/apache/tika/parser/pdf
- * 
+ * <p/>
  * Or, in tika-app-x.x.jar or tika-parsers-x.x.jar:
  * org/apache/tika/parser/pdf
- *
  */
-public class PDFParserConfig implements Serializable{
+public class PDFParserConfig implements Serializable {
 
     private static final long serialVersionUID = 6492570218190936986L;
 
@@ -63,7 +62,7 @@ public class PDFParserConfig implements Serializable{
 
     //True if we should use PDFBox's NonSequentialParser
     private boolean useNonSequentialParser = false;
-    
+
     //True if acroform content should be extracted
     private boolean extractAcroFormContent = true;
 
@@ -73,10 +72,10 @@ public class PDFParserConfig implements Serializable{
     //True if inline images (as identified by their object id within
     //a pdf file) should only be extracted once.
     private boolean extractUniqueInlineImagesOnly = true;
-    
+
     //The character width-based tolerance value used to estimate where spaces in text should be added
     private Float averageCharTolerance;
-    
+
     //The space width-based tolerance value used to estimate where spaces in text should be added
     private Float spacingTolerance;
 
@@ -90,7 +89,7 @@ public class PDFParserConfig implements Serializable{
      * Loads properties from InputStream and then tries to close InputStream.
      * If there is an IOException, this silently swallows the exception
      * and goes back to the default.
-     * 
+     *
      * @param is
      */
     public PDFParserConfig(InputStream is) {
@@ -109,7 +108,7 @@ public class PDFParserConfig implements Serializable{
         } catch (IOException e) {
         } finally {
             if (is != null) {
-                try{
+                try {
                     is.close();
                 } catch (IOException e) {
                     //swallow
@@ -119,26 +118,26 @@ public class PDFParserConfig implements Serializable{
         setEnableAutoSpace(
                 getProp(props.getProperty("enableAutoSpace"), getEnableAutoSpace()));
         setSuppressDuplicateOverlappingText(
-                getProp(props.getProperty("suppressDuplicateOverlappingText"), 
+                getProp(props.getProperty("suppressDuplicateOverlappingText"),
                         getSuppressDuplicateOverlappingText()));
         setExtractAnnotationText(
-                getProp(props.getProperty("extractAnnotationText"), 
+                getProp(props.getProperty("extractAnnotationText"),
                         getExtractAnnotationText()));
         setSortByPosition(
-                getProp(props.getProperty("sortByPosition"), 
+                getProp(props.getProperty("sortByPosition"),
                         getSortByPosition()));
         setUseNonSequentialParser(
-                getProp(props.getProperty("useNonSequentialParser"), 
+                getProp(props.getProperty("useNonSequentialParser"),
                         getUseNonSequentialParser()));
         setExtractAcroFormContent(
                 getProp(props.getProperty("extractAcroFormContent"),
-                getExtractAcroFormContent()));
+                        getExtractAcroFormContent()));
         setExtractInlineImages(
                 getProp(props.getProperty("extractInlineImages"),
-                getExtractInlineImages()));
+                        getExtractInlineImages()));
         setExtractUniqueInlineImagesOnly(
                 getProp(props.getProperty("extractUniqueInlineImagesOnly"),
-                getExtractUniqueInlineImagesOnly()));
+                        getExtractUniqueInlineImagesOnly()));
 
         boolean checkExtractAccessPermission = getProp(props.getProperty("checkExtractAccessPermission"), false);
         boolean allowExtractionForAccessibility = getProp(props.getProperty("allowExtractionForAccessibility"), true);
@@ -151,10 +150,10 @@ public class PDFParserConfig implements Serializable{
             accessChecker = new AccessChecker(allowExtractionForAccessibility);
         }
     }
-    
+
     /**
      * Configures the given pdf2XHTML.
-     * 
+     *
      * @param pdf2XHTML
      */
     public void configure(PDF2XHTML pdf2XHTML) {
@@ -174,108 +173,118 @@ public class PDFParserConfig implements Serializable{
         pdf2XHTML.setSuppressDuplicateOverlappingText(getSuppressDuplicateOverlappingText());
     }
 
-    
     /**
-     * If true (the default), extract content from AcroForms
-     * at the end of the document.
-     * 
-     * @param extractAcroFormContent
+     * @see #setExtractAcroFormContent(boolean)
      */
-    public void setExtractAcroFormContent(boolean extractAcroFormContent) {
-        this.extractAcroFormContent = extractAcroFormContent;
-        
-    }
-
-    /** @see #setExtractAcroFormContent(boolean) */
     public boolean getExtractAcroFormContent() {
         return extractAcroFormContent;
     }
 
     /**
+     * If true (the default), extract content from AcroForms
+     * at the end of the document.
+     *
+     * @param extractAcroFormContent
+     */
+    public void setExtractAcroFormContent(boolean extractAcroFormContent) {
+        this.extractAcroFormContent = extractAcroFormContent;
+
+    }
+
+    /**
+     * @see #setExtractInlineImages(boolean)
+     */
+    public boolean getExtractInlineImages() {
+        return extractInlineImages;
+    }
+
+    /**
      * If true, extract inline embedded OBXImages.
      * <b>Beware:</b> some PDF documents of modest size (~4MB) can contain
-     * thousands of embedded images totaling > 2.5 GB.  Also, at least as of PDFBox 1.8.5, 
+     * thousands of embedded images totaling > 2.5 GB.  Also, at least as of PDFBox 1.8.5,
      * there can be surprisingly large memory consumption and/or out of memory errors.
      * Set to <code>true</code> with caution.
-     * <p>
+     * <p/>
      * The default is <code>false</code>.
-     * <p>
+     * <p/>
      * See also: {@see #setExtractUniqueInlineImagesOnly(boolean)};
-     * 
+     *
      * @param extractInlineImages
      */
     public void setExtractInlineImages(boolean extractInlineImages) {
-        this.extractInlineImages = extractInlineImages;        
+        this.extractInlineImages = extractInlineImages;
     }
 
-    /** @see #setExtractInlineImages(boolean) */
-    public boolean getExtractInlineImages() {
-        return extractInlineImages;
+    /**
+     * @see #setExtractUniqueInlineImagesOnly(boolean)
+     */
+    public boolean getExtractUniqueInlineImagesOnly() {
+        return extractUniqueInlineImagesOnly;
     }
 
     /**
      * Multiple pages within a PDF file might refer to the same underlying image.
      * If {@link #extractUniqueInlineImagesOnly} is set to <code>false</code>, the
      * parser will call the EmbeddedExtractor each time the image appears on a page.
-     * This might be desired for some use cases.  However, to avoid duplication of 
+     * This might be desired for some use cases.  However, to avoid duplication of
      * extracted images, set this to <code>true</code>.  The default is <code>true</code>.
-     * <p>
-     * Note that uniqueness is determined only by the underlying PDF COSObject id, not by 
+     * <p/>
+     * Note that uniqueness is determined only by the underlying PDF COSObject id, not by
      * file hash or similar equality metric.
-     * If the PDF actually contains multiple copies of the same image 
+     * If the PDF actually contains multiple copies of the same image
      * -- all with different object ids -- then all images will be extracted.
-     * <p>
-     * For this parameter to have any effect, {@link #extractInlineImages} must be 
+     * <p/>
+     * For this parameter to have any effect, {@link #extractInlineImages} must be
      * set to <code>true</code>.
-     * 
+     *
      * @param extractUniqueInlineImagesOnly
      */
     public void setExtractUniqueInlineImagesOnly(boolean extractUniqueInlineImagesOnly) {
         this.extractUniqueInlineImagesOnly = extractUniqueInlineImagesOnly;
-        
+
     }
 
-    /** @see #setExtractUniqueInlineImagesOnly(boolean) */
-    public boolean getExtractUniqueInlineImagesOnly() {
-        return extractUniqueInlineImagesOnly;
-    }
-
-
-    /** @see #setEnableAutoSpace(boolean) */
+    /**
+     * @see #setEnableAutoSpace(boolean)
+     */
     public boolean getEnableAutoSpace() {
         return enableAutoSpace;
     }
 
     /**
-     *  If true (the default), the parser should estimate
-     *  where spaces should be inserted between words.  For
-     *  many PDFs this is necessary as they do not include
-     *  explicit whitespace characters.
+     * If true (the default), the parser should estimate
+     * where spaces should be inserted between words.  For
+     * many PDFs this is necessary as they do not include
+     * explicit whitespace characters.
      */
     public void setEnableAutoSpace(boolean enableAutoSpace) {
         this.enableAutoSpace = enableAutoSpace;
     }
 
-    /** @see #setSuppressDuplicateOverlappingText(boolean)*/
+    /**
+     * @see #setSuppressDuplicateOverlappingText(boolean)
+     */
     public boolean getSuppressDuplicateOverlappingText() {
         return suppressDuplicateOverlappingText;
     }
 
     /**
-     *  If true, the parser should try to remove duplicated
-     *  text over the same region.  This is needed for some
-     *  PDFs that achieve bolding by re-writing the same
-     *  text in the same area.  Note that this can
-     *  slow down extraction substantially (PDFBOX-956) and
-     *  sometimes remove characters that were not in fact
-     *  duplicated (PDFBOX-1155).  By default this is disabled.
+     * If true, the parser should try to remove duplicated
+     * text over the same region.  This is needed for some
+     * PDFs that achieve bolding by re-writing the same
+     * text in the same area.  Note that this can
+     * slow down extraction substantially (PDFBOX-956) and
+     * sometimes remove characters that were not in fact
+     * duplicated (PDFBOX-1155).  By default this is disabled.
      */
     public void setSuppressDuplicateOverlappingText(
             boolean suppressDuplicateOverlappingText) {
         this.suppressDuplicateOverlappingText = suppressDuplicateOverlappingText;
     }
 
-    /** @see #setExtractAnnotationText(boolean)*/
+    /**
+     * @see #setExtractAnnotationText(boolean)
+     */
     public boolean getExtractAnnotationText() {
         return extractAnnotationText;
     }
@@ -287,24 +296,29 @@ public class PDFParserConfig implements Serializable{
     public void setExtractAnnotationText(boolean extractAnnotationText) {
         this.extractAnnotationText = extractAnnotationText;
     }
-    /** @see #setSortByPosition(boolean)*/
+
+    /**
+     * @see #setSortByPosition(boolean)
+     */
     public boolean getSortByPosition() {
         return sortByPosition;
     }
 
     /**
-     *  If true, sort text tokens by their x/y position
-     *  before extracting text.  This may be necessary for
-     *  some PDFs (if the text tokens are not rendered "in
-     *  order"), while for other PDFs it can produce the
-     *  wrong result (for example if there are 2 columns,
-     *  the text will be interleaved).  Default is false.
+     * If true, sort text tokens by their x/y position
+     * before extracting text.  This may be necessary for
+     * some PDFs (if the text tokens are not rendered "in
+     * order"), while for other PDFs it can produce the
+     * wrong result (for example if there are 2 columns,
+     * the text will be interleaved).  Default is false.
      */
     public void setSortByPosition(boolean sortByPosition) {
         this.sortByPosition = sortByPosition;
     }
 
-    /** @see #setUseNonSequentialParser(boolean)*/
+    /**
+     * @see #setUseNonSequentialParser(boolean)
+     */
     public boolean getUseNonSequentialParser() {
         return useNonSequentialParser;
     }
@@ -312,18 +326,21 @@ public class PDFParserConfig implements Serializable{
     /**
      * If true, uses PDFBox's non-sequential parser.
      * The non-sequential parser should be much faster than the traditional
-     * full doc parser.  However, until PDFBOX-XXX is fixed, 
+     * full doc parser.  However, until PDFBOX-XXX is fixed,
      * the non-sequential parser fails
      * to extract some document metadata.
-     * <p>
+     * <p/>
      * Default is false (use the traditional parser)
+     *
      * @param useNonSequentialParser
      */
     public void setUseNonSequentialParser(boolean useNonSequentialParser) {
         this.useNonSequentialParser = useNonSequentialParser;
     }
 
-    /** @see #setAverageCharTolerance(Float)*/
+    /**
+     * @see #setAverageCharTolerance(Float)
+     */
     public Float getAverageCharTolerance() {
         return averageCharTolerance;
     }
@@ -335,7 +352,9 @@ public class PDFParserConfig implements Serializable{
         this.averageCharTolerance = averageCharTolerance;
     }
 
-    /** @see #setSpacingTolerance(Float)*/
+    /**
+     * @see #setSpacingTolerance(Float)
+     */
     public Float getSpacingTolerance() {
         return spacingTolerance;
     }
@@ -347,16 +366,16 @@ public class PDFParserConfig implements Serializable{
         this.spacingTolerance = spacingTolerance;
     }
 
-    public void setAccessChecker(AccessChecker accessChecker) {
-        this.accessChecker = accessChecker;
-    }
-
     public AccessChecker getAccessChecker() {
         return accessChecker;
     }
 
-    private boolean getProp(String p, boolean defaultMissing){
-        if (p == null){
+    public void setAccessChecker(AccessChecker accessChecker) {
+        this.accessChecker = accessChecker;
+    }
+
+    private boolean getProp(String p, boolean defaultMissing) {
+        if (p == null) {
             return defaultMissing;
         }
         if (p.toLowerCase(Locale.ROOT).equals("true")) {
@@ -375,7 +394,7 @@ public class PDFParserConfig implements Serializable{
         result = prime
                 * result
                 + ((averageCharTolerance == null) ? 0 : averageCharTolerance
-                        .hashCode());
+                .hashCode());
         result = prime * result + (enableAutoSpace ? 1231 : 1237);
         result = prime * result + (extractAcroFormContent ? 1231 : 1237);
         result = prime * result + (extractAnnotationText ? 1231 : 1237);

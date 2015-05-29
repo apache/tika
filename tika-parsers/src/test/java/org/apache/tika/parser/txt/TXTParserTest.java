@@ -41,9 +41,9 @@ public class TXTParserTest {
     @Test
     public void testEnglishText() throws Exception {
         String text =
-            "Hello, World! This is simple UTF-8 text content written"
-            + " in English to test autodetection of both the character"
-            + " encoding and the language of the input stream.";
+                "Hello, World! This is simple UTF-8 text content written"
+                        + " in English to test autodetection of both the character"
+                        + " encoding and the language of the input stream.";
 
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
@@ -65,7 +65,7 @@ public class TXTParserTest {
         assertContains("autodetection", content);
         assertContains("stream", content);
     }
-    
+
     @Test
     public void testUTF8Text() throws Exception {
         String text = "I\u00F1t\u00EBrn\u00E2ti\u00F4n\u00E0liz\u00E6ti\u00F8n";
@@ -134,22 +134,22 @@ public class TXTParserTest {
     /**
      * Test case for TIKA-240: Drop the BOM when extracting plain text
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-240">TIKA-240</a> 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-240">TIKA-240</a>
      */
     @Test
     public void testDropByteOrderMark() throws Exception {
-        assertExtractText("UTF-8 BOM", "test", new byte[] {
-                (byte) 0xEF, (byte) 0xBB, (byte) 0xBF, 't', 'e', 's', 't' });
-        assertExtractText("UTF-16 BE BOM", "test", new byte[] {
+        assertExtractText("UTF-8 BOM", "test", new byte[]{
+                (byte) 0xEF, (byte) 0xBB, (byte) 0xBF, 't', 'e', 's', 't'});
+        assertExtractText("UTF-16 BE BOM", "test", new byte[]{
                 (byte) 0xFE, (byte) 0xFF, 0, 't', 0, 'e', 0, 's', 0, 't'});
-        assertExtractText("UTF-16 LE BOM", "test", new byte[] {
+        assertExtractText("UTF-16 LE BOM", "test", new byte[]{
                 (byte) 0xFF, (byte) 0xFE, 't', 0, 'e', 0, 's', 0, 't', 0});
     }
 
     /**
      * Test case for TIKA-335: using incoming charset
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a> 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a>
      */
     @Test
     public void testUseIncomingCharsetAsHint() throws Exception {
@@ -160,14 +160,14 @@ public class TXTParserTest {
         Metadata metadata = new Metadata();
         parser.parse(
                 new ByteArrayInputStream(test2.getBytes("ISO-8859-1")),
-                new BodyContentHandler(),  metadata, new ParseContext());
+                new BodyContentHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 
         metadata.set(Metadata.CONTENT_TYPE, "text/plain; charset=ISO-8859-15");
         parser.parse(
                 new ByteArrayInputStream(test2.getBytes("ISO-8859-1")),
-                new BodyContentHandler(),  metadata, new ParseContext());
+                new BodyContentHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=ISO-8859-15", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
     }
@@ -175,7 +175,7 @@ public class TXTParserTest {
     /**
      * Test case for TIKA-341: using charset in content-type
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a> 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a>
      */
     @Test
     public void testUsingCharsetInContentTypeHeader() throws Exception {
@@ -186,7 +186,7 @@ public class TXTParserTest {
         Metadata metadata = new Metadata();
         parser.parse(
                 new ByteArrayInputStream(test2.getBytes("ISO-8859-1")),
-                new BodyContentHandler(),  metadata, new ParseContext());
+                new BodyContentHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("ISO-8859-1", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
 
@@ -194,7 +194,7 @@ public class TXTParserTest {
         metadata.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-15");
         parser.parse(
                 new ByteArrayInputStream(test2.getBytes("ISO-8859-1")),
-                new BodyContentHandler(),  metadata, new ParseContext());
+                new BodyContentHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=ISO-8859-15", metadata.get(Metadata.CONTENT_TYPE));
         assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING)); // deprecated
     }
@@ -214,7 +214,7 @@ public class TXTParserTest {
     /**
      * Test case for TIKA-339: don't override incoming language
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a> 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-335">TIKA-335</a>
      */
     @Test
     public void testRetainIncomingLanguage() throws Exception {
@@ -225,7 +225,7 @@ public class TXTParserTest {
 
         parser.parse(
                 new ByteArrayInputStream(test.getBytes(IOUtils.UTF_8)),
-                new BodyContentHandler(),  metadata, new ParseContext());
+                new BodyContentHandler(), metadata, new ParseContext());
 
         assertEquals("en", metadata.get(TikaCoreProperties.LANGUAGE));
     }
@@ -266,11 +266,11 @@ public class TXTParserTest {
 
         assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
     }
-    
+
     /**
      * Test case for TIKA-771: "Hello, World!" in UTF-8/ASCII gets detected as IBM500
      *
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-771">TIKA-771</a> 
+     * @see <a href="https://issues.apache.org/jira/browse/TIKA-771">TIKA-771</a>
      */
     @Test
     public void testCharsetDetectionWithShortSnipet() throws Exception {
@@ -281,7 +281,7 @@ public class TXTParserTest {
                 new ByteArrayInputStream(text.getBytes(IOUtils.UTF_8)),
                 new BodyContentHandler(), metadata, new ParseContext());
         assertEquals("text/plain; charset=ISO-8859-1", metadata.get(Metadata.CONTENT_TYPE));
-        
+
         // Now verify that if we tell the parser the encoding is UTF-8, that's what
         // we get back (see TIKA-868)
         metadata.set(Metadata.CONTENT_TYPE, "application/binary; charset=UTF-8");
