@@ -22,6 +22,13 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Locale;
 
+import de.l3s.boilerpipe.BoilerpipeExtractor;
+import de.l3s.boilerpipe.BoilerpipeProcessingException;
+import de.l3s.boilerpipe.document.TextBlock;
+import de.l3s.boilerpipe.document.TextDocument;
+import de.l3s.boilerpipe.extractors.ArticleExtractor;
+import de.l3s.boilerpipe.extractors.DefaultExtractor;
+import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -30,109 +37,32 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import de.l3s.boilerpipe.BoilerpipeExtractor;
-import de.l3s.boilerpipe.BoilerpipeProcessingException;
-import de.l3s.boilerpipe.document.TextBlock;
-import de.l3s.boilerpipe.document.TextDocument;
-import de.l3s.boilerpipe.extractors.ArticleExtractor;
-import de.l3s.boilerpipe.extractors.DefaultExtractor;
-import de.l3s.boilerpipe.sax.BoilerpipeHTMLContentHandler;
-
 /**
  * Uses the <a href="http://code.google.com/p/boilerpipe/">boilerpipe</a>
  * library to automatically extract the main content from a web page.
- *
+ * <p/>
  * Use this as a {@link ContentHandler} object passed to
  * {@link HtmlParser#parse(java.io.InputStream, ContentHandler, Metadata, org.apache.tika.parser.ParseContext)}
  */
 public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
 
-    private static class RecordedElement {
-        public enum ElementType {
-            START,
-            END,
-            CONTINUE
-        }
-
-        private String uri;
-        private String localName;
-        private String qName;
-        private Attributes attrs;
-        private List<char[]> characters;
-        private ElementType elementType;
-
-        public RecordedElement(String uri, String localName, String qName, Attributes attrs) {
-            this(uri, localName, qName, attrs, ElementType.START);
-        }
-
-        public RecordedElement(String uri, String localName, String qName) {
-            this(uri, localName, qName, null, ElementType.END);
-        }
-
-        public RecordedElement() {
-            this(null, null, null, null, ElementType.CONTINUE);
-        }
-
-        protected RecordedElement(String uri, String localName, String qName, Attributes attrs, RecordedElement.ElementType elementType) {
-            this.uri = uri;
-            this.localName = localName;
-            this.qName = qName;
-            this.attrs = attrs;
-            this.elementType = elementType;
-            this.characters = new ArrayList<char[]>();
-        }
-
-        @Override
-        public String toString() {
-            return String.format(Locale.ROOT, "<%s> of type %s", localName, elementType);
-        }
-
-        public String getUri() {
-            return uri;
-        }
-
-        public String getLocalName() {
-            return localName;
-        }
-
-        public String getQName() {
-            return qName;
-        }
-
-        public Attributes getAttrs() {
-            return attrs;
-        }
-
-        public List<char[]> getCharacters() {
-            return characters;
-        }
-
-        public RecordedElement.ElementType getElementType() {
-            return elementType;
-        }
-    }
-
     /**
      * The newline character that gets inserted after block elements.
      */
-    private static final char[] NL = new char[] { '\n' };
-
+    private static final char[] NL = new char[]{'\n'};
     private ContentHandler delegate;
     private BoilerpipeExtractor extractor;
-
     private boolean includeMarkup;
     private boolean inHeader;
     private boolean inFooter;
     private int headerCharOffset;
     private List<RecordedElement> elements;
     private TextDocument td;
-
     /**
      * Creates a new boilerpipe-based content extractor, using the
      * {@link DefaultExtractor} extraction rules and "delegate" as the content handler.
      *
-     * @param delegate
-     *            The {@link ContentHandler} object
+     * @param delegate The {@link ContentHandler} object
      */
     public BoilerpipeContentHandler(ContentHandler delegate) {
         this(delegate, DefaultExtractor.INSTANCE);
@@ -153,10 +83,8 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
      * extraction rules. The extracted main content will be passed to the
      * <delegate> content handler.
      *
-     * @param delegate
-     *            The {@link ContentHandler} object
-     * @param extractor
-     *            Extraction rules to use, e.g. {@link ArticleExtractor}
+     * @param delegate  The {@link ContentHandler} object
+     * @param extractor Extraction rules to use, e.g. {@link ArticleExtractor}
      */
     public BoilerpipeContentHandler(ContentHandler delegate, BoilerpipeExtractor extractor) {
         this.td = null;
@@ -164,12 +92,12 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         this.extractor = extractor;
     }
 
-    public void setIncludeMarkup(boolean includeMarkup) {
-        this.includeMarkup = includeMarkup;
-    }
-
     public boolean isIncludeMarkup() {
         return includeMarkup;
+    }
+
+    public void setIncludeMarkup(boolean includeMarkup) {
+        this.includeMarkup = includeMarkup;
     }
 
     /**
@@ -194,13 +122,15 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         if (includeMarkup) {
             elements = new ArrayList<RecordedElement>();
         }
-    };
+    }
 
     @Override
     public void startPrefixMapping(String prefix, String uri) throws SAXException {
         super.startPrefixMapping(prefix, uri);
         delegate.startPrefixMapping(prefix, uri);
-    };
+    }
+
+    ;
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes atts) throws SAXException {
@@ -216,7 +146,9 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             // This happens for the <body> element, if we're not doing markup.
             delegate.startElement(uri, localName, qName, atts);
         }
-    };
+    }
+
+    ;
 
     @Override
     public void characters(char[] chars, int offset, int length) throws SAXException {
@@ -234,7 +166,9 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             System.arraycopy(chars, offset, characters, 0, length);
             element.getCharacters().add(characters);
         }
-    };
+    }
+
+    ;
 
     @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
@@ -252,7 +186,9 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
             elements.add(new RecordedElement(uri, localName, qName));
             elements.add(new RecordedElement());
         }
-    };
+    }
+
+    ;
 
     @Override
     public void endDocument() throws SAXException {
@@ -341,5 +277,71 @@ public class BoilerpipeContentHandler extends BoilerpipeHTMLContentHandler {
         delegate.endPrefixMapping("");
 
         delegate.endDocument();
+    }
+
+    ;
+
+    private static class RecordedElement {
+        private String uri;
+        private String localName;
+        private String qName;
+        private Attributes attrs;
+        private List<char[]> characters;
+        private ElementType elementType;
+        public RecordedElement(String uri, String localName, String qName, Attributes attrs) {
+            this(uri, localName, qName, attrs, ElementType.START);
+        }
+
+        public RecordedElement(String uri, String localName, String qName) {
+            this(uri, localName, qName, null, ElementType.END);
+        }
+
+        public RecordedElement() {
+            this(null, null, null, null, ElementType.CONTINUE);
+        }
+
+        protected RecordedElement(String uri, String localName, String qName, Attributes attrs, RecordedElement.ElementType elementType) {
+            this.uri = uri;
+            this.localName = localName;
+            this.qName = qName;
+            this.attrs = attrs;
+            this.elementType = elementType;
+            this.characters = new ArrayList<char[]>();
+        }
+
+        @Override
+        public String toString() {
+            return String.format(Locale.ROOT, "<%s> of type %s", localName, elementType);
+        }
+
+        public String getUri() {
+            return uri;
+        }
+
+        public String getLocalName() {
+            return localName;
+        }
+
+        public String getQName() {
+            return qName;
+        }
+
+        public Attributes getAttrs() {
+            return attrs;
+        }
+
+        public List<char[]> getCharacters() {
+            return characters;
+        }
+
+        public RecordedElement.ElementType getElementType() {
+            return elementType;
+        }
+
+        public enum ElementType {
+            START,
+            END,
+            CONTINUE
+        }
     }
 }

@@ -59,16 +59,75 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private static final char UNICODECHAR_NONBREAKING_HYPHEN = '\u2011';
     private static final char UNICODECHAR_ZERO_WIDTH_SPACE = '\u200b';
     // could be improved by using the real delimiter in xchFollow [MS-DOC], v20140721, 2.4.6.3, Part 3, Step 3
-    private static final String LIST_DELIMITER = " "; 
+    private static final String LIST_DELIMITER = " ";
+    private static final Map<String, TagAndStyle> fixedParagraphStyles = new HashMap<String, TagAndStyle>();
+    private static final TagAndStyle defaultParagraphStyle = new TagAndStyle("p", null);
 
-    public WordExtractor(ParseContext context) {
-        super(context);
+    static {
+        fixedParagraphStyles.put("Default", defaultParagraphStyle);
+        fixedParagraphStyles.put("Normal", defaultParagraphStyle);
+        fixedParagraphStyles.put("heading", new TagAndStyle("h1", null));
+        fixedParagraphStyles.put("Heading", new TagAndStyle("h1", null));
+        fixedParagraphStyles.put("Title", new TagAndStyle("h1", "title"));
+        fixedParagraphStyles.put("Subtitle", new TagAndStyle("h2", "subtitle"));
+        fixedParagraphStyles.put("HTML Preformatted", new TagAndStyle("pre", null));
     }
 
     // True if we are currently in the named style tag:
     private boolean curStrikeThrough;
     private boolean curBold;
     private boolean curItalic;
+
+    public WordExtractor(ParseContext context) {
+        super(context);
+    }
+
+    private static int countParagraphs(Range... ranges) {
+        int count = 0;
+        for (Range r : ranges) {
+            if (r != null) {
+                count += r.numParagraphs();
+            }
+        }
+        return count;
+    }
+
+    /**
+     * Given a style name, return what tag should be used, and
+     * what style should be applied to it.
+     */
+    public static TagAndStyle buildParagraphTagAndStyle(String styleName, boolean isTable) {
+        TagAndStyle tagAndStyle = fixedParagraphStyles.get(styleName);
+        if (tagAndStyle != null) {
+            return tagAndStyle;
+        }
+
+        if (styleName.equals("Table Contents") && isTable) {
+            return defaultParagraphStyle;
+        }
+
+        String tag = "p";
+        String styleClass = null;
+
+        if (styleName.startsWith("heading") || styleName.startsWith("Heading")) {
+            // "Heading 3" or "Heading2" or "heading 4"
+            int num = 1;
+            try {
+                num = Integer.parseInt(
+                        styleName.substring(styleName.length() - 1)
+                );
+            } catch (NumberFormatException e) {
+            }
+            // Turn it into a H1 - H6 (H7+ isn't valid!)
+            tag = "h" + Math.min(num, 6);
+        } else {
+            styleClass = styleName.replace(' ', '_');
+            styleClass = styleClass.substring(0, 1).toLowerCase(Locale.ROOT) +
+                    styleClass.substring(1);
+        }
+
+        return new TagAndStyle(tag, styleClass);
+    }
 
     protected void parse(
             NPOIFSFileSystem filesystem, XHTMLContentHandler xhtml)
@@ -82,12 +141,12 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         HWPFDocument document;
         try {
             document = new HWPFDocument(root);
-        } catch(OldWordFileFormatException e) {
+        } catch (OldWordFileFormatException e) {
             parseWord6(root, xhtml);
             return;
         }
         org.apache.poi.hwpf.extractor.WordExtractor wordExtractor =
-            new org.apache.poi.hwpf.extractor.WordExtractor(document);
+                new org.apache.poi.hwpf.extractor.WordExtractor(document);
         HeaderStories headerFooter = new HeaderStories(document);
 
         // Grab the list of pictures. As far as we can tell,
@@ -97,24 +156,24 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         PicturesSource pictures = new PicturesSource(document);
 
         // Do any headers, if present
-        Range[] headers = new Range[] { headerFooter.getFirstHeaderSubrange(),
-                headerFooter.getEvenHeaderSubrange(), headerFooter.getOddHeaderSubrange() };
+        Range[] headers = new Range[]{headerFooter.getFirstHeaderSubrange(),
+                headerFooter.getEvenHeaderSubrange(), headerFooter.getOddHeaderSubrange()};
         handleHeaderFooter(headers, "header", document, pictures, pictureTable, xhtml);
 
         // Do the main paragraph text
         Range r = document.getRange();
         ListManager listManager = new ListManager(document);
-        for(int i=0; i<r.numParagraphs(); i++) {
-           Paragraph p = r.getParagraph(i);
-           i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable, listManager, xhtml);
+        for (int i = 0; i < r.numParagraphs(); i++) {
+            Paragraph p = r.getParagraph(i);
+            i += handleParagraph(p, 0, r, document, FieldsDocumentPart.MAIN, pictures, pictureTable, listManager, xhtml);
         }
 
         // Do everything else
-        for (String paragraph: wordExtractor.getMainTextboxText()) {
+        for (String paragraph : wordExtractor.getMainTextboxText()) {
             xhtml.element("p", paragraph);
         }
 
-	for (String paragraph : wordExtractor.getFootnoteText()) {
+        for (String paragraph : wordExtractor.getFootnoteText()) {
             xhtml.element("p", paragraph);
         }
 
@@ -127,16 +186,16 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
 
         // Do any footers, if present
-        Range[] footers = new Range[] { headerFooter.getFirstFooterSubrange(),
-                headerFooter.getEvenFooterSubrange(), headerFooter.getOddFooterSubrange() };
+        Range[] footers = new Range[]{headerFooter.getFirstFooterSubrange(),
+                headerFooter.getEvenFooterSubrange(), headerFooter.getOddFooterSubrange()};
         handleHeaderFooter(footers, "footer", document, pictures, pictureTable, xhtml);
 
         // Handle any pictures that we haven't output yet
-        for(Picture p = pictures.nextUnclaimed(); p != null; ) {
-           handlePictureCharacterRun(
-                 null, p, pictures, xhtml
-           );
-           p = pictures.nextUnclaimed();
+        for (Picture p = pictures.nextUnclaimed(); p != null; ) {
+            handlePictureCharacterRun(
+                    null, p, pictures, xhtml
+            );
+            p = pictures.nextUnclaimed();
         }
 
         // Handle any embeded office documents
@@ -148,32 +207,24 @@ public class WordExtractor extends AbstractPOIFSExtractor {
                     handleEmbeddedOfficeDoc((DirectoryEntry) entry, xhtml);
                 }
             }
-        } catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
         }
-    }
-
-    private static int countParagraphs(Range... ranges) {
-        int count = 0;
-        for (Range r : ranges) {
-            if (r != null) { count += r.numParagraphs(); }
-        }
-        return count;
     }
 
     private void handleHeaderFooter(Range[] ranges, String type, HWPFDocument document,
-          PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml)
-          throws SAXException, IOException, TikaException {
+                                    PicturesSource pictures, PicturesTable pictureTable, XHTMLContentHandler xhtml)
+            throws SAXException, IOException, TikaException {
         if (countParagraphs(ranges) > 0) {
             xhtml.startElement("div", "class", type);
             ListManager listManager = new ListManager(document);
             for (Range r : ranges) {
                 if (r != null) {
-                    for(int i=0; i<r.numParagraphs(); i++) {
+                    for (int i = 0; i < r.numParagraphs(); i++) {
                         Paragraph p = r.getParagraph(i);
 
                         i += handleParagraph(p, 0, r, document,
                                 FieldsDocumentPart.HEADER, pictures, pictureTable, listManager, xhtml);
-                     }
+                    }
                 }
             }
             xhtml.endElement("div");
@@ -181,275 +232,276 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     private int handleParagraph(Paragraph p, int parentTableLevel, Range r, HWPFDocument document,
-          FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable, ListManager listManager,
-          XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
-       // Note - a poi bug means we can't currently properly recurse
-       //  into nested tables, so currently we don't
-       if(p.isInTable() && p.getTableLevel() > parentTableLevel && parentTableLevel==0) {
-          Table t = r.getTable(p);
-          xhtml.startElement("table");
-          xhtml.startElement("tbody");
-          for(int rn=0; rn<t.numRows(); rn++) {
-             TableRow row = t.getRow(rn);
-             xhtml.startElement("tr");
-             for(int cn=0; cn<row.numCells(); cn++) {
-                TableCell cell = row.getCell(cn);
-                xhtml.startElement("td");
+                                FieldsDocumentPart docPart, PicturesSource pictures, PicturesTable pictureTable, ListManager listManager,
+                                XHTMLContentHandler xhtml) throws SAXException, IOException, TikaException {
+        // Note - a poi bug means we can't currently properly recurse
+        //  into nested tables, so currently we don't
+        if (p.isInTable() && p.getTableLevel() > parentTableLevel && parentTableLevel == 0) {
+            Table t = r.getTable(p);
+            xhtml.startElement("table");
+            xhtml.startElement("tbody");
+            for (int rn = 0; rn < t.numRows(); rn++) {
+                TableRow row = t.getRow(rn);
+                xhtml.startElement("tr");
+                for (int cn = 0; cn < row.numCells(); cn++) {
+                    TableCell cell = row.getCell(cn);
+                    xhtml.startElement("td");
 
-                for(int pn=0; pn<cell.numParagraphs(); pn++) {
-                   Paragraph cellP = cell.getParagraph(pn);
-                   handleParagraph(cellP, p.getTableLevel(), cell, document, docPart, pictures, pictureTable, listManager, xhtml);
+                    for (int pn = 0; pn < cell.numParagraphs(); pn++) {
+                        Paragraph cellP = cell.getParagraph(pn);
+                        handleParagraph(cellP, p.getTableLevel(), cell, document, docPart, pictures, pictureTable, listManager, xhtml);
+                    }
+                    xhtml.endElement("td");
                 }
-                xhtml.endElement("td");
-             }
-             xhtml.endElement("tr");
-          }
-          xhtml.endElement("tbody");
-          xhtml.endElement("table");
-          return (t.numParagraphs()-1);
-       }
+                xhtml.endElement("tr");
+            }
+            xhtml.endElement("tbody");
+            xhtml.endElement("table");
+            return (t.numParagraphs() - 1);
+        }
 
-       String text = p.text();
-       if (text.replaceAll("[\\r\\n\\s]+", "").isEmpty()) {
+        String text = p.text();
+        if (text.replaceAll("[\\r\\n\\s]+", "").isEmpty()) {
             // Skip empty paragraphs
             return 0;
-       }
+        }
 
-       TagAndStyle tas;
-       String numbering = null;
+        TagAndStyle tas;
+        String numbering = null;
 
-       if (document.getStyleSheet().numStyles()>p.getStyleIndex()) {
-           StyleDescription style =
-              document.getStyleSheet().getStyleDescription(p.getStyleIndex());
-           if (style != null && style.getName() != null && style.getName().length() > 0) {
-               if (p.isInList()) {
-                   numbering = listManager.getFormattedNumber(p);
-               }
-               tas = buildParagraphTagAndStyle(style.getName(), (parentTableLevel>0));
-           } else {
-               tas = new TagAndStyle("p", null);
-           }
-       } else {
-           tas = new TagAndStyle("p", null);
-       }
+        if (document.getStyleSheet().numStyles() > p.getStyleIndex()) {
+            StyleDescription style =
+                    document.getStyleSheet().getStyleDescription(p.getStyleIndex());
+            if (style != null && style.getName() != null && style.getName().length() > 0) {
+                if (p.isInList()) {
+                    numbering = listManager.getFormattedNumber(p);
+                }
+                tas = buildParagraphTagAndStyle(style.getName(), (parentTableLevel > 0));
+            } else {
+                tas = new TagAndStyle("p", null);
+            }
+        } else {
+            tas = new TagAndStyle("p", null);
+        }
 
-       if(tas.getStyleClass() != null) {
-           xhtml.startElement(tas.getTag(), "class", tas.getStyleClass());
-       } else {
-           xhtml.startElement(tas.getTag());
-       }
+        if (tas.getStyleClass() != null) {
+            xhtml.startElement(tas.getTag(), "class", tas.getStyleClass());
+        } else {
+            xhtml.startElement(tas.getTag());
+        }
 
-       if (numbering != null) {
-           xhtml.characters(numbering);
-       }
+        if (numbering != null) {
+            xhtml.characters(numbering);
+        }
 
-       for(int j=0; j<p.numCharacterRuns(); j++) {
-          CharacterRun cr = p.getCharacterRun(j);
+        for (int j = 0; j < p.numCharacterRuns(); j++) {
+            CharacterRun cr = p.getCharacterRun(j);
 
-          // FIELD_BEGIN_MARK:
-          if (cr.text().getBytes(IOUtils.UTF_8)[0] == 0x13) {
-             Field field = document.getFields().getFieldByStartOffset(docPart, cr.getStartOffset());
-             // 58 is an embedded document
-             // 56 is a document link
-             if (field != null && (field.getType() == 58 || field.getType() == 56)) {
-               // Embedded Object: add a <div
-               // class="embedded" id="_X"/> so consumer can see where
-               // in the main text each embedded document
-               // occurred:
-               String id = "_" + field.getMarkSeparatorCharacterRun(r).getPicOffset();
-               AttributesImpl attributes = new AttributesImpl();
-               attributes.addAttribute("", "class", "class", "CDATA", "embedded");
-               attributes.addAttribute("", "id", "id", "CDATA", id);
-               xhtml.startElement("div", attributes);
-               xhtml.endElement("div");
-             }
-          }
+            // FIELD_BEGIN_MARK:
+            if (cr.text().getBytes(IOUtils.UTF_8)[0] == 0x13) {
+                Field field = document.getFields().getFieldByStartOffset(docPart, cr.getStartOffset());
+                // 58 is an embedded document
+                // 56 is a document link
+                if (field != null && (field.getType() == 58 || field.getType() == 56)) {
+                    // Embedded Object: add a <div
+                    // class="embedded" id="_X"/> so consumer can see where
+                    // in the main text each embedded document
+                    // occurred:
+                    String id = "_" + field.getMarkSeparatorCharacterRun(r).getPicOffset();
+                    AttributesImpl attributes = new AttributesImpl();
+                    attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+                    attributes.addAttribute("", "id", "id", "CDATA", id);
+                    xhtml.startElement("div", attributes);
+                    xhtml.endElement("div");
+                }
+            }
 
-          if(cr.text().equals("\u0013")) {
-             j += handleSpecialCharacterRuns(p, j, tas.isHeading(), pictures, xhtml);
-          } else if(cr.text().startsWith("\u0008")) {
-             // Floating Picture(s)
-             for(int pn=0; pn<cr.text().length(); pn++) {
-                // Assume they're in the order from the unclaimed list...
-                Picture picture = pictures.nextUnclaimed();
+            if (cr.text().equals("\u0013")) {
+                j += handleSpecialCharacterRuns(p, j, tas.isHeading(), pictures, xhtml);
+            } else if (cr.text().startsWith("\u0008")) {
+                // Floating Picture(s)
+                for (int pn = 0; pn < cr.text().length(); pn++) {
+                    // Assume they're in the order from the unclaimed list...
+                    Picture picture = pictures.nextUnclaimed();
 
-                // Output
+                    // Output
+                    handlePictureCharacterRun(cr, picture, pictures, xhtml);
+                }
+            } else if (pictureTable.hasPicture(cr)) {
+                // Inline Picture
+                Picture picture = pictures.getFor(cr);
                 handlePictureCharacterRun(cr, picture, pictures, xhtml);
-             }
-          } else if(pictureTable.hasPicture(cr)) {
-             // Inline Picture
-             Picture picture = pictures.getFor(cr);
-             handlePictureCharacterRun(cr, picture, pictures, xhtml);
-          } else {
-             handleCharacterRun(cr, tas.isHeading(), xhtml);
-          }
-       }
+            } else {
+                handleCharacterRun(cr, tas.isHeading(), xhtml);
+            }
+        }
 
-       // Close any still open style tags
-       if (curStrikeThrough) {
-         xhtml.endElement("s");
-         curStrikeThrough = false;
-       }
-       if (curItalic) {
-         xhtml.endElement("i");
-         curItalic = false;
-       }
-       if (curBold) {
-         xhtml.endElement("b");
-         curBold = false;
-       }
+        // Close any still open style tags
+        if (curStrikeThrough) {
+            xhtml.endElement("s");
+            curStrikeThrough = false;
+        }
+        if (curItalic) {
+            xhtml.endElement("i");
+            curItalic = false;
+        }
+        if (curBold) {
+            xhtml.endElement("b");
+            curBold = false;
+        }
 
-       xhtml.endElement(tas.getTag());
+        xhtml.endElement(tas.getTag());
 
-       return 0;
+        return 0;
     }
 
     private void handleCharacterRun(CharacterRun cr, boolean skipStyling, XHTMLContentHandler xhtml)
-          throws SAXException {
-       // Skip trailing newlines
-       if(!isRendered(cr) || cr.text().equals("\r"))
-          return;
+            throws SAXException {
+        // Skip trailing newlines
+        if (!isRendered(cr) || cr.text().equals("\r"))
+            return;
 
-       if(!skipStyling) {
-         if (cr.isBold() != curBold) {
-           // Enforce nesting -- must close s and i tags
-           if (curStrikeThrough) {
-             xhtml.endElement("s");
-             curStrikeThrough = false;
-           }
-           if (curItalic) {
-             xhtml.endElement("i");
-             curItalic = false;
-           }
-           if (cr.isBold()) {
-             xhtml.startElement("b");
-           } else {
-             xhtml.endElement("b");
-           }
-           curBold = cr.isBold();
-         }
+        if (!skipStyling) {
+            if (cr.isBold() != curBold) {
+                // Enforce nesting -- must close s and i tags
+                if (curStrikeThrough) {
+                    xhtml.endElement("s");
+                    curStrikeThrough = false;
+                }
+                if (curItalic) {
+                    xhtml.endElement("i");
+                    curItalic = false;
+                }
+                if (cr.isBold()) {
+                    xhtml.startElement("b");
+                } else {
+                    xhtml.endElement("b");
+                }
+                curBold = cr.isBold();
+            }
 
-         if (cr.isItalic() != curItalic) {
-           // Enforce nesting -- must close s tag
-           if (curStrikeThrough) {
-             xhtml.endElement("s");
-             curStrikeThrough = false;
-           }
-           if (cr.isItalic()) {
-             xhtml.startElement("i");
-           } else {
-             xhtml.endElement("i");
-           }
-           curItalic = cr.isItalic();
-         }
+            if (cr.isItalic() != curItalic) {
+                // Enforce nesting -- must close s tag
+                if (curStrikeThrough) {
+                    xhtml.endElement("s");
+                    curStrikeThrough = false;
+                }
+                if (cr.isItalic()) {
+                    xhtml.startElement("i");
+                } else {
+                    xhtml.endElement("i");
+                }
+                curItalic = cr.isItalic();
+            }
 
-         if (cr.isStrikeThrough() != curStrikeThrough) {
-           if (cr.isStrikeThrough()) {
-             xhtml.startElement("s");
-           } else {
-             xhtml.endElement("s");
-           }
-           curStrikeThrough = cr.isStrikeThrough();
-         }
-       }
+            if (cr.isStrikeThrough() != curStrikeThrough) {
+                if (cr.isStrikeThrough()) {
+                    xhtml.startElement("s");
+                } else {
+                    xhtml.endElement("s");
+                }
+                curStrikeThrough = cr.isStrikeThrough();
+            }
+        }
 
-       // Clean up the text
-       String text = cr.text();
-       text = text.replace('\r', '\n');
-       if(text.endsWith("\u0007")) {
-          // Strip the table cell end marker
-          text = text.substring(0, text.length()-1);
-       }
+        // Clean up the text
+        String text = cr.text();
+        text = text.replace('\r', '\n');
+        if (text.endsWith("\u0007")) {
+            // Strip the table cell end marker
+            text = text.substring(0, text.length() - 1);
+        }
 
-       // Copied from POI's org/apache/poi/hwpf/converter/AbstractWordConverter.processCharacters:
+        // Copied from POI's org/apache/poi/hwpf/converter/AbstractWordConverter.processCharacters:
 
-       // Non-breaking hyphens are returned as char 30
-       text = text.replace((char) 30, UNICODECHAR_NONBREAKING_HYPHEN);
+        // Non-breaking hyphens are returned as char 30
+        text = text.replace((char) 30, UNICODECHAR_NONBREAKING_HYPHEN);
 
-       // Non-required hyphens to zero-width space
-       text = text.replace((char) 31, UNICODECHAR_ZERO_WIDTH_SPACE);
+        // Non-required hyphens to zero-width space
+        text = text.replace((char) 31, UNICODECHAR_ZERO_WIDTH_SPACE);
 
-       // Control characters as line break
-       text = text.replaceAll("[\u0000-\u001f]", "\n");
-       xhtml.characters(text);
+        // Control characters as line break
+        text = text.replaceAll("[\u0000-\u001f]", "\n");
+        xhtml.characters(text);
     }
+
     /**
      * Can be \13..text..\15 or \13..control..\14..text..\15 .
      * Nesting is allowed
      */
     private int handleSpecialCharacterRuns(Paragraph p, int index, boolean skipStyling,
-          PicturesSource pictures, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
-       List<CharacterRun> controls = new ArrayList<CharacterRun>();
-       List<CharacterRun> texts = new ArrayList<CharacterRun>();
-       boolean has14 = false;
+                                           PicturesSource pictures, XHTMLContentHandler xhtml) throws SAXException, TikaException, IOException {
+        List<CharacterRun> controls = new ArrayList<CharacterRun>();
+        List<CharacterRun> texts = new ArrayList<CharacterRun>();
+        boolean has14 = false;
 
-       // Split it into before and after the 14
-       int i;
-       for(i=index+1; i<p.numCharacterRuns(); i++) {
-          CharacterRun cr = p.getCharacterRun(i);
-          if(cr.text().equals("\u0013")) {
-             // Nested, oh joy...
-             int increment = handleSpecialCharacterRuns(p, i+1, skipStyling, pictures, xhtml);
-             i += increment;
-          } else if(cr.text().equals("\u0014")) {
-             has14 = true;
-          } else if(cr.text().equals("\u0015")) {
-             if(!has14) {
-                texts = controls;
-                controls = new ArrayList<CharacterRun>();
-             }
-             break;
-          } else {
-             if(has14) {
-                texts.add(cr);
-             } else {
-                controls.add(cr);
-             }
-          }
-       }
-
-       // Do we need to do something special with this?
-       if(controls.size() > 0) {
-          String text = controls.get(0).text();
-          for(int j=1; j<controls.size(); j++) {
-             text += controls.get(j).text();
-          }
-
-          if((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK"))
-                 && text.indexOf('"') > -1) {
-              int start = text.indexOf('"') + 1;
-              int end = findHyperlinkEnd(text, start);
-              String url = "";
-              if (start >= 0 && start < end && end <= text.length()) {
-                  url = text.substring(start, end);
-              }
-
-             xhtml.startElement("a", "href", url);
-             for(CharacterRun cr : texts) {
-                handleCharacterRun(cr, skipStyling, xhtml);
-             }
-             xhtml.endElement("a");
-          } else {
-             // Just output the text ones
-             for(CharacterRun cr : texts) {
-                if(pictures.hasPicture(cr)) {
-                   Picture picture = pictures.getFor(cr);
-                   handlePictureCharacterRun(cr, picture, pictures, xhtml);
-                } else {
-                   handleCharacterRun(cr, skipStyling, xhtml);
+        // Split it into before and after the 14
+        int i;
+        for (i = index + 1; i < p.numCharacterRuns(); i++) {
+            CharacterRun cr = p.getCharacterRun(i);
+            if (cr.text().equals("\u0013")) {
+                // Nested, oh joy...
+                int increment = handleSpecialCharacterRuns(p, i + 1, skipStyling, pictures, xhtml);
+                i += increment;
+            } else if (cr.text().equals("\u0014")) {
+                has14 = true;
+            } else if (cr.text().equals("\u0015")) {
+                if (!has14) {
+                    texts = controls;
+                    controls = new ArrayList<CharacterRun>();
                 }
-             }
-          }
-       } else {
-          // We only had text
-          // Output as-is
-          for(CharacterRun cr : texts) {
-             handleCharacterRun(cr, skipStyling, xhtml);
-          }
-       }
+                break;
+            } else {
+                if (has14) {
+                    texts.add(cr);
+                } else {
+                    controls.add(cr);
+                }
+            }
+        }
 
-       // Tell them how many to skip over
-       return i-index;
+        // Do we need to do something special with this?
+        if (controls.size() > 0) {
+            String text = controls.get(0).text();
+            for (int j = 1; j < controls.size(); j++) {
+                text += controls.get(j).text();
+            }
+
+            if ((text.startsWith("HYPERLINK") || text.startsWith(" HYPERLINK"))
+                    && text.indexOf('"') > -1) {
+                int start = text.indexOf('"') + 1;
+                int end = findHyperlinkEnd(text, start);
+                String url = "";
+                if (start >= 0 && start < end && end <= text.length()) {
+                    url = text.substring(start, end);
+                }
+
+                xhtml.startElement("a", "href", url);
+                for (CharacterRun cr : texts) {
+                    handleCharacterRun(cr, skipStyling, xhtml);
+                }
+                xhtml.endElement("a");
+            } else {
+                // Just output the text ones
+                for (CharacterRun cr : texts) {
+                    if (pictures.hasPicture(cr)) {
+                        Picture picture = pictures.getFor(cr);
+                        handlePictureCharacterRun(cr, picture, pictures, xhtml);
+                    } else {
+                        handleCharacterRun(cr, skipStyling, xhtml);
+                    }
+                }
+            }
+        } else {
+            // We only had text
+            // Output as-is
+            for (CharacterRun cr : texts) {
+                handleCharacterRun(cr, skipStyling, xhtml);
+            }
+        }
+
+        // Tell them how many to skip over
+        return i - index;
     }
 
     //temporary work around for TIKA-1512
@@ -478,48 +530,48 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     }
 
     private void handlePictureCharacterRun(CharacterRun cr, Picture picture, PicturesSource pictures, XHTMLContentHandler xhtml)
-          throws SAXException, IOException, TikaException {
-       if(!isRendered(cr) || picture == null) {
-          // Oh dear, we've run out...
-          // Probably caused by multiple \u0008 images referencing
-          //  the same real image
-          return;
-       }
+            throws SAXException, IOException, TikaException {
+        if (!isRendered(cr) || picture == null) {
+            // Oh dear, we've run out...
+            // Probably caused by multiple \u0008 images referencing
+            //  the same real image
+            return;
+        }
 
-       // Which one is it?
-       String extension = picture.suggestFileExtension();
-       int pictureNumber = pictures.pictureNumber(picture);
+        // Which one is it?
+        String extension = picture.suggestFileExtension();
+        int pictureNumber = pictures.pictureNumber(picture);
 
-       // Make up a name for the picture
-       // There isn't one in the file, but we need to be able to reference
-       //  the picture from the img tag and the embedded resource
-       String filename = "image"+pictureNumber+(extension.length()>0 ? "."+extension : "");
+        // Make up a name for the picture
+        // There isn't one in the file, but we need to be able to reference
+        //  the picture from the img tag and the embedded resource
+        String filename = "image" + pictureNumber + (extension.length() > 0 ? "." + extension : "");
 
-       // Grab the mime type for the picture
-       String mimeType = picture.getMimeType();
+        // Grab the mime type for the picture
+        String mimeType = picture.getMimeType();
 
-       // Output the img tag
-       AttributesImpl attr = new AttributesImpl();
-       attr.addAttribute("", "src", "src", "CDATA", "embedded:" + filename);
-       attr.addAttribute("", "alt", "alt", "CDATA", filename);
-       xhtml.startElement("img", attr);
-       xhtml.endElement("img");
+        // Output the img tag
+        AttributesImpl attr = new AttributesImpl();
+        attr.addAttribute("", "src", "src", "CDATA", "embedded:" + filename);
+        attr.addAttribute("", "alt", "alt", "CDATA", filename);
+        xhtml.startElement("img", attr);
+        xhtml.endElement("img");
 
-       // Have we already output this one?
-       // (Only expose each individual image once)
-       if(! pictures.hasOutput(picture)) {
-          TikaInputStream stream = TikaInputStream.get(picture.getContent());
-          handleEmbeddedResource(stream, filename, null, mimeType, xhtml, false);
-          pictures.recordOutput(picture);
-       }
+        // Have we already output this one?
+        // (Only expose each individual image once)
+        if (!pictures.hasOutput(picture)) {
+            TikaInputStream stream = TikaInputStream.get(picture.getContent());
+            handleEmbeddedResource(stream, filename, null, mimeType, xhtml, false);
+            pictures.recordOutput(picture);
+        }
     }
 
     /**
      * Outputs a section of text if the given text is non-empty.
      *
-     * @param xhtml XHTML content handler
+     * @param xhtml   XHTML content handler
      * @param section the class of the &lt;div/&gt; section emitted
-     * @param text text to be emitted, if any
+     * @param text    text to be emitted, if any
      * @throws SAXException if an error occurs
      */
     private void addTextIfAny(
@@ -544,75 +596,9 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         HWPFOldDocument doc = new HWPFOldDocument(root);
         Word6Extractor extractor = new Word6Extractor(doc);
 
-        for(String p : extractor.getParagraphText()) {
+        for (String p : extractor.getParagraphText()) {
             xhtml.element("p", p);
         }
-    }
-
-    private static final Map<String,TagAndStyle> fixedParagraphStyles = new HashMap<String,TagAndStyle>();
-    private static final TagAndStyle defaultParagraphStyle = new TagAndStyle("p", null);
-    static {
-        fixedParagraphStyles.put("Default", defaultParagraphStyle);
-        fixedParagraphStyles.put("Normal", defaultParagraphStyle);
-        fixedParagraphStyles.put("heading", new TagAndStyle("h1", null));
-        fixedParagraphStyles.put("Heading", new TagAndStyle("h1", null));
-        fixedParagraphStyles.put("Title", new TagAndStyle("h1", "title"));
-        fixedParagraphStyles.put("Subtitle", new TagAndStyle("h2", "subtitle"));
-        fixedParagraphStyles.put("HTML Preformatted", new TagAndStyle("pre", null));
-    }
-
-    /**
-     * Given a style name, return what tag should be used, and
-     *  what style should be applied to it.
-     */
-    public static TagAndStyle buildParagraphTagAndStyle(String styleName, boolean isTable) {
-       TagAndStyle tagAndStyle = fixedParagraphStyles.get(styleName);
-       if (tagAndStyle != null) {
-           return tagAndStyle;
-       }
-
-       if (styleName.equals("Table Contents") && isTable) {
-           return defaultParagraphStyle;
-       }
-
-       String tag = "p";
-       String styleClass = null;
-
-       if(styleName.startsWith("heading") || styleName.startsWith("Heading")) {
-           // "Heading 3" or "Heading2" or "heading 4"
-           int num = 1;
-           try {
-               num = Integer.parseInt(
-                                      styleName.substring(styleName.length()-1)
-                                      );
-           } catch(NumberFormatException e) {}
-           // Turn it into a H1 - H6 (H7+ isn't valid!)
-           tag = "h" + Math.min(num, 6);
-       } else {
-           styleClass = styleName.replace(' ', '_');
-           styleClass = styleClass.substring(0,1).toLowerCase(Locale.ROOT) +
-               styleClass.substring(1);
-       }
-
-       return new TagAndStyle(tag,styleClass);
-    }
-
-    public static class TagAndStyle {
-       private String tag;
-       private String styleClass;
-       public TagAndStyle(String tag, String styleClass) {
-         this.tag = tag;
-         this.styleClass = styleClass;
-       }
-       public String getTag() {
-         return tag;
-       }
-       public String getStyleClass() {
-         return styleClass;
-       }
-       public boolean isHeading() {
-          return tag.length()==2 && tag.startsWith("h");
-       }
     }
 
     /**
@@ -622,81 +608,103 @@ public class WordExtractor extends AbstractPOIFSExtractor {
      * @return true if character run should be included in extraction.
      */
     private boolean isRendered(final CharacterRun cr) {
- 	   return cr == null || !cr.isMarkedDeleted();
+        return cr == null || !cr.isMarkedDeleted();
     }
 
+    public static class TagAndStyle {
+        private String tag;
+        private String styleClass;
+
+        public TagAndStyle(String tag, String styleClass) {
+            this.tag = tag;
+            this.styleClass = styleClass;
+        }
+
+        public String getTag() {
+            return tag;
+        }
+
+        public String getStyleClass() {
+            return styleClass;
+        }
+
+        public boolean isHeading() {
+            return tag.length() == 2 && tag.startsWith("h");
+        }
+    }
 
     /**
      * Provides access to the pictures both by offset, iteration
-     *  over the un-claimed, and peeking forward
+     * over the un-claimed, and peeking forward
      */
     private static class PicturesSource {
-       private PicturesTable picturesTable;
-       private Set<Picture> output = new HashSet<Picture>();
-       private Map<Integer,Picture> lookup;
-       private List<Picture> nonU1based;
-       private List<Picture> all;
-       private int pn = 0;
+        private PicturesTable picturesTable;
+        private Set<Picture> output = new HashSet<Picture>();
+        private Map<Integer, Picture> lookup;
+        private List<Picture> nonU1based;
+        private List<Picture> all;
+        private int pn = 0;
 
-       private PicturesSource(HWPFDocument doc) {
-          picturesTable = doc.getPicturesTable();
-          all = picturesTable.getAllPictures();
+        private PicturesSource(HWPFDocument doc) {
+            picturesTable = doc.getPicturesTable();
+            all = picturesTable.getAllPictures();
 
-          // Build the Offset-Picture lookup map
-          lookup = new HashMap<Integer, Picture>();
-          for(Picture p : all) {
-             lookup.put(p.getStartOffset(), p);
-          }
+            // Build the Offset-Picture lookup map
+            lookup = new HashMap<Integer, Picture>();
+            for (Picture p : all) {
+                lookup.put(p.getStartOffset(), p);
+            }
 
-          // Work out which Pictures aren't referenced by
-          //  a \u0001 in the main text
-          // These are \u0008 escher floating ones, ones
-          //  found outside the normal text, and who
-          //  knows what else...
-          nonU1based = new ArrayList<Picture>();
-          nonU1based.addAll(all);
-          Range r = doc.getRange();
-          for(int i=0; i<r.numCharacterRuns(); i++) {
-             CharacterRun cr = r.getCharacterRun(i);
-             if(picturesTable.hasPicture(cr)) {
-                Picture p = getFor(cr);
-                int at = nonU1based.indexOf(p);
-                nonU1based.set(at, null);
-             }
-          }
-       }
+            // Work out which Pictures aren't referenced by
+            //  a \u0001 in the main text
+            // These are \u0008 escher floating ones, ones
+            //  found outside the normal text, and who
+            //  knows what else...
+            nonU1based = new ArrayList<Picture>();
+            nonU1based.addAll(all);
+            Range r = doc.getRange();
+            for (int i = 0; i < r.numCharacterRuns(); i++) {
+                CharacterRun cr = r.getCharacterRun(i);
+                if (picturesTable.hasPicture(cr)) {
+                    Picture p = getFor(cr);
+                    int at = nonU1based.indexOf(p);
+                    nonU1based.set(at, null);
+                }
+            }
+        }
 
-       private boolean hasPicture(CharacterRun cr) {
-          return picturesTable.hasPicture(cr);
-       }
+        private boolean hasPicture(CharacterRun cr) {
+            return picturesTable.hasPicture(cr);
+        }
 
-       private void recordOutput(Picture picture) {
-          output.add(picture);
-       }
-       private boolean hasOutput(Picture picture) {
-          return output.contains(picture);
-       }
+        private void recordOutput(Picture picture) {
+            output.add(picture);
+        }
 
-       private int pictureNumber(Picture picture) {
-          return all.indexOf(picture) + 1;
-       }
+        private boolean hasOutput(Picture picture) {
+            return output.contains(picture);
+        }
 
-       private Picture getFor(CharacterRun cr) {
-          return lookup.get(cr.getPicOffset());
-       }
+        private int pictureNumber(Picture picture) {
+            return all.indexOf(picture) + 1;
+        }
 
-       /**
-        * Return the next unclaimed one, used towards
-        *  the end
-        */
-       private Picture nextUnclaimed() {
-          Picture p = null;
-          while(pn < nonU1based.size()) {
-             p = nonU1based.get(pn);
-             pn++;
-             if(p != null) return p;
-          }
-          return null;
-       }
+        private Picture getFor(CharacterRun cr) {
+            return lookup.get(cr.getPicOffset());
+        }
+
+        /**
+         * Return the next unclaimed one, used towards
+         * the end
+         */
+        private Picture nextUnclaimed() {
+            Picture p = null;
+            while (pn < nonU1based.size()) {
+                p = nonU1based.get(pn);
+                pn++;
+                if (p != null) return p;
+            }
+            return null;
+        }
     }
 }

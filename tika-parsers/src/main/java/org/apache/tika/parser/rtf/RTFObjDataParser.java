@@ -43,37 +43,35 @@ import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 
 /**
  * Many thanks to Simon Mourier for:
- * http://stackoverflow.com/questions/14779647/extract-embedded-image-object-in-rtf 
+ * http://stackoverflow.com/questions/14779647/extract-embedded-image-object-in-rtf
  * and for granting permission to use his code in Tika.
- * 
  */
 class RTFObjDataParser {
 
     private final static int[] INT_LE_POWS = new int[]{
-        1, 256, 65536, 16777216
+            1, 256, 65536, 16777216
     };
 
     private final static String WIN_ASCII = "WINDOWS-1252";
 
     /**
      * Parses the embedded object/pict string
-     * 
+     *
      * @param bytes actual bytes (already converted from the 
      *  hex pair string stored in the embedded object data into actual bytes or read
      *  as raw binary bytes)
      * @return a SimpleRTFEmbObj or null
      * @throws IOException if there are any surprise surprises during parsing
      */
-    
+
     /**
-     * 
      * @param bytes
-     * @param metadata incoming metadata
-     * @param unknownFilenameCount 
+     * @param metadata             incoming metadata
+     * @param unknownFilenameCount
      * @return byte[] for contents of obj data
      * @throws IOException
      */
-    protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount) 
+    protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
             throws IOException {
         ByteArrayInputStream is = new ByteArrayInputStream(bytes);
         long version = readUInt(is);
@@ -84,9 +82,9 @@ class RTFObjDataParser {
         if (formatId != 2L) {
             return null;
         }
-        String className = readLengthPrefixedAnsiString(is).trim(); 
+        String className = readLengthPrefixedAnsiString(is).trim();
         String topicName = readLengthPrefixedAnsiString(is).trim();
-        String itemName = readLengthPrefixedAnsiString(is).trim(); 
+        String itemName = readLengthPrefixedAnsiString(is).trim();
 
         if (className != null && className.length() > 0) {
             metadata.add(RTFMetadata.EMB_CLASS, className);
@@ -103,19 +101,19 @@ class RTFObjDataParser {
         //readBytes tests for reading too many bytes
         byte[] embObjBytes = readBytes(is, dataSz);
 
-        if (className.toLowerCase(Locale.ROOT).equals("package")){
+        if (className.toLowerCase(Locale.ROOT).equals("package")) {
             return handlePackage(embObjBytes, metadata);
         } else if (className.toLowerCase(Locale.ROOT).equals("pbrush")) {
             //simple bitmap bytes
             return embObjBytes;
         } else {
             ByteArrayInputStream embIs = new ByteArrayInputStream(embObjBytes);
-            if (NPOIFSFileSystem.hasPOIFSHeader(embIs)){
-                try{
+            if (NPOIFSFileSystem.hasPOIFSHeader(embIs)) {
+                try {
                     return handleEmbeddedPOIFS(embIs, metadata, unknownFilenameCount);
                 } catch (IOException e) {
                     //swallow
-                }   
+                }
             }
         }
         return embObjBytes;
@@ -124,8 +122,8 @@ class RTFObjDataParser {
 
     //will throw IOException if not actually POIFS
     //can return null byte[]
-    private byte[] handleEmbeddedPOIFS(InputStream is, Metadata metadata, 
-            AtomicInteger unknownFilenameCount) 
+    private byte[] handleEmbeddedPOIFS(InputStream is, Metadata metadata,
+                                       AtomicInteger unknownFilenameCount)
             throws IOException {
 
         NPOIFSFileSystem fs = null;
@@ -140,7 +138,7 @@ class RTFObjDataParser {
                 return ret;
             }
 
-            if (root.hasEntry("Package")){
+            if (root.hasEntry("Package")) {
                 Entry ooxml = root.getEntry("Package");
                 TikaInputStream stream = TikaInputStream.get(new DocumentInputStream((DocumentEntry) ooxml));
 
@@ -163,9 +161,9 @@ class RTFObjDataParser {
 
                     DocumentEntry contentsEntry;
                     try {
-                        contentsEntry = (DocumentEntry)root.getEntry("CONTENTS");
+                        contentsEntry = (DocumentEntry) root.getEntry("CONTENTS");
                     } catch (FileNotFoundException ioe) {
-                        contentsEntry = (DocumentEntry)root.getEntry("Contents");
+                        contentsEntry = (DocumentEntry) root.getEntry("Contents");
                     }
 
                     DocumentInputStream inp = null;
@@ -184,7 +182,7 @@ class RTFObjDataParser {
                     is.reset();
                     IOUtils.copy(is, out);
                     ret = out.toByteArray();
-                    metadata.set(Metadata.RESOURCE_NAME_KEY, "file_"+unknownFilenameCount.getAndIncrement() + "."+type.getExtension());
+                    metadata.set(Metadata.RESOURCE_NAME_KEY, "file_" + unknownFilenameCount.getAndIncrement() + "." + type.getExtension());
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 }
             }
@@ -197,12 +195,11 @@ class RTFObjDataParser {
     }
 
 
-
     /**
-     * can return null if there is a linked object 
+     * can return null if there is a linked object
      * instead of an embedded file
      */
-    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata) throws IOException { 
+    private byte[] handlePackage(byte[] pkgBytes, Metadata metadata) throws IOException {
         //now parse the package header
         ByteArrayInputStream is = new ByteArrayInputStream(pkgBytes);
         readUShort(is);
@@ -231,16 +228,16 @@ class RTFObjDataParser {
         try {
             long unicodeLen = readUInt(is);
 
-            for (int i = 0; i < unicodeLen; i++){
+            for (int i = 0; i < unicodeLen; i++) {
                 int lo = is.read();
                 int hi = is.read();
-                int sum = lo+256*hi;
-                if (hi == -1 || lo == -1){
+                int sum = lo + 256 * hi;
+                if (hi == -1 || lo == -1) {
                     //stream ran out; empty SB and stop
                     unicodeFilePath.setLength(0);
                     break;
                 }
-                unicodeFilePath.append((char)sum);
+                unicodeFilePath.append((char) sum);
             }
         } catch (IOException e) {
             //swallow; the unicode file path is optional and might not happen
@@ -248,7 +245,7 @@ class RTFObjDataParser {
         }
         String fileNameToUse = "";
         String pathToUse = "";
-        if (unicodeFilePath.length() > 0){
+        if (unicodeFilePath.length() > 0) {
             String p = unicodeFilePath.toString();
             fileNameToUse = p;
             pathToUse = p;
@@ -265,21 +262,21 @@ class RTFObjDataParser {
 
     private int readUShort(InputStream is) throws IOException {
         int lo = is.read();
-        int hi = is.read()*256;
+        int hi = is.read() * 256;
         if (lo == -1 || hi == -1) {
             throw new IOException("Hit end of stream before reading little endian unsigned short.");
         }
-        return hi+lo;
+        return hi + lo;
     }
 
     private long readUInt(InputStream is) throws IOException {
         long sum = 0;
-        for (int i = 0; i < 4; i++){
+        for (int i = 0; i < 4; i++) {
             int v = is.read();
             if (v == -1) {
                 throw new IOException("Hit end of stream before finishing little endian unsigned int.");
             }
-            sum += v*(long)INT_LE_POWS[i];
+            sum += v * (long) INT_LE_POWS[i];
         }
         return sum;
     }
@@ -288,7 +285,7 @@ class RTFObjDataParser {
         StringBuilder sb = new StringBuilder();
         int c = is.read();
         while (c > 0) {
-            sb.append((char)c);
+            sb.append((char) c);
             c = is.read();
         }
         if (c == -1) {
@@ -319,13 +316,13 @@ class RTFObjDataParser {
 
         return bytes;
     }
-    
+
     private byte[] initByteArray(long len) throws IOException {
         if (len < 0 || len > RTFParser.getMaxBytesForEmbeddedObject()) {
             throw new IOException("Requested length for reading bytes is out of bounds: " + len);
         }
-        return new byte[(int)len];
-        
+        return new byte[(int) len];
+
     }
 }
 

@@ -81,19 +81,21 @@ import org.xml.sax.helpers.AttributesImpl;
  * stream.
  */
 class PDF2XHTML extends PDFTextStripper {
-    
+
+    /**
+     * Maximum recursive depth during AcroForm processing.
+     * Prevents theoretical AcroForm recursion bomb.
+     */
+    private final static int MAX_ACROFORM_RECURSIONS = 10;
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
      */
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT);
- 
-    /**
-     * Maximum recursive depth during AcroForm processing.
-     * Prevents theoretical AcroForm recursion bomb. 
-     */
-    private final static int MAX_ACROFORM_RECURSIONS = 10;
-
+    private final ContentHandler originalHandler;
+    private final ParseContext context;
+    private final XHTMLContentHandler handler;
+    private final PDFParserConfig config;
     /**
      * This keeps track of the pdf object ids for inline
      * images that have been processed.  If {@link PDFParserConfig#getExtractUniqueInlineImagesOnly()
@@ -102,17 +104,26 @@ class PDF2XHTML extends PDFTextStripper {
      * This integer is used to identify images in the markup.
      */
     private Map<String, Integer> processedInlineImages = new HashMap<String, Integer>();
-
     private int inlineImageCounter = 0;
+    private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata,
+                      PDFParserConfig config)
+            throws IOException {
+        //source of config (derives from context or PDFParser?) is
+        //already determined in PDFParser.  No need to check context here.
+        this.config = config;
+        this.originalHandler = handler;
+        this.context = context;
+        this.handler = new XHTMLContentHandler(handler, metadata);
+    }
 
     /**
      * Converts the given PDF document (and related metadata) to a stream
      * of XHTML SAX events sent to the given content handler.
      *
      * @param document PDF document
-     * @param handler SAX content handler
+     * @param handler  SAX content handler
      * @param metadata PDF metadata
-     * @throws SAXException if the content handler fails to process SAX events
+     * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if the PDF document can not be processed
      */
     public static void process(
@@ -124,16 +135,18 @@ class PDF2XHTML extends PDFTextStripper {
             // key methods to output to the given content
             // handler.
             PDF2XHTML pdf2XHTML = new PDF2XHTML(handler, context, metadata, config);
-            
+
             config.configure(pdf2XHTML);
 
             pdf2XHTML.writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {
                 }
+
                 @Override
                 public void flush() {
                 }
+
                 @Override
                 public void close() {
                 }
@@ -146,22 +159,6 @@ class PDF2XHTML extends PDFTextStripper {
                 throw new TikaException("Unable to extract PDF content", e);
             }
         }
-    }
-    
-    private final ContentHandler originalHandler;
-    private final ParseContext context;
-    private final XHTMLContentHandler handler;
-    private final PDFParserConfig config;
-    
-    private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata, 
-            PDFParserConfig config)
-            throws IOException {
-        //source of config (derives from context or PDFParser?) is
-        //already determined in PDFParser.  No need to check context here.
-        this.config = config;
-        this.originalHandler = handler;
-        this.context = context;
-        this.handler = new XHTMLContentHandler(handler, metadata);
     }
 
     void extractBookmarkText() throws SAXException {
@@ -202,14 +199,14 @@ class PDF2XHTML extends PDFTextStripper {
             // Extract text for any bookmarks:
             extractBookmarkText();
             extractEmbeddedDocuments(pdf, originalHandler);
-            
+
             //extract acroform data at end of doc
             if (config.getExtractAcroFormContent() == true) {
                 extractAcroForm(pdf, handler);
-             }
+            }
             handler.endDocument();
         } catch (TikaException e) {
-           throw new IOExceptionWithCause("Unable to end a document", e);
+            throw new IOExceptionWithCause("Unable to end a document", e);
         } catch (SAXException e) {
             throw new IOExceptionWithCause("Unable to end a document", e);
         }
@@ -235,7 +232,7 @@ class PDF2XHTML extends PDFTextStripper {
             EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
             for (PDAnnotation annotation : page.getAnnotations()) {
 
-                if (annotation instanceof PDAnnotationFileAttachment){
+                if (annotation instanceof PDAnnotationFileAttachment) {
                     PDAnnotationFileAttachment fann = (PDAnnotationFileAttachment) annotation;
                     PDComplexFileSpecification fileSpec = (PDComplexFileSpecification) fann.getFile();
                     try {
@@ -316,7 +313,7 @@ class PDF2XHTML extends PDFTextStripper {
         }
 
         for (Map.Entry<String, PDXObject> entry : xObjects.entrySet()) {
-                        
+
             PDXObject object = entry.getValue();
             if (object instanceof PDXObjectForm) {
                 extractImages(((PDXObjectForm) object).getResources());
@@ -341,7 +338,7 @@ class PDF2XHTML extends PDFTextStripper {
                 if (imageNumber == null) {
                     imageNumber = inlineImageCounter++;
                 }
-                String fileName = "image"+imageNumber+extension;
+                String fileName = "image" + imageNumber + extension;
                 metadata.set(Metadata.RESOURCE_NAME_KEY, fileName);
 
                 // Output the img tag
@@ -355,7 +352,7 @@ class PDF2XHTML extends PDFTextStripper {
                 //If so, have we already processed this one?
                 if (config.getExtractUniqueInlineImagesOnly() == true) {
                     String cosObjectId = entry.getKey();
-                    if (processedInlineImages.containsKey(cosObjectId)){
+                    if (processedInlineImages.containsKey(cosObjectId)) {
                         continue;
                     }
                     processedInlineImages.put(cosObjectId, imageNumber);
@@ -452,7 +449,7 @@ class PDF2XHTML extends PDFTextStripper {
                     "Unable to write a newline character", e);
         }
     }
-    
+
     private void extractEmbeddedDocuments(PDDocument document, ContentHandler handler)
             throws IOException, SAXException, TikaException {
         PDDocumentCatalog catalog = document.getDocumentCatalog();
@@ -495,14 +492,14 @@ class PDF2XHTML extends PDFTextStripper {
         }
 
         EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
-        for (Map.Entry<String,COSObjectable> ent : embeddedFileNames.entrySet()) {
+        for (Map.Entry<String, COSObjectable> ent : embeddedFileNames.entrySet()) {
             PDComplexFileSpecification spec = (PDComplexFileSpecification) ent.getValue();
             extractMultiOSPDEmbeddedFiles(ent.getKey(), spec, extractor);
         }
     }
 
     private void extractMultiOSPDEmbeddedFiles(String defaultName,
-        PDComplexFileSpecification spec, EmbeddedDocumentExtractor extractor) throws IOException,
+                                               PDComplexFileSpecification spec, EmbeddedDocumentExtractor extractor) throws IOException,
             SAXException, TikaException {
 
         if (spec == null) {
@@ -516,8 +513,8 @@ class PDF2XHTML extends PDFTextStripper {
     }
 
     private void extractPDEmbeddedFile(String defaultName, String fileName, PDEmbeddedFile file,
-                              EmbeddedDocumentExtractor extractor)
-            throws SAXException, IOException, TikaException{
+                                       EmbeddedDocumentExtractor extractor)
+            throws SAXException, IOException, TikaException {
 
         if (file == null) {
             //skip silently
@@ -536,7 +533,7 @@ class PDF2XHTML extends PDFTextStripper {
 
         if (extractor.shouldParseEmbedded(metadata)) {
             TikaInputStream stream = null;
-            try{
+            try {
                 stream = TikaInputStream.get(file.createInputStream());
                 extractor.parseEmbedded(
                         stream,
@@ -554,8 +551,8 @@ class PDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private void extractAcroForm(PDDocument pdf, XHTMLContentHandler handler) throws IOException, 
-    SAXException {
+    private void extractAcroForm(PDDocument pdf, XHTMLContentHandler handler) throws IOException,
+            SAXException {
         //Thank you, Ben Litchfield, for org.apache.pdfbox.examples.fdf.PrintFields
         //this code derives from Ben's code
         PDDocumentCatalog catalog = pdf.getDocumentCatalog();
@@ -574,7 +571,7 @@ class PDF2XHTML extends PDFTextStripper {
             return;
 
         @SuppressWarnings("rawtypes")
-        ListIterator itr  = fields.listIterator();
+        ListIterator itr = fields.listIterator();
 
         if (itr == null)
             return;
@@ -585,7 +582,7 @@ class PDF2XHTML extends PDFTextStripper {
         while (itr.hasNext()) {
             Object obj = itr.next();
             if (obj != null && obj instanceof PDField) {
-                processAcroField((PDField)obj, handler, 0);
+                processAcroField((PDField) obj, handler, 0);
             }
         }
         handler.endElement("ol");
@@ -593,7 +590,7 @@ class PDF2XHTML extends PDFTextStripper {
     }
 
     private void processAcroField(PDField field, XHTMLContentHandler handler, final int currentRecursiveDepth)
-            throws SAXException, IOException { 
+            throws SAXException, IOException {
 
         if (currentRecursiveDepth >= MAX_ACROFORM_RECURSIONS) {
             return;
@@ -602,14 +599,14 @@ class PDF2XHTML extends PDFTextStripper {
         addFieldString(field, handler);
 
         List<COSObjectable> kids = field.getKids();
-        if(kids != null) {
+        if (kids != null) {
 
-            int r = currentRecursiveDepth+1;
+            int r = currentRecursiveDepth + 1;
             handler.startElement("ol");
             //TODO: can generate <ol/>. Rework to avoid that.
-            for(COSObjectable pdfObj : kids) {
-                if(pdfObj != null && pdfObj instanceof PDField) {
-                    PDField kid = (PDField)pdfObj;
+            for (COSObjectable pdfObj : kids) {
+                if (pdfObj != null && pdfObj instanceof PDField) {
+                    PDField kid = (PDField) pdfObj;
                     //recurse
                     processAcroField(kid, handler, r);
                 }
@@ -635,13 +632,13 @@ class PDF2XHTML extends PDFTextStripper {
         }
         //return early if PDSignature field
         if (field instanceof PDSignatureField) {
-            handleSignature(attrs, (PDSignatureField)field, handler);
+            handleSignature(attrs, (PDSignatureField) field, handler);
             return;
         }
         try {
             //getValue can throw an IOException if there is no value
             String value = field.getValue();
-            if (value != null && ! value.equals("null")) {
+            if (value != null && !value.equals("null")) {
                 sb.append(value);
             }
         } catch (IOException e) {
@@ -656,14 +653,14 @@ class PDF2XHTML extends PDFTextStripper {
     }
 
     private void handleSignature(AttributesImpl parentAttributes, PDSignatureField sigField,
-            XHTMLContentHandler handler) throws SAXException {
+                                 XHTMLContentHandler handler) throws SAXException {
 
 
         PDSignature sig = sigField.getSignature();
         if (sig == null) {
             return;
         }
-        Map<String, String> vals= new TreeMap<String, String>();
+        Map<String, String> vals = new TreeMap<String, String>();
         vals.put("name", sig.getName());
         vals.put("contactInfo", sig.getContactInfo());
         vals.put("location", sig.getLocation());
@@ -677,7 +674,7 @@ class PDF2XHTML extends PDFTextStripper {
         //see if there is any data
         int nonNull = 0;
         for (String val : vals.keySet()) {
-            if (val != null && ! val.equals("")) {
+            if (val != null && !val.equals("")) {
                 nonNull++;
             }
         }

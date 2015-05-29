@@ -71,7 +71,7 @@ public class ListManager extends AbstractListManager {
             ListData listData = listTables.getListData(paragraph.getList().getLsid());
             LevelTuple[] levelTuples = new LevelTuple[listData.getLevels().length];
             for (int i = 0; i < listData.getLevels().length; i++) {
-                levelTuples[i] = buildTuple(i,listData.getLevels()[i]);
+                levelTuples[i] = buildTuple(i, listData.getLevels()[i]);
             }
             lc = new ParagraphLevelCounter(levelTuples);
         }
@@ -89,7 +89,7 @@ public class ListManager extends AbstractListManager {
         boolean isLegal = false;
         int start = 1;
         int restart = -1;
-        String lvlText = "%"+i+".";
+        String lvlText = "%" + i + ".";
         String numFmt = "decimal";
 
         start = listLevel.getStartAt();
@@ -127,18 +127,18 @@ public class ListManager extends AbstractListManager {
 
         StringBuilder sb = new StringBuilder();
         int last = 0;
-        for (int i = 0; i < numberOffsets.length;i++) {
-            int offset = (int)numberOffsets[i];
+        for (int i = 0; i < numberOffsets.length; i++) {
+            int offset = (int) numberOffsets[i];
 
-            if (offset == 0){
+            if (offset == 0) {
                 break;
             }
-            sb.append(numberText.substring(last, offset-1));
+            sb.append(numberText.substring(last, offset - 1));
             //need to add one because newer format
             //adds one.  In .doc, this was the array index;
             //but in .docx, this is the level number
-            int lvlNum = (int)numberText.charAt(offset-1)+1;
-            sb.append("%"+lvlNum);
+            int lvlNum = (int) numberText.charAt(offset - 1) + 1;
+            sb.append("%" + lvlNum);
             last = offset;
         }
         if (last < numberText.length()) {
@@ -149,29 +149,29 @@ public class ListManager extends AbstractListManager {
 
     private String convertToNewNumFormat(int numberFormat) {
         switch (numberFormat) {
-            case -1 :
+            case -1:
                 return "none";
-            case 0 :
+            case 0:
                 return "decimal";
-            case 1 :
+            case 1:
                 return "upperRoman";
-            case 2 :
+            case 2:
                 return "lowerRoman";
-            case 3 :
+            case 3:
                 return "upperLetter";
-            case 4 :
+            case 4:
                 return "lowerLetter";
-            case 5 :
+            case 5:
                 return "ordinal";
-            case 22 :
+            case 22:
                 return "decimalZero";
-            case 23 :
+            case 23:
                 return "bullet";
-            case 47 :
+            case 47:
                 return "none";
-            default :
+            default:
                 //do we really want to silently swallow these uncovered cases?
-                throw new RuntimeException("NOT COVERED: "+numberFormat);
+                throw new RuntimeException("NOT COVERED: " + numberFormat);
         }
     }
 }

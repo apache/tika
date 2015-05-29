@@ -36,7 +36,7 @@ import org.sqlite.SQLiteConfig;
 
 /**
  * This is the implementation of the db parser for SQLite.
- * <p>
+ * <p/>
  * This parser is internal only; it should not be registered in the services
  * file or configured in the TikaConfig xml file.
  */
@@ -45,7 +45,6 @@ class SQLite3DBParser extends AbstractDBParser {
     protected static final String SQLITE_CLASS_NAME = "org.sqlite.JDBC";
 
     /**
-     *
      * @param context context
      * @return null (always)
      */
@@ -64,7 +63,7 @@ class SQLite3DBParser extends AbstractDBParser {
         } catch (ClassNotFoundException e) {
             throw new IOExceptionWithCause(e);
         }
-        try{
+        try {
             SQLiteConfig config = new SQLiteConfig();
 
             //good habit, but effectively meaningless here
@@ -80,7 +79,7 @@ class SQLite3DBParser extends AbstractDBParser {
     @Override
     protected String getConnectionString(InputStream is, Metadata metadata, ParseContext context) throws IOException {
         File dbFile = TikaInputStream.get(is).getFile();
-        return "jdbc:sqlite:"+dbFile.getAbsolutePath();
+        return "jdbc:sqlite:" + dbFile.getAbsolutePath();
     }
 
     @Override

@@ -34,12 +34,10 @@ import org.xml.sax.InputSource;
 
 public class JempboxExtractor {
 
-    private XMPPacketScanner scanner = new XMPPacketScanner();
-    
-    private Metadata metadata;
-    
     // The XMP spec says it must be unicode, but for most file formats it specifies "must be encoded in UTF-8"
     private static final String DEFAULT_XMP_CHARSET = IOUtils.UTF_8.name();
+    private XMPPacketScanner scanner = new XMPPacketScanner();
+    private Metadata metadata;
 
     public JempboxExtractor(Metadata metadata) {
         this.metadata = metadata;

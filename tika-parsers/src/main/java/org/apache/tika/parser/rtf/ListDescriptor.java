@@ -29,8 +29,7 @@ public class ListDescriptor {
     public boolean isStyle;
     public int[] numberType = new int[9];
 
-    public boolean isUnordered(int level)
-    {
+    public boolean isUnordered(int level) {
         return numberType[level] == NUMBER_TYPE_BULLET;
     }
 }

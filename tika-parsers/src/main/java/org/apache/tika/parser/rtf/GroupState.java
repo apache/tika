@@ -59,7 +59,7 @@ class GroupState {
         list = other.list;
         listLevel = other.listLevel;
         fontCharset = other.fontCharset;
-        depth = 1+other.depth;
+        depth = 1 + other.depth;
         pictDepth = other.pictDepth > 0 ? other.pictDepth + 1 : 0;
         //do not inherit object, sn, sv or sp
 

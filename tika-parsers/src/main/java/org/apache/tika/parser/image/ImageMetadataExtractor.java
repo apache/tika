@@ -66,9 +66,9 @@ import org.xml.sax.SAXException;
  */
 public class ImageMetadataExtractor {
 
+    private static final String GEO_DECIMAL_FORMAT_STRING = "#.######"; // 6 dp seems to be reasonable
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
-    private static final String GEO_DECIMAL_FORMAT_STRING = "#.######"; // 6 dp seems to be reasonable
 
     /**
      * @param metadata to extract to, using default directory handlers
@@ -91,6 +91,15 @@ public class ImageMetadataExtractor {
     public ImageMetadataExtractor(Metadata metadata, DirectoryHandler... handlers) {
         this.metadata = metadata;
         this.handlers = handlers;
+    }
+
+    private static String trimPixels(String s) {
+        //if height/width appears as "100 pixels", trim " pixels"
+        if (s != null) {
+            int i = s.lastIndexOf(" pixels");
+            s = s.substring(0, i);
+        }
+        return s;
     }
 
     public void parseJpeg(File file)
@@ -201,15 +210,6 @@ public class ImageMetadataExtractor {
                 }
             }
         }
-    }
-
-    private static String trimPixels(String s) {
-        //if height/width appears as "100 pixels", trim " pixels"
-        if (s != null) {
-            int i = s.lastIndexOf(" pixels");
-            s = s.substring(0, i);
-        }
-        return s;
     }
 
     /**
@@ -451,8 +451,8 @@ public class ImageMetadataExtractor {
                 metadata.set(Metadata.RESOLUTION_UNIT, directory.getDescription(ExifIFD0Directory.TAG_RESOLUTION_UNIT));
             }
             if (directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)) {
-                        metadata.set(Metadata.IMAGE_WIDTH,
-                                trimPixels(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)));
+                metadata.set(Metadata.IMAGE_WIDTH,
+                        trimPixels(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)));
             }
             if (directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)) {
                 metadata.set(Metadata.IMAGE_LENGTH,

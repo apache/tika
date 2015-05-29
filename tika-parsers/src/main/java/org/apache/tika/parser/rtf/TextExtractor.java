@@ -54,15 +54,6 @@ import org.xml.sax.SAXException;
 final class TextExtractor {
 
     private static final Charset ASCII = Charset.forName("US-ASCII");
-
-    private static Charset getCharset(String name) {
-        try {
-            return CharsetUtils.forName(name);
-        } catch (Exception e) {
-            return ASCII;
-        }
-    }
-
     private static final Charset WINDOWS_1252 = getCharset("WINDOWS-1252");
     private static final Charset MAC_ROMAN = getCharset("MacRoman");
     private static final Charset SHIFT_JIS = getCharset("Shift_JIS");
@@ -131,99 +122,16 @@ final class TextExtractor {
     private static final Charset BIG5 = getCharset("Big5");
     private static final Charset GB2312 = getCharset("GB2312");
     private static final Charset MS949 = getCharset("ms949");
-
-    private int written = 0;
-    // Hold pending bytes (encoded in the current charset)
-    // for text output:
-    private byte[] pendingBytes = new byte[16];
-    private int pendingByteCount;
-    private ByteBuffer pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
-      
-    // Holds pending chars for text output
-    private char[] pendingChars = new char[10];
-    private int pendingCharCount;
-
-    // Holds chars for a still-being-tokenized control word
-    private byte[] pendingControl = new byte[10];
-    private int pendingControlCount;
-
-    // Used when we decode bytes -> chars using CharsetDecoder:
-    private final char[] outputArray = new char[128];
-    private final CharBuffer outputBuffer = CharBuffer.wrap(outputArray);
-
-    // Reused when possible:
-    private CharsetDecoder decoder;
-    private Charset lastCharset;
-
-    private Charset globalCharset = WINDOWS_1252;
-    private int globalDefaultFont = -1;
-    private int curFontID = -1;
-
-    // Holds the font table from this RTF doc, mapping
-    // the font number (from \fN control word) to the
-    // corresponding charset:
-    private final Map<Integer, Charset> fontToCharset =
-            new HashMap<Integer, Charset>();
-
-    // Group stack: when we open a new group, we push
-    // the previous group state onto the stack; when we
-    // close the group, we restore it
-    private final LinkedList<GroupState> groupStates = new LinkedList<GroupState>();
-
-    // Current group state; in theory this initial
-    // GroupState is unused because the RTF doc should
-    // immediately open the top group (start with {):
-    private GroupState groupState = new GroupState();
-
-    private boolean inHeader = true;
-    private int fontTableState;
-    private int fontTableDepth;
-
-    // Non null if we are processing metadata (title,
-    // keywords, etc.) inside the info group:
-    private Property nextMetaData;
-    private boolean inParagraph;
-
-    // Non-zero if we are processing inside a field destination:
-    private int fieldState;
-
-    // Non-zero list index
-    private int pendingListEnd;
-    private Map<Integer, ListDescriptor> listTable = new HashMap<Integer, ListDescriptor>();
-    private Map<Integer, ListDescriptor> listOverrideTable = new HashMap<Integer, ListDescriptor>();
-    private Map<Integer, ListDescriptor> currentListTable;
-    private ListDescriptor currentList;
-    private int listTableLevel = -1;
-    private boolean ignoreLists;
-
-    // Non-null if we've seen the url for a HYPERLINK but not yet
-    // its text:
-    private String pendingURL;
-
-    private final StringBuilder pendingBuffer = new StringBuilder();
-
-    // Used to process the sub-groups inside the upr
-    // group:
-    private int uprState = -1;
-
-    private final XHTMLContentHandler out;
-    private final Metadata metadata;
-    private final RTFEmbObjHandler embObjHandler;
-
-    // Used when extracting CREATION date:
-    private int year, month, day, hour, minute;
-
-    // How many next ansi chars we should skip; this
-    // is 0 except when we are still in the "ansi
-    // shadow" after seeing a unicode escape, at which
-    // point it's set to the last ucN skip we had seen:
-    int ansiSkip = 0;
-
     // The RTF doc has a "font table" that assigns ords
     // (f0, f1, f2, etc.) to fonts and charsets, using the
     // \fcharsetN control word.  This mapping maps from the
     // N to corresponding Java charset:
     private static final Map<Integer, Charset> FCHARSET_MAP =
+            new HashMap<Integer, Charset>();
+    // The RTF may specify the \ansicpgN charset in the
+    // header; this maps the N to the corresponding Java
+    // character set:
+    private static final Map<Integer, Charset> ANSICPG_MAP =
             new HashMap<Integer, Charset>();
 
     static {
@@ -267,15 +175,10 @@ final class TextExtractor {
         FCHARSET_MAP.put(255, CP850); // OEM
     }
 
-    // The RTF may specify the \ansicpgN charset in the
-    // header; this maps the N to the corresponding Java
-    // character set:
-    private static final Map<Integer, Charset> ANSICPG_MAP =
-            new HashMap<Integer, Charset>();
     static {
         ANSICPG_MAP.put(437, CP4372);   // US IBM
         ANSICPG_MAP.put(708, ISO_8859_6);   // Arabic (ASMO 708)
-      
+
         ANSICPG_MAP.put(709, WINDOWS_709);  // Arabic (ASMO 449+, BCON V4)
         ANSICPG_MAP.put(710, WINDOWS_710);  // Arabic (transparent Arabic)
         ANSICPG_MAP.put(710, WINDOWS_711);  // Arabic (Nafitha Enhanced)
@@ -331,30 +234,99 @@ final class TextExtractor {
         ANSICPG_MAP.put(57011, WINDOWS_57011);   // Punjabi
     }
 
+    // Used when we decode bytes -> chars using CharsetDecoder:
+    private final char[] outputArray = new char[128];
+    private final CharBuffer outputBuffer = CharBuffer.wrap(outputArray);
+    // Holds the font table from this RTF doc, mapping
+    // the font number (from \fN control word) to the
+    // corresponding charset:
+    private final Map<Integer, Charset> fontToCharset =
+            new HashMap<Integer, Charset>();
+    // Group stack: when we open a new group, we push
+    // the previous group state onto the stack; when we
+    // close the group, we restore it
+    private final LinkedList<GroupState> groupStates = new LinkedList<GroupState>();
+    private final StringBuilder pendingBuffer = new StringBuilder();
+    private final XHTMLContentHandler out;
+    private final Metadata metadata;
+    private final RTFEmbObjHandler embObjHandler;
+    // How many next ansi chars we should skip; this
+    // is 0 except when we are still in the "ansi
+    // shadow" after seeing a unicode escape, at which
+    // point it's set to the last ucN skip we had seen:
+    int ansiSkip = 0;
+    private int written = 0;
+    // Hold pending bytes (encoded in the current charset)
+    // for text output:
+    private byte[] pendingBytes = new byte[16];
+    private int pendingByteCount;
+    private ByteBuffer pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
+    // Holds pending chars for text output
+    private char[] pendingChars = new char[10];
+    private int pendingCharCount;
+    // Holds chars for a still-being-tokenized control word
+    private byte[] pendingControl = new byte[10];
+    private int pendingControlCount;
+    // Reused when possible:
+    private CharsetDecoder decoder;
+    private Charset lastCharset;
+    private Charset globalCharset = WINDOWS_1252;
+    private int globalDefaultFont = -1;
+    private int curFontID = -1;
+    // Current group state; in theory this initial
+    // GroupState is unused because the RTF doc should
+    // immediately open the top group (start with {):
+    private GroupState groupState = new GroupState();
+    private boolean inHeader = true;
+    private int fontTableState;
+    private int fontTableDepth;
+    // Non null if we are processing metadata (title,
+    // keywords, etc.) inside the info group:
+    private Property nextMetaData;
+    private boolean inParagraph;
+    // Non-zero if we are processing inside a field destination:
+    private int fieldState;
+    // Non-zero list index
+    private int pendingListEnd;
+    private Map<Integer, ListDescriptor> listTable = new HashMap<Integer, ListDescriptor>();
+    private Map<Integer, ListDescriptor> listOverrideTable = new HashMap<Integer, ListDescriptor>();
+    private Map<Integer, ListDescriptor> currentListTable;
+    private ListDescriptor currentList;
+    private int listTableLevel = -1;
+    private boolean ignoreLists;
+    // Non-null if we've seen the url for a HYPERLINK but not yet
+    // its text:
+    private String pendingURL;
+    // Used to process the sub-groups inside the upr
+    // group:
+    private int uprState = -1;
+    // Used when extracting CREATION date:
+    private int year, month, day, hour, minute;
+
     public TextExtractor(XHTMLContentHandler out, Metadata metadata,
-            RTFEmbObjHandler embObjHandler) {
+                         RTFEmbObjHandler embObjHandler) {
         this.metadata = metadata;
         this.out = out;
         this.embObjHandler = embObjHandler;
     }
 
-    public boolean isIgnoringLists() {
-        return ignoreLists;
-    }
-
-    public void setIgnoreLists(boolean ignore) {
-        this.ignoreLists = ignore;
+    private static Charset getCharset(String name) {
+        try {
+            return CharsetUtils.forName(name);
+        } catch (Exception e) {
+            return ASCII;
+        }
     }
 
     protected static boolean isHexChar(int ch) {
         return (ch >= '0' && ch <= '9') ||
-            (ch >= 'a' && ch <= 'f') ||
-            (ch >= 'A' && ch <= 'F');
+                (ch >= 'a' && ch <= 'f') ||
+                (ch >= 'A' && ch <= 'F');
     }
 
     private static boolean isAlpha(int ch) {
         return (ch >= 'a' && ch <= 'z') ||
-            (ch >= 'A' && ch <= 'Z');
+                (ch >= 'A' && ch <= 'Z');
     }
 
     private static boolean isDigit(int ch) {
@@ -370,6 +342,14 @@ final class TextExtractor {
             assert ch >= 'A' && ch <= 'Z';
             return 10 + (ch - 'A');
         }
+    }
+
+    public boolean isIgnoringLists() {
+        return ignoreLists;
+    }
+
+    public void setIgnoreLists(boolean ignore) {
+        this.ignoreLists = ignore;
     }
 
     // Push pending bytes or pending chars:
@@ -391,27 +371,27 @@ final class TextExtractor {
             pushChars();
         }
         if (groupState.pictDepth > 0) {
-            embObjHandler.writeMetadataChar((char)b);
+            embObjHandler.writeMetadataChar((char) b);
         } else {
             // Save the byte in pending buffer:
             if (pendingByteCount == pendingBytes.length) {
                 // Gradual but exponential growth:
-                final byte[] newArray = new byte[(int) (pendingBytes.length*1.25)];
+                final byte[] newArray = new byte[(int) (pendingBytes.length * 1.25)];
                 System.arraycopy(pendingBytes, 0, newArray, 0, pendingBytes.length);
                 pendingBytes = newArray;
                 pendingByteBuffer = ByteBuffer.wrap(pendingBytes);
             }
             pendingBytes[pendingByteCount++] = (byte) b;
-       }
+        }
     }
 
-   // Buffers a byte as part of a control word:
+    // Buffers a byte as part of a control word:
     private void addControl(int b) {
         assert isAlpha(b);
         // Save the byte in pending buffer:
         if (pendingControlCount == pendingControl.length) {
             // Gradual but exponential growth:
-            final byte[] newArray = new byte[(int) (pendingControl.length*1.25)];
+            final byte[] newArray = new byte[(int) (pendingControl.length * 1.25)];
             System.arraycopy(pendingControl, 0, newArray, 0, pendingControl.length);
             pendingControl = newArray;
         }
@@ -431,7 +411,7 @@ final class TextExtractor {
         } else {
             if (pendingCharCount == pendingChars.length) {
                 // Gradual but exponential growth:
-                final char[] newArray = new char[(int) (pendingChars.length*1.25)];
+                final char[] newArray = new char[(int) (pendingChars.length * 1.25)];
                 System.arraycopy(pendingChars, 0, newArray, 0, pendingChars.length);
                 pendingChars = newArray;
             }
@@ -458,7 +438,7 @@ final class TextExtractor {
 //        };
         extract(new PushbackInputStream(in, 2));
     }
-    
+
     private void extract(PushbackInputStream in) throws IOException, SAXException, TikaException {
         out.startDocument();
 
@@ -471,7 +451,7 @@ final class TextExtractor {
             } else if (b == '{') {
                 pushText();
                 processGroupStart(in);
-             } else if (b == '}') {
+            } else if (b == '}') {
                 pushText();
                 processGroupEnd();
                 if (groupStates.isEmpty()) {
@@ -479,9 +459,9 @@ final class TextExtractor {
                     break;
                 }
             } else if (groupState.objdata == true ||
-                groupState.pictDepth == 1) {
+                    groupState.pictDepth == 1) {
                 embObjHandler.writeHexChar(b);
-            } else if (b != '\r' && b != '\n' 
+            } else if (b != '\r' && b != '\n'
                     && (!groupState.ignore || nextMetaData != null ||
                     groupState.sn == true || groupState.sv == true)) {
                 // Linefeed and carriage return are not
@@ -497,7 +477,7 @@ final class TextExtractor {
         endParagraph(false);
         out.endDocument();
     }
-    
+
     private void parseControlToken(PushbackInputStream in) throws IOException, SAXException, TikaException {
         int b = in.read();
         if (b == '\'') {
@@ -505,16 +485,16 @@ final class TextExtractor {
             parseHexChar(in);
         } else if (isAlpha(b)) {
             // control word
-            parseControlWord((char)b, in);
+            parseControlWord((char) b, in);
         } else if (b == '{' || b == '}' || b == '\\' || b == '\r' || b == '\n') {
             // escaped char
             addOutputByte(b);
         } else if (b != -1) {
             // control symbol, eg \* or \~
-            processControlSymbol((char)b);
+            processControlSymbol((char) b);
         }
     }
-    
+
     private void parseHexChar(PushbackInputStream in) throws IOException, SAXException, TikaException {
         int hex1 = in.read();
         if (!isHexChar(hex1)) {
@@ -522,7 +502,7 @@ final class TextExtractor {
             in.unread(hex1);
             return;
         }
-        
+
         int hex2 = in.read();
         if (!isHexChar(hex2)) {
             // TODO: log a warning here, somehow?
@@ -531,7 +511,7 @@ final class TextExtractor {
             in.unread(hex2);
             return;
         }
-        
+
         if (ansiSkip != 0) {
             // Skip this ansi char since we are
             // still in the shadow of a unicode
@@ -539,19 +519,19 @@ final class TextExtractor {
             ansiSkip--;
         } else {
             // Unescape:
-            addOutputByte(16*hexValue(hex1) + hexValue(hex2));
+            addOutputByte(16 * hexValue(hex1) + hexValue(hex2));
         }
     }
 
     private void parseControlWord(int firstChar, PushbackInputStream in) throws IOException, SAXException, TikaException {
         addControl(firstChar);
-        
+
         int b = in.read();
         while (isAlpha(b)) {
             addControl(b);
             b = in.read();
         }
-        
+
         boolean hasParam = false;
         boolean negParam = false;
         if (b == '-') {
@@ -567,14 +547,14 @@ final class TextExtractor {
             hasParam = true;
             b = in.read();
         }
-        
+
         // space is consumed as part of the
         // control word, but is not added to the
         // control word
         if (b != ' ') {
             in.unread(b);
         }
-        
+
         if (hasParam) {
             if (negParam) {
                 param = -param;
@@ -583,7 +563,7 @@ final class TextExtractor {
         } else {
             processControlWord();
         }
-        
+
         pendingControlCount = 0;
     }
 
@@ -602,7 +582,7 @@ final class TextExtractor {
             }
             if (inList() && pendingListEnd != groupState.list) {
                 startList(groupState.list);
-            }            
+            }
             if (inList()) {
                 out.startElement("li");
             } else {
@@ -738,7 +718,7 @@ final class TextExtractor {
         if (pendingControlCount != s.length()) {
             return false;
         }
-        for(int idx=0;idx<pendingControlCount;idx++) {
+        for (int idx = 0; idx < pendingControlCount; idx++) {
             assert isAlpha(s.charAt(idx));
             if (((byte) s.charAt(idx)) != pendingControl[idx]) {
                 return false;
@@ -748,26 +728,26 @@ final class TextExtractor {
     }
 
     private void processControlSymbol(char ch) throws IOException, SAXException, TikaException {
-        switch(ch) {
-        case '~':
-            // Non-breaking space -> unicode NON-BREAKING SPACE
-            addOutputChar('\u00a0');
-            break;
-        case '*':
-            // Ignorable destination (control words defined after
-            // the 1987 RTF spec). These are already handled by
-            // processGroupStart()
-            break;
-        case '-':
-            // Optional hyphen -> unicode SOFT HYPHEN
-            addOutputChar('\u00ad');
-            break;
-        case '_':
-            // Non-breaking hyphen -> unicode NON-BREAKING HYPHEN
-            addOutputChar('\u2011');
-            break;
-        default:
-            break;
+        switch (ch) {
+            case '~':
+                // Non-breaking space -> unicode NON-BREAKING SPACE
+                addOutputChar('\u00a0');
+                break;
+            case '*':
+                // Ignorable destination (control words defined after
+                // the 1987 RTF spec). These are already handled by
+                // processGroupStart()
+                break;
+            case '-':
+                // Optional hyphen -> unicode SOFT HYPHEN
+                addOutputChar('\u00ad');
+                break;
+            case '_':
+                // Non-breaking hyphen -> unicode NON-BREAKING HYPHEN
+                addOutputChar('\u2011');
+                break;
+            default:
+                break;
         }
     }
 
@@ -890,8 +870,8 @@ final class TextExtractor {
                     currentList.templateID = param;
                 } else if (equals("levelnfc") || equals("levelnfcn")) {
                     //sanity check to make sure list information isn't corrupt
-                    if (listTableLevel > -1 && 
-                        listTableLevel < currentList.numberType.length ) {
+                    if (listTableLevel > -1 &&
+                            listTableLevel < currentList.numberType.length) {
                         currentList.numberType[listTableLevel] = param;
                     }
                 }
@@ -963,7 +943,7 @@ final class TextExtractor {
         } else if (equals("bin")) {
             if (param >= 0) {
                 if (groupState.pictDepth == 1) {
-                    try{
+                    try {
                         embObjHandler.writeBytes(in, param);
                     } catch (IOException e) {
                         //param was out of bounds or something went wrong during writing.
@@ -977,7 +957,7 @@ final class TextExtractor {
                     while (bytesToRead > 0) {
                         int r = in.read(tmpArray, 0, Math.min(bytesToRead, tmpArray.length));
                         if (r < 0) {
-                            throw new TikaException("unexpected end of file: need " + param + " bytes of binary data, found " + (param-bytesToRead));
+                            throw new TikaException("unexpected end of file: need " + param + " bytes of binary data, found " + (param - bytesToRead));
                         }
                         bytesToRead -= r;
                     }
@@ -1005,6 +985,7 @@ final class TextExtractor {
     /**
      * Emits the end tag of a list. Uses {@link #isUnorderedList(int)} to determine the list
      * type for the given <code>listID</code>.
+     *
      * @param listID The ID of the list.
      * @throws IOException
      * @throws SAXException
@@ -1019,6 +1000,7 @@ final class TextExtractor {
     /**
      * Emits the start tag of a list. Uses {@link #isUnorderedList(int)} to determine the list
      * type for the given <code>listID</code>.
+     *
      * @param listID The ID of the list.
      * @throws IOException
      * @throws SAXException
@@ -1051,11 +1033,11 @@ final class TextExtractor {
         if (inHeader) {
             if (equals("ansi")) {
                 globalCharset = WINDOWS_1252;
-            } else if (equals("pca")) { 
+            } else if (equals("pca")) {
                 globalCharset = CP850;
-            } else if (equals("pc")) { 
+            } else if (equals("pc")) {
                 globalCharset = CP437;
-            } else if (equals("mac")) { 
+            } else if (equals("mac")) {
                 globalCharset = MAC_ROMAN;
             }
 
@@ -1319,13 +1301,13 @@ final class TextExtractor {
 
         // Make new GroupState
         groupState = new GroupState(groupState);
-        assert groupStates.size() == groupState.depth: "size=" + groupStates.size() + " depth=" + groupState.depth;
+        assert groupStates.size() == groupState.depth : "size=" + groupStates.size() + " depth=" + groupState.depth;
 
         if (uprState == 0) {
             uprState = 1;
             groupState.ignore = true;
         }
-        
+
         // Check for ignorable groups. Note that
         // sometimes we un-ignore within this group, eg
         // when handling upr escape.
@@ -1335,7 +1317,7 @@ final class TextExtractor {
             if (b3 == '*') {
                 groupState.ignore = true;
             }
-               in.unread(b3);
+            in.unread(b3);
         }
         in.unread(b2);
     }
@@ -1346,7 +1328,7 @@ final class TextExtractor {
             if (nextMetaData != null) {
                 if (nextMetaData == TikaCoreProperties.CREATED) {
                     Calendar cal = Calendar.getInstance(TimeZone.getDefault(), Locale.ROOT);
-                    cal.set(year, month-1, day, hour, minute, 0);
+                    cal.set(year, month - 1, day, hour, minute, 0);
                     metadata.set(nextMetaData, cal.getTime());
                 } else if (nextMetaData.isMultiValuePermitted()) {
                     metadata.add(nextMetaData, pendingBuffer.toString());
@@ -1360,7 +1342,7 @@ final class TextExtractor {
 
         assert groupState.depth > 0;
         ansiSkip = 0;
-        
+
         if (groupState.objdata == true) {
             embObjHandler.handleCompletedObject();
             groupState.objdata = false;
@@ -1391,7 +1373,7 @@ final class TextExtractor {
             // bold changed:
             if (groupState.italic) {
                 if (!outerGroupState.italic ||
-                    groupState.bold != outerGroupState.bold) {
+                        groupState.bold != outerGroupState.bold) {
                     end("i");
                     groupState.italic = false;
                 }
@@ -1425,9 +1407,9 @@ final class TextExtractor {
                 final boolean isLocalLink = s.contains("\\l ");
                 int idx = s.indexOf('"');
                 if (idx != -1) {
-                    int idx2 = s.indexOf('"', 1+idx);
+                    int idx2 = s.indexOf('"', 1 + idx);
                     if (idx2 != -1) {
-                        s = s.substring(1+idx, idx2);
+                        s = s.substring(1 + idx, idx2);
                     }
                 }
                 pendingURL = (isLocalLink ? "#" : "") + s;

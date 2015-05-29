@@ -38,13 +38,14 @@ public class AccessChecker implements Serializable {
      * This constructs an {@link AccessChecker} that
      * will not perform any checking and will always return without
      * throwing an exception.
-     * <p>
+     * <p/>
      * This constructor is available to allow for Tika's legacy ( <= v1.7) behavior.
      */
     public AccessChecker() {
         needToCheck = false;
         allowAccessibility = true;
     }
+
     /**
      * This constructs an {@link AccessChecker} that will check
      * for whether or not content should be extracted from a document.
@@ -69,7 +70,7 @@ public class AccessChecker implements Serializable {
         }
         if ("false".equals(metadata.get(AccessPermissions.EXTRACT_CONTENT))) {
             if (allowAccessibility) {
-                if("true".equals(metadata.get(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY))) {
+                if ("true".equals(metadata.get(AccessPermissions.EXTRACT_FOR_ACCESSIBILITY))) {
                     return;
                 }
                 throw new AccessPermissionException("Content extraction for accessibility is not allowed.");

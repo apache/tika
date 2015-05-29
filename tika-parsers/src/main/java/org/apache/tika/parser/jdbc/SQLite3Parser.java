@@ -15,6 +15,7 @@ package org.apache.tika.parser.jdbc;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
@@ -31,18 +32,19 @@ import org.xml.sax.SAXException;
 /**
  * This is the main class for parsing SQLite3 files.  When {@link #parse} is called,
  * this creates a new {@link org.apache.tika.parser.jdbc.SQLite3DBParser}.
- * <p>
+ * <p/>
  * Given potential conflicts of native libraries in web servers, users will
  * need to add org.xerial's sqlite-jdbc jar to the class path for this parser
  * to work.  For development and testing, this jar is specified in tika-parsers'
  * pom.xml, but it is currently set to "provided."
- * <p>
+ * <p/>
  * Note that this family of jdbc parsers is designed to treat each CLOB and each BLOB
  * as embedded documents.
- *
  */
 public class SQLite3Parser extends AbstractParser {
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -752276948656079347L;
 
     private static final MediaType MEDIA_TYPE = MediaType.application("x-sqlite3");
@@ -51,7 +53,7 @@ public class SQLite3Parser extends AbstractParser {
 
     /**
      * Checks to see if class is available for org.sqlite.JDBC.
-     * <p>
+     * <p/>
      * If not, this class will return an EMPTY_SET for  getSupportedTypes()
      */
     public SQLite3Parser() {

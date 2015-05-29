@@ -35,7 +35,9 @@ import org.xml.sax.SAXException;
 
 public class WebPParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -3941143576535464926L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =

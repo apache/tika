@@ -33,16 +33,17 @@ import org.xml.sax.helpers.DefaultHandler;
 public class WebPParserTest {
 
     Parser parser = new AutoDetectParser();
-/*
-    Two photos in test-documents (testWebp_Alpha_Lossy.webp and testWebp_Alpha_Lossless.webp)
-    are in the public domain.  These files were retrieved from:
-    https://github.com/drewnoakes/metadata-extractor-images/tree/master/webp
-    These photos are also available here:
-    https://developers.google.com/speed/webp/gallery2#webp_links
-    Credits for the photo:
-    "Free Stock Photo in High Resolution - Yellow Rose 3 - Flowers"
-    Image Author: Jon Sullivan
- */
+
+    /*
+        Two photos in test-documents (testWebp_Alpha_Lossy.webp and testWebp_Alpha_Lossless.webp)
+        are in the public domain.  These files were retrieved from:
+        https://github.com/drewnoakes/metadata-extractor-images/tree/master/webp
+        These photos are also available here:
+        https://developers.google.com/speed/webp/gallery2#webp_links
+        Credits for the photo:
+        "Free Stock Photo in High Resolution - Yellow Rose 3 - Flowers"
+        Image Author: Jon Sullivan
+     */
     @Test
     public void testSimple() throws Exception {
         Metadata metadata = new Metadata();

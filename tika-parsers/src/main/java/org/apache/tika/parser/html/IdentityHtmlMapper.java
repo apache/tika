@@ -21,7 +21,7 @@ import java.util.Locale;
 /**
  * Alternative HTML mapping rules that pass the input HTML as-is without any
  * modifications.
- * 
+ *
  * @since Apache Tika 0.8
  */
 public class IdentityHtmlMapper implements HtmlMapper {

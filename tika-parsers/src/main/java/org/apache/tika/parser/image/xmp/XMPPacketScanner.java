@@ -27,10 +27,10 @@ import java.io.UnsupportedEncodingException;
 /**
  * This class is a parser for XMP packets. By default, it tries to locate the first XMP packet
  * it finds and parses it.
- * <p>
+ * <p/>
  * Important: Before you use this class to look for an XMP packet in some random file, please read
  * the chapter on "Scanning Files for XMP Packets" in the XMP specification!
- * <p>
+ * <p/>
  * Thic class was branched from http://xmlgraphics.apache.org/ XMPPacketParser.
  * See also org.semanticdesktop.aperture.extractor.xmp.XMPExtractor, a variant.
  */
@@ -48,40 +48,6 @@ public class XMPPacketScanner {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Incompatible JVM! US-ASCII encoding not supported.");
         }
-    }
-
-    /**
-     * Locates an XMP packet in a stream, parses it and returns the XMP metadata. If no
-     * XMP packet is found until the stream ends, null is returned. Note: This method
-     * only finds the first XMP packet in a stream. And it cannot determine whether it
-     * has found the right XMP packet if there are multiple packets.
-     * 
-     * Does <em>not</em> close the stream.
-     * If XMP block was found reading can continue below the block.
-     * 
-     * @param in the InputStream to search
-     * @param xmlOut to write the XMP packet to
-     * @return true if XMP packet is found, false otherwise
-     * @throws IOException if an I/O error occurs
-     * @throws TransformerException if an error occurs while parsing the XMP packet
-     */
-    public boolean parse(InputStream in, OutputStream xmlOut) throws IOException {
-        if (!in.markSupported()) {
-            in = new java.io.BufferedInputStream(in);
-        }
-        boolean foundXMP = skipAfter(in, PACKET_HEADER);
-        if (!foundXMP) {
-            return false;
-        }
-        //TODO Inspect "begin" attribute!
-        if (!skipAfter(in, PACKET_HEADER_END)) {
-            throw new IOException("Invalid XMP packet header!");
-        }
-        //TODO Do with TeeInputStream when Commons IO 1.4 is available
-        if (!skipAfter(in, PACKET_TRAILER, xmlOut)) {
-            throw new IOException("XMP packet not properly terminated!");
-        }
-        return true;
     }
 
     private static boolean skipAfter(InputStream in, byte[] match) throws IOException {
@@ -110,6 +76,40 @@ public class XMPPacketScanner {
             }
         }
         return false;
+    }
+
+    /**
+     * Locates an XMP packet in a stream, parses it and returns the XMP metadata. If no
+     * XMP packet is found until the stream ends, null is returned. Note: This method
+     * only finds the first XMP packet in a stream. And it cannot determine whether it
+     * has found the right XMP packet if there are multiple packets.
+     * <p/>
+     * Does <em>not</em> close the stream.
+     * If XMP block was found reading can continue below the block.
+     *
+     * @param in     the InputStream to search
+     * @param xmlOut to write the XMP packet to
+     * @return true if XMP packet is found, false otherwise
+     * @throws IOException          if an I/O error occurs
+     * @throws TransformerException if an error occurs while parsing the XMP packet
+     */
+    public boolean parse(InputStream in, OutputStream xmlOut) throws IOException {
+        if (!in.markSupported()) {
+            in = new java.io.BufferedInputStream(in);
+        }
+        boolean foundXMP = skipAfter(in, PACKET_HEADER);
+        if (!foundXMP) {
+            return false;
+        }
+        //TODO Inspect "begin" attribute!
+        if (!skipAfter(in, PACKET_HEADER_END)) {
+            throw new IOException("Invalid XMP packet header!");
+        }
+        //TODO Do with TeeInputStream when Commons IO 1.4 is available
+        if (!skipAfter(in, PACKET_TRAILER, xmlOut)) {
+            throw new IOException("XMP packet not properly terminated!");
+        }
+        return true;
     }
 
 }

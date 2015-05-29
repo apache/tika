@@ -35,11 +35,13 @@ import org.xml.sax.SAXException;
 
 public class TiffParser extends AbstractParser {
 
-    /** Serial version UID */
+    /**
+     * Serial version UID
+     */
     private static final long serialVersionUID = -3941143576535464926L;
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-        Collections.singleton(MediaType.image("tiff"));
+            Collections.singleton(MediaType.image("tiff"));
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;

@@ -70,10 +70,10 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         for (XSLFSlide slide : slides) {
             String slideDesc;
             if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
-              slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
-              slideDesc += "_";
+                slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
+                slideDesc += "_";
             } else {
-              slideDesc = null;
+                slideDesc = null;
             }
 
             // slide
@@ -118,27 +118,27 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     continue;
                 }
                 xhtml.element("p", txt.getText());
-            } else if (sh instanceof XSLFGroupShape){
+            } else if (sh instanceof XSLFGroupShape) {
                 // recurse into groups of shapes
-                XSLFGroupShape group = (XSLFGroupShape)sh;
+                XSLFGroupShape group = (XSLFGroupShape) sh;
                 extractContent(group.getShapes(), skipPlaceholders, xhtml, slideDesc);
             } else if (sh instanceof XSLFTable) {
-                XSLFTable tbl = (XSLFTable)sh;
-                for(XSLFTableRow row : tbl){
+                XSLFTable tbl = (XSLFTable) sh;
+                for (XSLFTableRow row : tbl) {
                     List<XSLFTableCell> cells = row.getCells();
                     extractContent(cells.toArray(new XSLFTableCell[cells.size()]), skipPlaceholders, xhtml, slideDesc);
                 }
             } else if (sh instanceof XSLFGraphicFrame) {
                 XSLFGraphicFrame frame = (XSLFGraphicFrame) sh;
                 XmlObject[] sp = frame.getXmlObject().selectPath(
-                                   "declare namespace p='http://schemas.openxmlformats.org/presentationml/2006/main' .//*/p:oleObj");
+                        "declare namespace p='http://schemas.openxmlformats.org/presentationml/2006/main' .//*/p:oleObj");
                 if (sp != null) {
-                    for(XmlObject emb : sp) {
+                    for (XmlObject emb : sp) {
                         XmlObject relIDAtt = emb.selectAttribute(new QName("http://schemas.openxmlformats.org/officeDocument/2006/relationships", "id"));
                         if (relIDAtt != null) {
                             String relID = relIDAtt.getDomNode().getNodeValue();
                             if (slideDesc != null) {
-                              relID = slideDesc + relID;
+                                relID = slideDesc + relID;
                             }
                             AttributesImpl attributes = new AttributesImpl();
                             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
@@ -155,7 +155,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         String relID = ctPic.getBlipFill().getBlip().getEmbed();
                         if (relID != null) {
                             if (slideDesc != null) {
-                              relID = slideDesc + relID;
+                                relID = slideDesc + relID;
                             }
                             AttributesImpl attributes = new AttributesImpl();
                             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
@@ -168,50 +168,50 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
     }
-    
+
     /**
      * In PowerPoint files, slides have things embedded in them,
-     *  and slide drawings which have the images
+     * and slide drawings which have the images
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
-       List<PackagePart> parts = new ArrayList<PackagePart>();
-       XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
-       XSLFSlideShow document = null;
-       try {
-          document = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
-       } catch(Exception e) {
-          throw new TikaException(e.getMessage()); // Shouldn't happen
-       }
+        List<PackagePart> parts = new ArrayList<PackagePart>();
+        XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
+        XSLFSlideShow document = null;
+        try {
+            document = slideShow._getXSLFSlideShow(); // TODO Avoid this in future
+        } catch (Exception e) {
+            throw new TikaException(e.getMessage()); // Shouldn't happen
+        }
 
-       CTSlideIdList ctSlideIdList = document.getSlideReferences();
-       if (ctSlideIdList != null) {
-           for (int i = 0; i < ctSlideIdList.sizeOfSldIdArray(); i++) {
-               CTSlideIdListEntry ctSlide = ctSlideIdList.getSldIdArray(i);
-               // Add the slide
-               PackagePart slidePart;
-               try {
-                   slidePart = document.getSlidePart(ctSlide);
-               } catch (IOException e) {
-                   throw new TikaException("Broken OOXML file", e);
-               } catch (XmlException xe) {
-                   throw new TikaException("Broken OOXML file", xe);
-               }
-               parts.add(slidePart);
+        CTSlideIdList ctSlideIdList = document.getSlideReferences();
+        if (ctSlideIdList != null) {
+            for (int i = 0; i < ctSlideIdList.sizeOfSldIdArray(); i++) {
+                CTSlideIdListEntry ctSlide = ctSlideIdList.getSldIdArray(i);
+                // Add the slide
+                PackagePart slidePart;
+                try {
+                    slidePart = document.getSlidePart(ctSlide);
+                } catch (IOException e) {
+                    throw new TikaException("Broken OOXML file", e);
+                } catch (XmlException xe) {
+                    throw new TikaException("Broken OOXML file", xe);
+                }
+                parts.add(slidePart);
 
-               // If it has drawings, return those too
-               try {
-                   for (PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
-                       if (rel.getTargetMode() == TargetMode.INTERNAL) {
-                           PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
-                           parts.add(rel.getPackage().getPart(relName));
-                       }
-                   }
-               } catch (InvalidFormatException e) {
-                   throw new TikaException("Broken OOXML file", e);
-               }
-           }
-       }
-       return parts;
+                // If it has drawings, return those too
+                try {
+                    for (PackageRelationship rel : slidePart.getRelationshipsByType(XSLFRelation.VML_DRAWING.getRelation())) {
+                        if (rel.getTargetMode() == TargetMode.INTERNAL) {
+                            PackagePartName relName = PackagingURIHelper.createPartName(rel.getTargetURI());
+                            parts.add(rel.getPackage().getPart(relName));
+                        }
+                    }
+                } catch (InvalidFormatException e) {
+                    throw new TikaException("Broken OOXML file", e);
+                }
+            }
+        }
+        return parts;
     }
 }

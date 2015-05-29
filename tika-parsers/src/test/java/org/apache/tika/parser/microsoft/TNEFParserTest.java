@@ -36,66 +36,66 @@ import org.xml.sax.ContentHandler;
  * Tests for the TNEF (winmail.dat) parser
  */
 public class TNEFParserTest extends AbstractPOIContainerExtractionTest {
-   private static final String file = "testWINMAIL.dat";
-   
-   @Test
-   public void testBasics() throws Exception {
-      TikaInputStream stream = getTestFile(file);
-      Detector detector = new DefaultDetector();
-      try {
-         assertEquals(
-                 MediaType.application("vnd.ms-tnef"),
-                 detector.detect(stream, new Metadata()));
-     } finally {
-         stream.close();
-     }
-   }
-   
-   @Test
-   public void testMetadata() throws Exception {
-      TikaInputStream stream = getTestFile(file);
-      
-      Metadata metadata = new Metadata();
-      ContentHandler handler = new BodyContentHandler();
-      
-      TNEFParser tnef = new TNEFParser();
-      tnef.parse(stream, handler, metadata, new ParseContext());
-      
-      assertEquals("This is a test message", metadata.get(TikaCoreProperties.TITLE));
-      assertEquals("This is a test message", metadata.get(Metadata.SUBJECT));
-   }
-   
+    private static final String file = "testWINMAIL.dat";
+
+    @Test
+    public void testBasics() throws Exception {
+        TikaInputStream stream = getTestFile(file);
+        Detector detector = new DefaultDetector();
+        try {
+            assertEquals(
+                    MediaType.application("vnd.ms-tnef"),
+                    detector.detect(stream, new Metadata()));
+        } finally {
+            stream.close();
+        }
+    }
+
+    @Test
+    public void testMetadata() throws Exception {
+        TikaInputStream stream = getTestFile(file);
+
+        Metadata metadata = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+
+        TNEFParser tnef = new TNEFParser();
+        tnef.parse(stream, handler, metadata, new ParseContext());
+
+        assertEquals("This is a test message", metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("This is a test message", metadata.get(Metadata.SUBJECT));
+    }
+
     /**
      * Check the Rtf and Attachments are returned
-     *  as expected
+     * as expected
      */
-   @Test
+    @Test
     public void testBodyAndAttachments() throws Exception {
-       ContainerExtractor extractor = new ParserContainerExtractor();
-       
-       // Process it with recursing
-       // Will have the message body RTF and the attachments
-       TrackingHandler handler = process(file, extractor, true);
-       assertEquals(6, handler.filenames.size());
-       assertEquals(6, handler.mediaTypes.size());
-       
-       // We know the filenames for all of them
-       assertEquals("message.rtf", handler.filenames.get(0));
-       assertEquals(MediaType.application("rtf"), handler.mediaTypes.get(0));
-       
-       assertEquals("quick.doc", handler.filenames.get(1));
-       assertEquals(MediaType.application("msword"), handler.mediaTypes.get(1));
-       
-       assertEquals("quick.html", handler.filenames.get(2));
-       assertEquals(MediaType.text("html"), handler.mediaTypes.get(2));
-       
-       assertEquals("quick.pdf", handler.filenames.get(3));
-       assertEquals(MediaType.application("pdf"), handler.mediaTypes.get(3));
-       
-       assertEquals("quick.txt", handler.filenames.get(4));
-       assertEquals(MediaType.text("plain"), handler.mediaTypes.get(4));
-       
-       assertEquals("quick.xml", handler.filenames.get(5));
-       assertEquals(MediaType.application("xml"), handler.mediaTypes.get(5));
+        ContainerExtractor extractor = new ParserContainerExtractor();
+
+        // Process it with recursing
+        // Will have the message body RTF and the attachments
+        TrackingHandler handler = process(file, extractor, true);
+        assertEquals(6, handler.filenames.size());
+        assertEquals(6, handler.mediaTypes.size());
+
+        // We know the filenames for all of them
+        assertEquals("message.rtf", handler.filenames.get(0));
+        assertEquals(MediaType.application("rtf"), handler.mediaTypes.get(0));
+
+        assertEquals("quick.doc", handler.filenames.get(1));
+        assertEquals(MediaType.application("msword"), handler.mediaTypes.get(1));
+
+        assertEquals("quick.html", handler.filenames.get(2));
+        assertEquals(MediaType.text("html"), handler.mediaTypes.get(2));
+
+        assertEquals("quick.pdf", handler.filenames.get(3));
+        assertEquals(MediaType.application("pdf"), handler.mediaTypes.get(3));
+
+        assertEquals("quick.txt", handler.filenames.get(4));
+        assertEquals(MediaType.text("plain"), handler.mediaTypes.get(4));
+
+        assertEquals("quick.xml", handler.filenames.get(5));
+        assertEquals(MediaType.application("xml"), handler.mediaTypes.get(5));
     }
 }

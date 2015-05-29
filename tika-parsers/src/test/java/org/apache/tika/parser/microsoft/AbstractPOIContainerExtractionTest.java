@@ -28,7 +28,7 @@ import org.apache.tika.mime.MediaType;
 
 /**
  * Parent class of tests that the various POI powered parsers are
- *  able to extract their embedded contents.
+ * able to extract their embedded contents.
  */
 public abstract class AbstractPOIContainerExtractionTest {
     public static final MediaType TYPE_DOC = MediaType.application("msword");
@@ -38,15 +38,23 @@ public abstract class AbstractPOIContainerExtractionTest {
     public static final MediaType TYPE_PPTX = MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation");
     public static final MediaType TYPE_XLSX = MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     public static final MediaType TYPE_MSG = MediaType.application("vnd.ms-outlook");
-    
+
     public static final MediaType TYPE_TXT = MediaType.text("plain");
     public static final MediaType TYPE_PDF = MediaType.application("pdf");
-    
+
     public static final MediaType TYPE_JPG = MediaType.image("jpeg");
     public static final MediaType TYPE_GIF = MediaType.image("gif");
     public static final MediaType TYPE_PNG = MediaType.image("png");
     public static final MediaType TYPE_EMF = MediaType.application("x-emf");
     public static final MediaType TYPE_WMF = MediaType.application("x-msmetafile");
+
+    protected static TikaInputStream getTestFile(String filename) throws Exception {
+        URL input = AbstractPOIContainerExtractionTest.class.getResource(
+                "/test-documents/" + filename);
+        assertNotNull(filename + " not found", input);
+
+        return TikaInputStream.get(input);
+    }
 
     protected TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
         TikaInputStream stream = getTestFile(filename);
@@ -55,7 +63,7 @@ public abstract class AbstractPOIContainerExtractionTest {
 
             // Process it
             TrackingHandler handler = new TrackingHandler();
-            if(recurse) {
+            if (recurse) {
                 extractor.extract(stream, extractor, handler);
             } else {
                 extractor.extract(stream, null, handler);
@@ -66,13 +74,5 @@ public abstract class AbstractPOIContainerExtractionTest {
         } finally {
             stream.close();
         }
-    }
-    
-    protected static TikaInputStream getTestFile(String filename) throws Exception {
-        URL input = AbstractPOIContainerExtractionTest.class.getResource(
-               "/test-documents/" + filename);
-        assertNotNull(filename + " not found", input);
-
-        return TikaInputStream.get(input);
     }
 }

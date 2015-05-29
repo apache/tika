@@ -28,20 +28,19 @@ import org.apache.tika.parser.microsoft.ooxml.OOXMLParserTest;
 import org.junit.Test;
 
 
-
 public class OfficeParserTest extends TikaTest {
 
-  @Test
-  public void parseOfficeWord() throws Exception {
-    Metadata metadata = new Metadata();
-    Parser parser = new OfficeParser();
+    @Test
+    public void parseOfficeWord() throws Exception {
+        Metadata metadata = new Metadata();
+        Parser parser = new OfficeParser();
 
-    String xml = getXML(getTestDocument("test.doc"), parser, metadata).xml;
+        String xml = getXML(getTestDocument("test.doc"), parser, metadata).xml;
 
-    assertTrue(xml.contains("test"));
-  }
+        assertTrue(xml.contains("test"));
+    }
 
-  private InputStream getTestDocument(String name) {
-    return TikaInputStream.get(OOXMLParserTest.class.getResourceAsStream("/test-documents/" + name));
-}
+    private InputStream getTestDocument(String name) {
+        return TikaInputStream.get(OOXMLParserTest.class.getResourceAsStream("/test-documents/" + name));
+    }
 }

@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.xml.sax.ContentHandler;
 
 public class WriteProtectedParserTest {
-  
+
     @Test
     public void testWriteProtected() throws Exception {
         InputStream input = ExcelParserTest.class.getResourceAsStream(
