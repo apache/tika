@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.9-SNAPSHOT</version>
+  <version>1.9</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -354,6 +354,11 @@
           <artifactId>maven-shade-plugin</artifactId>
           <version>2.3</version>
         </plugin>
+        <plugin>
+	  <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-release-plugin</artifactId>
+          <version>2.3.2</version>
+        </plugin>
     </plugins>
 
     <pluginManagement>
@@ -427,8 +432,8 @@
   </profiles>
 
   <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/trunk/tika-parent</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/tags/1.9-rc1/tika-parent</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/tags/1.9-rc1/tika-parent</developerConnection>
+    <url>http://svn.apache.org/viewvc/maven/pom/tags/1.9-rc1/tika-parent</url>
   </scm>
 </project>
