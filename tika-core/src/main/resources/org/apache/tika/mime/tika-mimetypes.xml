@@ -5580,6 +5580,9 @@
   <mime-type type="text/x-chdr">
     <_comment>C source code header</_comment>
     <glob pattern="*.h"/>
+    <magic priority="30">
+      <match value="#ifndef " type="string" offset="0"/>
+    </magic>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
@@ -5598,6 +5601,9 @@
   <mime-type type="text/x-csrc">
     <alias type="text/x-c"/>
     <_comment>C source code</_comment>
+    <magic priority="30">
+      <match value="#include " type="string" offset="0"/>
+    </magic>
     <glob pattern="*.c"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
