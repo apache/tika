@@ -487,7 +487,7 @@
       <match value="\xef\xbb\xbf%PDF-" type="string" offset="0"/>
     </magic>
     <magic priority="20">
-      <!-- Low priority match for %PDF near the start of the file -->
+      <!-- Low priority match for %PDF-#.# near the start of the file -->
       <!-- Can trigger false positives, so set the priority rather low here -->
       <match value="%PDF-1." type="string" offset="1:512"/>
       <match value="%PDF-2." type="string" offset="1:512"/>
@@ -2793,17 +2793,34 @@
       <match value="%%%\ \ " type="string" offset="73"/>
       <match value="%\ BibTeX\ standard\ bibliography\ " type="string" offset="0"/>
       <match value="%%%\ \ @BibTeX-style-file{" type="string" offset="73"/>
-      <match value="@article{" type="string" offset="0"/>
-      <match value="@book{" type="string" offset="0"/>
-      <match value="@inbook{" type="string" offset="0"/>
-      <match value="@incollection{" type="string" offset="0"/>
-      <match value="@inproceedings{" type="string" offset="0"/>
-      <match value="@manual{" type="string" offset="0"/>
-      <match value="@misc{" type="string" offset="0"/>
-      <match value="@preamble{" type="string" offset="0"/>
-      <match value="@phdthesis{" type="string" offset="0"/>
-      <match value="@techreport{" type="string" offset="0"/>
-      <match value="@unpublished{" type="string" offset="0"/>
+      <match value="@article{" type="stringignorecase" offset="0"/>
+      <match value="@book{" type="stringignorecase" offset="0"/>
+      <match value="@inbook{" type="stringignorecase" offset="0"/>
+      <match value="@incollection{" type="stringignorecase" offset="0"/>
+      <match value="@inproceedings{" type="stringignorecase" offset="0"/>
+      <match value="@manual{" type="stringignorecase" offset="0"/>
+      <match value="@misc{" type="stringignorecase" offset="0"/>
+      <match value="@preamble{" type="stringignorecase" offset="0"/>
+      <match value="@phdthesis{" type="stringignorecase" offset="0"/>
+      <match value="@string{" type="stringignorecase" offset="0"/>
+      <match value="@techreport{" type="stringignorecase" offset="0"/>
+      <match value="@unpublished{" type="stringignorecase" offset="0"/>
+    </magic>
+    <magic priority="30">
+      <match value="%" type="string" offset="0">
+         <match value="\n@article{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@book{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@inbook{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@incollection{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@inproceedings{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@manual{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@misc{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@preamble{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@phdthesis{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@string{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@techreport{" type="stringignorecase" offset="2:128"/>
+         <match value="\n@unpublished{" type="stringignorecase" offset="2:128"/>
+      </match>
     </magic>
     <glob pattern="*.bib"/>
     <glob pattern="*.bibtex"/>
