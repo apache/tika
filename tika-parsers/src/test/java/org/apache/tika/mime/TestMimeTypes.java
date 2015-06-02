@@ -932,6 +932,12 @@ public class TestMimeTypes {
     }
     
     @Test
+    public void testTextFormats() throws Exception {
+        assertType("application/x-bibtex-text-file", "testBIBTEX.bib");
+        assertTypeByData("application/x-bibtex-text-file", "testBIBTEX.bib");
+    }
+    
+    @Test
     public void testCodeFormats() throws Exception {
         assertType("text/x-csrc", "testC.c");
         
