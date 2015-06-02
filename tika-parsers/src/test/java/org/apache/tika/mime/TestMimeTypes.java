@@ -940,10 +940,16 @@ public class TestMimeTypes {
     @Test
     public void testCodeFormats() throws Exception {
         assertType("text/x-csrc", "testC.c");
+        assertType("text/x-chdr", "testH.h");
+        assertTypeByData("text/x-csrc", "testC.c");
+        assertTypeByData("text/x-chdr", "testH.h");
         
         assertType("text/x-matlab", "testMATLAB.m");
         assertType("text/x-matlab", "testMATLAB_wtsgaus.m");
         assertType("text/x-matlab", "testMATLAB_barcast.m");
+        assertTypeByData("text/x-matlab", "testMATLAB.m");
+        assertTypeByData("text/x-matlab", "testMATLAB_wtsgaus.m");
+        assertTypeByData("text/x-matlab", "testMATLAB_barcast.m");
     }
 
     private void assertText(byte[] prefix) throws IOException {
