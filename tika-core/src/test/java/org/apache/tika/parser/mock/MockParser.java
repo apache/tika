@@ -280,7 +280,6 @@ public class MockParser extends AbstractParser {
             try {
                 Class<?> clazz = Class.forName(className);
                 Constructor<?> con = clazz.getConstructor(String.class);
- System.err.println("CON: " + con + " :: " + msg+"<<");
                 t = (Throwable) con.newInstance(msg);
             } catch (Exception e) {
                 throw new RuntimeException("couldn't create throwable class:" + className, e);
