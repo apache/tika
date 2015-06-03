@@ -163,15 +163,16 @@ public class RecursiveParserWrapper implements Parser {
                 throw e;
             }
             metadata.set(WRITE_LIMIT_REACHED, "true");
+        } finally {
+            long elapsedMillis = new Date().getTime() - started;
+            metadata.set(PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
+            addContent(localHandler, metadata);
+
+            if (hitMaxEmbeddedResources) {
+                metadata.set(EMBEDDED_RESOURCE_LIMIT_REACHED, "true");
+            }
+            metadatas.add(0, deepCopy(metadata));
         }
-        long elapsedMillis = new Date().getTime()-started;
-        metadata.set(PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
-        addContent(localHandler, metadata);
-        
-        if (hitMaxEmbeddedResources) {
-            metadata.set(EMBEDDED_RESOURCE_LIMIT_REACHED, "true");
-        }
-        metadatas.add(0, deepCopy(metadata));
     }
 
     /**
