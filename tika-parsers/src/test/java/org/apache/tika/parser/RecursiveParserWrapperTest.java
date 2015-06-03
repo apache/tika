@@ -28,8 +28,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.junit.Test;
@@ -213,6 +215,49 @@ public class RecursiveParserWrapperTest {
         //Composite parser swallows caught TikaExceptions, IOExceptions and SAXExceptions
         //and just doesn't bother to report that there was an exception.
         assertEquals(12, list.size());
+    }
+
+    @Test
+    public void testPrimaryExcWEmbedded() throws Exception {
+        //if embedded content is handled and then
+        //the parser hits an exception in the container document,
+        //that the first element of the returned list is the container document
+        //and the second is the embedded content
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "embedded_then_npe.xml");
+
+        ParseContext context = new ParseContext();
+        Parser wrapped = new AutoDetectParser();
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1), true);
+        String path = "/test-documents/mock/embedded_then_npe.xml";
+
+        InputStream stream = null;
+        boolean npe = false;
+        try {
+            stream = RecursiveParserWrapperTest.class.getResourceAsStream(
+                    path);
+            wrapper.parse(stream, new DefaultHandler(), metadata, context);
+        } catch (TikaException e) {
+            if (e.getCause().getClass().equals(NullPointerException.class)) {
+                npe = true;
+            }
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+        assertTrue("npe", npe);
+
+        List<Metadata> metadataList = wrapper.getMetadata();
+        assertEquals(2, metadataList.size());
+        Metadata outerMetadata = metadataList.get(0);
+        Metadata embeddedMetadata = metadataList.get(1);
+        assertContains("main_content", outerMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("embedded_then_npe.xml", outerMetadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY));
+        assertEquals("Nikolai Lobachevsky", outerMetadata.get("author"));
+
+        assertContains("some_embedded_content", embeddedMetadata.get(RecursiveParserWrapper.TIKA_CONTENT));
+        assertEquals("embed1.xml", embeddedMetadata.get(TikaMetadataKeys.RESOURCE_NAME_KEY));
+        assertEquals("embeddedAuthor", embeddedMetadata.get("author"));
     }
 
     private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory,

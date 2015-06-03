@@ -21,6 +21,7 @@ package org.apache.tika.parser.mock;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
@@ -31,10 +32,16 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -87,12 +94,13 @@ public class MockParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         for (int i = 0; i < actions.getLength(); i++) {
-            executeAction(actions.item(i), metadata, xhtml);
+            executeAction(actions.item(i), metadata, context, xhtml);
         }
         xhtml.endDocument();
     }
 
-    private void executeAction(Node action, Metadata metadata, XHTMLContentHandler xhtml) throws SAXException,
+    private void executeAction(Node action, Metadata metadata, ParseContext context,
+                               XHTMLContentHandler xhtml) throws SAXException,
             IOException, TikaException {
 
         if (action.getNodeType() != 1) {
@@ -112,9 +120,57 @@ public class MockParser extends AbstractParser {
             kabOOM();
         } else if ("print_out".equals(name) || "print_err".equals(name)){
             print(action, name);
+        } else if ("embedded".equals(name)) {
+            handleEmbedded(action, xhtml, context);
         } else {
             throw new IllegalArgumentException("Didn't recognize mock action: "+name);
         }
+    }
+
+    private void handleEmbedded(Node action, XHTMLContentHandler handler, ParseContext context)
+            throws TikaException, SAXException, IOException {
+        String fileName = "";
+        String contentType = "";
+        NamedNodeMap attrs = action.getAttributes();
+        if (attrs != null) {
+            Node n = attrs.getNamedItem("filename");
+            if (n != null) {
+                fileName = n.getNodeValue();
+            }
+            n = attrs.getNamedItem("content-type");
+            if (n != null) {
+                contentType = n.getNodeValue();
+            }
+        }
+
+        String embeddedText = action.getTextContent();
+        EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor(context);
+        Metadata m = new Metadata();
+        m.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName);
+        if (! "".equals(contentType)) {
+            m.set(Metadata.CONTENT_TYPE, contentType);
+        }
+        InputStream is = new ByteArrayInputStream(embeddedText.getBytes(IOUtils.UTF_8));
+
+        extractor.parseEmbedded(
+                is,
+                new EmbeddedContentHandler(handler),
+                m, true);
+
+
+    }
+
+    protected EmbeddedDocumentExtractor getEmbeddedDocumentExtractor(ParseContext context) {
+        EmbeddedDocumentExtractor extractor =
+                context.get(EmbeddedDocumentExtractor.class);
+        if (extractor == null) {
+            Parser p = context.get(Parser.class);
+            if (p == null) {
+                context.set(Parser.class, new MockParser());
+            }
+            extractor = new ParsingEmbeddedDocumentExtractor(context);
+        }
+        return extractor;
     }
 
     private void print(Node action, String name) {
@@ -224,6 +280,7 @@ public class MockParser extends AbstractParser {
             try {
                 Class<?> clazz = Class.forName(className);
                 Constructor<?> con = clazz.getConstructor(String.class);
+ System.err.println("CON: " + con + " :: " + msg+"<<");
                 t = (Throwable) con.newInstance(msg);
             } catch (Exception e) {
                 throw new RuntimeException("couldn't create throwable class:" + className, e);
@@ -298,4 +355,5 @@ public class MockParser extends AbstractParser {
             }
         }
     }
+
 }
