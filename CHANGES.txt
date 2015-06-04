@@ -1,5 +1,7 @@
 Release 1.9 - Current Development
 
+  * Matlab file detection has been improved (TIKA-1634).
+
   * The EXIFTool was added as an External parser
     (TIKA-1639).
 

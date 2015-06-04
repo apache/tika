@@ -5792,6 +5792,8 @@
       <match value="%" type="string" offset="0">
          <match value="\r%" type="string" offset="2:120"/>
       </match>
+      <match value="%%" type="string" offset="0">
+      </match>
     </magic>
     <!-- <glob pattern="*.m"/> - conflicts with text/x-objcsrc -->
     <sub-class-of type="text/plain"/>
