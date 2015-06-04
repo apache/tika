@@ -16,9 +16,11 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import java.math.BigInteger;
 
 import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
+import org.apache.poi.xwpf.usermodel.XWPFNum;
 import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.tika.parser.microsoft.AbstractListManager;
@@ -50,9 +52,18 @@ public class XWPFListManager extends AbstractListManager {
         numbering = document.getNumbering();
     }
 
+    /**
+     *
+     * @param paragraph paragraph
+     * @return the formatted number or an empty string if something went wrong
+     */
     public String getFormattedNumber(final XWPFParagraph paragraph) {
         int currNumId = paragraph.getNumID().intValue();
-        CTNum ctNum = numbering.getNum(paragraph.getNumID()).getCTNum();
+        XWPFNum xwpfNum = numbering.getNum(paragraph.getNumID());
+        if (xwpfNum == null) {
+            return "";
+        }
+        CTNum ctNum = xwpfNum.getCTNum();
         CTDecimalNumber abNum = ctNum.getAbstractNumId();
         int currAbNumId = abNum.getVal().intValue();
 
