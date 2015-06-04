@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.util.NoSuchElementException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -53,16 +54,27 @@ public class ListManager extends AbstractListManager {
      * <p><em>Note:</em> This only works correctly if called subsequently for <em>all</em> paragraphs in a valid selection (main document, text field, ...) which are part of a list.</p>
      *
      * @param paragraph list paragraph to process
-     * @return String which represents the numbering of this list paragraph; never {@code null}
+     * @return String which represents the numbering of this list paragraph; never {@code null}, can be empty string, though, 
+     *        if something goes wrong in getList()
      * @throws IllegalArgumentException If the given paragraph is {@code null} or is not part of a list
-     * @throws IllegalStateException    If problems with the document are encountered
      */
     public String getFormattedNumber(final Paragraph paragraph) {
         if (paragraph == null) throw new IllegalArgumentException("Given paragraph cannot be null.");
         if (!paragraph.isInList()) throw new IllegalArgumentException("Can only process list paragraphs.");
         //lsid is equivalent to docx's abnum
         //ilfo is equivalent to docx's num
-        int currAbNumId = paragraph.getList().getLsid();
+        int currAbNumId = -1;
+        try{
+            currAbNumId = paragraph.getList().getLsid();
+        } catch (NoSuchElementException e) {
+            //somewhat frequent exception when initializing HWPFList
+            return "";
+        } catch (IllegalArgumentException e) {
+            return "";
+        } catch (NullPointerException e) {
+            return "";
+        }
+
         int currNumId = paragraph.getIlfo();
         ParagraphLevelCounter lc = listLevelMap.get(currAbNumId);
         LevelTuple[] overrideTuples = overrideTupleMap.get(currNumId);
@@ -171,7 +183,8 @@ public class ListManager extends AbstractListManager {
                 return "none";
             default:
                 //do we really want to silently swallow these uncovered cases?
-                throw new RuntimeException("NOT COVERED: " + numberFormat);
+                //throw new RuntimeException("NOT COVERED: " + numberFormat);
+                return "decimal";
         }
     }
 }

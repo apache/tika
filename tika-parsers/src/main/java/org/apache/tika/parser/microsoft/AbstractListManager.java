@@ -136,7 +136,7 @@ public abstract class AbstractListManager {
             return sb.toString();
         }
 
-        //actual level number
+        //actual level number; can return empty string if numberformatter fails
         private String formatNum(int lvlNum, boolean isLegal, LevelTuple[] overrideLevelTuples) {
 
             int numFmtStyle = 0;
@@ -166,7 +166,11 @@ public abstract class AbstractListManager {
             } else if ("none".equals(numFmt)) {
                 return "";
             }
-            return NumberFormatter.getNumber(count, numFmtStyle);
+            try {
+                return NumberFormatter.getNumber(count, numFmtStyle);
+            } catch (IllegalArgumentException e) {
+                return "";
+            }
         }
 
         private String ordinalize(int count) {
