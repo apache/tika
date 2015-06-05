@@ -248,6 +248,8 @@ public class PDFParser extends AbstractParser {
             addMetadata(metadata, TikaCoreProperties.CREATED, info.getCreationDate());
         } catch (IOException e) {
             // Invalid date format, just ignore
+        } catch (StringIndexOutOfBoundsException e) {
+            //ditto
         }
         try {
             Calendar modified = info.getModificationDate();
@@ -255,6 +257,8 @@ public class PDFParser extends AbstractParser {
             addMetadata(metadata, TikaCoreProperties.MODIFIED, modified);
         } catch (IOException e) {
             // Invalid date format, just ignore
+        } catch (StringIndexOutOfBoundsException e) {
+            //ditto
         }
 
         // All remaining metadata is custom
