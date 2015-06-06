@@ -1,4 +1,7 @@
-Release 1.9 - Current Development
+Release 1.9 - 6/6/2015
+
+  * Tika-server allows a user to specify the Tika config
+    from the command line (TIKA-1652, TIKA-1426).
 
   * Matlab file detection has been improved (TIKA-1634).
 
