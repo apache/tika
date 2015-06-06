@@ -70,6 +70,7 @@ public class TikaServerCli {
         options.addOption("C", "cors", true, "origin allowed to make CORS requests (default=NONE)\nall allowed if \"all\"");
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
         options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
+        options.addOption("c", "config", true, "Tika Configuration file to override default config with.");
         options.addOption("l", "log", true, "request URI log level ('debug' or 'info')");
         options.addOption("s", "includeStack", false, "whether or not to return a stack trace\nif there is an exception during 'parse'");
         options.addOption("?", "help", false, "this help message");
@@ -129,9 +130,18 @@ public class TikaServerCli {
                 if (!url.equals("*")) origins.add(url);         // Empty list allows all origins.
                 corsFilter.setAllowOrigins(origins);
             }
-
-            // The Tika Configuration to use throughout
-            TikaConfig tika = TikaConfig.getDefaultConfig();
+            
+            // The Tika Configuration to use throughout            
+            TikaConfig tika;
+            
+            if (line.hasOption("config")){
+              String configFilePath = line.getOptionValue("config");
+	      logger.info("Using custom config: "+configFilePath);
+              tika = new TikaConfig(configFilePath);
+            }
+            else{
+              tika = TikaConfig.getDefaultConfig();
+            }
 
             JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
 
