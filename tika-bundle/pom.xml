@@ -151,7 +151,9 @@
               org.apache.tika.parser.*,
             </Export-Package>
             <Import-Package>
-              !org.junit,
+              !org.junit, 
+              !org.apache.ctakes.*,
+              !org.apache.uima.*,
               *,
               org.apache.tika.fork,
               android.util;resolution:=optional,

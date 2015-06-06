@@ -326,6 +326,13 @@
 		<artifactId>geoapi</artifactId>
 		<version>3.0.0</version>
 	</dependency>
+    <!-- Apache cTAKES -->
+    <dependency>
+      <groupId>org.apache.ctakes</groupId>
+      <artifactId>ctakes-core</artifactId>
+      <version>3.2.2</version>
+      <scope>provided</scope>
+    </dependency>
   </dependencies>
 
   <build>
