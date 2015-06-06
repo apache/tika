@@ -1,5 +1,9 @@
 Release 1.9 - 6/6/2015
 
+  * The ability to use the cTAKES clinical text
+    knowledge extraction system for biomedical data is 
+    now included as a Tika parser (TIKA-1645, TIKA-1642).
+
   * Tika-server allows a user to specify the Tika config
     from the command line (TIKA-1652, TIKA-1426).
 
