@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.10-SNAPSHOT</version>
+    <version>1.9</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -306,9 +306,9 @@
     <url>http://www.apache.org</url>
   </organization>
   <scm>
-    <url>http://svn.apache.org/viewvc/tika/trunk/tika-server</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-server</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-server</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/tags/1.9-rc2/tika-server</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.9-rc2/tika-server</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.9-rc2/tika-server</developerConnection>
   </scm>
   <issueManagement>
     <system>JIRA</system>

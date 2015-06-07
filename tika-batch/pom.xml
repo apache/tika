@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.apache.tika</groupId>
         <artifactId>tika-parent</artifactId>
-        <version>1.10-SNAPSHOT</version>
+        <version>1.9</version>
         <relativePath>../tika-parent/pom.xml</relativePath>
     </parent>
 
@@ -155,9 +155,9 @@
         <url>http://www.apache.org</url>
     </organization>
     <scm>
-        <url>http://svn.apache.org/viewvc/tika/trunk/tika-batch</url>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-batch</connection>
-        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-batch</developerConnection>
+        <url>http://svn.apache.org/viewvc/tika/tags/1.9-rc2/tika-batch</url>
+        <connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.9-rc2/tika-batch</connection>
+        <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.9-rc2/tika-batch</developerConnection>
     </scm>
     <issueManagement>
         <system>JIRA</system>
