@@ -381,8 +381,10 @@ public class TikaConfig {
                         + " configuration element: " + name);
             }
 
-            // Is this a composite parser? If so, support recursion
-            if (CompositeParser.class.isAssignableFrom(parserClass)) {
+            // Is this a composite or decorated parser? If so, support recursion
+            if (CompositeParser.class.isAssignableFrom(parserClass) ||
+                ParserDecorator.class.isAssignableFrom(parserClass)) {
+                
                 // Get the child parsers for it
                 List<Parser> childParsers = new ArrayList<Parser>();
                 NodeList childParserNodes = parserNode.getElementsByTagName("parser");
@@ -407,20 +409,36 @@ public class TikaConfig {
                 
                 // Create the Composite Parser
                 Constructor<? extends Parser> c = null;
-                if (c == null) {
+                MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+                if (parser == null) {
                     try {
                         c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class, Collection.class);
-                        parser = c.newInstance(mimeTypes.getMediaTypeRegistry(), loader, excludeParsers);
+                        parser = c.newInstance(registry, loader, excludeParsers);
                     } 
                     catch (NoSuchMethodException me) {}
                 }
-                if (c == null) {
+                if (parser == null) {
                     try {
                         c = parserClass.getConstructor(MediaTypeRegistry.class, List.class, Collection.class);
-                        parser = c.newInstance(mimeTypes.getMediaTypeRegistry(), childParsers, excludeParsers);
+                        parser = c.newInstance(registry, childParsers, excludeParsers);
                     } catch (NoSuchMethodException me) {}
                 }
-                if (c == null) {
+                // Create as a Parser Decorator
+                if (parser == null && ParserDecorator.class.isAssignableFrom(parserClass)) {
+                    try {
+                        CompositeParser cp = null;
+                        if (childParsers.size() == 1 && excludeParsers.size() == 0 &&
+                                childParsers.get(0) instanceof CompositeParser) {
+                            cp = (CompositeParser)childParsers.get(0);
+                        } else {
+                            cp = new CompositeParser(registry, childParsers, excludeParsers);
+                        }
+                        c = parserClass.getConstructor(Parser.class);
+                        parser = c.newInstance(cp);
+                    } catch (NoSuchMethodException me) {}
+                }
+                // Default constructor
+                if (parser == null) {
                     parser = parserClass.newInstance();
                 }
             } else {
