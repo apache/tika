@@ -24,20 +24,19 @@ import org.apache.uima.util.XmlCasSerializer;
  * Enumeration for types of cTAKES (UIMA) CAS serializer supported by cTAKES.
  * 
  * A CAS serializer writes a CAS in the given format.
- *
  */
 public enum CTAKESSerializer {
-	XCAS(XCASSerializer.class.getName()),
-	XMI(XmiCasSerializer.class.getName()),
-	XML(XmlCasSerializer.class.getName());
-	
-	private final String className;
-	
-	private CTAKESSerializer(String className) {
-		this.className = className;
-	}
-	
-	public String getClassName() {
-		return className;
-	}
+    XCAS(XCASSerializer.class.getName()),
+    XMI(XmiCasSerializer.class.getName()),
+    XML(XmlCasSerializer.class.getName());
+
+    private final String className;
+
+    private CTAKESSerializer(String className) {
+        this.className = className;
+    }
+
+    public String getClassName() {
+        return className;
+    }
 }

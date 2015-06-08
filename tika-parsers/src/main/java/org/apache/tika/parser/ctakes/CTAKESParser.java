@@ -33,26 +33,26 @@ import org.xml.sax.SAXException;
  * 
  */
 public class CTAKESParser extends ParserDecorator {
-	/**
-	 * Serial version UID
-	 */
-	private static final long serialVersionUID = -2313482748027097961L;
+    /**
+     * Serial version UID
+     */
+    private static final long serialVersionUID = -2313482748027097961L;
 
-	/**
-	 * Default constructor.
-	 */
-	public CTAKESParser() {
-		super(new AutoDetectParser());
-	}
+    /**
+     * Default constructor.
+     */
+    public CTAKESParser() {
+        super(new AutoDetectParser());
+    }
 
-	@Override
-	public void parse(InputStream stream, ContentHandler handler,
-			Metadata metadata, ParseContext context) throws IOException,
-			SAXException, TikaException {
-		CTAKESConfig config = context.get(CTAKESConfig.class,
-				new CTAKESConfig());
-		CTAKESContentHandler ctakesHandler = new CTAKESContentHandler(handler,
-				metadata, config);
-		super.parse(stream, ctakesHandler, metadata, context);
-	}
+    @Override
+    public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context) throws IOException,
+            SAXException, TikaException {
+        CTAKESConfig config = context.get(CTAKESConfig.class,
+                new CTAKESConfig());
+        CTAKESContentHandler ctakesHandler = new CTAKESContentHandler(handler,
+                metadata, config);
+        super.parse(stream, ctakesHandler, metadata, context);
+    }
 }
