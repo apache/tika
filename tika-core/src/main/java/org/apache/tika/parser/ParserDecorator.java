@@ -30,10 +30,12 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * Decorator base class for the {@link Parser} interface. This class
- * simply delegates all parsing calls to an underlying decorated parser
- * instance. Subclasses can provide extra decoration by overriding the
+ * Decorator base class for the {@link Parser} interface. 
+ * <p>This class simply delegates all parsing calls to an underlying decorated 
+ * parser instance. Subclasses can provide extra decoration by overriding the
  * parse method.
+ * <p>To decorate several different parsers at the same time, wrap them in
+ *  a {@link CompositeParser} instance first.
  */
 public class ParserDecorator extends AbstractParser {
 
