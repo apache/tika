@@ -19,18 +19,35 @@ package org.apache.tika.parser.ctakes;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * CTAKESParser decorates {@see AutoDetectParser} and leverages on {@see
- * CTAKESContentHandler} to extract biomedical information from clinical text using Apache cTAKES.
- * 
+ * CTAKESParser decorates a {@see Parser} and leverages on 
+ * {@see CTAKESContentHandler} to extract biomedical information from 
+ * clinical text using Apache cTAKES.
+ * <p>It is normally called by supplying an instance to 
+ *  {@link AutoDetectParser}, such as:
+ * <code>AutoDetectParser parser = new AutoDetectParser(new CTakesParser());</code>
+ * <p>It can also be used by giving a Tika Config file similar to:
+ * <code>
+ *  &gt;properties>
+ *    &gt;parsers>
+ *      &gt;parser class="org.apache.tika.parser.ctakes.CTAKESParser">
+ *         &gt;parser class="org.apache.tika.parser.DefaultParser"/>
+ *      &gt;/parser>
+ *    &gt;/parsers>
+ *  &gt;/properties>
+ * </code>
+ * <p>Because this is a Parser Decorator, and not a normal Parser in
+ *  it's own right, it isn't normally selected via the Parser Service Loader.
  */
 public class CTAKESParser extends ParserDecorator {
     /**
@@ -39,10 +56,22 @@ public class CTAKESParser extends ParserDecorator {
     private static final long serialVersionUID = -2313482748027097961L;
 
     /**
-     * Default constructor.
+     * Wraps the default Parser
      */
     public CTAKESParser() {
-        super(new AutoDetectParser());
+        this(TikaConfig.getDefaultConfig());
+    }
+    /**
+     * Wraps the default Parser for this Config
+     */
+    public CTAKESParser(TikaConfig config) {
+        this(config.getParser());
+    }
+    /**
+     * Wraps the specified Parser
+     */
+    public CTAKESParser(Parser parser) {
+        super(parser);
     }
 
     @Override
@@ -55,4 +84,9 @@ public class CTAKESParser extends ParserDecorator {
                 metadata, config);
         super.parse(stream, ctakesHandler, metadata, context);
     }
+    
+    @Override
+    public String getDecorationName() {
+        return "CTakes";
+    }            
 }

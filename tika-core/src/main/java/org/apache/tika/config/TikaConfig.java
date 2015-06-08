@@ -332,10 +332,25 @@ public class TikaConfig {
             Element element, MimeTypes mimeTypes, ServiceLoader loader)
             throws TikaException, IOException {
         List<Parser> parsers = new ArrayList<Parser>();
-        NodeList nodes = element.getElementsByTagName("parser");
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Element node = (Element) nodes.item(i);
-            parsers.add(parserFromParserDomElement(node, mimeTypes, loader));
+        
+        // Should be only zero or one <parsers> tag
+        NodeList nodes = element.getElementsByTagName("parsers");
+        if (nodes.getLength() > 1) {
+            throw new TikaException("Properties may not contain multiple Parsers entries");
+        }
+        else if (nodes.getLength() == 1) {
+            // Find only the direct child parser objects
+            Node parsersE = nodes.item(0);
+            nodes = parsersE.getChildNodes();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Node node = nodes.item(i);
+                if (node instanceof Element) {
+                    Element nodeE = (Element)node;
+                    if ("parser".equals(nodeE.getTagName())) {
+                        parsers.add(parserFromParserDomElement(nodeE, mimeTypes, loader));
+                    }
+                }
+            }
         }
         
         if (parsers.isEmpty()) {
@@ -444,21 +459,26 @@ public class TikaConfig {
     private static Set<MediaType> mediaTypesListFromDomElement(
             Element node, String tag) 
             throws TikaException, IOException {
-        NodeList mimes = node.getElementsByTagName(tag);
-        if (mimes.getLength() > 0) {
-            Set<MediaType> types = new HashSet<MediaType>();
-            for (int j = 0; j < mimes.getLength(); j++) {
-                String mime = getText(mimes.item(j));
-                MediaType type = MediaType.parse(mime);
-                if (type != null) {
-                    types.add(type);
-                } else {
-                    throw new TikaException(
-                            "Invalid media type name: " + mime);
+        Set<MediaType> types = null;
+        NodeList children = node.getChildNodes();
+        for (int i=0; i<children.getLength(); i++) {
+            Node cNode = children.item(i);
+            if (cNode instanceof Element) {
+                Element cElement = (Element)cNode;
+                if (tag.equals(cElement.getTagName())) {
+                    String mime = getText(cElement);
+                    MediaType type = MediaType.parse(mime);
+                    if (type != null) {
+                        if (types == null) types = new HashSet<MediaType>();
+                        types.add(type);
+                    } else {
+                        throw new TikaException(
+                                "Invalid media type name: " + mime);
+                    }
                 }
             }
-            return types;
         }
+        if (types != null) return types;
         return Collections.emptySet();
     }
 

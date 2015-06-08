@@ -177,4 +177,39 @@ public class TikaConfigTest {
             System.clearProperty("tika.config");
         }
     }
+    
+    /**
+     * TIKA-1653 If one parser has child parsers, those child parsers shouldn't
+     *  show up at the top level as well
+     */
+    @Test
+    public void parserWithChildParsers() throws Exception {
+        URL url = TikaConfigTest.class.getResource("TIKA-1653-norepeat.xml");
+        System.setProperty("tika.config", url.toExternalForm());
+        try {
+            TikaConfig config = new TikaConfig();
+            
+            CompositeParser cp = (CompositeParser)config.getParser();
+            List<Parser> parsers = cp.getAllComponentParsers();
+            Parser p;
+            
+            // Just 2 top level parsers
+            assertEquals(2, parsers.size());
+            
+            // Should have a CompositeParser with 2 child ones, and
+            //  and a wrapped empty parser
+            p = parsers.get(0);
+            assertTrue(p.toString(), p instanceof CompositeParser);
+            assertEquals(2, ((CompositeParser)p).getAllComponentParsers().size());
+            
+            p = parsers.get(1);
+            assertTrue(p.toString(), p instanceof ParserDecorator);
+            assertEquals(EmptyParser.class, ((ParserDecorator)p).getWrappedParser().getClass());
+            assertEquals("hello/world", p.getSupportedTypes(null).iterator().next().toString());
+        } catch (TikaException e) {
+            fail("Unexpected TikaException: " + e);
+        } finally {
+            System.clearProperty("tika.config");
+        }
+    }
 }
