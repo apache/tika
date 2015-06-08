@@ -23,24 +23,24 @@ import org.apache.ctakes.typesystem.type.textsem.IdentifiedAnnotation;
  *
  */
 public enum CTAKESAnnotationProperty {
-	BEGIN("start"),
-	END("end"),
-	CONDITIONAL("conditional"),
-	CONFIDENCE("confidence"),
-	DISCOVERY_TECNIQUE("discoveryTechnique"),
-	GENERIC("generic"),
-	HISTORY_OF("historyOf"),
-	ID("id"),
-	ONTOLOGY_CONCEPT_ARR("ontologyConceptArr"),
-	POLARITY("polarity");
-	
-	private String name;
-	
-	CTAKESAnnotationProperty(String name) {
-		this.name = name;
-	}
-	
-	public String getName() {
-		return name;
-	}
+    BEGIN("start"),
+    END("end"),
+    CONDITIONAL("conditional"),
+    CONFIDENCE("confidence"),
+    DISCOVERY_TECNIQUE("discoveryTechnique"),
+    GENERIC("generic"),
+    HISTORY_OF("historyOf"),
+    ID("id"),
+    ONTOLOGY_CONCEPT_ARR("ontologyConceptArr"),
+    POLARITY("polarity");
+
+    private String name;
+
+    CTAKESAnnotationProperty(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
 }

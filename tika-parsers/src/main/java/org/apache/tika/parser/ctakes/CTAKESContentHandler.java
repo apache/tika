@@ -37,112 +37,111 @@ import org.xml.sax.helpers.DefaultHandler;
  * that is a natural language processing system for extraction of information 
  * from electronic medical record clinical free-text.
  * </p>
- *
  */
 public class CTAKESContentHandler extends ContentHandlerDecorator {
-	// Prefix used for metadata including cTAKES annotations
-	public static String CTAKES_META_PREFIX = "ctakes:";
-	
-	// Configuration object for CTAKESContentHandler
-	private CTAKESConfig config = null;
-	
-	// StringBuilder object used to build the clinical free-text for cTAKES
-	private StringBuilder sb = null;
-	
-	// Metadata object used for cTAKES annotations
-	private Metadata metadata = null;
-	
-	/**
-	 * Creates a new {@see CTAKESContentHandler} for the given {@see ContentHandler} and Metadata objects. 
-	 * @param handler the {@see ContentHandler} object to be decorated.
-	 * @param metadata the {@see Metadata} object that will be populated using biomedical information extracted by cTAKES.
-	 * @param config the {@see CTAKESConfig} object used to configure the handler.
-	 */
-	public CTAKESContentHandler(ContentHandler handler, Metadata metadata, CTAKESConfig config) {
-		super(handler);
-		this.metadata = metadata;
-		this.config = config;
-		this.sb = new StringBuilder();
-	}
-	
-	/**
-	 * Creates a new {@see CTAKESContentHandler} for the given {@see ContentHandler} and Metadata objects.
-	 * @param handler the {@see ContentHandler} object to be decorated.
-	 * @param metadata the {@see Metadata} object that will be populated using biomedical information extracted by cTAKES.
-	 */
-	public CTAKESContentHandler(ContentHandler handler, Metadata metadata) {
-		this(handler, metadata, new CTAKESConfig());
-	}
-	
-	/**
-	 * Default constructor.
-	 */
-	public CTAKESContentHandler() {
-		this(new DefaultHandler(), new Metadata());
-	}
-	
-	@Override
-	public void characters(char[] ch, int start, int length) throws SAXException {
-		if (config.isText()) {
-			sb.append(ch, start, length);
-		}
-		super.characters(ch, start, length);
-	}
+    // Prefix used for metadata including cTAKES annotations
+    public static String CTAKES_META_PREFIX = "ctakes:";
 
-	@Override
-	public void endDocument() throws SAXException {
-		try {
-			// create an Analysis Engine
-			AnalysisEngine ae = CTAKESUtils.getAnalysisEngine(config.getAeDescriptorPath(), config.getUMLSUser(), config.getUMLSPass());
-			
-			// create a JCas, given an AE
-			JCas jcas = CTAKESUtils.getJCas(ae);
-			
-			StringBuilder metaText = new StringBuilder();
-			for (String name : config.getMetadata()) {
-				for (String value : metadata.getValues(name)) {
-					metaText.append(value);
-					metaText.append(System.lineSeparator());
-				}
-			}
-			
-			// analyze text
-			jcas.setDocumentText(metaText.toString() + sb.toString());
-			ae.process(jcas);
-			
-			// add annotations to metadata
-			metadata.add(CTAKES_META_PREFIX + "schema", config.getAnnotationPropsAsString());
-			CTAKESAnnotationProperty[] annotationPros = config.getAnnotationProps();
-			Collection<IdentifiedAnnotation> collection = JCasUtil.select(jcas, IdentifiedAnnotation.class);
-			Iterator<IdentifiedAnnotation> iterator = collection.iterator();
-			while (iterator.hasNext()) {
-				IdentifiedAnnotation annotation = iterator.next();
-				StringBuilder annotationBuilder = new StringBuilder();
-				annotationBuilder.append(annotation.getCoveredText());
-				if (annotationPros != null) {
-					for (CTAKESAnnotationProperty property : annotationPros) {
-						annotationBuilder.append(config.getSeparatorChar());
-						annotationBuilder.append(CTAKESUtils.getAnnotationProperty(annotation, property));
-					}
-				}
-				metadata.add(CTAKES_META_PREFIX + annotation.getType().getShortName(), annotationBuilder.toString());
-			}
-			
-			if (config.isSerialize()) {
-				// serialize data
-				CTAKESUtils.serialize(config.getSerializerType(), config.isPrettyPrint(), config.getOutputStream());
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new SAXException(e.getMessage());
-		}
-	}
-	
-	/**
-	 * Returns metadata that includes cTAKES annotations.
-	 * @return {@Metadata} object that includes cTAKES annotations.
-	 */
-	public Metadata getMetadata() {
-		return metadata;
-	}
+    // Configuration object for CTAKESContentHandler
+    private CTAKESConfig config = null;
+
+    // StringBuilder object used to build the clinical free-text for cTAKES
+    private StringBuilder sb = null;
+
+    // Metadata object used for cTAKES annotations
+    private Metadata metadata = null;
+
+    /**
+     * Creates a new {@see CTAKESContentHandler} for the given {@see ContentHandler} and Metadata objects. 
+     * @param handler the {@see ContentHandler} object to be decorated.
+     * @param metadata the {@see Metadata} object that will be populated using biomedical information extracted by cTAKES.
+     * @param config the {@see CTAKESConfig} object used to configure the handler.
+     */
+    public CTAKESContentHandler(ContentHandler handler, Metadata metadata, CTAKESConfig config) {
+        super(handler);
+        this.metadata = metadata;
+        this.config = config;
+        this.sb = new StringBuilder();
+    }
+
+    /**
+     * Creates a new {@see CTAKESContentHandler} for the given {@see ContentHandler} and Metadata objects.
+     * @param handler the {@see ContentHandler} object to be decorated.
+     * @param metadata the {@see Metadata} object that will be populated using biomedical information extracted by cTAKES.
+     */
+    public CTAKESContentHandler(ContentHandler handler, Metadata metadata) {
+        this(handler, metadata, new CTAKESConfig());
+    }
+
+    /**
+     * Default constructor.
+     */
+    public CTAKESContentHandler() {
+        this(new DefaultHandler(), new Metadata());
+    }
+
+    @Override
+    public void characters(char[] ch, int start, int length) throws SAXException {
+        if (config.isText()) {
+            sb.append(ch, start, length);
+        }
+        super.characters(ch, start, length);
+    }
+
+    @Override
+    public void endDocument() throws SAXException {
+        try {
+            // create an Analysis Engine
+            AnalysisEngine ae = CTAKESUtils.getAnalysisEngine(config.getAeDescriptorPath(), config.getUMLSUser(), config.getUMLSPass());
+
+            // create a JCas, given an AE
+            JCas jcas = CTAKESUtils.getJCas(ae);
+
+            StringBuilder metaText = new StringBuilder();
+            for (String name : config.getMetadata()) {
+                for (String value : metadata.getValues(name)) {
+                    metaText.append(value);
+                    metaText.append(System.lineSeparator());
+                }
+            }
+
+            // analyze text
+            jcas.setDocumentText(metaText.toString() + sb.toString());
+            ae.process(jcas);
+
+            // add annotations to metadata
+            metadata.add(CTAKES_META_PREFIX + "schema", config.getAnnotationPropsAsString());
+            CTAKESAnnotationProperty[] annotationPros = config.getAnnotationProps();
+            Collection<IdentifiedAnnotation> collection = JCasUtil.select(jcas, IdentifiedAnnotation.class);
+            Iterator<IdentifiedAnnotation> iterator = collection.iterator();
+            while (iterator.hasNext()) {
+                IdentifiedAnnotation annotation = iterator.next();
+                StringBuilder annotationBuilder = new StringBuilder();
+                annotationBuilder.append(annotation.getCoveredText());
+                if (annotationPros != null) {
+                    for (CTAKESAnnotationProperty property : annotationPros) {
+                        annotationBuilder.append(config.getSeparatorChar());
+                        annotationBuilder.append(CTAKESUtils.getAnnotationProperty(annotation, property));
+                    }
+                }
+                metadata.add(CTAKES_META_PREFIX + annotation.getType().getShortName(), annotationBuilder.toString());
+            }
+
+            if (config.isSerialize()) {
+                // serialize data
+                CTAKESUtils.serialize(config.getSerializerType(), config.isPrettyPrint(), config.getOutputStream());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new SAXException(e.getMessage());
+        }
+    }
+
+    /**
+     * Returns metadata that includes cTAKES annotations.
+     * @return {@Metadata} object that includes cTAKES annotations.
+     */
+    public Metadata getMetadata() {
+        return metadata;
+    }
 }
