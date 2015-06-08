@@ -96,9 +96,11 @@ public class TikaParsers {
         }
         if (p.isComposite) {
             html.append("<p>Composite Parser</p>");
+            html.append("<div style=\"margin-left: 1em\">\n");
             for (Parser cp : p.childParsers) {
                 parserAsHTML(new ParserDetails(cp), withMimeTypes, html, level + 1);
             }
+            html.append("</div>\n");
         } else if (withMimeTypes) {
             html.append("<p>Mime Types:");
             html.append("<ul>");
@@ -110,6 +112,7 @@ public class TikaParsers {
             html.append("</ul>");
             html.append("</p>");
         }
+        html.append("\n");
     }
 
     @GET
