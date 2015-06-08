@@ -702,12 +702,20 @@ public class TikaCLI {
     }
      
     private void displayParser(Parser p, boolean includeMimeTypes, boolean apt, int i) {
+        String decorated = null;
+        if (p instanceof ParserDecorator) {
+            ParserDecorator pd = (ParserDecorator)p;
+            decorated = " (Wrapped by " + pd.getDecorationName() + ")";
+            p = pd.getWrappedParser();
+        }
+        
         boolean isComposite = (p instanceof CompositeParser);
-        String name = (p instanceof ParserDecorator) ?
-                      ((ParserDecorator) p).getWrappedParser().getClass().getName() :
-                      p.getClass().getName();
-        if (apt){
+        String name = p.getClass().getName();
+                      
+        if (apt) {
             name = name.substring(0, name.lastIndexOf(".") + 1) + "{{{./api/" + name.replace(".", "/") + "}" + name.substring(name.lastIndexOf(".") + 1) + "}}";
+        } else if (decorated != null) {
+            name += decorated;
         }
         if ((apt && !isComposite) || !apt) {    // Don't display Composite parsers in the apt output.
             System.out.println(indent(i) + ((apt) ? "* " : "") + name + (isComposite ? " (Composite Parser):" : ""));
