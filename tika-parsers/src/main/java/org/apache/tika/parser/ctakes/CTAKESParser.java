@@ -35,7 +35,7 @@ import org.xml.sax.SAXException;
  * clinical text using Apache cTAKES.
  * <p>It is normally called by supplying an instance to 
  *  {@link AutoDetectParser}, such as:
- * <code>AutoDetectParser parser = new AutoDetectParser(new CTakesParser());</code>
+ * <code>AutoDetectParser parser = new AutoDetectParser(new CTAKESParser());</code>
  * <p>It can also be used by giving a Tika Config file similar to:
  * <code>
  *  &gt;properties>
