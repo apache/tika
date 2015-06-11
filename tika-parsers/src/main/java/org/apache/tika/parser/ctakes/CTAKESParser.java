@@ -38,13 +38,13 @@ import org.xml.sax.SAXException;
  * <code>AutoDetectParser parser = new AutoDetectParser(new CTAKESParser());</code>
  * <p>It can also be used by giving a Tika Config file similar to:
  * <code>
- *  &gt;properties>
- *    &gt;parsers>
- *      &gt;parser class="org.apache.tika.parser.ctakes.CTAKESParser">
- *         &gt;parser class="org.apache.tika.parser.DefaultParser"/>
- *      &gt;/parser>
- *    &gt;/parsers>
- *  &gt;/properties>
+ *  <properties>
+ *    <parsers>
+ *      <parser class="org.apache.tika.parser.ctakes.CTAKESParser">
+ *        <parser class="org.apache.tika.parser.DefaultParser"/>
+ *      </parser>
+ *    </parsers>
+ *  </properties>
  * </code>
  * <p>Because this is a Parser Decorator, and not a normal Parser in
  *  it's own right, it isn't normally selected via the Parser Service Loader.

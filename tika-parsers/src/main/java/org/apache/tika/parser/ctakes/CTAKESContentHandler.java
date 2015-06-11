@@ -97,11 +97,15 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
             // create a JCas, given an AE
             JCas jcas = CTAKESUtils.getJCas(ae);
 
+            // get metadata to process
             StringBuilder metaText = new StringBuilder();
-            for (String name : config.getMetadata()) {
-                for (String value : metadata.getValues(name)) {
-                    metaText.append(value);
-                    metaText.append(System.lineSeparator());
+            String[] metadataToProcess = config.getMetadata();
+            if (metadataToProcess != null) {
+                for (String name : config.getMetadata()) {
+                    for (String value : metadata.getValues(name)) {
+                        metaText.append(value);
+                        metaText.append(System.lineSeparator());
+                    }
                 }
             }
 
@@ -132,8 +136,9 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
                 CTAKESUtils.serialize(config.getSerializerType(), config.isPrettyPrint(), config.getOutputStream());
             }
         } catch (Exception e) {
-            e.printStackTrace();
             throw new SAXException(e.getMessage());
+        } finally {
+            CTAKESUtils.resetCAS();
         }
     }
 
