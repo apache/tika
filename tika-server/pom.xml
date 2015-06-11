@@ -26,6 +26,7 @@
 
   <artifactId>tika-server</artifactId>
   <name>Apache Tika server</name>
+  <url>http://tika.apache.org/</url>
 
   <properties>
     <cxf.version>3.0.3</cxf.version>
@@ -59,7 +60,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-xmp</artifactId>
       <version>${project.version}</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>net.sf.opencsv</groupId>
       <artifactId>opencsv</artifactId>
@@ -105,7 +106,7 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>2.4</version>
-    </dependency>    
+    </dependency>
     <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-client</artifactId>
@@ -266,11 +267,11 @@
           </execution>
         </executions>
         <configuration>
-        <licence>
-          <!-- Miredot license key valid until August 1st, 2016 when we can apply for a new one - http://s.apache.org/oE -->
-          UHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAxNi0wOC0wMXx0cnVlI01Dd0NGRklXRzRqRmNTZXNJb2laRElKZVF4RXpieUNTQWhSMHBmTzZCMUdMbDBPQ1B1WmJYQ3NpZElZSCtRPT0=
-        </licence>
-        <!-- insert other configuration here (optional) -->
+          <licence>
+            <!-- Miredot license key valid until August 1st, 2016 when we can apply for a new one - http://s.apache.org/oE -->
+            UHJvamVjdHxvcmcuYXBhY2hlLnRpa2EudGlrYS1zZXJ2ZXJ8MjAxNi0wOC0wMXx0cnVlI01Dd0NGRklXRzRqRmNTZXNJb2laRElKZVF4RXpieUNTQWhSMHBmTzZCMUdMbDBPQ1B1WmJYQ3NpZElZSCtRPT0=
+          </licence>
+          <!-- insert other configuration here (optional) -->
         </configuration>
       </plugin>
     </plugins>
@@ -300,7 +301,7 @@
       </build>
     </profile>
   </profiles>
-  <url>http://tika.apache.org/</url>
+
   <organization>
     <name>The Apache Software Foundation</name>
     <url>http://www.apache.org</url>

@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
   or more contributor license agreements.  See the NOTICE file
@@ -17,56 +18,35 @@
   specific language governing permissions and limitations
   under the License.
 -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
   <parent>
-    <artifactId>tika-parent</artifactId>
     <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
     <version>1.10-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
-  <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-example</artifactId>
-
   <name>Apache Tika examples</name>
   <url>http://tika.apache.org/</url>
-
-  <description>This module contains examples of how to use Apache Tika.</description>
-  <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org</url>
-  </organization>
-
-  <scm>
-    <url>http://svn.apache.org/viewvc/tika/trunk/tika-example</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-example</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-example</developerConnection>
-  </scm>
-
-  <issueManagement>
-    <system>JIRA</system>
-    <url>https://issues.apache.org/jira/browse/TIKA</url>
-  </issueManagement>
-
-  <ciManagement>
-    <system>Jenkins</system>
-    <url>https://builds.apache.org/job/Tika-trunk/</url>
-  </ciManagement>
 
   <!-- List of dependencies that we depend on for the examples. See the full list of Tika
        modules and how to use them at http://mvnrepository.com/artifact/org.apache.tika.-->
   <dependencies>
-	<dependency>
-	    <groupId>org.apache.tika</groupId>
-	    <artifactId>tika-app</artifactId>
-	    <version>${project.version}</version>
-	    <exclusions>
-	      <exclusion>
-	        <artifactId>tika-parsers</artifactId>
-	        <groupId>org.apache.tika</groupId>
-	      </exclusion>
-	    </exclusions>
-	</dependency>  
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-app</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <artifactId>tika-parsers</artifactId>
+          <groupId>org.apache.tika</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-parsers</artifactId>
@@ -89,40 +69,59 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
-	<dependency>
-	    <groupId>javax.jcr</groupId>
-	    <artifactId>jcr</artifactId>
-	    <version>2.0</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.apache.jackrabbit</groupId>
-	    <artifactId>jackrabbit-jcr-server</artifactId>
-	    <version>2.3.6</version>
-	</dependency>
     <dependency>
-        <groupId>org.apache.jackrabbit</groupId>
-        <artifactId>jackrabbit-core</artifactId>
-        <version>2.3.6</version>
-    </dependency>   	
-	<dependency>
-	    <groupId>org.apache.lucene</groupId>
-	    <artifactId>lucene-core</artifactId>
-	    <version>3.5.0</version>
-	</dependency>	
-	<dependency>
-	    <groupId>commons-io</groupId>
-	    <artifactId>commons-io</artifactId>
-	    <version>2.4</version>
-	</dependency>
-	<dependency>
-	    <groupId>org.springframework</groupId>
-	    <artifactId>spring-context</artifactId>
-	    <version>3.0.2.RELEASE</version>
-	</dependency>
+      <groupId>javax.jcr</groupId>
+      <artifactId>jcr</artifactId>
+      <version>2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.jackrabbit</groupId>
+      <artifactId>jackrabbit-jcr-server</artifactId>
+      <version>2.3.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.jackrabbit</groupId>
+      <artifactId>jackrabbit-core</artifactId>
+      <version>2.3.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.lucene</groupId>
+      <artifactId>lucene-core</artifactId>
+      <version>3.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>2.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+      <version>3.0.2.RELEASE</version>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <description>This module contains examples of how to use Apache Tika.</description>
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+  <scm>
+    <url>http://svn.apache.org/viewvc/tika/trunk/tika-example</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-example</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-example</developerConnection>
+  </scm>
+  <issueManagement>
+    <system>JIRA</system>
+    <url>https://issues.apache.org/jira/browse/TIKA</url>
+  </issueManagement>
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/Tika-trunk/</url>
+  </ciManagement>
 </project>

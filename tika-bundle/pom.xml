@@ -119,13 +119,13 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-	    <_runsystempackages>com.sun.xml.bind.marshaller, com.sun.xml.internal.bind.marshaller</_runsystempackages> 
+            <_runsystempackages>com.sun.xml.bind.marshaller, com.sun.xml.internal.bind.marshaller</_runsystempackages>
             <Bundle-Activator>
               org.apache.tika.parser.internal.Activator
             </Bundle-Activator>
             <Embed-Dependency>
               tika-parsers;inline=true,
-              commons-compress, xz, commons-codec, commons-csv, 
+              commons-compress, xz, commons-codec, commons-csv,
               commons-io, commons-exec, junrar,
               pdfbox,fontbox,jempbox,bcmail-jdk15on,bcprov-jdk15on,bcpkix-jdk15on,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
@@ -135,12 +135,12 @@
               juniversalchardet,
               vorbis-java-core, vorbis-java-tika,
               isoparser, aspectjrt,
-              metadata-extractor, xmpcore, json-simple, 
+              metadata-extractor, xmpcore, json-simple,
               boilerpipe, rome, opennlp-tools, opennlp-maxent,
-              geoapi, sis-metadata, sis-netcdf, sis-utility, 
+              geoapi, sis-metadata, sis-netcdf, sis-utility,
               sis-storage, apache-mime4j-core, apache-mime4j-dom,
-              jsr-275, jhighlight, java-libpst, jwnl, 
-              netcdf4, grib, cdm, httpservices, jcip-annotations, 
+              jsr-275, jhighlight, java-libpst, jwnl,
+              netcdf4, grib, cdm, httpservices, jcip-annotations,
               jmatio, guava
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
@@ -151,7 +151,7 @@
               org.apache.tika.parser.*,
             </Export-Package>
             <Import-Package>
-              !org.junit, 
+              !org.junit,
               !org.apache.ctakes.*,
               !org.apache.uima.*,
               *,
@@ -163,8 +163,8 @@
               com.ibm.icu.text;resolution:=optional,
               com.sleepycat.je;resolution:=optional,
               com.sun.javadoc;resolution:=optional,
-	      com.sun.xml.bind.marshaller;resolution:=optional,
-	      com.sun.xml.internal.bind.marshaller;resolution:=optional,
+              com.sun.xml.bind.marshaller;resolution:=optional,
+              com.sun.xml.internal.bind.marshaller;resolution:=optional,
               com.sun.msv.datatype;resolution:=optional,
               com.sun.msv.datatype.xsd;resolution:=optional,
               com.sun.tools.javadoc;resolution:=optional,
@@ -173,10 +173,10 @@
               javax.activation;resolution:=optional,
               javax.mail;resolution:=optional,
               javax.mail.internet;resolution:=optional,
-	      javax.servlet.annotation;resolution:=optional,
+              javax.servlet.annotation;resolution:=optional,
               javax.servlet;resolution:=optional,
               javax.servlet.http;resolution:=optional,
-	      javax.measure.converter;resolution:=optional,
+              javax.measure.converter;resolution:=optional,
               javax.xml.stream;version="[1.0,2)";resolution:=optional,
               javax.xml.stream.events;version="[1.0,2)";resolution:=optional,
               javax.xml.stream.util;version="[1.0,2)";resolution:=optional,
@@ -187,11 +187,11 @@
               opendap.dap.http;resolution:=optional,
               opendap.dap;resolution:=optional,
               opendap.dap.parser;resolution:=optional,
-	      opennlp.maxent;resolution:=optional,
-	      opennlp.tools.namefind;resolution:=optional,
-	      net.didion.jwnl;resolution:=optional,
-	      org.apache.commons.exec;resolution:=optional,
-	      org.apache.commons.io;resolution:=optional,
+              opennlp.maxent;resolution:=optional,
+              opennlp.tools.namefind;resolution:=optional,
+              net.didion.jwnl;resolution:=optional,
+              org.apache.commons.exec;resolution:=optional,
+              org.apache.commons.io;resolution:=optional,
               org.apache.commons.httpclient;resolution:=optional,
               org.apache.commons.httpclient.auth;resolution:=optional,
               org.apache.commons.httpclient.methods;resolution:=optional,
@@ -203,9 +203,9 @@
               org.apache.commons.vfs2.util;resolution:=optional,
               org.apache.crimson.jaxp;resolution:=optional,
               org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
-	      org.apache.sis;resolution:=optional,
-	      org.apache.sis.distance;resolution:=optional,
-	      org.apache.sis.geometry;resolution:=optional,
+              org.apache.sis;resolution:=optional,
+              org.apache.sis.distance;resolution:=optional,
+              org.apache.sis.geometry;resolution:=optional,
               org.apache.tools.ant;resolution:=optional,
               org.apache.tools.ant.taskdefs;resolution:=optional,
               org.apache.tools.ant.types;resolution:=optional,
@@ -241,7 +241,7 @@
               org.jdom2;resolution:=optional,
               org.jdom2.input;resolution:=optional,
               org.jdom2.output;resolution:=optional,
-	      org.json.simple;resolution:=optional,
+              org.json.simple;resolution:=optional,
               org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
               org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
               org.osgi.framework;resolution:=optional,
