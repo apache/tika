@@ -291,8 +291,8 @@
       <groupId>edu.ucar</groupId>
       <artifactId>httpservices</artifactId>
       <version>${netcdf-java.version}</version>
-   </dependency>
-   <dependency>
+    </dependency>
+    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <version>11.0.2</version>
