@@ -238,4 +238,29 @@ public class CTAKESUtils {
         jcas.reset();
         jcas = null;
     }
+
+    /**
+     * Resets the CAS (Common Analysis System), emptying it of all content.
+     */
+    public static void resetCAS() {
+        if (jcas != null) {
+            jcas.reset();
+        }
+    }
+
+    /**
+     * Resets the AE (AnalysisEngine), releasing all resources held by the 
+     * current AE.
+     */
+    public static void resetAE() {
+        if (ae != null) {
+            ae.destroy();
+            ae = null;
+        }
+
+        if (jcas != null) {
+            jcas.reset();
+            jcas = null;
+        }
+    }
 }
