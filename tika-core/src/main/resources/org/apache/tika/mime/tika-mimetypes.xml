@@ -5392,7 +5392,6 @@
     <glob pattern="*.pod"/>
     <glob pattern="*.pom"/>
     <glob pattern="*.project"/>
-    <glob pattern="*.properties"/>
     <glob pattern="*.rng"/>
     <glob pattern="*.rnx"/>
     <glob pattern="*.roles"/>
@@ -5732,6 +5731,14 @@
     <_comment>Java source code</_comment>
     <alias type="text/x-java" />
     <glob pattern="*.java"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-java-properties">
+    <_comment>Java Properties</_comment>
+    <alias type="text/x-properties" />
+    <alias type="text/properties" />
+    <glob pattern="*.properties"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 
