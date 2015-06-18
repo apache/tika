@@ -58,13 +58,13 @@ import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
 public class ZipContainerDetector implements Detector {
     private static final Pattern MACRO_TEMPLATE_PATTERN = Pattern.compile("macroenabledtemplate$", Pattern.CASE_INSENSITIVE);
 
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes
+    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes 
     private static final String VISIO_DOCUMENT =
             "http://schemas.microsoft.com/visio/2010/relationships/document";
-    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes
-    private static final String STRICT_CORE_DOCUMENT =
+    // TODO Remove this constant once we upgrade to POI 3.12 beta 2, then use PackageRelationshipTypes 
+    private static final String STRICT_CORE_DOCUMENT = 
             "http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument";
-
+    
     /** Serial version UID */
     private static final long serialVersionUID = 2891763938430295453L;
 
@@ -180,7 +180,7 @@ public class ZipContainerDetector implements Detector {
     /**
      * OpenDocument files, along with EPub files, have a mimetype
      *  entry in the root of their Zip file. This entry contains the
-     *  mimetype of the overall file, stored as a single string.
+     *  mimetype of the overall file, stored as a single string.  
      */
     private static MediaType detectOpenDocument(ZipFile zip) {
         try {
@@ -211,15 +211,15 @@ public class ZipContainerDetector implements Detector {
                 // Is at an OOXML format?
                 MediaType type = detectOfficeOpenXML(pkg);
                 if (type != null) return type;
-
+                
                 // Is it XPS format?
                 type = detectXPSOPC(pkg);
                 if (type != null) return type;
-
+                
                 // Is it an AutoCAD format?
                 type = detectAutoCADOPC(pkg);
                 if (type != null) return type;
-
+                
                 // We don't know what it is, sorry
                 return null;
             } else {
@@ -235,11 +235,11 @@ public class ZipContainerDetector implements Detector {
     }
     /**
      * Detects the type of an OfficeOpenXML (OOXML) file from
-     *  opened Package
+     *  opened Package 
      */
     public static MediaType detectOfficeOpenXML(OPCPackage pkg) {
         // Check for the normal Office core document
-        PackageRelationshipCollection core =
+        PackageRelationshipCollection core = 
                pkg.getRelationshipsByType(PackageRelationshipTypes.CORE_DOCUMENT);
         // Otherwise check for some other Office core document types
         if (core.size() == 0) {
@@ -248,7 +248,7 @@ public class ZipContainerDetector implements Detector {
         if (core.size() == 0) {
             core = pkg.getRelationshipsByType(VISIO_DOCUMENT);
         }
-
+        
         // If we didn't find a single core document of any type, skip detection
         if (core.size() != 1) {
             // Invalid OOXML Package received
@@ -278,7 +278,7 @@ public class ZipContainerDetector implements Detector {
      * Detects Open XML Paper Specification (XPS)
      */
     private static MediaType detectXPSOPC(OPCPackage pkg) {
-        PackageRelationshipCollection xps =
+        PackageRelationshipCollection xps = 
                 pkg.getRelationshipsByType("http://schemas.microsoft.com/xps/2005/06/fixedrepresentation");
         if (xps.size() == 1) {
             return MediaType.application("vnd.ms-xpsdocument");
@@ -291,7 +291,7 @@ public class ZipContainerDetector implements Detector {
      * Detects AutoCAD formats that live in OPC packaging
      */
     private static MediaType detectAutoCADOPC(OPCPackage pkg) {
-        PackageRelationshipCollection dwfxSeq =
+        PackageRelationshipCollection dwfxSeq = 
                 pkg.getRelationshipsByType("http://schemas.autodesk.com/dwfx/2007/relationships/documentsequence");
         if (dwfxSeq.size() == 1) {
             return MediaType.parse("model/vnd.dwfx+xps");
@@ -307,28 +307,28 @@ public class ZipContainerDetector implements Detector {
             // the root element of the document. That is used to the identify
             // the correct type of the keynote container.
             for (String entryName : IWorkPackageParser.IWORK_CONTENT_ENTRIES) {
-               IWORKDocumentType type = IWORKDocumentType.detectType(zip.getEntry(entryName), zip);
+               IWORKDocumentType type = IWORKDocumentType.detectType(zip.getEntry(entryName), zip); 
                if (type != null) {
                   return type.getType();
                }
             }
-
+            
             // Not sure, fallback to the container type
             return MediaType.application("vnd.apple.iwork");
         } else {
             return null;
         }
     }
-
+    
     private static MediaType detectJar(ZipFile zip) {
        if (zip.getEntry("META-INF/MANIFEST.MF") != null) {
           // It's a Jar file, or something based on Jar
-
+          
           // Is it an Android APK?
           if (zip.getEntry("AndroidManifest.xml") != null) {
              return MediaType.application("vnd.android.package-archive");
           }
-
+          
           // Check for WAR and EAR
           if (zip.getEntry("WEB-INF/") != null) {
              return MediaType.application("x-tika-java-web-archive");
@@ -336,7 +336,7 @@ public class ZipContainerDetector implements Detector {
           if (zip.getEntry("META-INF/application.xml") != null) {
              return MediaType.application("x-tika-java-enterprise-archive");
           }
-
+          
           // Looks like a regular Jar Archive
           return MediaType.application("java-archive");
        } else {
@@ -344,7 +344,7 @@ public class ZipContainerDetector implements Detector {
           if (zip.getEntry("AndroidManifest.xml") != null) {
              return MediaType.application("vnd.android.package-archive");
           }
-
+          
           return null;
        }
     }
@@ -390,12 +390,12 @@ public class ZipContainerDetector implements Detector {
     private static MediaType detectIpa(ZipFile zip) {
         // Note - consider generalising this logic, if another format needs many regexp matching
         Set<Pattern> tmpPatterns = (Set<Pattern>)ipaEntryPatterns.clone();
-
+        
         Enumeration<ZipArchiveEntry> entries = zip.getEntries();
         while (entries.hasMoreElements()) {
             ZipArchiveEntry entry = entries.nextElement();
             String name = entry.getName();
-
+            
             Iterator<Pattern> ip = tmpPatterns.iterator();
             while (ip.hasNext()) {
                 if (ip.next().matcher(name).matches()) {
@@ -407,7 +407,7 @@ public class ZipContainerDetector implements Detector {
                 return MediaType.application("x-itunes-ipa");
             }
         }
-
+        
         // If we get here, not all required entries were found
         return null;
     }
