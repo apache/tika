@@ -944,6 +944,9 @@ public class TestMimeTypes {
         assertTypeByData("text/x-csrc", "testC.c");
         assertTypeByData("text/x-chdr", "testH.h");
         
+        assertTypeByName("text/x-java-source", "testJAVA.java");
+        assertType("text/x-java-properties", "testJAVAPROPS.properties");
+        
         assertType("text/x-matlab", "testMATLAB.m");
         assertType("text/x-matlab", "testMATLAB_wtsgaus.m");
         assertType("text/x-matlab", "testMATLAB_barcast.m");
@@ -970,6 +973,7 @@ public class TestMimeTypes {
     private void assertType(String expected, String filename) throws Exception {
         InputStream stream = TestMimeTypes.class.getResourceAsStream(
                 "/test-documents/" + filename);
+        assertNotNull("Test file not found: " + filename, stream);
         try {
             Metadata metadata = new Metadata();
             metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
