@@ -30,72 +30,95 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
- * Class used to extract biomedical information while parsing. 
+ * Class used to extract biomedical information while parsing.
  *
  * <p>
- * This class relies on <a href="http://ctakes.apache.org/">Apache cTAKES</a> 
- * that is a natural language processing system for extraction of information 
+ * This class relies on <a href="http://ctakes.apache.org/">Apache cTAKES</a>
+ * that is a natural language processing system for extraction of information
  * from electronic medical record clinical free-text.
  * </p>
  */
 public class CTAKESContentHandler extends ContentHandlerDecorator {
-    // Prefix used for metadata including cTAKES annotations
-    public static String CTAKES_META_PREFIX = "ctakes:";
+	// Prefix used for metadata including cTAKES annotations
+	public static String CTAKES_META_PREFIX = "ctakes:";
 
-    // Configuration object for CTAKESContentHandler
-    private CTAKESConfig config = null;
+	// Configuration object for CTAKESContentHandler
+	private CTAKESConfig config = null;
 
-    // StringBuilder object used to build the clinical free-text for cTAKES
-    private StringBuilder sb = null;
+	// StringBuilder object used to build the clinical free-text for cTAKES
+	private StringBuilder sb = null;
 
-    // Metadata object used for cTAKES annotations
-    private Metadata metadata = null;
+	// Metadata object used for cTAKES annotations
+	private Metadata metadata = null;
 
-    /**
-     * Creates a new {@see CTAKESContentHandler} for the given {@see ContentHandler} and Metadata objects. 
-     * @param handler the {@see ContentHandler} object to be decorated.
-     * @param metadata the {@see Metadata} object that will be populated using biomedical information extracted by cTAKES.
-     * @param config the {@see CTAKESConfig} object used to configure the handler.
-     */
-    public CTAKESContentHandler(ContentHandler handler, Metadata metadata, CTAKESConfig config) {
-        super(handler);
-        this.metadata = metadata;
-        this.config = config;
-        this.sb = new StringBuilder();
-    }
+	// UIMA Analysis Engine
+	private AnalysisEngine ae = null;
 
-    /**
-     * Creates a new {@see CTAKESContentHandler} for the given {@see ContentHandler} and Metadata objects.
-     * @param handler the {@see ContentHandler} object to be decorated.
-     * @param metadata the {@see Metadata} object that will be populated using biomedical information extracted by cTAKES.
-     */
-    public CTAKESContentHandler(ContentHandler handler, Metadata metadata) {
-        this(handler, metadata, new CTAKESConfig());
-    }
+	// JCas object for working with the CAS (Common Analysis System)
+	private JCas jcas = null;
 
-    /**
-     * Default constructor.
-     */
-    public CTAKESContentHandler() {
-        this(new DefaultHandler(), new Metadata());
-    }
+	/**
+	 * Creates a new {@see CTAKESContentHandler} for the given {@see
+	 * ContentHandler} and Metadata objects.
+	 * 
+	 * @param handler
+	 *            the {@see ContentHandler} object to be decorated.
+	 * @param metadata
+	 *            the {@see Metadata} object that will be populated using
+	 *            biomedical information extracted by cTAKES.
+	 * @param config
+	 *            the {@see CTAKESConfig} object used to configure the handler.
+	 */
+	public CTAKESContentHandler(ContentHandler handler, Metadata metadata,
+			CTAKESConfig config) {
+		super(handler);
+		this.metadata = metadata;
+		this.config = config;
+		this.sb = new StringBuilder();
+	}
 
-    @Override
-    public void characters(char[] ch, int start, int length) throws SAXException {
-        if (config.isText()) {
-            sb.append(ch, start, length);
-        }
-        super.characters(ch, start, length);
-    }
+	/**
+	 * Creates a new {@see CTAKESContentHandler} for the given {@see
+	 * ContentHandler} and Metadata objects.
+	 * 
+	 * @param handler
+	 *            the {@see ContentHandler} object to be decorated.
+	 * @param metadata
+	 *            the {@see Metadata} object that will be populated using
+	 *            biomedical information extracted by cTAKES.
+	 */
+	public CTAKESContentHandler(ContentHandler handler, Metadata metadata) {
+		this(handler, metadata, new CTAKESConfig());
+	}
 
-    @Override
+	/**
+	 * Default constructor.
+	 */
+	public CTAKESContentHandler() {
+		this(new DefaultHandler(), new Metadata());
+	}
+
+	@Override
+	public void characters(char[] ch, int start, int length)
+			throws SAXException {
+		if (config.isText()) {
+			sb.append(ch, start, length);
+		}
+		super.characters(ch, start, length);
+	}
+
+	@Override
     public void endDocument() throws SAXException {
         try {
             // create an Analysis Engine
-            AnalysisEngine ae = CTAKESUtils.getAnalysisEngine(config.getAeDescriptorPath(), config.getUMLSUser(), config.getUMLSPass());
+        	if (ae == null) {
+        		ae = CTAKESUtils.getAnalysisEngine(config.getAeDescriptorPath(), config.getUMLSUser(), config.getUMLSPass());
+        	}
 
             // create a JCas, given an AE
-            JCas jcas = CTAKESUtils.getJCas(ae);
+        	if (jcas == null) {
+        		jcas = CTAKESUtils.getJCas(ae);
+        	}
 
             // get metadata to process
             StringBuilder metaText = new StringBuilder();
@@ -133,20 +156,21 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
 
             if (config.isSerialize()) {
                 // serialize data
-                CTAKESUtils.serialize(config.getSerializerType(), config.isPrettyPrint(), config.getOutputStream());
+                CTAKESUtils.serialize(jcas, config.getSerializerType(), config.isPrettyPrint(), config.getOutputStream());
             }
         } catch (Exception e) {
             throw new SAXException(e.getMessage());
         } finally {
-            CTAKESUtils.resetCAS();
+            CTAKESUtils.resetCAS(jcas);
         }
     }
 
-    /**
-     * Returns metadata that includes cTAKES annotations.
-     * @return {@Metadata} object that includes cTAKES annotations.
-     */
-    public Metadata getMetadata() {
-        return metadata;
-    }
+	/**
+	 * Returns metadata that includes cTAKES annotations.
+	 * 
+	 * @return {@Metadata} object that includes cTAKES annotations.
+	 */
+	public Metadata getMetadata() {
+		return metadata;
+	}
 }
