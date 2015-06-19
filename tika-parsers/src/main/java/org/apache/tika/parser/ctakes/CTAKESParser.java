@@ -85,7 +85,7 @@ public class CTAKESParser extends ParserDecorator {
         super.parse(stream, ctakesHandler, metadata, context);
     }
     
-    @Override
+    //@Override
     public String getDecorationName() {
         return "CTakes";
     }            
