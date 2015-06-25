@@ -1,3 +1,9 @@
+Release 1.10 - Current Development
+
+  * Fixed ZipContainerDetector to detect all IPA files
+    (TIKA-1659).
+
+
 Release 1.9 - 6/6/2015
 
   * The ability to use the cTAKES clinical text

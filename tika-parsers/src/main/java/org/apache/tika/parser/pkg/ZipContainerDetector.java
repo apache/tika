@@ -383,10 +383,8 @@ public class ZipContainerDetector implements Detector {
            add(Pattern.compile("^Payload/.*\\.app/$"));
            add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/$"));
            add(Pattern.compile("^Payload/.*\\.app/_CodeSignature/CodeResources$"));
-           add(Pattern.compile("^Payload/.*\\.app/CodeResources$"));
            add(Pattern.compile("^Payload/.*\\.app/Info\\.plist$"));
            add(Pattern.compile("^Payload/.*\\.app/PkgInfo$"));
-           add(Pattern.compile("^Payload/.*\\.app/ResourceRules\\.plist$"));
     }};
     @SuppressWarnings("unchecked")
     private static MediaType detectIpa(ZipFile zip) {
