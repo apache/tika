@@ -45,7 +45,7 @@ public class TikaParsersTest extends CXFTestBase {
         sf.setResourceClasses(TikaParsers.class);
         sf.setResourceProvider(
                 TikaParsers.class,
-                new SingletonResourceProvider(new TikaParsers(tika))
+                new SingletonResourceProvider(new TikaParsers())
         );
     }
 

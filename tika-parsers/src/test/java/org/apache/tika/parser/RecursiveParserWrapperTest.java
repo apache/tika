@@ -30,8 +30,10 @@ import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
+import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.junit.Test;
@@ -210,7 +212,7 @@ public class RecursiveParserWrapperTest {
         metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded_npe.docx");
         list = getMetadata(metadata,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
-                false);
+                false, null);
 
         //Composite parser swallows caught TikaExceptions, IOExceptions and SAXExceptions
         //and just doesn't bother to report that there was an exception.
@@ -260,10 +262,30 @@ public class RecursiveParserWrapperTest {
         assertEquals("embeddedAuthor", embeddedMetadata.get("author"));
     }
 
+    @Test
+    public void testDigesters() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
+        List<Metadata> list = getMetadata(metadata,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
+                true, new CommonsDigester(100000, CommonsDigester.DigestAlgorithm.MD5));
+        int i = 0;
+        Metadata m0 = list.get(0);
+        Metadata m6 = list.get(6);
+        String md5Key = "X-TIKA:digest:MD5";
+        assertEquals("59f626e09a8c16ab6dbc2800c685f772", list.get(0).get(md5Key));
+        assertEquals("ccdf3882e7e4c2454e28884db9b0a54d", list.get(6).get(md5Key));
+        assertEquals("a869bf6432ebd14e19fc79416274e0c9", list.get(7).get(md5Key));
+    }
+
     private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory,
-                                       boolean catchEmbeddedExceptions) throws Exception {
+                                       boolean catchEmbeddedExceptions,
+                                       DigestingParser.Digester digester) throws Exception {
         ParseContext context = new ParseContext();
         Parser wrapped = new AutoDetectParser();
+        if (digester != null) {
+            wrapped = new DigestingParser(wrapped, digester);
+        }
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(wrapped,
                 contentHandlerFactory, catchEmbeddedExceptions);
         String path = metadata.get(Metadata.RESOURCE_NAME_KEY);
@@ -274,8 +296,7 @@ public class RecursiveParserWrapperTest {
         }
         InputStream stream = null;
         try {
-            stream = RecursiveParserWrapperTest.class.getResourceAsStream(
-                    path);
+            stream = TikaInputStream.get(RecursiveParserWrapperTest.class.getResource(path).toURI());
             wrapper.parse(stream, new DefaultHandler(), metadata, context);
         } finally {
             IOUtils.closeQuietly(stream);
@@ -286,6 +307,6 @@ public class RecursiveParserWrapperTest {
 
     private List<Metadata> getMetadata(Metadata metadata, ContentHandlerFactory contentHandlerFactory)
             throws Exception {
-        return getMetadata(metadata, contentHandlerFactory, true);
+        return getMetadata(metadata, contentHandlerFactory, true, null);
     }
 }

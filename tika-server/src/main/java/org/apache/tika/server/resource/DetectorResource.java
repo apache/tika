@@ -24,13 +24,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -40,12 +38,6 @@ public class DetectorResource {
 
     private static final Log logger = LogFactory.getLog(DetectorResource.class
             .getName());
-
-    private TikaConfig config = null;
-
-    public DetectorResource(TikaConfig config) {
-        this.config = config;
-    }
 
     @PUT
     @Path("stream")
@@ -60,7 +52,7 @@ public class DetectorResource {
         logger.info("Detecting media type for Filename: " + filename);
         met.add(Metadata.RESOURCE_NAME_KEY, filename);
         try {
-            return this.config.getDetector().detect(tis, met).toString();
+            return TikaResource.getConfig().getDetector().detect(tis, met).toString();
         } catch (IOException e) {
             logger.warn("Unable to detect MIME type for file. Reason: "
                     + e.getMessage());

@@ -1,5 +1,9 @@
 Release 1.10 - Current Development
 
+  * Added DigestingParser to calculate digest hashes 
+    and record them in metadata. Integrated with
+    tika-app and tika-server (TIKA-1663).
+
   * Fixed ZipContainerDetector to detect all IPA files
     (TIKA-1659).
 

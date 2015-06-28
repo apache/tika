@@ -106,6 +106,10 @@ public abstract class TikaTest {
         }
     }
 
+    protected XMLResult getXML(String filePath, Parser parser, Metadata metadata) throws Exception {
+        return getXML(getResourceAsStream("/test-documents/" + filePath), parser, metadata);
+    }
+
     protected XMLResult getXML(String filePath, Metadata metadata) throws Exception {
         return getXML(getResourceAsStream("/test-documents/" + filePath), new AutoDetectParser(), metadata);
     }

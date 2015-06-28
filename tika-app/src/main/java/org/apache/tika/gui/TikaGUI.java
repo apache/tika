@@ -47,6 +47,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -71,10 +75,12 @@ import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
@@ -91,6 +97,9 @@ import org.xml.sax.helpers.AttributesImpl;
  */
 public class TikaGUI extends JFrame
         implements ActionListener, HyperlinkListener {
+
+    //maximum length to allow for mark for reparse to get JSON
+    private static final int MAX_MARK = 20*1024*1024;//20MB
 
     /**
      * Serial version UID.
@@ -115,13 +124,16 @@ public class TikaGUI extends JFrame
         final TikaConfig finalConfig = config;
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                new TikaGUI(new AutoDetectParser(finalConfig)).setVisible(true);
+                new TikaGUI(new DigestingParser(
+                        new AutoDetectParser(finalConfig),
+                        new CommonsDigester(MAX_MARK,
+                                CommonsDigester.DigestAlgorithm.MD5,
+                                CommonsDigester.DigestAlgorithm.SHA256)
+                        )).setVisible(true);
             }
         });
     }
 
-    //maximum length to allow for mark for reparse to get JSON
-    private final int MAX_MARK = 20*1024*1024;//20MB
     /**
      * Parsing context.
      */
@@ -334,11 +346,22 @@ public class TikaGUI extends JFrame
                 getXmlContentHandler(xmlBuffer));
 
         context.set(DocumentSelector.class, new ImageDocumentSelector());
+
+        input = TikaInputStream.get(new ProgressMonitorInputStream(
+                this, "Parsing stream", input));
+
         if (input.markSupported()) {
-            input.mark(MAX_MARK);
+            int mark = -1;
+            if (input instanceof TikaInputStream) {
+                if (((TikaInputStream)input).hasFile()) {
+                    mark = (int)((TikaInputStream)input).getLength();
+                }
+            }
+            if (mark == -1) {
+                mark = MAX_MARK;
+            }
+            input.mark(mark);
         }
-        input = new ProgressMonitorInputStream(
-                this, "Parsing stream", input);
         parser.parse(input, handler, md, context);
 
         String[] names = md.names();

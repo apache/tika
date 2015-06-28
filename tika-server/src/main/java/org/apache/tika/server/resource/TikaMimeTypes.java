@@ -19,7 +19,6 @@ package org.apache.tika.server.resource;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
@@ -41,11 +39,9 @@ import org.eclipse.jetty.util.ajax.JSON;
  */
 @Path("/mime-types")
 public class TikaMimeTypes {
-    private TikaConfig tika;
     private HTMLHelper html;
 
-    public TikaMimeTypes(TikaConfig tika) {
-        this.tika = tika;
+    public TikaMimeTypes() {
         this.html = new HTMLHelper();
     }
 
@@ -139,8 +135,8 @@ public class TikaMimeTypes {
     }
 
     protected List<MediaTypeDetails> getMediaTypes() {
-        MediaTypeRegistry registry = tika.getMediaTypeRegistry();
-        Map<MediaType, Parser> parsers = ((CompositeParser) tika.getParser()).getParsers();
+        MediaTypeRegistry registry = TikaResource.getConfig().getMediaTypeRegistry();
+        Map<MediaType, Parser> parsers = ((CompositeParser) TikaResource.getConfig().getParser()).getParsers();
         List<MediaTypeDetails> types =
                 new ArrayList<TikaMimeTypes.MediaTypeDetails>(registry.getTypes().size());
 

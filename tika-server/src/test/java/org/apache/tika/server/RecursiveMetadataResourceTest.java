@@ -46,7 +46,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
         sf.setResourceProvider(RecursiveMetadataResource.class,
-                new SingletonResourceProvider(new RecursiveMetadataResource(tika)));
+                new SingletonResourceProvider(new RecursiveMetadataResource()));
     }
 
     @Override
@@ -70,6 +70,8 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertEquals(12, metadataList.size());
         assertEquals("Microsoft Office Word", metadataList.get(0).get("Application-Name"));
         assertContains("plundered our seas", metadataList.get(6).get("X-TIKA:content"));
+
+        assertEquals("a38e6c7b38541af87148dee9634cb811", metadataList.get(10).get("X-TIKA:digest:MD5"));
     }
 
     @Test

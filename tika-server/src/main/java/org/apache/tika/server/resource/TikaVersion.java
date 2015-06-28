@@ -21,14 +21,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
 
 @Path("/version")
 public class TikaVersion {
     private Tika tika;
 
-    public TikaVersion(TikaConfig tika) {
-        this.tika = new Tika(tika);
+    public TikaVersion() {
+        this.tika = new Tika(TikaResource.getConfig());
     }
 
     @GET

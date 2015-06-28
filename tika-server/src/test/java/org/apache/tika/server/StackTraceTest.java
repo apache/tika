@@ -57,11 +57,11 @@ public class StackTraceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rCoreProviders = new ArrayList<ResourceProvider>();
-        rCoreProviders.add(new SingletonResourceProvider(new MetadataResource(tika)));
-        rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource(tika)));
-        rCoreProviders.add(new SingletonResourceProvider(new DetectorResource(tika)));
-        rCoreProviders.add(new SingletonResourceProvider(new TikaResource(tika)));
-        rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource(tika)));
+        rCoreProviders.add(new SingletonResourceProvider(new MetadataResource()));
+        rCoreProviders.add(new SingletonResourceProvider(new RecursiveMetadataResource()));
+        rCoreProviders.add(new SingletonResourceProvider(new DetectorResource()));
+        rCoreProviders.add(new SingletonResourceProvider(new TikaResource()));
+        rCoreProviders.add(new SingletonResourceProvider(new UnpackerResource()));
         sf.setResourceProviders(rCoreProviders);
     }
 

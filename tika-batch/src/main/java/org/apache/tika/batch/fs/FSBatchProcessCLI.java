@@ -19,6 +19,7 @@ package org.apache.tika.batch.fs;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -74,10 +75,17 @@ public class FSBatchProcessCLI {
             is = TikaInputStream.get(batchConfigFile);
         } else {
             if (logDefault) {
-                logger.info("No config file set via -bc, relying on default-tika-batch-config.xml");
+                logger.info("No config file set via -bc, relying on tika-app-batch-config.xml or default-tika-batch-config.xml");
             }
-            is = TikaInputStream.get(
-                    FSBatchProcessCLI.class.getResourceAsStream("default-tika-batch-config.xml"));
+            //test to see if there's a tika-app-batch-config.xml on the path
+            URL config = FSBatchProcessCLI.class.getResource("/tika-app-batch-config.xml");
+            if (config != null) {
+                is = TikaInputStream.get(
+                        FSBatchProcessCLI.class.getResourceAsStream("/tika-app-batch-config.xml"));
+            } else {
+                is = TikaInputStream.get(
+                        FSBatchProcessCLI.class.getResourceAsStream("default-tika-batch-config.xml"));
+            }
         }
         return is;
     }

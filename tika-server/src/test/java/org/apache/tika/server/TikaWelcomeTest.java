@@ -44,11 +44,11 @@ public class TikaWelcomeTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> rpsCore =
 	    new ArrayList<ResourceProvider>();
-	rpsCore.add(new SingletonResourceProvider(new TikaVersion(tika)));
-	rpsCore.add(new SingletonResourceProvider(new DetectorResource(tika)));
-	rpsCore.add(new SingletonResourceProvider(new MetadataResource(tika)));
+	rpsCore.add(new SingletonResourceProvider(new TikaVersion()));
+	rpsCore.add(new SingletonResourceProvider(new DetectorResource()));
+	rpsCore.add(new SingletonResourceProvider(new MetadataResource()));
         List<ResourceProvider> all = new ArrayList<ResourceProvider>(rpsCore);
-        all.add(new SingletonResourceProvider(new TikaWelcome(tika, rpsCore)));
+        all.add(new SingletonResourceProvider(new TikaWelcome(rpsCore)));
         sf.setResourceProviders(all);
     }
 

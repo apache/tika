@@ -53,7 +53,7 @@ public class MetadataResourceTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(MetadataResource.class);
         sf.setResourceProvider(MetadataResource.class,
-                new SingletonResourceProvider(new MetadataResource(tika)));
+                new SingletonResourceProvider(new MetadataResource()));
     }
 
     @Override
@@ -89,6 +89,8 @@ public class MetadataResourceTest extends CXFTestBase {
 
         assertNotNull(metadata.get("Author"));
         assertEquals("Maxim Valyanskiy", metadata.get("Author"));
+        assertEquals("X-TIKA:digest:MD5", "f8be45c34e8919eedba48cc8d207fbf0",
+                metadata.get("X-TIKA:digest:MD5"));
     }
 
     @Test
