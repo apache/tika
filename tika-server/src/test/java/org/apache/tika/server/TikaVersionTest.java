@@ -38,7 +38,7 @@ public class TikaVersionTest extends CXFTestBase {
         sf.setResourceClasses(TikaVersion.class);
         sf.setResourceProvider(
                 TikaVersion.class,
-                new SingletonResourceProvider(new TikaVersion(tika))
+                new SingletonResourceProvider(new TikaVersion())
         );
     }
 

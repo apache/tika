@@ -17,14 +17,14 @@
 
 package org.apache.tika.server.resource;
 
-import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.Metadata;
-
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 
 public class TikaUtils {
 
@@ -34,6 +34,6 @@ public class TikaUtils {
             Metadata metadata = new Metadata();
             return TikaInputStream.get(new URL(fileUrl), metadata);
         }
-        return is;
+        return TikaInputStream.get(is);
     }
 }

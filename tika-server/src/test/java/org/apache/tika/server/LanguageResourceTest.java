@@ -46,7 +46,7 @@ public class LanguageResourceTest extends CXFTestBase {
 	protected void setUpResources(JAXRSServerFactoryBean sf) {
 		sf.setResourceClasses(LanguageResource.class);
 		sf.setResourceProvider(LanguageResource.class,
-				new SingletonResourceProvider(new LanguageResource(tika)));
+				new SingletonResourceProvider(new LanguageResource()));
 
 	}
 

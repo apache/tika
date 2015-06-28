@@ -25,7 +25,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -49,14 +48,14 @@ import org.apache.poi.poifs.filesystem.Ole10Native;
 import org.apache.poi.poifs.filesystem.Ole10NativeException;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.IOUtils;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.server.RichTextContentHandler;
@@ -69,12 +68,6 @@ public class UnpackerResource {
     public static final String TEXT_FILENAME = "__TEXT__";
     private static final Log logger = LogFactory.getLog(UnpackerResource.class);
     private static final String META_FILENAME = "__METADATA__";
-
-    private TikaConfig tikaConfig;
-
-    public UnpackerResource(TikaConfig tikaConfig) {
-        this.tikaConfig = tikaConfig;
-    }
 
     public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
         CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, org.apache.tika.io.IOUtils.UTF_8));
@@ -121,7 +114,11 @@ public class UnpackerResource {
         Metadata metadata = new Metadata();
         ParseContext pc = new ParseContext();
 
-        AutoDetectParser parser = TikaResource.createParser(tikaConfig);
+        Parser parser = TikaResource.createParser();
+        if (parser instanceof DigestingParser) {
+            //no need to digest for unwrapping
+            parser = ((DigestingParser)parser).getWrappedParser();
+        }
 
         TikaResource.fillMetadata(parser, metadata, pc, httpHeaders.getRequestHeaders());
         TikaResource.logRequest(logger, info, metadata);
@@ -139,6 +136,7 @@ public class UnpackerResource {
         MutableInt count = new MutableInt();
 
         pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
+        is = TikaUtils.getInputSteam(is, httpHeaders);
         TikaResource.parse(parser, logger, info.getPath(), is, ch, metadata, pc);
 
         if (count.intValue() == 0 && !saveAll) {
@@ -184,7 +182,7 @@ public class UnpackerResource {
 
             if (!name.contains(".") && contentType != null) {
                 try {
-                    String ext = tikaConfig.getMimeRepository().forName(contentType).getExtension();
+                    String ext = TikaResource.getConfig().getMimeRepository().forName(contentType).getExtension();
 
                     if (ext != null) {
                         name += ext;

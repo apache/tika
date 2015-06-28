@@ -17,23 +17,21 @@
 
 package org.apache.tika.server.resource;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
@@ -49,13 +47,10 @@ public class TranslateResource {
 	private static final Log logger = LogFactory.getLog(TranslateResource.class
 			.getName());
 
-	private TikaConfig config;
-
-	public TranslateResource(TikaConfig config) {
-		this.config = config;
+	public TranslateResource() {
 		this.loader = new ServiceLoader(ServiceLoader.class.getClassLoader(),
 				LoadErrorHandler.WARN);
-		this.defaultTranslator = this.config.getTranslator();
+		this.defaultTranslator = TikaResource.getConfig().getTranslator();
 	}
 
 	@PUT

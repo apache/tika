@@ -100,6 +100,12 @@ public class TikaCLITest {
         String[] params = {"-x", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
         assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("?xml version=\"1.0\" encoding=\"UTF-8\"?"));
+
+        params = new String[]{"-x", "--digest=SHA256", resourcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        assertTrue(outContent.toString(IOUtils.UTF_8.name())
+                .contains("<meta name=\"X-TIKA:digest:SHA256\" content=\"e90779adbac09c4ee"));
+
     }
 
     /**
@@ -114,6 +120,11 @@ public class TikaCLITest {
         assertTrue(outContent.toString("UTF-8").contains("html xmlns=\"http://www.w3.org/1999/xhtml"));
         assertTrue("Expanded <title></title> element should be present",
                 outContent.toString(IOUtils.UTF_8.name()).contains("<title></title>"));
+
+        params = new String[]{"-h", "--digest=SHA384", resourcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        assertTrue(outContent.toString("UTF-8")
+                .contains("<meta name=\"X-TIKA:digest:SHA384\" content=\"c69ea023f5da95a026"));
     }
 
     /**
@@ -137,6 +148,12 @@ public class TikaCLITest {
         String[] params = {"-m", resourcePrefix + "alice.cli.test"};
         TikaCLI.main(params);
         assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("text/plain"));
+
+        params = new String[]{"-m", "--digest=SHA512", resourcePrefix + "alice.cli.test"};
+        TikaCLI.main(params);
+        assertTrue(outContent.toString(IOUtils.UTF_8.name()).contains("text/plain"));
+        assertTrue(outContent.toString(IOUtils.UTF_8.name())
+                .contains("X-TIKA:digest:SHA512: dd459d99bc19ff78fd31fbae46e0"));
     }
 
     /**
@@ -146,7 +163,7 @@ public class TikaCLITest {
      */
     @Test
     public void testJsonMetadataOutput() throws Exception {
-        String[] params = {"--json", resourcePrefix + "testJsonMultipleInts.html"};
+        String[] params = {"--json", "--digest=MD2", resourcePrefix + "testJsonMultipleInts.html"};
         TikaCLI.main(params);
         String json = outContent.toString(IOUtils.UTF_8.name());
         //TIKA-1310
@@ -158,6 +175,7 @@ public class TikaCLITest {
         int title = json.indexOf("\"title\"");
         assertTrue(enc > -1 && fb > -1 && enc < fb);
         assertTrue (fb > -1 && title > -1 && fb < title);
+        assertTrue(json.contains("\"X-TIKA:digest:MD2\":\"470481522c33aa7f6558dfc5cc0c8135\""));
     }
 
     /**
@@ -378,4 +396,14 @@ public class TikaCLITest {
         assertTrue(content.contains("\\n\\nembed_4\\n"));
         assertTrue(content.contains("\\n\\nembed_0"));
     }
+
+    @Test
+    public void testDigestInJson() throws Exception {
+        String[] params = new String[]{"-J", "-r", "-t", "--digest=MD5", resourcePrefix+"test_recursive_embedded.docx"};
+        TikaCLI.main(params);
+        String content = outContent.toString(IOUtils.UTF_8.name());
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"59f626e09a8c16ab6dbc2800c685f772\","));
+        assertTrue(content.contains("\"X-TIKA:digest:MD5\": \"f9627095ef86c482e61d99f0cc1cf87d\""));
+    }
+
 }

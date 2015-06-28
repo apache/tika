@@ -89,10 +89,12 @@
 
 	<consumers builderClass="org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder"
                recursiveParserWrapper="false">
-		<parser class="org.apache.tika.parser.mock.MockParserFactory" parseRecursively="true"/>
+        <parser builderClass="org.apache.tika.batch.builders.ParserFactoryBuilder"
+            class="org.apache.tika.batch.AutoDetectParserFactory"
+            parseRecursively="true"/>
+        
 		<contenthandler builderClass="org.apache.tika.batch.builders.DefaultContentHandlerFactoryBuilder"
                         basicHandlerType="xml" writeLimit="-1"/>
-
 
 		<outputstream class="FSOutputStreamFactory"
                 encoding="UTF-8" outputSuffix="xml"/>

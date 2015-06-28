@@ -31,6 +31,7 @@ import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.batch.builders.AbstractConsumersBuilder;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
 import org.apache.tika.batch.builders.IContentHandlerFactoryBuilder;
+import org.apache.tika.batch.builders.IParserFactoryBuilder;
 import org.apache.tika.batch.fs.BasicTikaFSConsumer;
 import org.apache.tika.batch.fs.FSConsumersManager;
 import org.apache.tika.batch.fs.FSOutputStreamFactory;
@@ -156,10 +157,10 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
     }
 
     private ParserFactory getParserFactory(Node node, Map<String, String> runtimeAttributes) {
-        //TODO: add ability to set TikaConfig file path
         Map<String, String> localAttrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
-        String className = localAttrs.get("class");
-        return ClassLoaderUtil.buildClass(ParserFactory.class, className);
+        String className = localAttrs.get("builderClass");
+        IParserFactoryBuilder builder = ClassLoaderUtil.buildClass(IParserFactoryBuilder.class, className);
+        return builder.build(node, runtimeAttributes);
     }
 
     private OutputStreamFactory getOutputStreamFactory(Node node, Map<String, String> runtimeAttributes) {

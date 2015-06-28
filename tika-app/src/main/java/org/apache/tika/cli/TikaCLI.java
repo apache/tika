@@ -88,6 +88,7 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.NetworkParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -95,6 +96,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.html.BoilerpipeContentHandler;
+import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -108,6 +110,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * Simple command line interface for Apache Tika.
  */
 public class TikaCLI {
+
+    private final int MAX_MARK = 20*1024*1024;//20MB
+
     private File extractDir = new File(".");
 
     private static final Log logger = LogFactory.getLog(TikaCLI.class);
@@ -334,6 +339,8 @@ public class TikaCLI {
      */
     private String password = System.getenv("TIKA_PASSWORD");
 
+    private DigestingParser.Digester digester = null;
+
     private boolean pipeMode = true;
 
     private boolean serverMode = false;
@@ -400,6 +407,11 @@ public class TikaCLI {
             fork = true;
         } else if (arg.startsWith("--config=")) {
             configure(arg.substring("--config=".length()));
+        } else if (arg.startsWith("--digest=")) {
+            CommonsDigester.DigestAlgorithm[] algos = CommonsDigester.parse(
+                    arg.substring("--digest=".length()));
+            digester = new CommonsDigester(MAX_MARK,algos);
+            parser = new DigestingParser(parser, digester);
         } else if (arg.startsWith("-e")) {
             encoding = arg.substring("-e".length());
         } else if (arg.startsWith("--encoding=")) {
@@ -545,6 +557,8 @@ public class TikaCLI {
         out.println("                           with -x, -h, -t or -m; default is -x)");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
+        out.println("           --digest=X      Include digest X (md2, md5, sha1,");
+        out.println("                               sha256, sha384, sha512");
         out.println("    -eX or --encoding=X    Use output encoding X");
         out.println("    -pX or --password=X    Use document password X");
         out.println("    -z  or --extract       Extract all attachements into current directory");
@@ -662,6 +676,9 @@ public class TikaCLI {
         this.configFilePath = configFilePath;
         TikaConfig config = new TikaConfig(new File(configFilePath));
         parser = new AutoDetectParser(config);
+        if (digester != null) {
+            parser = new DigestingParser(parser, digester);
+        }
         detector = config.getDetector();
         context.set(Parser.class, parser);
     }

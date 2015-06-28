@@ -24,11 +24,12 @@ import org.apache.tika.parser.Parser;
 /**
  * Simple class for AutoDetectParser
  */
-public class AutoDetectParserFactory implements ParserFactory {
+public class AutoDetectParserFactory extends ParserFactory {
 
   @Override
   public Parser getParser(TikaConfig config) {
     return new AutoDetectParser(config);
   }
-  
+
+
 }

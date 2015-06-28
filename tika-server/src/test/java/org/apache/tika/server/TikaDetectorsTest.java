@@ -44,7 +44,7 @@ public class TikaDetectorsTest extends CXFTestBase {
         sf.setResourceClasses(TikaDetectors.class);
         sf.setResourceProvider(
                 TikaDetectors.class,
-                new SingletonResourceProvider(new TikaDetectors(tika))
+                new SingletonResourceProvider(new TikaDetectors())
         );
     }
 

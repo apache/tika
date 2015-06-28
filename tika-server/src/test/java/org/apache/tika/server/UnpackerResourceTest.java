@@ -71,7 +71,7 @@ public class UnpackerResourceTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(UnpackerResource.class);
         sf.setResourceProvider(UnpackerResource.class,
-                new SingletonResourceProvider(new UnpackerResource(tika)));
+                new SingletonResourceProvider(new UnpackerResource()));
     }
 
     @Override

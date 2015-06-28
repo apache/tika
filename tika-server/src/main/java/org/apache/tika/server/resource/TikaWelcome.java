@@ -24,7 +24,6 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -40,7 +39,6 @@ import java.util.regex.Pattern;
 
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.tika.Tika;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.server.HTMLHelper;
 
 /**
@@ -66,8 +64,8 @@ public class TikaWelcome {
     private HTMLHelper html;
     private List<Class<?>> endpoints = new LinkedList<Class<?>>();
 
-    public TikaWelcome(TikaConfig tika, List<ResourceProvider> rCoreProviders) {
-        this.tika = new Tika(tika);
+    public TikaWelcome(List<ResourceProvider> rCoreProviders) {
+        this.tika = new Tika(TikaResource.getConfig());
         this.html = new HTMLHelper();
         for (ResourceProvider rp : rCoreProviders) {
             this.endpoints.add(rp.getResourceClass());

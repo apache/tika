@@ -77,6 +77,10 @@
                 description="regex that specifies which files to avoid processing"/>
         <option opt="reporterSleepMillis" hasArg="true"
                 description="millisecond between reports by the reporter"/>
+        <option opt="digest" hasArg="true"
+                description="which digest(s) to use, e.g. 'md5,sha512'\"/>
+        <option opt="digestMarkLimit" hasArg="true"
+                description="max bytes to read for digest\"/>
     </commandline>
 
 
@@ -108,15 +112,20 @@
     <!--
         To wrap parser in RecursiveParserWrapper (tika-app's -J or tika-server's /rmeta),
         add attribute recursiveParserWrapper="true" to consumers element.
+
+        To wrap parser with DigestingParser add attributes e.g.:
+        digest="md5,sha256" digestMarkLimit="10000000"
         -->
     <consumers builderClass="org.apache.tika.batch.fs.builders.BasicTikaFSConsumersBuilder"
                recursiveParserWrapper="false" consumersManagerMaxMillis="60000">
-        <parser builderClass="org.apache.tika.batch.builders.ParserFactoryBuilder"
-                class="org.apache.tika.batch.AutoDetectParserFactory"
-                parseRecursively="true"/>
+        <parser builderClass="org.apache.tika.batch.builders.AppParserFactoryBuilder"
+                class="org.apache.tika.batch.DigestingAutoDetectParserFactory"
+                parseRecursively="true"
+                digest="md5" digestMarkLimit="1000000"/>
         <contenthandler builderClass="org.apache.tika.batch.builders.DefaultContentHandlerFactoryBuilder"
                         basicHandlerType="xml" writeLimit="-1"/>
-        <!-- overwritePolicy: "skip" a file if output file exists, "rename" a output file, "overwrite" -->        <!-- can include e.g. outputDir="output", but we don't want to include this in the default! -->
+        <!-- overwritePolicy: "skip" a file if output file exists, "rename" a output file, "overwrite" -->
+        <!-- can include e.g. outputDir="output", but we don't want to include this in the default! -->
         <outputstream class="FSOutputStreamFactory" encoding="UTF-8" outputSuffix="xml"/>
     </consumers>
 

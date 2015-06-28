@@ -62,8 +62,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.ocr.TesseractOCRConfig;
@@ -84,10 +86,12 @@ public class TikaResource {
 
     private static final Log logger = LogFactory.getLog(TikaResource.class);
 
-    private TikaConfig tikaConfig;
+    private static TikaConfig tikaConfig;
+    private static DigestingParser.Digester digester = null;
 
-    public TikaResource(TikaConfig tikaConfig) {
-        this.tikaConfig = tikaConfig;
+    public static void init(TikaConfig config, DigestingParser.Digester digestr) {
+        tikaConfig = config;
+        digester = digestr;
     }
 
     static {
@@ -95,14 +99,14 @@ public class TikaResource {
     }
 
     @SuppressWarnings("serial")
-    public static AutoDetectParser createParser(TikaConfig tikaConfig) {
-        final AutoDetectParser parser = new AutoDetectParser(tikaConfig);
+    public static Parser createParser() {
+        final Parser parser = new AutoDetectParser(tikaConfig);
 
-        Map<MediaType, Parser> parsers = parser.getParsers();
+        Map<MediaType, Parser> parsers = ((AutoDetectParser)parser).getParsers();
         parsers.put(MediaType.APPLICATION_XML, new HtmlParser());
-        parser.setParsers(parsers);
+        ((AutoDetectParser)parser).setParsers(parsers);
 
-        parser.setFallback(new Parser() {
+        ((AutoDetectParser)parser).setFallback(new Parser() {
             public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
                 return parser.getSupportedTypes(parseContext);
             }
@@ -111,8 +115,14 @@ public class TikaResource {
                 throw new WebApplicationException(Response.Status.UNSUPPORTED_MEDIA_TYPE);
             }
         });
-
+        if (digester != null) {
+            return new DigestingParser(parser, digester);
+        }
         return parser;
+    }
+
+    public static TikaConfig getConfig() {
+        return tikaConfig;
     }
 
     public static String detectFilename(MultivaluedMap<String, String> httpHeaders) {
@@ -192,7 +202,7 @@ public class TikaResource {
     }
 
     @SuppressWarnings("serial")
-    public static void fillMetadata(AutoDetectParser parser, Metadata metadata, ParseContext context, MultivaluedMap<String, String> httpHeaders) {
+    public static void fillMetadata(Parser parser, Metadata metadata, ParseContext context, MultivaluedMap<String, String> httpHeaders) {
         String fileName = detectFilename(httpHeaders);
         if (fileName != null) {
             metadata.set(TikaMetadataKeys.RESOURCE_NAME_KEY, fileName);
@@ -212,9 +222,9 @@ public class TikaResource {
         if (mediaType != null) {
             metadata.add(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE, mediaType.toString());
 
-            final Detector detector = parser.getDetector();
+            final Detector detector = getDetector(parser);
 
-            parser.setDetector(new Detector() {
+            setDetector(parser, new Detector() {
                 public MediaType detect(InputStream inputStream, Metadata metadata) throws IOException {
                     String ct = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
 
@@ -238,8 +248,35 @@ public class TikaResource {
         }
     }
 
+    public static void setDetector(Parser p, Detector detector) {
+        AutoDetectParser adp = getAutoDetectParser(p);
+        adp.setDetector(detector);
+    }
+
+    public static Detector getDetector(Parser p) {
+        AutoDetectParser adp = getAutoDetectParser(p);
+        return adp.getDetector();
+    }
+
+    private static AutoDetectParser getAutoDetectParser(Parser p) {
+        //bit stinky
+        if (p instanceof AutoDetectParser) {
+            return (AutoDetectParser)p;
+        } else if (p instanceof ParserDecorator) {
+            Parser wrapped = ((ParserDecorator)p).getWrappedParser();
+            if (wrapped instanceof AutoDetectParser) {
+                return (AutoDetectParser)wrapped;
+            }
+            throw new RuntimeException("Couldn't find AutoDetectParser within: "+wrapped.getClass());
+
+        }
+        throw new RuntimeException("Couldn't find AutoDetectParser within: "+p.getClass());
+
+    }
+
     public static void parse(Parser parser, Log logger, String path, InputStream inputStream,
                              ContentHandler handler, Metadata metadata, ParseContext parseContext) throws IOException {
+        inputStream = TikaInputStream.get(inputStream);
         try {
             parser.parse(inputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
@@ -258,6 +295,8 @@ public class TikaResource {
                     path
             ), e);
             throw new TikaServerParseException(e);
+        } finally {
+            inputStream.close();
         }
     }
 
@@ -300,7 +339,7 @@ public class TikaResource {
     }
 
     public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {
-        final AutoDetectParser parser = createParser(tikaConfig);
+        final Parser parser = createParser();
         final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
 
@@ -315,12 +354,10 @@ public class TikaResource {
 
                 BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
-                TikaInputStream tis = TikaInputStream.get(is);
-
                 try {
-                    parse(parser, logger, info.getPath(), tis, body, metadata, context);
+                    parse(parser, logger, info.getPath(), is, body, metadata, context);
                 } finally {
-                    tis.close();
+                    is.close();
                 }
             }
         };
@@ -358,7 +395,7 @@ public class TikaResource {
 
     private StreamingOutput produceOutput(final InputStream is, final MultivaluedMap<String, String> httpHeaders,
                                           final UriInfo info, final String format) {
-        final AutoDetectParser parser = createParser(tikaConfig);
+        final Parser parser = createParser();
         final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
 
@@ -386,13 +423,7 @@ public class TikaResource {
                     throw new WebApplicationException(e);
                 }
 
-                TikaInputStream tis = TikaInputStream.get(is);
-
-                try {
-                    parse(parser, logger, info.getPath(), tis, content, metadata, context);
-                } finally {
-                    tis.close();
-                }
+                parse(parser, logger, info.getPath(), is, content, metadata, context);
             }
         };
     }

@@ -18,6 +18,7 @@
 package org.apache.tika.cli;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -124,6 +125,49 @@ public class TikaCLIBatchIntegrationTest {
         assertTrue("coffee.xls.xml", new File(tempDir, "coffee.xls.xml").exists());
         String sysOutString = new String(outBuffer.toByteArray(), IOUtils.UTF_8);
         assertTrue(sysOutString.contains("MY_CUSTOM_LOG_CONFIG"));
+    }
+
+    @Test
+    public void testDigester() throws Exception {
+        Reader reader = null;
+/*        try {
+            String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
+                    "-o", escape(tempDir.getAbsolutePath()),
+                    "-numConsumers", "10",
+                    "-J", //recursive Json
+                    "-t" //plain text in content
+            };
+            TikaCLI.main(params);
+            reader = new InputStreamReader(
+                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), IOUtils.UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(12, metadataList.size());
+            assertEquals("59f626e09a8c16ab6dbc2800c685f772", metadataList.get(0).get("X-TIKA:digest:MD5"));
+            assertEquals("22e6e91f408d018417cd452d6de3dede", metadataList.get(5).get("X-TIKA:digest:MD5"));
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+*/
+        reader = null;
+        try {
+            String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
+                    "-o", escape(tempDir.getAbsolutePath()),
+                    "-numConsumers", "10",
+                    "-J", //recursive Json
+                    "-t", //plain text in content
+                    "-digest", "sha512"
+            };
+            TikaCLI.main(params);
+            reader = new InputStreamReader(
+                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), IOUtils.UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(12, metadataList.size());
+            assertNotNull(metadataList.get(0).get("X-TIKA:digest:SHA512"));
+            assertTrue(metadataList.get(0).get("X-TIKA:digest:SHA512").startsWith("ee46d973ee1852c01858"));
+        } finally {
+            IOUtils.closeQuietly(reader);
+        }
+
     }
 
     public static String escape(String path) {

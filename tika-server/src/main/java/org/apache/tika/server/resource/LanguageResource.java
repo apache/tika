@@ -17,35 +17,26 @@
 
 package org.apache.tika.server.resource;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import java.io.IOException;
+import java.io.InputStream;
 
+import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
-
-import com.google.common.base.Charsets;
 
 @Path("/language")
 public class LanguageResource {
 
 	private static final Log logger = LogFactory.getLog(LanguageResource.class
 			.getName());
-
-	private TikaConfig config;
-
-	public LanguageResource(TikaConfig config) {
-		this.config = config;
-	}
 
 	@PUT
 	@POST

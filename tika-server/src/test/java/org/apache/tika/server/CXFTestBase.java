@@ -41,15 +41,19 @@ import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.parser.utils.CommonsDigester;
+import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.resource.UnpackerResource;
 import org.junit.After;
 import org.junit.Before;
 
 public abstract class CXFTestBase {
+    private final static int DIGESTER_READ_LIMIT = 20*1024*1024;
+
     protected static final String endPoint =
             "http://localhost:" + TikaServerCli.DEFAULT_PORT;
     protected Server server;
-    protected TikaConfig tika;
+    private TikaConfig tika;
 
     public static void assertContains(String needle, String haystack) {
         assertTrue(needle + " not found in:\n" + haystack, haystack.contains(needle));
@@ -76,7 +80,7 @@ public abstract class CXFTestBase {
     @Before
     public void setUp() {
         this.tika = TikaConfig.getDefaultConfig();
-
+        TikaResource.init(tika, new CommonsDigester(DIGESTER_READ_LIMIT, CommonsDigester.DigestAlgorithm.MD5));
         JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         setUpResources(sf);
         setUpProviders(sf);

@@ -40,7 +40,7 @@ public class TikaMimeTypesTest extends CXFTestBase {
         sf.setResourceClasses(TikaMimeTypes.class);
         sf.setResourceProvider(
                 TikaMimeTypes.class,
-                new SingletonResourceProvider(new TikaMimeTypes(tika))
+                new SingletonResourceProvider(new TikaMimeTypes())
         );
     }
 

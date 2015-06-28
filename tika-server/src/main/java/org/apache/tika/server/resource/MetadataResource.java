@@ -28,30 +28,21 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.language.ProfilingHandler;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
-import org.xml.sax.helpers.DefaultHandler;
+import org.apache.tika.parser.Parser;
 
 
 @Path("/meta")
 public class MetadataResource {
     private static final Log logger = LogFactory.getLog(MetadataResource.class);
-
-    private TikaConfig tikaConfig;
-
-    public MetadataResource(TikaConfig tikaConfig) {
-        this.tikaConfig = tikaConfig;
-    }
 
     @POST
     @Consumes("multipart/form-data")
@@ -127,7 +118,7 @@ public class MetadataResource {
                                    MultivaluedMap<String, String> httpHeaders, UriInfo info) throws IOException {
         final Metadata metadata = new Metadata();
         final ParseContext context = new ParseContext();
-        AutoDetectParser parser = TikaResource.createParser(tikaConfig);
+        Parser parser = TikaResource.createParser();
         TikaResource.fillMetadata(parser, metadata, context, httpHeaders);
         //no need to pass parser for embedded document parsing
         TikaResource.fillParseContext(context, httpHeaders, null);

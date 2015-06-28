@@ -1,5 +1,3 @@
-package org.apache.tika.batch;
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,21 +15,29 @@ package org.apache.tika.batch;
  * limitations under the License.
  */
 
+package org.apache.tika.batch;
+
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.DigestingParser;
 import org.apache.tika.parser.Parser;
 
-public abstract class ParserFactory {
+public class DigestingAutoDetectParserFactory extends ParserFactory {
 
-    private boolean parseRecursively = true;
+    private DigestingParser.Digester digester = null;
 
-    public abstract Parser getParser(TikaConfig config);
 
-    public boolean getParseRecursively() {
-        return parseRecursively;
+    @Override
+    public Parser getParser(TikaConfig config) {
+        Parser p = new AutoDetectParser(config);
+        if (digester == null) {
+            return p;
+        }
+        DigestingParser d = new DigestingParser(p, digester);
+        return d;
     }
 
-    public void setParseRecursively(boolean parseRecursively) {
-        this.parseRecursively = parseRecursively;
+    public void setDigester(DigestingParser.Digester digester) {
+        this.digester = digester;
     }
-
 }
