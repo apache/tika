@@ -1,5 +1,8 @@
 Release 1.10 - Current Development
 
+  * GDALParser now correctly sets "nitf" as a supported 
+    MediaType (TIKA-1664).
+
   * Added DigestingParser to calculate digest hashes 
     and record them in metadata. Integrated with
     tika-app and tika-server (TIKA-1663).

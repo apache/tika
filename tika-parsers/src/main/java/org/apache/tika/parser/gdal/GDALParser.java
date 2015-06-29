@@ -103,7 +103,7 @@ public class GDALParser extends AbstractParser {
         types.add(MediaType.application("x-netcdf"));
         types.add(MediaType.application("vrt"));
         types.add(MediaType.image("geotiff"));
-        types.add(MediaType.image("ntif"));
+        types.add(MediaType.image("nitf"));
         types.add(MediaType.application("x-rpf-toc"));
         types.add(MediaType.application("x-ecrg-toc"));
         types.add(MediaType.image("hfa"));
