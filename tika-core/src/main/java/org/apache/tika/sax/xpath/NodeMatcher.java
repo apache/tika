@@ -30,11 +30,6 @@ public class NodeMatcher extends Matcher {
     }
 
     @Override
-    public boolean matchesAttribute(String namespace, String name) {
-        return true;
-    }
-
-    @Override
     public boolean matchesText() {
         return true;
     }
