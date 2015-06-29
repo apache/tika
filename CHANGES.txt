@@ -1,5 +1,9 @@
 Release 1.10 - Current Development
 
+  * The XPath content handler now correclty handles the 
+     node() function which shouldn't match attributes 
+     per http://www.w3.org/TR/xpath/ (TIKA-1669).
+
   * GDALParser now correctly sets "nitf" as a supported 
     MediaType (TIKA-1664).
 
