@@ -130,6 +130,8 @@
               pdfbox,fontbox,jempbox,bcmail-jdk15on,bcprov-jdk15on,bcpkix-jdk15on,
               poi,poi-scratchpad,poi-ooxml,poi-ooxml-schemas,
               xmlbeans,
+              jackcess,
+              commons-lang,              
               tagsoup,
               asm-debug-all,
               juniversalchardet,

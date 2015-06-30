@@ -1,5 +1,9 @@
 Release 1.10 - Current Development
 
+  * Added parser for MS Access files via Jackcess. Many thanks 
+    to Health Market Science, Brian O'Neill and James Ahlborn 
+    for relicensing Jackcess to Apache v2! (TIKA-1601)
+
   * GDALParser now correctly sets "nitf" as a supported 
     MediaType (TIKA-1664).
 
