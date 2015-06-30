@@ -77,6 +77,11 @@
       <artifactId>vorbis-java-tika</artifactId>
       <version>${vorbis.version}</version>
     </dependency>
+<dependency>
+      <groupId>com.healthmarketscience.jackcess</groupId>
+      <artifactId>jackcess</artifactId>
+      <version>2.1.2</version>
+    </dependency>
 
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
