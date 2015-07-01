@@ -1,5 +1,8 @@
 Release 1.10 - Current Development
 
+  * Non-standards compliant emails are now correctly detected
+    as message/rfc822 (TIKA-1602).
+
   * Added parser for MS Access files via Jackcess. Many thanks 
     to Health Market Science, Brian O'Neill and James Ahlborn 
     for relicensing Jackcess to Apache v2! (TIKA-1601)
