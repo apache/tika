@@ -93,7 +93,7 @@ public class RecursiveParserWrapper implements Parser {
  
     private final Parser wrappedParser;
     private final ContentHandlerFactory contentHandlerFactory;
-    private final List<Metadata> metadatas = new LinkedList<Metadata>();
+    private final List<Metadata> metadatas = new LinkedList<>();
 
     private final boolean catchEmbeddedExceptions;
 
@@ -150,8 +150,7 @@ public class RecursiveParserWrapper implements Parser {
             Metadata metadata, ParseContext context) throws IOException,
             SAXException, TikaException {
 
-        String name = getResourceName(metadata);
-        EmbeddedParserDecorator decorator = new EmbeddedParserDecorator(name);
+        EmbeddedParserDecorator decorator = new EmbeddedParserDecorator("/");
         context.set(Parser.class, decorator);
         ContentHandler localHandler = contentHandlerFactory.getNewContentHandler();
         long started = new Date().getTime();
@@ -313,7 +312,7 @@ public class RecursiveParserWrapper implements Parser {
             
             Parser preContextParser = context.get(Parser.class);
             context.set(Parser.class, new EmbeddedParserDecorator(objectLocation));
-
+            long started = new Date().getTime();
             try {
                 super.parse(stream, localHandler, metadata, context);
             } catch (SAXException e) {
@@ -328,14 +327,7 @@ public class RecursiveParserWrapper implements Parser {
                         throw e;
                     }
                 }
-            } catch (IOException e) {
-                if (catchEmbeddedExceptions) {
-                    String trace = ExceptionUtils.getStackTrace(e);
-                    metadata.set(EMBEDDED_EXCEPTION, trace);
-                } else {
-                    throw e;
-                }
-            } catch (TikaException e) {
+            } catch (IOException|TikaException e) {
                 if (catchEmbeddedExceptions) {
                     String trace = ExceptionUtils.getStackTrace(e);
                     metadata.set(EMBEDDED_EXCEPTION, trace);
@@ -344,6 +336,8 @@ public class RecursiveParserWrapper implements Parser {
                 }
             } finally {
                 context.set(Parser.class, preContextParser);
+                long elapsedMillis = new Date().getTime() - started;
+                metadata.set(PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
             }
             
             //Because of recursion, we need

@@ -76,7 +76,7 @@ public class TestParsingExample {
         assertEquals("Number of embedded documents + 1 for the container document", 12, metadataList.size());
         Metadata m = metadataList.get(6);
         //this is the location the embed3.txt text file within the outer .docx
-        assertEquals("test_recursive_embedded.docx/embed1.zip/embed2.zip/embed3.zip/embed3.txt",
+        assertEquals("/embed1.zip/embed2.zip/embed3.zip/embed3.txt",
                 m.get("X-TIKA:embedded_resource_path"));
         //it contains some html encoded content
         assertContains("When in the Course", m.get("X-TIKA:content"));
