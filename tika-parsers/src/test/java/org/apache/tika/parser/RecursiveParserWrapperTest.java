@@ -166,17 +166,17 @@ public class RecursiveParserWrapperTest {
     public void testEmbeddedResourcePath() throws Exception {
 
         Set<String> targets = new HashSet<String>();
-        targets.add("test_recursive_embedded.docx/embed1.zip");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip/embed3.zip");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip/embed3.zip/embed4.zip");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip/embed3.zip/embed4.zip/embed4.txt");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip/embed3.zip/embed3.txt");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip/embed2a.txt");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed2.zip/embed2b.txt");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed1b.txt");
-        targets.add("test_recursive_embedded.docx/embed1.zip/embed1a.txt");
-        targets.add("test_recursive_embedded.docx/image1.emf");
+        targets.add("/embed1.zip");
+        targets.add("/embed1.zip/embed2.zip");
+        targets.add("/embed1.zip/embed2.zip/embed3.zip");
+        targets.add("/embed1.zip/embed2.zip/embed3.zip/embed4.zip");
+        targets.add("/embed1.zip/embed2.zip/embed3.zip/embed4.zip/embed4.txt");
+        targets.add("/embed1.zip/embed2.zip/embed3.zip/embed3.txt");
+        targets.add("/embed1.zip/embed2.zip/embed2a.txt");
+        targets.add("/embed1.zip/embed2.zip/embed2b.txt");
+        targets.add("/embed1.zip/embed1b.txt");
+        targets.add("/embed1.zip/embed1a.txt");
+        targets.add("/image1.emf");
 
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");

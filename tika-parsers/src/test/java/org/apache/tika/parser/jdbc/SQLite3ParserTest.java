@@ -168,7 +168,7 @@ public class SQLite3ParserTest extends TikaTest {
         assertContains("The quick brown fox", metadataList.get(4).get(RecursiveParserWrapper.TIKA_CONTENT));
 
         //confirm .doc was added to blob
-        assertEquals("testSqlite3b.db/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
+        assertEquals("/BYTES_COL_0.doc/image1.png", metadataList.get(1).get(RecursiveParserWrapper.EMBEDDED_RESOURCE_PATH));
     }
 
     @Test
