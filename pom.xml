@@ -56,6 +56,7 @@
     <module>tika-server</module>
     <module>tika-translate</module>
     <module>tika-example</module>
+    <module>tika-java7</module>
   </modules>
 
   <profiles>
@@ -175,15 +176,6 @@ least three +1 Tika PMC votes are cast.
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>java7</id>
-      <activation>
-        <jdk>[1.7,]</jdk>
-      </activation>
-      <modules>
-        <module>tika-java7</module>
-      </modules>
     </profile>
   </profiles>
 
