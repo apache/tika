@@ -43,8 +43,10 @@ import org.apache.poi.hssf.record.DateWindow1904Record;
 import org.apache.poi.hssf.record.DrawingGroupRecord;
 import org.apache.poi.hssf.record.EOFRecord;
 import org.apache.poi.hssf.record.ExtendedFormatRecord;
+import org.apache.poi.hssf.record.FooterRecord;
 import org.apache.poi.hssf.record.FormatRecord;
 import org.apache.poi.hssf.record.FormulaRecord;
+import org.apache.poi.hssf.record.HeaderRecord;
 import org.apache.poi.hssf.record.HyperlinkRecord;
 import org.apache.poi.hssf.record.LabelRecord;
 import org.apache.poi.hssf.record.LabelSSTRecord;
@@ -296,6 +298,8 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                 hssfRequest.addListener(formatListener, FormatRecord.sid);
                 hssfRequest.addListener(formatListener, ExtendedFormatRecord.sid);
                 hssfRequest.addListener(formatListener, DrawingGroupRecord.sid);
+                hssfRequest.addListener(formatListener, HeaderRecord.sid);
+                hssfRequest.addListener(formatListener, FooterRecord.sid);
             }
 
             // Create event factory and process Workbook (fire events)
@@ -462,6 +466,16 @@ public class ExcelExtractor extends AbstractPOIFSExtractor {
                     //  the continue records are in
                     drawingGroups.add((DrawingGroupRecord) record);
                     break;
+                    
+                case HeaderRecord.sid:
+                	HeaderRecord headerRecord = (HeaderRecord) record;
+                	addTextCell(record, headerRecord.getText());
+                	break;
+                	
+                case FooterRecord.sid:
+                	FooterRecord footerRecord = (FooterRecord) record;
+                	addTextCell(record, footerRecord.getText());
+                	break;
 
             }
 

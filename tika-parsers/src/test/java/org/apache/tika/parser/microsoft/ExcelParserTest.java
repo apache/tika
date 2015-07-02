@@ -454,4 +454,38 @@ public class ExcelParserTest {
         assertEquals("2010-12-30T22:00:00Z", metadata.get("custom:MyCustomDate"));
         assertEquals("2010-12-29T22:00:00Z", metadata.get("custom:myCustomSecondDate"));
     }
+
+	@Test
+    public void testHeaderAndFooterExtraction() throws Exception {
+        InputStream input = ExcelParserTest.class.getResourceAsStream(
+                "/test-documents/testEXCEL_headers_footers.xls");
+        
+        try {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            ParseContext context = new ParseContext();
+            context.set(Locale.class, Locale.UK);
+            new OfficeParser().parse(input, handler, metadata, context);
+
+            assertEquals(
+                    "application/vnd.ms-excel",
+                    metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals("Internal spreadsheet", metadata.get(TikaCoreProperties.TITLE));
+            assertEquals("Aeham Abushwashi", metadata.get(TikaCoreProperties.CREATOR));
+            assertEquals("Aeham Abushwashi", metadata.get(Metadata.AUTHOR));
+
+            String content = handler.toString();
+            assertContains("John Smith1", content);
+            assertContains("John Smith50", content);
+            assertContains("1 Corporate HQ", content);
+            assertContains("Header - Corporate Spreadsheet", content);
+            assertContains("Header - For Internal Use Only", content);
+            assertContains("Header - Author: John Smith", content);
+            assertContains("Footer - Corporate Spreadsheet", content);
+            assertContains("Footer - For Internal Use Only", content);
+            assertContains("Footer - Author: John Smith", content);
+        } finally {
+            input.close();
+        }
+    }
 }
