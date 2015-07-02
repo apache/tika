@@ -1249,6 +1249,29 @@ public class OOXMLParserTest extends TikaTest {
         assertContains(">01..1 01..1", xml);
         assertContains(">02 02", xml);
     }
+
+    @Test
+    public void testExcelHeaderAndFooterExtraction() throws Exception {
+        XMLResult xml = getXML("testEXCEL_headers_footers.xlsx");
+
+        assertEquals(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                xml.metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("Internal spreadsheet", xml.metadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Aeham Abushwashi", xml.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Aeham Abushwashi", xml.metadata.get(Metadata.AUTHOR));
+
+        String content = xml.xml;
+        assertContains("John Smith1", content);
+        assertContains("John Smith50", content);
+        assertContains("1 Corporate HQ", content);
+        assertContains("Header - Corporate Spreadsheet", content);
+        assertContains("Header - For Internal Use Only", content);
+        assertContains("Header - Author: John Smith", content);
+        assertContains("Footer - Corporate Spreadsheet", content);
+        assertContains("Footer - For Internal Use Only", content);
+        assertContains("Footer - Author: John Smith", content);
+    }
 }
 
 

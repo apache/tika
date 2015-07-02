@@ -1,4 +1,7 @@
 Release 1.10 - Current Development
+  * Add header/footer extraction to xls (via Aeham Abushwashi)
+    (TIKA-1400).
+
   * Drop the source file name from the embedded file path in
     RecursiveParserWrapper's "X-TIKA:embedded_resource_path" 
     (TIKA-1673).
