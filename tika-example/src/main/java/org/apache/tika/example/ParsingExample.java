@@ -19,6 +19,10 @@ package org.apache.tika.example;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.tika.Tika;
@@ -203,5 +207,28 @@ public class ParsingExample {
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
         return writer.toString();
+    }
+
+
+    /**
+     *
+     * @param outputPath -- output directory to place files
+     * @return list of files created
+     * @throws IOException
+     * @throws SAXException
+     * @throws TikaException
+     */
+    public List<Path> extractEmbeddedDocumentsExample(Path outputPath) throws IOException,
+            SAXException, TikaException {
+        InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
+        ExtractEmbeddedFiles ex = new ExtractEmbeddedFiles();
+        ex.extract(stream, outputPath);
+        List<Path> ret = new ArrayList<Path>();
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
+            for (Path entry: dirStream) {
+                ret.add(entry);
+            }
+        }
+        return ret;
     }
 }
