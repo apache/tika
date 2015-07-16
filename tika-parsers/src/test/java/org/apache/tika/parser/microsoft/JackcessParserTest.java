@@ -82,4 +82,10 @@ public class JackcessParserTest extends TikaTest {
         }
     }
 
+    @Test
+    public void testReadOnly() throws Exception {
+        //TIKA-1681: just make sure an exception is not thrown
+        XMLResult r = getXML("testAccess_V1997.mdb");
+        assertContains("hijklmnop", r.xml);
+    }
 }

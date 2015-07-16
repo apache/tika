@@ -77,7 +77,7 @@ public class JackcessParser extends AbstractParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
         try {
-            db = new DatabaseBuilder().setReadOnly(true).open(tis.getFile());
+            db = new DatabaseBuilder(tis.getFile()).setReadOnly(true).open();
             db.setLinkResolver(IGNORE_LINK_RESOLVER);//just in case
             JackcessExtractor ex = new JackcessExtractor(context, locale);
             ex.parse(db, xhtml, metadata);
