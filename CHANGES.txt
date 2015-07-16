@@ -1,4 +1,12 @@
 Release 1.10 - Current Development
+
+  * Fixed bug in Tika's use of the Jackcess parser that 
+    prevented reading of v97 Access files (TIKA-1681).
+
+  * Upgrade xerial.org's sqlite-jdbc to 3.8.10.1. NOTE: 
+    as of Tika 1.9, this jar is "provided." Make sure 
+    to upgrade your provided jar! (TIKA-1687).
+
   * Add header/footer extraction to xls (via Aeham Abushwashi)
     (TIKA-1400).
 
