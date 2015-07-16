@@ -24,9 +24,11 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import com.healthmarketscience.jackcess.Column;
 import com.healthmarketscience.jackcess.DataType;
@@ -41,6 +43,8 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
@@ -52,6 +56,10 @@ import org.xml.sax.SAXException;
  * the lack of thread safety with the dateTimeFormatter
  */
 class JackcessExtractor extends AbstractPOIFSExtractor {
+
+    final static String TITLE_PROP_KEY = "Title";
+    final static String AUTHOR_PROP_KEY = "Author";
+    final static String COMPANY_PROP_KEY = "Company";
 
     final static String TEXT_FORMAT_KEY = "TextFormat";
     final static String CURRENCY_FORMAT_KEY = "Format";
@@ -85,15 +93,38 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         }
 
         PropertyMap up = db.getUserDefinedProperties();
-        for (PropertyMap.Property p : up
-                ) {
+        for (PropertyMap.Property p : up) {
             metadata.add(JackcessParser.USER_DEFINED_PROPERTY_PREFIX+ p.getName(),
                     toString(p.getValue(), p.getType()));
         }
 
-        for (PropertyMap.Property p : db.getSummaryProperties()) {
-            metadata.add(JackcessParser.SUMMARY_PROPERTY_PREFIX+ p.getName(),
-                    toString(p.getValue(), p.getType()));
+        Set<String> found = new HashSet<>();
+        PropertyMap summaryProperties = db.getSummaryProperties();
+        if (summaryProperties != null) {
+            //try to get core properties
+            PropertyMap.Property title = summaryProperties.get(TITLE_PROP_KEY);
+            if (title != null) {
+                metadata.set(TikaCoreProperties.TITLE, toString(title.getValue(), title.getType()));
+                found.add(title.getName());
+            }
+            PropertyMap.Property author = summaryProperties.get(AUTHOR_PROP_KEY);
+            if (author != null) {
+                metadata.set(TikaCoreProperties.CREATOR, toString(author.getValue(), author.getType()));
+                found.add(author.getName());
+            }
+            PropertyMap.Property company = summaryProperties.get(COMPANY_PROP_KEY);
+            if (company != null) {
+                metadata.set(OfficeOpenXMLExtended.COMPANY, toString(company.getValue(), company.getType()));
+                found.add(company.getName());
+            }
+
+            for (PropertyMap.Property p : db.getSummaryProperties()) {
+                if (! found.contains(p.getName())) {
+                    metadata.add(JackcessParser.SUMMARY_PROPERTY_PREFIX + p.getName(),
+                            toString(p.getValue(), p.getType()));
+                }
+            }
+
         }
 
         Iterator<Table> it = db.newIterable().

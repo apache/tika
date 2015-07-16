@@ -47,7 +47,7 @@ import org.xml.sax.SAXException;
  */
 public class JackcessParser extends AbstractParser {
 
-    public static final String SUMMARY_PROPERTY_PREFIX = "MDB_SUMMARY_PROP";
+    public static final String SUMMARY_PROPERTY_PREFIX = "MDB_SUMMARY_PROP" + Metadata.NAMESPACE_PREFIX_DELIMITER;
     public static String MDB_PROPERTY_PREFIX = "MDB_PROP" + Metadata.NAMESPACE_PREFIX_DELIMITER;
     public static String USER_DEFINED_PROPERTY_PREFIX = "MDB_USER_PROP" + Metadata.NAMESPACE_PREFIX_DELIMITER;
     public static Property MDB_PW = Property.externalText("Password");

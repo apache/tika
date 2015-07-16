@@ -25,6 +25,8 @@ import java.util.List;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -87,5 +89,14 @@ public class JackcessParserTest extends TikaTest {
         //TIKA-1681: just make sure an exception is not thrown
         XMLResult r = getXML("testAccess_V1997.mdb");
         assertContains("hijklmnop", r.xml);
+    }
+
+    @Test
+    public void testMetadata() throws Exception {
+        //basic tests for normalized metadata
+        XMLResult r = getXML("testAccess_V1997.mdb");
+        assertEquals("tmccune", r.metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Health Market Science", r.metadata.get(OfficeOpenXMLExtended.COMPANY));
+        assertEquals("test", r.metadata.get(TikaCoreProperties.TITLE));
     }
 }
