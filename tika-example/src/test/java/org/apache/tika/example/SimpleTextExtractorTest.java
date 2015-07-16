@@ -14,11 +14,11 @@
 
 package org.apache.tika.example;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
-
-import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
@@ -46,7 +46,7 @@ public class SimpleTextExtractorTest {
 
         System.setOut(out);
 
-        Assert.assertEquals(message, buffer.toString(Charsets.UTF_8.name()).trim());
+        assertEquals(message, buffer.toString(Charsets.UTF_8.name()).trim());
     }
 
 }

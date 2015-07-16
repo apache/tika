@@ -17,6 +17,10 @@ package org.apache.tika.metadata.serialization;
 * limitations under the License.
 */
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.LinkedList;
@@ -24,10 +28,6 @@ import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
-
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.TestCase.assertNull;
-import static org.junit.Assert.assertEquals;
 
 public class JsonMetadataListTest {
 

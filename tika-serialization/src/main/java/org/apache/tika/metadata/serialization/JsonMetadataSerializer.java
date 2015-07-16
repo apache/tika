@@ -52,11 +52,11 @@ public class JsonMetadataSerializer implements JsonSerializer<Metadata> {
     @Override
     public JsonElement serialize(Metadata metadata, Type type, JsonSerializationContext context) {
         if (metadata == null){
-            return new JsonNull();
+            return JsonNull.INSTANCE;
         }
         String[] names = getNames(metadata);
         if (names == null) {
-            return new JsonNull();
+            return JsonNull.INSTANCE;
         }
 
         JsonObject root = new JsonObject();

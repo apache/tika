@@ -16,7 +16,7 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 

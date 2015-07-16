@@ -17,15 +17,18 @@
 
 package org.apache.tika.language.translate;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import org.junit.Before;
 
-import junit.framework.TestCase;
 
 /**
  * Test harness for the {@link GoogleTranslator}.
  * 
  */
-public class GoogleTranslatorTest extends TestCase {
+public class GoogleTranslatorTest  {
 
 	private GoogleTranslator translator;
 

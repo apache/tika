@@ -14,15 +14,13 @@
 
 package org.apache.tika.example;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 
-import junit.framework.Assert;
-
-import org.junit.Test;
-
 import com.google.common.base.Charsets;
+import org.junit.Test;
 
 @SuppressWarnings("deprecation")
 public class SimpleTypeDetectorTest {
@@ -38,7 +36,7 @@ public class SimpleTypeDetectorTest {
 
 		System.setOut(out);
 
-		Assert.assertEquals("pom.xml: application/xml",
+		assertEquals("pom.xml: application/xml",
 				buffer.toString(Charsets.UTF_8.name()).trim());
 	}
 
