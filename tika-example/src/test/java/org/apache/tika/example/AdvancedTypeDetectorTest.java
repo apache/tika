@@ -14,7 +14,8 @@
 
 package org.apache.tika.example;
 
-import junit.framework.Assert;
+
+import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
@@ -23,7 +24,7 @@ public class AdvancedTypeDetectorTest {
 
 	@Test
 	public void testDetectWithCustomConfig() throws Exception {
-		Assert.assertEquals("application/xml",
+		assertEquals("application/xml",
 				AdvancedTypeDetector.detectWithCustomConfig("pom.xml"));
 	}
 

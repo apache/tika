@@ -17,14 +17,17 @@
 
 package org.apache.tika.language.translate;
 
-import junit.framework.TestCase;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+
 import org.junit.Before;
 
 /**
  * Test harness for the {@link org.apache.tika.language.translate.Lingo24Translator}.
  *
  */
-public class Lingo24TranslatorTest extends TestCase {
+public class Lingo24TranslatorTest {
 
     private Lingo24Translator translator;
 

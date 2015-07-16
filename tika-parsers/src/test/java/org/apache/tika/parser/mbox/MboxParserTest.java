@@ -16,8 +16,8 @@
  */
 package org.apache.tika.parser.mbox;
 
-import static junit.framework.Assert.assertEquals;
 import static org.apache.tika.TikaTest.assertContains;
+import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 import java.util.Map;
