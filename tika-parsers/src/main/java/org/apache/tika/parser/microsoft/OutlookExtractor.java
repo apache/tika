@@ -18,26 +18,39 @@ package org.apache.tika.parser.microsoft;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.poi.hmef.attribute.MAPIRtfAttribute;
 import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.AttachmentChunks;
 import org.apache.poi.hsmf.datatypes.ByteChunk;
 import org.apache.poi.hsmf.datatypes.Chunk;
+import org.apache.poi.hsmf.datatypes.Chunks;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
+import org.apache.poi.hsmf.datatypes.PropertyValue;
 import org.apache.poi.hsmf.datatypes.StringChunk;
 import org.apache.poi.hsmf.datatypes.Types;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
+import org.apache.poi.util.CodePageUtil;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlEncodingDetector;
 import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.parser.mbox.MboxParser;
 import org.apache.tika.parser.rtf.RTFParser;
@@ -52,6 +65,9 @@ import org.xml.sax.SAXException;
  * Outlook Message Parser.
  */
 public class OutlookExtractor extends AbstractPOIFSExtractor {
+    private static final Metadata EMPTY_METADATA = new Metadata();
+    HtmlEncodingDetector detector = new HtmlEncodingDetector();
+
     private final MAPIMessage msg;
 
     public OutlookExtractor(NPOIFSFileSystem filesystem, ParseContext context) throws TikaException {
@@ -76,22 +92,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             // If the message contains strings that aren't stored
             //  as Unicode, try to sort out an encoding for them
             if (msg.has7BitEncodingStrings()) {
-                if (msg.getHeaders() != null) {
-                    // There's normally something in the headers
-                    msg.guess7BitEncoding();
-                } else {
-                    // Nothing in the header, try encoding detection
-                    //  on the message body
-                    StringChunk text = msg.getMainChunks().textBodyChunk;
-                    if (text != null) {
-                        CharsetDetector detector = new CharsetDetector();
-                        detector.setText(text.getRawValue());
-                        CharsetMatch match = detector.detect();
-                        if (match.getConfidence() > 35) {
-                            msg.set7BitEncoding(match.getName());
-                        }
-                    }
-                }
+                guess7BitEncoding(msg);
             }
 
             // Start with the metadata
@@ -261,5 +262,124 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
             xhtml.element("dt", key);
             xhtml.element("dd", value);
         }
+    }
+
+    /**
+     * Tries to identify the correct encoding for 7-bit (non-unicode)
+     *  strings in the file.
+     * <p>Many messages store their strings as unicode, which is
+     *  nice and easy. Some use one-byte encodings for their
+     *  strings, but don't always store the encoding anywhere
+     *  helpful in the file.</p>
+     * <p>This method checks for codepage properties, and failing that
+     *  looks at the headers for the message, and uses these to
+     *  guess the correct encoding for your file.</p>
+     * <p>Bug #49441 has more on why this is needed</p>
+     * <p>This is taken verbatim from POI (TIKA-1238)
+     * as a temporary workaround to prevent unsupported encoding exceptions</p>
+     */
+    private void guess7BitEncoding(MAPIMessage msg) {
+        Chunks mainChunks = msg.getMainChunks();
+        //sanity check
+        if (mainChunks == null) {
+            return;
+        }
+
+        Map<MAPIProperty, List<PropertyValue>> props = mainChunks.getProperties();
+        if (props != null) {
+            // First choice is a codepage property
+            for (MAPIProperty prop : new MAPIProperty[]{
+                    MAPIProperty.MESSAGE_CODEPAGE,
+                    MAPIProperty.INTERNET_CPID
+            }) {
+                List<PropertyValue> val = props.get(prop);
+                if (val != null && val.size() > 0) {
+                    int codepage = ((PropertyValue.LongPropertyValue) val.get(0)).getValue();
+                    String encoding = null;
+                    try {
+                        encoding = CodePageUtil.codepageToEncoding(codepage, true);
+                    } catch (UnsupportedEncodingException e) {
+                        //swallow
+                    }
+                    if (tryToSet7BitEncoding(msg, encoding)) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        // Second choice is a charset on a content type header
+        try {
+            String[] headers = msg.getHeaders();
+            if(headers != null && headers.length > 0) {
+                // Look for a content type with a charset
+                Pattern p = Pattern.compile("Content-Type:.*?charset=[\"']?([^;'\"]+)[\"']?", Pattern.CASE_INSENSITIVE);
+
+                for(String header : headers) {
+                    if(header.startsWith("Content-Type")) {
+                        Matcher m = p.matcher(header);
+                        if(m.matches()) {
+                            // Found it! Tell all the string chunks
+                            String charset = m.group(1);
+                            if (tryToSet7BitEncoding(msg, charset)) {
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch(ChunkNotFoundException e) {}
+
+        // Nothing suitable in the headers, try HTML
+        // TODO: do we need to replicate this in Tika? If we wind up
+        // parsing the html version of the email, this is duplicative??
+        // Or do we need to reset the header strings based on the html
+        // meta header if there is no other information?
+        try {
+            String html = msg.getHtmlBody();
+            if(html != null && html.length() > 0) {
+                Charset charset = null;
+                try {
+                    charset = detector.detect(new ByteArrayInputStream(
+                            html.getBytes(IOUtils.UTF_8)), EMPTY_METADATA);
+                } catch (IOException e) {
+                    //swallow
+                }
+                if (charset != null && tryToSet7BitEncoding(msg, charset.name())) {
+                    return;
+                }
+            }
+        } catch(ChunkNotFoundException e) {}
+
+        //absolute last resort, try charset detector
+        StringChunk text = mainChunks.textBodyChunk;
+        if (text != null) {
+            CharsetDetector detector = new CharsetDetector();
+            detector.setText(text.getRawValue());
+            CharsetMatch match = detector.detect();
+            if (match != null && match.getConfidence() > 35 &&
+                    tryToSet7BitEncoding(msg, match.getName())) {
+                return;
+            }
+        }
+    }
+
+    private boolean tryToSet7BitEncoding(MAPIMessage msg, String charsetName) {
+        if (charsetName == null) {
+            return false;
+        }
+
+        if (charsetName.equalsIgnoreCase("utf-8")) {
+            return false;
+        }
+        try {
+            if (Charset.isSupported(charsetName)) {
+                msg.set7BitEncoding(charsetName);
+                return true;
+            }
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
+            //swallow
+        }
+        return false;
     }
 }

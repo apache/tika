@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft;
 
-import static org.apache.tika.TikaTest.assertContains;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -30,6 +29,7 @@ import java.io.StringWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -42,7 +42,7 @@ import org.xml.sax.ContentHandler;
 /**
  * Test case for parsing Outlook files.
  */
-public class OutlookParserTest {
+public class OutlookParserTest extends TikaTest {
 
     @Test
     public void testOutlookParsing() throws Exception {
@@ -181,6 +181,10 @@ public class OutlookParserTest {
         // Make sure we don't have nested html docs
         assertEquals(2, content.split("<body>").length);
         assertEquals(2, content.split("<\\/body>").length);
+
+        // Make sure that the Chinese actually came through
+        assertContains("\u5F35\u6BD3\u502B", metadata.get(TikaCoreProperties.CREATOR));
+        assertContains("\u9673\u60E0\u73CD", content);
     }
 
     @Test
