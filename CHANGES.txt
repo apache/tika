@@ -1,5 +1,8 @@
 Release 1.10 - Current Development
 
+  * Added more robust error handling for encoding detection
+    of .MSG files (TIKA-1238).
+
   * Fixed bug in Tika's use of the Jackcess parser that 
     prevented reading of v97 Access files (TIKA-1681).
 
