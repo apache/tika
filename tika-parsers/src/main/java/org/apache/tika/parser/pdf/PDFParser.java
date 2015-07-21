@@ -37,6 +37,7 @@ import org.apache.pdfbox.exceptions.CryptographyException;
 import org.apache.pdfbox.io.RandomAccess;
 import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
+import org.apache.pdfbox.pdfparser.PDFOctalUnicodeDecoder;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
@@ -347,7 +348,7 @@ public class PDFParser extends AbstractParser {
         //if schema is null, just go with pdfBoxBaseline
         if (schema == null) {
             if (pdfBoxBaseline != null && pdfBoxBaseline.length() > 0) {
-                metadata.set(property, pdfBoxBaseline);
+                addMetadata(metadata, property, pdfBoxBaseline);
             }
             return;
         }
@@ -360,7 +361,7 @@ public class PDFParser extends AbstractParser {
                 if (pdfBoxBaseline != null && value.equals(pdfBoxBaseline)) {
                     continue;
                 }
-                metadata.add(property, value);
+                addMetadata(metadata, property, value);
                 if (!property.isMultiValuePermitted()) {
                     return;
                 }
@@ -375,7 +376,7 @@ public class PDFParser extends AbstractParser {
                     return;
                 }
             }
-            metadata.add(property, pdfBoxBaseline);
+            addMetadata(metadata, property, pdfBoxBaseline);
         }
     }
 
@@ -446,14 +447,26 @@ public class PDFParser extends AbstractParser {
 
     private void addMetadata(Metadata metadata, Property property, String value) {
         if (value != null) {
-            metadata.add(property, value);
+            String decoded = decode(value);
+            if (property.isMultiValuePermitted() || metadata.get(property) == null) {
+                metadata.add(property, decoded);
+            }
+            //silently skip adding property that already exists if multiple values are not permitted
         }
     }
 
     private void addMetadata(Metadata metadata, String name, String value) {
         if (value != null) {
-            metadata.add(name, value);
+            metadata.add(name, decode(value));
         }
+    }
+
+    private String decode(String value) {
+        if (PDFOctalUnicodeDecoder.shouldDecode(value)) {
+            PDFOctalUnicodeDecoder d = new PDFOctalUnicodeDecoder();
+            return d.decode(value);
+        }
+        return value;
     }
 
     private void addMetadata(Metadata metadata, String name, Calendar value) {
