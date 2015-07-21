@@ -24,9 +24,11 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.Set;
 
+import com.healthmarketscience.jackcess.CryptCodecProvider;
 import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
 import com.healthmarketscience.jackcess.util.LinkResolver;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -34,6 +36,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -76,11 +79,32 @@ public class JackcessParser extends AbstractParser {
         Database db = null;
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
         xhtml.startDocument();
+
+        String password = null;
+        PasswordProvider passwordProvider = context.get(PasswordProvider.class);
+        if (passwordProvider != null) {
+            password = passwordProvider.getPassword(metadata);
+        }
         try {
-            db = new DatabaseBuilder(tis.getFile()).setReadOnly(true).open();
+            if (password == null) {
+                //do this to ensure encryption/wrong password exception vs. more generic
+                //"need right codec" error message.
+                db = new DatabaseBuilder(tis.getFile())
+                        .setCodecProvider(new CryptCodecProvider())
+                        .setReadOnly(true).open();
+            } else {
+                db = new DatabaseBuilder(tis.getFile())
+                        .setCodecProvider(new CryptCodecProvider(password))
+                        .setReadOnly(true).open();
+            }
             db.setLinkResolver(IGNORE_LINK_RESOLVER);//just in case
             JackcessExtractor ex = new JackcessExtractor(context, locale);
             ex.parse(db, xhtml, metadata);
+        } catch (IllegalStateException e) {
+            if (e.getMessage() != null && e.getMessage().contains("Incorrect password")) {
+                throw new EncryptedDocumentException(e);
+            }
+            throw e;
         } finally {
             if (db != null) {
                 try {
