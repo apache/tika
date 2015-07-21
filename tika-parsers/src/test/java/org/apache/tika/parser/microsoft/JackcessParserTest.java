@@ -18,11 +18,14 @@
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
 import java.util.List;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
@@ -30,6 +33,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.junit.Test;
@@ -82,6 +86,94 @@ public class JackcessParserTest extends TikaTest {
 
             w.reset();
         }
+    }
+
+    @Test
+    public void testPassword() throws Exception {
+        ParseContext c = new ParseContext();
+        c.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "tika";
+            }
+        });
+        Parser p = new AutoDetectParser();
+        String content = null;
+        try (InputStream is =
+                     this.getResourceAsStream(
+                             "/test-documents/testAccess2_encrypted.accdb")){
+            content = getText(is, p, c);
+        }
+        assertContains("red and brown", content);
+
+        //now try wrong password
+        c.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "WRONG";
+            }
+        });
+
+        boolean ex = false;
+        try (InputStream is =
+                     this.getResourceAsStream(
+                             "/test-documents/testAccess2_encrypted.accdb")){
+            getText(is, p, c);
+        } catch (EncryptedDocumentException e) {
+            ex = true;
+        }
+        assertTrue("failed to throw encrypted document exception for wrong password", ex);
+
+        //now try null
+        c.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return null;
+            }
+        });
+
+        ex = false;
+        try (InputStream is =
+                     this.getResourceAsStream(
+                             "/test-documents/testAccess2_encrypted.accdb")){
+            getText(is, p, c);
+        } catch (EncryptedDocumentException e) {
+            ex = true;
+        }
+        assertTrue("failed to throw encrypted document exception for null password", ex);
+
+
+        //now try missing password provider
+        c = new ParseContext();
+        ex = false;
+        try (InputStream is =
+                     this.getResourceAsStream(
+                             "/test-documents/testAccess2_encrypted.accdb")){
+            getText(is, p, c);
+        } catch (EncryptedDocumentException e) {
+            ex = true;
+        }
+        assertTrue("failed to throw encrypted document exception for missing password provider", ex);
+
+        //now try password on file that doesn't need a password
+        c = new ParseContext();
+        c.set(PasswordProvider.class, new PasswordProvider() {
+            @Override
+            public String getPassword(Metadata metadata) {
+                return "tika";
+            }
+        });
+        ex = false;
+        try (InputStream is =
+                     this.getResourceAsStream(
+                             "/test-documents/testAccess2.accdb")){
+            content = getText(is, p, c);
+        } catch (EncryptedDocumentException e) {
+            ex = true;
+        }
+        assertFalse("shouldn't have thrown encrypted document exception for "+
+                        "opening unencrypted file that doesn't need passowrd", ex);
+        assertContains("red and brown", content);
     }
 
     @Test
