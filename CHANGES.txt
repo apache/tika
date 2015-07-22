@@ -1,4 +1,6 @@
 Release 1.10 - Current Development
+  * MimeTypes now tries to find a registered type with and 
+    without parameters (TIKA-1692).
 
   * Added more robust error handling for encoding detection
     of .MSG files (TIKA-1238).

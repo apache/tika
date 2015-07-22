@@ -16,6 +16,11 @@
  */
 package org.apache.tika.mime;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -26,11 +31,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Before;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * These tests try to ensure that the MimeTypesReader
@@ -238,5 +238,28 @@ public class MimeTypesReaderTest {
         String ext = mt.getExtension();
         assertEquals(".ppt",ext);
         assertEquals(".ppt",mt.getExtensions().get(0));
+    }
+
+    @Test
+    public void testGetRegisteredMimesWithParameters() throws Exception {
+        //TIKA-1692
+
+        // Media Type always keeps details / parameters
+        String name = "application/xml; charset=UTF-8";
+        MediaType mt = MediaType.parse(name);
+        assertEquals(name, mt.toString());
+
+        // Mime type loses details not in the file
+        MimeType mimeType = this.mimeTypes.getRegisteredMimeType(name);
+        assertEquals("application/xml", mimeType.toString());
+        assertEquals(".xml", mimeType.getExtension());
+
+        // But on well-known parameters stays
+        name = "application/dita+xml; format=map";
+        mt = MediaType.parse(name);
+        assertEquals(name, mt.toString());
+        mimeType = this.mimeTypes.getRegisteredMimeType(name);
+        assertEquals(name, mimeType.toString());
+        assertEquals(".ditamap", mimeType.getExtension());
     }
 }
