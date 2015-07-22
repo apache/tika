@@ -306,17 +306,31 @@ public final class MimeTypes implements Detector, Serializable {
      * Returns the registered media type with the given name (or alias).
      * 
      * Unlike {@link #forName(String)}, this function will *not* create a new
-     * MimeType and register it
+     * MimeType and register it.
+     *
+     * Also, unlike {@link #forName(String)}, this function may return a
+     * mime type that does include the parameters that were included in the name.
+     * If the registered mime type has parameters (e.g. application/dita+xml;format=map),
+     * then those will be maintained.  However, if the name has paramenters (e.g.
+     * "application/xml; charset=UTF-8"), but the _registered_ mime type doesn't,
+     * those parameters will not be included -- "application/xml".
      *
      * @param name media type name (case-insensitive)
-     * @return the registered media type with the given name or alias
+     * @return the registered media type with the given name or alias or null if not found
      * @throws MimeTypeException if the given media type name is invalid
      */
     public MimeType getRegisteredMimeType(String name) throws MimeTypeException {
         MediaType type = MediaType.parse(name);
         if (type != null) {
             MediaType normalisedType = registry.normalize(type);
-            return types.get(normalisedType);
+            MimeType candidate = types.get(normalisedType);
+            if (candidate != null) {
+                return candidate;
+            }
+            if (normalisedType.hasParameters()) {
+                return types.get(normalisedType.getBaseType());
+            }
+            return null;
         } else {
             throw new MimeTypeException("Invalid media type name: " + name);
         }
