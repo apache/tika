@@ -16,8 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
-import java.math.BigInteger;
-
 import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFNum;
@@ -28,6 +26,7 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTDecimalNumber;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNum;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumLvl;
 
 
 public class XWPFListManager extends AbstractListManager {
@@ -83,19 +82,9 @@ public class XWPFListManager extends AbstractListManager {
 
         return formattedString;
     }
-
-    /**
-     * WARNING: currently always returns null.
-     * TODO: Once CTNumLvl is available to Tika,
-     * we can turn this back on.
-     *
-     * @param ctNum  number on which to build the overrides
-     * @param length length of intended array
-     * @return null or an array of override tuples of length {@param length}
-     */
+    
     private LevelTuple[] loadOverrideTuples(CTNum ctNum, int length) {
-        return null;
-/*        LevelTuple[] levelTuples = new LevelTuple[length];
+        LevelTuple[] levelTuples = new LevelTuple[length];
         int overrideLength = ctNum.sizeOfLvlOverrideArray();
         if (overrideLength == 0) {
             return null;
@@ -114,7 +103,7 @@ public class XWPFListManager extends AbstractListManager {
             }
             levelTuples[i] = tuple;
         }
-        return levelTuples;*/
+        return levelTuples;
     }
 
 

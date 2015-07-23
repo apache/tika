@@ -1238,8 +1238,8 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<p>1 1</p>", xml);
         assertContains("<p>A A</p>", xml);
         assertContains("<p>B B</p>", xml);
-        //TODO: add this back in once overrides are available via CTNumLvl
-        //assertContains("<p>C C</p>", xml);
+        //this tests overrides
+        assertContains("<p>C C</p>", xml);
         assertContains("<p>4 4</p>", xml);
 
         //Test5
