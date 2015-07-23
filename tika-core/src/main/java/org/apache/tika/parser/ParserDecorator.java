@@ -70,7 +70,7 @@ public class ParserDecorator extends AbstractParser {
      * parsing of the given media types, but will work for all others.
      *
      * @param parser the parser to be decorated
-     * @param types excluded/ignored media types
+     * @param excludeTypes excluded/ignored media types
      * @return the decorated parser
      */
     public static final Parser withoutTypes(
@@ -186,10 +186,9 @@ public class ParserDecorator extends AbstractParser {
 
     /**
      * Gets the parser wrapped by this ParserDecorator
-     * @return
+     * @return the parser wrapped by this ParserDecorator
      */
     public Parser getWrappedParser() {
         return this.parser;
     }
-
 }

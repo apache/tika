@@ -369,7 +369,7 @@ public interface IPTC {
     * <p>
     * Maps to this IIM property: 2:110 Credit
     * 
-    * @see Photoshop#CREDIT_LINE
+    * @see Photoshop#CREDIT
     */
    Property CREDIT_LINE = Photoshop.CREDIT;
 
