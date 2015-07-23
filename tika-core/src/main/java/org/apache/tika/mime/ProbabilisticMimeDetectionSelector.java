@@ -529,9 +529,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         }
 
         /**
-         * initialize the MimeTypes with this builder instance
-         * 
-         * @return
+         * Initialize the MimeTypes with this builder instance
          */
         public ProbabilisticMimeDetectionSelector build2() {
             return new ProbabilisticMimeDetectionSelector(this);
