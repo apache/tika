@@ -303,20 +303,23 @@ public final class MimeTypes implements Detector, Serializable {
     }
 
     /**
-     * Returns the registered media type with the given name (or alias).
+     * Returns the registered, normalised media type with the given name (or alias).
      * 
-     * Unlike {@link #forName(String)}, this function will *not* create a new
-     * MimeType and register it.
+     * <p>Unlike {@link #forName(String)}, this function will <em>not<em> create a 
+     * new MimeType and register it. Instead, <code>null</code> will be returned if 
+     * there is no definition available for the given name.
      *
-     * Also, unlike {@link #forName(String)}, this function may return a
-     * mime type that does include the parameters that were included in the name.
-     * If the registered mime type has parameters (e.g. application/dita+xml;format=map),
-     * then those will be maintained.  However, if the name has paramenters (e.g.
-     * "application/xml; charset=UTF-8"), but the _registered_ mime type doesn't,
-     * those parameters will not be included -- "application/xml".
+     * <p>Also, unlike {@link #forName(String)}, this function may return a
+     * mime type that has fewer parameters than were included in the supplied name.
+     * If the registered mime type has parameters (e.g. 
+     * <code>application/dita+xml;format=map</code>), then those will be maintained.  
+     * However, if the supplied name has paramenters that the <em>registered</em> mime
+     * type does not (e.g. <code>application/xml; charset=UTF-8</code> as a name, 
+     * compared to just <code>application/xml</code> for the type in the registry), 
+     * then those parameters will not be included in the returned type.
      *
      * @param name media type name (case-insensitive)
-     * @return the registered media type with the given name or alias or null if not found
+     * @return the registered media type with the given name or alias, or null if not found
      * @throws MimeTypeException if the given media type name is invalid
      */
     public MimeType getRegisteredMimeType(String name) throws MimeTypeException {
