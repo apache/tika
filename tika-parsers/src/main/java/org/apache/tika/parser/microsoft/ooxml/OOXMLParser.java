@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.poi.openxml4j.util.ZipSecureFile;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -35,6 +36,10 @@ import org.xml.sax.SAXException;
  * Office Open XML (OOXML) parser.
  */
 public class OOXMLParser extends AbstractParser {
+    static {
+        //turn off POI's zip bomb detection because we have our own
+        ZipSecureFile.setMinInflateRatio(-1.0d);
+    }
 
     protected static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<MediaType>(Arrays.asList(

@@ -1,5 +1,7 @@
 Release 1.10 - Current Development
 
+  * Upgrade to POI 3.13-beta1 (TIKA-1667).
+
   * Upgrade to PDFBox 1.8.10 (TIKA-1588).
 
   * MimeTypes now tries to find a registered type with and 
