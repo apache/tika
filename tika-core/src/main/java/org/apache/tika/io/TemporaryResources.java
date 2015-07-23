@@ -59,7 +59,7 @@ public class TemporaryResources implements Closeable {
      * Creates and returns a temporary file that will automatically be
      * deleted when the {@link #close()} method is called.
      *
-     * @return
+     * @return Created temporary file that'll be deleted after closing
      * @throws IOException
      */
     public File createTemporaryFile() throws IOException {
