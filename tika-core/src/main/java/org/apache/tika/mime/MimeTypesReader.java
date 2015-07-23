@@ -96,7 +96,7 @@ import org.xml.sax.helpers.DefaultHandler;
  *  - uti
  * 
  *
- * @see http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec
+ * @see <a href="http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec">http://freedesktop.org/wiki/Standards_2fshared_2dmime_2dinfo_2dspec</a>
  */
 public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMetKeys {
     protected final MimeTypes types;

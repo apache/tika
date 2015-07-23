@@ -71,7 +71,7 @@ public final class MimeTypes implements Detector, Serializable {
     public static final String PLAIN_TEXT = "text/plain";
     
     /**
-     * Name of the {@link #xml xml} type, application/xml.
+     * Name of the {@link #xmlMimeType xml} type, application/xml.
      */
     public static final String XML = "application/xml";
 
@@ -563,7 +563,7 @@ public final class MimeTypes implements Detector, Serializable {
      * Get the default MimeTypes. This includes all the built-in
      * media types, and any custom override ones present.
      * 
-     * @param ClassLoader to use, if not the default
+     * @param classLoader to use, if not the default
      * @return MimeTypes default type registry
      */
     public static synchronized MimeTypes getDefaultMimeTypes(ClassLoader classLoader) {

@@ -19,7 +19,6 @@ package org.apache.tika.mime;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -191,7 +190,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
     /**
      * Get the UTI for this mime type.
      * 
-     * @see http://en.wikipedia.org/wiki/Uniform_Type_Identifier
+     * @see <a href="http://en.wikipedia.org/wiki/Uniform_Type_Identifier">http://en.wikipedia.org/wiki/Uniform_Type_Identifier</a>
      * 
      * @return The Uniform Type Identifier
      */
