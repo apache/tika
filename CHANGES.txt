@@ -1,4 +1,7 @@
 Release 1.10 - Current Development
+
+  * Upgrade to PDFBox 1.8.10 (TIKA-1588).
+
   * MimeTypes now tries to find a registered type with and 
     without parameters (TIKA-1692).
 
