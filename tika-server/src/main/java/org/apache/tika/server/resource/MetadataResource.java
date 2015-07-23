@@ -57,7 +57,7 @@ public class MetadataResource {
     @Produces({"text/csv", "application/json", "application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
         return Response.ok(
-                parseMetadata(TikaUtils.getInputSteam(is, httpHeaders), httpHeaders.getRequestHeaders(), info)).build();
+                parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
     }
 
     /**
@@ -93,7 +93,7 @@ public class MetadataResource {
         Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
         Metadata metadata = null;
         try {
-            metadata = parseMetadata(TikaUtils.getInputSteam(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
+            metadata = parseMetadata(is, httpHeaders.getRequestHeaders(), info);
             // once we've parsed the document successfully, we should use NOT_FOUND
             // if we did not see the field
             defaultErrorResponse = Response.Status.NOT_FOUND;

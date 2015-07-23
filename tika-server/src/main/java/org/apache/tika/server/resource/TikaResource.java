@@ -334,8 +334,8 @@ public class TikaResource {
     @PUT
     @Consumes("*/*")
     @Produces("text/plain")
-    public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) throws IOException {
-        return produceText(TikaUtils.getInputSteam(is, httpHeaders), httpHeaders.getRequestHeaders(), info);
+    public StreamingOutput getText(final InputStream is, @Context HttpHeaders httpHeaders, @Context final UriInfo info) {
+        return produceText(is, httpHeaders.getRequestHeaders(), info);
     }
 
     public StreamingOutput produceText(final InputStream is, MultivaluedMap<String, String> httpHeaders, final UriInfo info) {

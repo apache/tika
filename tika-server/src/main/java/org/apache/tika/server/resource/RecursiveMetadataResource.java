@@ -56,7 +56,6 @@ public class RecursiveMetadataResource {
     @PUT
     @Produces("application/json")
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-		is = TikaUtils.getInputSteam(is, httpHeaders);
         return Response.ok(
                 parseMetadata(is, httpHeaders.getRequestHeaders(), info)).build();
     }

@@ -136,7 +136,6 @@ public class UnpackerResource {
         MutableInt count = new MutableInt();
 
         pc.set(EmbeddedDocumentExtractor.class, new MyEmbeddedDocumentExtractor(count, files));
-        is = TikaUtils.getInputSteam(is, httpHeaders);
         TikaResource.parse(parser, logger, info.getPath(), is, ch, metadata, pc);
 
         if (count.intValue() == 0 && !saveAll) {
