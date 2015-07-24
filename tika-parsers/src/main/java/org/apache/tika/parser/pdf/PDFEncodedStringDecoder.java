@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.pdfbox.pdfparser;
+package org.apache.tika.parser.pdf;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.pdfbox.cos.COSString;
+import org.apache.pdfbox.pdfparser.BaseParser;
 
 /**
  * In fairly rare cases, a PDF's XMP will contain a string that
@@ -33,10 +34,14 @@ import org.apache.pdfbox.cos.COSString;
  * See TIKA-1678.  Many thanks to Andrew Jackson for raising this issue
  * and Tilman Hausherr for the solution.
  * <p>
- * Unfortunately because {@link BaseParser#parseCOSString()} is protected, we
- * had to put this in o.a.pdfbox.pdfparser and not in o.a.t.parser.pdf
+ * As of this writing, we are only handling strings that start with
+ * an encoded BOM.  Andrew Jackson found a handful of other examples (e.g.
+ * this ISO-8859-7 string:
+ * "Microsoft Word - \\323\\365\\354\\354\\345\\364\\357\\367\\336
+ * \\364\\347\\362 PRAKSIS \\363\\364\\357")
+ * that we aren't currently handling.
  */
-public class PDFOctalUnicodeDecoder {
+class PDFEncodedStringDecoder {
 
     private static final String[] PDF_ENCODING_BOMS = {
             "\\376\\377", //UTF-16BE
@@ -50,7 +55,7 @@ public class PDFOctalUnicodeDecoder {
      * @param s
      * @return
      */
-    public static boolean shouldDecode(String s) {
+    static boolean shouldDecode(String s) {
         if (s == null || s.length() < 8) {
             return false;
         }
@@ -70,14 +75,14 @@ public class PDFOctalUnicodeDecoder {
      * @param value
      * @return
      */
-    public String decode(String value) {
+    String decode(String value) {
         try {
             byte[] bytes = new String("(" + value + ")").getBytes("ISO-8859-1");
             InputStream is = new ByteArrayInputStream(bytes);
             COSStringParser p = new COSStringParser(is);
-            COSString cosString = p.parseCOSString();
-            if (cosString != null) {
-                return cosString.getString();
+            String parsed = p.myParseCOSString();
+            if (parsed != null) {
+                return parsed;
             }
         } catch (IOException e) {
             //oh well, we tried.
@@ -86,10 +91,25 @@ public class PDFOctalUnicodeDecoder {
         return value;
     }
 
-    private class COSStringParser extends BaseParser {
+    class COSStringParser extends BaseParser {
 
-        private COSStringParser(InputStream buffer) throws IOException {
+        COSStringParser(InputStream buffer) throws IOException {
             super(buffer);
+        }
+
+        /**
+         *
+         * @return parsed string or null if something went wrong.
+         */
+        String myParseCOSString() {
+            try {
+                COSString cosString = parseCOSString();
+                if (cosString != null) {
+                    return cosString.getString();
+                }
+            } catch (IOException e) {
+            }
+            return null;
         }
     }
 }
