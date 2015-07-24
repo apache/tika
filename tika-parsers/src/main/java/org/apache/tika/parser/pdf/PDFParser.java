@@ -37,7 +37,6 @@ import org.apache.pdfbox.exceptions.CryptographyException;
 import org.apache.pdfbox.io.RandomAccess;
 import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
-import org.apache.pdfbox.pdfparser.PDFOctalUnicodeDecoder;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
@@ -458,8 +457,8 @@ public class PDFParser extends AbstractParser {
     }
 
     private String decode(String value) {
-        if (PDFOctalUnicodeDecoder.shouldDecode(value)) {
-            PDFOctalUnicodeDecoder d = new PDFOctalUnicodeDecoder();
+        if (PDFEncodedStringDecoder.shouldDecode(value)) {
+            PDFEncodedStringDecoder d = new PDFEncodedStringDecoder();
             return d.decode(value);
         }
         return value;
