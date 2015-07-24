@@ -38,9 +38,9 @@ public class ServiceLoaderUtils {
                 if (t1 == t2) {
                     return n1.compareTo(n2);
                 } else if (t1) {
-                    return 1;
-                } else {
                     return -1;
+                } else {
+                    return 1;
                 }
             }
         });
