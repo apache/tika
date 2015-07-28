@@ -154,6 +154,8 @@
             </Export-Package>
             <Import-Package>
               !org.junit,
+              !org.junit.*,
+              !junit.*,
               !org.apache.ctakes.*,
               !org.apache.uima.*,
               *,
@@ -182,7 +184,6 @@
               javax.xml.stream;version="[1.0,2)";resolution:=optional,
               javax.xml.stream.events;version="[1.0,2)";resolution:=optional,
               javax.xml.stream.util;version="[1.0,2)";resolution:=optional,
-              junit.textui;resolution:=optional,
               net.sf.ehcache;resolution:=optional,
               nu.xom;resolution:=optional,
               opendap.dap.http;resolution:=optional,
