@@ -18,6 +18,7 @@ package org.apache.tika.bundle;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 import static org.ops4j.pax.exam.CoreOptions.bundle;
 import static org.ops4j.pax.exam.CoreOptions.junitBundles;
 import static org.ops4j.pax.exam.CoreOptions.options;
@@ -34,6 +35,9 @@ import java.io.Writer;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarInputStream;
+import java.util.jar.Manifest;
 
 import org.apache.tika.Tika;
 import org.apache.tika.detect.DefaultDetector;
@@ -97,6 +101,25 @@ public class BundleIT {
         }
         assertTrue("Core bundle not found", hasCore);
         assertTrue("Bundle bundle not found", hasBundle);
+    }
+
+
+    @Test
+    public void testManifestNoJUnit() throws Exception {
+        File TARGET = new File("target");
+        File base = new File(TARGET, "test-bundles");
+        File tikaBundle = new File(base, "tika-bundle.jar");
+
+        JarInputStream jarIs = new JarInputStream(new FileInputStream(tikaBundle));
+        Manifest mf = jarIs.getManifest();
+
+        Attributes main = mf.getMainAttributes();
+
+        String importPackage = main.getValue("Import-Package");
+
+        boolean containsJunit = importPackage.contains("junit");
+
+        assertFalse("The bundle should not import junit", containsJunit);
     }
 
 
