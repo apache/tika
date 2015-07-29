@@ -37,33 +37,33 @@ import org.xml.sax.SAXException;
 
 public class JournalParser extends AbstractParser{
 
-	/**
-	 * Generated serial ID
-	 */
-	private static final long serialVersionUID = 4664255544154296438L;
+  /**
+   * Generated serial ID
+   */
+  private static final long serialVersionUID = 4664255544154296438L;
 
 
-	private static final MediaType TYPE =
-			MediaType.application("pdf");
+  private static final MediaType TYPE =
+      MediaType.application("pdf");
 
-	private static final Set<MediaType> SUPPORTED_TYPES =
-			Collections.singleton(TYPE);
+  private static final Set<MediaType> SUPPORTED_TYPES =
+      Collections.singleton(TYPE);
 
-	public Set<MediaType> getSupportedTypes(ParseContext context) {
-		return SUPPORTED_TYPES;
-	}
+  public Set<MediaType> getSupportedTypes(ParseContext context) {
+    return SUPPORTED_TYPES;
+  }
 
-	public void parse(
-			InputStream stream, ContentHandler handler,
-			Metadata metadata, ParseContext context)
-					throws IOException, SAXException, TikaException {
+  public void parse(
+      InputStream stream, ContentHandler handler,
+      Metadata metadata, ParseContext context)
+          throws IOException, SAXException, TikaException {
     TikaInputStream tis = TikaInputStream.get(stream, new TemporaryResources());
     File tmpFile = tis.getFile();
-		
-		GrobidParser grobidParser = new GrobidParser();
-		grobidParser.parse(tmpFile.getAbsolutePath(), handler, metadata, context);
 
-		PDFParser parser = new PDFParser();
-		parser.parse(new FileInputStream(tmpFile), handler, metadata, context);
-	}
+    GrobidParser grobidParser = new GrobidParser();
+    grobidParser.parse(tmpFile.getAbsolutePath(), handler, metadata, context);
+
+    PDFParser parser = new PDFParser();
+    parser.parse(new FileInputStream(tmpFile), handler, metadata, context);
+  }
 }

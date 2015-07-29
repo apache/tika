@@ -22,53 +22,53 @@ import java.util.Properties;
 
 public class GrobidConfig {
 
-	public static final String GROBID_PREFIX = "grobid:";
-	public static final String HEADER_METADATA_PREFIX = "header_";
-	
-	private String grobidHome; 
-	private String grobidProperties; 
-	
-	public GrobidConfig() {
-		init(this.getClass().getResourceAsStream("GrobidExtractor.properties"));
-	}
-	
-	private void init(InputStream in) {
-		if (in == null) {
-			return;
-		}
-		
-		Properties props = new Properties();
-		try {
-			props.load(in);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} finally {
-			try {
-				in.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-		
-		setGrobidHome(props.getProperty("grobid.home", getGrobidHome()));
-		setGrobidProperties(props.getProperty("grobid.properties", getGrobidProperties()));
-	}
+  public static final String GROBID_PREFIX = "grobid:";
+  public static final String HEADER_METADATA_PREFIX = "header_";
 
-	public String getGrobidHome() {
-		return grobidHome;
-	}
+  private String grobidHome; 
+  private String grobidProperties; 
 
-	public void setGrobidHome(String grobidHome) {
-		this.grobidHome = grobidHome;
-	}
+  public GrobidConfig() {
+    init(this.getClass().getResourceAsStream("GrobidExtractor.properties"));
+  }
 
-	public String getGrobidProperties() {
-		return grobidProperties;
-	}
+  private void init(InputStream in) {
+    if (in == null) {
+      return;
+    }
 
-	public void setGrobidProperties(String grobidProperties) {
-		this.grobidProperties = grobidProperties;
-	}
+    Properties props = new Properties();
+    try {
+      props.load(in);
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } finally {
+      try {
+        in.close();
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+    }
+
+    setGrobidHome(props.getProperty("grobid.home", getGrobidHome()));
+    setGrobidProperties(props.getProperty("grobid.properties", getGrobidProperties()));
+  }
+
+  public String getGrobidHome() {
+    return grobidHome;
+  }
+
+  public void setGrobidHome(String grobidHome) {
+    this.grobidHome = grobidHome;
+  }
+
+  public String getGrobidProperties() {
+    return grobidProperties;
+  }
+
+  public void setGrobidProperties(String grobidProperties) {
+    this.grobidProperties = grobidProperties;
+  }
 }

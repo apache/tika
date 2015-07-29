@@ -28,36 +28,36 @@ import java.util.Map;
 import org.grobid.core.data.BiblioItem;
 
 public class GrobidHeaderMetadata {
-	
 
-	private Map<String, String> headerMetadata;
-	
-	public void generateHeaderMetada(BiblioItem resHeader) {
-		headerMetadata = new HashMap<String, String>();
-		try {
-			BeanInfo info = Introspector.getBeanInfo(BiblioItem.class);
-			
-			for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
-				Method m = pd.getReadMethod();
-				if( m!= null) {
-					Object value = m.invoke(resHeader);
-					if(value != null){
-						headerMetadata.put(GrobidConfig.HEADER_METADATA_PREFIX +  m.getName().replace("get", ""), "" +value);
-					}
-					
-				}
-			}
-		} catch (IntrospectionException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-    
-	public Map<String, String> getHeaderMetadata() {
-		return headerMetadata;
-	}
-	
-	public void setHeaderMetadata(Map<String, String> headerMetadata) {
-		this.headerMetadata = headerMetadata;
-	}
+
+  private Map<String, String> headerMetadata;
+
+  public void generateHeaderMetada(BiblioItem resHeader) {
+    headerMetadata = new HashMap<String, String>();
+    try {
+      BeanInfo info = Introspector.getBeanInfo(BiblioItem.class);
+
+      for (PropertyDescriptor pd : info.getPropertyDescriptors()) {
+        Method m = pd.getReadMethod();
+        if( m!= null) {
+          Object value = m.invoke(resHeader);
+          if(value != null){
+            headerMetadata.put(GrobidConfig.HEADER_METADATA_PREFIX +  m.getName().replace("get", ""), "" +value);
+          }
+
+        }
+      }
+    } catch (IntrospectionException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  public Map<String, String> getHeaderMetadata() {
+    return headerMetadata;
+  }
+
+  public void setHeaderMetadata(Map<String, String> headerMetadata) {
+    this.headerMetadata = headerMetadata;
+  }
 }
