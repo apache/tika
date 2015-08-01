@@ -504,8 +504,9 @@ public class TikaConfig {
                     }
                 } else {
                     // Regular class, create as-is
-                    // TODO Support arguments, needed for Translators etc
                     loaded = loadedClass.newInstance();
+                    // TODO Support arguments, needed for Translators etc
+                    // See the thread "Configuring parsers and translators" for details 
                 }
                 
                 // Have any decoration performed, eg explicit mimetypes
@@ -579,6 +580,12 @@ public class TikaConfig {
                     parser = c.newInstance(registry, childParsers, excludeParsers);
                 } catch (NoSuchMethodException me) {}
             }
+            if (parser == null) {
+                try {
+                    c = parserClass.getConstructor(MediaTypeRegistry.class, List.class);
+                    parser = c.newInstance(registry, childParsers);
+                } catch (NoSuchMethodException me) {}
+            }
             
             // Create as a Parser Decorator
             if (parser == null && ParserDecorator.class.isAssignableFrom(parserClass)) {
@@ -641,14 +648,44 @@ public class TikaConfig {
             return new CompositeDetector(registry, detectors);
         }
         @Override
-        Detector createComposite(Class<? extends Detector> compositeClass,
-                List<Detector> children,
-                Set<Class<? extends Detector>> excludeChildren,
+        Detector createComposite(Class<? extends Detector> detectorClass,
+                List<Detector> childDetectors,
+                Set<Class<? extends Detector>> excludeDetectors,
                 MimeTypes mimeTypes, ServiceLoader loader)
                 throws InvocationTargetException, IllegalAccessException,
                 InstantiationException {
-            // TODO Implement properly
-            return compositeClass.newInstance();
+            Detector detector = null;
+            Constructor<? extends Detector> c = null;
+            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+            
+            // Try the possible composite detector constructors
+            if (detector == null) {
+                try {
+                    c = detectorClass.getConstructor(MimeTypes.class, ServiceLoader.class, Collection.class);
+                    detector = c.newInstance(mimeTypes, loader, excludeDetectors);
+                } 
+                catch (NoSuchMethodException me) {}
+            }
+            if (detector == null) {
+                try {
+                    c = detectorClass.getConstructor(MediaTypeRegistry.class, List.class, Collection.class);
+                    detector = c.newInstance(registry, childDetectors, excludeDetectors);
+                } catch (NoSuchMethodException me) {}
+            }
+            if (detector == null) {
+                try {
+                    c = detectorClass.getConstructor(MediaTypeRegistry.class, List.class);
+                    detector = c.newInstance(registry, childDetectors);
+                } catch (NoSuchMethodException me) {}
+            }
+            if (detector == null) {
+                try {
+                    c = detectorClass.getConstructor(List.class);
+                    detector = c.newInstance(childDetectors);
+                } catch (NoSuchMethodException me) {}
+            }
+            
+            return detector;
         }
         @Override
         Detector decorate(Detector created, Element element) {
