@@ -92,15 +92,22 @@ public class TikaConfig {
 
     public TikaConfig(File file)
             throws TikaException, IOException, SAXException {
-        this(getBuilder().parse(file));
+        this(file, new ServiceLoader());
+    }
+    public TikaConfig(File file, ServiceLoader loader)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(file), loader);
     }
 
     public TikaConfig(URL url)
             throws TikaException, IOException, SAXException {
         this(url, ServiceLoader.getContextClassLoader());
     }
-
     public TikaConfig(URL url, ClassLoader loader)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(url.toString()).getDocumentElement(), loader);
+    }
+    public TikaConfig(URL url, ServiceLoader loader)
             throws TikaException, IOException, SAXException {
         this(getBuilder().parse(url.toString()).getDocumentElement(), loader);
     }
@@ -112,6 +119,9 @@ public class TikaConfig {
 
     public TikaConfig(Document document) throws TikaException, IOException {
         this(document.getDocumentElement());
+    }
+    public TikaConfig(Document document, ServiceLoader loader) throws TikaException, IOException {
+        this(document.getDocumentElement(), loader);
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
@@ -418,7 +428,8 @@ public class TikaConfig {
             
             // Find the children of the parent tag, if any
             for (Element le : getTopLevelElementChildren(element, getParentTagName(), getLoaderTagName())) {
-                loaded.add(loadOne(le, mimeTypes, loader));
+                T loadedChild = loadOne(le, mimeTypes, loader);
+                if (loadedChild != null) loaded.add(loadedChild);
             }
             
             // Build the classes, and wrap as needed
@@ -462,9 +473,9 @@ public class TikaConfig {
                     NodeList childNodes = element.getElementsByTagName(getLoaderTagName());
                     if (childNodes.getLength() > 0) {
                         for (int i = 0; i < childNodes.getLength(); i++) {
-                            children.add(loadOne(
-                                    (Element)childNodes.item(i), mimeTypes, loader
-                            ));
+                            T loadedChild = loadOne((Element)childNodes.item(i), 
+                                                    mimeTypes, loader);
+                            if (loadedChild != null) children.add(loadedChild);
                         }
                     }
                     
@@ -499,8 +510,14 @@ public class TikaConfig {
                 // All done with setup
                 return loaded;
             } catch (ClassNotFoundException e) {
-                throw new TikaException(
+                if (loader.getLoadErrorHandler() == LoadErrorHandler.THROW) {
+                    // Use a different exception signature here
+                    throw new TikaException(
                         "Unable to find a "+getLoaderTagName()+" class: " + name, e);
+                }
+                // Report the problem
+                loader.getLoadErrorHandler().handleLoadError(name, e);
+                return null;
             } catch (IllegalAccessException e) {
                 throw new TikaException(
                         "Unable to access a "+getLoaderTagName()+" class: " + name, e);
@@ -510,7 +527,8 @@ public class TikaConfig {
             } catch (InstantiationException e) {
                 throw new TikaException(
                         "Unable to instantiate a "+getLoaderTagName()+" class: " + name, e);
-            }        }
+            }
+        }
     }
     private static class ParserXmlLoader extends XmlLoader<CompositeParser,Parser> {
         boolean supportsComposite() { return true; }

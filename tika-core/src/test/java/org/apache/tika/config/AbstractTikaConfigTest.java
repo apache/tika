@@ -16,6 +16,8 @@
  */
 package org.apache.tika.config;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.net.URL;
 
 import org.apache.tika.parser.ParseContext;
@@ -30,9 +32,13 @@ import org.junit.After;
 public abstract class AbstractTikaConfigTest {
     protected static ParseContext context = new ParseContext();
     
-    protected static TikaConfig getConfig(String config) throws Exception {
+    protected static String getConfigPath(String config) throws Exception {
         URL url = TikaConfig.class.getResource(config);
-        System.setProperty("tika.config", url.toExternalForm());
+        assertNotNull("Test Tika Config not found: " + config, url);
+        return url.toExternalForm();
+    }
+    protected static TikaConfig getConfig(String config) throws Exception {
+        System.setProperty("tika.config", getConfigPath(config));
         return new TikaConfig();
     }
     

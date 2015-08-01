@@ -16,6 +16,8 @@
  */
 package org.apache.tika.config;
 
+import java.io.File;
+import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +67,28 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
      */
     @Test
     public void testUnknownParser() throws Exception {
-        // TODO
+        ServiceLoader ignoreLoader = new ServiceLoader(
+                getClass().getClassLoader(), LoadErrorHandler.IGNORE);
+        ServiceLoader warnLoader = new ServiceLoader(
+                getClass().getClassLoader(), LoadErrorHandler.WARN);
+        ServiceLoader throwLoader = new ServiceLoader(
+                getClass().getClassLoader(), LoadErrorHandler.THROW);
+        File configPath = new File(new URI(getConfigPath("TIKA-1700-unknown-parser.xml")));
+        
+        TikaConfig ignore = new TikaConfig(configPath, ignoreLoader);
+        assertNotNull(ignore);
+        assertNotNull(ignore.getParser());
+        assertEquals(1, ((CompositeParser)ignore.getParser()).getAllComponentParsers().size());
+        
+        TikaConfig warn = new TikaConfig(configPath, warnLoader);
+        assertNotNull(warn);
+        assertNotNull(warn.getParser());
+        assertEquals(1, ((CompositeParser)warn.getParser()).getAllComponentParsers().size());
+        
+        try {
+            new TikaConfig(configPath, throwLoader);
+            fail("Shouldn't get here, invalid parser class");
+        } catch (TikaException expected) {}
     }
 
     /**

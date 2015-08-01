@@ -173,6 +173,10 @@ public class ServiceLoader {
     /**
      * Loads and returns the named service class that's expected to implement
      * the given interface.
+     * 
+     * Note that this class does not use the {@link LoadErrorHandler}, a
+     *  {@link ClassNotFoundException} is always returned for unknown
+     *  classes or classes of the wrong type
      *
      * @param iface service interface
      * @param name service class name
