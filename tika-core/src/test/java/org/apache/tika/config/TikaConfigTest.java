@@ -43,8 +43,7 @@ import static org.junit.Assert.fail;
  *  over in the Tika Parsers project, which do further Tika Config
  *  testing using real parsers and detectors.
  */
-public class TikaConfigTest {
-
+public class TikaConfigTest extends AbstractTikaConfigTest {
     /**
      * Make sure that a configuration file can't reference the
      * {@link AutoDetectParser} class a &lt;parser&gt; configuration element.
@@ -53,15 +52,20 @@ public class TikaConfigTest {
      */
     @Test
     public void withInvalidParser() throws Exception {
-        URL url = TikaConfigTest.class.getResource("TIKA-866-invalid.xml");
-        System.setProperty("tika.config", url.toExternalForm());
         try {
-            new TikaConfig();
+            getConfig("TIKA-866-invalid.xml");
             fail("AutoDetectParser allowed in a <parser> element");
-        } catch (TikaException expected) {
-        } finally {
-            System.clearProperty("tika.config");
-        }
+        } catch (TikaException expected) {}
+    }
+    
+    /**
+     * Make sure that with a service loader given, we can
+     * get different configurable behaviour on parser classes
+     * which can't be found.
+     */
+    @Test
+    public void testUnknownParser() throws Exception {
+        // TODO
     }
 
     /**
@@ -73,14 +77,10 @@ public class TikaConfigTest {
      */
     @Test
     public void asCompositeParser() throws Exception {
-        URL url = TikaConfigTest.class.getResource("TIKA-866-composite.xml");
-        System.setProperty("tika.config", url.toExternalForm());
         try {
-            new TikaConfig();
+            getConfig("TIKA-866-composite.xml");
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
-        } finally {
-            System.clearProperty("tika.config");
         }
     }
 
@@ -92,14 +92,10 @@ public class TikaConfigTest {
      */
     @Test
     public void onlyValidParser() throws Exception {
-        URL url = TikaConfigTest.class.getResource("TIKA-866-valid.xml");
-        System.setProperty("tika.config", url.toExternalForm());
         try {
-            new TikaConfig();
+            getConfig("TIKA-866-valid.xml");
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
-        } finally {
-            System.clearProperty("tika.config");
         }
     }
 
@@ -149,10 +145,8 @@ public class TikaConfigTest {
      */
     @Test
     public void defaultParserWithExcludes() throws Exception {
-        URL url = TikaConfigTest.class.getResource("TIKA-1445-default-except.xml");
-        System.setProperty("tika.config", url.toExternalForm());
         try {
-            TikaConfig config = new TikaConfig();
+            TikaConfig config = getConfig("TIKA-1445-default-except.xml");
             
             CompositeParser cp = (CompositeParser)config.getParser();
             List<Parser> parsers = cp.getAllComponentParsers();
@@ -180,8 +174,6 @@ public class TikaConfigTest {
             assertEquals("fail/world", p.getSupportedTypes(null).iterator().next().toString());
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
-        } finally {
-            System.clearProperty("tika.config");
         }
     }
     
@@ -191,10 +183,8 @@ public class TikaConfigTest {
      */
     @Test
     public void parserWithChildParsers() throws Exception {
-        URL url = TikaConfigTest.class.getResource("TIKA-1653-norepeat.xml");
-        System.setProperty("tika.config", url.toExternalForm());
         try {
-            TikaConfig config = new TikaConfig();
+            TikaConfig config = getConfig("TIKA-1653-norepeat.xml");
             
             CompositeParser cp = (CompositeParser)config.getParser();
             List<Parser> parsers = cp.getAllComponentParsers();
@@ -215,8 +205,6 @@ public class TikaConfigTest {
             assertEquals("hello/world", p.getSupportedTypes(null).iterator().next().toString());
         } catch (TikaException e) {
             fail("Unexpected TikaException: " + e);
-        } finally {
-            System.clearProperty("tika.config");
         }
     }
 }
