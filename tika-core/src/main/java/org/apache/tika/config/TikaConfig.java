@@ -125,12 +125,12 @@ public class TikaConfig {
     }
 
     public TikaConfig(Element element) throws TikaException, IOException {
-        this(element, new ServiceLoader());
+        this(element, serviceLoaderFromDomElement(element, null));
     }
 
     public TikaConfig(Element element, ClassLoader loader)
             throws TikaException, IOException {
-        this(element, new ServiceLoader(loader));
+        this(element, serviceLoaderFromDomElement(element, loader));
     }
 
     private TikaConfig(Element element, ServiceLoader loader)
@@ -403,6 +403,28 @@ public class TikaConfig {
         }
         if (types != null) return types;
         return Collections.emptySet();
+    }
+    
+    private static ServiceLoader serviceLoaderFromDomElement(Element element, ClassLoader loader) {
+        Element serviceLoaderElement = getChild(element, "service-loader");
+        ServiceLoader serviceLoader = null;
+        if(serviceLoaderElement != null) {
+            boolean dynamic = Boolean.parseBoolean(serviceLoaderElement.getAttribute("dynamic"));
+            LoadErrorHandler loadErrorHandler = LoadErrorHandler.IGNORE;
+            String loadErrorHandleConfig = serviceLoaderElement.getAttribute("loadErrorHandler");
+            if("WARN".equalsIgnoreCase(loadErrorHandleConfig)) {
+                loadErrorHandler = LoadErrorHandler.WARN;
+            } else if("THROW".equalsIgnoreCase(loadErrorHandleConfig)) {
+                loadErrorHandler = LoadErrorHandler.THROW;
+            }
+            
+            serviceLoader = new ServiceLoader(loader, loadErrorHandler, dynamic);
+        } else if(loader != null) {
+            serviceLoader = new ServiceLoader(loader);
+        } else {
+            serviceLoader = new ServiceLoader();
+        }
+        return serviceLoader;
     }
     
     private static abstract class XmlLoader<CT,T> {

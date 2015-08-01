@@ -230,4 +230,17 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
             fail("Unexpected TikaException: " + e);
         }
     }
+    
+    @Test
+    public void testDynamicServiceLoaderFromConfig() throws Exception {
+        URL url = TikaConfigTest.class.getResource("TIKA-1700-dynamic.xml");
+        TikaConfig config = new TikaConfig(url);
+        
+        DummyParser parser = (DummyParser)config.getParser();
+
+        ServiceLoader loader = parser.getLoader();
+        boolean dynamicValue = loader.isDynamic();
+        
+        assertTrue("Dynamic Service Loading Should be true", dynamicValue);
+    }
 }

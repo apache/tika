@@ -142,6 +142,16 @@ public class ServiceLoader {
     	this(getContextClassLoader(), Boolean.getBoolean("org.apache.tika.service.error.warn") 
     			? LoadErrorHandler.WARN:LoadErrorHandler.IGNORE, true);
     }
+    
+    /**
+     * Returns if the service loader is static or dynamic
+     * 
+     * @return dynamic or static loading
+     * @since Apache Tika 1.10
+     */
+    public boolean isDynamic() {
+        return dynamic;
+    }
 
     /**
      * Returns the load error handler used by this loader.
