@@ -129,7 +129,7 @@ public class TikaConfig {
         DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
         
         this.mimeTypes = typesFromDomElement(element);
-        this.detector = detectorFromDomElement(element, mimeTypes, loader);
+        this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
         this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
         this.translator = translatorFromDomElement(element, loader);
     }
@@ -213,8 +213,7 @@ public class TikaConfig {
                 
                 this.mimeTypes = typesFromDomElement(element);
                 this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
-                this.detector =
-                        detectorFromDomElement(element, mimeTypes, loader);
+                this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
                 this.translator = translatorFromDomElement(element, loader);
             } catch (SAXException e) {
                 throw new TikaException(
@@ -358,137 +357,6 @@ public class TikaConfig {
             return getDefaultMimeTypes(null);
         }
     }
-
-//    private static CompositeParser parserFromDomElement(
-//            Element element, MimeTypes mimeTypes, ServiceLoader loader)
-//            throws TikaException, IOException {
-//        List<Parser> parsers = new ArrayList<Parser>();
-//        
-//        // Find the parser children of the parsers tag, if any
-//        for (Element pe : getTopLevelElementChildren(element, "parsers", "parser")) {
-//            parsers.add(parserFromParserDomElement(pe, mimeTypes, loader));
-//        }
-//        
-//        if (parsers.isEmpty()) {
-//            // No parsers defined, create a DefaultParser
-//            return getDefaultParser(mimeTypes, loader);
-//        } else if (parsers.size() == 1 && parsers.get(0) instanceof CompositeParser) {
-//            // Single Composite defined, use that
-//            return (CompositeParser)parsers.get(0);
-//        } else {
-//            // Wrap the defined parsers up in a Composite
-//            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
-//            return new CompositeParser(registry, parsers);
-//        }
-//    }
-    private static Parser parserFromParserDomElement(
-            Element parserNode, MimeTypes mimeTypes, ServiceLoader loader)
-            throws TikaException, IOException {
-        String name = parserNode.getAttribute("class");
-        Parser parser = null;
-
-        try {
-            Class<? extends Parser> parserClass =
-                    loader.getServiceClass(Parser.class, name);
-            // https://issues.apache.org/jira/browse/TIKA-866
-            if (AutoDetectParser.class.isAssignableFrom(parserClass)) {
-                throw new TikaException(
-                        "AutoDetectParser not supported in a <parser>"
-                        + " configuration element: " + name);
-            }
-
-            // Is this a composite or decorated parser? If so, support recursion
-            if (CompositeParser.class.isAssignableFrom(parserClass) ||
-                ParserDecorator.class.isAssignableFrom(parserClass)) {
-                
-                // Get the child parsers for it
-                List<Parser> childParsers = new ArrayList<Parser>();
-                NodeList childParserNodes = parserNode.getElementsByTagName("parser");
-                if (childParserNodes.getLength() > 0) {
-                    for (int i = 0; i < childParserNodes.getLength(); i++) {
-                        childParsers.add(parserFromParserDomElement(
-                                (Element)childParserNodes.item(i), mimeTypes, loader
-                        ));
-                    }
-                }
-                
-                // Get the list of parsers to exclude
-                Set<Class<? extends Parser>> excludeParsers = new HashSet<Class<? extends Parser>>();
-                NodeList excludeParserNodes = parserNode.getElementsByTagName("parser-exclude");
-                if (excludeParserNodes.getLength() > 0) {
-                    for (int i = 0; i < excludeParserNodes.getLength(); i++) {
-                        Element excl = (Element)excludeParserNodes.item(i);
-                        String exclName = excl.getAttribute("class");
-                        excludeParsers.add(loader.getServiceClass(Parser.class, exclName));
-                    }
-                }
-                
-                // Create the Composite Parser
-                Constructor<? extends Parser> c = null;
-                MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
-                if (parser == null) {
-                    try {
-                        c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class, Collection.class);
-                        parser = c.newInstance(registry, loader, excludeParsers);
-                    } 
-                    catch (NoSuchMethodException me) {}
-                }
-                if (parser == null) {
-                    try {
-                        c = parserClass.getConstructor(MediaTypeRegistry.class, List.class, Collection.class);
-                        parser = c.newInstance(registry, childParsers, excludeParsers);
-                    } catch (NoSuchMethodException me) {}
-                }
-                // Create as a Parser Decorator
-                if (parser == null && ParserDecorator.class.isAssignableFrom(parserClass)) {
-                    try {
-                        CompositeParser cp = null;
-                        if (childParsers.size() == 1 && excludeParsers.size() == 0 &&
-                                childParsers.get(0) instanceof CompositeParser) {
-                            cp = (CompositeParser)childParsers.get(0);
-                        } else {
-                            cp = new CompositeParser(registry, childParsers, excludeParsers);
-                        }
-                        c = parserClass.getConstructor(Parser.class);
-                        parser = c.newInstance(cp);
-                    } catch (NoSuchMethodException me) {}
-                }
-                // Default constructor
-                if (parser == null) {
-                    parser = parserClass.newInstance();
-                }
-            } else {
-                // Regular parser, create as-is
-                parser = parserClass.newInstance();
-            }
-
-            // Is there an explicit list of mime types for this to handle?
-            Set<MediaType> parserTypes = mediaTypesListFromDomElement(parserNode, "mime");
-            if (! parserTypes.isEmpty()) {
-                parser = ParserDecorator.withTypes(parser, parserTypes);
-            }
-            // Is there an explicit list of mime types this shouldn't handle?
-            Set<MediaType> parserExclTypes = mediaTypesListFromDomElement(parserNode, "mime-exclude");
-            if (! parserExclTypes.isEmpty()) {
-                parser = ParserDecorator.withoutTypes(parser, parserExclTypes);
-            }
-            
-            // All done with setup
-            return parser;
-        } catch (ClassNotFoundException e) {
-            throw new TikaException(
-                    "Unable to find a parser class: " + name, e);
-        } catch (IllegalAccessException e) {
-            throw new TikaException(
-                    "Unable to access a parser class: " + name, e);
-        } catch (InvocationTargetException e) {
-            throw new TikaException(
-                    "Unable to create a parser class: " + name, e);
-        } catch (InstantiationException e) {
-            throw new TikaException(
-                    "Unable to instantiate a parser class: " + name, e);
-        }
-    }
     
     private static Set<MediaType> mediaTypesListFromDomElement(
             Element node, String tag) 
@@ -514,49 +382,6 @@ public class TikaConfig {
         }
         if (types != null) return types;
         return Collections.emptySet();
-    }
-
-    private static CompositeDetector detectorFromDomElement(
-            Element element, MimeTypes mimeTypes, ServiceLoader loader)
-            throws TikaException, IOException {
-        List<Detector> detectors = new ArrayList<Detector>();
-        
-        // Find the detector children of the detectors tag, if any
-        for (Element de : getTopLevelElementChildren(element, "detectors", "detector")) {
-            detectors.add(detectorFromDetectorDomElement(de, mimeTypes, loader));
-        }
-        
-        if (detectors.isEmpty()) {
-            // No detectors defined, create a DefaultDetector
-            return getDefaultDetector(mimeTypes, loader);
-        } else if (detectors.size() == 1 && detectors.get(0) instanceof CompositeDetector) {
-            // Single Composite defined, use that
-            return (CompositeDetector)detectors.get(0);
-        } else {
-            // Wrap the defined detectors up in a Composite
-            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
-            return new CompositeDetector(registry, detectors);
-        }
-    }
-    private static Detector detectorFromDetectorDomElement(
-            Element detectorNode, MimeTypes mimeTypes, ServiceLoader loader)
-            throws TikaException, IOException {
-        String name = detectorNode.getAttribute("class");
-        
-        try {
-            Class<? extends Detector> detectorClass =
-                    loader.getServiceClass(Detector.class, name);
-            return detectorClass.newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new TikaException(
-                    "Unable to find a detector class: " + name, e);
-        } catch (IllegalAccessException e) {
-            throw new TikaException(
-                    "Unable to access a detector class: " + name, e);
-        } catch (InstantiationException e) {
-            throw new TikaException(
-                    "Unable to instantiate a detector class: " + name, e);
-        }
     }
 
     private static Translator translatorFromDomElement(
@@ -593,9 +418,17 @@ public class TikaConfig {
     private static abstract class XmlLoader<CT,T> {
         abstract String getParentTagName(); // eg parsers
         abstract String getLoaderTagName(); // eg parser
+        abstract Class<? extends T> getLoaderClass(); // Generics workaround
         abstract boolean isComposite(T loaded);
+        abstract boolean isComposite(Class<? extends T> loadedClass);
         abstract CT createDefault(MimeTypes mimeTypes, ServiceLoader loader);
         abstract CT createComposite(List<T> loaded, MimeTypes mimeTypes, ServiceLoader loader);
+        abstract T createComposite(Class<? extends T> compositeClass, 
+                List<T> children, Set<Class<? extends T>> excludeChildren, 
+                MimeTypes mimeTypes, ServiceLoader loader) 
+                throws InvocationTargetException, IllegalAccessException, InstantiationException;
+        abstract T decorate(T created, Element element) 
+                throws IOException, TikaException; // eg explicit mime types 
         
         @SuppressWarnings("unchecked")
         CT loadOverall(Element element, MimeTypes mimeTypes, 
@@ -621,20 +454,98 @@ public class TikaConfig {
             // Wrap the defined parsers/detectors up in a Composite
             return createComposite(loaded, mimeTypes, loader);
         }
-        T loadOne(Element element, MimeTypes mimeTypes, 
-                ServiceLoader loader) throws TikaException, IOException {
-            // TODO Do this properly
-            // TODO This is a cheat for parsers only!
-            return (T)parserFromParserDomElement(element, mimeTypes, loader);
-        }
+        T loadOne(Element element, MimeTypes mimeTypes, ServiceLoader loader) 
+                throws TikaException, IOException {
+            String name = element.getAttribute("class");
+            T loaded = null;
+
+            try {
+                Class<? extends T> loadedClass =
+                        loader.getServiceClass(getLoaderClass(), name);
+                
+                // Check for classes which can't be set in config
+                if (AutoDetectParser.class.isAssignableFrom(loadedClass)) {
+                    // https://issues.apache.org/jira/browse/TIKA-866
+                    throw new TikaException(
+                            "AutoDetectParser not supported in a <parser>"
+                            + " configuration element: " + name);
+                }
+
+                // Is this a composite or decorated class? If so, support recursion
+                if (isComposite(loadedClass)) {
+                    // Get the child objects for it
+                    List<T> children = new ArrayList<T>();
+                    NodeList childNodes = element.getElementsByTagName(getLoaderTagName());
+                    if (childNodes.getLength() > 0) {
+                        for (int i = 0; i < childNodes.getLength(); i++) {
+                            children.add(loadOne(
+                                    (Element)childNodes.item(i), mimeTypes, loader
+                            ));
+                        }
+                    }
+                    
+                    // Get the list of children to exclude
+                    Set<Class<? extends T>> excludeChildren = new HashSet<Class<? extends T>>();
+                    NodeList excludeChildNodes = element.getElementsByTagName(getLoaderTagName()+"-exclude");
+                    if (excludeChildNodes.getLength() > 0) {
+                        for (int i = 0; i < excludeChildNodes.getLength(); i++) {
+                            Element excl = (Element)excludeChildNodes.item(i);
+                            String exclName = excl.getAttribute("class");
+                            excludeChildren.add(loader.getServiceClass(getLoaderClass(), exclName));
+                        }
+                    }
+                    
+                    // Create the Composite
+                    loaded = createComposite(loadedClass, children, excludeChildren, mimeTypes, loader);
+
+                    // Default constructor fallback
+                    if (loaded == null) {
+                        loaded = loadedClass.newInstance();
+                    }
+                } else {
+                    // Regular class, create as-is
+                    // TODO Support arguments, needed for Translators etc
+                    loaded = loadedClass.newInstance();
+                }
+                
+                // Have any decoration performed, eg explicit mimetypes
+                loaded = decorate(loaded, element);
+                
+                // All done with setup
+                return loaded;
+            } catch (ClassNotFoundException e) {
+                throw new TikaException(
+                        "Unable to find a "+getLoaderTagName()+" class: " + name, e);
+            } catch (IllegalAccessException e) {
+                throw new TikaException(
+                        "Unable to access a "+getLoaderTagName()+" class: " + name, e);
+            } catch (InvocationTargetException e) {
+                throw new TikaException(
+                        "Unable to create a "+getLoaderTagName()+" class: " + name, e);
+            } catch (InstantiationException e) {
+                throw new TikaException(
+                        "Unable to instantiate a "+getLoaderTagName()+" class: " + name, e);
+            }        }
     }
     private static class ParserXmlLoader extends XmlLoader<CompositeParser,Parser> {
         String getParentTagName() { return "parsers"; }
         String getLoaderTagName() { return "parser"; }
         
         @Override
+        Class<? extends Parser> getLoaderClass() {
+            return Parser.class;
+        }
+        @Override
         boolean isComposite(Parser loaded) {
             return loaded instanceof CompositeParser;
+        }
+        @Override
+        boolean isComposite(Class<? extends Parser> loadedClass) {
+            if (CompositeParser.class.isAssignableFrom(loadedClass) ||
+                ParserDecorator.class.isAssignableFrom(loadedClass)) {
+                return true;
+            }
+            return false;
         }
         @Override
         CompositeParser createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
@@ -644,15 +555,81 @@ public class TikaConfig {
         CompositeParser createComposite(List<Parser> parsers, MimeTypes mimeTypes, ServiceLoader loader) {
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
             return new CompositeParser(registry, parsers);
-        }        
+        }
+        @Override
+        Parser createComposite(Class<? extends Parser> parserClass,
+                List<Parser> childParsers, Set<Class<? extends Parser>> excludeParsers,
+                MimeTypes mimeTypes, ServiceLoader loader) 
+                throws InvocationTargetException, IllegalAccessException, InstantiationException {
+            Parser parser = null;
+            Constructor<? extends Parser> c = null;
+            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+            
+            // Try the possible parser constructors
+            if (parser == null) {
+                try {
+                    c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class, Collection.class);
+                    parser = c.newInstance(registry, loader, excludeParsers);
+                } 
+                catch (NoSuchMethodException me) {}
+            }
+            if (parser == null) {
+                try {
+                    c = parserClass.getConstructor(MediaTypeRegistry.class, List.class, Collection.class);
+                    parser = c.newInstance(registry, childParsers, excludeParsers);
+                } catch (NoSuchMethodException me) {}
+            }
+            
+            // Create as a Parser Decorator
+            if (parser == null && ParserDecorator.class.isAssignableFrom(parserClass)) {
+                try {
+                    CompositeParser cp = null;
+                    if (childParsers.size() == 1 && excludeParsers.size() == 0 &&
+                            childParsers.get(0) instanceof CompositeParser) {
+                        cp = (CompositeParser)childParsers.get(0);
+                    } else {
+                        cp = new CompositeParser(registry, childParsers, excludeParsers);
+                    }
+                    c = parserClass.getConstructor(Parser.class);
+                    parser = c.newInstance(cp);
+                } catch (NoSuchMethodException me) {}
+            }
+            return parser;
+        }
+        @Override
+        Parser decorate(Parser created, Element element) throws IOException, TikaException {
+            Parser parser = created;
+            
+            // Is there an explicit list of mime types for this to handle?
+            Set<MediaType> parserTypes = mediaTypesListFromDomElement(element, "mime");
+            if (! parserTypes.isEmpty()) {
+                parser = ParserDecorator.withTypes(parser, parserTypes);
+            }
+            // Is there an explicit list of mime types this shouldn't handle?
+            Set<MediaType> parserExclTypes = mediaTypesListFromDomElement(element, "mime-exclude");
+            if (! parserExclTypes.isEmpty()) {
+                parser = ParserDecorator.withoutTypes(parser, parserExclTypes);
+            }
+            
+            // All done with decoration
+            return parser;
+        }
     }
     private static class DetectorXmlLoader extends XmlLoader<CompositeDetector,Detector> {
         String getParentTagName() { return "detectors"; }
         String getLoaderTagName() { return "detector"; }
         
         @Override
+        Class<? extends Detector> getLoaderClass() {
+            return Detector.class;
+        }
+        @Override
         boolean isComposite(Detector loaded) {
             return loaded instanceof CompositeDetector;
+        }
+        @Override
+        boolean isComposite(Class<? extends Detector> loadedClass) {
+            return CompositeDetector.class.isAssignableFrom(loadedClass);
         }
         @Override
         CompositeDetector createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
@@ -662,6 +639,20 @@ public class TikaConfig {
         CompositeDetector createComposite(List<Detector> detectors, MimeTypes mimeTypes, ServiceLoader loader) {
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
             return new CompositeDetector(registry, detectors);
-        }        
+        }
+        @Override
+        Detector createComposite(Class<? extends Detector> compositeClass,
+                List<Detector> children,
+                Set<Class<? extends Detector>> excludeChildren,
+                MimeTypes mimeTypes, ServiceLoader loader)
+                throws InvocationTargetException, IllegalAccessException,
+                InstantiationException {
+            // TODO Implement properly
+            return compositeClass.newInstance();
+        }
+        @Override
+        Detector decorate(Detector created, Element element) {
+            return created; // No decoration of Detectors
+        }
     }
 }
