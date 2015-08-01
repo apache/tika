@@ -37,7 +37,7 @@ import org.junit.Test;
  */
 public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
     @Test
-    @Ignore // TODO Finish support
+    @Ignore // TODO Work on TIKA-1702 in progress
     public void testDetectorExcludeFromDefault() throws Exception {
         TikaConfig config = getConfig("TIKA-1702-detector-blacklist.xml");
         assertNotNull(config.getParser());

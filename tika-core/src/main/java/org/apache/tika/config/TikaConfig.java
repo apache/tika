@@ -125,9 +125,12 @@ public class TikaConfig {
 
     private TikaConfig(Element element, ServiceLoader loader)
             throws TikaException, IOException {
+        ParserXmlLoader parserLoader = new ParserXmlLoader();
+        DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
+        
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorFromDomElement(element, mimeTypes, loader);
-        this.parser = parserFromDomElement(element, mimeTypes, loader);
+        this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
         this.translator = translatorFromDomElement(element, loader);
     }
 
@@ -204,11 +207,12 @@ public class TikaConfig {
             }
 
             try {
-                Element element =
-                        getBuilder().parse(stream).getDocumentElement();
+                Element element = getBuilder().parse(stream).getDocumentElement();
+                ParserXmlLoader parserLoader = new ParserXmlLoader();
+                DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
+                
                 this.mimeTypes = typesFromDomElement(element);
-                this.parser =
-                        parserFromDomElement(element, mimeTypes, loader);
+                this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
                 this.detector =
                         detectorFromDomElement(element, mimeTypes, loader);
                 this.translator = translatorFromDomElement(element, loader);
@@ -355,28 +359,28 @@ public class TikaConfig {
         }
     }
 
-    private static CompositeParser parserFromDomElement(
-            Element element, MimeTypes mimeTypes, ServiceLoader loader)
-            throws TikaException, IOException {
-        List<Parser> parsers = new ArrayList<Parser>();
-        
-        // Find the parser children of the parsers tag, if any
-        for (Element pe : getTopLevelElementChildren(element, "parsers", "parser")) {
-            parsers.add(parserFromParserDomElement(pe, mimeTypes, loader));
-        }
-        
-        if (parsers.isEmpty()) {
-            // No parsers defined, create a DefaultParser
-            return getDefaultParser(mimeTypes, loader);
-        } else if (parsers.size() == 1 && parsers.get(0) instanceof CompositeParser) {
-            // Single Composite defined, use that
-            return (CompositeParser)parsers.get(0);
-        } else {
-            // Wrap the defined parsers up in a Composite
-            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
-            return new CompositeParser(registry, parsers);
-        }
-    }
+//    private static CompositeParser parserFromDomElement(
+//            Element element, MimeTypes mimeTypes, ServiceLoader loader)
+//            throws TikaException, IOException {
+//        List<Parser> parsers = new ArrayList<Parser>();
+//        
+//        // Find the parser children of the parsers tag, if any
+//        for (Element pe : getTopLevelElementChildren(element, "parsers", "parser")) {
+//            parsers.add(parserFromParserDomElement(pe, mimeTypes, loader));
+//        }
+//        
+//        if (parsers.isEmpty()) {
+//            // No parsers defined, create a DefaultParser
+//            return getDefaultParser(mimeTypes, loader);
+//        } else if (parsers.size() == 1 && parsers.get(0) instanceof CompositeParser) {
+//            // Single Composite defined, use that
+//            return (CompositeParser)parsers.get(0);
+//        } else {
+//            // Wrap the defined parsers up in a Composite
+//            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+//            return new CompositeParser(registry, parsers);
+//        }
+//    }
     private static Parser parserFromParserDomElement(
             Element parserNode, MimeTypes mimeTypes, ServiceLoader loader)
             throws TikaException, IOException {
@@ -584,5 +588,80 @@ public class TikaConfig {
         } else {
             return translators.get(0);
         }
+    }
+    
+    private static abstract class XmlLoader<CT,T> {
+        abstract String getParentTagName(); // eg parsers
+        abstract String getLoaderTagName(); // eg parser
+        abstract boolean isComposite(T loaded);
+        abstract CT createDefault(MimeTypes mimeTypes, ServiceLoader loader);
+        abstract CT createComposite(List<T> loaded, MimeTypes mimeTypes, ServiceLoader loader);
+        
+        @SuppressWarnings("unchecked")
+        CT loadOverall(Element element, MimeTypes mimeTypes, 
+                ServiceLoader loader) throws TikaException, IOException {
+            List<T> loaded = new ArrayList<T>();
+            
+            // Find the children of the parent tag, if any
+            for (Element le : getTopLevelElementChildren(element, getParentTagName(), getLoaderTagName())) {
+                loaded.add(loadOne(le, mimeTypes, loader));
+            }
+            
+            // Build the classes, and wrap as needed
+            if (loaded.isEmpty()) {
+                // Nothing defined, create a Default
+                return createDefault(mimeTypes, loader);
+            } else if (loaded.size() == 1) {
+                T single = loaded.get(0);
+                if (isComposite(single)) {
+                    // Single Composite defined, use that
+                    return (CT)single;
+                }
+            }
+            // Wrap the defined parsers/detectors up in a Composite
+            return createComposite(loaded, mimeTypes, loader);
+        }
+        T loadOne(Element element, MimeTypes mimeTypes, 
+                ServiceLoader loader) throws TikaException, IOException {
+            // TODO Do this properly
+            // TODO This is a cheat for parsers only!
+            return (T)parserFromParserDomElement(element, mimeTypes, loader);
+        }
+    }
+    private static class ParserXmlLoader extends XmlLoader<CompositeParser,Parser> {
+        String getParentTagName() { return "parsers"; }
+        String getLoaderTagName() { return "parser"; }
+        
+        @Override
+        boolean isComposite(Parser loaded) {
+            return loaded instanceof CompositeParser;
+        }
+        @Override
+        CompositeParser createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
+            return getDefaultParser(mimeTypes, loader);
+        }
+        @Override
+        CompositeParser createComposite(List<Parser> parsers, MimeTypes mimeTypes, ServiceLoader loader) {
+            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+            return new CompositeParser(registry, parsers);
+        }        
+    }
+    private static class DetectorXmlLoader extends XmlLoader<CompositeDetector,Detector> {
+        String getParentTagName() { return "detectors"; }
+        String getLoaderTagName() { return "detector"; }
+        
+        @Override
+        boolean isComposite(Detector loaded) {
+            return loaded instanceof CompositeDetector;
+        }
+        @Override
+        CompositeDetector createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
+            return getDefaultDetector(mimeTypes, loader);
+        }
+        @Override
+        CompositeDetector createComposite(List<Detector> detectors, MimeTypes mimeTypes, ServiceLoader loader) {
+            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+            return new CompositeDetector(registry, detectors);
+        }        
     }
 }
