@@ -127,11 +127,12 @@ public class TikaConfig {
             throws TikaException, IOException {
         ParserXmlLoader parserLoader = new ParserXmlLoader();
         DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
+        TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
         
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
         this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
-        this.translator = translatorFromDomElement(element, loader);
+        this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
     }
 
     /**
@@ -210,11 +211,12 @@ public class TikaConfig {
                 Element element = getBuilder().parse(stream).getDocumentElement();
                 ParserXmlLoader parserLoader = new ParserXmlLoader();
                 DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
+                TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
                 
                 this.mimeTypes = typesFromDomElement(element);
                 this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
                 this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
-                this.translator = translatorFromDomElement(element, loader);
+                this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
             } catch (SAXException e) {
                 throw new TikaException(
                         "Specified Tika configuration has syntax errors: "
@@ -322,15 +324,24 @@ public class TikaConfig {
     }
     private static List<Element> getTopLevelElementChildren(Element element, 
             String parentName, String childrenName) throws TikaException {
-        // Should be only zero or one <parsers> / <detectors> etc tag
-        NodeList nodes = element.getElementsByTagName(parentName);
-        if (nodes.getLength() > 1) {
-            throw new TikaException("Properties may not contain multiple "+parentName+" entries");
+        Node parentNode = null;
+        if (parentName != null) {
+            // Should be only zero or one <parsers> / <detectors> etc tag
+            NodeList nodes = element.getElementsByTagName(parentName);
+            if (nodes.getLength() > 1) {
+                throw new TikaException("Properties may not contain multiple "+parentName+" entries");
+            }
+            else if (nodes.getLength() == 1) {
+                parentNode = nodes.item(0);
+            }
+        } else {
+            // All children directly on the master element
+            parentNode = element;
         }
-        else if (nodes.getLength() == 1) {
+        
+        if (parentNode != null) {
             // Find only the direct child parser/detector objects
-            Node parsersE = nodes.item(0);
-            nodes = parsersE.getChildNodes();
+            NodeList nodes = parentNode.getChildNodes();
             List<Element> elements = new ArrayList<Element>();
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
@@ -383,39 +394,9 @@ public class TikaConfig {
         if (types != null) return types;
         return Collections.emptySet();
     }
-
-    private static Translator translatorFromDomElement(
-            Element element, ServiceLoader loader)
-            throws TikaException, IOException {
-        List<Translator> translators = new ArrayList<Translator>();
-        NodeList nodes = element.getElementsByTagName("translator");
-        for (int i = 0; i < nodes.getLength(); i++) {
-            Element node = (Element) nodes.item(i);
-            String name = node.getAttribute("class");
-
-            try {
-                Class<? extends Translator> translatorClass =
-                        loader.getServiceClass(Translator.class, name);
-                translators.add(translatorClass.newInstance());
-            } catch (ClassNotFoundException e) {
-                throw new TikaException(
-                        "Unable to find a translator class: " + name, e);
-            } catch (IllegalAccessException e) {
-                throw new TikaException(
-                        "Unable to access a translator class: " + name, e);
-            } catch (InstantiationException e) {
-                throw new TikaException(
-                        "Unable to instantiate a translator class: " + name, e);
-            }
-        }
-        if (translators.isEmpty()) {
-            return getDefaultTranslator(loader);
-        } else {
-            return translators.get(0);
-        }
-    }
     
     private static abstract class XmlLoader<CT,T> {
+        abstract boolean supportsComposite();
         abstract String getParentTagName(); // eg parsers
         abstract String getLoaderTagName(); // eg parser
         abstract Class<? extends T> getLoaderClass(); // Generics workaround
@@ -450,6 +431,9 @@ public class TikaConfig {
                     // Single Composite defined, use that
                     return (CT)single;
                 }
+            } else if (! supportsComposite()) {
+                // No composite support, just return the first one
+                return (CT)loaded.get(0);
             }
             // Wrap the defined parsers/detectors up in a Composite
             return createComposite(loaded, mimeTypes, loader);
@@ -529,6 +513,7 @@ public class TikaConfig {
             }        }
     }
     private static class ParserXmlLoader extends XmlLoader<CompositeParser,Parser> {
+        boolean supportsComposite() { return true; }
         String getParentTagName() { return "parsers"; }
         String getLoaderTagName() { return "parser"; }
         
@@ -566,7 +551,7 @@ public class TikaConfig {
             Constructor<? extends Parser> c = null;
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
             
-            // Try the possible parser constructors
+            // Try the possible default and composite parser constructors
             if (parser == null) {
                 try {
                     c = parserClass.getConstructor(MediaTypeRegistry.class, ServiceLoader.class, Collection.class);
@@ -623,6 +608,7 @@ public class TikaConfig {
         }
     }
     private static class DetectorXmlLoader extends XmlLoader<CompositeDetector,Detector> {
+        boolean supportsComposite() { return true; }
         String getParentTagName() { return "detectors"; }
         String getLoaderTagName() { return "detector"; }
         
@@ -658,7 +644,7 @@ public class TikaConfig {
             Constructor<? extends Detector> c = null;
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
             
-            // Try the possible composite detector constructors
+            // Try the possible default and composite detector constructors
             if (detector == null) {
                 try {
                     c = detectorClass.getConstructor(MimeTypes.class, ServiceLoader.class, Collection.class);
@@ -691,5 +677,41 @@ public class TikaConfig {
         Detector decorate(Detector created, Element element) {
             return created; // No decoration of Detectors
         }
+    }
+    private static class TranslatorXmlLoader extends XmlLoader<Translator,Translator> {
+        boolean supportsComposite() { return false; }
+        String getParentTagName() { return null; }
+        String getLoaderTagName() { return "translator"; }
+        
+        @Override
+        Class<? extends Translator> getLoaderClass() {
+            return Translator.class;
+        }
+        @Override
+        boolean isComposite(Translator loaded) { return false; }
+        @Override
+        boolean isComposite(Class<? extends Translator> loadedClass) { return false; }
+        @Override
+        Translator createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
+            return getDefaultTranslator(loader);
+        }
+        @Override
+        Translator createComposite(List<Translator> loaded,
+                MimeTypes mimeTypes, ServiceLoader loader) {
+            return loaded.get(0);
+        }
+        @Override
+        Translator createComposite(Class<? extends Translator> compositeClass,
+                List<Translator> children,
+                Set<Class<? extends Translator>> excludeChildren,
+                MimeTypes mimeTypes, ServiceLoader loader)
+                throws InvocationTargetException, IllegalAccessException,
+                InstantiationException {
+            throw new InstantiationException("Only one translator supported");
+        }
+        @Override
+        Translator decorate(Translator created, Element element) {
+            return created; // No decoration of Translators
+        }        
     }
 }

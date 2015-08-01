@@ -31,7 +31,7 @@ import org.junit.Test;
 
 /**
  * Junit test class for {@link TikaConfig}, which cover things
- *  that {@link AbstractTikaConfigTest} can't do due to a need for the
+ *  that {@link TikaConfigTest} can't do due to a need for the
  *  full set of detectors
  */
 public class TikaDetectorConfigTest extends AbstractTikaConfigTest {

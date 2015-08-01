@@ -38,6 +38,9 @@ public class DefaultTranslator implements Translator {
     public DefaultTranslator(ServiceLoader loader) {
         this.loader = loader;
     }
+    public DefaultTranslator() {
+        this(new ServiceLoader());
+    }
 
     /**
      * Finds all statically loadable translators and sort the list by name,
