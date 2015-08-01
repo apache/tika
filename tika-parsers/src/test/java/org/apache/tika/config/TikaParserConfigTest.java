@@ -23,41 +23,29 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.net.URL;
 import java.util.List;
 
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.EmptyParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.executable.ExecutableParser;
 import org.apache.tika.parser.xml.XMLParser;
-import org.junit.After;
 import org.junit.Test;
 
 /**
  * Junit test class for {@link TikaConfig}, which cover things
- *  that {@link TikaConfigTest} can't do due to a need for the
+ *  that {@link AbstractTikaConfigTest} can't do due to a need for the
  *  full set of parsers
  */
-public class TikaParserConfigTest {
-    protected static ParseContext context = new ParseContext();
-    protected static TikaConfig getConfig(String config) throws Exception {
-        URL url = TikaConfig.class.getResource(config);
-        System.setProperty("tika.config", url.toExternalForm());
-        return new TikaConfig();
-    }
-    @After
-    public void resetConfig() {
-        System.clearProperty("tika.config");
-    }
-    
+public class TikaParserConfigTest extends AbstractTikaConfigTest {
     @Test
     public void testMimeExcludeInclude() throws Exception {
         TikaConfig config = getConfig("TIKA-1558-blacklist.xml");
+        assertNotNull(config.getParser());
+        assertNotNull(config.getDetector());
         Parser parser = config.getParser();
         
         MediaType PDF = MediaType.application("pdf");
@@ -95,6 +83,8 @@ public class TikaParserConfigTest {
     @Test
     public void testParserExcludeFromDefault() throws Exception {
         TikaConfig config = getConfig("TIKA-1558-blacklist.xml");
+        assertNotNull(config.getParser());
+        assertNotNull(config.getDetector());
         CompositeParser parser = (CompositeParser)config.getParser();
         
         MediaType PE_EXE = MediaType.application("x-msdownload");
@@ -140,6 +130,8 @@ public class TikaParserConfigTest {
     @Test
     public void defaultParserBlacklist() throws Exception {
         TikaConfig config = new TikaConfig();
+        assertNotNull(config.getParser());
+        assertNotNull(config.getDetector());
         CompositeParser cp = (CompositeParser) config.getParser();
         List<Parser> parsers = cp.getAllComponentParsers();
 
