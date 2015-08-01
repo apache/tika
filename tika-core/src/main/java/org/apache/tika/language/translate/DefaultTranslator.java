@@ -17,15 +17,22 @@
 
 package org.apache.tika.language.translate;
 
-import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.exception.TikaException;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-public class DefaultTranslator implements Translator{
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.exception.TikaException;
+
+/**
+ * A translator which picks the first available {@link Translator} 
+ * implementations available through the
+ * {@link javax.imageio.spi.ServiceRegistry service provider mechanism}.
+ *
+ * @since Apache Tika 1.6
+ */
+public class DefaultTranslator implements Translator {
     private transient final ServiceLoader loader;
 
     public DefaultTranslator(ServiceLoader loader) {
@@ -58,17 +65,39 @@ public class DefaultTranslator implements Translator{
         });
         return translators;
     }
-
-    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
-        return getDefaultTranslators(loader).get(0).translate(text, sourceLanguage, targetLanguage);
+    /**
+     * Returns the first available translator, or null if none are
+     */
+    private static Translator getFirstAvailable(ServiceLoader loader) {
+        for (Translator t : getDefaultTranslators(loader)) {
+            if (t.isAvailable()) return t;
+        }
+        return null;
     }
 
+    /**
+     * Translate, using the first available service-loaded translator
+     */
+    public String translate(String text, String sourceLanguage, String targetLanguage) throws TikaException, IOException {
+        Translator t = getFirstAvailable(loader);
+        if (t != null) {
+            return t.translate(text, sourceLanguage, targetLanguage);
+        }
+        throw new TikaException("No translators currently available");
+    }
+
+    /**
+     * Translate, using the first available service-loaded translator
+     */
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
-        return getDefaultTranslators(loader).get(0).translate(text, targetLanguage);
+        Translator t = getFirstAvailable(loader);
+        if (t != null) {
+            return t.translate(text, targetLanguage);
+        }
+        throw new TikaException("No translators currently available");
     }
 
     public boolean isAvailable() {
-        return getDefaultTranslators(loader).get(0).isAvailable();
+        return getFirstAvailable(loader) != null;
     }
-
 }
