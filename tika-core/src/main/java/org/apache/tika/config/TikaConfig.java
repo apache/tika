@@ -66,7 +66,7 @@ public class TikaConfig {
         return MimeTypes.getDefaultMimeTypes(loader);
     }
 
-    protected Detector getDefaultDetector(
+    protected CompositeDetector getDefaultDetector(
             MimeTypes types, ServiceLoader loader) {
         return new DefaultDetector(types, loader);
     }
@@ -80,7 +80,7 @@ public class TikaConfig {
         return new DefaultTranslator(loader);
     }
     private final CompositeParser parser;
-    private final Detector detector;
+    private final CompositeDetector detector;
     private final Translator translator;
 
     private final MimeTypes mimeTypes;
@@ -317,6 +317,33 @@ public class TikaConfig {
         }
         return null;
     }
+    private static List<Element> getTopLevelElementChildren(Element element, 
+            String parentName, String childrenName) throws TikaException {
+        // Should be only zero or one <parsers> / <detectors> etc tag
+        NodeList nodes = element.getElementsByTagName(parentName);
+        if (nodes.getLength() > 1) {
+            throw new TikaException("Properties may not contain multiple "+parentName+" entries");
+        }
+        else if (nodes.getLength() == 1) {
+            // Find only the direct child parser/detector objects
+            Node parsersE = nodes.item(0);
+            nodes = parsersE.getChildNodes();
+            List<Element> elements = new ArrayList<Element>();
+            for (int i = 0; i < nodes.getLength(); i++) {
+                Node node = nodes.item(i);
+                if (node instanceof Element) {
+                    Element nodeE = (Element)node;
+                    if (childrenName.equals(nodeE.getTagName())) {
+                        elements.add(nodeE);
+                    }
+                }
+            }
+            return elements;
+        } else {
+            // No elements of this type
+            return Collections.emptyList();
+        }
+    }
 
     private static MimeTypes typesFromDomElement(Element element)
             throws TikaException, IOException {
@@ -333,24 +360,9 @@ public class TikaConfig {
             throws TikaException, IOException {
         List<Parser> parsers = new ArrayList<Parser>();
         
-        // Should be only zero or one <parsers> tag
-        NodeList nodes = element.getElementsByTagName("parsers");
-        if (nodes.getLength() > 1) {
-            throw new TikaException("Properties may not contain multiple Parsers entries");
-        }
-        else if (nodes.getLength() == 1) {
-            // Find only the direct child parser objects
-            Node parsersE = nodes.item(0);
-            nodes = parsersE.getChildNodes();
-            for (int i = 0; i < nodes.getLength(); i++) {
-                Node node = nodes.item(i);
-                if (node instanceof Element) {
-                    Element nodeE = (Element)node;
-                    if ("parser".equals(nodeE.getTagName())) {
-                        parsers.add(parserFromParserDomElement(nodeE, mimeTypes, loader));
-                    }
-                }
-            }
+        // Find the parser children of the parsers tag, if any
+        for (Element pe : getTopLevelElementChildren(element, "parsers", "parser")) {
+            parsers.add(parserFromParserDomElement(pe, mimeTypes, loader));
         }
         
         if (parsers.isEmpty()) {
@@ -500,7 +512,7 @@ public class TikaConfig {
         return Collections.emptySet();
     }
 
-    private static Detector detectorFromDomElement(
+    private static CompositeDetector detectorFromDomElement(
           Element element, MimeTypes mimeTypes, ServiceLoader loader)
           throws TikaException, IOException {
        List<Detector> detectors = new ArrayList<Detector>();
