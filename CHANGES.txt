@@ -1,5 +1,9 @@
 Release 1.10 - Current Development
 
+  * Tika Config XML can now be used to create composite detectors,
+    and exclude detectors that DefaultDetector would otherwise
+    have used. This brings support in-line with Parsers. (TIKA-1702)
+
   * Reverted to legacy sort order of parsers that was 
     mistakenly reversed in Tika 1.9 (TIKA-1689).
 
