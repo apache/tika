@@ -29,14 +29,10 @@ import java.nio.charset.Charset;
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultProbDetector;
-import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
-import org.apache.tika.mime.MimeTypes;
-import org.apache.tika.mime.ProbabilisticMimeDetectionSelector;
 import org.apache.tika.mime.ProbabilisticMimeDetectionSelector.Builder;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +50,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
             registry = MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry();
             tika = new Tika(new TikaConfig() {
                 @Override
-                protected Detector getDefaultDetector(MimeTypes types,
+                protected CompositeDetector getDefaultDetector(MimeTypes types,
                         ServiceLoader loader) {
                     /*
                      * here is an example with the use of the builder to
