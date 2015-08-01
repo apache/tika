@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.10-SNAPSHOT</version>
+    <version>1.10</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -145,9 +145,9 @@
     <url>http://www.apache.org</url>
   </organization>
   <scm>
-    <url>http://svn.apache.org/viewvc/tika/trunk/tika-translate</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-translate</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-translate</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/tags/1.10-rc1/tika-translate</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.10-rc1/tika-translate</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.10-rc1/tika-translate</developerConnection>
   </scm>
   <issueManagement>
     <system>JIRA</system>
