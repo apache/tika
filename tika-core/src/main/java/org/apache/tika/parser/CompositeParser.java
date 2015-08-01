@@ -99,10 +99,9 @@ public class CompositeParser extends AbstractParser {
         return map;
     }
 
-    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p){
+    private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
         return excludeParsers.contains(p) || assignableFrom(excludeParsers, p);
     }
-
     private boolean assignableFrom(Collection<Class<? extends Parser>> excludeParsers, Class<? extends Parser> p) {
         for (Class<? extends Parser> e : excludeParsers) {
             if (e.isAssignableFrom(p)) return true;

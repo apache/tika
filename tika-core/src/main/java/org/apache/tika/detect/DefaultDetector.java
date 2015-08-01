@@ -16,6 +16,7 @@
  */
 package org.apache.tika.detect;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.imageio.spi.ServiceRegistry;
@@ -62,9 +63,14 @@ public class DefaultDetector extends CompositeDetector {
 
     private transient final ServiceLoader loader;
 
-    public DefaultDetector(MimeTypes types, ServiceLoader loader) {
-        super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader));
+    public DefaultDetector(MimeTypes types, ServiceLoader loader,
+                           Collection<Class<? extends Detector>> excludeDetectors) {
+        super(types.getMediaTypeRegistry(), getDefaultDetectors(types, loader), excludeDetectors);
         this.loader = loader;
+    }
+    
+    public DefaultDetector(MimeTypes types, ServiceLoader loader) {
+        this(types, loader, null);
     }
 
     public DefaultDetector(MimeTypes types, ClassLoader loader) {
