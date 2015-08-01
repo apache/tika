@@ -1,4 +1,4 @@
-Release 1.10 - Current Development
+Release 1.10 - 8/1/2015
 
   * Tika Config XML can now be used to create composite detectors,
     and exclude detectors that DefaultDetector would otherwise
