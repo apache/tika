@@ -27,7 +27,6 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EmptyDetector;
 import org.apache.tika.parser.microsoft.POIFSContainerDetector;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -37,7 +36,6 @@ import org.junit.Test;
  */
 public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
     @Test
-    @Ignore // TODO Work on TIKA-1702 in progress
     public void testDetectorExcludeFromDefault() throws Exception {
         TikaConfig config = getConfig("TIKA-1702-detector-blacklist.xml");
         assertNotNull(config.getParser());
