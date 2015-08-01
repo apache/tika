@@ -66,7 +66,7 @@ public class TikaConfig {
         return MimeTypes.getDefaultMimeTypes(loader);
     }
 
-    protected CompositeDetector getDefaultDetector(
+    protected static CompositeDetector getDefaultDetector(
             MimeTypes types, ServiceLoader loader) {
         return new DefaultDetector(types, loader);
     }
@@ -513,35 +513,46 @@ public class TikaConfig {
     }
 
     private static CompositeDetector detectorFromDomElement(
-          Element element, MimeTypes mimeTypes, ServiceLoader loader)
-          throws TikaException, IOException {
-       List<Detector> detectors = new ArrayList<Detector>();
-       NodeList nodes = element.getElementsByTagName("detector");
-       for (int i = 0; i < nodes.getLength(); i++) {
-           Element node = (Element) nodes.item(i);
-           String name = node.getAttribute("class");
-
-           try {
-               Class<? extends Detector> detectorClass =
-                       loader.getServiceClass(Detector.class, name);
-               detectors.add(detectorClass.newInstance());
-           } catch (ClassNotFoundException e) {
-               throw new TikaException(
-                       "Unable to find a detector class: " + name, e);
-           } catch (IllegalAccessException e) {
-               throw new TikaException(
-                       "Unable to access a detector class: " + name, e);
-           } catch (InstantiationException e) {
-               throw new TikaException(
-                       "Unable to instantiate a detector class: " + name, e);
-           }
-       }
-       if (detectors.isEmpty()) {
-    	   return new DefaultDetector(mimeTypes, loader);
-       } else {
-           MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
-           return new CompositeDetector(registry, detectors);
-       }
+            Element element, MimeTypes mimeTypes, ServiceLoader loader)
+            throws TikaException, IOException {
+        List<Detector> detectors = new ArrayList<Detector>();
+        
+        // Find the detector children of the detectors tag, if any
+        for (Element de : getTopLevelElementChildren(element, "detectors", "detector")) {
+            detectors.add(detectorFromDetectorDomElement(de, mimeTypes, loader));
+        }
+        
+        if (detectors.isEmpty()) {
+            // No detectors defined, create a DefaultDetector
+            return getDefaultDetector(mimeTypes, loader);
+        } else if (detectors.size() == 1 && detectors.get(0) instanceof CompositeDetector) {
+            // Single Composite defined, use that
+            return (CompositeDetector)detectors.get(0);
+        } else {
+            // Wrap the defined detectors up in a Composite
+            MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
+            return new CompositeDetector(registry, detectors);
+        }
+    }
+    private static Detector detectorFromDetectorDomElement(
+            Element detectorNode, MimeTypes mimeTypes, ServiceLoader loader)
+            throws TikaException, IOException {
+        String name = detectorNode.getAttribute("class");
+        
+        try {
+            Class<? extends Detector> detectorClass =
+                    loader.getServiceClass(Detector.class, name);
+            return detectorClass.newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new TikaException(
+                    "Unable to find a detector class: " + name, e);
+        } catch (IllegalAccessException e) {
+            throw new TikaException(
+                    "Unable to access a detector class: " + name, e);
+        } catch (InstantiationException e) {
+            throw new TikaException(
+                    "Unable to instantiate a detector class: " + name, e);
+        }
     }
 
     private static Translator translatorFromDomElement(
