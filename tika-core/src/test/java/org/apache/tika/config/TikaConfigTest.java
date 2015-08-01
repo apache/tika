@@ -36,6 +36,13 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * Tests for the Tika Config, which don't require real parsers /
+ *  detectors / etc.
+ * There's also {@link TikaParserConfigTest} and {@link TikaDetectorConfigTest}
+ *  over in the Tika Parsers project, which do further Tika Config
+ *  testing using real parsers and detectors.
+ */
 public class TikaConfigTest {
 
     /**
