@@ -18,6 +18,7 @@
 package org.apache.tika.mime;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -28,10 +29,7 @@ import java.nio.charset.Charset;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultProbDetector;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.ProbabilisticMimeDetectionSelector.Builder;
 import org.junit.Before;
@@ -39,41 +37,31 @@ import org.junit.Test;
 
 public class ProbabilisticMimeDetectionTestWithTika {
     private static final Charset UTF8 = Charset.forName("UTF-8");
-    // private ProbabilisticMimeDetectionSelector proDetector;
-    private Tika tika;
+    
+    private ProbabilisticMimeDetectionSelector proSelector;
     private MediaTypeRegistry registry;
+    private Tika tika;
 
     /** @inheritDoc */
     @Before
     public void setUp() {
-        try {
-            registry = MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry();
-            tika = new Tika(new TikaConfig() {
-                @Override
-                protected CompositeDetector getDefaultDetector(MimeTypes types,
-                        ServiceLoader loader) {
-                    /*
-                     * here is an example with the use of the builder to
-                     * instantiate the object.
-                     */
-                    Builder builder = new ProbabilisticMimeDetectionSelector.Builder();
-                    ProbabilisticMimeDetectionSelector proDetector = new ProbabilisticMimeDetectionSelector(
-                            types, builder.priorMagicFileType(0.5f)
-                            .priorExtensionFileType(0.5f)
-                            .priorMetaFileType(0.5f));
-                    return new DefaultProbDetector(proDetector, loader);
-                }
-            });
-        } catch (TikaException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } finally {
-
-        }
-
+        MimeTypes types = MimeTypes.getDefaultMimeTypes();
+        ServiceLoader loader = new ServiceLoader();
+        registry = types.getMediaTypeRegistry();
+        
+        /*
+         * here is an example with the use of the builder to
+         * instantiate the object.
+         */
+        Builder builder = new ProbabilisticMimeDetectionSelector.Builder();
+        proSelector = new ProbabilisticMimeDetectionSelector(
+                types, builder.priorMagicFileType(0.5f)
+                .priorExtensionFileType(0.5f)
+                .priorMetaFileType(0.5f));
+        DefaultProbDetector detector = new DefaultProbDetector(proSelector, loader);
+        
+        // Use a default Tika, except for our different detector
+        tika = new Tika(detector);
     }
 
     @Test
@@ -196,11 +184,6 @@ public class ProbabilisticMimeDetectionTestWithTika {
         } finally {
             in.close();
         }
-    }
-
-    private void assertNotNull(String string, InputStream in) {
-        // TODO Auto-generated method stub
-
     }
 
     /**
