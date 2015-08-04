@@ -25,7 +25,7 @@ import java.util.Properties;
 
 /**
  * Configuration for TesseractOCRParser.
- * 
+ *
  * This allows to enable TesseractOCRParser and set its parameters:
  * <p>
  * TesseractOCRConfig config = new TesseractOCRConfig();<br>
@@ -36,27 +36,30 @@ import java.util.Properties;
  * Parameters can also be set by either editing the existing TesseractOCRConfig.properties file in,
  * tika-parser/src/main/resources/org/apache/tika/parser/ocr, or overriding it by creating your own
  * and placing it in the package org/apache/tika/parser/ocr on the classpath.
- * 
+ *
  */
 public class TesseractOCRConfig implements Serializable{
 
 	private static final long serialVersionUID = -4861942486845757891L;
-	
+
 	// Path to tesseract installation folder, if not on system path.
 	private  String tesseractPath = "";
-	
+
+    // Path to the 'tessdata' folder, which contains language files and config files.
+    private String tessdataPath = "";
+
 	// Language dictionary to be used.
 	private  String language = "eng";
-	
+
 	// Tesseract page segmentation mode.
 	private  String pageSegMode = "1";
-	
+
 	// Minimum file size to submit file to ocr.
 	private  int minFileSizeToOcr = 0;
-	
+
 	// Maximum file size to submit file to ocr.
 	private  int maxFileSizeToOcr = Integer.MAX_VALUE;
-	
+
 	// Maximum time (seconds) to wait for the ocring process termination
 	private int timeout = 120;
 
@@ -98,6 +101,8 @@ public class TesseractOCRConfig implements Serializable{
 
 		setTesseractPath(
 				getProp(props, "tesseractPath", getTesseractPath()));
+        setTessdataPath(
+                getProp(props, "tessdataPath", getTessdataPath()));
 		setLanguage(
 				getProp(props, "language", getLanguage()));
 		setPageSegMode(
@@ -107,7 +112,7 @@ public class TesseractOCRConfig implements Serializable{
 		setMaxFileSizeToOcr(
 				getProp(props, "maxFileSizeToOcr", getMaxFileSizeToOcr()));
 		setTimeout(
-				getProp(props, "timeout", getTimeout()));
+                getProp(props, "timeout", getTimeout()));
 
 	}
 
@@ -115,22 +120,43 @@ public class TesseractOCRConfig implements Serializable{
 	public String getTesseractPath() {
 		return tesseractPath;
 	}
-	
+
 	/**
-	 * Set tesseract installation folder, needed if it is not on system path.
+	 * Set the path to the Tesseract executable, needed if it is not on system path.
+     * <p>
+     * Note that if you set this value, it is highly recommended that you also
+     * set the path to the 'tessdata' folder using {@link #setTessdataPath}.
+     * </p>
 	 */
 	public void setTesseractPath(String tesseractPath) {
 		if(!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator))
 			tesseractPath += File.separator;
-		
+
 		this.tesseractPath = tesseractPath;
 	}
-	
+
+    /** @see #setTessdataPath(String tessdataPath) */
+    public String getTessdataPath() {
+        return tessdataPath;
+    }
+
+    /**
+     * Set the path to the 'tessdata' folder, which contains language files and config files. In some cases (such
+     * as on Windows), this folder is found in the Tesseract installation, but in other cases
+     * (such as when Tesseract is built from source), it may be located elsewhere.
+     */
+    public void setTessdataPath(String tessdataPath) {
+        if(!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator))
+            tessdataPath += File.separator;
+
+        this.tessdataPath = tessdataPath;
+    }
+
 	/** @see #setLanguage(String language)*/
 	public String getLanguage() {
 		return language;
 	}
-	
+
 	/**
 	 * Set tesseract language dictionary to be used. Default is "eng".
 	 * Multiple languages may be specified, separated by plus characters.
@@ -141,12 +167,12 @@ public class TesseractOCRConfig implements Serializable{
 		}
 		this.language = language;
 	}
-	
+
 	/** @see #setPageSegMode(String pageSegMode)*/
 	public String getPageSegMode() {
 		return pageSegMode;
 	}
-	
+
 	/**
 	 * Set tesseract page segmentation mode.
 	 * Default is 1 = Automatic page segmentation with OSD (Orientation and Script Detection)
@@ -157,12 +183,12 @@ public class TesseractOCRConfig implements Serializable{
 		}
 		this.pageSegMode = pageSegMode;
 	}
-	
+
 	/** @see #setMinFileSizeToOcr(int minFileSizeToOcr)*/
 	public int getMinFileSizeToOcr() {
 		return minFileSizeToOcr;
 	}
-	
+
 	/**
 	 * Set minimum file size to submit file to ocr.
 	 * Default is 0.
@@ -170,12 +196,12 @@ public class TesseractOCRConfig implements Serializable{
 	public void setMinFileSizeToOcr(int minFileSizeToOcr) {
 		this.minFileSizeToOcr = minFileSizeToOcr;
 	}
-	
+
 	/** @see #setMaxFileSizeToOcr(int maxFileSizeToOcr)*/
 	public int getMaxFileSizeToOcr() {
 		return maxFileSizeToOcr;
 	}
-	
+
 	/**
 	 * Set maximum file size to submit file to ocr.
 	 * Default is Integer.MAX_VALUE.
