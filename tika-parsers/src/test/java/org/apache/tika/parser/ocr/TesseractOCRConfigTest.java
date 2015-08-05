@@ -32,6 +32,7 @@ public class TesseractOCRConfigTest extends TikaTest {
     public void testNoConfig() throws Exception {
         TesseractOCRConfig config = new TesseractOCRConfig();
         assertEquals("Invalid default tesseractPath value", "", config.getTesseractPath());
+        assertEquals("Invalid default tessdataPath value", "", config.getTessdataPath());
         assertEquals("Invalid default language value", "eng", config.getLanguage());
         assertEquals("Invalid default pageSegMode value", "1", config.getPageSegMode());
         assertEquals("Invalid default minFileSizeToOcr value", 0, config.getMinFileSizeToOcr());
@@ -47,6 +48,7 @@ public class TesseractOCRConfigTest extends TikaTest {
 
         TesseractOCRConfig config = new TesseractOCRConfig(stream);
         assertEquals("Invalid default tesseractPath value", "", config.getTesseractPath());
+        assertEquals("Invalid default tessdataPath value", "", config.getTessdataPath());
         assertEquals("Invalid overridden language value", "fra+deu", config.getLanguage());
         assertEquals("Invalid default pageSegMode value", "1", config.getPageSegMode());
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
@@ -62,6 +64,7 @@ public class TesseractOCRConfigTest extends TikaTest {
 
         TesseractOCRConfig config = new TesseractOCRConfig(stream);
         assertEquals("Invalid overridden tesseractPath value", "/opt/tesseract" + File.separator, config.getTesseractPath());
+        assertEquals("Invalid overridden tesseractPath value", "/usr/local/share" + File.separator, config.getTessdataPath());
         assertEquals("Invalid overridden language value", "fra+deu", config.getLanguage());
         assertEquals("Invalid overridden pageSegMode value", "2", config.getPageSegMode());
         assertEquals("Invalid overridden minFileSizeToOcr value", 1, config.getMinFileSizeToOcr());
