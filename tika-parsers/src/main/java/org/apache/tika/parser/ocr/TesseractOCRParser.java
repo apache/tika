@@ -97,9 +97,14 @@ public class TesseractOCRParser extends AbstractParser {
     }
 
     private void setEnv(TesseractOCRConfig config, ProcessBuilder pb) {
-        if (!config.getTesseractPath().isEmpty()) {
-            Map<String, String> env = pb.environment();
-            env.put("TESSDATA_PREFIX", config.getTesseractPath());
+        String tessdataPrefix = "TESSDATA_PREFIX";
+        Map<String, String> env = pb.environment();
+
+        if (!config.getTessdataPath().isEmpty()) {
+            env.put(tessdataPrefix, config.getTessdataPath());
+        }
+        else if(!config.getTesseractPath().isEmpty()) {
+            env.put(tessdataPrefix, config.getTesseractPath());
         }
     }
 
