@@ -60,6 +60,16 @@
           </instructions>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>src/main/resources/META-INF/services/java.nio.file.spi.FileTypeDetector</exclude>
+            <exclude>src/test/resources/test-documents/*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
