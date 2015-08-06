@@ -132,6 +132,7 @@
         <configuration>
           <excludes>
             <exclude>src/test/resources/org/apache/tika/**</exclude>
+            <exclude>src/test/resources/*.txt</exclude>
           </excludes>
         </configuration>
       </plugin>
