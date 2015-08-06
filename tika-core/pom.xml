@@ -85,6 +85,8 @@
         <configuration>
           <excludes>
             <exclude>src/test/resources/org/apache/tika/**</exclude>
+            <exclude>src/main/resources/org/apache/tika/language/*.ngp</exclude>
+            <exclude>src/main/resources/org/apache/tika/detect/*.nnmodel</exclude>
           </excludes>
         </configuration>
       </plugin>
