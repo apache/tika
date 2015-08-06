@@ -256,6 +256,17 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>src/main/resources/tikaserver-version.properties</exclude>
+            <exclude>src/test/resources/*</exclude>
+            <exclude>README.md</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>com.qmino</groupId>
         <artifactId>miredot-maven-plugin</artifactId>
         <version>1.4</version>
