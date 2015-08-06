@@ -382,6 +382,7 @@
           <excludes>
             <exclude>src/main/java/org/apache/tika/parser/txt/Charset*.java</exclude>
             <exclude>src/test/resources/test-documents/**</exclude>
+            <exclude>src/test/resources/META-INF/services/org.apache.tika.parser.Parser</exclude>
           </excludes>
         </configuration>
       </plugin>
