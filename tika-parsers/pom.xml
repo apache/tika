@@ -184,7 +184,7 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-debug-all</artifactId>
-      <version>4.1</version>
+      <version>5.0.4</version>
     </dependency>
     <dependency>
       <groupId>com.googlecode.mp4parser</groupId>

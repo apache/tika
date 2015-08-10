@@ -3,6 +3,8 @@ Release 1.11 - Current Development
   * The ability to specify the Tesseract Config Path was added
     to the OCR Parser (TIKA-1703).
 
+  * Upgraded to ASM 5.0.4 (TIKA-1705).
+
 
 Release 1.10 - 8/1/2015
 
