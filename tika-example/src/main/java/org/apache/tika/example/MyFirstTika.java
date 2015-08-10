@@ -15,6 +15,7 @@
 package org.apache.tika.example;
 
 import java.io.File;
+import java.io.InputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.config.TikaConfig;
@@ -35,10 +36,9 @@ import org.xml.sax.ContentHandler;
  * Demonstrates how to call the different components within Tika: its
  * {@link Detector} framework (aka MIME identification and repository), its
  * {@link Parser} interface, its {@link LanguageIdentifier} and other goodies.
+ * 
  * It also shows the "easy way" via {@link AutoDetectParser}
  */
-
-@SuppressWarnings("deprecation")
 public class MyFirstTika {
     public static void main(String[] args) throws Exception {
         String filename = args[0];
@@ -77,16 +77,18 @@ public class MyFirstTika {
 
         System.out.println("Examining: [" + filename + "]");
 
+        metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
         System.out.println("The MIME type (based on filename) is: ["
-                + mimeRegistry.getMimeType(filename) + "]");
+                + mimeRegistry.detect(null, metadata) + "]");
 
+        InputStream stream = TikaInputStream.get(new File(filename));
         System.out.println("The MIME type (based on MAGIC) is: ["
-                + mimeRegistry.getMimeType(new File(filename)) + "]");
+                + mimeRegistry.detect(stream, metadata) + "]");
 
-        Detector mimeDetector = (Detector) mimeRegistry;
+        stream = TikaInputStream.get(new File(filename));
+        Detector detector = tikaConfig.getDetector();
         System.out.println("The MIME type (based on the Detector interface) is: ["
-                + mimeDetector.detect(new File(filename).toURI().toURL()
-                        .openStream(), new Metadata()) + "]");
+                + detector.detect(stream, metadata) + "]");
 
         LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
                 FileUtils.readFileToString(new File(filename))));
@@ -94,11 +96,14 @@ public class MyFirstTika {
         System.out.println("The language of this content is: ["
                 + lang.getLanguage() + "]");
 
-        Parser parser = tikaConfig.getParser(
-                MediaType.parse(mimeRegistry.getMimeType(filename).getName()));
+        // Get a non-detecting parser that handles all the types it can
+        Parser parser = tikaConfig.getParser();
+        // Tell it what we think the content is
+        MediaType type = detector.detect(stream, metadata);
+        metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        // Have the file parsed to get the content and metadata
         ContentHandler handler = new BodyContentHandler();
-        parser.parse(new File(filename).toURI().toURL().openStream(), handler,
-                metadata, new ParseContext());
+        parser.parse(stream, handler, metadata, new ParseContext());
         
         return handler.toString();
     }
