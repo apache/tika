@@ -67,7 +67,7 @@ public class MyFirstTika {
         
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         ContentHandler handler = new BodyContentHandler();
-        TikaInputStream stream = TikaInputStream.get(new File(filename));
+        TikaInputStream stream = TikaInputStream.get(new File(filename), metadata);
         parser.parse(stream, handler, metadata, new ParseContext());
         return handler.toString();
     }
