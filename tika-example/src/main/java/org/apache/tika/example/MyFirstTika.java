@@ -37,43 +37,41 @@ import org.xml.sax.ContentHandler;
 
 @SuppressWarnings("deprecation")
 public class MyFirstTika {
+    public static void main(String[] args) throws Exception {
+        String filename = args[0];
+        MimeTypes mimeRegistry = TikaConfig.getDefaultConfig()
+                .getMimeRepository();
 
-	public static void main(String[] args) throws Exception {
-		String filename = args[0];
-		MimeTypes mimeRegistry = TikaConfig.getDefaultConfig()
-				.getMimeRepository();
+        System.out.println("Examining: [" + filename + "]");
 
-		System.out.println("Examining: [" + filename + "]");
+        System.out.println("The MIME type (based on filename) is: ["
+                + mimeRegistry.getMimeType(filename) + "]");
 
-		System.out.println("The MIME type (based on filename) is: ["
-				+ mimeRegistry.getMimeType(filename) + "]");
+        System.out.println("The MIME type (based on MAGIC) is: ["
+                + mimeRegistry.getMimeType(new File(filename)) + "]");
 
-		System.out.println("The MIME type (based on MAGIC) is: ["
-				+ mimeRegistry.getMimeType(new File(filename)) + "]");
+        Detector mimeDetector = (Detector) mimeRegistry;
+        System.out
+        .println("The MIME type (based on the Detector interface) is: ["
+                + mimeDetector.detect(new File(filename).toURI().toURL()
+                        .openStream(), new Metadata()) + "]");
 
-		Detector mimeDetector = (Detector) mimeRegistry;
-		System.out
-				.println("The MIME type (based on the Detector interface) is: ["
-						+ mimeDetector.detect(new File(filename).toURI().toURL()
-								.openStream(), new Metadata()) + "]");
+        LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
+                FileUtils.readFileToString(new File(filename))));
 
-		LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
-				FileUtils.readFileToString(new File(filename))));
+        System.out.println("The language of this content is: ["
+                + lang.getLanguage() + "]");
 
-		System.out.println("The language of this content is: ["
-				+ lang.getLanguage() + "]");
+        Parser parser = TikaConfig.getDefaultConfig().getParser(
+                MediaType.parse(mimeRegistry.getMimeType(filename).getName()));
+        Metadata parsedMet = new Metadata();
+        ContentHandler handler = new BodyContentHandler();
+        parser.parse(new File(filename).toURI().toURL().openStream(), handler,
+                parsedMet, new ParseContext());
 
-		Parser parser = TikaConfig.getDefaultConfig().getParser(
-				MediaType.parse(mimeRegistry.getMimeType(filename).getName()));
-		Metadata parsedMet = new Metadata();
-		ContentHandler handler = new BodyContentHandler();
-		parser.parse(new File(filename).toURI().toURL().openStream(), handler,
-				parsedMet, new ParseContext());
-
-		System.out.println("Parsed Metadata: ");
-		System.out.println(parsedMet);
-		System.out.println("Parsed Text: ");
-		System.out.println(handler.toString());
-
-	}
+        System.out.println("Parsed Metadata: ");
+        System.out.println(parsedMet);
+        System.out.println("Parsed Text: ");
+        System.out.println(handler.toString());
+    }
 }
