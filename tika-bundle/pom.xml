@@ -133,7 +133,7 @@
               jackcess,
               commons-lang,              
               tagsoup,
-              asm-debug-all,
+              asm,
               juniversalchardet,
               vorbis-java-core, vorbis-java-tika,
               isoparser, aspectjrt,
