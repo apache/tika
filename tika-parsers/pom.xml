@@ -232,6 +232,45 @@
       <version>0.7</version>
     </dependency>
 
+	<!--  GROBID Dependencies -->
+	<dependency>
+	  <groupId>org.grobid</groupId>
+  	  <artifactId>grobid-core</artifactId>
+	  <version>0.3.4-SNAPSHOT</version>
+	</dependency>
+	<dependency>
+	  <groupId>directory-naming</groupId>
+	  <artifactId>naming-java</artifactId>
+	  <version>0.8</version>
+	</dependency>
+	<dependency>
+	  <groupId>org.apache.commons</groupId>
+	  <artifactId>commons-lang3</artifactId>
+	  <version>3.0.1</version>
+	</dependency>		
+	<dependency>
+	  <groupId>org.chasen</groupId>
+	  <artifactId>crfpp</artifactId>
+	  <version>1.0.2</version>
+	  <scope>compile</scope>
+	</dependency>
+	<dependency>
+      <groupId>fr.limsi.wapiti</groupId>
+      <artifactId>wapiti</artifactId>
+      <version>1.5.0</version>
+    </dependency>
+    <dependency>
+	  <groupId>com.cybozu</groupId>
+	  <artifactId>language-detection</artifactId>
+	  <version>09-13-2011</version>
+	</dependency>
+    <dependency>
+	  <groupId>net.arnx</groupId>
+	  <artifactId>jsonic</artifactId>
+	  <version>1.3.5</version>
+	</dependency>
+	
+
     <!-- Provided dependencies -->
     <dependency>
       <groupId>org.xerial</groupId>
