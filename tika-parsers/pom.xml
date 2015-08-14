@@ -232,6 +232,14 @@
       <version>0.7</version>
     </dependency>
 
+	<!--  GROBID Dependencies -->
+	<dependency>
+	  <groupId>org.grobid</groupId>
+  	  <artifactId>grobid-core</artifactId>
+	  <version>0.3.4</version>
+	</dependency>	
+	
+
     <!-- Provided dependencies -->
     <dependency>
       <groupId>org.xerial</groupId>
