@@ -34,20 +34,30 @@ public class GrobidParser {
   
   private static final String GROBID_PROPERTIES_UNSET_VALUE = "/path/to/grobid-home/config/grobid.properties";
   
+  private static GrobidConfig gConfig;
+  
+  static{
+    gConfig = new GrobidConfig();
+    try {
+      MockContext.setInitialContext(gConfig.getGrobidHome(),
+          gConfig.getGrobidProperties());
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+  }
+  
   public GrobidParser() {
 
   }
 
   public void parse(String filePath, ContentHandler handler, Metadata metadata,
       ParseContext context) {
-    GrobidConfig gConfig = new GrobidConfig();
+    
     if (!canRun(gConfig)){
       return;
     }
     
     try {
-      MockContext.setInitialContext(gConfig.getGrobidHome(),
-          gConfig.getGrobidProperties());
       GrobidProperties.getInstance();
 
       Engine engine = GrobidFactory.getInstance().createEngine();
@@ -70,6 +80,7 @@ public class GrobidParser {
   }
   
   protected static boolean canRun(GrobidConfig gConfig){
+    if (gConfig == null) return false;
     return  gConfig.getGrobidHome() != null 
         && !gConfig.getGrobidHome().equals("")
         && !gConfig.getGrobidHome().equals(GROBID_HOME_UNSET_VALUE)
