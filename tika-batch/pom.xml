@@ -89,7 +89,7 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <scope>test</scope>
-      <version>2.1</version>
+      <version>${commons.io.version}</version>
     </dependency>
   </dependencies>
 
