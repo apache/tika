@@ -40,7 +40,6 @@ import org.xml.sax.SAXException;
 /**
  * Demonstrates Tika and its ability to sense symlinks.
  */
-@SuppressWarnings("deprecation")
 public class RollbackSoftware {
 
 	public static void main(String[] args) throws Exception {
@@ -53,7 +52,7 @@ public class RollbackSoftware {
 		LinkContentHandler handler = new LinkContentHandler();
 		Metadata met = new Metadata();
 		DeploymentAreaParser parser = new DeploymentAreaParser();
-		parser.parse(IOUtils.toInputStream(deployArea.getAbsolutePath()),
+		parser.parse(IOUtils.toInputStream(deployArea.getAbsolutePath(), "utf-8"),
 				handler, met);
 		List<Link> links = handler.getLinks();
 		if (links.size() < 2)
@@ -111,7 +110,7 @@ public class RollbackSoftware {
 				Metadata metadata, ParseContext context) throws IOException,
 				SAXException, TikaException {
 
-			File deployArea = new File(IOUtils.toString(is));
+			File deployArea = new File(IOUtils.toString(is, "utf-8"));
 			File[] versions = deployArea.listFiles(new FileFilter() {
 
 				public boolean accept(File pathname) {

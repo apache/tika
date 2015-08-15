@@ -91,7 +91,7 @@ public class MyFirstTika {
                 + detector.detect(stream, metadata) + "]");
 
         LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
-                FileUtils.readFileToString(new File(filename))));
+                FileUtils.readFileToString(new File(filename), "utf-8")));
 
         System.out.println("The language of this content is: ["
                 + lang.getLanguage() + "]");

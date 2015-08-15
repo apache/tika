@@ -94,7 +94,7 @@
     <dependency>
       <artifactId>commons-io</artifactId>
       <groupId>commons-io</groupId>
-      <version>2.4</version>
+      <version>${commons.io.version}</version>
     </dependency>
   </dependencies>
 

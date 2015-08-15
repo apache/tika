@@ -301,6 +301,7 @@
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
+    <commons.io.version>2.4</commons.io.version>
     <slf4j.version>1.7.12</slf4j.version>
   </properties>
 
@@ -317,14 +318,16 @@
       <plugin>
         <groupId>de.thetaphi</groupId>
         <artifactId>forbiddenapis</artifactId>
-        <version>1.7</version>
+        <version>1.8</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
           <internalRuntimeForbidden>true</internalRuntimeForbidden>
+          <failOnUnresolvableSignatures>false</failOnUnresolvableSignatures>
           <failOnUnsupportedJava>false</failOnUnsupportedJava>
           <bundledSignatures>
             <bundledSignature>jdk-unsafe</bundledSignature>
             <bundledSignature>jdk-deprecated</bundledSignature>
+            <bundledSignature>commons-io-unsafe-${commons.io.version}</bundledSignature>
           </bundledSignatures>
         </configuration>
         <executions>

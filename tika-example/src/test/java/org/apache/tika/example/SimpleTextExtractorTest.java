@@ -25,9 +25,7 @@ import org.junit.Test;
 
 import com.google.common.base.Charsets;
 
-@SuppressWarnings("deprecation")
 public class SimpleTextExtractorTest {
-
     @Test
     public void testSimpleTextExtractor() throws Exception {
         String message =
@@ -40,7 +38,7 @@ public class SimpleTextExtractorTest {
         System.setOut(new PrintStream(buffer, true, Charsets.UTF_8.name()));
 
         File file = new File("target", "test.txt");
-        FileUtils.writeStringToFile(file, message);
+        FileUtils.writeStringToFile(file, message, "utf-8");
         SimpleTextExtractor.main(new String[] { file.getPath() });
         file.delete();
 
@@ -48,5 +46,4 @@ public class SimpleTextExtractorTest {
 
         assertEquals(message, buffer.toString(Charsets.UTF_8.name()).trim());
     }
-
 }

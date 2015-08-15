@@ -75,8 +75,8 @@ public class DirListParser implements Parser {
 			Metadata metadata, ParseContext context) throws IOException,
 			SAXException, TikaException {
 
-		List<String> lines = FileUtils.readLines(TikaInputStream.get(is)
-				.getFile());
+		List<String> lines = FileUtils.readLines(
+		        TikaInputStream.get(is).getFile(), "utf-8");
 		for (String line : lines) {
 			String[] fileToks = line.split("\\s+");
 			if (fileToks.length < 8)

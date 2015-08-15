@@ -62,7 +62,7 @@ public class TranslateResource {
 			@PathParam("translator") String translator,
 			@PathParam("src") String sLang, @PathParam("dest") String dLang)
 			throws TikaException, IOException {
-		return doTranslate(IOUtils.toString(is), translator, sLang, dLang);
+		return doTranslate(IOUtils.toString(is, "utf-8"), translator, sLang, dLang);
 
 	}
 
@@ -74,7 +74,7 @@ public class TranslateResource {
 	public String autoTranslate(final InputStream is,
 			@PathParam("translator") String translator,
 			@PathParam("dest") String dLang) throws TikaException, IOException {
-		final String content = IOUtils.toString(is);
+		final String content = IOUtils.toString(is, "utf-8");
 		LanguageIdentifier language = new LanguageIdentifier(
 				new LanguageProfile(content));
 		String sLang = language.getLanguage();
