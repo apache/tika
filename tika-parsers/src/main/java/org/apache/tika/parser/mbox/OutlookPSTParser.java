@@ -46,14 +46,13 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 /**
- * @author Tran Nam Quang
- * @author hong-thai.nguyen
+ * Parser for MS Outlook PST email storage files
  */
 public class OutlookPSTParser extends AbstractParser {
 
     private static final long serialVersionUID = 620998217748364063L;
 
-    private static final MediaType MS_OUTLOOK_PST_MIMETYPE = MediaType.application("vnd.ms-outlook-pst");
+    public static final MediaType MS_OUTLOOK_PST_MIMETYPE = MediaType.application("vnd.ms-outlook-pst");
     private static final Set<MediaType> SUPPORTED_TYPES = singleton(MS_OUTLOOK_PST_MIMETYPE);
 
     private static AttributesImpl createAttribute(String attName, String attValue) {
