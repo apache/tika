@@ -29,21 +29,22 @@ public class SimpleTextExtractorTest {
     @Test
     public void testSimpleTextExtractor() throws Exception {
         String message =
-            "Hello, World! This is simple UTF-8 text content written"
-            + " in English to test autodetection of the character"
-            + " encoding of the input stream.";
+            "This is Tika - Hello, World! This is simple UTF-8 text"
+            + " content written in English to test autodetection of"
+            + " the character encoding of the input stream.";
         ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        String UTF8 = Charsets.UTF_8.name();
 
         PrintStream out = System.out;
-        System.setOut(new PrintStream(buffer, true, Charsets.UTF_8.name()));
+        System.setOut(new PrintStream(buffer, true, UTF8));
 
         File file = new File("target", "test.txt");
-        FileUtils.writeStringToFile(file, message, "utf-8");
+        FileUtils.writeStringToFile(file, message, UTF8);
         SimpleTextExtractor.main(new String[] { file.getPath() });
         file.delete();
 
         System.setOut(out);
 
-        assertEquals(message, buffer.toString(Charsets.UTF_8.name()).trim());
+        assertEquals(message, buffer.toString(UTF8).trim());
     }
 }
