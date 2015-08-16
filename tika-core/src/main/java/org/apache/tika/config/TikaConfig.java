@@ -434,6 +434,8 @@ public class TikaConfig {
         abstract Class<? extends T> getLoaderClass(); // Generics workaround
         abstract boolean isComposite(T loaded);
         abstract boolean isComposite(Class<? extends T> loadedClass);
+        abstract T preLoadOne(Class<? extends T> loadedClass, String classname, 
+                MimeTypes mimeTypes) throws TikaException;
         abstract CT createDefault(MimeTypes mimeTypes, ServiceLoader loader);
         abstract CT createComposite(List<T> loaded, MimeTypes mimeTypes, ServiceLoader loader);
         abstract T createComposite(Class<? extends T> compositeClass, 
@@ -479,15 +481,11 @@ public class TikaConfig {
             try {
                 Class<? extends T> loadedClass =
                         loader.getServiceClass(getLoaderClass(), name);
-                
-                // Check for classes which can't be set in config
-                if (AutoDetectParser.class.isAssignableFrom(loadedClass)) {
-                    // https://issues.apache.org/jira/browse/TIKA-866
-                    throw new TikaException(
-                            "AutoDetectParser not supported in a <parser>"
-                            + " configuration element: " + name);
-                }
 
+                // Do pre-load checks and short-circuits
+                loaded = preLoadOne(loadedClass, name, mimeTypes);
+                if (loaded != null) return loaded;
+                
                 // Is this a composite or decorated class? If so, support recursion
                 if (isComposite(loadedClass)) {
                     // Get the child objects for it
@@ -560,6 +558,19 @@ public class TikaConfig {
         @Override
         Class<? extends Parser> getLoaderClass() {
             return Parser.class;
+        }
+        @Override
+        Parser preLoadOne(Class<? extends Parser> loadedClass, String classname, 
+                          MimeTypes mimeTypes) throws TikaException {
+            // Check for classes which can't be set in config
+            if (AutoDetectParser.class.isAssignableFrom(loadedClass)) {
+                // https://issues.apache.org/jira/browse/TIKA-866
+                throw new TikaException(
+                        "AutoDetectParser not supported in a <parser>"
+                        + " configuration element: " + classname);
+            }
+            // Continue with normal loading
+            return null;
         }
         @Override
         boolean isComposite(Parser loaded) {
@@ -657,6 +668,17 @@ public class TikaConfig {
             return Detector.class;
         }
         @Override
+        Detector preLoadOne(Class<? extends Detector> loadedClass, String classname, 
+                            MimeTypes mimeTypes) throws TikaException {
+            // If they asked for the mime types as a detector, give
+            //  them the one we've already created. TIKA-1708
+            if (MimeTypes.class.equals(loadedClass)) {
+                return mimeTypes;
+            }
+            // Continue with normal loading
+            return null;
+        }
+        @Override
         boolean isComposite(Detector loaded) {
             return loaded instanceof CompositeDetector;
         }
@@ -726,6 +748,12 @@ public class TikaConfig {
         @Override
         Class<? extends Translator> getLoaderClass() {
             return Translator.class;
+        }
+        @Override
+        Translator preLoadOne(Class<? extends Translator> loadedClass, String classname, 
+                              MimeTypes mimeTypes) throws TikaException {
+            // Continue with normal loading
+            return null;
         }
         @Override
         boolean isComposite(Translator loaded) { return false; }
