@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNotNull;
 
 import java.net.URL;
 
+import org.apache.tika.TikaTest;
 import org.apache.tika.parser.ParseContext;
 import org.junit.After;
 
@@ -29,7 +30,7 @@ import org.junit.After;
  *  that {@link TikaConfigTest} can't, do due to a need for the
  *  full set of "real" classes of parsers / detectors
  */
-public abstract class AbstractTikaConfigTest {
+public abstract class AbstractTikaConfigTest extends TikaTest {
     protected static ParseContext context = new ParseContext();
     
     protected static String getConfigPath(String config) throws Exception {

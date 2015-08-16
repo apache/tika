@@ -25,8 +25,12 @@ import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EmptyDetector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.mbox.OutlookPSTParser;
 import org.apache.tika.parser.microsoft.POIFSContainerDetector;
 import org.apache.tika.parser.pkg.ZipContainerDetector;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -52,33 +56,83 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
         
         
         // Get the DefaultDetector from the config
-        DefaultDetector confDetecotor = (DefaultDetector)detector.getDetectors().get(0);
+        DefaultDetector confDetector = (DefaultDetector)detector.getDetectors().get(0);
         
         // Get a fresh "default" DefaultParser
         DefaultDetector normDetector = new DefaultDetector(config.getMimeRepository());
         
         
         // The default one will offer the Zip and POIFS detectors
-        boolean hasZip = false;
-        boolean hasPOIFS = false;
-        for (Detector d : normDetector.getDetectors()) {
-            if (d instanceof ZipContainerDetector) {
-                hasZip = true;
-            }
-            if (d instanceof POIFSContainerDetector) {
-                hasPOIFS = true;
-            }
-        }
-        assertTrue(hasZip);
-        assertTrue(hasPOIFS);
+        assertDetectors(normDetector, true, true);
         
         
         // The one from the config won't, as we excluded those
-        for (Detector d : confDetecotor.getDetectors()) {
-            if (d instanceof ZipContainerDetector)
-                fail("Shouldn't have the ZipContainerDetector from config");
-            if (d instanceof POIFSContainerDetector)
-                fail("Shouldn't have the POIFSContainerDetector from config");
+        assertDetectors(confDetector, false, false);
+    }
+    
+    /**
+     * TIKA-1708 - If the Zip detector is disabled, either explicitly,
+     *  or via giving a list of detectors that it isn't part of, ensure
+     *  that detection of PST files still works
+     */
+    @Test
+    @Ignore // Currently broken as per bug report
+    public void testPSTDetectionWithoutZipDetector() throws Exception {
+        // Check the one with an exclude
+        TikaConfig config = getConfig("TIKA-1708-detector-default.xml");
+        assertNotNull(config.getParser());
+        assertNotNull(config.getDetector());
+        CompositeDetector detectorWX = (CompositeDetector)config.getDetector();
+
+        // Check it has the POIFS one, but not the zip one
+        assertDetectors(detectorWX, true, false);
+        
+        
+        // Check the one with an explicit list
+        config = getConfig("TIKA-1708-detector-composite.xml");
+        assertNotNull(config.getParser());
+        assertNotNull(config.getDetector());
+        CompositeDetector detectorCL = (CompositeDetector)config.getDetector();
+        assertEquals(2, detectorCL.getDetectors().size());
+        
+        // Check it also has the POIFS one, but not the zip one
+        assertDetectors(detectorCL, true, false);
+        
+        
+        // Now check they detect PST files correctly
+        TikaInputStream stream = TikaInputStream.get(
+                getResourceAsFile("/test-documents/testPST.pst"));
+        assertEquals(
+                OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE.toString(), 
+                detectorWX.detect(stream, new Metadata())
+        );
+        assertEquals(
+                OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE.toString(), 
+                detectorCL.detect(stream, new Metadata())
+        );
+    }
+    
+    private void assertDetectors(CompositeDetector detector, boolean shouldHavePOIFS,
+                                 boolean shouldHaveZip) {
+        boolean hasZip = false;
+        boolean hasPOIFS = false;
+        for (Detector d : detector.getDetectors()) {
+            if (d instanceof ZipContainerDetector) {
+                if (shouldHaveZip) {
+                    hasZip = true;
+                } else {
+                    fail("Shouldn't have the ZipContainerDetector from config");
+                }
+            }
+            if (d instanceof POIFSContainerDetector) {
+                if (shouldHavePOIFS) {
+                    hasPOIFS = true;
+                } else {
+                    fail("Shouldn't have the POIFSContainerDetector from config");
+                }
+            }
         }
+        if (shouldHavePOIFS) assertTrue("Should have the POIFSContainerDetector", hasPOIFS);
+        if (shouldHaveZip)   assertTrue("Should have the ZipContainerDetector", hasZip);
     }
 }
