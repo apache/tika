@@ -76,38 +76,44 @@ public class TikaDetectorConfigTest extends AbstractTikaConfigTest {
      *  that detection of PST files still works
      */
     @Test
-    @Ignore // Currently broken as per bug report
     public void testPSTDetectionWithoutZipDetector() throws Exception {
         // Check the one with an exclude
-        TikaConfig config = getConfig("TIKA-1708-detector-default.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        CompositeDetector detectorWX = (CompositeDetector)config.getDetector();
+        TikaConfig configWX = getConfig("TIKA-1708-detector-default.xml");
+        assertNotNull(configWX.getParser());
+        assertNotNull(configWX.getDetector());
+        CompositeDetector detectorWX = (CompositeDetector)configWX.getDetector();
 
         // Check it has the POIFS one, but not the zip one
         assertDetectors(detectorWX, true, false);
         
         
         // Check the one with an explicit list
-        config = getConfig("TIKA-1708-detector-composite.xml");
-        assertNotNull(config.getParser());
-        assertNotNull(config.getDetector());
-        CompositeDetector detectorCL = (CompositeDetector)config.getDetector();
+        TikaConfig configCL = getConfig("TIKA-1708-detector-composite.xml");
+        assertNotNull(configCL.getParser());
+        assertNotNull(configCL.getDetector());
+        CompositeDetector detectorCL = (CompositeDetector)configCL.getDetector();
         assertEquals(2, detectorCL.getDetectors().size());
         
         // Check it also has the POIFS one, but not the zip one
         assertDetectors(detectorCL, true, false);
         
         
+        // Check that both detectors have a mimetypes with entries
+        assertTrue("Not enough mime types: " + configWX.getMediaTypeRegistry().getTypes().size(),
+                   configWX.getMediaTypeRegistry().getTypes().size() > 100);
+        assertTrue("Not enough mime types: " + configCL.getMediaTypeRegistry().getTypes().size(),
+                   configCL.getMediaTypeRegistry().getTypes().size() > 100);
+        
+        
         // Now check they detect PST files correctly
         TikaInputStream stream = TikaInputStream.get(
                 getResourceAsFile("/test-documents/testPST.pst"));
         assertEquals(
-                OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE.toString(), 
+                OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE, 
                 detectorWX.detect(stream, new Metadata())
         );
         assertEquals(
-                OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE.toString(), 
+                OutlookPSTParser.MS_OUTLOOK_PST_MIMETYPE, 
                 detectorCL.detect(stream, new Metadata())
         );
     }
