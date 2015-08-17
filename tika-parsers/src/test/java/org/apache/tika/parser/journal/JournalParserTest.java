@@ -32,7 +32,7 @@ public class JournalParserTest {
 
   @Test
   public void testJournalParser() {
-    String path = "/test-documents/testJournalParser2.pdf";
+    String path = "/test-documents/testJournalParser.pdf";
     ContentHandler handler = new BodyContentHandler();
     Metadata metadata = new Metadata();
     
