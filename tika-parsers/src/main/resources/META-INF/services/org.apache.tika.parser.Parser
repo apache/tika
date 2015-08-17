@@ -66,3 +66,4 @@ org.apache.tika.parser.isatab.ISArchiveParser
 org.apache.tika.parser.geoinfo.GeographicInformationParser
 org.apache.tika.parser.geo.topic.GeoParser
 org.apache.tika.parser.external.CompositeExternalParser
+org.apache.tika.parser.journal.JournalParser
