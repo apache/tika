@@ -2,7 +2,7 @@ Release 1.11 - Current Development
 
   * The fantastic GROBID (or Grobid) GeneRation Of BIbliographic Data
     for machine learning from PDF files is now integrated as a 
-    Tika parser (TIKA-1699).
+    Tika parser (TIKA-1699, TIKA-1712).
 
   * The ability to specify the Tesseract Config Path was added
     to the OCR Parser (TIKA-1703).
