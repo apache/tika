@@ -9,6 +9,9 @@ Release 1.11 - Current Development
 
   * Upgraded to ASM 5.0.4 (TIKA-1705).
 
+  * Corrected Tika Config XML detector defintion explicit loading 
+    of MimeTypes (TIKA-1708)
+
 
 Release 1.10 - 8/1/2015
 
