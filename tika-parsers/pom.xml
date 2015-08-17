@@ -45,6 +45,7 @@
     <vorbis.version>0.6</vorbis.version>
     <pdfbox.version>1.8.10</pdfbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
+    <cxf.version>3.0.3</cxf.version>
   </properties>
 
   <dependencies>
@@ -231,6 +232,12 @@
       <artifactId>junrar</artifactId>
       <version>0.7</version>
     </dependency>
+	<dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-rs-client</artifactId>
+      <version>${cxf.version}</version>
+    </dependency>
+	
 
     <!-- Provided dependencies -->
     <dependency>
@@ -269,6 +276,13 @@
         </exclusion>
       </exclusions>
     </dependency>
+    
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20140107</version>
+    </dependency>
+    
 
     <!-- Test dependencies -->
     <dependency>
