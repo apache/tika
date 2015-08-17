@@ -20,8 +20,12 @@ package org.apache.tika.parser.journal;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
@@ -40,14 +44,21 @@ public class GrobidRESTParser {
 
   private static final String GROBID_PROCESSHEADER_PATH = "/processHeaderDocument";
 
-  private static String restHostUrlStr;
+  private String restHostUrlStr;
 
-  public GrobidRESTParser(String restHostUrlStr) {
+  public GrobidRESTParser() {
+    String restHostUrlStr = null;
+    try {
+      restHostUrlStr = readRestUrl();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+
     if (restHostUrlStr == null
         || (restHostUrlStr != null && restHostUrlStr.equals(""))) {
-      GrobidRESTParser.restHostUrlStr = GROBID_REST_HOST;
+      this.restHostUrlStr = GROBID_REST_HOST;
     } else {
-      GrobidRESTParser.restHostUrlStr = restHostUrlStr;
+      this.restHostUrlStr = restHostUrlStr;
     }
   }
 
@@ -76,11 +87,19 @@ public class GrobidRESTParser {
     }
   }
 
+  private static String readRestUrl() throws IOException {
+    Properties grobidProperties = new Properties();
+    grobidProperties.load(GrobidRESTParser.class
+        .getResourceAsStream("GrobidExtractor.properties"));
+
+    return grobidProperties.getProperty("grobid.server.url");
+  }
+
   protected static boolean canRun() {
     Response response = null;
 
     try {
-      response = WebClient.create(restHostUrlStr + GROBID_ISALIVE_PATH)
+      response = WebClient.create(readRestUrl() + GROBID_ISALIVE_PATH)
           .accept(MediaType.TEXT_HTML).get();
       String resp = response.readEntity(String.class);
       return resp != null && !resp.equals("") && resp.startsWith("<h4>");

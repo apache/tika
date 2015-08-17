@@ -22,9 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
-import java.util.Properties;
 import java.util.Set;
-
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -58,12 +56,7 @@ public class JournalParser extends AbstractParser {
     TikaInputStream tis = TikaInputStream.get(stream, new TemporaryResources());
     File tmpFile = tis.getFile();
 
-    Properties grobidProperties = new Properties();
-    grobidProperties.load(JournalParser.class
-        .getResourceAsStream("GrobidExtractor.properties"));
-
-    GrobidRESTParser grobidParser = new GrobidRESTParser(
-        grobidProperties.getProperty("grobid.server.url"));
+    GrobidRESTParser grobidParser = new GrobidRESTParser();
     grobidParser.parse(tmpFile.getAbsolutePath(), handler, metadata, context);
 
     PDFParser parser = new PDFParser();
