@@ -39,14 +39,14 @@ public class GrobidRESTParser {
                                                                // nfc why
 
   private static final String GROBID_PROCESSHEADER_PATH = "/processHeaderDocument";
-  
+
   private static String restHostUrlStr;
-  
-  public GrobidRESTParser(String restHostUrlStr){
-    if (restHostUrlStr == null){
+
+  public GrobidRESTParser(String restHostUrlStr) {
+    if (restHostUrlStr == null
+        || (restHostUrlStr != null && restHostUrlStr.equals(""))) {
       GrobidRESTParser.restHostUrlStr = GROBID_REST_HOST;
-    }
-    else{
+    } else {
       GrobidRESTParser.restHostUrlStr = restHostUrlStr;
     }
   }
@@ -68,8 +68,8 @@ public class GrobidRESTParser {
     try {
       String resp = response.readEntity(String.class);
       Metadata teiMet = new TEIParser().parse(resp);
-      for(String key: teiMet.names()){
-        metadata.add("grobid:header_"+key, teiMet.get(key));
+      for (String key : teiMet.names()) {
+        metadata.add("grobid:header_" + key, teiMet.get(key));
       }
     } catch (Exception e) {
       e.printStackTrace();
