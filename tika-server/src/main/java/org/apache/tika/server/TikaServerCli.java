@@ -71,7 +71,7 @@ public class TikaServerCli {
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("C", "cors", true, "origin allowed to make CORS requests (default=NONE)\nall allowed if \"all\"");
-        options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ')');
+        options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ", use * for all)");
         options.addOption("p", "port", true, "listen port (default = " + DEFAULT_PORT + ')');
         options.addOption("c", "config", true, "Tika Configuration file to override default config with.");
         options.addOption("d", "digest", true, "include digest in metadata, e.g. md5,sha256");
@@ -103,6 +103,9 @@ public class TikaServerCli {
 
             if (line.hasOption("host")) {
                 host = line.getOptionValue("host");
+                if ("*".equals(host)) {
+                    host = "0.0.0.0";
+                }
             }
 
             int port = DEFAULT_PORT;
