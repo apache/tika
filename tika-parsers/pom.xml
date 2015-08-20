@@ -36,11 +36,10 @@
 
   <properties>
     <poi.version>3.13-beta1</poi.version>
+    <!-- NOTE: sync codec version with POI -->
     <codec.version>1.9</codec.version>
-    <!-- NOTE: sync with POI -->
-    <compress.version>1.9</compress.version>
+    <!-- NOTE: sync tukaani version with commons-compress -->
     <tukaani.version>1.5</tukaani.version>
-    <!-- NOTE: sync with commons-compress -->
     <mime4j.version>0.7.2</mime4j.version>
     <vorbis.version>0.6</vorbis.version>
     <pdfbox.version>1.8.10</pdfbox.version>
@@ -121,7 +120,7 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <version>${compress.version}</version>
+      <version>${commons.compress.version}</version>
     </dependency>
     <dependency>
       <groupId>org.tukaani</groupId>
