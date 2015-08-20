@@ -16,7 +16,6 @@
  */
 package org.apache.tika.detect;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,6 +34,8 @@ import java.util.Map;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.io.TemporaryResources;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class TrainedModelDetector implements Detector {
 	private final Map<MediaType, TrainedModel> MODEL_MAP = new HashMap<MediaType, TrainedModel>();
@@ -146,7 +147,7 @@ public abstract class TrainedModelDetector implements Detector {
 	private synchronized void writeHisto(final float[] histogram)
 			throws IOException {
 	        String histPath = new TemporaryResources().createTemporaryFile().getAbsolutePath();
-	        Writer writer = new OutputStreamWriter(new FileOutputStream(histPath),"UTF-8");
+	        Writer writer = new OutputStreamWriter(new FileOutputStream(histPath), UTF_8);
 		int n = histogram.length;// excluding the last one for storing the
 									// max value
 		for (int i = 0; i < n; i++) {

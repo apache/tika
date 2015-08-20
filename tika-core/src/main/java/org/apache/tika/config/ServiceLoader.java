@@ -29,7 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.apache.tika.io.IOUtils;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Internal utility class that Tika uses to look up service providers.
@@ -345,7 +346,7 @@ public class ServiceLoader {
         InputStream stream = resource.openStream();
         try {
             BufferedReader reader =
-                new BufferedReader(new InputStreamReader(stream, IOUtils.UTF_8));
+                new BufferedReader(new InputStreamReader(stream, UTF_8));
             String line = reader.readLine();
             while (line != null) {
                 line = COMMENT.matcher(line).replaceFirst("");

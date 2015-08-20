@@ -21,13 +21,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.nio.charset.Charset;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Content type detection based on magic bytes, i.e. type-specific patterns
@@ -40,8 +41,6 @@ import org.apache.tika.mime.MediaType;
  * @since Apache Tika 0.3
  */
 public class MagicDetector implements Detector {
-
-    private static final Charset ISO_8859_1 = Charset.forName("ISO-8859-1");
 
     public static MagicDetector parse(
             MediaType mediaType,
@@ -98,7 +97,7 @@ public class MagicDetector implements Detector {
         } else if (type.equals("stringignorecase")) {
             decoded = decodeString(value.toLowerCase(Locale.ROOT), type);
         } else if (type.equals("byte")) {
-            decoded = tmpVal.getBytes(IOUtils.UTF_8);
+            decoded = tmpVal.getBytes(UTF_8);
         } else if (type.equals("host16") || type.equals("little16")) {
             int i = Integer.parseInt(tmpVal, radix);
             decoded = new byte[] { (byte) (i & 0x00FF), (byte) (i >> 8) };
@@ -394,7 +393,7 @@ public class MagicDetector implements Detector {
                     flags = Pattern.CASE_INSENSITIVE;
                 }
                 
-                Pattern p = Pattern.compile(new String(this.pattern, IOUtils.UTF_8), flags);
+                Pattern p = Pattern.compile(new String(this.pattern, UTF_8), flags);
 
                 ByteBuffer bb = ByteBuffer.wrap(buffer);
                 CharBuffer result = ISO_8859_1.decode(bb);

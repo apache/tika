@@ -34,6 +34,8 @@ import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 class ForkClient {
 
     private final List<ForkResource> resources = new ArrayList<ForkResource>();
@@ -262,7 +264,7 @@ class ForkClient {
             String manifest =
                 "Main-Class: " + ForkServer.class.getName() + "\n";
             jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
-            jar.write(manifest.getBytes(IOUtils.UTF_8));
+            jar.write(manifest.getBytes(UTF_8));
 
             Class<?>[] bootstrap = {
                     ForkServer.class, ForkObjectInputStream.class,

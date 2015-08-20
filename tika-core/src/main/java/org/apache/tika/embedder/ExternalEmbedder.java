@@ -39,6 +39,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Embedder that uses an external program (like sed or exiftool) to embed text
  * content and metadata into a given document.
@@ -413,7 +415,7 @@ public class ExternalEmbedder implements Embedder {
             if (process.exitValue() != 0) {
                 throw new TikaException("There was an error executing the command line" +
                         "\nExecutable Command:\n\n" + cmd +
-                        "\nExecutable Error:\n\n" + stdErrOutputStream.toString(IOUtils.UTF_8.name()));
+                        "\nExecutable Error:\n\n" + stdErrOutputStream.toString(UTF_8.name()));
             }
         }
     }
