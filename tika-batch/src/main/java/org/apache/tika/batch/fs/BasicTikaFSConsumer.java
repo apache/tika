@@ -22,15 +22,17 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.xml.sax.ContentHandler;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Basic FileResourceConsumer that reads files from an input
@@ -47,7 +49,7 @@ public class BasicTikaFSConsumer extends AbstractFSConsumer {
     private final ContentHandlerFactory contentHandlerFactory;
     private final OutputStreamFactory fsOSFactory;
     private final TikaConfig config;
-    private String outputEncoding = IOUtils.UTF_8.toString();
+    private String outputEncoding = UTF_8.toString();
 
 
     public BasicTikaFSConsumer(ArrayBlockingQueue<FileResource> queue,

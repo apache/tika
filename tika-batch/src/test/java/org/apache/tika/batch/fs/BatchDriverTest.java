@@ -17,6 +17,7 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -29,7 +30,6 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.batch.BatchProcessDriverCLI;
-import org.apache.tika.io.IOUtils;
 import org.junit.Test;
 
 
@@ -53,10 +53,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertFalse(driver.getUserInterrupted());
         assertEquals(5, outputDir.listFiles().length);
         assertContains("first test file",
-                FileUtils.readFileToString(new File(outputDir, "test2_ok.xml.xml"),
-                        IOUtils.UTF_8.toString()));
-
-
+                FileUtils.readFileToString(new File(outputDir, "test2_ok.xml.xml"), UTF_8));
     }
 
     @Test(timeout = 30000)
@@ -74,8 +71,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertTrue(driver.getNumRestarts() > 0);
         assertFalse(driver.getUserInterrupted());
         assertContains("first test file",
-                FileUtils.readFileToString(new File(outputDir, "test6_ok.xml.xml"),
-                        IOUtils.UTF_8.toString()));
+                FileUtils.readFileToString(new File(outputDir, "test6_ok.xml.xml"), UTF_8));
     }
 
     @Test(timeout = 15000)
@@ -117,8 +113,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(1, driver.getNumRestarts());
         assertFalse(driver.getUserInterrupted());
         assertContains("first test file",
-                FileUtils.readFileToString(new File(outputDir, "test2_ok.xml.xml"),
-                        IOUtils.UTF_8.toString()));
+                FileUtils.readFileToString(new File(outputDir, "test2_ok.xml.xml"), UTF_8));
     }
 
     @Test(timeout = 30000)
@@ -136,8 +131,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertEquals(3, driver.getNumRestarts());
         assertFalse(driver.getUserInterrupted());
         assertContains("first test file",
-                FileUtils.readFileToString(new File(outputDir, "test6_ok.xml.xml"),
-                        IOUtils.UTF_8.toString()));
+                FileUtils.readFileToString(new File(outputDir, "test6_ok.xml.xml"), UTF_8));
     }
 
     @Test(timeout = 30000)

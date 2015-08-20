@@ -17,6 +17,7 @@ package org.apache.tika.batch.fs;
  */
 
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -29,7 +30,6 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
-import org.apache.tika.io.IOUtils;
 import org.junit.Test;
 
 public class BatchProcessTest extends FSBatchTestBase {
@@ -85,8 +85,7 @@ public class BatchProcessTest extends FSBatchTestBase {
             assertEquals(0, hvyHang.length());
         }
         assertContains("This is tika-batch's first test file",
-                FileUtils.readFileToString(new File(outputDir, "test6_ok.xml.xml"),
-                        IOUtils.UTF_8.toString()));
+                FileUtils.readFileToString(new File(outputDir, "test6_ok.xml.xml"), UTF_8));
 
         //key that the process realize that there were no more processable files
         //in the queue and does not ask for a restart!
@@ -137,8 +136,7 @@ public class BatchProcessTest extends FSBatchTestBase {
 
         assertEquals(4, outputDir.listFiles().length);
         assertContains("This is tika-batch's first test file",
-                FileUtils.readFileToString(new File(outputDir, "test2_ok.xml.xml"),
-                        IOUtils.UTF_8.toString()));
+                FileUtils.readFileToString(new File(outputDir, "test2_ok.xml.xml"), UTF_8));
 
         assertContains(BatchProcess.BATCH_CONSTANTS.BATCH_PROCESS_FATAL_MUST_RESTART.toString(),
                 streamStrings.getErrString());
@@ -191,8 +189,7 @@ public class BatchProcessTest extends FSBatchTestBase {
         File[] files = outputDir.listFiles();
         assertEquals(1, files.length);
         assertContains("<p>some content</p>",
-                FileUtils.readFileToString(new File(outputDir, "test0_sleep.xml.xml"),
-                        IOUtils.UTF_8.toString()));
+                FileUtils.readFileToString(new File(outputDir, "test0_sleep.xml.xml"), UTF_8));
 
         assertContains("exitStatus="+BatchProcessDriverCLI.PROCESS_RESTART_EXIT_CODE, streamStrings.getOutString());
         assertContains("causeForTermination='BATCH_PROCESS_ALIVE_TOO_LONG'",

@@ -30,12 +30,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.batch.ParallelFileProcessingResult;
 import org.apache.tika.batch.builders.BatchProcessBuilder;
-import org.apache.tika.io.IOUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
