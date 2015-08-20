@@ -24,6 +24,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.junit.Test;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -35,7 +38,7 @@ public class MagicDetectorTest {
     @Test
     public void testDetectNull() throws Exception {
         MediaType html = new MediaType("text", "html");
-        Detector detector = new MagicDetector(html, "<html".getBytes("ASCII"));
+        Detector detector = new MagicDetector(html, "<html".getBytes(US_ASCII));
         assertEquals(
                 MediaType.OCTET_STREAM,
                 detector.detect(null, new Metadata()));
@@ -44,7 +47,7 @@ public class MagicDetectorTest {
     @Test
     public void testDetectSimple() throws Exception {
         MediaType html = new MediaType("text", "html");
-        Detector detector = new MagicDetector(html, "<html".getBytes("ASCII"));
+        Detector detector = new MagicDetector(html, "<html".getBytes(US_ASCII));
 
         assertDetect(detector, html, "<html");
         assertDetect(detector, html, "<html><head/><body/></html>");
@@ -58,7 +61,7 @@ public class MagicDetectorTest {
     public void testDetectOffsetRange() throws Exception {
         MediaType html = new MediaType("text", "html");
         Detector detector = new MagicDetector(
-                html, "<html".getBytes("ASCII"), null, 0, 64);
+                html, "<html".getBytes(US_ASCII), null, 0, 64);
 
         assertDetect(detector, html, "<html");
         assertDetect(detector, html, "<html><head/><body/></html>");
@@ -111,7 +114,7 @@ public class MagicDetectorTest {
     public void testDetectRegExPDF() throws Exception {
         MediaType pdf = new MediaType("application", "pdf");
         Detector detector = new MagicDetector(
-                pdf, "(?s)\\A.{0,144}%PDF-".getBytes("ASCII"), null, true, 0, 0);
+                pdf, "(?s)\\A.{0,144}%PDF-".getBytes(US_ASCII), null, true, 0, 0);
 
         assertDetect(detector, pdf, "%PDF-1.0");
         assertDetect(
@@ -136,7 +139,7 @@ public class MagicDetectorTest {
                 + "\".*\\x3ctitle\\x3e.*\\x3c/title\\x3e";
         MediaType xhtml = new MediaType("application", "xhtml+xml");
         Detector detector = new MagicDetector(xhtml,
-                pattern.getBytes("ASCII"), null,
+                pattern.getBytes(US_ASCII), null,
                 true, 0, 8192);
 
         assertDetect(detector, xhtml,
@@ -171,7 +174,7 @@ public class MagicDetectorTest {
 
         MediaType html = new MediaType("text", "html");
         Detector detector = new MagicDetector(
-                html, pattern.getBytes("ASCII"), null, true, 0, 0);
+                html, pattern.getBytes(US_ASCII), null, true, 0, 0);
 
         assertDetect(detector, html, data);
         assertDetect(detector, html, data1);
@@ -180,7 +183,7 @@ public class MagicDetectorTest {
 
     @Test
     public void testDetectStreamReadProblems() throws Exception {
-        byte[] data = "abcdefghijklmnopqrstuvwxyz0123456789".getBytes("ASCII");
+        byte[] data = "abcdefghijklmnopqrstuvwxyz0123456789".getBytes(US_ASCII);
         MediaType testMT = new MediaType("application", "test");
         Detector detector = new MagicDetector(testMT, data, null, false, 0, 0);
         // Deliberately prevent InputStream.read(...) from reading the entire
@@ -197,28 +200,24 @@ public class MagicDetectorTest {
         
         // Check regular String matching
         detector = MagicDetector.parse(testMT, "string", "0:20", "abcd", null); 
-        assertDetect(detector, testMT, data.getBytes("ASCII"));
+        assertDetect(detector, testMT, data.getBytes(US_ASCII));
         detector = MagicDetector.parse(testMT, "string", "0:20", "cdEFGh", null); 
-        assertDetect(detector, testMT, data.getBytes("ASCII"));
+        assertDetect(detector, testMT, data.getBytes(US_ASCII));
         
         // Check Little Endian and Big Endian utf-16 strings
         detector = MagicDetector.parse(testMT, "unicodeLE", "0:20", "cdEFGh", null); 
-        assertDetect(detector, testMT, data.getBytes("UTF-16LE"));
+        assertDetect(detector, testMT, data.getBytes(UTF_16LE));
         detector = MagicDetector.parse(testMT, "unicodeBE", "0:20", "cdEFGh", null); 
-        assertDetect(detector, testMT, data.getBytes("UTF-16BE"));
+        assertDetect(detector, testMT, data.getBytes(UTF_16BE));
         
         // Check case ignoring String matching
         detector = MagicDetector.parse(testMT, "stringignorecase", "0:20", "BcDeFgHiJKlm", null); 
-        assertDetect(detector, testMT, data.getBytes("ASCII"));
+        assertDetect(detector, testMT, data.getBytes(US_ASCII));
     }
 
     private void assertDetect(Detector detector, MediaType type, String data) {
-        try {
-            byte[] bytes = data.getBytes("ASCII");
-            assertDetect(detector, type, bytes);
-        } catch (IOException e) {
-            fail("Unexpected exception from MagicDetector");
-        }
+        byte[] bytes = data.getBytes(US_ASCII);
+        assertDetect(detector, type, bytes);
     }
     private void assertDetect(Detector detector, MediaType type, byte[] bytes) {
         try {

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.language;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -175,7 +176,7 @@ public class LanguageIdentifierTest {
         InputStream stream =
             LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
         try {
-            IOUtils.copy(new InputStreamReader(stream, IOUtils.UTF_8), writer);
+            IOUtils.copy(new InputStreamReader(stream, UTF_8), writer);
         } finally {
             stream.close();
         }

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -225,7 +226,7 @@ public class MimeTypesReaderTest {
           // By contents - picks the x one as that sorts later
           m = new Metadata();
           ByteArrayInputStream s = new ByteArrayInputStream(
-                "Hello, World!".getBytes("ASCII"));
+                "Hello, World!".getBytes(US_ASCII));
           assertEquals(hxw.toString(), this.mimeTypes.detect(s, m).toString());
        } catch (Exception e) {
           fail(e.getMessage());

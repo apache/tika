@@ -16,12 +16,12 @@
  */
 package org.apache.tika.sax;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
@@ -46,7 +46,7 @@ public class BodyContentHandlerTest {
         xhtml.element("p", "Test text");
         xhtml.endDocument();
 
-        assertEquals("Test text\n", buffer.toString(IOUtils.UTF_8.name()));
+        assertEquals("Test text\n", buffer.toString(UTF_8.name()));
     }
 
 }
