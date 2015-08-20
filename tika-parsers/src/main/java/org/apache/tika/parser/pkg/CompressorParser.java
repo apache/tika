@@ -31,7 +31,10 @@ import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStr
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipUtils;
 import org.apache.commons.compress.compressors.pack200.Pack200CompressorInputStream;
+import org.apache.commons.compress.compressors.snappy.FramedSnappyCompressorInputStream;
+import org.apache.commons.compress.compressors.snappy.SnappyCompressorInputStream;
 import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+import org.apache.commons.compress.compressors.z.ZCompressorInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -56,19 +59,18 @@ public class CompressorParser extends AbstractParser {
     private static final MediaType BZIP2 = MediaType.application("x-bzip2");
     private static final MediaType GZIP = MediaType.application("gzip");
     private static final MediaType GZIP_ALT = MediaType.application("x-gzip");
+    private static final MediaType COMPRESS = MediaType.application("x-compress");
     private static final MediaType XZ = MediaType.application("x-xz");
-    private static final MediaType PACK = MediaType.application("application/x-java-pack200");
+    private static final MediaType PACK = MediaType.application("x-java-pack200");
+    private static final MediaType SNAPPY = MediaType.application("x-snappy-framed");
     private static final MediaType ZLIB = MediaType.application("zlib");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, XZ, PACK, ZLIB);
+            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, COMPRESS, XZ, PACK, ZLIB);
 
     static MediaType getMediaType(CompressorInputStream stream) {
         // TODO Add support for the remaining CompressorInputStream formats:
-        //   FramedSnappyCompressorInputStream
         //   LZMACompressorInputStream
-        //   SnappyCompressorInputStream
-        //   ZCompressorInputStream
         if (stream instanceof BZip2CompressorInputStream) {
             return BZIP2;
         } else if (stream instanceof GzipCompressorInputStream) {
@@ -77,8 +79,14 @@ public class CompressorParser extends AbstractParser {
             return XZ;
         } else if (stream instanceof DeflateCompressorInputStream) {
             return ZLIB;
+        } else if (stream instanceof ZCompressorInputStream) {
+            return COMPRESS;
         } else if (stream instanceof Pack200CompressorInputStream) {
             return PACK;
+        } else if (stream instanceof FramedSnappyCompressorInputStream ||
+                   stream instanceof SnappyCompressorInputStream) {
+            // TODO Add unit tests for this format
+            return SNAPPY;
         } else {
             return MediaType.OCTET_STREAM;
         }
