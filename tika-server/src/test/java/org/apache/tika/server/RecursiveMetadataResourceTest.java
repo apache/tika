@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -31,7 +32,6 @@ import java.util.List;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.server.resource.RecursiveMetadataResource;
@@ -64,7 +64,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
                 .put(ClassLoader
                         .getSystemResourceAsStream(TEST_RECURSIVE_DOC));
 
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), IOUtils.UTF_8);
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
 
         assertEquals(12, metadataList.size());
@@ -98,7 +98,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         // Check results
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), IOUtils.UTF_8);
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
         assertNotNull(metadataList.get(0).get("Author"));
         assertEquals("pavel", metadataList.get(0).get("Author"));

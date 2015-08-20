@@ -25,12 +25,13 @@ import javax.ws.rs.Produces;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.google.common.base.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Path("/language")
 public class LanguageResource {
@@ -46,7 +47,7 @@ public class LanguageResource {
 	public String detect(final InputStream is) throws IOException {
 		// comme çi comme ça
 		// this is English!
-		String fileTxt = IOUtils.toString(is, Charsets.UTF_8);
+		String fileTxt = IOUtils.toString(is, UTF_8);
 		logger.debug("File: " + fileTxt);
 		LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
 				fileTxt));

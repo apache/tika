@@ -32,9 +32,10 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.server.MetadataList;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
@@ -56,7 +57,7 @@ public class MetadataListMessageBodyWriter implements MessageBodyWriter<Metadata
                         MediaType mediaType, MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream) throws IOException,
             WebApplicationException {
         try {
-            Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
+            Writer writer = new OutputStreamWriter(entityStream, UTF_8);
             JsonMetadataList.toJson(list.getMetadata(), writer);
             writer.flush();
         } catch (TikaException e) {

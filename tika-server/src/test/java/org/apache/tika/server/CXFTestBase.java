@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -35,12 +36,12 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.IOUtils;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.utils.CommonsDigester;
 import org.apache.tika.server.resource.TikaResource;
 import org.apache.tika.server.resource.UnpackerResource;
@@ -119,7 +120,7 @@ public abstract class CXFTestBase {
     }
 
     protected String getStringFromInputStream(InputStream in) throws Exception {
-        return IOUtils.toString(in);
+        return IOUtils.toString(in, UTF_8);
     }
 
     protected Map<String, String> readZipArchive(InputStream inputStream) throws IOException {
@@ -148,7 +149,7 @@ public abstract class CXFTestBase {
 
         zip.close();
         tempFile.delete();
-        return bos.toString(IOUtils.UTF_8.name());
+        return bos.toString(UTF_8.name());
     }
 
     protected Map<String, String> readArchiveFromStream(ArchiveInputStream zip) throws IOException {
