@@ -17,6 +17,7 @@
 package org.apache.tika.parser.mbox;
 
 import static java.lang.String.valueOf;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singleton;
 
 import java.io.ByteArrayInputStream;
@@ -32,7 +33,6 @@ import com.pff.PSTMessage;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -153,7 +153,7 @@ public class OutlookPSTParser extends AbstractParser {
         mailMetadata.set("priority", valueOf(pstMail.getPriority()));
         mailMetadata.set("flagged", valueOf(pstMail.isFlagged()));
 
-        byte[] mailContent = pstMail.getBody().getBytes(IOUtils.UTF_8);
+        byte[] mailContent = pstMail.getBody().getBytes(UTF_8);
         embeddedExtractor.parseEmbedded(new ByteArrayInputStream(mailContent), handler, mailMetadata, true);
     }
 

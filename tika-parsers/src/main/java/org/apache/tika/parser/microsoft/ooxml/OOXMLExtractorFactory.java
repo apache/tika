@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.POIXMLDocument;
 import org.apache.poi.POIXMLTextExtractor;
 import org.apache.poi.extractor.ExtractorFactory;
@@ -33,7 +34,6 @@ import org.apache.poi.xssf.extractor.XSSFEventBasedExcelExtractor;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;

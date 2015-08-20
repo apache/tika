@@ -41,6 +41,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 public class MidiParser extends AbstractParser {
 
     /** Serial version UID */
@@ -101,7 +103,7 @@ public class MidiParser extends AbstractParser {
                         if (meta.getType() >= 1 && meta.getType() <= 15) {
                             // FIXME: What's the encoding?
                             xhtml.characters(
-                                    new String(meta.getData(), "ISO-8859-1"));
+                                    new String(meta.getData(), ISO_8859_1));
                         }
                     }
                 }

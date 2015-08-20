@@ -30,10 +30,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;

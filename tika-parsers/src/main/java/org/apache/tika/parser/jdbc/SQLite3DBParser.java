@@ -27,7 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.tika.io.IOExceptionWithCause;
+import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;

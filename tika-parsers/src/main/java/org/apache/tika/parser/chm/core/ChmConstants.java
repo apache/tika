@@ -16,14 +16,14 @@
  */
 package org.apache.tika.parser.chm.core;
 
-import org.apache.tika.io.IOUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ChmConstants {
     /* Prevents instantiation */
     private ChmConstants() {
     }
 
-    public static final String DEFAULT_CHARSET = IOUtils.UTF_8.name();
+    public static final String DEFAULT_CHARSET = UTF_8.name();
     public static final String ITSF = "ITSF";
     public static final String ITSP = "ITSP";
     public static final String PMGL = "PMGL";

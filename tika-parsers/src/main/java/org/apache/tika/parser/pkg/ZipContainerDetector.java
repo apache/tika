@@ -35,6 +35,7 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.apache.commons.io.IOUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
@@ -43,13 +44,14 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.iwork.IWorkPackageParser;
 import org.apache.tika.parser.iwork.IWorkPackageParser.IWORKDocumentType;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A detector that works on Zip documents and other archive and compression
@@ -188,7 +190,7 @@ public class ZipContainerDetector implements Detector {
             if (mimetype != null) {
                 InputStream stream = zip.getInputStream(mimetype);
                 try {
-                    return MediaType.parse(IOUtils.toString(stream, IOUtils.UTF_8.name()));
+                    return MediaType.parse(IOUtils.toString(stream, UTF_8));
                 } finally {
                     stream.close();
                 }

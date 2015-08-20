@@ -40,9 +40,9 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.LogFactory;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -59,6 +59,8 @@ import org.apache.tika.parser.jpeg.JpegParser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * TesseractOCRParser powered by tesseract-ocr engine. To enable this parser,
@@ -288,7 +290,7 @@ public class TesseractOCRParser extends AbstractParser {
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
 
-        Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
+        Reader reader = new InputStreamReader(stream, UTF_8);
         xhtml.startDocument();
         xhtml.startElement("div");
         try {
@@ -312,7 +314,7 @@ public class TesseractOCRParser extends AbstractParser {
     private void logStream(final String logType, final InputStream stream, final File file) {
         new Thread() {
             public void run() {
-                Reader reader = new InputStreamReader(stream, IOUtils.UTF_8);
+                Reader reader = new InputStreamReader(stream, UTF_8);
                 StringBuilder out = new StringBuilder();
                 char[] buffer = new char[1024];
                 try {

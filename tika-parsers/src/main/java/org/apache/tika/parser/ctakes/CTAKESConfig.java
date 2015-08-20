@@ -22,7 +22,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Properties;
 
-import org.apache.tika.io.NullOutputStream;
+import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
 
 /**
  * Configuration for {@see CTAKESContentHandler}.
@@ -51,7 +51,7 @@ public class CTAKESConfig implements Serializable {
     private CTAKESSerializer serializerType = CTAKESSerializer.XMI;
 
     // OutputStream object used for CAS serialization
-    private OutputStream stream = NullOutputStream.NULL_OUTPUT_STREAM;
+    private OutputStream stream = NULL_OUTPUT_STREAM;
 
     // Enables CAS serialization
     private boolean serialize = false;

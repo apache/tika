@@ -31,12 +31,12 @@ import java.sql.Types;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOExceptionWithCause;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.io.FilenameUtils;
-import org.apache.tika.io.IOExceptionWithCause;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
@@ -51,6 +51,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * General base class to iterate through rows of a JDBC table
@@ -185,7 +187,7 @@ class JDBCTableReader {
         //is there a more efficient way to go from a Reader to an InputStream?
         String s = clob.getSubString(0, readSize);
         EmbeddedDocumentExtractor ex = AbstractDBParser.getEmbeddedDocumentExtractor(context);
-        ex.parseEmbedded(new ByteArrayInputStream(s.getBytes("UTF-8")), handler, m, true);
+        ex.parseEmbedded(new ByteArrayInputStream(s.getBytes(UTF_8)), handler, m, true);
     }
 
     protected void handleBlob(String tableName, String columnName, int rowNum, ResultSet resultSet, int columnIndex,

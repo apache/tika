@@ -23,8 +23,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.nio.charset.Charset;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.tika.detect.AutoDetectReader;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;

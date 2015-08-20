@@ -40,7 +40,6 @@ import com.healthmarketscience.jackcess.query.Query;
 import com.healthmarketscience.jackcess.util.OleBlob;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
@@ -50,6 +49,8 @@ import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Internal class.  Needs to be instantiated for each parse because of
@@ -198,7 +199,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 Metadata m = new Metadata();
                 m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try {
-                    htmlParser.parse(new ByteArrayInputStream(v.getBytes(IOUtils.UTF_8)),
+                    htmlParser.parse(new ByteArrayInputStream(v.getBytes(UTF_8)),
                             h,
                            m, EMPTY_PARSE_CONTEXT);
                     handler.characters(h.toString());

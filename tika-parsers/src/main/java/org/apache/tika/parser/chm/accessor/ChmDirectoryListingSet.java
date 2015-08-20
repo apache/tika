@@ -20,10 +20,11 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Holds chm listing entries
@@ -234,7 +235,7 @@ public class ChmDirectoryListingSet {
                     dle.setNameLength(strlen);
                     dle.setName(new String(ChmCommons.copyOfRange(
                                 dir_chunk, placeHolder,
-                                (placeHolder + dle.getNameLength())), IOUtils.UTF_8));
+                                (placeHolder + dle.getNameLength())), UTF_8));
 
                     checkControlData(dle);
                     checkResetTable(dle);
@@ -255,9 +256,9 @@ public class ChmDirectoryListingSet {
                 }
                 
 //                int indexWorkData = ChmCommons.indexOf(dir_chunk,
-//                        "::".getBytes("UTF-8"));
+//                        "::".getBytes(UTF_8));
 //                int indexUserData = ChmCommons.indexOf(dir_chunk,
-//                        "/".getBytes("UTF-8"));
+//                        "/".getBytes(UTF_8));
 //
 //                if (indexUserData>=0 && indexUserData < indexWorkData)
 //                    setPlaceHolder(indexUserData);
@@ -285,7 +286,7 @@ public class ChmDirectoryListingSet {
 //                            // dle.getNameLength()))));
 //                            dle.setName(new String(ChmCommons.copyOfRange(
 //                                    dir_chunk, placeHolder,
-//                                    (placeHolder + dle.getNameLength())), "UTF-8"));
+//                                    (placeHolder + dle.getNameLength())), UTF_8));
 //                            checkControlData(dle);
 //                            checkResetTable(dle);
 //                            setPlaceHolder(placeHolder

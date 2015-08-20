@@ -17,10 +17,11 @@
 package org.apache.tika.parser.chm.accessor;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Description There are two types of directory chunks -- index chunks, and
@@ -67,11 +68,11 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
     private int currentPlace = 0;
 
     public ChmPmglHeader() {
-            signature = ChmConstants.PMGL.getBytes(IOUtils.UTF_8); /*
-                                                                          * 0
-                                                                          * (PMGL
-                                                                          * )
-                                                                          */
+            signature = ChmConstants.PMGL.getBytes(UTF_8); /*
+                                                            * 0
+                                                            * (PMGL
+                                                            * )
+                                                            */
     }
 
     private int getDataRemained() {
@@ -103,7 +104,7 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("signatute:=" + new String(getSignature(), IOUtils.UTF_8) + ", ");
+        sb.append("signatute:=" + new String(getSignature(), UTF_8) + ", ");
         sb.append("free space:=" + getFreeSpace() + ", ");
         sb.append("unknown0008:=" + getUnknown0008() + ", ");
         sb.append("prev block:=" + getBlockPrev() + ", ");
@@ -166,7 +167,7 @@ public class ChmPmglHeader implements ChmAccessor<ChmPmglHeader> {
         chmPmglHeader.setBlockNext(chmPmglHeader.unmarshalInt32(data));
 
         /* check structure */
-        if (!new String(chmPmglHeader.getSignature(), IOUtils.UTF_8).equals(ChmConstants.PMGL))
+        if (!new String(chmPmglHeader.getSignature(), UTF_8).equals(ChmConstants.PMGL))
             throw new ChmParsingException(ChmPmglHeader.class.getName()
                     + " pmgl != pmgl.signature");
     }

@@ -27,15 +27,16 @@ import java.util.List;
 import org.apache.jempbox.xmp.XMPMetadata;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.xml.sax.InputSource;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class JempboxExtractor {
 
     // The XMP spec says it must be unicode, but for most file formats it specifies "must be encoded in UTF-8"
-    private static final String DEFAULT_XMP_CHARSET = IOUtils.UTF_8.name();
+    private static final String DEFAULT_XMP_CHARSET = UTF_8.name();
     private XMPPacketScanner scanner = new XMPPacketScanner();
     private Metadata metadata;
 

@@ -29,6 +29,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.io.IOExceptionWithCause;
+import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -63,8 +65,6 @@ import org.apache.pdfbox.util.TextPosition;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
-import org.apache.tika.io.IOExceptionWithCause;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;

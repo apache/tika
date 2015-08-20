@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.poi.hdgf.extractor.VisioTextExtractor;
 import org.apache.poi.hpbf.extractor.PublisherTextExtractor;
 import org.apache.poi.poifs.crypt.Decryptor;
@@ -36,7 +37,6 @@ import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CloseShieldInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
