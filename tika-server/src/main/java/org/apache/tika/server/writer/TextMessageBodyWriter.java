@@ -31,8 +31,9 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Returns simple text string for a particular metadata value.
@@ -62,7 +63,7 @@ public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
         if (metadata.names().length != 1) {
             throw new WebApplicationException("Metadata object must only have one entry!");
         }
-        Writer writer = new OutputStreamWriter(entityStream, IOUtils.UTF_8);
+        Writer writer = new OutputStreamWriter(entityStream, UTF_8);
 
         for (String name : metadata.names()) {
             writer.write(metadata.get(name));

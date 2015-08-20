@@ -17,10 +17,12 @@
 
 package org.apache.tika.server;
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.apache.tika.io.IOUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Helps produce user facing HTML output.
@@ -40,7 +42,7 @@ public class HTMLHelper {
             throw new IllegalArgumentException("Template Not Found - " + PATH);
         }
         try {
-            String html = IOUtils.toString(htmlStr, IOUtils.UTF_8.name());
+            String html = IOUtils.toString(htmlStr, UTF_8);
             int bodyAt = html.indexOf(BODY_VAR);
             PRE_BODY = html.substring(0, bodyAt);
             POST_BODY = html.substring(bodyAt + BODY_VAR.length());

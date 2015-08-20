@@ -63,6 +63,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 @Path("/unpack")
 public class UnpackerResource {
     public static final String TEXT_FILENAME = "__TEXT__";
@@ -70,7 +72,7 @@ public class UnpackerResource {
     private static final String META_FILENAME = "__METADATA__";
 
     public static void metadataToCsv(Metadata metadata, OutputStream outputStream) throws IOException {
-        CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, org.apache.tika.io.IOUtils.UTF_8));
+        CSVWriter writer = new CSVWriter(new OutputStreamWriter(outputStream, UTF_8));
 
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
@@ -127,7 +129,7 @@ public class UnpackerResource {
         ByteArrayOutputStream text = new ByteArrayOutputStream();
 
         if (saveAll) {
-            ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, org.apache.tika.io.IOUtils.UTF_8)));
+            ch = new BodyContentHandler(new RichTextContentHandler(new OutputStreamWriter(text, UTF_8)));
         } else {
             ch = new DefaultHandler();
         }

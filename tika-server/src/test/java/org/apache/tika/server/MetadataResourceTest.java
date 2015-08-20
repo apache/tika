@@ -17,6 +17,7 @@
 
 package org.apache.tika.server;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -75,7 +76,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 .put(ClassLoader
                         .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), org.apache.tika.io.IOUtils.UTF_8);
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
         CSVReader csvReader = new CSVReader(reader);
 
@@ -127,7 +128,7 @@ public class MetadataResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         // Check results
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), org.apache.tika.io.IOUtils.UTF_8);
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         CSVReader csvReader = new CSVReader(reader);
 
         Map<String, String> metadata = new HashMap<String, String>();
@@ -151,7 +152,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 .put(ClassLoader
                         .getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
 
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), org.apache.tika.io.IOUtils.UTF_8);
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
 
         Metadata metadata = JsonMetadata.fromJson(reader);
         assertNotNull(metadata.get("Author"));
@@ -210,7 +211,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 .accept(MediaType.APPLICATION_JSON).put(copy(stream, 12000));
         Assert.assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
-                (InputStream) response.getEntity(), org.apache.tika.io.IOUtils.UTF_8));
+                (InputStream) response.getEntity(), UTF_8));
         assertEquals("Maxim Valyanskiy", metadata.get("Author"));
         assertEquals(1, metadata.names().length);
     }

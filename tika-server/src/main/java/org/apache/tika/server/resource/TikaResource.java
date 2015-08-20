@@ -56,7 +56,6 @@ import org.apache.poi.extractor.ExtractorFactory;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
@@ -76,6 +75,8 @@ import org.apache.tika.server.RichTextContentHandler;
 import org.apache.tika.server.TikaServerParseException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Path("/tika")
 public class TikaResource {
@@ -350,7 +351,7 @@ public class TikaResource {
 
         return new StreamingOutput() {
             public void write(OutputStream outputStream) throws IOException, WebApplicationException {
-                Writer writer = new OutputStreamWriter(outputStream, IOUtils.UTF_8);
+                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
 
                 BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
@@ -408,7 +409,7 @@ public class TikaResource {
         return new StreamingOutput() {
             public void write(OutputStream outputStream)
                     throws IOException, WebApplicationException {
-                Writer writer = new OutputStreamWriter(outputStream, IOUtils.UTF_8);
+                Writer writer = new OutputStreamWriter(outputStream, UTF_8);
                 ContentHandler content;
 
                 try {
@@ -416,7 +417,7 @@ public class TikaResource {
                     TransformerHandler handler = factory.newTransformerHandler();
                     handler.getTransformer().setOutputProperty(OutputKeys.METHOD, format);
                     handler.getTransformer().setOutputProperty(OutputKeys.INDENT, "yes");
-                    handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, IOUtils.UTF_8.name());
+                    handler.getTransformer().setOutputProperty(OutputKeys.ENCODING, UTF_8.name());
                     handler.setResult(new StreamResult(writer));
                     content = new ExpandedTitleContentHandler(handler);
                 } catch (TransformerConfigurationException e) {

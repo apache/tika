@@ -37,6 +37,8 @@ import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
 import org.apache.tika.language.translate.Translator;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 @Path("/translate")
 public class TranslateResource {
 
@@ -62,7 +64,7 @@ public class TranslateResource {
 			@PathParam("translator") String translator,
 			@PathParam("src") String sLang, @PathParam("dest") String dLang)
 			throws TikaException, IOException {
-		return doTranslate(IOUtils.toString(is, "utf-8"), translator, sLang, dLang);
+		return doTranslate(IOUtils.toString(is, UTF_8), translator, sLang, dLang);
 
 	}
 
@@ -74,7 +76,7 @@ public class TranslateResource {
 	public String autoTranslate(final InputStream is,
 			@PathParam("translator") String translator,
 			@PathParam("dest") String dLang) throws TikaException, IOException {
-		final String content = IOUtils.toString(is, "utf-8");
+		final String content = IOUtils.toString(is, UTF_8);
 		LanguageIdentifier language = new LanguageIdentifier(
 				new LanguageProfile(content));
 		String sLang = language.getLanguage();
