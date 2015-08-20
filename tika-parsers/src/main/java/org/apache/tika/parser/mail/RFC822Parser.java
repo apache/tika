@@ -21,11 +21,11 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
-import org.apache.commons.io.input.TaggedInputStream;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -44,7 +44,6 @@ import org.xml.sax.SAXException;
  * @author jnioche@digitalpebble.com
  */
 public class RFC822Parser extends AbstractParser {
-
     /**
      * Serial version UID
      */
@@ -73,13 +72,12 @@ public class RFC822Parser extends AbstractParser {
                 xhtml, metadata, context, config.isStrictParsing());
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
-        TaggedInputStream tagged = stream instanceof TaggedInputStream
-                ? (TaggedInputStream)stream
-                : new TaggedInputStream(stream);
+        
+        TikaInputStream tstream = TikaInputStream.get(stream);
         try {
-            parser.parse(tagged);
+            parser.parse(tstream);
         } catch (IOException e) {
-            tagged.throwIfCauseOf(e);
+            tstream.throwIfCauseOf(e);
             throw new TikaException("Failed to parse an email message", e);
         } catch (MimeException e) {
             // Unwrap the exception in case it was not thrown by mime4j
