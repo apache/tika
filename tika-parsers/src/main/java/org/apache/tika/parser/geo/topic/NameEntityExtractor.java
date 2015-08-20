@@ -35,6 +35,8 @@ import opennlp.tools.util.Span;
 
 import org.apache.commons.io.IOUtils;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class NameEntityExtractor {
 	private String nerModelPath = null;
 	ArrayList<String> locationNameEntities;
@@ -63,7 +65,7 @@ public class NameEntityExtractor {
 		InputStream modelIn = new FileInputStream(nerModelPath);
 		TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
 		NameFinderME nameFinder = new NameFinderME(model);
-		String[] in = IOUtils.toString(stream, "UTF-8").split(" ");
+		String[] in = IOUtils.toString(stream, UTF_8).split(" ");
 
 		Span nameE[] = nameFinder.find(in);
 

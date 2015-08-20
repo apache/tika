@@ -18,7 +18,6 @@ package org.apache.tika.parser.image;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -37,6 +36,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * Parser for the Adobe Photoshop PSD File Format.
@@ -193,11 +194,7 @@ public class PSDParser extends AbstractParser {
 
         private String getDataAsString() {
             // Will be null padded
-            try {
-                return new String(data, 0, data.length - 1, "ASCII");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("Something is very broken in your JVM!");
-            }
+            return new String(data, 0, data.length - 1, US_ASCII);
         }
     }
 }

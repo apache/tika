@@ -21,11 +21,11 @@ import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
+import org.apache.commons.io.input.TaggedInputStream;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.parser.MimeStreamParser;
 import org.apache.james.mime4j.stream.MimeConfig;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TaggedInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -73,7 +73,9 @@ public class RFC822Parser extends AbstractParser {
                 xhtml, metadata, context, config.isStrictParsing());
         parser.setContentHandler(mch);
         parser.setContentDecoding(true);
-        TaggedInputStream tagged = TaggedInputStream.get(stream);
+        TaggedInputStream tagged = stream instanceof TaggedInputStream
+                ? (TaggedInputStream)stream
+                : new TaggedInputStream(stream);
         try {
             parser.parse(tagged);
         } catch (IOException e) {

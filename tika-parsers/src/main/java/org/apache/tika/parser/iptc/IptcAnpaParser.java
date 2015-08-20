@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -37,6 +36,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Parser for IPTC ANPA New Wire Feeds
@@ -162,7 +163,7 @@ public class IptcAnpaParser implements Parser {
          }
          int msgsize = is.read(buf);                // read in at least the full data
 
-         String message = (new String(buf, IOUtils.UTF_8)).toLowerCase(Locale.ROOT);
+         String message = (new String(buf, UTF_8)).toLowerCase(Locale.ROOT);
          // these are not if-then-else, because we want to go from most common
          // and fall through to least.  this is imperfect, as these tags could
          // show up in other agency stories, but i can't find a spec or any

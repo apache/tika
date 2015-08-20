@@ -45,7 +45,6 @@ import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.NPOIFSFileSystem;
 import org.apache.poi.util.CodePageUtil;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -60,6 +59,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Outlook Message Parser.
@@ -341,7 +342,7 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 Charset charset = null;
                 try {
                     charset = detector.detect(new ByteArrayInputStream(
-                            html.getBytes(IOUtils.UTF_8)), EMPTY_METADATA);
+                            html.getBytes(UTF_8)), EMPTY_METADATA);
                 } catch (IOException e) {
                     //swallow
                 }

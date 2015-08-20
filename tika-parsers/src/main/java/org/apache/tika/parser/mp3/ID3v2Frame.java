@@ -24,6 +24,8 @@ import java.util.Iterator;
 
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 /**
  * A frame of ID3v2 data, which is then passed to a handler to 
  * be turned into useful data.
@@ -331,12 +333,7 @@ public class ID3v2Frame implements MP3Frame {
      *  offset and length. Strings are ISO-8859-1 
      */
     protected static String getString(byte[] data, int offset, int length) {
-        try {
-            return new String(data, offset, length, "ISO-8859-1");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(
-                    "Core encoding ISO-8859-1 encoding is not available", e);
-        }
+        return new String(data, offset, length, ISO_8859_1);
     }
 
 

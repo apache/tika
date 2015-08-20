@@ -16,13 +16,12 @@
  */
 package org.apache.tika.parser.chm.accessor;
 
-import java.io.UnsupportedEncodingException;
-
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * 
@@ -55,11 +54,11 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
     private int currentPlace = 0;
 
     public ChmLzxcControlData() {
-        signature = ChmConstants.LZXC.getBytes(IOUtils.UTF_8); /*
-                                                              * 4
-                                                              * (LZXC
-                                                              * )
-                                                              */
+        signature = ChmConstants.LZXC.getBytes(UTF_8); /*
+                                                        * 4
+                                                        * (LZXC
+                                                        * )
+                                                        */
     }
 
     /**
@@ -255,7 +254,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
         StringBuilder sb = new StringBuilder();
         sb.append("size(unknown):=" + this.getSize() + ", ");
         sb.append("signature(Compression type identifier):="
-                + new String(this.getSignature(), IOUtils.UTF_8) + ", ");
+                + new String(this.getSignature(), UTF_8) + ", ");
         sb.append("version(Possibly numeric code for LZX):="
                 + this.getVersion() + System.getProperty("line.separator"));
         sb.append("resetInterval(The Huffman reset interval):="
@@ -306,7 +305,7 @@ public class ChmLzxcControlData implements ChmAccessor<ChmLzxcControlData> {
                     "window size / resetInterval should be more than 1");
 
         /* checks a signature */
-        if (!new String(chmLzxcControlData.getSignature(), IOUtils.UTF_8)
+        if (!new String(chmLzxcControlData.getSignature(), UTF_8)
                 .equals(ChmConstants.LZXC))
             throw new ChmParsingException(
                     "the signature does not seem to be correct");

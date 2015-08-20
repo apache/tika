@@ -22,7 +22,8 @@ package org.apache.tika.parser.image.xmp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
+
+import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * This class is a parser for XMP packets. By default, it tries to locate the first XMP packet
@@ -41,13 +42,9 @@ public class XMPPacketScanner {
     private static final byte[] PACKET_TRAILER;
 
     static {
-        try {
-            PACKET_HEADER = "<?xpacket begin=".getBytes("US-ASCII");
-            PACKET_HEADER_END = "?>".getBytes("US-ASCII");
-            PACKET_TRAILER = "<?xpacket".getBytes("US-ASCII");
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Incompatible JVM! US-ASCII encoding not supported.");
-        }
+        PACKET_HEADER = "<?xpacket begin=".getBytes(US_ASCII);
+        PACKET_HEADER_END = "?>".getBytes(US_ASCII);
+        PACKET_TRAILER = "<?xpacket".getBytes(US_ASCII);
     }
 
     private static boolean skipAfter(InputStream in, byte[] match) throws IOException {

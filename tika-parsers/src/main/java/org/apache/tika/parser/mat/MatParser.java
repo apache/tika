@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.Map;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AbstractParser;
@@ -39,6 +38,8 @@ import com.jmatio.io.MatFileHeader;
 import com.jmatio.io.MatFileReader;
 import com.jmatio.types.MLArray;
 import com.jmatio.types.MLStructure;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 public class MatParser extends AbstractParser {
@@ -87,7 +88,7 @@ public class MatParser extends AbstractParser {
             }
 
             // Get endian indicator from header file
-            String endianBytes = new String(hdr.getEndianIndicator(), IOUtils.UTF_8); // Retrieve endian bytes and convert to string
+            String endianBytes = new String(hdr.getEndianIndicator(), UTF_8); // Retrieve endian bytes and convert to string
             String endianCode = String.valueOf(endianBytes.toCharArray()); // Convert bytes to characters to string
             metadata.set("endian", endianCode);
 

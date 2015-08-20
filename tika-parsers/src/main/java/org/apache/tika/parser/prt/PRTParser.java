@@ -34,6 +34,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 /**
  * A basic text extracting parser for the CADKey PRT (CAD Drawing)
  *  format. It outputs text from note entries.
@@ -80,7 +82,7 @@ public class PRTParser extends AbstractParser {
        byte[] date = new byte[12];
        IOUtils.readFully(stream, date);
        
-       String dateStr = new String(date, "ASCII");
+       String dateStr = new String(date, US_ASCII);
        if(dateStr.startsWith("19") || dateStr.startsWith("20")) {
           String formattedDate = dateStr.substring(0, 4) + "-" + dateStr.substring(4,6) +
              "-" + dateStr.substring(6,8) + "T" + dateStr.substring(8,10) + ":" +

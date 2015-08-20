@@ -21,8 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.accessor.ChmDirectoryListingSet;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
@@ -33,6 +34,8 @@ import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons.EntryType;
 import org.apache.tika.parser.chm.lzx.ChmBlockInfo;
 import org.apache.tika.parser.chm.lzx.ChmLzxBlock;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Extracts text from chm file. Enumerates chm entries.
@@ -172,7 +175,7 @@ public class ChmExtractor {
 
             int indexOfControlData = getChmDirList().getControlDataIndex();
             int indexOfResetData = ChmCommons.indexOfResetTableBlock(getData(),
-                    ChmConstants.LZXC.getBytes(IOUtils.UTF_8));
+                    ChmConstants.LZXC.getBytes(UTF_8));
             byte[] dir_chunk = null;
             if (indexOfResetData > 0)
                 dir_chunk = ChmCommons.copyOfRange( getData(), indexOfResetData, indexOfResetData  

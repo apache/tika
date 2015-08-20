@@ -27,8 +27,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -40,6 +40,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * OpenOffice parser
@@ -180,7 +182,7 @@ public class OpenDocumentParser extends AbstractParser {
         if (entry == null) return;
 
         if (entry.getName().equals("mimetype")) {
-            String type = IOUtils.toString(zip, IOUtils.UTF_8.name());
+            String type = IOUtils.toString(zip, UTF_8);
             metadata.set(Metadata.CONTENT_TYPE, type);
         } else if (entry.getName().equals(META_NAME)) {
             meta.parse(zip, new DefaultHandler(), metadata, context);

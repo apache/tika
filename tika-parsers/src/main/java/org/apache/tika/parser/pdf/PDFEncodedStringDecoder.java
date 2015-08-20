@@ -24,6 +24,8 @@ import java.io.InputStream;
 import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.pdfparser.BaseParser;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+
 /**
  * In fairly rare cases, a PDF's XMP will contain a string that
  * has incorrectly been encoded with PDFEncoding: an octal for non-ascii and
@@ -77,7 +79,7 @@ class PDFEncodedStringDecoder {
      */
     String decode(String value) {
         try {
-            byte[] bytes = new String("(" + value + ")").getBytes("ISO-8859-1");
+            byte[] bytes = new String("(" + value + ")").getBytes(ISO_8859_1);
             InputStream is = new ByteArrayInputStream(bytes);
             COSStringParser p = new COSStringParser(is);
             String parsed = p.myParseCOSString();

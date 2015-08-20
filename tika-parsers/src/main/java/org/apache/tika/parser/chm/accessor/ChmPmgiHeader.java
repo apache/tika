@@ -19,11 +19,12 @@ package org.apache.tika.parser.chm.accessor;
 import java.util.Arrays;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmCommons;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Description Note: not always exists An index chunk has the following format:
@@ -54,7 +55,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
     private int currentPlace = 0;
 
     public ChmPmgiHeader() {
-        signature = ChmConstants.CHM_PMGI_MARKER.getBytes(IOUtils.UTF_8); /* 0 (PMGI) */
+        signature = ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8); /* 0 (PMGI) */
     }
 
     private int getDataRemained() {
@@ -81,7 +82,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
         ChmAssert.assertPositiveInt(count);
         this.setDataRemained(data.length);
             index = ChmCommons.indexOf(data,
-                    ChmConstants.CHM_PMGI_MARKER.getBytes(IOUtils.UTF_8));
+                    ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8));
 
         if (index >= 0)
             System.arraycopy(data, index, chmPmgiHeader.getSignature(), 0, count);
@@ -149,7 +150,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("signature:=" + new String(getSignature(), IOUtils.UTF_8) + ", ");
+        sb.append("signature:=" + new String(getSignature(), UTF_8) + ", ");
         sb.append("free space:=" + getFreeSpace()
                 + System.getProperty("line.separator"));
         return sb.toString();
@@ -167,7 +168,7 @@ public class ChmPmgiHeader implements ChmAccessor<ChmPmgiHeader> {
 
         /* check structure */
         if (!Arrays.equals(chmPmgiHeader.getSignature(),
-                ChmConstants.CHM_PMGI_MARKER.getBytes(IOUtils.UTF_8)))
+                ChmConstants.CHM_PMGI_MARKER.getBytes(UTF_8)))
             throw new TikaException(
                     "it does not seem to be valid a PMGI signature, check ChmItsp index_root if it was -1, means no PMGI, use PMGL insted");
 

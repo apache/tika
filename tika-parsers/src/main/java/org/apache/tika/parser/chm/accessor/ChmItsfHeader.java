@@ -19,10 +19,11 @@ package org.apache.tika.parser.chm.accessor;
 import java.math.BigInteger;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.assertion.ChmAssert;
 import org.apache.tika.parser.chm.core.ChmConstants;
 import org.apache.tika.parser.chm.exception.ChmParsingException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * The Header 0000: char[4] 'ITSF' 0004: DWORD 3 (Version number) 0008: DWORD
@@ -62,7 +63,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
     private int currentPlace = 0;
 
     public ChmItsfHeader() {
-        signature = ChmConstants.ITSF.getBytes(IOUtils.UTF_8); /* 0 (ITSF) */
+        signature = ChmConstants.ITSF.getBytes(UTF_8); /* 0 (ITSF) */
     }
 
     /**
@@ -70,7 +71,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
      */
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(new String(getSignature(), IOUtils.UTF_8) + " ");
+        sb.append(new String(getSignature(), UTF_8) + " ");
         sb.append(getVersion() + " ");
         sb.append(getHeaderLen() + " ");
         sb.append(getUnknown_000c() + " ");
@@ -463,7 +464,7 @@ public class ChmItsfHeader implements ChmAccessor<ChmItsfHeader> {
         chmItsfHeader.setUnknownLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getUnknownLen()));
         chmItsfHeader.setDirOffset(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirOffset()));
         chmItsfHeader.setDirLen(chmItsfHeader.unmarshalUint64(data, chmItsfHeader.getDirLen()));
-        if (!new String(chmItsfHeader.getSignature(), IOUtils.UTF_8).equals(ChmConstants.ITSF))
+        if (!new String(chmItsfHeader.getSignature(), UTF_8).equals(ChmConstants.ITSF))
             throw new TikaException("seems not valid file");
         if (chmItsfHeader.getVersion() == ChmConstants.CHM_VER_2) {
             if (chmItsfHeader.getHeaderLen() < ChmConstants.CHM_ITSF_V2_LEN)
