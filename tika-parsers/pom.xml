@@ -327,11 +327,6 @@
       <artifactId>httpservices</artifactId>
       <version>${netcdf-java.version}</version>
     </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
-      <version>11.0.2</version>
-    </dependency>
     <!-- Apache Commons CSV -->
     <dependency>
       <groupId>org.apache.commons</groupId>
