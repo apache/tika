@@ -12,6 +12,10 @@ Release 1.11 - Current Development
   * Corrected Tika Config XML detector defintion explicit loading 
     of MimeTypes (TIKA-1708)
 
+  * In Tika Parsers, Batch, Server, App and Examples, use Apache
+    Commons IO instead of inlined ex-Commons classes, and the Java 7
+    Standard Charset definitions (TIKA-1710)
+
   * Upgraded to Commons Compress 1.10, which enables zlib compressed
     archives support (TIKA-1718)
 
