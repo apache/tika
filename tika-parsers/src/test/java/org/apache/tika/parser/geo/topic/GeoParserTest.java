@@ -17,6 +17,7 @@
 
 package org.apache.tika.parser.geo.topic;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -25,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -51,7 +53,7 @@ public class GeoParserTest {
 		GeoParserConfig config = new GeoParserConfig();
 		context.set(GeoParserConfig.class, config);
 
-		InputStream s = new ByteArrayInputStream(text.getBytes("UTF-8"));
+		InputStream s = new ByteArrayInputStream(text.getBytes(UTF_8));
 		/* if it's not available no tests to run */
 		if (!((GeoParser) geoparser).isAvailable())
 			return;
@@ -79,7 +81,7 @@ public class GeoParserTest {
 		ParseContext context = new ParseContext();
 		GeoParserConfig config = new GeoParserConfig();
 		context.set(GeoParserConfig.class, config);
-		geoparser.parse(new ByteArrayInputStream(text.getBytes("UTF-8")),
+		geoparser.parse(new ByteArrayInputStream(text.getBytes(UTF_8)),
 				new BodyContentHandler(), metadata, context);
 		assertNull(metadata.get("Geographic_NAME"));
 		assertNull(metadata.get("Geographic_LONGITUDE"));

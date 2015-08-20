@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
@@ -98,6 +99,6 @@ public class Bzip2ParserTest extends AbstractPkgTest {
        assertEquals(null, tracker.modifiedAts.get(0));
 
        // Tar file starts with the directory name
-       assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, "ASCII"));
+       assertEquals("test-documents/", new String(tracker.lastSeenStart, 0, 15, US_ASCII));
     }
 }

@@ -21,7 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.InputStream;
 
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;

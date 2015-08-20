@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.mp3;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -25,7 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import org.apache.tika.io.IOUtils;
+
 import org.junit.After;
 import org.junit.Test;
 
@@ -157,7 +158,7 @@ public class MpegStreamTest
     public void testSkipNoCurrentHeader() throws IOException
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        bos.write("This is a test".getBytes(IOUtils.UTF_8));
+        bos.write("This is a test".getBytes(UTF_8));
         ByteArrayInputStream in = new ByteArrayInputStream(bos.toByteArray());
         stream = new MpegStream(in);
         assertFalse("Wrong result", stream.skipFrame());

@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.chm;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.parser.chm.accessor.ChmItsfHeader;
 import org.apache.tika.parser.chm.accessor.ChmItspHeader;
 import org.apache.tika.parser.chm.core.ChmCommons;
@@ -137,7 +137,7 @@ public class TestChmItspHeader {
     @Test
     public void testGetSignature() {
         assertEquals(TestParameters.VP_ISTP_SIGNATURE, new String(
-                chmItspHeader.getSignature(), IOUtils.UTF_8));
+                chmItspHeader.getSignature(), UTF_8));
     }
 
     @Test

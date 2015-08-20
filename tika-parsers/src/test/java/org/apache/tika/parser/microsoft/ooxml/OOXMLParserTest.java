@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.ooxml;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -33,7 +34,6 @@ import java.util.Map;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -1069,13 +1069,13 @@ public class OOXMLParserTest extends TikaTest {
 
             //grab stderr
             ByteArrayOutputStream errContent = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(errContent, true, IOUtils.UTF_8.name()));
+            System.setErr(new PrintStream(errContent, true, UTF_8.name()));
             parser.parse(input, handler, metadata, context);
 
             //return stderr
             System.setErr(origErr);
 
-            String err = errContent.toString(IOUtils.UTF_8.name());
+            String err = errContent.toString(UTF_8.name());
             assertTrue(err.length() == 0);
             input.close();
         }

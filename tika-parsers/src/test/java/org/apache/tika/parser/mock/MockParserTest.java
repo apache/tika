@@ -17,6 +17,7 @@ package org.apache.tika.parser.mock;
  * limitations under the License.
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -27,9 +28,9 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Date;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
@@ -57,8 +58,8 @@ public class MockParserTest extends TikaTest {
         PrintStream err = System.err;
         ByteArrayOutputStream outBos = new ByteArrayOutputStream();
         ByteArrayOutputStream errBos = new ByteArrayOutputStream();
-        PrintStream tmpOut = new PrintStream(outBos, true, IOUtils.UTF_8.toString());
-        PrintStream tmpErr = new PrintStream(errBos, true, IOUtils.UTF_8.toString());
+        PrintStream tmpOut = new PrintStream(outBos, true, UTF_8.toString());
+        PrintStream tmpErr = new PrintStream(errBos, true, UTF_8.toString());
         System.setOut(tmpOut);
         System.setErr(tmpErr);
         try {
@@ -68,10 +69,10 @@ public class MockParserTest extends TikaTest {
             System.setOut(out);
             System.setErr(err);
         }
-        String outString = new String(outBos.toByteArray(), IOUtils.UTF_8);
+        String outString = new String(outBos.toByteArray(), UTF_8);
         assertContains("writing to System.out", outString);
 
-        String errString = new String(errBos.toByteArray(), IOUtils.UTF_8);
+        String errString = new String(errBos.toByteArray(), UTF_8);
         assertContains("writing to System.err", errString);
 
     }
