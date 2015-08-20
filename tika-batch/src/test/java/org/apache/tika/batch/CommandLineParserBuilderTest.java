@@ -22,9 +22,9 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.batch.builders.CommandLineParserBuilder;
 import org.apache.tika.batch.fs.FSBatchTestBase;
-import org.apache.tika.io.IOUtils;
 import org.junit.Test;
 
 

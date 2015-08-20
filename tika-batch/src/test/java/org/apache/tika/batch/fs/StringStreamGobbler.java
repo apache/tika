@@ -17,13 +17,15 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
+import org.apache.commons.io.IOUtils;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import org.apache.tika.io.IOUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class StringStreamGobbler implements Runnable {
 
@@ -33,8 +35,7 @@ public class StringStreamGobbler implements Runnable {
         private final StringBuilder sb = new StringBuilder();
 
         public StringStreamGobbler(InputStream is) {
-            this.reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(is),
-                    IOUtils.UTF_8));
+            this.reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(is), UTF_8));
         }
 
         @Override

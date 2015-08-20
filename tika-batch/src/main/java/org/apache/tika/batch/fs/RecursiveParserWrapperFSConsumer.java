@@ -25,11 +25,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.batch.FileResource;
 import org.apache.tika.batch.OutputStreamFactory;
 import org.apache.tika.batch.ParserFactory;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;

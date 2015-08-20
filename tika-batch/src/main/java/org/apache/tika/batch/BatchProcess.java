@@ -31,10 +31,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.tika.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This is the main processor class for a single process.
@@ -134,7 +134,7 @@ public class BatchProcess implements Callable<ParallelFileProcessingResult> {
         //System.err should be redirected to System.out
         PrintStream sysErr = System.err;
         try {
-            outputStreamWriter = new PrintStream(sysErr, true, IOUtils.UTF_8.toString());
+            outputStreamWriter = new PrintStream(sysErr, true, UTF_8.toString());
         } catch (IOException e) {
             throw new RuntimeException("Can't redirect streams");
         }

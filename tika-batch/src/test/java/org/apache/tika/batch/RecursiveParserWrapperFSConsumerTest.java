@@ -16,6 +16,7 @@
  */
 package org.apache.tika.batch;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
@@ -31,7 +32,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.fs.RecursiveParserWrapperFSConsumer;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
@@ -76,7 +76,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();
         byte[] bytes = mockOSFactory.getStreams().get(0).toByteArray();
-        List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), IOUtils.UTF_8));
+        List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
 
         assertEquals(4, results.size());
         assertContains("another null pointer",
@@ -123,7 +123,7 @@ public class RecursiveParserWrapperFSConsumerTest extends TikaTest {
         IFileProcessorFutureResult result = consumer.call();
         mockOSFactory.getStreams().get(0).flush();
         byte[] bytes = mockOSFactory.getStreams().get(0).toByteArray();
-        List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), IOUtils.UTF_8));
+        List<Metadata> results = JsonMetadataList.fromJson(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
         assertEquals(2, results.size());
         assertContains("another null pointer",
                 results.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX + "runtime"));
