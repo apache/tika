@@ -58,11 +58,10 @@ public class CompressorParser extends AbstractParser {
     private static final MediaType GZIP_ALT = MediaType.application("x-gzip");
     private static final MediaType XZ = MediaType.application("x-xz");
     private static final MediaType PACK = MediaType.application("application/x-java-pack200");
-    // TODO Not yet supported by CompressorStreamFactory, see COMPRESS-316
     private static final MediaType ZLIB = MediaType.application("zlib");
 
     private static final Set<MediaType> SUPPORTED_TYPES =
-            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, XZ, PACK);
+            MediaType.set(BZIP, BZIP2, GZIP, GZIP_ALT, XZ, PACK, ZLIB);
 
     static MediaType getMediaType(CompressorInputStream stream) {
         // TODO Add support for the remaining CompressorInputStream formats:
@@ -103,14 +102,14 @@ public class CompressorParser extends AbstractParser {
 
         CompressorInputStream cis;
         try {
-            CompressorStreamFactory factory = new CompressorStreamFactory();
             CompressorParserOptions options =
                  context.get(CompressorParserOptions.class, new CompressorParserOptions() {
                      public boolean decompressConcatenated(Metadata metadata) {
                          return false;
                      }
                  });
-            factory.setDecompressConcatenated(options.decompressConcatenated(metadata));
+            CompressorStreamFactory factory = 
+                    new CompressorStreamFactory(options.decompressConcatenated(metadata));
             cis = factory.createCompressorInputStream(stream);
         } catch (CompressorException e) {
             throw new TikaException("Unable to uncompress document stream", e);

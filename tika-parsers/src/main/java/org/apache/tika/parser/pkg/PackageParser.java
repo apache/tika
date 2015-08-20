@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.Set;
 
+import org.apache.commons.compress.PasswordRequiredException;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -188,14 +189,8 @@ public class PackageParser extends AbstractParser {
                 throw new EncryptedDocumentException(zfe);
             }
             // Otherwise fall through to raise the exception as normal
-        } catch (IOException ie) {
-            // Is this a password protection error?
-            // (COMPRESS-298 should give a nicer way when implemented, see TIKA-1525)
-            if ("Cannot read encrypted files without a password".equals(ie.getMessage())) {
-                throw new EncryptedDocumentException();
-            }
-            // Otherwise fall through to raise the exception as normal
-            throw ie;
+        } catch (PasswordRequiredException pre) {
+            throw new EncryptedDocumentException(pre);
         } finally {
             ais.close();
             tmp.close();
