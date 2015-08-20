@@ -12,6 +12,9 @@ Release 1.11 - Current Development
   * Corrected Tika Config XML detector defintion explicit loading 
     of MimeTypes (TIKA-1708)
 
+  * Upgraded to Commons Compress 1.10, which enables zlib compressed
+    archives support (TIKA-1718)
+
 
 Release 1.10 - 8/1/2015
 
