@@ -17,6 +17,7 @@
 
 package org.apache.tika.cli;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -31,7 +32,7 @@ import java.io.Reader;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -54,9 +55,9 @@ public class TikaCLIBatchIntegrationTest {
         tempDir.delete();
         tempDir.mkdir();
         outBuffer = new ByteArrayOutputStream();
-        PrintStream outWriter = new PrintStream(outBuffer, true, IOUtils.UTF_8.name());
+        PrintStream outWriter = new PrintStream(outBuffer, true, UTF_8.name());
         ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
-        PrintStream errWriter = new PrintStream(errBuffer, true, IOUtils.UTF_8.name());
+        PrintStream errWriter = new PrintStream(errBuffer, true, UTF_8.name());
         out = System.out;
         err = System.err;
         System.setOut(outWriter);
@@ -65,8 +66,8 @@ public class TikaCLIBatchIntegrationTest {
 
     @After
     public void tearDown() throws Exception {
-        System.setOut(new PrintStream(out, true, IOUtils.UTF_8.name()));
-        System.setErr(new PrintStream(err, true, IOUtils.UTF_8.name()));
+        System.setOut(new PrintStream(out, true, UTF_8.name()));
+        System.setErr(new PrintStream(err, true, UTF_8.name()));
         FileUtils.deleteDirectory(tempDir);
     }
 
@@ -104,7 +105,7 @@ public class TikaCLIBatchIntegrationTest {
             };
             TikaCLI.main(params);
             reader = new InputStreamReader(
-                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), IOUtils.UTF_8);
+                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), UTF_8);
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
             assertTrue(metadataList.get(6).get(RecursiveParserWrapper.TIKA_CONTENT).contains("human events"));
@@ -123,7 +124,7 @@ public class TikaCLIBatchIntegrationTest {
 
         assertTrue("bad_xml.xml.xml", new File(tempDir, "bad_xml.xml.xml").isFile());
         assertTrue("coffee.xls.xml", new File(tempDir, "coffee.xls.xml").exists());
-        String sysOutString = new String(outBuffer.toByteArray(), IOUtils.UTF_8);
+        String sysOutString = new String(outBuffer.toByteArray(), UTF_8);
         assertTrue(sysOutString.contains("MY_CUSTOM_LOG_CONFIG"));
     }
 
@@ -139,7 +140,7 @@ public class TikaCLIBatchIntegrationTest {
             };
             TikaCLI.main(params);
             reader = new InputStreamReader(
-                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), IOUtils.UTF_8);
+                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), UTF_8);
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
             assertEquals("59f626e09a8c16ab6dbc2800c685f772", metadataList.get(0).get("X-TIKA:digest:MD5"));
@@ -159,7 +160,7 @@ public class TikaCLIBatchIntegrationTest {
             };
             TikaCLI.main(params);
             reader = new InputStreamReader(
-                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), IOUtils.UTF_8);
+                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), UTF_8);
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
             assertNotNull(metadataList.get(0).get("X-TIKA:digest:SHA512"));

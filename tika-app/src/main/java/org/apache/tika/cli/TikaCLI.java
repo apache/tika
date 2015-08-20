@@ -52,6 +52,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Level;
@@ -72,9 +75,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.gui.TikaGUI;
-import org.apache.tika.io.CloseShieldInputStream;
-import org.apache.tika.io.FilenameUtils;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.LanguageProfilerBuilder;
 import org.apache.tika.language.ProfilingHandler;
@@ -105,6 +105,8 @@ import org.apache.tika.xmp.XMPMetadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Simple command line interface for Apache Tika.
@@ -855,7 +857,7 @@ public class TikaCLI {
         for (File mf : dir.listFiles()) {
             if (mf.isFile()) {
                 BufferedReader r = new BufferedReader(new InputStreamReader(
-                        new FileInputStream(mf), IOUtils.UTF_8));
+                        new FileInputStream(mf), UTF_8));
                 String line;
                 while ((line = r.readLine()) != null) {
                     if (line.startsWith("!:mime") ||
@@ -969,7 +971,7 @@ public class TikaCLI {
         } else if (System.getProperty("os.name")
                 .toLowerCase(Locale.ROOT).startsWith("mac os x")) {
             // TIKA-324: Override the default encoding on Mac OS X
-            return new OutputStreamWriter(output, IOUtils.UTF_8);
+            return new OutputStreamWriter(output, UTF_8);
         } else {
             return new OutputStreamWriter(output, Charset.defaultCharset());
         }

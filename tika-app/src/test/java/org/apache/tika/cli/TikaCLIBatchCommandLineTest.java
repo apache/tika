@@ -16,6 +16,7 @@
  */
 package org.apache.tika.cli;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -27,7 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.tika.io.IOUtils;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +48,7 @@ public class TikaCLIBatchCommandLineTest {
         OutputStream os = null;
         try {
             os = new FileOutputStream(testFile);
-            IOUtils.write("test output", os, "UTF-8");
+            IOUtils.write("test output", os, UTF_8);
         } catch (IOException e) {
             throw new RuntimeException("Couldn't open testFile");
         } finally {

@@ -47,10 +47,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -65,10 +61,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
@@ -90,6 +86,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Simple Swing GUI for Apache Tika. You can drag and drop files on top
@@ -481,11 +479,8 @@ public class TikaGUI extends JFrame
                 URL url = e.getURL();
                 InputStream stream = url.openStream();
                 try {
-                    StringWriter writer = new StringWriter();
-                    IOUtils.copy(stream, writer, IOUtils.UTF_8.name());
-
                     JEditorPane editor =
-                        new JEditorPane("text/plain", writer.toString());
+                        new JEditorPane("text/plain", IOUtils.toString(stream, UTF_8));
                     editor.setEditable(false);
                     editor.setBackground(Color.WHITE);
                     editor.setCaretPosition(0);
