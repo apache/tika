@@ -71,6 +71,7 @@ public class CompressorParser extends AbstractParser {
     static MediaType getMediaType(CompressorInputStream stream) {
         // TODO Add support for the remaining CompressorInputStream formats:
         //   LZMACompressorInputStream
+        //   LZWInputStream -> UnshrinkingInputStream
         if (stream instanceof BZip2CompressorInputStream) {
             return BZIP2;
         } else if (stream instanceof GzipCompressorInputStream) {
