@@ -18,7 +18,8 @@ package org.apache.tika.parser.chm;
 
 import java.io.IOException;
 import java.io.InputStream;
-import org.apache.tika.io.IOUtils;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.parser.chm.core.ChmCommons.EntryType;
 
 /**

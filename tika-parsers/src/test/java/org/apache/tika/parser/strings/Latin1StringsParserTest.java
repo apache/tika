@@ -13,6 +13,9 @@
  */
 package org.apache.tika.parser.strings;
 
+import static java.nio.charset.StandardCharsets.ISO_8859_1;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_16;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -34,11 +37,11 @@ public class Latin1StringsParserTest {
         String testStr = "These are Latin1 accented scripts: \u00C2 \u00C3 \u00C9 \u00DC \u00E2 \u00E3 \u00E9 \u00FC";
         String smallStr = "ab";
 
-        byte[] iso8859Bytes = testStr.getBytes("ISO-8859-1");
-        byte[] utf8Bytes = testStr.getBytes("UTF-8");
-        byte[] utf16Bytes = testStr.getBytes("UTF-16");
+        byte[] iso8859Bytes = testStr.getBytes(ISO_8859_1);
+        byte[] utf8Bytes = testStr.getBytes(UTF_8);
+        byte[] utf16Bytes = testStr.getBytes(UTF_16);
         byte[] zeros = new byte[10];
-        byte[] smallString = smallStr.getBytes("ISO-8859-1");
+        byte[] smallString = smallStr.getBytes(ISO_8859_1);
         byte[] trashBytes = { 0x00, 0x01, 0x02, 0x03, 0x1E, 0x1F, (byte) 0xFF };
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

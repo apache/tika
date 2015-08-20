@@ -17,6 +17,7 @@ package org.apache.tika.parser.jdbc;
  * limitations under the License.
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
@@ -26,10 +27,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.extractor.EmbeddedResourceHandler;
 import org.apache.tika.extractor.ParserContainerExtractor;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
@@ -47,7 +48,6 @@ import org.xml.sax.ContentHandler;
 public class SQLite3ParserTest extends TikaTest {
     private final static String TEST_FILE_NAME = "testSqlite3b.db";
     private final static String TEST_FILE1 = "/test-documents/" + TEST_FILE_NAME;
-    ;
 
     @Test
     public void testBasic() throws Exception {
@@ -189,7 +189,7 @@ public class SQLite3ParserTest extends TikaTest {
         String[] strings = new String[4];
         for (int i = 1; i < byteCopier.bytes.size(); i++) {
             byte[] byteArr = byteCopier.bytes.get(i);
-            String s = new String(byteArr, 0, Math.min(byteArr.length, 1000), "UTF-8");
+            String s = new String(byteArr, 0, Math.min(byteArr.length, 1000), UTF_8);
             strings[i] = s;
         }
         byte[] oleBytes = new byte[]{

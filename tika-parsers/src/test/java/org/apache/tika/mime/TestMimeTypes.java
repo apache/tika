@@ -17,6 +17,9 @@
 package org.apache.tika.mime;
 
 // Junit imports
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -570,17 +573,17 @@ public class TestMimeTypes {
     @Test
     public void testXmlAndHtmlDetection() throws Exception {
         assertTypeByData("application/xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><records><record/></records>"
-                .getBytes("UTF-8"));
+                .getBytes(UTF_8));
         assertTypeByData("application/xml", "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
-                .getBytes("UTF-16LE"));
+                .getBytes(UTF_16LE));
         assertTypeByData("application/xml", "\uFEFF<?xml version=\"1.0\" encoding=\"UTF-16\"?><records><record/></records>"
-                .getBytes("UTF-16BE"));
+                .getBytes(UTF_16BE));
         assertTypeByData("application/xml", "<!-- XML without processing instructions --><records><record/></records>"
-                .getBytes("UTF-8"));
+                .getBytes(UTF_8));
         assertTypeByData("text/html", "<html><body>HTML</body></html>"
-                .getBytes("UTF-8"));
+                .getBytes(UTF_8));
         assertTypeByData("text/html", "<!-- HTML comment --><html><body>HTML</body></html>"
-                .getBytes("UTF-8"));
+                .getBytes(UTF_8));
     }
 
     @Test

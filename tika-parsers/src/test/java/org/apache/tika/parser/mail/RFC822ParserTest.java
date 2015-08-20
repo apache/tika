@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.mail;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -221,7 +222,7 @@ public class RFC822ParserTest extends TikaTest {
                     "really really really really really really long name ");
         }
         String name = inputBuilder.toString();
-        byte[] data = ("From: " + name + "\r\n\r\n").getBytes("US-ASCII");
+        byte[] data = ("From: " + name + "\r\n\r\n").getBytes(US_ASCII);
 
         Parser parser = new RFC822Parser();
         ContentHandler handler = new DefaultHandler();
