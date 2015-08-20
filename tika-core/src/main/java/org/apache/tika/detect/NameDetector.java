@@ -22,9 +22,10 @@ import java.net.URLDecoder;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Content type detection based on the resource name. An instance of this
@@ -120,7 +121,7 @@ public class NameDetector implements Detector {
             int percent = name.indexOf('%');
             if (percent != -1) {
                 try {
-                    name = URLDecoder.decode(name, IOUtils.UTF_8.name());
+                    name = URLDecoder.decode(name, UTF_8.name());
                 } catch (UnsupportedEncodingException e) {
                     throw new IllegalStateException("UTF-8 not supported", e);
                 }

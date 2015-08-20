@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -21,12 +20,13 @@ package org.apache.tika.detect;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 
 import org.apache.tika.mime.MediaType;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class NNExampleModelDetector extends TrainedModelDetector {
 	private static final String EXAMPLE_NNMODEL_FILE = "tika-example.nnmodel";
@@ -43,14 +43,8 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 
 	@Override
 	public void loadDefaultModels(InputStream modelStream) {
-	    BufferedReader bReader = null;
-	    try{
-                bReader = new BufferedReader(
-			         new InputStreamReader(modelStream, "UTF-8"));
-	    }
-	    catch(UnsupportedEncodingException e){
-                e.printStackTrace();
-	    }
+	    BufferedReader bReader =
+                new BufferedReader(new InputStreamReader(modelStream, UTF_8));
 
 		NNTrainedModelBuilder nnBuilder = new NNTrainedModelBuilder();
 		String line;
