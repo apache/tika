@@ -387,56 +387,45 @@
           <skip>true</skip>
         </configuration>
       </plugin>
+
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <descriptor>test-bundles.xml</descriptor>
+              <finalName>test</finalName>
+              <attach>false</attach>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>2.10</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <systemPropertyVariables>
+            <org.ops4j.pax.logging.DefaultServiceLog.level>
+              WARN
+            </org.ops4j.pax.logging.DefaultServiceLog.level>
+          </systemPropertyVariables>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>java6</id>
-      <activation>
-        <jdk>[1.6,)</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>pre-integration-test</phase>
-                <goals>
-                  <goal>single</goal>
-                </goals>
-                <configuration>
-                  <descriptor>test-bundles.xml</descriptor>
-                  <finalName>test</finalName>
-                  <attach>false</attach>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.10</version>
-            <executions>
-              <execution>
-                <goals>
-                  <goal>integration-test</goal>
-                  <goal>verify</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <systemPropertyVariables>
-                <org.ops4j.pax.logging.DefaultServiceLog.level>
-                  WARN
-                </org.ops4j.pax.logging.DefaultServiceLog.level>
-              </systemPropertyVariables>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 
   <organization>
     <name>The Apache Software Founation</name>
