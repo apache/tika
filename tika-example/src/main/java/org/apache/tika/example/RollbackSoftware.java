@@ -37,6 +37,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Demonstrates Tika and its ability to sense symlinks.
  */
@@ -52,7 +54,7 @@ public class RollbackSoftware {
 		LinkContentHandler handler = new LinkContentHandler();
 		Metadata met = new Metadata();
 		DeploymentAreaParser parser = new DeploymentAreaParser();
-		parser.parse(IOUtils.toInputStream(deployArea.getAbsolutePath(), "utf-8"),
+		parser.parse(IOUtils.toInputStream(deployArea.getAbsolutePath(), UTF_8),
 				handler, met);
 		List<Link> links = handler.getLinks();
 		if (links.size() < 2)
@@ -110,7 +112,7 @@ public class RollbackSoftware {
 				Metadata metadata, ParseContext context) throws IOException,
 				SAXException, TikaException {
 
-			File deployArea = new File(IOUtils.toString(is, "utf-8"));
+			File deployArea = new File(IOUtils.toString(is, UTF_8));
 			File[] versions = deployArea.listFiles(new FileFilter() {
 
 				public boolean accept(File pathname) {

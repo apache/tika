@@ -32,6 +32,8 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Parses the output of /bin/ls and counts the number of files and the number of
  * executables using Tika.
@@ -75,8 +77,7 @@ public class DirListParser implements Parser {
 			Metadata metadata, ParseContext context) throws IOException,
 			SAXException, TikaException {
 
-		List<String> lines = FileUtils.readLines(
-		        TikaInputStream.get(is).getFile(), "utf-8");
+		List<String> lines = FileUtils.readLines(TikaInputStream.get(is).getFile(), UTF_8);
 		for (String line : lines) {
 			String[] fileToks = line.split("\\s+");
 			if (fileToks.length < 8)

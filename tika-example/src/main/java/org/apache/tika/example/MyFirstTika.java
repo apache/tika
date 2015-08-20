@@ -32,6 +32,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Demonstrates how to call the different components within Tika: its
  * {@link Detector} framework (aka MIME identification and repository), its
@@ -91,7 +93,7 @@ public class MyFirstTika {
                 + detector.detect(stream, metadata) + "]");
 
         LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
-                FileUtils.readFileToString(new File(filename), "utf-8")));
+                FileUtils.readFileToString(new File(filename), UTF_8)));
 
         System.out.println("The language of this content is: ["
                 + lang.getLanguage() + "]");

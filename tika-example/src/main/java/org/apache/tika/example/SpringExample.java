@@ -15,6 +15,7 @@
 package org.apache.tika.example;
 
 import java.io.ByteArrayInputStream;
+
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -22,7 +23,7 @@ import org.apache.tika.sax.WriteOutContentHandler;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.google.common.base.Charsets;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class SpringExample {
 
@@ -30,7 +31,7 @@ public class SpringExample {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				new String[] { "org/apache/tika/example/spring.xml" });
 		Parser parser = context.getBean("tika", Parser.class);
-		parser.parse(new ByteArrayInputStream("Hello, World!".getBytes(Charsets.UTF_8)),
+		parser.parse(new ByteArrayInputStream("Hello, World!".getBytes(UTF_8)),
 				new WriteOutContentHandler(System.out), new Metadata(),
 				new ParseContext());
 	}

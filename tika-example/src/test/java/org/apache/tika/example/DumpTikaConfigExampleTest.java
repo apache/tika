@@ -18,6 +18,8 @@ package org.apache.tika.example;
  */
 
 
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -26,6 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
@@ -61,9 +64,9 @@ public class DumpTikaConfigExampleTest {
     @Test
     public void testDump() throws Exception {
         DumpTikaConfigExample ex = new DumpTikaConfigExample();
-        for (String encoding : new String[]{ "UTF-8", "UTF-16LE"}) {
-            Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), encoding);
-            ex.dump(TikaConfig.getDefaultConfig(), writer, encoding);
+        for (Charset charset : new Charset[]{UTF_8, UTF_16LE}) {
+            Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), charset);
+            ex.dump(TikaConfig.getDefaultConfig(), writer, charset.name());
             writer.flush();
             writer.close();
 

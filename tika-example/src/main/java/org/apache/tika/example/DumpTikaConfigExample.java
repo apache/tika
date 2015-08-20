@@ -41,7 +41,6 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.mime.MediaType;
@@ -51,6 +50,8 @@ import org.apache.tika.parser.Parser;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 
 /**
@@ -190,7 +191,7 @@ public class DumpTikaConfigExample {
      */
     public static void main(String[] args) throws Exception {
 
-        Charset encoding = IOUtils.UTF_8;
+        Charset encoding = UTF_8;
         Writer writer = null;
         if (args.length > 0) {
             writer = new OutputStreamWriter(new FileOutputStream(new File(args[0])), encoding);
