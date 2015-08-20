@@ -30,9 +30,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * An implementation of a REST client for the
@@ -78,7 +79,7 @@ public class Lingo24Translator implements Translator {
                 .query("user_key", userKey).query("source", sourceLanguage)
                 .query("target", targetLanguage).query("q", text).get();
         BufferedReader reader = new BufferedReader(new InputStreamReader(
-                (InputStream) response.getEntity(), IOUtils.UTF_8));
+                (InputStream) response.getEntity(), UTF_8));
         String line = null;
         StringBuffer responseText = new StringBuffer();
         while ((line = reader.readLine()) != null) {
