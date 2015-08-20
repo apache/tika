@@ -17,6 +17,7 @@
 
 package org.apache.tika.language;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -30,7 +31,6 @@ import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.junit.After;
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ public class LanguageProfilerBuilderTest {
         InputStream is =
                 LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName);
         try {
-            ngramProfile = LanguageProfilerBuilder.create(profileName, is , IOUtils.UTF_8.name());
+            ngramProfile = LanguageProfilerBuilder.create(profileName, is , UTF_8.name());
         } finally {
             is.close();
         }
@@ -82,7 +82,7 @@ public class LanguageProfilerBuilderTest {
                 + FILE_EXTENSION));
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(
-                    stream, IOUtils.UTF_8));
+                    stream, UTF_8));
             String line = reader.readLine();
             while (line != null) {
                 if (line.length() > 0 && !line.startsWith("#")) {// skips the

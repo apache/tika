@@ -34,7 +34,6 @@ import java.util.Set;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaMetadataKeys;
 import org.apache.tika.mime.MediaType;
@@ -49,6 +48,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class enables mocking of parser behavior for use in testing
@@ -150,7 +151,7 @@ public class MockParser extends AbstractParser {
         if (! "".equals(contentType)) {
             m.set(Metadata.CONTENT_TYPE, contentType);
         }
-        InputStream is = new ByteArrayInputStream(embeddedText.getBytes(IOUtils.UTF_8));
+        InputStream is = new ByteArrayInputStream(embeddedText.getBytes(UTF_8));
 
         extractor.parseEmbedded(
                 is,

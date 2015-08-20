@@ -16,6 +16,9 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -25,7 +28,6 @@ import java.io.InputStream;
 import java.net.URL;
 
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.junit.Before;
 import org.junit.Test;
@@ -82,13 +84,13 @@ public class MimeDetectionTest {
     @Test
     public void testByteOrderMark() throws Exception {
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
-                new ByteArrayInputStream("\ufefftest".getBytes("UTF-16LE")),
+                new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)),
                 new Metadata()));
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
-                new ByteArrayInputStream("\ufefftest".getBytes("UTF-16BE")),
+                new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)),
                 new Metadata()));
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
-                new ByteArrayInputStream("\ufefftest".getBytes(IOUtils.UTF_8)),
+                new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)),
                 new Metadata()));
     }
 
@@ -198,7 +200,7 @@ public class MimeDetectionTest {
     @Test
     public void testNotXML() throws IOException {
         assertEquals(MediaType.TEXT_PLAIN, mimeTypes.detect(
-                new ByteArrayInputStream("<!-- test -->".getBytes(IOUtils.UTF_8)),
+                new ByteArrayInputStream("<!-- test -->".getBytes(UTF_8)),
                 new Metadata()));
     }
 
@@ -222,7 +224,7 @@ public class MimeDetectionTest {
      */
     @Test    
     public void testMimeMagicClashSamePriority() throws IOException {
-        byte[] helloWorld = "Hello, World!".getBytes(IOUtils.UTF_8);
+        byte[] helloWorld = "Hello, World!".getBytes(UTF_8);
         MediaType helloType = MediaType.parse("hello/world-file");
         MediaType helloXType = MediaType.parse("hello/x-world-hello");
         Metadata metadata;

@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,6 +16,9 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.UTF_16BE;
+import static java.nio.charset.StandardCharsets.UTF_16LE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -25,7 +27,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.charset.Charset;
 
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
@@ -36,8 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class ProbabilisticMimeDetectionTestWithTika {
-    private static final Charset UTF8 = Charset.forName("UTF-8");
-    
+
     private ProbabilisticMimeDetectionSelector proSelector;
     private MediaTypeRegistry registry;
     private Tika tika;
@@ -98,14 +98,14 @@ public class ProbabilisticMimeDetectionTestWithTika {
     @Test
     public void testByteOrderMark() throws Exception {
         assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
-                new ByteArrayInputStream("\ufefftest".getBytes("UTF-16LE")),
+                new ByteArrayInputStream("\ufefftest".getBytes(UTF_16LE)),
                 new Metadata()));
         assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
-                new ByteArrayInputStream("\ufefftest".getBytes("UTF-16BE")),
+                new ByteArrayInputStream("\ufefftest".getBytes(UTF_16BE)),
                 new Metadata()));
 
         assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
-                new ByteArrayInputStream("\ufefftest".getBytes(UTF8)),
+                new ByteArrayInputStream("\ufefftest".getBytes(UTF_8)),
                 new Metadata()));
     }
 
@@ -219,7 +219,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
     @Test
     public void testNotXML() throws IOException {
         assertEquals(MediaType.TEXT_PLAIN.toString(), tika.detect(
-                new ByteArrayInputStream("<!-- test -->".getBytes(UTF8)),
+                new ByteArrayInputStream("<!-- test -->".getBytes(UTF_8)),
                 new Metadata()));
     }
 
@@ -242,7 +242,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
      */
     @Test
     public void testMimeMagicClashSamePriority() throws IOException {
-        byte[] helloWorld = "Hello, World!".getBytes(UTF8);
+        byte[] helloWorld = "Hello, World!".getBytes(UTF_8);
         MediaType helloType = MediaType.parse("hello/world-file");
         MediaType helloXType = MediaType.parse("hello/x-world-hello");
         Metadata metadata;

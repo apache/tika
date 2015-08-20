@@ -16,6 +16,7 @@
  */
 package org.apache.tika.sax;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -27,7 +28,6 @@ import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -44,7 +44,7 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class BasicContentHandlerFactoryTest {
 
-    private static final String ENCODING = IOUtils.UTF_8.name();
+    private static final String ENCODING = UTF_8.name();
     //default max char len (at least in WriteOutContentHandler is 100k)
     private static final int OVER_DEFAULT = 120000;
 
