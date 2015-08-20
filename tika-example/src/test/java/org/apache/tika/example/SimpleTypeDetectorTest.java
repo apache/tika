@@ -14,12 +14,12 @@
 
 package org.apache.tika.example;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import com.google.common.base.Charsets;
 import org.junit.Test;
 
 @SuppressWarnings("deprecation")
@@ -30,14 +30,14 @@ public class SimpleTypeDetectorTest {
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
 		PrintStream out = System.out;
-		System.setOut(new PrintStream(buffer, true, Charsets.UTF_8.name()));
+		System.setOut(new PrintStream(buffer, true, UTF_8.name()));
 
 		SimpleTypeDetector.main(new String[] { "pom.xml" });
 
 		System.setOut(out);
 
 		assertEquals("pom.xml: application/xml",
-				buffer.toString(Charsets.UTF_8.name()).trim());
+				buffer.toString(UTF_8.name()).trim());
 	}
 
 }

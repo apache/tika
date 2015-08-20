@@ -16,6 +16,7 @@
  */
 package org.apache.tika.bundle;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
@@ -141,7 +142,7 @@ public class BundleIT {
     public void testForkParser() throws Exception {
         ForkParser parser = new ForkParser(Activator.class.getClassLoader(), defaultParser);
         String data = "<!DOCTYPE html>\n<html><body><p>test <span>content</span></p></body></html>";
-        InputStream stream = new ByteArrayInputStream(data.getBytes("UTF-8"));
+        InputStream stream = new ByteArrayInputStream(data.getBytes(UTF_8));
         Writer writer = new StringWriter();
         ContentHandler contentHandler = new BodyContentHandler(writer);
         Metadata metadata = new Metadata();
