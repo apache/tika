@@ -20,7 +20,6 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
-import java.util.List;
 
 import org.apache.tika.exception.TikaException;
 
@@ -107,33 +106,32 @@ public class TemporaryResources implements Closeable {
      * Closes all tracked resources. The resources are closed in reverse order
      * from how they were added.
      * <p>
-     * Any thrown exceptions from managed resources are collected and
-     * then re-thrown only once all the resources have been closed.
+     * Any suppressed exceptions from managed resources are collected and
+     * then added to the first thrown exception, which is re-thrown once
+     * all the resources have been closed.
      *
      * @throws IOException if one or more of the tracked resources
      *                     could not be closed
      */
     public void close() throws IOException {
         // Release all resources and keep track of any exceptions
-        List<IOException> exceptions = new LinkedList<IOException>();
+        IOException exception = null;
         for (Closeable resource : resources) {
             try {
                 resource.close();
             } catch (IOException e) {
-                exceptions.add(e);
+                if (exception == null) {
+                    exception = e;
+                } else {
+                    exception.addSuppressed(e);
+                }
             }
         }
         resources.clear();
 
         // Throw any exceptions that were captured from above
-        if (!exceptions.isEmpty()) {
-            if (exceptions.size() == 1) {
-                throw exceptions.get(0);
-            } else {
-                throw new IOExceptionWithCause(
-                        "Multiple IOExceptions" + exceptions,
-                        exceptions.get(0));
-            }
+        if (exception != null) {
+            throw exception;
         }
     }
 
