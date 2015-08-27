@@ -30,7 +30,6 @@ import java.util.jar.JarOutputStream;
 import java.util.zip.ZipEntry;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.IOExceptionWithCause;
 import org.apache.tika.io.IOUtils;
 import org.xml.sax.ContentHandler;
 
@@ -200,7 +199,7 @@ class ForkClient {
                     return (Throwable) ForkObjectInputStream.readObject(
                             input, loader);
                 } catch (ClassNotFoundException e) {
-                    throw new IOExceptionWithCause(
+                    throw new IOException(
                             "Unable to deserialize an exception", e);
                 }
             } else {
