@@ -267,7 +267,10 @@ public class Tika {
      * @throws IOException if the file can not be read
      */
     public String detect(File file) throws IOException {
-        return detect(file.toURI().toURL());
+        Metadata metadata = new Metadata();
+        try (InputStream stream = TikaInputStream.get(file, metadata)) {
+            return detect(stream, metadata);
+        }
     }
 
     /**
@@ -418,7 +421,9 @@ public class Tika {
      * @throws IOException if the file can not be read or parsed
      */
     public Reader parse(File file) throws IOException {
-        return parse(file.toURI().toURL());
+        Metadata metadata = new Metadata();
+        InputStream stream = TikaInputStream.get(file, metadata);
+        return parse(stream, metadata);
     }
 
     /**
@@ -554,7 +559,9 @@ public class Tika {
      * @throws TikaException if the file can not be parsed
      */
     public String parseToString(File file) throws IOException, TikaException {
-        return parseToString(file.toURI().toURL());
+        Metadata metadata = new Metadata();
+        InputStream stream = TikaInputStream.get(file, metadata);
+        return parseToString(stream, metadata);
     }
 
     /**
