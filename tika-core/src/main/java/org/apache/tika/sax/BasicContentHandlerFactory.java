@@ -19,6 +19,7 @@ package org.apache.tika.sax;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.Locale;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
@@ -29,6 +30,33 @@ import org.xml.sax.helpers.DefaultHandler;
 public class BasicContentHandlerFactory implements ContentHandlerFactory {
 
     /**
+     * Tries to parse string into handler type.  Returns default if string is null or
+     * parse fails.
+     * <p/>
+     * Options: xml, html, text, body, ignore (no content)
+     *
+     * @param handlerTypeName string to parse
+     * @param defaultType type to return if parse fails
+     * @return handler type
+     */
+    public static HANDLER_TYPE parseHandlerType(String handlerTypeName, HANDLER_TYPE defaultType) {
+        if (handlerTypeName == null) {
+            return defaultType;
+        }
+
+        String lcHandlerTypeName = handlerTypeName.toLowerCase(Locale.ROOT);
+        switch (lcHandlerTypeName) {
+            case "xml" : return HANDLER_TYPE.XML;
+            case "text" : return HANDLER_TYPE.TEXT;
+            case "txt" : return HANDLER_TYPE.TEXT;
+            case "html" : return HANDLER_TYPE.HTML;
+            case "body" : return HANDLER_TYPE.BODY;
+            case "ignore" : return HANDLER_TYPE.IGNORE;
+            default : return defaultType;
+        }
+    }
+
+    /**
      * Common handler types for content.
      */
     public enum HANDLER_TYPE {
@@ -37,7 +65,7 @@ public class BasicContentHandlerFactory implements ContentHandlerFactory {
         TEXT,
         HTML,
         XML
-    };
+    }
 
     private final HANDLER_TYPE type;
     private final int writeLimit;

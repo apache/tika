@@ -17,7 +17,6 @@ package org.apache.tika.batch.builders;
  * limitations under the License.
  */
 
-import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -40,25 +39,8 @@ public class DefaultContentHandlerFactoryBuilder implements IContentHandlerFacto
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
         BasicContentHandlerFactory.HANDLER_TYPE type = null;
         String handlerTypeString = attributes.get("basicHandlerType");
-        if (handlerTypeString == null) {
-            handlerTypeString = "text";
-        }
-        handlerTypeString = handlerTypeString.toLowerCase(Locale.ROOT);
-        if (handlerTypeString.equals("xml")) {
-            type = BasicContentHandlerFactory.HANDLER_TYPE.XML;
-        } else if (handlerTypeString.equals("text")) {
-            type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-        } else if (handlerTypeString.equals("txt")) {
-            type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-        } else if (handlerTypeString.equals("html")) {
-            type = BasicContentHandlerFactory.HANDLER_TYPE.HTML;
-        } else if (handlerTypeString.equals("body")) {
-            type = BasicContentHandlerFactory.HANDLER_TYPE.BODY;
-        } else if (handlerTypeString.equals("ignore")) {
-            type = BasicContentHandlerFactory.HANDLER_TYPE.IGNORE;
-        } else {
-            type = BasicContentHandlerFactory.HANDLER_TYPE.TEXT;
-        }
+        type = BasicContentHandlerFactory.parseHandlerType(handlerTypeString,
+                BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         int writeLimit = -1;
         String writeLimitString = attributes.get("writeLimit");
         if (writeLimitString != null) {
