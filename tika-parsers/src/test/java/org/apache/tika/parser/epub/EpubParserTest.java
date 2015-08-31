@@ -32,9 +32,8 @@ public class EpubParserTest {
 
     @Test
     public void testXMLParser() throws Exception {
-        InputStream input = EpubParserTest.class.getResourceAsStream(
-                "/test-documents/testEPUB.epub");
-        try {
+        try (InputStream input = EpubParserTest.class.getResourceAsStream(
+                "/test-documents/testEPUB.epub")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new EpubParser().parse(input, handler, metadata, new ParseContext());
@@ -53,8 +52,6 @@ public class EpubParserTest {
             assertContains("First item", content);
             assertContains("The previous headings were subchapters", content);
             assertContains("Table data", content);
-        } finally {
-            input.close();
         }
     }
 

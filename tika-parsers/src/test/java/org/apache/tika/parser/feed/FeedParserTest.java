@@ -31,9 +31,8 @@ import org.xml.sax.ContentHandler;
 public class FeedParserTest {
     @Test
     public void testRSSParser() throws Exception {
-        InputStream input = FeedParserTest.class
-                .getResourceAsStream("/test-documents/rsstest.rss");
-        try {
+        try (InputStream input = FeedParserTest.class.getResourceAsStream(
+                "/test-documents/rsstest.rss")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -48,18 +47,14 @@ public class FeedParserTest {
             assertEquals("TestChannel", metadata.get(TikaCoreProperties.TITLE));
 
             // TODO find a way of testing the paragraphs and anchors
-
-        } finally {
-            input.close();
         }
     }
 
 
     @Test
     public void testAtomParser() throws Exception {
-        InputStream input = FeedParserTest.class
-                .getResourceAsStream("/test-documents/testATOM.atom");
-        try {
+        try (InputStream input = FeedParserTest.class.getResourceAsStream(
+                "/test-documents/testATOM.atom")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             ParseContext context = new ParseContext();
@@ -74,8 +69,6 @@ public class FeedParserTest {
             assertEquals("Test Atom Feed", metadata.get(TikaCoreProperties.TITLE));
 
             // TODO Check some more
-        } finally {
-            input.close();
         }
     }
 

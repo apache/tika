@@ -59,12 +59,9 @@ public class MboxParserTest {
     public void testSimple() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        InputStream stream = getStream("/test-documents/simple.mbox");
 
-        try {
+        try (InputStream stream = getStream("/test-documents/simple.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();
@@ -88,12 +85,9 @@ public class MboxParserTest {
     public void testHeaders() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        InputStream stream = getStream("/test-documents/headers.mbox");
 
-        try {
+        try (InputStream stream = getStream("/test-documents/headers.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertContains("Test content", handler.toString());
@@ -114,12 +108,9 @@ public class MboxParserTest {
     public void testMultilineHeader() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        InputStream stream = getStream("/test-documents/multiline.mbox");
 
-        try {
+        try (InputStream stream = getStream("/test-documents/multiline.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("Nb. Of mails", 1, mboxParser.getTrackingMetadata().size());
@@ -132,12 +123,9 @@ public class MboxParserTest {
     public void testQuoted() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        InputStream stream = getStream("/test-documents/quoted.mbox");
 
-        try {
+        try (InputStream stream = getStream("/test-documents/quoted.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertContains("Test content", handler.toString());
@@ -148,12 +136,9 @@ public class MboxParserTest {
     public void testComplex() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        InputStream stream = getStream("/test-documents/complex.mbox");
 
-        try {
+        try (InputStream stream = getStream("/test-documents/complex.mbox")) {
             mboxParser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("Nb. Of mails", 3, mboxParser.getTrackingMetadata().size());

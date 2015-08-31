@@ -38,27 +38,21 @@ public class ArParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofText.ar");
-        try {
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofText.ar")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-archive",
-                     metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(Metadata.CONTENT_TYPE));
         String content = handler.toString();
         assertContains("testTXT.txt", content);
         assertContains("Test d'indexation de Txt", content);
         assertContains("http://www.apache.org", content);
 
-        stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofSND.ar");
-        try {
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofSND.ar")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-archive",
@@ -77,12 +71,9 @@ public class ArParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofText.ar");
-        try {
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofText.ar")) {
             parser.parse(stream, handler, metadata, trackingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals(1, tracker.filenames.size());
@@ -102,12 +93,9 @@ public class ArParserTest extends AbstractPkgTest {
         }
 
         tracker.reset();
-        stream = ArParserTest.class.getResourceAsStream(
-                "/test-documents/testARofSND.ar");
-        try {
+        try (InputStream stream = ArParserTest.class.getResourceAsStream(
+                "/test-documents/testARofSND.ar")) {
             parser.parse(stream, handler, metadata, trackingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals(1, tracker.filenames.size());

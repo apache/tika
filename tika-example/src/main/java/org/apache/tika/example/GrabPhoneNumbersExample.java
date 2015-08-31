@@ -72,12 +72,8 @@ public class GrabPhoneNumbersExample {
         // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        InputStream stream = new FileInputStream(file);
-        try {
+        try (InputStream stream = new FileInputStream(file)) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        }
-        finally {
-            stream.close();
         }
         String[] numbers = metadata.getValues("phonenumbers");
         for (String number : numbers) {

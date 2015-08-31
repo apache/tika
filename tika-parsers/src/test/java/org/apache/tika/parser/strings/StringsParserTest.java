@@ -57,14 +57,10 @@ public class StringsParserTest {
 		context.set(StringsConfig.class, stringsConfig);
 		context.set(FileConfig.class, fileConfig);
 
-		InputStream stream = StringsParserTest.class.getResourceAsStream(resource);
-
-		try {
+		try (InputStream stream = StringsParserTest.class.getResourceAsStream(resource)) {
 			parser.parse(stream, handler, metadata, context);
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			stream.close();
 		}
 
 		// Content

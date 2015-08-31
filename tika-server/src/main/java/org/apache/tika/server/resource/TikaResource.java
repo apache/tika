@@ -277,9 +277,8 @@ public class TikaResource {
 
     public static void parse(Parser parser, Log logger, String path, InputStream inputStream,
                              ContentHandler handler, Metadata metadata, ParseContext parseContext) throws IOException {
-        inputStream = TikaInputStream.get(inputStream);
-        try {
-            parser.parse(inputStream, handler, metadata, parseContext);
+        try (TikaInputStream tikaInputStream = TikaInputStream.get(inputStream)) {
+            parser.parse(tikaInputStream, handler, metadata, parseContext);
         } catch (SAXException e) {
             throw new TikaServerParseException(e);
         } catch (EncryptedDocumentException e) {
@@ -296,8 +295,6 @@ public class TikaResource {
                     path
             ), e);
             throw new TikaServerParseException(e);
-        } finally {
-            inputStream.close();
         }
     }
 
@@ -355,10 +352,8 @@ public class TikaResource {
 
                 BodyContentHandler body = new BodyContentHandler(new RichTextContentHandler(writer));
 
-                try {
-                    parse(parser, logger, info.getPath(), is, body, metadata, context);
-                } finally {
-                    is.close();
+                try (InputStream inputStream = is) {
+                    parse(parser, logger, info.getPath(), inputStream, body, metadata, context);
                 }
             }
         };

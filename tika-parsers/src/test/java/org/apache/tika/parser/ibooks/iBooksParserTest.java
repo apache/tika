@@ -32,9 +32,8 @@ public class iBooksParserTest {
 
     @Test
     public void testiBooksParser() throws Exception {
-        InputStream input = iBooksParserTest.class.getResourceAsStream(
-                "/test-documents/testiBooks.ibooks");
-        try {
+        try (InputStream input = iBooksParserTest.class.getResourceAsStream(
+                "/test-documents/testiBooks.ibooks")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new EpubParser().parse(input, handler, metadata, new ParseContext());
@@ -57,8 +56,6 @@ public class iBooksParserTest {
             assertContains("Table data", content);
             assertContains("Lorem ipsum dolor rutur amet", content);
             */
-        } finally {
-            input.close();
         }
     }
 

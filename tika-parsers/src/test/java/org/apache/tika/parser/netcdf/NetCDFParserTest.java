@@ -42,12 +42,9 @@ public class NetCDFParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = NetCDFParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
-        try {
+        try (InputStream stream = NetCDFParser.class
+                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals(metadata.get(TikaCoreProperties.TITLE),

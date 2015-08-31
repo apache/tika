@@ -51,12 +51,9 @@ public class ParsingExample {
      * @return The content of a file.
      */
     public String parseToStringExample() throws IOException, SAXException, TikaException {
-        InputStream stream = ParsingExample.class.getResourceAsStream("test.doc");
         Tika tika = new Tika();
-        try {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test.doc")) {
             return tika.parseToString(stream);
-        } finally {
-            stream.close();
         }
     }
 
@@ -85,15 +82,12 @@ public class ParsingExample {
      * @return The content of a file.
      */
     public String parseExample() throws IOException, SAXException, TikaException {
-        InputStream stream = ParsingExample.class.getResourceAsStream("test.doc");
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        try {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test.doc")) {
             parser.parse(stream, handler, metadata);
             return handler.toString();
-        } finally {
-            stream.close();
         }
     }
 
@@ -105,15 +99,12 @@ public class ParsingExample {
      * @return The content of a file.
      */
     public String parseNoEmbeddedExample() throws IOException, SAXException, TikaException {
-        InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        try {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
             parser.parse(stream, handler, metadata, new ParseContext());
             return handler.toString();
-        } finally {
-            stream.close();
         }
     }
 
@@ -128,19 +119,15 @@ public class ParsingExample {
      * @throws TikaException
      */
     public String parseEmbeddedExample() throws IOException, SAXException, TikaException {
-        InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
         AutoDetectParser parser = new AutoDetectParser();
         BodyContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
-        try {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
             parser.parse(stream, handler, metadata, context);
             return handler.toString();
-        } finally {
-            stream.close();
         }
-
     }
 
     /**
@@ -173,15 +160,12 @@ public class ParsingExample {
                 BasicContentHandlerFactory.HANDLER_TYPE.HTML, -1);
 
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(p, factory);
-        InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, "test_recursive_embedded.docx");
         ParseContext context = new ParseContext();
 
-        try {
+        try (InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx")) {
             wrapper.parse(stream, new DefaultHandler(), metadata, context);
-        } finally {
-            stream.close();
         }
         return wrapper.getMetadata();
     }

@@ -35,23 +35,19 @@ public class FictionBookParserTest {
   
     @Test
     public void testFB2() throws Exception {
-        InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2");
-        try {
+        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new FictionBookParser().parse(input, handler, metadata, new ParseContext());
             String content = handler.toString();
 
             assertContains("1812", content);
-        } finally {
-            input.close();
         }
     }
 
     @Test
     public void testEmbedded() throws Exception {
-        InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2");
-        try {
+        try (InputStream input = FictionBookParserTest.class.getResourceAsStream("/test-documents/test.fb2")) {
             ContainerExtractor extractor = new ParserContainerExtractor();
             TikaInputStream stream = TikaInputStream.get(input);
 
@@ -62,8 +58,6 @@ public class FictionBookParserTest {
             extractor.extract(stream, null, handler);
 
             assertEquals(2, handler.filenames.size());
-        } finally {
-            input.close();
         }
     }
 }

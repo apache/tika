@@ -41,9 +41,8 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testWordParser() throws Exception {
-        InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD.doc");
-        try {
+        try (InputStream input = WordParserTest.class.getResourceAsStream(
+                "/test-documents/testWORD.doc")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -55,23 +54,18 @@ public class WordParserTest extends TikaTest {
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Keith Bennett", metadata.get(Metadata.AUTHOR));
             assertContains("Sample Word Document", handler.toString());
-        } finally {
-            input.close();
         }
     }
 
     @Test
     public void testWordWithWAV() throws Exception {
-        InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/Doc1_ole.doc");
-        try {
+        try (InputStream input = WordParserTest.class.getResourceAsStream(
+                "/test-documents/Doc1_ole.doc")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
 
             assertContains("MSj00974840000[1].wav", handler.toString());
-        } finally {
-            input.close();
         }
     }
 
@@ -178,9 +172,8 @@ public class WordParserTest extends TikaTest {
 
     @Test
     public void testWord6Parser() throws Exception {
-        InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD6.doc");
-        try {
+        try (InputStream input = WordParserTest.class.getResourceAsStream(
+                "/test-documents/testWORD6.doc")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -194,8 +187,6 @@ public class WordParserTest extends TikaTest {
             assertEquals("Nevin Nollop", metadata.get(TikaCoreProperties.CREATOR));
             assertEquals("Nevin Nollop", metadata.get(Metadata.AUTHOR));
             assertContains("The quick brown fox jumps over the lazy dog", handler.toString());
-        } finally {
-            input.close();
         }
     }
 
@@ -204,12 +195,9 @@ public class WordParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_various.doc");
-        try {
+        try (InputStream stream = WordParserTest.class.getResourceAsStream(
+                "/test-documents/testWORD_various.doc")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();
@@ -280,12 +268,9 @@ public class WordParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_no_format.doc");
-        try {
+        try (InputStream stream = WordParserTest.class.getResourceAsStream(
+                "/test-documents/testWORD_no_format.doc")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();
@@ -297,17 +282,14 @@ public class WordParserTest extends TikaTest {
      */
     @Test
     public void testCustomProperties() throws Exception {
-        InputStream input = WordParserTest.class.getResourceAsStream(
-                "/test-documents/testWORD_custom_props.doc");
         Metadata metadata = new Metadata();
 
-        try {
+        try (InputStream input = WordParserTest.class.getResourceAsStream(
+                "/test-documents/testWORD_custom_props.doc")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
             new OfficeParser().parse(input, handler, metadata, context);
-        } finally {
-            input.close();
         }
 
         assertEquals("application/msword", metadata.get(Metadata.CONTENT_TYPE));

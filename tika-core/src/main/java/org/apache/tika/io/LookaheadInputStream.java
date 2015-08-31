@@ -28,11 +28,8 @@ import java.io.InputStream;
  * <p>
  * The recommended usage pattern of this class is:
  * <pre>
- *     InputStream lookahead = new LookaheadInputStream(stream, n);
- *     try {
+ *     try (InputStream lookahead = new LookaheadInputStream(stream, n)) {
  *         processStream(lookahead);
- *     } finally {
- *         lookahead.close();
  *     }
  * </pre>
  * <p>

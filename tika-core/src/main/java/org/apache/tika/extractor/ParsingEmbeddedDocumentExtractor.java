@@ -91,8 +91,7 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         }
 
         // Use the delegate parser to parse this entry
-        TemporaryResources tmp = new TemporaryResources();
-        try {
+        try (TemporaryResources tmp = new TemporaryResources()) {
             final TikaInputStream newStream = TikaInputStream.get(new CloseShieldInputStream(stream), tmp);
             if (stream instanceof TikaInputStream) {
                 final Object container = ((TikaInputStream) stream).getOpenContainer();
@@ -110,8 +109,6 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         } catch (TikaException e) {
             // TODO: can we log a warning somehow?
             // Could not parse the entry, just skip the content
-        } finally {
-            tmp.close();
         }
 
         if(outputHtml) {

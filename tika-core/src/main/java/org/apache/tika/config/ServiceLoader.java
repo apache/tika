@@ -343,10 +343,9 @@ public class ServiceLoader {
 
     private void collectServiceClassNames(URL resource, Collection<String> names)
             throws IOException {
-        InputStream stream = resource.openStream();
-        try {
+        try (InputStream stream = resource.openStream()) {
             BufferedReader reader =
-                new BufferedReader(new InputStreamReader(stream, UTF_8));
+                    new BufferedReader(new InputStreamReader(stream, UTF_8));
             String line = reader.readLine();
             while (line != null) {
                 line = COMMENT.matcher(line).replaceFirst("");
@@ -356,8 +355,6 @@ public class ServiceLoader {
                 }
                 line = reader.readLine();
             }
-        } finally {
-            stream.close();
         }
     }
 

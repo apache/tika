@@ -85,19 +85,16 @@ public class TikaInputStream extends TaggedInputStream {
      * when you <em>don't</em> explicitly close the returned stream. The
      * recommended access pattern is:
      * <pre>
-     * TemporaryResources tmp = new TemporaryResources();
-     * try {
+     * try (TemporaryResources tmp = new TemporaryResources()) {
      *     TikaInputStream stream = TikaInputStream.get(..., tmp);
      *     // process stream but don't close it
-     * } finally {
-     *     tmp.close();
      * }
      * </pre>
      * <p>
      * The given stream instance will <em>not</em> be closed when the
-     * {@link TemporaryResources#close()} method is called. The caller
-     * is expected to explicitly close the original stream when it's no
-     * longer used.
+     * {@link TemporaryResources#close()} method is called by the
+     * try-with-resources statement. The caller is expected to explicitly
+     * close the original stream when it's no longer used.
      *
      * @since Apache Tika 0.10
      * @param stream normal input stream
@@ -131,17 +128,14 @@ public class TikaInputStream extends TaggedInputStream {
      * <em>do</em> explicitly close the returned stream. The recommended
      * access pattern is:
      * <pre>
-     * TikaInputStream stream = TikaInputStream.get(...);
-     * try {
+     * try (TikaInputStream stream = TikaInputStream.get(...)) {
      *     // process stream
-     * } finally {
-     *     stream.close();
      * }
      * </pre>
      * <p>
      * The given stream instance will be closed along with any other resources
      * associated with the returned TikaInputStream instance when the
-     * {@link #close()} method is called.
+     * {@link #close()} method is called by the try-with-resources statement.
      *
      * @param stream normal input stream
      * @return a TikaInputStream instance
@@ -531,11 +525,8 @@ public class TikaInputStream extends TaggedInputStream {
             } else {
                 // Spool the entire stream into a temporary file
                 file = tmp.createTemporaryFile();
-                OutputStream out = new FileOutputStream(file);
-                try {
+                try (OutputStream out = new FileOutputStream(file)) {
                     IOUtils.copy(in, out);
-                } finally {
-                    out.close();
                 }
 
                 // Create a new input stream and make sure it'll get closed

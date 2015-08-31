@@ -62,12 +62,9 @@ public class ISATabUtils {
 	
 	public static void parseInvestigation(InputStream stream, XHTMLContentHandler handler, Metadata metadata, ParseContext context, String studyFileName) throws IOException, TikaException, SAXException {
 		// Automatically detect the character encoding
-		AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream), metadata, context.get(ServiceLoader.class, LOADER));
-
-		try {
+		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(stream),
+				metadata, context.get(ServiceLoader.class, LOADER))) {
 			extractMetadata(reader, metadata, studyFileName);
-		} finally {
-			reader.close();
 		}
 	}
 	
@@ -78,11 +75,10 @@ public class ISATabUtils {
 	public static void parseStudy(InputStream stream, XHTMLContentHandler xhtml, Metadata metadata, ParseContext context) throws IOException, TikaException, SAXException {
 		TikaInputStream tis = TikaInputStream.get(stream);
 		// Automatically detect the character encoding
-		AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis), metadata, context.get(ServiceLoader.class, LOADER));
-		CSVParser csvParser = null;
-		
-		try {
-			csvParser = new CSVParser(reader, CSVFormat.TDF);
+
+		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
+				metadata, context.get(ServiceLoader.class, LOADER));
+			 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
 			Iterator<CSVRecord> iterator = csvParser.iterator();
 
 			xhtml.startElement("table");
@@ -112,10 +108,6 @@ public class ISATabUtils {
 			xhtml.endElement("tbody");
 
 			xhtml.endElement("table");
-
-		} finally {
-			reader.close();
-			csvParser.close();
 		}
 	}
 	
@@ -123,16 +115,14 @@ public class ISATabUtils {
 		TikaInputStream tis = TikaInputStream.get(stream);
 		
 		// Automatically detect the character encoding
-		AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis), metadata, context.get(ServiceLoader.class, LOADER));
-		CSVParser csvParser = null;
-		
-		try {
-			csvParser = new CSVParser(reader, CSVFormat.TDF);
-			
+
+		try (AutoDetectReader reader = new AutoDetectReader(new CloseShieldInputStream(tis),
+				metadata, context.get(ServiceLoader.class, LOADER));
+			 CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
 			xhtml.startElement("table");
-			
+
 			Iterator<CSVRecord> iterator = csvParser.iterator();
-			
+
 			xhtml.startElement("thead");
 			if (iterator.hasNext()) {
 				CSVRecord record = iterator.next();
@@ -143,7 +133,7 @@ public class ISATabUtils {
 				}
 			}
 			xhtml.endElement("thead");
-			
+
 			xhtml.startElement("tbody");
 			while (iterator.hasNext()) {
 				CSVRecord record = iterator.next();
@@ -156,12 +146,8 @@ public class ISATabUtils {
 				xhtml.endElement("tr");
 			}
 			xhtml.endElement("tbody");
-			
+
 			xhtml.endElement("table");
-			
-		} finally {
-			reader.close();
-			csvParser.close();
 		}
 	}
 	
@@ -171,25 +157,20 @@ public class ISATabUtils {
 		boolean studyTarget = false;
 				
 		Map<String, String> map = new HashMap<String, String>();
-		
-		CSVParser csvParser = null;
-		try {
-			csvParser = new CSVParser(reader, CSVFormat.TDF);
-			
+
+		try (CSVParser csvParser = new CSVParser(reader, CSVFormat.TDF)) {
 			Iterator<CSVRecord> iterator = csvParser.iterator();
-			
+
 			while (iterator.hasNext()) {
 				CSVRecord record = iterator.next();
 				String field = record.get(0);
 				if ((field.toUpperCase(Locale.ENGLISH).equals(field)) && (record.size() == 1)) {
 					investigationSection = Arrays.asList(sections).contains(field);
 					studySection = (studyFileName != null) && (field.equals(studySectionField));
-				}
-				else {
+				} else {
 					if (investigationSection) {
 						addMetadata(field, record, metadata);
-					}
-					else if (studySection) {
+					} else if (studySection) {
 						if (studyTarget) {
 							break;
 						}
@@ -200,16 +181,13 @@ public class ISATabUtils {
 							mapStudyToMetadata(map, metadata);
 							studySection = false;
 						}
-					}
-					else if (studyTarget) {
+					} else if (studyTarget) {
 						addMetadata(field, record, metadata);
 					}
 				}
 			}
 		} catch (IOException ioe) {
 			throw ioe;
-		} finally {
-			csvParser.close();
 		}
 	}
 	

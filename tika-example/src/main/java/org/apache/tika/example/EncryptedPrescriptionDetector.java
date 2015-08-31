@@ -38,8 +38,7 @@ public class EncryptedPrescriptionDetector implements Detector {
 		Key key = Pharmacy.getKey();
 		MediaType type = MediaType.OCTET_STREAM;
 
-		InputStream lookahead = new LookaheadInputStream(stream, 1024);
-		try {
+		try (InputStream lookahead = new LookaheadInputStream(stream, 1024)) {
 			Cipher cipher = Cipher.getInstance("RSA");
 
 			cipher.init(Cipher.DECRYPT_MODE, key);
@@ -53,8 +52,6 @@ public class EncryptedPrescriptionDetector implements Detector {
 			}
 		} catch (GeneralSecurityException e) {
 			// unable to decrypt, fall through
-		} finally {
-			lookahead.close();
 		}
 		return type;
 	}

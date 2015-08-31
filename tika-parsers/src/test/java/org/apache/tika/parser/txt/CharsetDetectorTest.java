@@ -29,9 +29,7 @@ public class CharsetDetectorTest {
 
     @Test
     public void testTagDropper() throws IOException {
-        InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html");
-
-        try {
+        try (InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html")) {
             CharsetDetector detector = new CharsetDetector();
             detector.enableInputFilter(true);
             detector.setText(in);
@@ -44,8 +42,6 @@ public class CharsetDetectorTest {
             }
             assertTrue(mm != null);
             assertEquals("UTF-8", mm.getName());
-        } finally {
-            in.close();
         }
     }
   
@@ -56,17 +52,13 @@ public class CharsetDetectorTest {
 
     @Test
     public void testEmptyOrNullDeclaredCharset() throws IOException {
-        InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html");
-
-        try {
+        try (InputStream in = CharsetDetectorTest.class.getResourceAsStream("/test-documents/resume.html")) {
             CharsetDetector detector = new CharsetDetector();
             Reader reader = detector.getReader(in, null);
             assertTrue(reader.ready());
 
             reader = detector.getReader(in, "");
             assertTrue(reader.ready());
-        } finally {
-            in.close();
         }
     }
 }

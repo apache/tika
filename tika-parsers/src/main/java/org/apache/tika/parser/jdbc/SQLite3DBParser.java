@@ -92,18 +92,13 @@ class SQLite3DBParser extends AbstractDBParser {
                                          ParseContext context) throws SQLException {
         List<String> tableNames = new LinkedList<String>();
 
-        Statement st = null;
-        try {
-            st = connection.createStatement();
+        try (Statement st = connection.createStatement()) {
             String sql = "SELECT name FROM sqlite_master WHERE type='table'";
             ResultSet rs = st.executeQuery(sql);
 
             while (rs.next()) {
                 tableNames.add(rs.getString(1));
             }
-        } finally {
-            if (st != null)
-                st.close();
         }
         return tableNames;
     }

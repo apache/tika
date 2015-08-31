@@ -38,57 +38,51 @@ public class EmptyAndDuplicateElementsXMLParserTest extends TikaTest {
 
     @Test
     public void testDefaultBehavior() throws Exception {
-        InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testXML3.xml");
-        try {
+        try (InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new DefaultCustomXMLTestParser().parse(input, handler, metadata, new ParseContext());
-            
+
             assertEquals(4, metadata.getValues(FIRST_NAME).length);
             assertEquals(2, metadata.getValues(LAST_NAME).length);
-            
+
             assertEquals("John", metadata.getValues(FIRST_NAME)[0]);
             assertEquals("Smith", metadata.getValues(LAST_NAME)[0]);
-            
+
             assertEquals("Jane", metadata.getValues(FIRST_NAME)[1]);
             assertEquals("Doe", metadata.getValues(LAST_NAME)[1]);
-            
+
             // We didn't know Bob's last name, but now we don't know an entry existed
             assertEquals("Bob", metadata.getValues(FIRST_NAME)[2]);
-            
+
             // We don't know Kate's last name because it was a duplicate
             assertEquals("Kate", metadata.getValues(FIRST_NAME)[3]);
-        } finally {
-            input.close();
         }
     }
     
     @Test
     public void testEmptiesAndRepeats() throws Exception {
-        InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testXML3.xml");
-        try {
+        try (InputStream input = EmptyAndDuplicateElementsXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testXML3.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new AllowEmptiesAndDuplicatesCustomXMLTestParser().parse(input, handler, metadata, new ParseContext());
-            
+
             assertEquals(4, metadata.getValues(FIRST_NAME).length);
             assertEquals(4, metadata.getValues(LAST_NAME).length);
-            
+
             assertEquals("John", metadata.getValues(FIRST_NAME)[0]);
             assertEquals("Smith", metadata.getValues(LAST_NAME)[0]);
-            
+
             assertEquals("Jane", metadata.getValues(FIRST_NAME)[1]);
             assertEquals("Doe", metadata.getValues(LAST_NAME)[1]);
-            
+
             assertEquals("Bob", metadata.getValues(FIRST_NAME)[2]);
             assertEquals("", metadata.getValues(LAST_NAME)[2]);
-            
+
             assertEquals("Kate", metadata.getValues(FIRST_NAME)[3]);
             assertEquals("Smith", metadata.getValues(LAST_NAME)[3]);
-        } finally {
-            input.close();
         }
     }
     

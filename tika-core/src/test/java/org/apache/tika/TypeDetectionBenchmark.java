@@ -47,11 +47,10 @@ public class TypeDetectionBenchmark {
         if (file.isHidden()) {
             // ignore
         } else if (file.isFile()) {
-            InputStream input = new FileInputStream(file);
-            try {
+            try (InputStream input = new FileInputStream(file)) {
                 byte[] content = IOUtils.toByteArray(input);
                 String type =
-                    tika.detect(new ByteArrayInputStream(content));
+                        tika.detect(new ByteArrayInputStream(content));
                 long start = System.currentTimeMillis();
                 for (int i = 0; i < 1000; i++) {
                     tika.detect(new ByteArrayInputStream(content));
@@ -60,8 +59,6 @@ public class TypeDetectionBenchmark {
                         Locale.ROOT,
                         "%6dns per Tika.detect(%s) = %s%n",
                         System.currentTimeMillis() - start, file, type);
-            } finally {
-                input.close();
             }
         } else if (file.isDirectory()) {
             for (File child : file.listFiles()) {

@@ -173,12 +173,10 @@ public class LanguageIdentifierTest {
     }
 
     private void writeTo(String language, Writer writer) throws IOException {
-        InputStream stream =
-            LanguageIdentifierTest.class.getResourceAsStream(language + ".test");
-        try {
+        try (InputStream stream =
+                LanguageIdentifierTest.class.getResourceAsStream(
+                        language + ".test")) {
             IOUtils.copy(new InputStreamReader(stream, UTF_8), writer);
-        } finally {
-            stream.close();
         }
     }
 

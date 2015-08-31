@@ -69,10 +69,9 @@ public class TXTParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         // Automatically detect the character encoding
-        AutoDetectReader reader = new AutoDetectReader(
+        try (AutoDetectReader reader = new AutoDetectReader(
                 new CloseShieldInputStream(stream), metadata,
-                context.get(ServiceLoader.class, LOADER));
-        try {
+                context.get(ServiceLoader.class, LOADER))) {
             Charset charset = reader.getCharset();
             MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
             metadata.set(Metadata.CONTENT_TYPE, type.toString());
@@ -93,8 +92,6 @@ public class TXTParser extends AbstractParser {
             xhtml.endElement("p");
 
             xhtml.endDocument();
-        } finally {
-            reader.close();
         }
     }
 

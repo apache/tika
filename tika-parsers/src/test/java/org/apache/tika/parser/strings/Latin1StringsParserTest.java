@@ -56,12 +56,8 @@ public class Latin1StringsParserTest {
         Parser parser = new Latin1StringsParser();
         ContentHandler handler = new BodyContentHandler();
 
-        InputStream stream = new ByteArrayInputStream(baos.toByteArray());
-
-        try {
+        try (InputStream stream = new ByteArrayInputStream(baos.toByteArray())) {
             parser.parse(stream, handler, new Metadata(), new ParseContext());
-        } finally {
-            stream.close();
         }
 
         String result = handler.toString();

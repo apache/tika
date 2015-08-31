@@ -68,24 +68,21 @@ public class DWGParserTest {
     @Test
     public void testDWG2010CustomPropertiesParser() throws Exception {
         // Check that standard parsing works
-        InputStream input = DWGParserTest.class.getResourceAsStream(
+        InputStream testInput = DWGParserTest.class.getResourceAsStream(
                 "/test-documents/testDWG2010_custom_props.dwg");
-        testParser(input);
+        testParser(testInput);
         
         // Check that custom properties with alternate padding work
-        input = DWGParserTest.class.getResourceAsStream(
-                "/test-documents/testDWG2010_custom_props.dwg");
-        try {
+        try (InputStream input = DWGParserTest.class.getResourceAsStream(
+                "/test-documents/testDWG2010_custom_props.dwg")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new DWGParser().parse(input, handler, metadata, null);
-            
+
             assertEquals("valueforcustomprop1",
                     metadata.get("customprop1"));
             assertEquals("valueforcustomprop2",
                     metadata.get("customprop2"));
-        } finally {
-            input.close();
         }
     }
 

@@ -247,12 +247,9 @@ public class BundleIT {
         ParseContext context = new ParseContext();
         context.set(Parser.class, parser);
 
-        InputStream stream
-                = new FileInputStream("src/test/resources/test-documents.zip");
-        try {
+        try (InputStream stream =
+                new FileInputStream("src/test/resources/test-documents.zip")) {
             parser.parse(stream, handler, new Metadata(), context);
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();

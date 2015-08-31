@@ -304,11 +304,8 @@ public class TikaGUI extends JFrame
     public void openFile(File file) {
         try {
             Metadata metadata = new Metadata();
-            TikaInputStream stream = TikaInputStream.get(file, metadata);
-            try {
+            try (TikaInputStream stream = TikaInputStream.get(file, metadata)) {
                 handleStream(stream, metadata);
-            } finally {
-                stream.close();
             }
         } catch (Throwable t) {
             handleError(file.getPath(), t);
@@ -318,11 +315,8 @@ public class TikaGUI extends JFrame
     public void openURL(URL url) {
         try {
             Metadata metadata = new Metadata();
-            TikaInputStream stream = TikaInputStream.get(url, metadata);
-            try {
+            try (TikaInputStream stream = TikaInputStream.get(url, metadata)) {
                 handleStream(stream, metadata);
-            } finally {
-                stream.close();
             }
         } catch (Throwable t) {
             handleError(url.toString(), t);
@@ -477,8 +471,7 @@ public class TikaGUI extends JFrame
         if (e.getEventType() == EventType.ACTIVATED) {
             try {
                 URL url = e.getURL();
-                InputStream stream = url.openStream();
-                try {
+                try (InputStream stream = url.openStream()) {
                     JEditorPane editor =
                         new JEditorPane("text/plain", IOUtils.toString(stream, UTF_8));
                     editor.setEditable(false);
@@ -493,8 +486,6 @@ public class TikaGUI extends JFrame
                     dialog.add(new JScrollPane(editor));
                     dialog.pack();
                     dialog.setVisible(true);
-                } finally {
-                    stream.close();
                 }
             } catch (IOException exception) {
                 exception.printStackTrace();

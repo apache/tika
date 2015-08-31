@@ -43,12 +43,8 @@ public class PhoneExtractingContentHandlerTest {
         // The PhoneExtractingContentHandler will examine any characters for phone numbers before passing them
         // to the underlying Handler.
         PhoneExtractingContentHandler handler = new PhoneExtractingContentHandler(new BodyContentHandler(), metadata);
-        InputStream stream = PhoneExtractingContentHandlerTest.class.getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt");
-        try {
+        try (InputStream stream = PhoneExtractingContentHandlerTest.class.getResourceAsStream("/test-documents/testPhoneNumberExtractor.odt")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        }
-        finally {
-            stream.close();
         }
         String[] phoneNumbers = metadata.getValues("phonenumbers");
         assertContains("9498888888", phoneNumbers[0]);

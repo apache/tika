@@ -126,11 +126,8 @@ class RTFObjDataParser {
                                        AtomicInteger unknownFilenameCount)
             throws IOException {
 
-        NPOIFSFileSystem fs = null;
         byte[] ret = null;
-        try {
-
-            fs = new NPOIFSFileSystem(is);
+        try (NPOIFSFileSystem fs = new NPOIFSFileSystem(is)) {
 
             DirectoryNode root = fs.getRoot();
 
@@ -166,15 +163,9 @@ class RTFObjDataParser {
                         contentsEntry = (DocumentEntry) root.getEntry("Contents");
                     }
 
-                    DocumentInputStream inp = null;
-                    try {
-                        inp = new DocumentInputStream(contentsEntry);
+                    try (DocumentInputStream inp = new DocumentInputStream(contentsEntry)) {
                         ret = new byte[contentsEntry.getSize()];
                         inp.readFully(ret);
-                    } finally {
-                        if (inp != null) {
-                            inp.close();
-                        }
                     }
                 } else {
 
@@ -185,10 +176,6 @@ class RTFObjDataParser {
                     metadata.set(Metadata.RESOURCE_NAME_KEY, "file_" + unknownFilenameCount.getAndIncrement() + "." + type.getExtension());
                     metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
                 }
-            }
-        } finally {
-            if (fs != null) {
-                fs.close();
             }
         }
         return ret;

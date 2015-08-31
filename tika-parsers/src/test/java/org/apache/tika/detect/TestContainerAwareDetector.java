@@ -55,28 +55,24 @@ public class TestContainerAwareDetector {
         assertTypeByNameAndData(dataFile, name, type, null);
     }
     private void assertTypeByNameAndData(String dataFile, String name, String typeFromDetector, String typeFromMagic) throws Exception {
-       TikaInputStream stream = TikaInputStream.get(
-               TestContainerAwareDetector.class.getResource(
-                       "/test-documents/" + dataFile));
-       try {
-           Metadata m = new Metadata();
-           if (name != null)
-              m.add(Metadata.RESOURCE_NAME_KEY, name);
-           
-           // Mime Magic version is likely to be less precise
-           if (typeFromMagic != null) {
-               assertEquals(
-                       MediaType.parse(typeFromMagic),
-                       mimeTypes.detect(stream, m));
-           }
-           
-           // All being well, the detector should get it perfect
-           assertEquals(
-                   MediaType.parse(typeFromDetector),
-                   detector.detect(stream, m));
-       } finally {
-           stream.close();
-       }
+        try (TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource("/test-documents/" + dataFile))) {
+            Metadata m = new Metadata();
+            if (name != null)
+                m.add(Metadata.RESOURCE_NAME_KEY, name);
+
+            // Mime Magic version is likely to be less precise
+            if (typeFromMagic != null) {
+                assertEquals(
+                        MediaType.parse(typeFromMagic),
+                        mimeTypes.detect(stream, m));
+            }
+
+            // All being well, the detector should get it perfect
+            assertEquals(
+                    MediaType.parse(typeFromDetector),
+                    detector.detect(stream, m));
+        }
     }
 
     @Test
@@ -165,17 +161,13 @@ public class TestContainerAwareDetector {
 
     @Test
     public void testOpenContainer() throws Exception {
-        TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource(
-                        "/test-documents/testPPT.ppt"));
-        try {
+        try (TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource("/test-documents/testPPT.ppt"))) {
             assertNull(stream.getOpenContainer());
             assertEquals(
                     MediaType.parse("application/vnd.ms-powerpoint"),
                     detector.detect(stream, new Metadata()));
             assertTrue(stream.getOpenContainer() instanceof NPOIFSFileSystem);
-        } finally {
-            stream.close();
         }
     }
 
@@ -306,13 +298,9 @@ public class TestContainerAwareDetector {
     private void assertRemovalTempfiles(String fileName) throws Exception {
         int numberOfTempFiles = countTemporaryFiles();
 
-        TikaInputStream stream = TikaInputStream.get(
-                TestContainerAwareDetector.class.getResource(
-                        "/test-documents/" + fileName));
-        try {
+        try (TikaInputStream stream = TikaInputStream.get(
+                TestContainerAwareDetector.class.getResource("/test-documents/" + fileName))) {
             detector.detect(stream, new Metadata());
-        } finally {
-            stream.close();
         }
 
         assertEquals(numberOfTempFiles, countTemporaryFiles());
@@ -354,10 +342,8 @@ public class TestContainerAwareDetector {
 
     private TikaInputStream getTruncatedFile(String name, int n)
             throws IOException {
-        InputStream input =
-            TestContainerAwareDetector.class.getResourceAsStream(
-                    "/test-documents/" + name);
-        try {
+        try (InputStream input = TestContainerAwareDetector.class.getResourceAsStream(
+                "/test-documents/" + name)) {
             byte[] bytes = new byte[n];
             int m = 0;
             while (m < bytes.length) {
@@ -369,8 +355,6 @@ public class TestContainerAwareDetector {
                 }
             }
             return TikaInputStream.get(bytes);
-        } finally {
-            input.close();
         }
     }
 
@@ -379,50 +363,37 @@ public class TestContainerAwareDetector {
         // First up a truncated OOXML (zip) file
        
         // With only the data supplied, the best we can do is the container
-        TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
         Metadata m = new Metadata();
-        try {
+        try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
             assertEquals(
                     MediaType.application("x-tika-ooxml"),
                     detector.detect(xlsx, m));
-        } finally {
-            xlsx.close();
         }
         
         // With truncated data + filename, we can use the filename to specialise
-        xlsx = getTruncatedFile("testEXCEL.xlsx", 300);
         m = new Metadata();
         m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xlsx");
-        try {
+        try (TikaInputStream xlsx = getTruncatedFile("testEXCEL.xlsx", 300)) {
             assertEquals(
                     MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
                     detector.detect(xlsx, m));
-        } finally {
-            xlsx.close();
         }
-        
 
         // Now a truncated OLE2 file 
-        TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400);
         m = new Metadata();
-        try {
+        try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
             assertEquals(
                     MediaType.application("x-tika-msoffice"),
                     detector.detect(xls, m));
-        } finally {
-            xls.close();
         }
         
         // Finally a truncated OLE2 file, with a filename available
-        xls = getTruncatedFile("testEXCEL.xls", 400);
         m = new Metadata();
         m.add(Metadata.RESOURCE_NAME_KEY, "testEXCEL.xls");
-        try {
+        try (TikaInputStream xls = getTruncatedFile("testEXCEL.xls", 400)) {
             assertEquals(
                     MediaType.application("vnd.ms-excel"),
                     detector.detect(xls, m));
-        } finally {
-            xls.close();
         }
    }
 

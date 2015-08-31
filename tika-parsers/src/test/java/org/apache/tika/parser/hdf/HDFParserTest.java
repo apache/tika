@@ -57,12 +57,8 @@ public class HDFParserTest {
          * ftp://acdisc.gsfc.nasa.gov/data/s4pa///Aura_MLS_Level2/ML2O3.002//2009
          * /MLS-Aura_L2GP-O3_v02-23-c01_2009d122.he5
          */
-        InputStream stream = HDFParser.class
-                .getResourceAsStream("/test-documents/test.he5");
-        try {
+        try (InputStream stream = HDFParser.class.getResourceAsStream("/test-documents/test.he5")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertNotNull(metadata);
@@ -83,13 +79,9 @@ public class HDFParserTest {
        * 
        * http://www.hdfgroup.org/training/hdf4_chunking/Chunkit/bin/input54kmdata.hdf
        */
-      InputStream stream = HDFParser.class
-              .getResourceAsStream("/test-documents/test.hdf");
-      try {
-          parser.parse(stream, handler, metadata, new ParseContext());
-      } finally {
-          stream.close();
-      }
+        try (InputStream stream = HDFParser.class.getResourceAsStream("/test-documents/test.hdf")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        }
 
       assertNotNull(metadata);
       assertEquals("Direct read of HDF4 file through CDM library", metadata.get("_History"));

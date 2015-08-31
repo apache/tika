@@ -238,8 +238,7 @@ public class ExternalParser extends AbstractParser {
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml)
             throws SAXException, IOException {
-        Reader reader = new InputStreamReader(stream, UTF_8);
-        try {
+        try (Reader reader = new InputStreamReader(stream, UTF_8)) {
             xhtml.startDocument();
             xhtml.startElement("p");
             char[] buffer = new char[1024];
@@ -248,8 +247,6 @@ public class ExternalParser extends AbstractParser {
             }
             xhtml.endElement("p");
             xhtml.endDocument();
-        } finally {
-            reader.close();
         }
     }
 

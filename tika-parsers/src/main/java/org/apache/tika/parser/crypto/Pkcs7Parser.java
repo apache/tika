@@ -69,13 +69,10 @@ public class Pkcs7Parser extends AbstractParser {
                 if (content == null) {
                     throw new TikaException("cannot parse detached pkcs7 signature (no signed data to parse)");
                 }
-                InputStream input = content.getContentStream();
-                try {
+                try (InputStream input = content.getContentStream()) {
                     Parser delegate =
                             context.get(Parser.class, EmptyParser.INSTANCE);
                     delegate.parse(input, handler, metadata, context);
-                } finally {
-                    input.close();
                 }
             } finally {
                 parser.close();

@@ -56,12 +56,9 @@ public class Mp3ParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v1.mp3");
-        try {
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3id3v1.mp3")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
@@ -93,12 +90,9 @@ public class Mp3ParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v2.mp3");
-        try {
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3id3v2.mp3")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         // Check core properties
@@ -151,12 +145,9 @@ public class Mp3ParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v1_v2.mp3");
-        try {
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3id3v1_v2.mp3")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
@@ -188,12 +179,9 @@ public class Mp3ParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3id3v24.mp3");
-        try {
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3id3v24.mp3")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
@@ -238,13 +226,10 @@ public class Mp3ParserTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-               "/test-documents/testMP3i18n.mp3");
-       try {
-           parser.parse(stream, handler, metadata, new ParseContext());
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3i18n.mp3")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        }
 
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("Une chason en Fran\u00e7ais", metadata.get(TikaCoreProperties.TITLE));
@@ -278,13 +263,10 @@ public class Mp3ParserTest {
         // Note - our test file has a lyrics tag, but lacks any
         //  lyrics in the tags, so we can't test that bit
         // TODO Find a better sample file
-        
-        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3lyrics.mp3");
-        try {
+
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3lyrics.mp3")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
@@ -335,12 +317,9 @@ public class Mp3ParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP3noid3.mp3");
-        try {
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3noid3.mp3")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals("2455.510986328125", metadata.get(XMPDM.DURATION));
@@ -359,19 +338,15 @@ public class Mp3ParserTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-               "/test-documents/test2.mp3");
-       if(stream == null) {
-          // You haven't downloaded the file
-          // Skip the test
-          return;
-       }
-       
-       try {
-           parser.parse(stream, handler, metadata, new ParseContext());
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/test2.mp3")) {
+            if (stream == null) {
+                // You haven't downloaded the file
+                // Skip the test
+                return;
+            }
+            parser.parse(stream, handler, metadata, new ParseContext());
+        }
 
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("Plus loin vers l'ouest", metadata.get(TikaCoreProperties.TITLE));
@@ -399,15 +374,10 @@ public class Mp3ParserTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-               "/test-documents/testMP3truncated.mp3");
-       
-       
-       try {
-           parser.parse(stream, handler, metadata, new ParseContext());
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP3truncated.mp3")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        }
 
        // Check we could get the headers from the start
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
@@ -434,14 +404,10 @@ public class Mp3ParserTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = Mp3ParserTest.class.getResourceAsStream(
-               "/test-documents/testNakedUTF16BOM.mp3");
-       
-       try {
-           parser.parse(stream, handler, metadata, new ParseContext());
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = Mp3ParserTest.class.getResourceAsStream(
+                "/test-documents/testNakedUTF16BOM.mp3")) {
+            parser.parse(stream, handler, metadata, new ParseContext());
+        }
        assertEquals("audio/mpeg", metadata.get(Metadata.CONTENT_TYPE));
        assertEquals("", metadata.get(XMPDM.GENRE));
     }

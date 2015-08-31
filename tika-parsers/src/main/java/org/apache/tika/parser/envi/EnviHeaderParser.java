@@ -57,10 +57,9 @@ public class EnviHeaderParser extends AbstractParser {
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
-        AutoDetectReader reader = new AutoDetectReader(
-                new CloseShieldInputStream(stream), metadata);
 
-        try {
+        try (AutoDetectReader reader = new AutoDetectReader(
+                new CloseShieldInputStream(stream), metadata)) {
             Charset charset = reader.getCharset();
             MediaType type = new MediaType(MediaType.TEXT_PLAIN, charset);
             // deprecated, see TIKA-431
@@ -78,10 +77,8 @@ public class EnviHeaderParser extends AbstractParser {
                 xhtml.characters(line);
                 xhtml.endElement("p");
             }
-            
+
             xhtml.endDocument();
-        } finally {
-            reader.close();
         }
     }
 }

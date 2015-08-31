@@ -47,12 +47,8 @@ public class LanguageProfilerBuilderTest {
 
     @Test
     public void testCreateProfile() throws TikaException, IOException, URISyntaxException {
-        InputStream is =
-                LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName);
-        try {
-            ngramProfile = LanguageProfilerBuilder.create(profileName, is , UTF_8.name());
-        } finally {
-            is.close();
+        try (InputStream is = LanguageProfilerBuilderTest.class.getResourceAsStream(corpusName)) {
+            ngramProfile = LanguageProfilerBuilder.create(profileName, is, UTF_8.name());
         }
 
         File f = new File(profileName + "." + FILE_EXTENSION);
@@ -78,9 +74,7 @@ public class LanguageProfilerBuilderTest {
 
         langProfile = new LanguageProfile();
 
-        InputStream stream = new FileInputStream(new File(profileName + "."
-                + FILE_EXTENSION));
-        try {
+        try (InputStream stream = new FileInputStream(new File(profileName + "." + FILE_EXTENSION))) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(
                     stream, UTF_8));
             String line = reader.readLine();
@@ -94,8 +88,6 @@ public class LanguageProfilerBuilderTest {
                 }
                 line = reader.readLine();
             }
-        } finally {
-            stream.close();
         }
     }
 

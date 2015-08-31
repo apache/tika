@@ -264,12 +264,9 @@ public class StringsParser extends AbstractParser {
 			throws SAXException, IOException {
 
 		char[] buffer = new char[1024];
-		BufferedReader reader = null;
 		int totalBytes = 0;
 
-		try {
-			reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
-
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8))) {
 			int n = 0;
 			while ((n = reader.read(buffer)) != -1) {
 				if (n > 0) {
@@ -278,8 +275,6 @@ public class StringsParser extends AbstractParser {
 				totalBytes += n;
 			}
 
-		} finally {
-			reader.close();
 		}
 
 		return totalBytes;
@@ -317,18 +312,13 @@ public class StringsParser extends AbstractParser {
 
 		InputStream out = process.getInputStream();
 
-		BufferedReader reader = null;
 		String fileOutput = null;
 
-		try {
-			reader = new BufferedReader(new InputStreamReader(out, UTF_8));
+		try (BufferedReader reader = new BufferedReader(new InputStreamReader(out, UTF_8))) {
 			fileOutput = reader.readLine();
-
 		} catch (IOException ioe) {
 			// file output not available!
 			fileOutput = "";
-		} finally {
-			reader.close();
 		}
 
 		return fileOutput;

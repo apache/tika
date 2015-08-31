@@ -301,9 +301,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     xhtml.startElement("div", attributes);
                     xhtml.endElement("div");
 
-                    TikaInputStream stream =
-                            TikaInputStream.get(data.getData());
-                    try {
+                    try (TikaInputStream stream = TikaInputStream.get(data.getData())) {
                         String mediaType = null;
                         if ("Excel.Chart.8".equals(oleShape.getProgID())) {
                             mediaType = "application/vnd.ms-excel";
@@ -311,8 +309,6 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         handleEmbeddedResource(
                                 stream, objID, objID,
                                 mediaType, xhtml, false);
-                    } finally {
-                        stream.close();
                     }
                 }
             }

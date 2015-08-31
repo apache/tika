@@ -50,12 +50,9 @@ public class ZipParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = ZipParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.zip");
-        try {
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.zip")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/zip", metadata.get(Metadata.CONTENT_TYPE));
@@ -90,13 +87,10 @@ public class ZipParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.zip");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.zip")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should have found all 9 documents
        assertEquals(9, tracker.filenames.size());
@@ -171,14 +165,11 @@ public class ZipParserTest extends AbstractPkgTest {
         context.set(Parser.class, parser);
         GatherRelIDsDocumentExtractor relIDs = new GatherRelIDsDocumentExtractor();
         context.set(EmbeddedDocumentExtractor.class, relIDs);
-        InputStream input = getResourceAsStream("/test-documents/testEmbedded.zip");
-        try {
-          parser.parse(input,
-                       new BodyContentHandler(),
-                       new Metadata(),
-                       context);
-        } finally {
-            input.close();
+        try (InputStream input = getResourceAsStream("/test-documents/testEmbedded.zip")) {
+            parser.parse(input,
+                    new BodyContentHandler(),
+                    new Metadata(),
+                    context);
         }
 
         assertTrue(relIDs.allRelIDs.contains("test1.txt"));
@@ -191,17 +182,14 @@ public class ZipParserTest extends AbstractPkgTest {
         factory.setEntryEncoding("SJIS");
         trackingContext.set(ArchiveStreamFactory.class, factory);
 
-        InputStream stream = TikaInputStream.get(Base64.decodeBase64(
+        try (InputStream stream = TikaInputStream.get(Base64.decodeBase64(
                 "UEsDBBQAAAAIAI+CvUCDo3+zIgAAACgAAAAOAAAAk/qWe4zqg4GDgi50"
-                + "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh"
-                + "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA"
-                + "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="));
-        try {
+                        + "eHRr2tj0qulsc2pzRHN609Gm7Y1OvFxNYLHJv6ZV97yCiQEAUEsBAh"
+                        + "QLFAAAAAgAj4K9QIOjf7MiAAAAKAAAAA4AAAAAAAAAAAAgAAAAAAAA"
+                        + "AJP6lnuM6oOBg4IudHh0UEsFBgAAAAABAAEAPAAAAE4AAAAAAA=="))) {
             autoDetectParser.parse(
                     stream, new DefaultHandler(),
                     new Metadata(), trackingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals(1, tracker.filenames.size());

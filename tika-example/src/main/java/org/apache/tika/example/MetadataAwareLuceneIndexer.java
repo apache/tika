@@ -46,8 +46,7 @@ public class MetadataAwareLuceneIndexer {
 
 	public void indexContentSpecificMet(File file) throws Exception {
 		Metadata met = new Metadata();
-		InputStream is = new FileInputStream(file);
-		try {
+		try (InputStream is = new FileInputStream(file)) {
 			tika.parse(is, met);
 			Document document = new Document();
 			for (String key : met.names()) {
@@ -57,8 +56,6 @@ public class MetadataAwareLuceneIndexer {
 				}
 				writer.addDocument(document);
 			}
-		} finally {
-			is.close();
 		}
 	}
 
@@ -74,8 +71,7 @@ public class MetadataAwareLuceneIndexer {
 		met.add(Metadata.SUBJECT, "Metadata");
 		met.set(Property.externalClosedChoise(Metadata.RIGHTS, "public",
 				"private"), "public");
-		InputStream is = new FileInputStream(file);
-		try {
+		try (InputStream is = new FileInputStream(file)) {
 			tika.parse(is, met);
 			Document document = new Document();
 			for (String key : met.names()) {
@@ -85,8 +81,6 @@ public class MetadataAwareLuceneIndexer {
 				}
 				writer.addDocument(document);
 			}
-		} finally {
-			is.close();
 		}
 	}
 

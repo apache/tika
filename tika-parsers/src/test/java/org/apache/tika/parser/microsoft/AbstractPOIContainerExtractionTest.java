@@ -57,8 +57,7 @@ public abstract class AbstractPOIContainerExtractionTest {
     }
 
     protected TrackingHandler process(String filename, ContainerExtractor extractor, boolean recurse) throws Exception {
-        TikaInputStream stream = getTestFile(filename);
-        try {
+        try (TikaInputStream stream = getTestFile(filename)) {
             assertEquals(true, extractor.isSupported(stream));
 
             // Process it
@@ -71,8 +70,6 @@ public abstract class AbstractPOIContainerExtractionTest {
 
             // So they can check what happened
             return handler;
-        } finally {
-            stream.close();
         }
     }
 }

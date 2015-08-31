@@ -39,12 +39,9 @@ public class Bzip2ParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = Bzip2ParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tbz2");
-        try {
+        try (InputStream stream = Bzip2ParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.tbz2")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-bzip2", metadata.get(Metadata.CONTENT_TYPE));
@@ -80,13 +77,10 @@ public class Bzip2ParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.tbz2");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.tbz2")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should find a single entry, for the (compressed) tar file
        assertEquals(1, tracker.filenames.size());
