@@ -290,17 +290,14 @@ public class TesseractOCRParser extends AbstractParser {
      */
     private void extractOutput(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
 
-        Reader reader = new InputStreamReader(stream, UTF_8);
         xhtml.startDocument();
         xhtml.startElement("div");
-        try {
+        try (Reader reader = new InputStreamReader(stream, UTF_8)) {
             char[] buffer = new char[1024];
             for (int n = reader.read(buffer); n != -1; n = reader.read(buffer)) {
                 if (n > 0)
                     xhtml.characters(buffer, 0, n);
             }
-        } finally {
-            reader.close();
         }
         xhtml.endElement("div");
         xhtml.endDocument();

@@ -41,12 +41,9 @@ public class TarParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = TarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.tar");
-        try {
+        try (InputStream stream = TarParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.tar")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-tar", metadata.get(Metadata.CONTENT_TYPE));
@@ -81,13 +78,10 @@ public class TarParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.tar");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.tar")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should have found all 9 documents, but not the directory
        assertEquals(9, tracker.filenames.size());

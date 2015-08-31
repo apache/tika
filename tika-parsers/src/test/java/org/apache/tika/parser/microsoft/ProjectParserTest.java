@@ -39,23 +39,17 @@ public class ProjectParserTest {
 
     @Test
     public void testProject2003() throws Exception {
-        InputStream input = ProjectParserTest.class.getResourceAsStream(
-                "/test-documents/testPROJECT2003.mpp");
-        try {
+        try (InputStream input = ProjectParserTest.class.getResourceAsStream(
+                "/test-documents/testPROJECT2003.mpp")) {
             doTestProject(input);
-        } finally {
-            input.close();
         }
     }
 
     @Test
     public void testProject2007() throws Exception {
-        InputStream input = ProjectParserTest.class.getResourceAsStream(
-                "/test-documents/testPROJECT2007.mpp");
-        try {
+        try (InputStream input = ProjectParserTest.class.getResourceAsStream(
+                "/test-documents/testPROJECT2007.mpp")) {
             doTestProject(input);
-        } finally {
-            input.close();
         }
     }
 

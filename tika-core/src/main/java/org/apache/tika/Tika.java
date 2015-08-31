@@ -218,11 +218,8 @@ public class Tika {
      */
     public String detect(byte[] prefix, String name) {
         try {
-            InputStream stream = TikaInputStream.get(prefix);
-            try {
+            try (InputStream stream = TikaInputStream.get(prefix)) {
                 return detect(stream, name);
-            } finally {
-                stream.close();
             }
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected IOException", e);
@@ -244,11 +241,8 @@ public class Tika {
      */
     public String detect(byte[] prefix) {
         try {
-            InputStream stream = TikaInputStream.get(prefix);
-            try {
+            try (InputStream stream = TikaInputStream.get(prefix)) {
                 return detect(stream);
-            } finally {
-                stream.close();
             }
         } catch (IOException e) {
             throw new IllegalStateException("Unexpected IOException", e);
@@ -287,11 +281,8 @@ public class Tika {
      */
     public String detect(URL url) throws IOException {
         Metadata metadata = new Metadata();
-        InputStream stream = TikaInputStream.get(url, metadata);
-        try {
+        try (InputStream stream = TikaInputStream.get(url, metadata)) {
             return detect(stream, metadata);
-        } finally {
-            stream.close();
         }
     }
 
@@ -642,17 +633,12 @@ public class Tika {
     public String toString() {
         String version = null;
 
-        try {
-            InputStream stream = Tika.class.getResourceAsStream(
-                    "/META-INF/maven/org.apache.tika/tika-core/pom.properties");
+        try (InputStream stream = Tika.class.getResourceAsStream(
+                "/META-INF/maven/org.apache.tika/tika-core/pom.properties")) {
             if (stream != null) {
-                try {
-                    Properties properties = new Properties();
-                    properties.load(stream);
-                    version = properties.getProperty("version");
-                } finally {
-                    stream.close();
-                }
+                Properties properties = new Properties();
+                properties.load(stream);
+                version = properties.getProperty("version");
             }
         } catch (Exception ignore) {
         }

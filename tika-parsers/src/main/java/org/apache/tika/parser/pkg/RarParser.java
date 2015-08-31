@@ -65,9 +65,8 @@ public class RarParser extends AbstractParser {
                 EmbeddedDocumentExtractor.class,
                 new ParsingEmbeddedDocumentExtractor(context));
 
-        TemporaryResources tmp = new TemporaryResources();
         Archive rar = null;
-        try {
+        try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tis = TikaInputStream.get(stream, tmp);
             rar = new Archive(tis.getFile());
 
@@ -81,12 +80,9 @@ public class RarParser extends AbstractParser {
             FileHeader header = rar.nextFileHeader();
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
-                    InputStream subFile = null;
-                    try {
-                        subFile = rar.getInputStream(header);
-
+                    try (InputStream subFile = rar.getInputStream(header)) {
                         Metadata entrydata = PackageParser.handleEntryMetadata(
-                                "".equals(header.getFileNameW())?header.getFileNameString():header.getFileNameW(),
+                                "".equals(header.getFileNameW()) ? header.getFileNameString() : header.getFileNameW(),
                                 header.getCTime(), header.getMTime(),
                                 header.getFullUnpackSize(),
                                 xhtml
@@ -95,9 +91,6 @@ public class RarParser extends AbstractParser {
                         if (extractor.shouldParseEmbedded(entrydata)) {
                             extractor.parseEmbedded(subFile, handler, entrydata, true);
                         }
-                    } finally {
-                        if (subFile != null)
-                            subFile.close();
                     }
                 }
 
@@ -109,7 +102,7 @@ public class RarParser extends AbstractParser {
         } finally {
             if (rar != null)
                 rar.close();
-            tmp.close();
+
         }
 
         xhtml.endDocument();

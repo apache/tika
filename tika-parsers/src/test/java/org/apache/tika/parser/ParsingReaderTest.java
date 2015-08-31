@@ -87,9 +87,8 @@ public class ParsingReaderTest {
         Metadata metadata = new Metadata();
         InputStream stream = ParsingReaderTest.class.getResourceAsStream(
                 "/test-documents/testEXCEL.xls");
-        Reader reader = new ParsingReader(
-                new AutoDetectParser(), stream, metadata, new ParseContext());
-        try {
+        try (Reader reader = new ParsingReader(
+                new AutoDetectParser(), stream, metadata, new ParseContext())) {
             // Metadata should already be available
             assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
             // Check that the internal buffering isn't broken
@@ -99,8 +98,6 @@ public class ParsingReaderTest {
             assertEquals('i', (char) reader.read());
             assertEquals('l', (char) reader.read());
             assertEquals('1', (char) reader.read());
-        } finally {
-            reader.close();
         }
     }
 

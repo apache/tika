@@ -47,12 +47,9 @@ public class MP4ParserTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = MP4ParserTest.class.getResourceAsStream(
-                "/test-documents/testMP4.m4a");
-        try {
+        try (InputStream stream = MP4ParserTest.class.getResourceAsStream(
+                "/test-documents/testMP4.m4a")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         // Check core properties

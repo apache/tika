@@ -258,10 +258,10 @@ class ForkClient {
      * @throws IOException if the bootstrap archive could not be created
      */
     private static void fillBootstrapJar(File file) throws IOException {
-        JarOutputStream jar = new JarOutputStream(new FileOutputStream(file));
-        try {
+        try (JarOutputStream jar =
+                new JarOutputStream(new FileOutputStream(file))) {
             String manifest =
-                "Main-Class: " + ForkServer.class.getName() + "\n";
+                    "Main-Class: " + ForkServer.class.getName() + "\n";
             jar.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
             jar.write(manifest.getBytes(UTF_8));
 
@@ -276,16 +276,11 @@ class ForkClient {
             ClassLoader loader = ForkServer.class.getClassLoader();
             for (Class<?> klass : bootstrap) {
                 String path = klass.getName().replace('.', '/') + ".class";
-                InputStream input = loader.getResourceAsStream(path);
-                try {
+                try (InputStream input = loader.getResourceAsStream(path)) {
                     jar.putNextEntry(new JarEntry(path));
                     IOUtils.copy(input, jar);
-                } finally {
-                    input.close();
                 }
             }
-        } finally {
-            jar.close();
         }
     }
 

@@ -73,9 +73,9 @@ public class LanguageIdentifier {
         try {
             LanguageProfile profile = new LanguageProfile();
 
-            InputStream stream =
-                LanguageIdentifier.class.getResourceAsStream(language + PROFILE_SUFFIX);
-            try {
+            try (InputStream stream =
+                    LanguageIdentifier.class.getResourceAsStream(
+                            language + PROFILE_SUFFIX)) {
                 BufferedReader reader =
                     new BufferedReader(new InputStreamReader(stream, UTF_8));
                 String line = reader.readLine();
@@ -88,8 +88,6 @@ public class LanguageIdentifier {
                     }
                     line = reader.readLine();
                 }
-            } finally {
-                stream.close();
             }
 
             addProfile(language, profile);

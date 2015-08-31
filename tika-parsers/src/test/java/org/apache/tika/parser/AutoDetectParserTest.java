@@ -82,16 +82,11 @@ public class AutoDetectParserTest {
      * @throws IOException
      */
     private void assertAutoDetect(TestParams tp) throws Exception {
-
-        InputStream input =
-            AutoDetectParserTest.class.getResourceAsStream(tp.resourceRealName);
-
-        if (input == null) {
-            fail("Could not open stream from specified resource: "
-                    + tp.resourceRealName);
-        }
-
-        try {
+        try (InputStream input = AutoDetectParserTest.class.getResourceAsStream(tp.resourceRealName)) {
+            if (input == null) {
+                fail("Could not open stream from specified resource: "
+                        + tp.resourceRealName);
+            }
             Metadata metadata = new Metadata();
             metadata.set(Metadata.RESOURCE_NAME_KEY, tp.resourceStatedName);
             metadata.set(Metadata.CONTENT_TYPE, tp.statedType);
@@ -102,11 +97,9 @@ public class AutoDetectParserTest {
                     tp.realType, metadata.get(Metadata.CONTENT_TYPE));
 
             if (tp.expectedContentFragment != null) {
-               assertTrue("Expected content not found: " + tp,
-                       handler.toString().contains(tp.expectedContentFragment));
+                assertTrue("Expected content not found: " + tp,
+                        handler.toString().contains(tp.expectedContentFragment));
             }
-        } finally {
-            input.close();
         }
     }
 
@@ -263,21 +256,16 @@ public class AutoDetectParserTest {
      */
     @Test
     public void testZipBombPrevention() throws Exception {
-        InputStream tgz = AutoDetectParserTest.class.getResourceAsStream(
-                "/test-documents/TIKA-216.tgz");
-        try {
+        try (InputStream tgz = AutoDetectParserTest.class.getResourceAsStream(
+                "/test-documents/TIKA-216.tgz")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler(-1);
             new AutoDetectParser(tika).parse(tgz, handler, metadata);
             fail("Zip bomb was not detected");
         } catch (TikaException e) {
             // expected
-        } finally {
-            tgz.close();
         }
-    
     }
-
 
     /**
      * Make sure XML parse errors don't trigger ZIP bomb detection.
@@ -339,45 +327,40 @@ public class AutoDetectParserTest {
        
        // Have each file parsed, and check
        for (int i=0; i<testFiles.length; i++) {
-          String file = testFiles[i];
-          InputStream input = AutoDetectParserTest.class.getResourceAsStream(
-                "/test-documents/"+file);
+           String file = testFiles[i];
+           try (InputStream input = AutoDetectParserTest.class.getResourceAsStream(
+                   "/test-documents/" + file)) {
+               if (input == null) {
+                   fail("Could not find test file " + file);
+               }
+               Metadata metadata = new Metadata();
+               ContentHandler handler = new BodyContentHandler();
+               new AutoDetectParser(tika).parse(input, handler, metadata);
 
-          if (input == null) {
-             fail("Could not find test file " + file);
-          }
-          
-          try {
-             Metadata metadata = new Metadata();
-             ContentHandler handler = new BodyContentHandler();
-             new AutoDetectParser(tika).parse(input, handler, metadata);
+               assertEquals("Incorrect content type for " + file,
+                       mediaTypes[i].toString(), metadata.get(Metadata.CONTENT_TYPE));
 
-             assertEquals("Incorrect content type for " + file,
-                   mediaTypes[i].toString(), metadata.get(Metadata.CONTENT_TYPE));
+               // Check some of the common metadata
+               // Old style metadata
+               assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
+               assertEquals("Test Title", metadata.get(Metadata.TITLE));
+               // New style metadata
+               assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
+               assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
 
-             // Check some of the common metadata
-             // Old style metadata
-             assertEquals("Test Artist", metadata.get(Metadata.AUTHOR));
-             assertEquals("Test Title", metadata.get(Metadata.TITLE));
-             // New style metadata
-             assertEquals("Test Artist", metadata.get(TikaCoreProperties.CREATOR));
-             assertEquals("Test Title", metadata.get(TikaCoreProperties.TITLE));
-             
-             // Check some of the XMPDM metadata
-             if (! file.endsWith(".opus")) {
-                 assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
-             }
-             assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
-             assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
-             assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
-             
-             // Check some of the text
-             String content = handler.toString();
-             assertTrue(content.contains("Test Title"));
-             assertTrue(content.contains("Test Artist"));
-          } finally {
-             input.close();
-          }
+               // Check some of the XMPDM metadata
+               if (!file.endsWith(".opus")) {
+                   assertEquals("Test Album", metadata.get(XMPDM.ALBUM));
+               }
+               assertEquals("Test Artist", metadata.get(XMPDM.ARTIST));
+               assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
+               assertEquals("44100", metadata.get(XMPDM.AUDIO_SAMPLE_RATE));
+
+               // Check some of the text
+               String content = handler.toString();
+               assertTrue(content.contains("Test Title"));
+               assertTrue(content.contains("Test Artist"));
+           }
        }
     }
     

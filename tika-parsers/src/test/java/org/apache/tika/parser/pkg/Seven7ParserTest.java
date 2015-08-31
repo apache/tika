@@ -55,12 +55,9 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 parser.getSupportedTypes(recursingContext).contains(TYPE_7ZIP));
         
         // Parse
-        InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.7z");
-        try {
+        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.7z")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
@@ -95,13 +92,10 @@ public class Seven7ParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.7z");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.7z")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should have found all 9 documents, but not the directory
        assertEquals(9, tracker.filenames.size());
@@ -136,17 +130,14 @@ public class Seven7ParserTest extends AbstractPkgTest {
         Metadata metadata = new Metadata();
         
         // No password, will fail with EncryptedDocumentException
-        InputStream stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/test7Z_protected_passTika.7z");
         boolean ex = false;
-        try {
+        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z")) {
             parser.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z without the password");
         } catch (EncryptedDocumentException e) {
             // Good
             ex = true;
-        } finally {
-            stream.close();
         }
         
         assertTrue("test no password", ex);
@@ -162,9 +153,8 @@ public class Seven7ParserTest extends AbstractPkgTest {
             }
         });
         handler = new BodyContentHandler();
-        stream = Seven7ParserTest.class.getResourceAsStream(
-                "/test-documents/test7Z_protected_passTika.7z");
-        try {
+        try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                "/test-documents/test7Z_protected_passTika.7z")) {
             parser.parse(stream, handler, metadata, recursingContext);
             fail("Shouldn't be able to read a password protected 7z with wrong password");
         } catch (TikaException e) {
@@ -172,8 +162,6 @@ public class Seven7ParserTest extends AbstractPkgTest {
             //if JCE is not installed, the message will include
             // "(do you have the JCE  Unlimited Strength Jurisdiction Policy Files installed?")
             ex = true;
-        } finally {
-            stream.close();
         }
         assertTrue("TikaException for bad password", ex);
         // Will be empty
@@ -189,12 +177,9 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 }
             });
             handler = new BodyContentHandler();
-            stream = Seven7ParserTest.class.getResourceAsStream(
-                    "/test-documents/test7Z_protected_passTika.7z");
-            try {
+            try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                    "/test-documents/test7Z_protected_passTika.7z")) {
                 parser.parse(stream, handler, metadata, recursingContext);
-            } finally {
-                stream.close();
             }
 
             assertEquals(TYPE_7ZIP.toString(), metadata.get(Metadata.CONTENT_TYPE));
@@ -218,14 +203,11 @@ public class Seven7ParserTest extends AbstractPkgTest {
                 }
             });
             handler = new BodyContentHandler();
-            stream = Seven7ParserTest.class.getResourceAsStream(
-                    "/test-documents/test7Z_protected_passTika.7z");
-            try {
+            try (InputStream stream = Seven7ParserTest.class.getResourceAsStream(
+                    "/test-documents/test7Z_protected_passTika.7z")) {
                 parser.parse(stream, handler, metadata, recursingContext);
             } catch (TikaException e) {
                 ioe = true;
-            } finally {
-                stream.close();
             }
             assertTrue("IOException because JCE was not installed", ioe);
         }

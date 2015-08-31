@@ -44,11 +44,8 @@ public class TestParameters {
 
     private static byte[] readResource(String name) {
         try {
-            InputStream stream = TestParameters.class.getResourceAsStream(name);
-            try {
+            try (InputStream stream = TestParameters.class.getResourceAsStream(name)) {
                 return IOUtils.toByteArray(stream);
-            } finally {
-                stream.close();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

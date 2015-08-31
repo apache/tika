@@ -41,29 +41,23 @@ public class LuceneIndexerExtended {
 	}
 
 	public static void main(String[] args) throws Exception {
-		IndexWriter writer = new IndexWriter(new SimpleFSDirectory(new File(
+		try (IndexWriter writer = new IndexWriter(new SimpleFSDirectory(new File(
 				args[0])), new StandardAnalyzer(Version.LUCENE_30),
-				MaxFieldLength.UNLIMITED);
-		try {
+				MaxFieldLength.UNLIMITED)) {
 			LuceneIndexer indexer = new LuceneIndexer(new Tika(), writer);
 			for (int i = 1; i < args.length; i++) {
 				indexer.indexDocument(new File(args[i]));
 			}
-		} finally {
-			writer.close();
 		}
 	}
 
 	public void indexDocument(File file) throws Exception {
-		Reader fulltext = tika.parse(file);
-		try {
+		try (Reader fulltext = tika.parse(file)) {
 			Document document = new Document();
 			document.add(new Field("filename", file.getName(), Store.YES,
 					Index.ANALYZED));
 			document.add(new Field("fulltext", fulltext));
 			writer.addDocument(document);
-		} finally {
-			fulltext.close();
 		}
 	}
 

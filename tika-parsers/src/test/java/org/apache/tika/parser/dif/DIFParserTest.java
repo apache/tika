@@ -16,10 +16,6 @@
  */
 package org.apache.tika.parser.dif;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.InputStream;
-
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -27,6 +23,10 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
+
+import java.io.InputStream;
+
+import static org.junit.Assert.assertEquals;
 
 public class DIFParserTest extends TikaTest {
 
@@ -36,12 +36,9 @@ public class DIFParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = DIFParser.class
-                .getResourceAsStream("/test-documents/Zamora2010.dif");
-        try {
+        try (InputStream stream = DIFParser.class.getResourceAsStream(
+                "/test-documents/Zamora2010.dif")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals(metadata.get("DIF-Entry_ID"),"00794186-48f9-11e3-9dcb-00c0f03d5b7c");

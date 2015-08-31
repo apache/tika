@@ -85,12 +85,8 @@ public class TestChmExtraction {
     @Test
     public void testExtractChmEntries() throws TikaException, IOException{
         for (String fileName : files) {
-            InputStream stream =
-                    TestChmExtraction.class.getResourceAsStream(fileName);
-            try {
+            try (InputStream stream = TestChmExtraction.class.getResourceAsStream(fileName)) {
                 testExtractChmEntry(stream);
-            } finally {
-                stream.close();
             }
         }
     }

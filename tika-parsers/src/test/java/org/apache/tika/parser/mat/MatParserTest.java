@@ -39,12 +39,8 @@ public class MatParserTest {
         Metadata metadata = new Metadata();
         String path = "/test-documents/breidamerkurjokull_radar_profiles_2009.mat";
 
-        InputStream stream = MatParser.class.getResourceAsStream(path);
-
-        try {
+        try (InputStream stream = MatParser.class.getResourceAsStream(path)) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         // Check Metadata
@@ -73,12 +69,8 @@ public class MatParserTest {
         Metadata metadata = new Metadata();
         String path = "/test-documents/test_mat_text.mat";
 
-        InputStream stream = MatParser.class.getResourceAsStream(path);
-
-        try {
+        try (InputStream stream = MatParser.class.getResourceAsStream(path)) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         // Check Content

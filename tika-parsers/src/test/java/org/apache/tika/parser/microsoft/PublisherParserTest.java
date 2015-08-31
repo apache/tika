@@ -32,9 +32,8 @@ public class PublisherParserTest {
 
     @Test
     public void testPublisherParser() throws Exception {
-        InputStream input = PublisherParserTest.class.getResourceAsStream(
-                "/test-documents/testPUBLISHER.pub");
-        try {
+        try (InputStream input = PublisherParserTest.class.getResourceAsStream(
+                "/test-documents/testPUBLISHER.pub")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -48,8 +47,6 @@ public class PublisherParserTest {
             String content = handler.toString();
             assertContains("0123456789", content);
             assertContains("abcdef", content);
-        } finally {
-            input.close();
         }
     }
 

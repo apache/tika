@@ -93,8 +93,7 @@ public class MboxParser extends AbstractParser {
         xhtml.startDocument();
 
         InputStreamReader isr = new InputStreamReader(stream, charsetName);
-        BufferedReader reader = new BufferedReader(isr);
-        try {
+        try (BufferedReader reader = new BufferedReader(isr)) {
             String curLine = reader.readLine();
             int mailItem = 0;
             do {
@@ -140,9 +139,6 @@ public class MboxParser extends AbstractParser {
                 }
 
             } while (curLine != null && !Thread.currentThread().isInterrupted());
-
-        } finally {
-            reader.close();
         }
 
         xhtml.endDocument();

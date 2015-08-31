@@ -32,9 +32,8 @@ public class VisioParserTest {
 
     @Test
     public void testVisioParser() throws Exception {
-        InputStream input = VisioParserTest.class.getResourceAsStream(
-                "/test-documents/testVISIO.vsd");
-        try {
+        try (InputStream input = VisioParserTest.class.getResourceAsStream(
+                "/test-documents/testVISIO.vsd")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -46,8 +45,6 @@ public class VisioParserTest {
             assertEquals("Hogwarts", metadata.get(TikaCoreProperties.CREATOR));
             String content = handler.toString();
             assertContains("Some random text, on a page", content);
-        } finally {
-            input.close();
         }
     }
 

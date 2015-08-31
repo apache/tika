@@ -467,12 +467,9 @@ public class TikaCLI {
             if (serverMode) {
                 new TikaServer(Integer.parseInt(arg)).start();
             } else if (arg.equals("-")) {
-                InputStream stream =
-                    TikaInputStream.get(new CloseShieldInputStream(System.in));
-                try {
+                try (InputStream stream = TikaInputStream.get(
+                        new CloseShieldInputStream(System.in))) {
                     type.process(stream, System.out, new Metadata());
-                } finally {
-                    stream.close();
                 }
             } else {
                 URL url;
@@ -486,11 +483,10 @@ public class TikaCLI {
                     handleRecursiveJson(url, System.out);
                 } else {
                     Metadata metadata = new Metadata();
-                    InputStream input = TikaInputStream.get(url, metadata);
-                    try {
+                    try (InputStream input =
+                            TikaInputStream.get(url, metadata)) {
                         type.process(input, System.out, metadata);
                     } finally {
-                        input.close();
                         System.out.flush();
                     }
                 }
@@ -500,12 +496,9 @@ public class TikaCLI {
 
     private void handleRecursiveJson(URL url, OutputStream output) throws IOException, SAXException, TikaException {
         Metadata metadata = new Metadata();
-        InputStream input = TikaInputStream.get(url, metadata);
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser, getContentHandlerFactory(type));
-        try {
+        try (InputStream input = TikaInputStream.get(url, metadata)) {
             wrapper.parse(input, null, metadata, context);
-        } finally {
-            input.close();
         }
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         Writer writer = getOutputWriter(output, encoding);
@@ -1049,11 +1042,7 @@ public class TikaCLI {
             }
             System.out.println("Extracting '"+name+"' ("+contentType+") to " + outputFile);
 
-            FileOutputStream os = null;
-
-            try {
-                os = new FileOutputStream(outputFile);
-
+            try (FileOutputStream os = new FileOutputStream(outputFile)) {
                 if (inputStream instanceof TikaInputStream) {
                     TikaInputStream tin = (TikaInputStream) inputStream;
 
@@ -1079,10 +1068,6 @@ public class TikaCLI {
                 );
                 System.err.println(msg);
                 logger.warn(msg, e);
-            } finally {
-                if (os != null) {
-                    os.close();
-                }
             }
         }
 
@@ -1095,11 +1080,9 @@ public class TikaCLI {
                     copy((DirectoryEntry) entry, newDir);
                 } else {
                     // Copy entry
-                    InputStream contents = new DocumentInputStream((DocumentEntry) entry);
-                    try {
+                    try (InputStream contents =
+                            new DocumentInputStream((DocumentEntry) entry)) {
                         destDir.createDocument(entry.getName(), contents);
-                    } finally {
-                        contents.close();
                     }
                 }
             }

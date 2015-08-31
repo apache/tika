@@ -103,12 +103,9 @@ public class IWorkPackageParser extends AbstractParser {
                  return null;
              }
 
-             InputStream stream = zip.getInputStream(entry);
-             try {
-                return detectType(stream);
-             } finally {
-                 stream.close();
-             }
+              try (InputStream stream = zip.getInputStream(entry)) {
+                  return detectType(stream);
+              }
           } catch (IOException e) {
              return null;
           }

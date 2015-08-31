@@ -35,9 +35,8 @@ public class PowerPointParserTest extends TikaTest {
 
     @Test
     public void testPowerPointParser() throws Exception {
-        InputStream input = PowerPointParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT.ppt");
-        try {
+        try (InputStream input = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT.ppt")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new OfficeParser().parse(input, handler, metadata, new ParseContext());
@@ -51,8 +50,6 @@ public class PowerPointParserTest extends TikaTest {
             String content = handler.toString();
             assertContains("Sample Powerpoint Slide", content);
             assertContains("Powerpoint X for Mac", content);
-        } finally {
-            input.close();
         }
     }
 
@@ -61,12 +58,9 @@ public class PowerPointParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = PowerPointParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT_various.ppt");
-        try {
+        try (InputStream stream = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_various.ppt")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();
@@ -134,12 +128,9 @@ public class PowerPointParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = PowerPointParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT_masterFooter.ppt");
-        try {
+        try (InputStream stream = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterFooter.ppt")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();
@@ -161,12 +152,9 @@ public class PowerPointParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = PowerPointParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT_masterText.ppt");
-        try {
+        try (InputStream stream = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterText.ppt")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();
@@ -184,12 +172,9 @@ public class PowerPointParserTest extends TikaTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = PowerPointParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT_masterText2.ppt");
-        try {
+        try (InputStream stream = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_masterText2.ppt")) {
             new OfficeParser().parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         String content = handler.toString();
@@ -206,17 +191,14 @@ public class PowerPointParserTest extends TikaTest {
      */
     @Test
     public void testCustomProperties() throws Exception {
-        InputStream input = PowerPointParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT_custom_props.ppt");
         Metadata metadata = new Metadata();
 
-        try {
+        try (InputStream input = PowerPointParserTest.class.getResourceAsStream(
+                "/test-documents/testPPT_custom_props.ppt")) {
             ContentHandler handler = new BodyContentHandler(-1);
             ParseContext context = new ParseContext();
             context.set(Locale.class, Locale.US);
             new OfficeParser().parse(input, handler, metadata, context);
-        } finally {
-            input.close();
         }
 
         assertEquals("application/vnd.ms-powerpoint", metadata.get(Metadata.CONTENT_TYPE));

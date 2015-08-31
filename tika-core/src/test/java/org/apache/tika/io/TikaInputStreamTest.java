@@ -88,21 +88,15 @@ public class TikaInputStreamTest {
 
     private File createTempFile(String data) throws IOException {
         File file = File.createTempFile("tika-", ".tmp");
-        OutputStream stream = new FileOutputStream(file);
-        try {
+        try (OutputStream stream = new FileOutputStream(file)) {
             stream.write(data.getBytes(UTF_8));
-        } finally {
-            stream.close();
         }
         return file;
     }
 
     private String readFile(File file) throws IOException {
-        InputStream stream = new FileInputStream(file);
-        try {
+        try (InputStream stream = new FileInputStream(file)) {
             return readStream(stream);
-        } finally {
-            stream.close();
         }
     }
 

@@ -42,13 +42,10 @@ public class EnviHeaderParserTest {
         ToXMLContentHandler handler = new ToXMLContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = EnviHeaderParser.class
-                .getResourceAsStream("/test-documents/envi_test_header.hdr");
-        assertNotNull("Test ENVI file not found", stream);
-        try {
+        try (InputStream stream = EnviHeaderParser.class.getResourceAsStream(
+                "/test-documents/envi_test_header.hdr")) {
+            assertNotNull("Test ENVI file not found", stream);
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         // Check content of test file

@@ -365,14 +365,10 @@ public class RTFParserTest extends TikaTest {
     @Test
     public void testBinControlWord() throws Exception {
         ByteCopyingHandler embHandler = new ByteCopyingHandler();
-        TikaInputStream tis = null;
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testBinControlWord.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testBinControlWord.rtf"));
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, embHandler);
-        } finally {
-            tis.close();
         }
         assertEquals(1, embHandler.bytes.size());
 
@@ -459,15 +455,10 @@ public class RTFParserTest extends TikaTest {
         trueTypes.add("image/jpeg");
 
         TrackingHandler tracker = new TrackingHandler(skipTypes);
-        TikaInputStream tis = null;
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"));
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, tracker);
-
-        } finally {
-            tis.close();
         }
 
         assertEquals(trueNames.size(), tracker.filenames.size());
@@ -487,15 +478,10 @@ public class RTFParserTest extends TikaTest {
         }
 
         tracker = new TrackingHandler();
-        tis = null;
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedFiles.rtf"));
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, tracker);
-
-        } finally {
-            tis.close();
         }
         assertEquals(47, tracker.filenames.size());
         assertEquals("thumbnail_26.emf", tracker.filenames.get(45));
@@ -509,15 +495,11 @@ public class RTFParserTest extends TikaTest {
         RecursiveParserWrapper parser = new RecursiveParserWrapper(base,
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
         ctx.set(org.apache.tika.parser.Parser.class, parser);
-        TikaInputStream tis = null;
         ContentHandler handler = new BodyContentHandler();
         Metadata rootMetadata = new Metadata();
         rootMetadata.add(Metadata.RESOURCE_NAME_KEY, "testRTFRegularImages.rtf");
-        try {
-            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFRegularImages.rtf"));
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFRegularImages.rtf"))) {
             parser.parse(tis, handler, rootMetadata, ctx);
-        } finally {
-            tis.close();
         }
         List<Metadata> metadatas = parser.getMetadata();
 
@@ -561,28 +543,19 @@ public class RTFParserTest extends TikaTest {
         skipTypes.add(MediaType.parse("application/x-msmetafile"));
 
         TrackingHandler tracker = new TrackingHandler(skipTypes);
-        TikaInputStream tis = null;
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"));
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, tracker);
-
-        } finally {
-            tis.close();
         }
         //should gracefully skip link and not throw NPE, IOEx, etc
         assertEquals(0, tracker.filenames.size());
 
         tracker = new TrackingHandler();
-        tis = null;
-        try {
+        try (TikaInputStream tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"))) {
             ContainerExtractor ex = new ParserContainerExtractor();
-            tis = TikaInputStream.get(getResourceAsStream("/test-documents/testRTFEmbeddedLink.rtf"));
             assertEquals(true, ex.isSupported(tis));
             ex.extract(tis, ex, tracker);
-        } finally {
-            tis.close();
         }
         //should gracefully skip link and not throw NPE, IOEx, etc
         assertEquals(2, tracker.filenames.size());

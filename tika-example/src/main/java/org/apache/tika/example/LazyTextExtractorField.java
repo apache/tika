@@ -175,11 +175,8 @@ public class LazyTextExtractorField extends AbstractField {
 
 		public void run() {
 			try {
-				InputStream stream = value.getStream();
-				try {
+				try (InputStream stream = value.getStream()) {
 					parser.parse(stream, handler, metadata, context);
-				} finally {
-					stream.close();
 				}
 			} catch (LinkageError e) {
 				// Capture and ignore

@@ -67,8 +67,7 @@ public class HtmlParserTest {
         final StringWriter name = new StringWriter();
         ContentHandler body = new BodyContentHandler();
         Metadata metadata = new Metadata();
-        InputStream stream = HtmlParserTest.class.getResourceAsStream(path);
-        try {
+        try (InputStream stream = HtmlParserTest.class.getResourceAsStream(path)) {
             ContentHandler link = new DefaultHandler() {
                 @Override
                 public void startElement(
@@ -86,8 +85,6 @@ public class HtmlParserTest {
             new HtmlParser().parse(
                     stream, new TeeContentHandler(body, link),
                     metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
 
         assertEquals(

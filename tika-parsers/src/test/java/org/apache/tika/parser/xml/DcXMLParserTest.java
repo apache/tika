@@ -34,9 +34,8 @@ public class DcXMLParserTest extends TikaTest {
 
     @Test
     public void testXMLParserAsciiChars() throws Exception {
-        InputStream input = DcXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testXML.xml");
-        try {
+        try (InputStream input = DcXMLParserTest.class.getResourceAsStream(
+                "/test-documents/testXML.xml")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new DcXMLParser().parse(input, handler, metadata);
@@ -46,20 +45,20 @@ public class DcXMLParserTest extends TikaTest {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("Tika test document", metadata.get(TikaCoreProperties.TITLE));
             assertEquals("Rida Benjelloun", metadata.get(TikaCoreProperties.CREATOR));
-            
+
             // The file contains 5 dc:subject tags, which come through as
             //  a multi-valued Tika Metadata entry in file order
             assertEquals(true, metadata.isMultiValued(TikaCoreProperties.KEYWORDS));
-            assertEquals(5,      metadata.getValues(TikaCoreProperties.KEYWORDS).length);
+            assertEquals(5, metadata.getValues(TikaCoreProperties.KEYWORDS).length);
             assertEquals("Java", metadata.getValues(TikaCoreProperties.KEYWORDS)[0]);
-            assertEquals("XML",  metadata.getValues(TikaCoreProperties.KEYWORDS)[1]);
+            assertEquals("XML", metadata.getValues(TikaCoreProperties.KEYWORDS)[1]);
             assertEquals("XSLT", metadata.getValues(TikaCoreProperties.KEYWORDS)[2]);
             assertEquals("JDOM", metadata.getValues(TikaCoreProperties.KEYWORDS)[3]);
             assertEquals("Indexation", metadata.getValues(TikaCoreProperties.KEYWORDS)[4]);
             assertEquals(true, metadata.isMultiValued(Metadata.SUBJECT));
-            assertEquals(5,      metadata.getValues(Metadata.SUBJECT).length);
+            assertEquals(5, metadata.getValues(Metadata.SUBJECT).length);
             assertEquals("Java", metadata.getValues(Metadata.SUBJECT)[0]);
-            assertEquals("XML",  metadata.getValues(Metadata.SUBJECT)[1]);
+            assertEquals("XML", metadata.getValues(Metadata.SUBJECT)[1]);
             assertEquals("XSLT", metadata.getValues(Metadata.SUBJECT)[2]);
             assertEquals("JDOM", metadata.getValues(Metadata.SUBJECT)[3]);
             assertEquals("Indexation", metadata.getValues(Metadata.SUBJECT)[4]);
@@ -77,24 +76,19 @@ public class DcXMLParserTest extends TikaTest {
 
             String content = handler.toString();
             assertContains("Tika test document", content);
-            
+
             assertEquals("2000-12-01T00:00:00.000Z", metadata.get(TikaCoreProperties.CREATED));
-        } finally {
-            input.close();
         }
     }
     
     @Test
     public void testXMLParserNonAsciiChars() throws Exception {
-        InputStream input = DcXMLParserTest.class.getResourceAsStream("/test-documents/testXML.xml");
-        try {
+        try (InputStream input = DcXMLParserTest.class.getResourceAsStream("/test-documents/testXML.xml")) {
             Metadata metadata = new Metadata();
             new DcXMLParser().parse(input, new DefaultHandler(), metadata);
-            
+
             final String expected = "Archim\u00E8de et Lius \u00E0 Ch\u00E2teauneuf testing chars en \u00E9t\u00E9";
-            assertEquals(expected,metadata.get(TikaCoreProperties.RIGHTS));
-        } finally {
-            input.close();
+            assertEquals(expected, metadata.get(TikaCoreProperties.RIGHTS));
         }
     }
 

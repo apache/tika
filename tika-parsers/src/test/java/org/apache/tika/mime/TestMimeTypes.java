@@ -974,15 +974,12 @@ public class TestMimeTypes {
     }
 
     private void assertType(String expected, String filename) throws Exception {
-        InputStream stream = TestMimeTypes.class.getResourceAsStream(
-                "/test-documents/" + filename);
-        assertNotNull("Test file not found: " + filename, stream);
-        try {
+        try (InputStream stream = TestMimeTypes.class.getResourceAsStream(
+                "/test-documents/" + filename)) {
+            assertNotNull("Test file not found: " + filename, stream);
             Metadata metadata = new Metadata();
             metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
             assertEquals(expected, repo.detect(stream, metadata).toString());
-        } finally {
-            stream.close();
         }
     }
 
@@ -995,26 +992,20 @@ public class TestMimeTypes {
 
     private void assertTypeByData(String expected, String filename)
             throws IOException {
-        InputStream stream = TestMimeTypes.class.getResourceAsStream(
-                "/test-documents/" + filename);
-        assertNotNull("Test file not found: " + filename, stream);
-        try {
+        try (InputStream stream = TestMimeTypes.class.getResourceAsStream(
+                "/test-documents/" + filename)) {
+            assertNotNull("Test file not found: " + filename, stream);
             Metadata metadata = new Metadata();
             assertEquals(expected, repo.detect(stream, metadata).toString());
-        } finally {
-            stream.close();
         }
     }
     
     private void assertTypeByData(String expected, byte[] data)
             throws IOException {
-       InputStream stream = new ByteArrayInputStream(data);
-       try {
-          Metadata metadata = new Metadata();
-          assertEquals(expected, repo.detect(stream, metadata).toString());
-       } finally {
-          stream.close();
-       }
+        try (InputStream stream = new ByteArrayInputStream(data)) {
+            Metadata metadata = new Metadata();
+            assertEquals(expected, repo.detect(stream, metadata).toString());
+        }
     }
 
     private void assertTypeDetection(String filename, String type)
@@ -1035,15 +1026,12 @@ public class TestMimeTypes {
     }
 
     private MediaType getTypeByNameAndData(String filename) throws IOException {
-       InputStream stream = TestMimeTypes.class.getResourceAsStream(
-             "/test-documents/" + filename);
-       assertNotNull("Test document not found: " + filename, stream);
-       try {
-          Metadata metadata = new Metadata();
-          metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
-          return repo.detect(stream, metadata);
-       } finally {
-          stream.close();
-       }
+        try (InputStream stream = TestMimeTypes.class.getResourceAsStream(
+                "/test-documents/" + filename)) {
+            assertNotNull("Test document not found: " + filename, stream);
+            Metadata metadata = new Metadata();
+            metadata.set(Metadata.RESOURCE_NAME_KEY, filename);
+            return repo.detect(stream, metadata);
+        }
     }
 }

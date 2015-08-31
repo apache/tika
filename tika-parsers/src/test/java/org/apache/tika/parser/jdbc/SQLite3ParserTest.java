@@ -101,17 +101,13 @@ public class SQLite3ParserTest extends TikaTest {
     @Test
     public void testSpacesInBodyContentHandler() throws Exception {
         Parser p = new AutoDetectParser();
-        InputStream stream = null;
         Metadata metadata = new Metadata();
         metadata.set(Metadata.RESOURCE_NAME_KEY, TEST_FILE_NAME);
         ContentHandler handler = new BodyContentHandler(-1);
         ParseContext ctx = new ParseContext();
         ctx.set(Parser.class, p);
-        try {
-            stream = getResourceAsStream(TEST_FILE1);
+        try (InputStream stream = getResourceAsStream(TEST_FILE1)) {
             p.parse(stream, handler, metadata, ctx);
-        } finally {
-            stream.close();
         }
         String s = handler.toString();
         assertContains("0\t2.3\t2.4\tlorem", s);

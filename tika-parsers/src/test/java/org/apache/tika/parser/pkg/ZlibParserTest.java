@@ -37,12 +37,9 @@ public class ZlibParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = ZipParserTest.class.getResourceAsStream(
-                "/test-documents/testTXT.zlib");
-        try {
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/testTXT.zlib")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/zlib", metadata.get(Metadata.CONTENT_TYPE));
@@ -61,13 +58,10 @@ public class ZlibParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = ZipParserTest.class.getResourceAsStream(
-               "/test-documents/testTXT.zlib");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = ZipParserTest.class.getResourceAsStream(
+                "/test-documents/testTXT.zlib")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should have found a single text document inside
        assertEquals(1, tracker.filenames.size());

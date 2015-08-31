@@ -45,15 +45,12 @@ public class ContentHandlerExample {
      */
     public String parseToPlainText() throws IOException, SAXException, TikaException {
         BodyContentHandler handler = new BodyContentHandler();
-        
-        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc");
+
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try {
+        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc")) {
             parser.parse(stream, handler, metadata);
             return handler.toString();
-        } finally {
-            stream.close();
         }
     }
 
@@ -62,15 +59,12 @@ public class ContentHandlerExample {
      */
     public String parseToHTML() throws IOException, SAXException, TikaException {
         ContentHandler handler = new ToXMLContentHandler();
-        
-        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc");
+
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try {
+        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc")) {
             parser.parse(stream, handler, metadata);
             return handler.toString();
-        } finally {
-            stream.close();
         }
     }
     
@@ -81,15 +75,12 @@ public class ContentHandlerExample {
     public String parseBodyToHTML() throws IOException, SAXException, TikaException {
         ContentHandler handler = new BodyContentHandler(
                 new ToXMLContentHandler());
-        
-        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc");
+
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try {
+        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test.doc")) {
             parser.parse(stream, handler, metadata);
             return handler.toString();
-        } finally {
-            stream.close();
         }
     }
     
@@ -104,15 +95,12 @@ public class ContentHandlerExample {
                 "/xhtml:html/xhtml:body/xhtml:div/descendant::node()");        
         ContentHandler handler = new MatchingContentHandler(
                 new ToXMLContentHandler(), divContentMatcher);
-        
-        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc");
+
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try {
+        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc")) {
             parser.parse(stream, handler, metadata);
             return handler.toString();
-        } finally {
-            stream.close();
         }
     }
     
@@ -137,15 +125,12 @@ public class ContentHandlerExample {
                 }
             }
         };
-        
-        InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc");
+
         AutoDetectParser parser = new AutoDetectParser();
         Metadata metadata = new Metadata();
-        try {
+        try (InputStream stream = ContentHandlerExample.class.getResourceAsStream("test2.doc")) {
             parser.parse(stream, handler, metadata);
             return chunks;
-        } finally {
-            stream.close();
         }
     }
 }

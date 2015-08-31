@@ -78,8 +78,7 @@ public class NetworkParser extends AbstractParser {
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         if ("telnet".equals(uri.getScheme())) {
-            final Socket socket = new Socket(uri.getHost(), uri.getPort());
-            try {
+            try (Socket socket = new Socket(uri.getHost(), uri.getPort())) {
                 new ParsingTask(stream, new FilterOutputStream(socket.getOutputStream()) {
                     @Override
                     public void close() throws IOException {
@@ -87,21 +86,16 @@ public class NetworkParser extends AbstractParser {
                     }
                 }).parse(
                         socket.getInputStream(), handler, metadata, context);
-            } finally {
-                socket.close();
             }
         } else {
             URL url = uri.toURL();
             URLConnection connection = url.openConnection();
             connection.setDoOutput(true);
             connection.connect();
-            InputStream input = connection.getInputStream();
-            try {
+            try (InputStream input = connection.getInputStream()) {
                 new ParsingTask(stream, connection.getOutputStream()).parse(
                         new CloseShieldInputStream(input),
                         handler, metadata, context);
-            } finally {
-                input.close();
             }
         }
 

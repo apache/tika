@@ -41,13 +41,8 @@ public class ISArchiveParserTest {
 		ContentHandler handler = new BodyContentHandler();
 		Metadata metadata = new Metadata();
 		ParseContext context = new ParseContext();
-		InputStream stream = null;
-		try {
-			stream = ISArchiveParserTest.class.getResourceAsStream(path);
+		try (InputStream stream = ISArchiveParserTest.class.getResourceAsStream(path)) {
 			parser.parse(stream, handler, metadata, context);
-		}
-		finally {
-			stream.close();
 		}
 		
 		// INVESTIGATION

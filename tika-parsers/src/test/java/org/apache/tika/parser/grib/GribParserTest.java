@@ -41,11 +41,8 @@ public class GribParserTest {
         Parser parser = new GribParser();
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
-        InputStream stream = GribParser.class.getResourceAsStream("/test-documents/gdas1.forecmwf.2014062612.grib2");
-        try {
+        try (InputStream stream = GribParser.class.getResourceAsStream("/test-documents/gdas1.forecmwf.2014062612.grib2")) {
             parser.parse(stream, handler, metadata, new ParseContext());
-        } finally {
-            stream.close();
         }
         assertNotNull(metadata);
         String content = handler.toString();

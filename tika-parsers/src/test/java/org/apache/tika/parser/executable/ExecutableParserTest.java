@@ -30,9 +30,8 @@ public class ExecutableParserTest {
 
     @Test
     public void testWin32Parser() throws Exception {
-        InputStream input = ExecutableParserTest.class.getResourceAsStream(
-                "/test-documents/testWindows-x86-32.exe");
-        try {
+        try (InputStream input = ExecutableParserTest.class.getResourceAsStream(
+                "/test-documents/testWindows-x86-32.exe")) {
             Metadata metadata = new Metadata();
             ContentHandler handler = new BodyContentHandler();
             new ExecutableParser().parse(input, handler, metadata, new ParseContext());
@@ -41,49 +40,44 @@ public class ExecutableParserTest {
                     metadata.get(Metadata.CONTENT_TYPE));
             assertEquals("2012-05-13T13:40:11Z",
                     metadata.get(Metadata.CREATION_DATE));
-            
-            assertEquals(ExecutableParser.MACHINE_x86_32, 
+
+            assertEquals(ExecutableParser.MACHINE_x86_32,
                     metadata.get(ExecutableParser.MACHINE_TYPE));
-            assertEquals("Little", 
+            assertEquals("Little",
                   metadata.get(ExecutableParser.ENDIAN));
-            assertEquals("32", 
+            assertEquals("32",
                   metadata.get(ExecutableParser.ARCHITECTURE_BITS));
-            assertEquals("Windows", 
+            assertEquals("Windows",
                   metadata.get(ExecutableParser.PLATFORM));
 
             String content = handler.toString();
             assertEquals("", content); // No text yet
-        } finally {
-            input.close();
         }
     }
     
     @Test
     public void testElfParser_x86_32() throws Exception {
-       InputStream input = ExecutableParserTest.class.getResourceAsStream(
-             "/test-documents/testLinux-x86-32");
-     try {
-         Metadata metadata = new Metadata();
-         ContentHandler handler = new BodyContentHandler();
-         new ExecutableParser().parse(input, handler, metadata, new ParseContext());
+        try (InputStream input = ExecutableParserTest.class.getResourceAsStream(
+                "/test-documents/testLinux-x86-32")) {
+            Metadata metadata = new Metadata();
+            ContentHandler handler = new BodyContentHandler();
+            new ExecutableParser().parse(input, handler, metadata, new ParseContext());
 
-         assertEquals("application/x-executable",
-                 metadata.get(Metadata.CONTENT_TYPE));
-         
-         assertEquals(ExecutableParser.MACHINE_x86_32, 
-                 metadata.get(ExecutableParser.MACHINE_TYPE));
-         assertEquals("Little", 
-               metadata.get(ExecutableParser.ENDIAN));
-         assertEquals("32", 
-               metadata.get(ExecutableParser.ARCHITECTURE_BITS));
-//         assertEquals("Linux", 
+            assertEquals("application/x-executable",
+                    metadata.get(Metadata.CONTENT_TYPE));
+
+            assertEquals(ExecutableParser.MACHINE_x86_32,
+                    metadata.get(ExecutableParser.MACHINE_TYPE));
+            assertEquals("Little",
+                    metadata.get(ExecutableParser.ENDIAN));
+            assertEquals("32",
+                    metadata.get(ExecutableParser.ARCHITECTURE_BITS));
+//         assertEquals("Linux",
 //               metadata.get(ExecutableParser.PLATFORM));
 
-         String content = handler.toString();
-         assertEquals("", content); // No text yet
-     } finally {
-         input.close();
-     }       
+            String content = handler.toString();
+            assertEquals("", content); // No text yet
+        }
     }
 
 }

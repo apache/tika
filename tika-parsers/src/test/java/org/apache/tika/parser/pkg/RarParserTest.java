@@ -41,12 +41,9 @@ public class RarParserTest extends AbstractPkgTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
 
-        InputStream stream = RarParserTest.class.getResourceAsStream(
-                "/test-documents/test-documents.rar");
-        try {
+        try (InputStream stream = RarParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.rar")) {
             parser.parse(stream, handler, metadata, recursingContext);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-rar-compressed", metadata.get(Metadata.CONTENT_TYPE));
@@ -81,13 +78,10 @@ public class RarParserTest extends AbstractPkgTest {
        ContentHandler handler = new BodyContentHandler();
        Metadata metadata = new Metadata();
 
-       InputStream stream = RarParserTest.class.getResourceAsStream(
-               "/test-documents/test-documents.rar");
-       try {
-           parser.parse(stream, handler, metadata, trackingContext);
-       } finally {
-           stream.close();
-       }
+        try (InputStream stream = RarParserTest.class.getResourceAsStream(
+                "/test-documents/test-documents.rar")) {
+            parser.parse(stream, handler, metadata, trackingContext);
+        }
        
        // Should have found all 9 documents, but not the directory
        assertEquals(9, tracker.filenames.size());

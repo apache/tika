@@ -251,11 +251,8 @@ public class UnpackerResource {
                     copy((DirectoryEntry) entry, newDir);
                 } else {
                     // Copy entry
-                    InputStream contents = new DocumentInputStream((DocumentEntry) entry);
-                    try {
+                    try (InputStream contents = new DocumentInputStream((DocumentEntry) entry)) {
                         destDir.createDocument(entry.getName(), contents);
-                    } finally {
-                        contents.close();
                     }
                 }
             }

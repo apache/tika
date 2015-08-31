@@ -52,12 +52,8 @@ public class TestParsers extends TikaTest {
         File file = getResourceAsFile("/test-documents/testWORD.doc");
         Parser parser = tika.getParser();
         Metadata metadata = new Metadata();
-        InputStream stream = new FileInputStream(file);
-        try {
-            parser.parse(
-                    stream, new DefaultHandler(), metadata, new ParseContext());
-        } finally {
-            stream.close();
+        try (InputStream stream = new FileInputStream(file)) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("Sample Word Document", metadata.get(TikaCoreProperties.TITLE));
     }
@@ -71,12 +67,8 @@ public class TestParsers extends TikaTest {
                 .contains(expected));
         Parser parser = tika.getParser();
         Metadata metadata = new Metadata();
-        InputStream stream = new FileInputStream(file);
-        try {
-            parser.parse(
-                    stream, new DefaultHandler(), metadata, new ParseContext());
-        } finally {
-            stream.close();
+        try (InputStream stream = new FileInputStream(file)) {
+            parser.parse(stream, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("Simple Excel document", metadata.get(TikaCoreProperties.TITLE));
     }

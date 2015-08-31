@@ -138,12 +138,8 @@ public class TesseractOCRParserTest extends TikaTest {
         parseContext.set(Parser.class, parser);
         parseContext.set(PDFParserConfig.class, pdfConfig);
 
-        InputStream stream = TesseractOCRParserTest.class.getResourceAsStream(resource);
-
-        try {
+        try (InputStream stream = TesseractOCRParserTest.class.getResourceAsStream(resource)) {
             parser.parse(stream, new DefaultHandler(), new Metadata(), parseContext);
-        } finally {
-            stream.close();
         }
         List<Metadata> metadataList = ((RecursiveParserWrapper) parser).getMetadata();
         assertEquals(numMetadatas, metadataList.size());

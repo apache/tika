@@ -46,14 +46,10 @@ public class FontParsersTest {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         ParseContext context = new ParseContext();
-        TikaInputStream stream = TikaInputStream.get(
-                FontParsersTest.class.getResource(
-                        "/test-documents/testAFM.afm"));
 
-        try {
+        try (TikaInputStream stream = TikaInputStream.get(
+                FontParsersTest.class.getResource("/test-documents/testAFM.afm"))) {
             parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-font-adobe-metric", metadata.get(Metadata.CONTENT_TYPE));
@@ -84,14 +80,10 @@ public class FontParsersTest {
         //Open Sans font is ASL 2.0 according to 
         //http://www.google.com/fonts/specimen/Open+Sans
         //...despite the copyright in the file's metadata.
-        TikaInputStream stream = TikaInputStream.get(
-                FontParsersTest.class.getResource(
-                        "/test-documents/testTrueType3.ttf"));
-        
-        try {
+
+        try (TikaInputStream stream = TikaInputStream.get(
+                FontParsersTest.class.getResource("/test-documents/testTrueType3.ttf"))) {
             parser.parse(stream, handler, metadata, context);
-        } finally {
-            stream.close();
         }
 
         assertEquals("application/x-font-ttf", metadata.get(Metadata.CONTENT_TYPE));

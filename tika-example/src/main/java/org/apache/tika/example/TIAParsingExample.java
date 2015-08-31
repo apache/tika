@@ -62,16 +62,13 @@ public class TIAParsingExample {
 
 	public static void parseToReaderExample() throws Exception {
 		File document = new File("example.doc");
-		Reader reader = new Tika().parse(document);
-		try {
+		try (Reader reader = new Tika().parse(document)) {
 			char[] buffer = new char[1000];
 			int n = reader.read(buffer);
 			while (n != -1) {
 				System.out.append(CharBuffer.wrap(buffer, 0, n));
 				n = reader.read(buffer);
 			}
-		} finally {
-			reader.close();
 		}
 	}
 
@@ -80,11 +77,8 @@ public class TIAParsingExample {
 		ContentHandler handler = new DefaultHandler();
 		Metadata metadata = new Metadata();
 		ParseContext context = new ParseContext();
-		InputStream stream = new FileInputStream(new File(filename));
-		try {
+		try (InputStream stream = new FileInputStream(new File(filename))) {
 			parser.parse(stream, handler, metadata, context);
-		} finally {
-			stream.close();
 		}
 	}
 
@@ -93,11 +87,8 @@ public class TIAParsingExample {
 		ContentHandler handler = new DefaultHandler();
 		Metadata metadata = new Metadata();
 		ParseContext context = new ParseContext();
-		InputStream stream = new GZIPInputStream(new URL(address).openStream());
-		try {
+		try (InputStream stream = new GZIPInputStream(new URL(address).openStream())) {
 			parser.parse(stream, handler, metadata, context);
-		} finally {
-			stream.close();
 		}
 	}
 
@@ -106,22 +97,16 @@ public class TIAParsingExample {
 		ContentHandler handler = new DefaultHandler();
 		Metadata metadata = new Metadata();
 		ParseContext context = new ParseContext();
-		InputStream stream = TikaInputStream.get(new File(filename));
-		try {
+		try (InputStream stream = TikaInputStream.get(new File(filename))) {
 			parser.parse(stream, handler, metadata, context);
-		} finally {
-			stream.close();
 		}
 	}
 
 	public static File tikaInputStreamGetFile(String filename) throws Exception {
-		InputStream stream = TikaInputStream.get(new File(filename));
-		try {
+		try (InputStream stream = TikaInputStream.get(new File(filename))) {
 			TikaInputStream tikaInputStream = TikaInputStream.get(stream);
 			File file = tikaInputStream.getFile();
 			return file;
-		} finally {
-			stream.close();
 		}
 	}
 
@@ -166,13 +151,10 @@ public class TIAParsingExample {
 		ParseContext context = new ParseContext();
 		Parser parser = new AutoDetectParser();
 		LinkContentHandler linkCollector = new LinkContentHandler();
-		OutputStream output = new FileOutputStream(new File(filename));
-		try {
+		try (OutputStream output = new FileOutputStream(new File(filename))) {
 			ContentHandler handler = new TeeContentHandler(
 					new BodyContentHandler(output), linkCollector);
 			parser.parse(stream, handler, metadata, context);
-		} finally {
-			output.close();
 		}
 	}
 

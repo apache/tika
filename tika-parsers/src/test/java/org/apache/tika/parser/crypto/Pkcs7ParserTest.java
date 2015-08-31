@@ -31,9 +31,8 @@ import org.xml.sax.ContentHandler;
 
 public class Pkcs7ParserTest extends TikaTest {
     public void testDetachedSignature() throws Exception {
-        InputStream input = Pkcs7ParserTest.class.getResourceAsStream(
-                "/test-documents/testDetached.p7s");
-        try {
+        try (InputStream input = Pkcs7ParserTest.class.getResourceAsStream(
+                "/test-documents/testDetached.p7s")) {
             ContentHandler handler = new BodyContentHandler();
             Metadata metadata = new Metadata();
             new Pkcs7Parser().parse(input, handler, metadata, new ParseContext());
@@ -41,8 +40,6 @@ public class Pkcs7ParserTest extends TikaTest {
             fail("should not get NPE");
         } catch (TikaException te) {
             assertTrue(te.toString().contains("cannot parse detached pkcs7 signature"));
-        } finally {
-            input.close();
         }
     }
 }
