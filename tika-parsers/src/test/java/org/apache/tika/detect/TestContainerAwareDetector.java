@@ -106,6 +106,8 @@ public class TestContainerAwareDetector {
         assertTypeByData("testQUATTRO.qpw", "application/x-quattro-pro");
         assertTypeByData("testQUATTRO.wb3", "application/x-quattro-pro");
         
+        assertTypeByData("testHWP_5.0.hwp", "application/x-hwp-v5");
+        
         
         // With the filename and data
         assertTypeByNameAndData("testEXCEL.xls", "application/vnd.ms-excel");
