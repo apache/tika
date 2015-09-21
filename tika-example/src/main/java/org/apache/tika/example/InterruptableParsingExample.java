@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
 
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
@@ -79,7 +80,7 @@ public class InterruptableParsingExample {
 
         @Override
         public void characters(char[] ch, int start, int length) throws SAXException {
-            sb.append(new String(ch, start, length).toLowerCase());
+            sb.append(new String(ch, start, length).toLowerCase(Locale.getDefault()));
 
             if (sb.toString().contains(query))
                 throw new QueryMatchedException();
