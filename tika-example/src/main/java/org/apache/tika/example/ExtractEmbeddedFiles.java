@@ -1,9 +1,12 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,7 +16,6 @@
  */
 
 package org.apache.tika.example;
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,9 +39,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class ExtractEmbeddedFiles {
-
     private Parser parser = new AutoDetectParser();
-    private Detector detector = ((AutoDetectParser)parser).getDetector();
+    private Detector detector = ((AutoDetectParser) parser).getDetector();
     private TikaConfig config = TikaConfig.getDefaultConfig();
 
     public void extract(InputStream is, Path outputDir) throws SAXException, TikaException, IOException {
@@ -87,7 +88,7 @@ public class ExtractEmbeddedFiles {
             //now try to figure out the right extension for the embedded file
             MediaType contentType = detector.detect(stream, metadata);
 
-            if (name.indexOf('.')==-1 && contentType!=null) {
+            if (name.indexOf('.') == -1 && contentType != null) {
                 try {
                     name += config.getMimeRepository().forName(
                             contentType.toString()).getExtension();

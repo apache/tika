@@ -1,9 +1,12 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -38,23 +41,23 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Demonstrates how to call the different components within Tika: its
  * {@link Detector} framework (aka MIME identification and repository), its
  * {@link Parser} interface, its {@link LanguageIdentifier} and other goodies.
- * 
+ * <p>
  * It also shows the "easy way" via {@link AutoDetectParser}
  */
 public class MyFirstTika {
     public static void main(String[] args) throws Exception {
         String filename = args[0];
         TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
-        
+
         Metadata metadata = new Metadata();
         String text = parseUsingComponents(filename, tikaConfig, metadata);
         System.out.println("Parsed Metadata: ");
         System.out.println(metadata);
         System.out.println("Parsed Text: ");
         System.out.println(text);
-        
+
         System.out.println("-------------------------");
-        
+
         metadata = new Metadata();
         text = parseUsingAutoDetect(filename, tikaConfig, metadata);
         System.out.println("Parsed Metadata: ");
@@ -62,19 +65,20 @@ public class MyFirstTika {
         System.out.println("Parsed Text: ");
         System.out.println(text);
     }
-    
-    public static String parseUsingAutoDetect(String filename, TikaConfig tikaConfig, 
-            Metadata metadata) throws Exception {
+
+    public static String parseUsingAutoDetect(String filename, TikaConfig tikaConfig,
+                                              Metadata metadata) throws Exception {
         System.out.println("Handling using AutoDetectParser: [" + filename + "]");
-        
+
         AutoDetectParser parser = new AutoDetectParser(tikaConfig);
         ContentHandler handler = new BodyContentHandler();
         TikaInputStream stream = TikaInputStream.get(new File(filename), metadata);
         parser.parse(stream, handler, metadata, new ParseContext());
         return handler.toString();
     }
-    public static String parseUsingComponents(String filename, TikaConfig tikaConfig, 
-            Metadata metadata) throws Exception {    
+
+    public static String parseUsingComponents(String filename, TikaConfig tikaConfig,
+                                              Metadata metadata) throws Exception {
         MimeTypes mimeRegistry = tikaConfig.getMimeRepository();
 
         System.out.println("Examining: [" + filename + "]");
@@ -106,7 +110,7 @@ public class MyFirstTika {
         // Have the file parsed to get the content and metadata
         ContentHandler handler = new BodyContentHandler();
         parser.parse(stream, handler, metadata, new ParseContext());
-        
+
         return handler.toString();
     }
 }
