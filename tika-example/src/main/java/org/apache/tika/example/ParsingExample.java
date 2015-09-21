@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.example;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class ParsingExample {
     /**
      * Example of how to use Tika's parseToString method to parse the content of a file,
      * and return any text found.
-     *
+     * <p>
      * Note: Tika.parseToString() will extract content from the outer container
      * document and any embedded/attached documents.
      *
@@ -60,20 +61,20 @@ public class ParsingExample {
     /**
      * Example of how to use Tika to parse a file when you do not know its file type
      * ahead of time.
-     *
+     * <p>
      * AutoDetectParser attempts to discover the file's type automatically, then call
      * the exact Parser built for that file type.
-     *
+     * <p>
      * The stream to be parsed by the Parser. In this case, we get a file from the
      * resources folder of this project.
-     *
+     * <p>
      * Handlers are used to get the exact information you want out of the host of
      * information gathered by Parsers. The body content handler, intuitively, extracts
      * everything that would go between HTML body tags.
-     *
+     * <p>
      * The Metadata object will be filled by the Parser with Metadata discovered about
      * the file being parsed.
-     *
+     * <p>
      * Note: This example will extract content from the outer document and all
      * embedded documents.  However, if you choose to use a {@link ParseContext},
      * make sure to set a {@link Parser} or else embedded content will not be
@@ -154,7 +155,6 @@ public class ParsingExample {
      */
     public List<Metadata> recursiveParserWrapperExample() throws IOException,
             SAXException, TikaException {
-
         Parser p = new AutoDetectParser();
         ContentHandlerFactory factory = new BasicContentHandlerFactory(
                 BasicContentHandlerFactory.HANDLER_TYPE.HTML, -1);
@@ -187,7 +187,7 @@ public class ParsingExample {
      */
     public String serializedRecursiveParserWrapperExample() throws IOException,
             SAXException, TikaException {
-        List metadataList = recursiveParserWrapperExample();
+        List<Metadata> metadataList = recursiveParserWrapperExample();
         StringWriter writer = new StringWriter();
         JsonMetadataList.toJson(metadataList, writer);
         return writer.toString();
@@ -195,7 +195,6 @@ public class ParsingExample {
 
 
     /**
-     *
      * @param outputPath -- output directory to place files
      * @return list of files created
      * @throws IOException
@@ -207,9 +206,9 @@ public class ParsingExample {
         InputStream stream = ParsingExample.class.getResourceAsStream("test_recursive_embedded.docx");
         ExtractEmbeddedFiles ex = new ExtractEmbeddedFiles();
         ex.extract(stream, outputPath);
-        List<Path> ret = new ArrayList<Path>();
+        List<Path> ret = new ArrayList<>();
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(outputPath)) {
-            for (Path entry: dirStream) {
+            for (Path entry : dirStream) {
                 ret.add(entry);
             }
         }

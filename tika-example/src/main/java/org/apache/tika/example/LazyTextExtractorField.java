@@ -1,9 +1,12 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -44,171 +47,164 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 @SuppressWarnings("serial")
 public class LazyTextExtractorField extends AbstractField {
+    /**
+     * The logger instance for this class.
+     */
+    private static final Logger log = LoggerFactory.getLogger(LazyTextExtractorField.class);
 
-	/**
-	 * The logger instance for this class.
-	 */
-	private static final Logger log = LoggerFactory
-			.getLogger(LazyTextExtractorField.class);
+    /**
+     * The exception used to forcibly terminate the extraction process when the
+     * maximum field length is reached.
+     * <p>
+     * Such exceptions shouldn't be used in logging since its stack trace is meaningless.
+     */
+    private static final SAXException STOP = new SAXException("max field length reached");
 
-	/**
-	 * The exception used to forcibly terminate the extraction process when the
-	 * maximum field length is reached.
-	 */
-	private static final SAXException STOP = new SAXException(
-			"max field length reached");
+    /**
+     * The extracted text content of the given binary value. Set to non-null
+     * when the text extraction task finishes.
+     */
+    private volatile String extract = null;
 
-	/**
-	 * The extracted text content of the given binary value. Set to non-null
-	 * when the text extraction task finishes.
-	 */
-	private volatile String extract = null;
+    /**
+     * Creates a new <code>LazyTextExtractorField</code> with the given
+     * <code>name</code>.
+     *
+     * @param name         the name of the field.
+     * @param reader       the reader where to obtain the string from.
+     * @param highlighting set to <code>true</code> to enable result highlighting support
+     */
+    public LazyTextExtractorField(Parser parser, InternalValue value,
+                                  Metadata metadata, Executor executor, boolean highlighting,
+                                  int maxFieldLength) {
+        super(FieldNames.FULLTEXT, highlighting ? Store.YES : Store.NO,
+                Field.Index.ANALYZED, highlighting ? TermVector.WITH_OFFSETS
+                        : TermVector.NO);
+        executor.execute(new ParsingTask(parser, value, metadata,
+                maxFieldLength));
+    }
 
-	/**
-	 * Creates a new <code>LazyTextExtractorField</code> with the given
-	 * <code>name</code>.
-	 *
-	 * @param name
-	 *            the name of the field.
-	 * @param reader
-	 *            the reader where to obtain the string from.
-	 * @param highlighting
-	 *            set to <code>true</code> to enable result highlighting support
-	 */
-	public LazyTextExtractorField(Parser parser, InternalValue value,
-			Metadata metadata, Executor executor, boolean highlighting,
-			int maxFieldLength) {
-		super(FieldNames.FULLTEXT, highlighting ? Store.YES : Store.NO,
-				Field.Index.ANALYZED, highlighting ? TermVector.WITH_OFFSETS
-						: TermVector.NO);
-		executor.execute(new ParsingTask(parser, value, metadata,
-				maxFieldLength));
-	}
+    /**
+     * Returns the extracted text. This method blocks until the text extraction
+     * task has been completed.
+     *
+     * @return the string value of this field
+     */
+    public synchronized String stringValue() {
+        try {
+            while (!isExtractorFinished()) {
+                wait();
+            }
+            return extract;
+        } catch (InterruptedException e) {
+            log.error("Text extraction thread was interrupted", e);
+            return "";
+        }
+    }
 
-	/**
-	 * Returns the extracted text. This method blocks until the text extraction
-	 * task has been completed.
-	 *
-	 * @return the string value of this field
-	 */
-	public synchronized String stringValue() {
-		try {
-			while (!isExtractorFinished()) {
-				wait();
-			}
-			return extract;
-		} catch (InterruptedException e) {
-			log.error("Text extraction thread was interrupted", e);
-			return "";
-		}
-	}
+    /**
+     * @return always <code>null</code>
+     */
+    public Reader readerValue() {
+        return null;
+    }
 
-	/**
-	 * @return always <code>null</code>
-	 */
-	public Reader readerValue() {
-		return null;
-	}
+    /**
+     * @return always <code>null</code>
+     */
+    public byte[] binaryValue() {
+        return null;
+    }
 
-	/**
-	 * @return always <code>null</code>
-	 */
-	public byte[] binaryValue() {
-		return null;
-	}
+    /**
+     * @return always <code>null</code>
+     */
+    public TokenStream tokenStreamValue() {
+        return null;
+    }
 
-	/**
-	 * @return always <code>null</code>
-	 */
-	public TokenStream tokenStreamValue() {
-		return null;
-	}
+    /**
+     * Checks whether the text extraction task has finished.
+     *
+     * @return <code>true</code> if the extracted text is available
+     */
+    public boolean isExtractorFinished() {
+        return extract != null;
+    }
 
-	/**
-	 * Checks whether the text extraction task has finished.
-	 *
-	 * @return <code>true</code> if the extracted text is available
-	 */
-	public boolean isExtractorFinished() {
-		return extract != null;
-	}
+    private synchronized void setExtractedText(String value) {
+        extract = value;
+        notify();
+    }
 
-	private synchronized void setExtractedText(String value) {
-		extract = value;
-		notify();
-	}
+    /**
+     * Releases all resources associated with this field.
+     */
+    public void dispose() {
+        // TODO: Cause the ContentHandler below to throw an exception
+    }
 
-	/**
-	 * Releases all resources associated with this field.
-	 */
-	public void dispose() {
-		// TODO: Cause the ContentHandler below to throw an exception
-	}
+    /**
+     * The background task for extracting text from a binary value.
+     */
+    private class ParsingTask extends DefaultHandler implements Runnable {
+        private final Parser parser;
 
-	/**
-	 * The background task for extracting text from a binary value.
-	 */
-	private class ParsingTask extends DefaultHandler implements Runnable {
+        private final InternalValue value;
 
-		private final Parser parser;
+        private final Metadata metadata;
 
-		private final InternalValue value;
+        private final int maxFieldLength;
 
-		private final Metadata metadata;
+        private final StringBuilder builder = new StringBuilder();
 
-		private final int maxFieldLength;
+        private final ParseContext context = new ParseContext();
 
-		private final StringBuilder builder = new StringBuilder();
+        // NOTE: not a part of Jackrabbit code, made
+        private final ContentHandler handler = new DefaultHandler();
 
-		private final ParseContext context = new ParseContext();
+        public ParsingTask(Parser parser, InternalValue value,
+                           Metadata metadata, int maxFieldLength) {
+            this.parser = parser;
+            this.value = value;
+            this.metadata = metadata;
+            this.maxFieldLength = maxFieldLength;
+        }
 
-		// NOTE: not a part of Jackrabbit code, made
-		private final ContentHandler handler = new DefaultHandler();
+        public void run() {
+            try {
+                try (InputStream stream = value.getStream()) {
+                    parser.parse(stream, handler, metadata, context);
+                }
+            } catch (LinkageError e) {
+                // Capture and ignore
+            } catch (Throwable t) {
+                if (t != STOP) {
+                    log.debug("Failed to extract text.", t);
+                    setExtractedText("TextExtractionError");
+                    return;
+                }
+            } finally {
+                value.discard();
+            }
+            setExtractedText(handler.toString());
 
-		public ParsingTask(Parser parser, InternalValue value,
-				Metadata metadata, int maxFieldLength) {
-			this.parser = parser;
-			this.value = value;
-			this.metadata = metadata;
-			this.maxFieldLength = maxFieldLength;
-		}
+        }
 
-		public void run() {
-			try {
-				try (InputStream stream = value.getStream()) {
-					parser.parse(stream, handler, metadata, context);
-				}
-			} catch (LinkageError e) {
-				// Capture and ignore
-			} catch (Throwable t) {
-				if (t != STOP) {
-					log.debug("Failed to extract text.", t);
-					setExtractedText("TextExtractionError");
-					return;
-				}
-			} finally {
-				value.discard();
-			}
-			setExtractedText(handler.toString());
+        @Override
+        public void characters(char[] ch, int start, int length)
+                throws SAXException {
+            builder.append(ch, start,
+                    Math.min(length, maxFieldLength - builder.length()));
+            if (builder.length() >= maxFieldLength) {
+                throw STOP;
+            }
+        }
 
-		}
-
-		@Override
-		public void characters(char[] ch, int start, int length)
-				throws SAXException {
-			builder.append(ch, start,
-					Math.min(length, maxFieldLength - builder.length()));
-			if (builder.length() >= maxFieldLength) {
-				throw STOP;
-			}
-		}
-
-		@Override
-		public void ignorableWhitespace(char[] ch, int start, int length)
-				throws SAXException {
-			characters(ch, start, length);
-		}
-
-	}
-
+        @Override
+        public void ignorableWhitespace(char[] ch, int start, int length)
+                throws SAXException {
+            characters(ch, start, length);
+        }
+    }
 }

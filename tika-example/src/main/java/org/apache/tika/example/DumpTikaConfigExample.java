@@ -1,4 +1,3 @@
-package org.apache.tika.example;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,13 +15,7 @@ package org.apache.tika.example;
  * limitations under the License.
  */
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+package org.apache.tika.example;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +29,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.DefaultDetector;
@@ -65,9 +65,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * for your custom mime types.
  */
 public class DumpTikaConfigExample {
-
     /**
-     *
      * @param config config file to dump
      * @param writer writer to which to write
      * @throws Exception
@@ -104,8 +102,7 @@ public class DumpTikaConfigExample {
         Translator translator = config.getTranslator();
         if (translator instanceof DefaultTranslator) {
             Node mimeComment = doc.createComment(
-                    "for example: "+
-                            "<translator class=\"org.apache.tika.language.translate.GoogleTranslator\"/>");
+                    "for example: <translator class=\"org.apache.tika.language.translate.GoogleTranslator\"/>");
             rootElement.appendChild(mimeComment);
         } else {
             Element translatorElement = doc.createElement("translator");
@@ -125,7 +122,7 @@ public class DumpTikaConfigExample {
         Element detectorsElement = doc.createElement("detectors");
 
         if (detector instanceof DefaultDetector) {
-            List<Detector> children = ((DefaultDetector)detector).getDetectors();
+            List<Detector> children = ((DefaultDetector) detector).getDetectors();
             for (Detector d : children) {
                 Element detectorElement = doc.createElement("detector");
                 detectorElement.setAttribute("class", d.getClass().getCanonicalName());
@@ -147,9 +144,9 @@ public class DumpTikaConfigExample {
             Parser child = e.getValue();
             String className = e.getKey();
             parserElement.setAttribute("class", className);
-            Set<MediaType> types = new TreeSet<MediaType>();
+            Set<MediaType> types = new TreeSet<>();
             types.addAll(child.getSupportedTypes(context));
-            for (MediaType type : types){
+            for (MediaType type : types) {
                 Element mimeElement = doc.createElement("mime");
                 mimeElement.appendChild(doc.createTextNode(type.toString()));
                 parserElement.appendChild(mimeElement);
@@ -160,10 +157,10 @@ public class DumpTikaConfigExample {
 
     }
 
-    private Map<String, Parser> getConcreteParsers(Parser parentParser)throws TikaException, IOException  {
-        Map<String, Parser> parsers = new TreeMap<String, Parser>();
+    private Map<String, Parser> getConcreteParsers(Parser parentParser) throws TikaException, IOException {
+        Map<String, Parser> parsers = new TreeMap<>();
         if (parentParser instanceof CompositeParser) {
-            addParsers((CompositeParser)parentParser, parsers);
+            addParsers((CompositeParser) parentParser, parsers);
         } else {
             addParser(parentParser, parsers);
         }
@@ -173,7 +170,7 @@ public class DumpTikaConfigExample {
     private void addParsers(CompositeParser p, Map<String, Parser> parsers) {
         for (Parser child : p.getParsers().values()) {
             if (child instanceof CompositeParser) {
-                addParsers((CompositeParser)child, parsers);
+                addParsers((CompositeParser) child, parsers);
             } else {
                 addParser(child, parsers);
             }
@@ -185,12 +182,10 @@ public class DumpTikaConfigExample {
     }
 
     /**
-     *
      * @param args outputFile, outputEncoding, if args is empty, this prints to console
      * @throws Exception
      */
     public static void main(String[] args) throws Exception {
-
         Charset encoding = UTF_8;
         Writer writer = null;
         if (args.length > 0) {

@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.example;
 
 import java.io.IOException;
@@ -36,7 +37,7 @@ import org.xml.sax.SAXException;
 
 /**
  * Examples of using different Content Handlers to
- *  get different parts of the file's contents 
+ * get different parts of the file's contents
  */
 public class ContentHandlerExample {
     /**
@@ -67,10 +68,10 @@ public class ContentHandlerExample {
             return handler.toString();
         }
     }
-    
+
     /**
      * Example of extracting just the body as HTML, without the
-     *  head part, as a string
+     * head part, as a string
      */
     public String parseBodyToHTML() throws IOException, SAXException, TikaException {
         ContentHandler handler = new BodyContentHandler(
@@ -83,16 +84,15 @@ public class ContentHandlerExample {
             return handler.toString();
         }
     }
-    
+
     /**
      * Example of extracting just one part of the document's body,
-     *  as HTML as a string, excluding the rest
+     * as HTML as a string, excluding the rest
      */
     public String parseOnePartToHTML() throws IOException, SAXException, TikaException {
         // Only get things under html -> body -> div (class=header)
         XPathParser xhtmlParser = new XPathParser("xhtml", XHTMLContentHandler.XHTML);
-        Matcher divContentMatcher = xhtmlParser.parse(
-                "/xhtml:html/xhtml:body/xhtml:div/descendant::node()");        
+        Matcher divContentMatcher = xhtmlParser.parse("/xhtml:html/xhtml:body/xhtml:div/descendant::node()");
         ContentHandler handler = new MatchingContentHandler(
                 new ToXMLContentHandler(), divContentMatcher);
 
@@ -103,25 +103,26 @@ public class ContentHandlerExample {
             return handler.toString();
         }
     }
-    
+
     protected final int MAXIMUM_TEXT_CHUNK_SIZE = 40;
+
     /**
      * Example of extracting the plain text in chunks, with each chunk
-     *  of no more than a certain maximum size
+     * of no more than a certain maximum size
      */
     public List<String> parseToPlainTextChunks() throws IOException, SAXException, TikaException {
-        final List<String> chunks = new ArrayList<String>();
+        final List<String> chunks = new ArrayList<>();
         chunks.add("");
         ContentHandlerDecorator handler = new ContentHandlerDecorator() {
             @Override
             public void characters(char[] ch, int start, int length) {
-                String lastChunk = chunks.get(chunks.size()-1);
+                String lastChunk = chunks.get(chunks.size() - 1);
                 String thisStr = new String(ch, start, length);
-                
-                if (lastChunk.length()+length > MAXIMUM_TEXT_CHUNK_SIZE) {
+
+                if (lastChunk.length() + length > MAXIMUM_TEXT_CHUNK_SIZE) {
                     chunks.add(thisStr);
                 } else {
-                    chunks.set(chunks.size()-1, lastChunk+thisStr);
+                    chunks.set(chunks.size() - 1, lastChunk + thisStr);
                 }
             }
         };

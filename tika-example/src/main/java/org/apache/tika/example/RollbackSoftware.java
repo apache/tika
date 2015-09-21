@@ -1,9 +1,12 @@
-/**
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -43,100 +46,92 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * Demonstrates Tika and its ability to sense symlinks.
  */
 public class RollbackSoftware {
+    public static void main(String[] args) throws Exception {
+        RollbackSoftware r = new RollbackSoftware();
+        r.rollback(new File(args[0]));
+    }
 
-	public static void main(String[] args) throws Exception {
-		RollbackSoftware r = new RollbackSoftware();
-		r.rollback(new File(args[0]));
-	}
+    public void rollback(File deployArea) throws IOException, SAXException,
+            TikaException {
+        LinkContentHandler handler = new LinkContentHandler();
+        Metadata met = new Metadata();
+        DeploymentAreaParser parser = new DeploymentAreaParser();
+        parser.parse(IOUtils.toInputStream(deployArea.getAbsolutePath(), UTF_8),
+                handler, met);
+        List<Link> links = handler.getLinks();
+        if (links.size() < 2)
+            throw new IOException("Must have installed at least 2 versions!");
+        Collections.sort(links, new Comparator<Link>() {
+            public int compare(Link o1, Link o2) {
+                return o1.getText().compareTo(o2.getText());
+            }
+        });
 
-	public void rollback(File deployArea) throws IOException, SAXException,
-			TikaException {
-		LinkContentHandler handler = new LinkContentHandler();
-		Metadata met = new Metadata();
-		DeploymentAreaParser parser = new DeploymentAreaParser();
-		parser.parse(IOUtils.toInputStream(deployArea.getAbsolutePath(), UTF_8),
-				handler, met);
-		List<Link> links = handler.getLinks();
-		if (links.size() < 2)
-			throw new IOException("Must have installed at least 2 versions!");
-		Collections.sort(links, new Comparator<Link>() {
-			public int compare(Link o1, Link o2) {
-				return o1.getText().compareTo(o2.getText());
-			}
-		});
+        this.updateVersion(links.get(links.size() - 2).getText());
+    }
 
-		this.updateVersion(links.get(links.size() - 2).getText());
+    private void updateVersion(String version) {
+        System.out.println("Rolling back to version: [" + version + "]");
+    }
 
-	}
+    class DeploymentAreaParser implements Parser {
+        private static final long serialVersionUID = -2356647405087933468L;
 
-	private void updateVersion(String version) {
-		System.out.println("Rolling back to version: [" + version + "]");
-	}
+        /*
+         * (non-Javadoc)
+         *
+         * @see org.apache.tika.parser.Parser#getSupportedTypes(
+         * org.apache.tika.parser.ParseContext)
+         */
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return Collections.unmodifiableSet(new HashSet<MediaType>(Arrays
+                    .asList(MediaType.TEXT_PLAIN)));
+        }
 
-	class DeploymentAreaParser implements Parser {
+        /*
+         * (non-Javadoc)
+         *
+         * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
+         * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
+         */
+        public void parse(InputStream is, ContentHandler handler,
+                          Metadata metadata) throws IOException, SAXException,
+                TikaException {
+            parse(is, handler, metadata, new ParseContext());
+        }
 
-		private static final long serialVersionUID = -2356647405087933468L;
+        /*
+         * (non-Javadoc)
+         *
+         * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
+         * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
+         * org.apache.tika.parser.ParseContext)
+         */
+        public void parse(InputStream is, ContentHandler handler,
+                          Metadata metadata, ParseContext context) throws IOException,
+                SAXException, TikaException {
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.apache.tika.parser.Parser#getSupportedTypes(
-		 * org.apache.tika.parser.ParseContext)
-		 */
-		public Set<MediaType> getSupportedTypes(ParseContext context) {
-			return Collections.unmodifiableSet(new HashSet<MediaType>(Arrays
-					.asList(MediaType.TEXT_PLAIN)));
-		}
+            File deployArea = new File(IOUtils.toString(is, UTF_8));
+            File[] versions = deployArea.listFiles(new FileFilter() {
+                public boolean accept(File pathname) {
+                    return !pathname.getName().startsWith("current");
+                }
+            });
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
-		 * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata)
-		 */
-		public void parse(InputStream is, ContentHandler handler,
-				Metadata metadata) throws IOException, SAXException,
-				TikaException {
-			parse(is, handler, metadata, new ParseContext());
-		}
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler,
+                    metadata);
+            xhtml.startDocument();
+            for (File v : versions) {
+                if (isSymlink(v))
+                    continue;
+                xhtml.startElement("a", "href", v.toURI().toURL().toExternalForm());
+                xhtml.characters(v.getName());
+                xhtml.endElement("a");
+            }
+        }
+    }
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see org.apache.tika.parser.Parser#parse(java.io.InputStream,
-		 * org.xml.sax.ContentHandler, org.apache.tika.metadata.Metadata,
-		 * org.apache.tika.parser.ParseContext)
-		 */
-
-		public void parse(InputStream is, ContentHandler handler,
-				Metadata metadata, ParseContext context) throws IOException,
-				SAXException, TikaException {
-
-			File deployArea = new File(IOUtils.toString(is, UTF_8));
-			File[] versions = deployArea.listFiles(new FileFilter() {
-
-				public boolean accept(File pathname) {
-					return !pathname.getName().startsWith("current");
-				}
-			});
-
-			XHTMLContentHandler xhtml = new XHTMLContentHandler(handler,
-					metadata);
-			xhtml.startDocument();
-			for (File v : versions) {
-				if (isSymlink(v))
-					continue;
-				xhtml.startElement("a", "href", v.toURI().toURL().toExternalForm());
-				xhtml.characters(v.getName());
-				xhtml.endElement("a");
-			}
-
-		}
-
-	}
-
-	private boolean isSymlink(File f) throws IOException {
-		return !f.getAbsolutePath().equals(f.getCanonicalPath());
-	}
-
+    private boolean isSymlink(File f) throws IOException {
+        return !f.getAbsolutePath().equals(f.getCanonicalPath());
+    }
 }
