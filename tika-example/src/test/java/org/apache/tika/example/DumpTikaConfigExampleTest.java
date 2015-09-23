@@ -17,10 +17,9 @@ package org.apache.tika.example;
  * limitations under the License.
  */
 
-
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
@@ -32,13 +31,13 @@ import java.nio.charset.Charset;
 
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
+import org.apache.tika.example.DumpTikaConfigExample.Mode;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 
 public class DumpTikaConfigExampleTest {
     private File configFile;
@@ -65,22 +64,26 @@ public class DumpTikaConfigExampleTest {
     public void testDump() throws Exception {
         DumpTikaConfigExample ex = new DumpTikaConfigExample();
         for (Charset charset : new Charset[]{UTF_8, UTF_16LE}) {
-            Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), charset);
-            ex.dump(TikaConfig.getDefaultConfig(), writer, charset.name());
-            writer.flush();
-            writer.close();
-
-            TikaConfig c = new TikaConfig(configFile);
-            assertEquals(CompositeParser.class, c.getParser().getClass());
-            assertEquals(CompositeDetector.class, c.getDetector().getClass());
-
-            CompositeParser p = (CompositeParser) c.getParser();
-            assertTrue("enough parsers?", p.getParsers().size() > 130);
-
-            CompositeDetector d = (CompositeDetector) c.getDetector();
-            assertTrue("enough detectors?", d.getDetectors().size() > 3);
-            //just try to load it into autodetect to make sure no errors are thrown
-            Parser auto = new AutoDetectParser(c);
+            for (Mode mode : Mode.values()) {
+                Writer writer = new OutputStreamWriter(new FileOutputStream(configFile), charset);
+                ex.dump(TikaConfig.getDefaultConfig(), mode, writer, charset.name());
+                writer.flush();
+                writer.close();
+    
+                TikaConfig c = new TikaConfig(configFile);
+                assertTrue(c.getParser().toString(), c.getParser() instanceof CompositeParser);
+                assertTrue(c.getDetector().toString(), c.getDetector() instanceof CompositeDetector);
+    
+                CompositeParser p = (CompositeParser) c.getParser();
+                assertTrue("enough parsers?", p.getParsers().size() > 130);
+    
+                CompositeDetector d = (CompositeDetector) c.getDetector();
+                assertTrue("enough detectors?", d.getDetectors().size() > 3);
+                
+                //just try to load it into autodetect to make sure no errors are thrown
+                Parser auto = new AutoDetectParser(c);
+                assertNotNull(auto);
+            }
         }
     }
 

@@ -99,6 +99,19 @@ public class DefaultTranslator implements Translator {
         }
         throw new TikaException("No translators currently available");
     }
+    
+    /**
+     * Returns all available translators
+     */
+    public List<Translator> getTranslators() {
+        return getDefaultTranslators(loader);
+    }
+    /**
+     * Returns the current translator
+     */
+    public Translator getTranslator() {
+        return getFirstAvailable(loader);
+    }
 
     public boolean isAvailable() {
         return getFirstAvailable(loader) != null;
