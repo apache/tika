@@ -20,15 +20,12 @@ package org.apache.tika.example;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -43,13 +40,14 @@ import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.DefaultTranslator;
 import org.apache.tika.language.translate.Translator;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -84,6 +82,7 @@ public class DumpTikaConfigExample {
         addTranslator(mode, rootElement, doc, config);
         addDetectors(mode, rootElement, doc, config);
         addParsers(mode, rootElement, doc, config);
+        // TODO Service Loader section
 
         // now write
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -130,6 +129,9 @@ public class DumpTikaConfigExample {
         
         if (mode == Mode.MINIMAL && detector instanceof DefaultDetector) {
             // Don't output anything, all using defaults
+            Node detComment = doc.createComment(
+                    "for example: <detectors><detector class=\"org.apache.tika.detector.MimeTypes\"></detectors>");
+            rootElement.appendChild(detComment);
             return;
         }
         
@@ -151,54 +153,83 @@ public class DumpTikaConfigExample {
     }
 
     private void addParsers(Mode mode, Element rootElement, Document doc, TikaConfig config) throws Exception {
-        Map<String, Parser> parsers = getConcreteParsers(config.getParser());
-
+        Parser parser = config.getParser();
+        if (mode == Mode.MINIMAL && parser instanceof DefaultParser) {
+            // Don't output anything, all using defaults
+            return;
+        } else if (mode == Mode.MINIMAL) {
+            mode = Mode.CURRENT;
+        }
+        addParsers(mode, rootElement, doc, parser);
+    }
+    private void addParsers(Mode mode, Element rootElement, Document doc, Parser parser) throws Exception {
+        Parser realParser = parser;
+        if (parser instanceof ParserDecorator) {
+            realParser = ((ParserDecorator)parser).getWrappedParser();
+        }
+        
+        List<Parser> children = null;
+        if (mode == Mode.CURRENT && realParser instanceof DefaultParser) {
+            // Don't output any children
+            // TODO List excluded children
+        } else if (realParser instanceof CompositeParser) {
+            children = ((CompositeParser)realParser).getAllComponentParsers();
+            if (realParser instanceof DefaultParser || parser == realParser) {
+                realParser = null;
+            }
+        }
+        
         Element parsersElement = doc.createElement("parsers");
         rootElement.appendChild(parsersElement);
-
+        Element addParserTo = parsersElement;
+        
+        if (realParser != null) {
+            addParserTo = addParser(addParserTo, doc, parser, realParser);
+        }
+        if (children != null && !children.isEmpty()) {
+            for (Parser p : children) {
+                addParser(addParserTo, doc, p, p);
+            }
+        }
+    }
+    private Element addParser(Element rootElement, Document doc, Parser parser, Parser realParser) throws Exception {
         ParseContext context = new ParseContext();
-        for (Map.Entry<String, Parser> e : parsers.entrySet()) {
-            Element parserElement = doc.createElement("parser");
-            Parser child = e.getValue();
-            String className = e.getKey();
-            parserElement.setAttribute("class", className);
-            Set<MediaType> types = new TreeSet<>();
-            types.addAll(child.getSupportedTypes(context));
-            for (MediaType type : types) {
-                Element mimeElement = doc.createElement("mime");
-                mimeElement.appendChild(doc.createTextNode(type.toString()));
-                parserElement.appendChild(mimeElement);
+        
+        Set<MediaType> types = new TreeSet<>();
+        Set<MediaType> addedTypes = new TreeSet<>();
+        Set<MediaType> excludedTypes = new TreeSet<>();
+        types.addAll(parser.getSupportedTypes(context));
+        
+        for (MediaType type : realParser.getSupportedTypes(context)) {
+            if (! types.contains(type)) {
+                excludedTypes.add(type);
             }
-            parsersElement.appendChild(parserElement);
+            addedTypes.remove(type);
         }
-        rootElement.appendChild(parsersElement);
-
-    }
-
-    private Map<String, Parser> getConcreteParsers(Parser parentParser) throws TikaException, IOException {
-        Map<String, Parser> parsers = new TreeMap<>();
-        if (parentParser instanceof CompositeParser) {
-            addParsers((CompositeParser) parentParser, parsers);
-        } else {
-            addParser(parentParser, parsers);
+        
+        String className = realParser.getClass().getCanonicalName();
+        Element parserElement = doc.createElement("parser");
+        parserElement.setAttribute("class", className);
+        rootElement.appendChild(parserElement);
+        
+        for (MediaType type : addedTypes) {
+            Element mimeElement = doc.createElement("mime");
+            mimeElement.appendChild(doc.createTextNode(type.toString()));
+            parserElement.appendChild(mimeElement);
         }
-        return parsers;
-    }
-
-    private void addParsers(CompositeParser p, Map<String, Parser> parsers) {
-        for (Parser child : p.getParsers().values()) {
-            if (child instanceof CompositeParser) {
-                addParsers((CompositeParser) child, parsers);
-            } else {
-                addParser(child, parsers);
-            }
+        for (MediaType type : excludedTypes) {
+            Element mimeElement = doc.createElement("mime-exclude");
+            mimeElement.appendChild(doc.createTextNode(type.toString()));
+            parserElement.appendChild(mimeElement);
         }
+        
+        if (realParser instanceof CompositeParser) {
+            // TODO Recurse
+        }
+        
+        return parserElement;
     }
-
-    private void addParser(Parser p, Map<String, Parser> parsers) {
-        parsers.put(p.getClass().getCanonicalName(), p);
-    }
-
+    
     /**
      * @param args outputFile, outputEncoding, if args is empty, this prints to console
      * @throws Exception
