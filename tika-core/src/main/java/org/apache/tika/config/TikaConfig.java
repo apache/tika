@@ -79,6 +79,7 @@ public class TikaConfig {
     private static Translator getDefaultTranslator(ServiceLoader loader) {
         return new DefaultTranslator(loader);
     }
+    private final ServiceLoader serviceLoader;
     private final CompositeParser parser;
     private final CompositeDetector detector;
     private final Translator translator;
@@ -143,6 +144,7 @@ public class TikaConfig {
         this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
         this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
         this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
+        this.serviceLoader = loader;
     }
 
     /**
@@ -159,7 +161,7 @@ public class TikaConfig {
      */
     public TikaConfig(ClassLoader loader)
             throws MimeTypeException, IOException {
-        ServiceLoader serviceLoader = new ServiceLoader(loader);
+        this.serviceLoader = new ServiceLoader(loader);
         this.mimeTypes = getDefaultMimeTypes(loader);
         this.detector = getDefaultDetector(mimeTypes, serviceLoader);
         this.parser = getDefaultParser(mimeTypes, serviceLoader);
@@ -184,7 +186,7 @@ public class TikaConfig {
      * @throws TikaException if problem with MimeTypes or parsing XML config
      */
     public TikaConfig() throws TikaException, IOException {
-        ServiceLoader loader = new ServiceLoader();
+        this.serviceLoader = new ServiceLoader();
 
         String config = System.getProperty("tika.config");
         if (config == null) {
@@ -193,9 +195,9 @@ public class TikaConfig {
 
         if (config == null) {
             this.mimeTypes = getDefaultMimeTypes(ServiceLoader.getContextClassLoader());
-            this.parser = getDefaultParser(mimeTypes, loader);
-            this.detector = getDefaultDetector(mimeTypes, loader);
-            this.translator = getDefaultTranslator(loader);
+            this.parser = getDefaultParser(mimeTypes, serviceLoader);
+            this.detector = getDefaultDetector(mimeTypes, serviceLoader);
+            this.translator = getDefaultTranslator(serviceLoader);
         } else {
             // Locate the given configuration file
             InputStream stream = null;
@@ -210,7 +212,7 @@ public class TikaConfig {
                 }
             }
             if (stream == null) {
-                stream = loader.getResourceAsStream(config);
+                stream = serviceLoader.getResourceAsStream(config);
             }
             if (stream == null) {
                 throw new TikaException(
@@ -224,9 +226,9 @@ public class TikaConfig {
                 TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
                 
                 this.mimeTypes = typesFromDomElement(element);
-                this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
-                this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
-                this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
+                this.parser = parserLoader.loadOverall(element, mimeTypes, serviceLoader);
+                this.detector = detectorLoader.loadOverall(element, mimeTypes, serviceLoader);
+                this.translator = translatorLoader.loadOverall(element, mimeTypes, serviceLoader);
             } catch (SAXException e) {
                 throw new TikaException(
                         "Specified Tika configuration has syntax errors: "
@@ -292,6 +294,10 @@ public class TikaConfig {
 
     public MediaTypeRegistry getMediaTypeRegistry() {
         return mimeTypes.getMediaTypeRegistry();
+    }
+    
+    public ServiceLoader getServiceLoader() {
+        return serviceLoader;
     }
 
     /**
@@ -412,9 +418,9 @@ public class TikaConfig {
             boolean dynamic = Boolean.parseBoolean(serviceLoaderElement.getAttribute("dynamic"));
             LoadErrorHandler loadErrorHandler = LoadErrorHandler.IGNORE;
             String loadErrorHandleConfig = serviceLoaderElement.getAttribute("loadErrorHandler");
-            if("WARN".equalsIgnoreCase(loadErrorHandleConfig)) {
+            if(LoadErrorHandler.WARN.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.WARN;
-            } else if("THROW".equalsIgnoreCase(loadErrorHandleConfig)) {
+            } else if(LoadErrorHandler.THROW.toString().equalsIgnoreCase(loadErrorHandleConfig)) {
                 loadErrorHandler = LoadErrorHandler.THROW;
             }
             

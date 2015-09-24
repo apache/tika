@@ -37,6 +37,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.tika.config.LoadErrorHandler;
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
@@ -80,6 +82,7 @@ public class DumpTikaConfigExample {
 
         doc.appendChild(rootElement);
         addMimeComment(mode, rootElement, doc);
+        addServiceLoader(mode, rootElement, doc, config);
         addTranslator(mode, rootElement, doc, config);
         addDetectors(mode, rootElement, doc, config);
         addParsers(mode, rootElement, doc, config);
@@ -97,6 +100,23 @@ public class DumpTikaConfigExample {
         transformer.transform(source, result);
     }
 
+    private void addServiceLoader(Mode mode, Element rootElement, Document doc, TikaConfig config) {
+        ServiceLoader loader = config.getServiceLoader();
+        
+        if (mode == Mode.MINIMAL) {
+            // Is this the default?
+            if (loader.isDynamic() && loader.getLoadErrorHandler() == LoadErrorHandler.IGNORE) {
+                // Default config, no need to output anything
+                return;
+            }
+        }
+        
+        Element dslEl = doc.createElement("service-loader");
+        dslEl.setAttribute("dynamic", Boolean.toString(loader.isDynamic()));
+        dslEl.setAttribute("loadErrorHandler", loader.getLoadErrorHandler().toString());
+        rootElement.appendChild(dslEl);
+    }
+    
     private void addTranslator(Mode mode, Element rootElement, Document doc, TikaConfig config) {
         // Unlike the other entries, TikaConfig only wants one of
         //  these, and no outer <translators> list
