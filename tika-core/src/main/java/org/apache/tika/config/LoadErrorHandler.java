@@ -46,6 +46,10 @@ public interface LoadErrorHandler {
     LoadErrorHandler IGNORE = new LoadErrorHandler() {
         public void handleLoadError(String classname, Throwable throwable) {
         }
+        @Override
+        public String toString() {
+            return "IGNORE";
+        }
     };
 
     /**
@@ -56,6 +60,10 @@ public interface LoadErrorHandler {
         public void handleLoadError(String classname, Throwable throwable) {
             Logger.getLogger(classname).log(
                     Level.WARNING, "Unable to load " + classname, throwable);
+        }
+        @Override
+        public String toString() {
+            return "WARN";
         }
     };
 
@@ -68,6 +76,9 @@ public interface LoadErrorHandler {
         public void handleLoadError(String classname, Throwable throwable) {
             throw new RuntimeException("Unable to load " + classname, throwable);
         }
+        @Override
+        public String toString() {
+            return "THROW";
+        }
     };
-
 }
