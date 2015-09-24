@@ -19,7 +19,6 @@ package org.apache.tika.language.translate;
 
 import com.fasterxml.jackson.databind.util.LRUMap;
 
-import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.LanguageIdentifier;
 import org.apache.tika.language.LanguageProfile;
@@ -54,7 +53,7 @@ public class CachedTranslator implements Translator {
      */
     public CachedTranslator(Translator translator) {
         this.translator = translator;
-        cache = new HashMap<String, LRUMap<String, String>>();
+        this.cache = new HashMap<>();
     }
 
     /**
@@ -93,7 +92,7 @@ public class CachedTranslator implements Translator {
 
     @Override
     public boolean isAvailable() {
-        return translator.isAvailable();
+        return translator != null && translator.isAvailable();
     }
 
     /**
@@ -172,7 +171,7 @@ public class CachedTranslator implements Translator {
     private LRUMap<String, String> getTranslationCache(String sourceLanguage, String targetLanguage) {
         LRUMap<String, String> translationCache = cache.get(buildCacheKeyString(sourceLanguage, targetLanguage));
         if (translationCache == null) {
-            translationCache = new LRUMap<String, String>(INITIAL_ENTRIES, MAX_ENTRIES);
+            translationCache = new LRUMap<>(INITIAL_ENTRIES, MAX_ENTRIES);
             cache.put(buildCacheKeyString(sourceLanguage, targetLanguage), translationCache);
         }
         return translationCache;
