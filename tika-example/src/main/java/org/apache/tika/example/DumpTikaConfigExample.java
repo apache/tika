@@ -24,6 +24,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -97,8 +98,8 @@ public class DumpTikaConfigExample {
     }
 
     private void addTranslator(Mode mode, Element rootElement, Document doc, TikaConfig config) {
-        // TikaConfig only reads the first translator from the list,
-        //  but it looks like it expects a list
+        // Unlike the other entries, TikaConfig only wants one of
+        //  these, and no outer <translators> list
         Translator translator = config.getTranslator();
         if (mode == Mode.MINIMAL && translator instanceof DefaultTranslator) {
             Node mimeComment = doc.createComment(
@@ -160,54 +161,65 @@ public class DumpTikaConfigExample {
         } else if (mode == Mode.MINIMAL) {
             mode = Mode.CURRENT;
         }
-        addParsers(mode, rootElement, doc, parser);
-    }
-    private void addParsers(Mode mode, Element rootElement, Document doc, Parser parser) throws Exception {
-        Parser realParser = parser;
-        if (parser instanceof ParserDecorator) {
-            realParser = ((ParserDecorator)parser).getWrappedParser();
-        }
-        
-        List<Parser> children = null;
-        if (mode == Mode.CURRENT && realParser instanceof DefaultParser) {
-            // Don't output any children
-            // TODO List excluded children
-        } else if (realParser instanceof CompositeParser) {
-            children = ((CompositeParser)realParser).getAllComponentParsers();
-            if (realParser instanceof DefaultParser || parser == realParser) {
-                realParser = null;
-            }
-        }
-        
+
         Element parsersElement = doc.createElement("parsers");
         rootElement.appendChild(parsersElement);
-        Element addParserTo = parsersElement;
         
-        if (realParser != null) {
-            addParserTo = addParser(addParserTo, doc, parser, realParser);
-        }
-        if (children != null && !children.isEmpty()) {
-            for (Parser p : children) {
-                addParser(addParserTo, doc, p, p);
+        addParser(mode, parsersElement, doc, parser);
+    }
+    private void addParser(Mode mode, Element rootElement, Document doc, Parser parser) throws Exception {
+        // If the parser is decorated, is it a kind where we output the parser inside?
+        ParserDecorator decoration = null;
+        if (parser instanceof ParserDecorator) {
+            if (parser.getClass().getName().startsWith(ParserDecorator.class.getName()+"$")) {
+                decoration = ((ParserDecorator)parser);
+                parser = decoration.getWrappedParser();
             }
         }
+        
+        boolean outputParser = true;
+        List<Parser> children = Collections.emptyList();
+        if (mode == Mode.CURRENT && parser instanceof DefaultParser) {
+            // Only output the parser, not the children
+        } else if (parser instanceof CompositeParser) {
+            children = ((CompositeParser)parser).getAllComponentParsers();
+            // Special case for a naked composite
+            if (parser.getClass().equals(CompositeParser.class)) {
+                outputParser = false;
+            }
+            // Special case for making Default to static
+            if (mode == Mode.STATIC && parser instanceof DefaultParser) {
+                outputParser = false;
+            }
+        }
+        
+        if (outputParser) {
+            rootElement = addParser(rootElement, doc, parser, decoration);
+        }
+        for (Parser childParser : children) {
+            addParser(mode, rootElement, doc, childParser);
+        }
+        // TODO Parser Exclusions
     }
-    private Element addParser(Element rootElement, Document doc, Parser parser, Parser realParser) throws Exception {
+    private Element addParser(Element rootElement, Document doc, Parser parser, ParserDecorator decorator) throws Exception {
         ParseContext context = new ParseContext();
         
-        Set<MediaType> types = new TreeSet<>();
         Set<MediaType> addedTypes = new TreeSet<>();
         Set<MediaType> excludedTypes = new TreeSet<>();
-        types.addAll(parser.getSupportedTypes(context));
-        
-        for (MediaType type : realParser.getSupportedTypes(context)) {
-            if (! types.contains(type)) {
-                excludedTypes.add(type);
+        if (decorator != null) {
+            Set<MediaType> types = new TreeSet<>();
+            types.addAll(decorator.getSupportedTypes(context));
+            addedTypes.addAll(types);
+            
+            for (MediaType type : parser.getSupportedTypes(context)) {
+                if (! types.contains(type)) {
+                    excludedTypes.add(type);
+                }
+                addedTypes.remove(type);
             }
-            addedTypes.remove(type);
         }
         
-        String className = realParser.getClass().getCanonicalName();
+        String className = parser.getClass().getCanonicalName();
         Element parserElement = doc.createElement("parser");
         parserElement.setAttribute("class", className);
         rootElement.appendChild(parserElement);
@@ -221,10 +233,6 @@ public class DumpTikaConfigExample {
             Element mimeElement = doc.createElement("mime-exclude");
             mimeElement.appendChild(doc.createTextNode(type.toString()));
             parserElement.appendChild(mimeElement);
-        }
-        
-        if (realParser instanceof CompositeParser) {
-            // TODO Recurse
         }
         
         return parserElement;
