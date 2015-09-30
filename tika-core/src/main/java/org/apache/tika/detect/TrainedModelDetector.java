@@ -17,16 +17,14 @@
 package org.apache.tika.detect;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.OutputStreamWriter;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -84,7 +82,7 @@ public abstract class TrainedModelDetector implements Detector {
 
 	/**
 	 * read the inputstream and build a byte frequence histogram
-	 * 
+	 *
 	 * @param input
 	 * @return
 	 * @throws IOException
@@ -92,7 +90,7 @@ public abstract class TrainedModelDetector implements Detector {
 	protected float[] readByteFrequencies(final InputStream input)
 			throws IOException {
 
-		ReadableByteChannel inputChannel = null;
+		ReadableByteChannel inputChannel;
 		try {
 			inputChannel = Channels.newChannel(input);
 			// long inSize = inputChannel.size();
@@ -139,43 +137,34 @@ public abstract class TrainedModelDetector implements Detector {
 	}
 
 	/**
-	 * on testing purpose; this method write the histogram vector to a file.
-	 * 
+	 * for testing purposes; this method write the histogram vector to a file.
+	 *
 	 * @param histogram
 	 * @throws IOException
 	 */
-	private synchronized void writeHisto(final float[] histogram)
+	private void writeHisto(final float[] histogram)
 			throws IOException {
-	        String histPath = new TemporaryResources().createTemporaryFile().getAbsolutePath();
-	        Writer writer = new OutputStreamWriter(new FileOutputStream(histPath), UTF_8);
-		int n = histogram.length;// excluding the last one for storing the
-									// max value
-		for (int i = 0; i < n; i++) {
-			writer.write(new StringBuffer().append(histogram[i]).append("\t")
-					.toString());
-			// writer.write(i + "\t");
+		Path histPath = new TemporaryResources().createTempFile();
+		try (Writer writer = Files.newBufferedWriter(histPath, UTF_8)) {
+			for (float bin : histogram) {
+				writer.write(String.valueOf(bin) + "\t");
+				// writer.write(i + "\t");
+			}
+			writer.write("\r\n");
 		}
-
-		writer.write("\r\n");
-		writer.flush();
 	}
 
-	public void loadDefaultModels(final File modelFile) {
-		FileInputStream in = null;
-		try {
-			in = new FileInputStream(modelFile);
+	public void loadDefaultModels(Path modelFile) {
+		try (InputStream in = Files.newInputStream(modelFile)) {
 			loadDefaultModels(in);
-		} catch (FileNotFoundException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(
 					"Unable to read the default media type registry", e);
-		} finally {
-			try {
-				in.close();
-			} catch (IOException e) {
-				throw new RuntimeException(
-						"Unable to read the default media type registry", e);
-			}
 		}
+	}
+
+	public void loadDefaultModels(File modelFile) {
+		loadDefaultModels(modelFile.toPath());
 	}
 
 	public abstract void loadDefaultModels(final InputStream modelStream);

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.file.Path;
 
 import org.apache.tika.mime.MediaType;
 
@@ -35,6 +36,10 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 
 	public NNExampleModelDetector() {
 		super();
+	}
+
+	public NNExampleModelDetector(final Path modelFile) {
+		loadDefaultModels(modelFile);
 	}
 
 	public NNExampleModelDetector(final File modelFile) {
@@ -64,7 +69,6 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 			throw new RuntimeException(
 					"Unable to read the default media type registry", e);
 		}
-
 	}
 
 	/**
@@ -85,21 +89,11 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 		// Get the core URL, and all the extensions URLs
 		URL modelURL = classLoader.getResource(classPrefix
 				+ EXAMPLE_NNMODEL_FILE);
-		InputStream stream = null;
-		try {
-			stream = modelURL.openStream();
+		try (InputStream stream = modelURL.openStream()) {
 			loadDefaultModels(stream);
-
 		} catch (IOException e) {
 			throw new RuntimeException(
 					"Unable to read the default media type registry", e);
-		} finally {
-			try {
-				stream.close();
-			} catch (IOException e) {
-				throw new RuntimeException(
-						"Unable to read the default media type registry", e);
-			}
 		}
 
 	}
@@ -114,11 +108,10 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 	 */
 	private void readDescription(final NNTrainedModelBuilder builder,
 			final String line) {
-		int numInputs = 0;
-		int numHidden = 0;
-		int numOutputs = 0;
-		String tline = line;
-		String[] sarr = tline.split("\t");
+		int numInputs;
+		int numHidden;
+		int numOutputs;
+		String[] sarr = line.split("\t");
 
 		try {
 			MediaType type = MediaType.parse(sarr[1]);
@@ -134,7 +127,6 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 			throw new RuntimeException(
 					"Unable to parse the model configuration", e);
 		}
-
 	}
 
 	/**
@@ -146,8 +138,7 @@ public class NNExampleModelDetector extends TrainedModelDetector {
 	 */
 	private void readNNParams(final NNTrainedModelBuilder builder,
 			final String line) {
-		String tline = line;
-		String[] sarr = tline.split("\t");
+		String[] sarr = line.split("\t");
 		int n = sarr.length;
 		float[] params = new float[n];
 		try {
