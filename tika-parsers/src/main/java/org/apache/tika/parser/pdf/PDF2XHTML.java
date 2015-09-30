@@ -23,14 +23,17 @@ import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.io.IOExceptionWithCause;
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentNameDictionary;
@@ -98,12 +101,16 @@ class PDF2XHTML extends PDFTextStripper {
     private final PDFParserConfig config;
     /**
      * This keeps track of the pdf object ids for inline
-     * images that have been processed.  If {@link PDFParserConfig#getExtractUniqueInlineImagesOnly()
+     * images that have been processed.
+     * If {@link PDFParserConfig#getExtractUniqueInlineImagesOnly()
      * is true, this will be checked before extracting an embedded image.
      * The integer keeps track of the inlineImageCounter for that image.
      * This integer is used to identify images in the markup.
+     *
+     * This is used across the document.  To avoid infinite recursion
+     * TIKA-1742, we're limiting the export to one image per page.
      */
-    private Map<String, Integer> processedInlineImages = new HashMap<String, Integer>();
+    private Map<String, Integer> processedInlineImages = new HashMap<>();
     private int inlineImageCounter = 0;
     private PDF2XHTML(ContentHandler handler, ParseContext context, Metadata metadata,
                       PDFParserConfig config)
@@ -227,7 +234,7 @@ class PDF2XHTML extends PDFTextStripper {
         try {
             writeParagraphEnd();
 
-            extractImages(page.getResources());
+            extractImages(page.getResources(), new HashSet<COSBase>());
 
             EmbeddedDocumentExtractor extractor = getEmbeddedDocumentExtractor();
             for (PDAnnotation annotation : page.getAnnotations()) {
@@ -302,7 +309,7 @@ class PDF2XHTML extends PDFTextStripper {
         page.clear();
     }
 
-    private void extractImages(PDResources resources) throws SAXException {
+    private void extractImages(PDResources resources, Set<COSBase> seenThisPage) throws SAXException {
         if (resources == null || config.getExtractInlineImages() == false) {
             return;
         }
@@ -315,8 +322,18 @@ class PDF2XHTML extends PDFTextStripper {
         for (Map.Entry<String, PDXObject> entry : xObjects.entrySet()) {
 
             PDXObject object = entry.getValue();
+            if (object == null) {
+                continue;
+            }
+            COSBase cosObject = object.getCOSObject();
+            if (seenThisPage.contains(cosObject)) {
+                //avoid infinite recursion TIKA-1742
+                continue;
+            }
+            seenThisPage.add(cosObject);
+
             if (object instanceof PDXObjectForm) {
-                extractImages(((PDXObjectForm) object).getResources());
+                extractImages(((PDXObjectForm) object).getResources(), seenThisPage);
             } else if (object instanceof PDXObjectImage) {
 
                 PDXObjectImage image = (PDXObjectImage) object;
