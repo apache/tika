@@ -234,8 +234,9 @@ public class PowerPointParserTest extends TikaTest {
         //autodate automatically.  For pptx, where value is stored,
         //value is extracted.  For ppt, however, no date is extracted.
         XMLResult result = getXML("testPPT_autodate.ppt");
+        System.out.println(result.xml);
         assertContains(
-                "<p class=\"slide-content\">Now<br />\n*<br />\n*<br />",
+                "<div class=\"slide-content\"><p>Now</p>",
                 result.xml);
     }
 }
