@@ -21,10 +21,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Map;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.tika.batch.BatchProcess;
 import org.apache.tika.batch.ParallelFileProcessingResult;
 import org.junit.Test;
@@ -34,15 +33,15 @@ public class HandlerBuilderTest extends FSBatchTestBase {
     @Test
     public void testXML() throws Exception {
 
-        File outputDir = getNewOutputDir("handler-xml-");
+        Path outputDir = getNewOutputDir("handler-xml-");
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "xml");
         args.put("outputSuffix", "xml");
 
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
-        File outputFile = new File(outputDir, "test0.xml.xml");
-        String resultString = FileUtils.readFileToString(outputFile, UTF_8);
+        Path outputFile = outputDir.resolve("test0.xml.xml");
+        String resultString = readFileToString(outputFile, UTF_8);
         assertTrue(resultString.contains("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
         assertTrue(resultString.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assertTrue(resultString.contains("This is tika-batch's first test file"));
@@ -51,15 +50,15 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
     @Test
     public void testHTML() throws Exception {
-        File outputDir = getNewOutputDir("handler-html-");
+        Path outputDir = getNewOutputDir("handler-html-");
 
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "html");
         args.put("outputSuffix", "html");
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
-        File outputFile = new File(outputDir, "test0.xml.html");
-        String resultString = FileUtils.readFileToString(outputFile, UTF_8);
+        Path outputFile = outputDir.resolve("test0.xml.html");
+        String resultString = readFileToString(outputFile, UTF_8);
         assertTrue(resultString.contains("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
         assertFalse(resultString.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assertTrue(resultString.contains("This is tika-batch's first test file"));
@@ -67,7 +66,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
     @Test
     public void testText() throws Exception {
-        File outputDir = getNewOutputDir("handler-txt-");
+        Path outputDir = getNewOutputDir("handler-txt-");
 
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "txt");
@@ -75,8 +74,8 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
-        File outputFile = new File(outputDir, "test0.xml.txt");
-        String resultString = FileUtils.readFileToString(outputFile, UTF_8);
+        Path outputFile = outputDir.resolve("test0.xml.txt");
+        String resultString = readFileToString(outputFile, UTF_8);
         assertFalse(resultString.contains("<html xmlns=\"http://www.w3.org/1999/xhtml\">"));
         assertFalse(resultString.contains("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"));
         assertTrue(resultString.contains("This is tika-batch's first test file"));
@@ -85,7 +84,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
     @Test
     public void testXMLWithWriteLimit() throws Exception {
-        File outputDir = getNewOutputDir("handler-xml-write-limit-");
+        Path outputDir = getNewOutputDir("handler-xml-write-limit-");
 
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("writeLimit", "5");
@@ -93,8 +92,8 @@ public class HandlerBuilderTest extends FSBatchTestBase {
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
 
-        File outputFile = new File(outputDir, "test0.xml.xml");
-        String resultString = FileUtils.readFileToString(outputFile, UTF_8);
+        Path outputFile = outputDir.resolve("test0.xml.xml");
+        String resultString = readFileToString(outputFile, UTF_8);
         //this is not ideal. How can we change handlers to writeout whatever
         //they've gotten so far, up to the writeLimit?
         assertTrue(resultString.equals(""));
@@ -102,7 +101,7 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
     @Test
     public void testRecursiveParserWrapper() throws Exception {
-        File outputDir = getNewOutputDir("handler-recursive-parser");
+        Path outputDir = getNewOutputDir("handler-recursive-parser");
 
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("basicHandlerType", "txt");
@@ -111,8 +110,8 @@ public class HandlerBuilderTest extends FSBatchTestBase {
 
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
-        File outputFile = new File(outputDir, "test0.xml.json");
-        String resultString = FileUtils.readFileToString(outputFile, UTF_8);
+        Path outputFile = outputDir.resolve("test0.xml.json");
+        String resultString = readFileToString(outputFile, UTF_8);
         assertTrue(resultString.contains("\"author\":\"Nikolai Lobachevsky\""));
         assertTrue(resultString.contains("tika-batch\\u0027s first test file"));
     }

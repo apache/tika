@@ -1,5 +1,10 @@
 Release 1.11 - Current Development
 
+  * Upgraded tika-batch to use Path throughout (TIKA-1747 and
+    (TIKA-1754).
+
+  * Upgraded to Path in TikaInputStream (via Yaniv Kunda) (TIKA-1744).
+
   * Changed default content handler type for "/rmeta" in tika-server
     to "xml" to align with "-J" option in tika-app.  
     Clients can now specify handler types via PathParam. (TIKA-1716).

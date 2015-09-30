@@ -20,7 +20,7 @@ package org.apache.tika.batch.fs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -33,11 +33,11 @@ public class OutputStreamFactoryTest extends FSBatchTestBase {
 
     @Test
     public void testIllegalState() throws Exception {
-        File outputDir = getNewOutputDir("os-factory-illegal-state-");
+        Path outputDir = getNewOutputDir("os-factory-illegal-state-");
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         run(runner);
-        assertEquals(1, outputDir.listFiles().length);
+        assertEquals(1, countChildren(outputDir));
 
         boolean illegalState = false;
         try {
@@ -52,16 +52,16 @@ public class OutputStreamFactoryTest extends FSBatchTestBase {
 
     @Test
     public void testSkip() throws Exception {
-        File outputDir = getNewOutputDir("os-factory-skip-");
+        Path outputDir = getNewOutputDir("os-factory-skip-");
         Map<String, String> args = getDefaultArgs("basic", outputDir);
         args.put("handleExisting", "skip");
         BatchProcess runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         ParallelFileProcessingResult result = run(runner);
-        assertEquals(1, outputDir.listFiles().length);
+        assertEquals(1, countChildren(outputDir));
 
         runner = getNewBatchRunner("/tika-batch-config-test.xml", args);
         result = run(runner);
-        assertEquals(1, outputDir.listFiles().length);
+        assertEquals(1, countChildren(outputDir));
     }
 
     /* turn this back on if there is any need to add "handleExisting"

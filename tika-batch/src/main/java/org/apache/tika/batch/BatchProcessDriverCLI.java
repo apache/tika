@@ -16,15 +16,17 @@ package org.apache.tika.batch;
  * limitations under the License.
  */
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -32,8 +34,6 @@ import java.util.Locale;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class BatchProcessDriverCLI {
 
@@ -252,7 +252,7 @@ public class BatchProcessDriverCLI {
 
     private void start() throws Exception {
         ProcessBuilder builder = new ProcessBuilder(commandLine);
-        builder.directory(new File("."));
+        builder.directory(Paths.get(".").toFile());
         process = builder.start();
 
         errorWatcher = new StreamWatcher(process.getErrorStream());

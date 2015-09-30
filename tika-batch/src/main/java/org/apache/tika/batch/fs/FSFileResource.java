@@ -20,6 +20,9 @@ package org.apache.tika.batch.fs;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
 
 import org.apache.tika.batch.FileResource;
@@ -39,21 +42,49 @@ import org.apache.tika.metadata.Metadata;
  */
 public class FSFileResource implements FileResource {
 
-    private final File fullPath;
+    private final Path fullPath;
     private final String relativePath;
     private final Metadata metadata;
 
+    /**
+     *
+     * @param inputRoot
+     * @param fullPath
+     * @see FSFileResource#FSFileResource(Path, Path)
+     * @deprecated to be removed in Tika 2.0
+     */
+    @Deprecated
     public FSFileResource(File inputRoot, File fullPath) {
+        this(Paths.get(inputRoot.getAbsolutePath()),
+                Paths.get(fullPath.getAbsolutePath()));
+    }
+
+    /**
+     * Constructor
+     *
+     * @param inputRoot the input root for the file
+     * @param fullPath the full path to the file
+     * @throws IllegalArgumentException if the fullPath is not
+     * a child of inputRoot
+     */
+    public FSFileResource(Path inputRoot, Path fullPath) {
         this.fullPath = fullPath;
         this.metadata = new Metadata();
         //child path must actually be a child
-        assert(FSUtil.checkThisIsAncestorOfThat(inputRoot, fullPath));
-        this.relativePath = fullPath.getAbsolutePath().substring(inputRoot.getAbsolutePath().length()+1);
+        assert(fullPath.toAbsolutePath().startsWith(inputRoot.toAbsolutePath()));
+        this.relativePath = inputRoot.relativize(fullPath).toString();
 
         //need to set these now so that the filter can determine
         //whether or not to crawl this file
-        metadata.set(Metadata.RESOURCE_NAME_KEY, fullPath.getName());
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(fullPath.length()));
+        metadata.set(Metadata.RESOURCE_NAME_KEY, fullPath.getFileName().toString());
+        long sz = -1;
+        try {
+            sz = Files.size(fullPath);
+        } catch (IOException e) {
+            //swallow
+            //not existent file will be handled downstream
+        }
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(sz));
         metadata.set(FSProperties.FS_REL_PATH, relativePath);
         metadata.set(FileResource.FILE_EXTENSION, getExtension(fullPath));
     }
@@ -67,8 +98,8 @@ public class FSFileResource implements FileResource {
      * @param fullPath full path from which to try to find an extension
      * @return the lowercased extension or an empty string
      */
-    private String getExtension(File fullPath) {
-        String p = fullPath.getName();
+    private String getExtension(Path fullPath) {
+        String p = fullPath.getFileName().toString();
         int i = p.lastIndexOf(".");
         if (i > -1) {
             return p.substring(i + 1).toLowerCase(Locale.ROOT);

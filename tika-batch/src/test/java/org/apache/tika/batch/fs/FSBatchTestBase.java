@@ -17,11 +17,21 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -29,7 +39,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.batch.BatchProcess;
@@ -56,17 +65,13 @@ import org.junit.BeforeClass;
  */
 public abstract class FSBatchTestBase extends TikaTest {
 
-    private static File outputRoot = null;
+    private static Path outputRoot = null;
 
     @BeforeClass
     public static void setUp() throws Exception {
-
-        File testOutput = new File("target/test-classes/test-output");
-        testOutput.mkdirs();
-        outputRoot = File.createTempFile("tika-batch-output-root-", "", testOutput);
-        outputRoot.delete();
-        outputRoot.mkdirs();
-
+        Path testOutput = Paths.get("target/test-classes/test-output");
+        Files.createDirectories(testOutput);
+        outputRoot = Files.createTempDirectory(testOutput, "tika-batch-output-root-");
     }
 
     @AfterClass
@@ -75,7 +80,7 @@ public abstract class FSBatchTestBase extends TikaTest {
         //see caveat in TikaCLITest's textExtract
 
         try {
-            FileUtils.deleteDirectory(outputRoot);
+            deleteDirectory(outputRoot);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -92,32 +97,33 @@ public abstract class FSBatchTestBase extends TikaTest {
         }
     }
 
-    File getNewOutputDir(String subdirPrefix) throws IOException {
-        File outputDir = File.createTempFile(subdirPrefix, "", outputRoot);
-        outputDir.delete();
-        outputDir.mkdirs();
+    Path getNewOutputDir(String subdirPrefix) throws IOException {
+        Path outputDir = Files.createTempDirectory(outputRoot, subdirPrefix);
+        assert(countChildren(outputDir) == 0);
         return outputDir;
     }
 
-    Map<String, String> getDefaultArgs(String inputSubDir, File outputDir) throws Exception {
-        Map<String, String> args = new HashMap<String, String>();
-        args.put("inputDir", "\""+getInputRoot(inputSubDir).getAbsolutePath()+"\"");
+    Map<String, String> getDefaultArgs(String inputSubDir, Path outputDir) throws Exception {
+        Map<String, String> args = new HashMap<>();
+
+        args.put("inputDir", "\""+getInputRoot(inputSubDir).toString()+"\"");
         if (outputDir != null) {
-            args.put("outputDir", "\""+outputDir.getAbsolutePath()+"\"");
+            args.put("outputDir", "\""+outputDir.toString()+"\"");
         }
         return args;
     }
 
-    public String[] getDefaultCommandLineArgsArr(String inputSubDir, File outputDir, Map<String, String> commandLine) throws Exception {
-        List<String> args = new ArrayList<String>();
+    public String[] getDefaultCommandLineArgsArr(String inputSubDir,
+                                                 Path outputDir, Map<String, String> commandLine) throws Exception {
+        List<String> args = new ArrayList<>();
         //need to include "-" because these are going to the commandline!
         if (inputSubDir != null) {
             args.add("-inputDir");
-            args.add(getInputRoot(inputSubDir).getAbsolutePath());
+            args.add(getInputRoot(inputSubDir).toAbsolutePath().toString());
         }
         if (outputDir != null) {
             args.add("-outputDir");
-            args.add(outputDir.getAbsolutePath());
+            args.add(outputDir.toAbsolutePath().toString());
         }
         if (commandLine != null) {
             for (Map.Entry<String, String> e : commandLine.entrySet()) {
@@ -129,9 +135,9 @@ public abstract class FSBatchTestBase extends TikaTest {
     }
 
 
-    public File getInputRoot(String subdir) throws Exception {
+    public Path getInputRoot(String subdir) throws Exception {
         String path = (subdir == null || subdir.length() == 0) ? "/test-input" : "/test-input/"+subdir;
-        return new File(this.getClass().getResource(path).toURI());
+        return Paths.get(this.getClass().getResource(path).toURI());
     }
 
     BatchProcess getNewBatchRunner(String testConfig,
@@ -145,18 +151,19 @@ public abstract class FSBatchTestBase extends TikaTest {
     }
 
     public ProcessBuilder getNewBatchRunnerProcess(String testConfig, Map<String, String> args) {
-        List<String> argList = new ArrayList<String>();
+        List<String> argList = new ArrayList<>();
         for (Map.Entry<String, String> e : args.entrySet()) {
             argList.add("-"+e.getKey());
             argList.add(e.getValue());
         }
 
-        String[] fullCommandLine = commandLine(testConfig, argList.toArray(new String[argList.size()]));
+        String[] fullCommandLine = commandLine(testConfig,
+                argList.toArray(new String[argList.size()]));
         return new ProcessBuilder(fullCommandLine);
     }
 
     private String[] commandLine(String testConfig, String[] args) {
-        List<String> commandLine = new ArrayList<String>();
+        List<String> commandLine = new ArrayList<>();
         commandLine.add("java");
         commandLine.add("-Dlog4j.configuration=file:"+
             this.getClass().getResource("/log4j_process.properties").getFile());
@@ -171,9 +178,14 @@ public abstract class FSBatchTestBase extends TikaTest {
         commandLine.add(cp);
         commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
 
-        String configFile = this.getClass().getResource(testConfig).getFile();
-        commandLine.add("-bc");
+        String configFile = null;
+        try {
+            configFile = Paths.get(this.getClass().getResource(testConfig).toURI()).toAbsolutePath().toString();
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
 
+        commandLine.add("-bc");
         commandLine.add(configFile);
 
         for (String s : args) {
@@ -184,7 +196,7 @@ public abstract class FSBatchTestBase extends TikaTest {
 
     public BatchProcessDriverCLI getNewDriver(String testConfig,
                                               String[] args) throws Exception {
-        List<String> commandLine = new ArrayList<String>();
+        List<String> commandLine = new ArrayList<>();
         commandLine.add("java");
         commandLine.add("-Xmx128m");
         commandLine.add("-cp");
@@ -197,7 +209,8 @@ public abstract class FSBatchTestBase extends TikaTest {
         commandLine.add(cp);
         commandLine.add("org.apache.tika.batch.fs.FSBatchProcessCLI");
 
-        String configFile = this.getClass().getResource(testConfig).getFile();
+        String configFile = Paths.get(
+                this.getClass().getResource(testConfig).toURI()).toAbsolutePath().toString();
         commandLine.add("-bc");
 
         commandLine.add(configFile);
@@ -216,5 +229,73 @@ public abstract class FSBatchTestBase extends TikaTest {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Future<ParallelFileProcessingResult> futureResult = executor.submit(process);
         return futureResult.get(10, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Counts immediate children only, does not work recursively
+     * @param p
+     * @return
+     * @throws IOException
+     */
+    public static int countChildren(Path p) throws IOException {
+        int i = 0;
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(p)) {
+            Iterator<Path> it = ds.iterator();
+            while (it.hasNext()) {
+                i++;
+                it.next();
+            }
+        }
+        return i;
+    }
+
+    //REMOVE THIS AND USE FileUtils, once a java 7 option has been added.
+    public static String readFileToString(Path p, Charset cs) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        try (BufferedReader r = Files.newBufferedReader(p, cs)) {
+            String line = r.readLine();
+            while (line != null) {
+                sb.append(line).append("\n");
+                line = r.readLine();
+            }
+        }
+        return sb.toString();
+    }
+
+    //TODO: move this into FileUtils
+    public static void deleteDirectory(Path dir) throws IOException {
+        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file,
+                                             BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir,
+                                                      IOException exc) throws IOException {
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+
+        });
+    }
+
+    /**
+     * helper method equivalent to File#listFiles()
+     * grabs children only, does not walk recursively
+     * @param p
+     * @return
+     */
+    public static List<Path> listPaths(Path p) throws IOException {
+        List<Path> list = new ArrayList<>();
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(p)) {
+            Iterator<Path> it = ds.iterator();
+            while (it.hasNext()) {
+                list.add(it.next());
+            }
+        }
+        return list;
     }
 }

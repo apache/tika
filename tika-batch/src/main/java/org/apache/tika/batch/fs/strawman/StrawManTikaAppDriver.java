@@ -17,11 +17,15 @@ package org.apache.tika.batch.fs.strawman;
  * limitations under the License.
  */
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -53,111 +57,107 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
     private static AtomicInteger threadCount = new AtomicInteger(0);
     private final int totalThreads;
     private final int threadNum;
-    private int rootLen = -1;
-    private File inputDir = null;
-    private File outputDir = null;
+    private Path inputRoot = null;
+    private Path outputRoot = null;
     private String[] args = null;
     private Logger logger = LoggerFactory.getLogger(StrawManTikaAppDriver.class);
 
 
-    public StrawManTikaAppDriver(File inputDir, File outputDir, int totalThreads, String[] args) {
-        rootLen = inputDir.getAbsolutePath().length()+1;
-        this.inputDir = inputDir;
-        this.outputDir = outputDir;
+    public StrawManTikaAppDriver(Path inputRoot, Path outputRoot,
+                                 int totalThreads, String[] args) {
+        this.inputRoot = inputRoot;
+        this.outputRoot = outputRoot;
         this.args = args;
         threadNum = threadCount.getAndIncrement();
         this.totalThreads = totalThreads;
     }
 
 
-    private int processDirectory(File inputDir) {
-        int processed = 0;
-        if (inputDir == null || inputDir.listFiles() == null) {
+    private class TikaVisitor extends SimpleFileVisitor<Path> {
+        private int processed = 0;
+
+        int getProcessed() {
             return processed;
         }
-        for (File f : inputDir.listFiles()) {
-            List<File> childDirs = new ArrayList<File>();
-            if (f.isDirectory()) {
-                childDirs.add(f);
-            } else {
-                processed += processFile(f);
+        @Override
+        public FileVisitResult visitFile(Path file,
+                                         BasicFileAttributes attr) {
+            if (totalThreads > 1) {
+                int hashCode = file.toAbsolutePath().toString().hashCode();
+                if (Math.abs(hashCode % totalThreads) != threadNum) {
+                    return FileVisitResult.CONTINUE;
+                }
             }
-            for (File dir : childDirs) {
-                processed += processDirectory(dir);
+            assert(file.startsWith(inputRoot));
+            Path relPath = inputRoot.relativize(file);
+            Path outputFile = Paths.get(outputRoot.toAbsolutePath().toString(),
+                    relPath.toString() + ".txt");
+            try {
+                Files.createDirectories(outputFile.getParent());
+            } catch (IOException e) {
+                logger.error(MarkerFactory.getMarker("FATAL"),
+                        "parent directory for "+ outputFile + " was not made!");
+                throw new RuntimeException("couldn't make parent file for " + outputFile);
+            }
+            List<String> commandLine = new ArrayList<>();
+            for (String arg : args) {
+                commandLine.add(arg);
+            }
+            commandLine.add("-t");
+            commandLine.add("\""+outputFile.toAbsolutePath()+"\"");
+            ProcessBuilder builder = new ProcessBuilder(commandLine.toArray(new String[commandLine.size()]));
+            logger.info("about to process: "+file.toAbsolutePath());
+            Process proc = null;
+            RedirectGobbler gobbler = null;
+            Thread gobblerThread = null;
+            try {
+                OutputStream os = Files.newOutputStream(outputFile);
+                proc = builder.start();
+                gobbler = new RedirectGobbler(proc.getInputStream(), os);
+                gobblerThread = new Thread(gobbler);
+                gobblerThread.start();
+            } catch (IOException e) {
+                logger.error(e.getMessage());
+                return FileVisitResult.CONTINUE;
+            }
 
+            boolean finished = false;
+            long totalTime = 180000;//3 minutes
+            long pulse = 100;
+            for (int i = 0; i < totalTime; i += pulse) {
+                try {
+                    Thread.currentThread().sleep(pulse);
+                } catch (InterruptedException e) {
+                    //swallow
+                }
+                try {
+                    int exit = proc.exitValue();
+                    finished = true;
+                    break;
+                } catch (IllegalThreadStateException e) {
+                    //swallow
+                }
             }
+            if (!finished) {
+                logger.warn("Had to kill process working on: " + file.toAbsolutePath());
+                proc.destroy();
+            }
+            gobbler.close();
+            gobblerThread.interrupt();
+            processed++;
+            return FileVisitResult.CONTINUE;
         }
-        return processed;
+
     }
 
-    private int processFile(File f) {
-        if (totalThreads > 1) {
-            int hashCode = f.getAbsolutePath().hashCode();
-            if (Math.abs(hashCode % totalThreads) != threadNum) {
-                return 0;
-            }
-        }
-        File outputFile = new File(outputDir, f.getAbsolutePath().substring(rootLen)+".txt");
-        outputFile.getAbsoluteFile().getParentFile().mkdirs();
-        if (! outputFile.getParentFile().exists()) {
-            logger.error(MarkerFactory.getMarker("FATAL"),
-                    "parent directory for "+ outputFile + " was not made!");
-            throw new RuntimeException("couldn't make parent file for " + outputFile);
-        }
-        List<String> commandLine = new ArrayList<String>();
-        for (String arg : args) {
-            commandLine.add(arg);
-        }
-        commandLine.add("-t");
-        commandLine.add("\""+f.getAbsolutePath()+"\"");
-        ProcessBuilder builder = new ProcessBuilder(commandLine.toArray(new String[commandLine.size()]));
-        logger.info("about to process: "+f.getAbsolutePath());
-        Process proc = null;
-        RedirectGobbler gobbler = null;
-        Thread gobblerThread = null;
-        try {
-            OutputStream os = new FileOutputStream(outputFile);
-            proc = builder.start();
-            gobbler = new RedirectGobbler(proc.getInputStream(), os);
-            gobblerThread = new Thread(gobbler);
-            gobblerThread.start();
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-            return 0;
-        }
-
-        boolean finished = false;
-        long totalTime = 180000;//3 minutes
-        long pulse = 100;
-        for (int i = 0; i < totalTime; i += pulse) {
-            try {
-                Thread.currentThread().sleep(pulse);
-            } catch (InterruptedException e) {
-                //swallow
-            }
-            try {
-                int exit = proc.exitValue();
-                finished = true;
-                break;
-            } catch (IllegalThreadStateException e) {
-                //swallow
-            }
-        }
-        if (!finished) {
-            logger.warn("Had to kill process working on: " + f.getAbsolutePath());
-            proc.destroy();
-        }
-        gobbler.close();
-        gobblerThread.interrupt();
-        return 1;
-    }
 
 
     @Override
     public Integer call() throws Exception {
         long start = new Date().getTime();
-
-        int processed = processDirectory(inputDir);
+        TikaVisitor v = new TikaVisitor();
+        Files.walkFileTree(inputRoot, v);
+        int processed = v.getProcessed();
         double elapsedSecs = ((double)new Date().getTime()-(double)start)/(double)1000;
         logger.info("Finished processing " + processed + " files in " + elapsedSecs + " seconds.");
         return processed;
@@ -202,6 +202,8 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         }
     }
 
+
+
     public static String usage() {
         StringBuilder sb = new StringBuilder();
         sb.append("Example usage:\n");
@@ -216,8 +218,8 @@ public class StrawManTikaAppDriver implements Callable<Integer> {
         if (args.length < 6) {
             System.err.println(StrawManTikaAppDriver.usage());
         }
-        File inputDir = new File(args[0]);
-        File outputDir = new File(args[1]);
+        Path inputDir = Paths.get(args[0]);
+        Path outputDir = Paths.get(args[1]);
         int totalThreads = Integer.parseInt(args[2]);
 
         List<String> commandLine = new ArrayList<String>();

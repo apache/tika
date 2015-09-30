@@ -17,8 +17,10 @@
 
 package org.apache.tika.cli;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -132,14 +134,15 @@ class BatchCommandLineBuilder {
         //if there are only two args and they are both directories, treat the first
         //as input and the second as output.
         if (args.length == 2 && !args[0].startsWith("-") && ! args[1].startsWith("-")) {
-            File candInput = new File(args[0]);
-            File candOutput = new File(args[1]);
-            if (candOutput.isFile()) {
+            Path candInput = Paths.get(args[0]);
+            Path candOutput = Paths.get(args[1]);
+
+            if (Files.isRegularFile(candOutput)) {
                 throw new IllegalArgumentException("Can't specify an existing file as the "+
                 "second argument for the output directory of a batch process");
             }
 
-            if (candInput.isDirectory()){
+            if (Files.isDirectory(candInput)) {
                 map.put("-inputDir", args[0]);
                 map.put("-outputDir", args[1]);
             }

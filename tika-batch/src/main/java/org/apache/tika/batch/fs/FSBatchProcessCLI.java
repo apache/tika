@@ -17,9 +17,10 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -68,7 +69,7 @@ public class FSBatchProcessCLI {
 
     private TikaInputStream getConfigInputStream(String[] args, boolean logDefault) throws IOException {
         TikaInputStream is = null;
-        File batchConfigFile = getConfigFile(args);
+        Path batchConfigFile = getConfigFile(args);
         if (batchConfigFile != null) {
             //this will throw IOException if it can't find a specified config file
             //better to throw an exception than silently back off to default.
@@ -131,12 +132,12 @@ public class FSBatchProcessCLI {
         System.exit(result.getExitStatus());
     }
 
-    private File getConfigFile(String[] args) {
-        File configFile = null;
+    private Path getConfigFile(String[] args) {
+        Path configFile = null;
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-bc") || args[i].equals("-batch-config")) {
                 if (i < args.length-1) {
-                    configFile = new File(args[i+1]);
+                    configFile = Paths.get(args[i+1]);
                 }
             }
         }
