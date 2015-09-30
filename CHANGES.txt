@@ -1,4 +1,9 @@
 Release 1.11 - Current Development
+  
+  * Prevent infinite recursion when processing inline images
+    in PDF files by limiting extraction of duplicate images
+    within the same page (TIKA-1742).
+
   * Upgrade to POI 3.13-final (via Andreas Beeker) (TIKA-1707).
 
   * Upgraded tika-batch to use Path throughout (TIKA-1747 and
