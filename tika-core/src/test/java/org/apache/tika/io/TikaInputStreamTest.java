@@ -21,15 +21,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
@@ -38,13 +35,13 @@ public class TikaInputStreamTest {
 
     @Test
     public void testFileBased() throws IOException {
-        File file = createTempFile("Hello, World!");
-        InputStream stream = TikaInputStream.get(file);
+        Path path = createTempFile("Hello, World!");
+        InputStream stream = TikaInputStream.get(path);
 
         assertEquals(
                 "The file returned by the getFile() method should"
                 + " be the file used to instantiate a TikaInputStream",
-                file, TikaInputStream.get(stream).getFile());
+                path, TikaInputStream.get(stream).getPath());
 
         assertEquals(
                 "The contents of the TikaInputStream should equal the"
@@ -54,20 +51,19 @@ public class TikaInputStreamTest {
         stream.close();
         assertTrue(
                 "The close() method must not remove the file used to"
-                + " instantiate a TikaInputStream",
-                file.exists());
+                        + " instantiate a TikaInputStream",
+                Files.exists(path));
 
-        file.delete();
+        Files.delete(path);
     }
 
     @Test
     public void testStreamBased() throws IOException {
-        InputStream input =
-            new ByteArrayInputStream("Hello, World!".getBytes(UTF_8));
+        InputStream input = IOUtils.toInputStream("Hello, World!", UTF_8.name());
         InputStream stream = TikaInputStream.get(input);
 
-        File file = TikaInputStream.get(stream).getFile();
-        assertTrue(file != null && file.isFile());
+        Path file = TikaInputStream.get(stream).getPath();
+        assertTrue(file != null && Files.isRegularFile(file));
 
         assertEquals(
                 "The contents of the file returned by the getFile method"
@@ -83,27 +79,21 @@ public class TikaInputStreamTest {
         assertFalse(
                 "The close() method must remove the temporary file created"
                 + " by a TikaInputStream",
-                file.exists());
+                Files.exists(file));
     }
 
-    private File createTempFile(String data) throws IOException {
-        File file = File.createTempFile("tika-", ".tmp");
-        try (OutputStream stream = new FileOutputStream(file)) {
-            stream.write(data.getBytes(UTF_8));
-        }
+    private Path createTempFile(String data) throws IOException {
+        Path file = Files.createTempFile("tika-", ".tmp");
+        Files.write(file, data.getBytes(UTF_8));
         return file;
     }
 
-    private String readFile(File file) throws IOException {
-        try (InputStream stream = new FileInputStream(file)) {
-            return readStream(stream);
-        }
+    private String readFile(Path file) throws IOException {
+        return new String(Files.readAllBytes(file), UTF_8);
     }
 
     private String readStream(InputStream stream) throws IOException {
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-        IOUtils.copy(stream, buffer);
-        return buffer.toString(UTF_8.name());
+        return IOUtils.toString(stream, UTF_8.name());
     }
 
     @Test
@@ -113,7 +103,7 @@ public class TikaInputStreamTest {
         TikaInputStream.get(url, metadata).close();
         assertEquals("test.txt", metadata.get(Metadata.RESOURCE_NAME_KEY));
         assertEquals(
-                Long.toString(new File(url.toURI()).length()),
+                Long.toString(Files.size(Paths.get(url.toURI()))),
                 metadata.get(Metadata.CONTENT_LENGTH));
     }
 

@@ -16,21 +16,24 @@
  */
 package org.apache.tika.io;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Blob;
 import java.sql.SQLException;
 
@@ -193,6 +196,39 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
+     * Creates a TikaInputStream from the file at the given path.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
+     *
+     * @param path input file
+     * @return a TikaInputStream instance
+     * @throws IOException if an I/O error occurs
+     */
+    public static TikaInputStream get(Path path) throws IOException {
+        return get(path, new Metadata());
+    }
+
+    /**
+     * Creates a TikaInputStream from the file at the given path. The file name
+     * and length are stored as input metadata in the given metadata instance.
+     * <p>
+     * Note that you must always explicitly close the returned stream to
+     * prevent leaking open file handles.
+     *
+     * @param path input file
+     * @param metadata metadata instance
+     * @return a TikaInputStream instance
+     * @throws IOException if an I/O error occurs
+     */
+    public static TikaInputStream get(Path path, Metadata metadata)
+            throws IOException {
+        metadata.set(Metadata.RESOURCE_NAME_KEY, path.getFileName().toString());
+        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
+        return new TikaInputStream(path);
+    }
+
+    /**
      * Creates a TikaInputStream from the given file.
      * <p>
      * Note that you must always explicitly close the returned stream to
@@ -201,6 +237,8 @@ public class TikaInputStream extends TaggedInputStream {
      * @param file input file
      * @return a TikaInputStream instance
      * @throws FileNotFoundException if the file does not exist
+     * @deprecated use #get(Path). In Tika 2.0, this will be removed
+     * or modified to throw an IOException.
      */
     public static TikaInputStream get(File file) throws FileNotFoundException {
         return get(file, new Metadata());
@@ -217,6 +255,9 @@ public class TikaInputStream extends TaggedInputStream {
      * @param metadata metadata instance
      * @return a TikaInputStream instance
      * @throws FileNotFoundException if the file does not exist
+     * or cannot be opened for reading
+     * @deprecated use #get(Path, Metadata). In Tika 2.0,
+     * this will be removed or modified to throw an IOException.
      */
     public static TikaInputStream get(File file, Metadata metadata)
             throws FileNotFoundException {
@@ -314,9 +355,9 @@ public class TikaInputStream extends TaggedInputStream {
             throws IOException {
         // Special handling for file:// URIs
         if ("file".equalsIgnoreCase(uri.getScheme())) {
-            File file = new File(uri);
-            if (file.isFile()) {
-                return get(file, metadata);
+            Path path = Paths.get(uri);
+            if (Files.isRegularFile(path)) {
+                return get(path, metadata);
             }
         }
 
@@ -354,9 +395,9 @@ public class TikaInputStream extends TaggedInputStream {
         // Special handling for file:// URLs
         if ("file".equalsIgnoreCase(url.getProtocol())) {
             try {
-                File file = new File(url.toURI());
-                if (file.isFile()) {
-                    return get(file, metadata);
+                Path path = Paths.get(url.toURI());
+                if (Files.isRegularFile(path)) {
+                    return get(path, metadata);
                 }
             } catch (URISyntaxException e) {
                 // fall through
@@ -392,13 +433,13 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
-     * The file that contains the contents of this stream. This is either
-     * the original file passed to the {@link #TikaInputStream(File)}
-     * constructor or a temporary file created by a call to the
-     * {@link #getFile()} method. If neither has been called, then
-     * the value is <code>null</code>.
+     * The path to the file that contains the contents of this stream.
+     * This is either the original file passed to the
+     * {@link #TikaInputStream(Path)} constructor or a temporary file created
+     * by a call to the {@link #getPath()} method. If neither has been called,
+     * then the value is <code>null</code>.
      */
-    private File file;
+    private Path path;
 
     /**
      * Tracker of temporary resources.
@@ -431,12 +472,27 @@ public class TikaInputStream extends TaggedInputStream {
      * Creates a TikaInputStream instance. This private constructor is used
      * by the static factory methods based on the available information.
      *
+     * @param path the path to the file that contains the stream
+     * @throws IOException if an I/O error occurs
+     */
+    private TikaInputStream(Path path) throws IOException {
+        super(new BufferedInputStream(Files.newInputStream(path)));
+        this.path = path;
+        this.tmp = new TemporaryResources();
+        this.length = Files.size(path);
+    }
+
+    /**
+     * Creates a TikaInputStream instance. This private constructor is used
+     * by the static factory methods based on the available information.
+     *
      * @param file the file that contains the stream
      * @throws FileNotFoundException if the file does not exist
+     * @deprecated use #TikaInputStream(Path)
      */
     private TikaInputStream(File file) throws FileNotFoundException {
         super(new BufferedInputStream(new FileInputStream(file)));
-        this.file = file;
+        this.path = file.toPath();
         this.tmp = new TemporaryResources();
         this.length = file.length();
     }
@@ -456,7 +512,7 @@ public class TikaInputStream extends TaggedInputStream {
     private TikaInputStream(
             InputStream stream, TemporaryResources tmp, long length) {
         super(stream);
-        this.file = null;
+        this.path = null;
         this.tmp = tmp;
         this.length = length;
     }
@@ -515,22 +571,20 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     public boolean hasFile() {
-        return file != null;
+        return path != null;
     }
 
-    public File getFile() throws IOException {
-        if (file == null) {
+    public Path getPath() throws IOException {
+        if (path == null) {
             if (position > 0) {
                 throw new IOException("Stream is already being read");
             } else {
                 // Spool the entire stream into a temporary file
-                file = tmp.createTemporaryFile();
-                try (OutputStream out = new FileOutputStream(file)) {
-                    IOUtils.copy(in, out);
-                }
+                path = tmp.createTempFile();
+                Files.copy(in, path, REPLACE_EXISTING);
 
                 // Create a new input stream and make sure it'll get closed
-                FileInputStream newStream = new FileInputStream(file);
+                InputStream newStream = Files.newInputStream(path);
                 tmp.addResource(newStream);
 
                 // Replace the spooled stream with the new stream in a way
@@ -545,16 +599,21 @@ public class TikaInputStream extends TaggedInputStream {
                     }
                 };
 
-                length = file.length();
+                length = Files.size(path);
             }
         }
-        return file;
+        return path;
+    }
+
+    /**
+     * @see #getPath()
+     */
+    public File getFile() throws IOException {
+        return getPath().toFile();
     }
 
     public FileChannel getFileChannel() throws IOException {
-        FileInputStream fis = new FileInputStream(getFile());
-        tmp.addResource(fis);
-        FileChannel channel = fis.getChannel();
+        FileChannel channel = FileChannel.open(getPath());
         tmp.addResource(channel);
         return channel;
     }
@@ -566,7 +625,7 @@ public class TikaInputStream extends TaggedInputStream {
     /**
      * Returns the length (in bytes) of this stream. Note that if the length
      * was not available when this stream was instantiated, then this method
-     * will use the {@link #getFile()} method to buffer the entire stream to
+     * will use the {@link #getPath()} method to buffer the entire stream to
      * a temporary file in order to calculate the stream length. This case
      * will only work if the stream has not yet been consumed.
      *
@@ -575,7 +634,7 @@ public class TikaInputStream extends TaggedInputStream {
      */
     public long getLength() throws IOException {
         if (length == -1) {
-            length = getFile().length();
+            getPath(); // updates length internally
         }
         return length;
     }
@@ -616,7 +675,7 @@ public class TikaInputStream extends TaggedInputStream {
 
     @Override
     public void close() throws IOException {
-        file = null;
+        path = null;
         mark = -1;
 
         // The close method was explicitly called, so we indeed
@@ -638,7 +697,7 @@ public class TikaInputStream extends TaggedInputStream {
     public String toString() {
         String str = "TikaInputStream of ";
         if (hasFile()) {
-            str += file.toString();
+            str += path.toString();
         } else {
             str += in.toString();
         }
