@@ -238,7 +238,7 @@ public class PDFParserConfig implements Serializable {
      * set to <code>true</code>.
      * <p>
      * Because of TIKA-1742 -- to avoid infinite recursion -- no matter the setting
-     * of this parameter, the extractor will only pull out one copy of one image per
+     * of this parameter, the extractor will only pull out one copy of each image per
      * page.  This parameter tries to capture uniqueness across the entire document.
      *
      * @param extractUniqueInlineImagesOnly
