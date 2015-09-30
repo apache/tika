@@ -19,10 +19,13 @@ package org.apache.tika.parser.gdal;
 
 //JDK imports
 
+import java.io.IOException;
 import java.io.InputStream;
+
 
 //Tika imports
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
@@ -30,6 +33,7 @@ import org.apache.tika.sax.BodyContentHandler;
 
 //Junit imports
 import org.junit.Test;
+import org.xml.sax.SAXException;
 
 import static org.junit.Assert.fail;
 import static org.junit.Assert.assertTrue;
@@ -48,45 +52,47 @@ public class TestGDALParser extends TikaTest {
         return ExternalParser.check(checkCmd);
     }
 
-    @Test
-    public void testParseBasicInfo() {
-        assumeTrue(canRun());
-        final String expectedDriver = "netCDF/Network Common Data Format";
-        final String expectedUpperRight = "512.0,    0.0";
-        final String expectedUpperLeft = "0.0,    0.0";
-        final String expectedLowerLeft = "0.0,  512.0";
-        final String expectedLowerRight = "512.0,  512.0";
-        final String expectedCoordinateSystem = "`'";
-        final String expectedSize = "512, 512";
+  @Test
+  public void testParseBasicInfo() {
+    assumeTrue(canRun());
+    final String expectedDriver = "netCDF/Network Common Data Format";
+    final String expectedUpperRight = "512.0,    0.0";
+    final String expectedUpperLeft = "0.0,    0.0";
+    final String expectedLowerLeft = "0.0,  512.0";
+    final String expectedLowerRight = "512.0,  512.0";
+    final String expectedCoordinateSystem = "`'";
+    final String expectedSize = "512, 512";
 
-        GDALParser parser = new GDALParser();
-        InputStream stream = TestGDALParser.class
-                .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
-        Metadata met = new Metadata();
-        BodyContentHandler handler = new BodyContentHandler();
-        try {
-            parser.parse(stream, handler, met, new ParseContext());
-            assertNotNull(met);
-            assertNotNull(met.get("Driver"));
-            assertEquals(expectedDriver, met.get("Driver"));
-            assumeTrue(met.get("Files") != null);
-            assertNotNull(met.get("Coordinate System"));
-            assertEquals(expectedCoordinateSystem, met.get("Coordinate System"));
-            assertNotNull(met.get("Size"));
-            assertEquals(expectedSize, met.get("Size"));
-            assertNotNull(met.get("Upper Right"));
-            assertEquals(expectedUpperRight, met.get("Upper Right"));
-            assertNotNull(met.get("Upper Left"));
-            assertEquals(expectedUpperLeft, met.get("Upper Left"));
-            assertNotNull(met.get("Upper Right"));
-            assertEquals(expectedLowerRight, met.get("Lower Right"));
-            assertNotNull(met.get("Upper Right"));
-            assertEquals(expectedLowerLeft, met.get("Lower Left"));
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail(e.getMessage());
-        }
+    GDALParser parser = new GDALParser();
+    InputStream stream = TestGDALParser.class
+        .getResourceAsStream("/test-documents/sresa1b_ncar_ccsm3_0_run1_200001.nc");
+    Metadata met = new Metadata();
+    BodyContentHandler handler = new BodyContentHandler();
+    try {
+      parser.parse(stream, handler, met, new ParseContext());
+    } catch (Exception e) {
+      e.printStackTrace();
+      fail(e.getMessage());
     }
+
+    assertNotNull(met);
+    assertNotNull(met.get("Driver"));
+    assertEquals(expectedDriver, met.get("Driver"));
+    assumeTrue(met.get("Files") != null);
+    assertNotNull(met.get("Coordinate System"));
+    assertEquals(expectedCoordinateSystem, met.get("Coordinate System"));
+    assertNotNull(met.get("Size"));
+    assertEquals(expectedSize, met.get("Size"));
+    assertNotNull(met.get("Upper Right"));
+    assertEquals(expectedUpperRight, met.get("Upper Right"));
+    assertNotNull(met.get("Upper Left"));
+    assertEquals(expectedUpperLeft, met.get("Upper Left"));
+    assertNotNull(met.get("Upper Right"));
+    assertEquals(expectedLowerRight, met.get("Lower Right"));
+    assertNotNull(met.get("Upper Right"));
+    assertEquals(expectedLowerLeft, met.get("Lower Left"));
+
+  }
 
     @Test
     public void testParseMetadata() {
