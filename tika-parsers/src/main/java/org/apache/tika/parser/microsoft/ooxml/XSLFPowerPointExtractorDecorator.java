@@ -34,11 +34,14 @@ import org.apache.poi.xslf.usermodel.XMLSlideShow;
 import org.apache.poi.xslf.usermodel.XSLFComments;
 import org.apache.poi.xslf.usermodel.XSLFGraphicFrame;
 import org.apache.poi.xslf.usermodel.XSLFGroupShape;
+import org.apache.poi.xslf.usermodel.XSLFNotes;
+import org.apache.poi.xslf.usermodel.XSLFNotesMaster;
 import org.apache.poi.xslf.usermodel.XSLFPictureShape;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xslf.usermodel.XSLFShape;
 import org.apache.poi.xslf.usermodel.XSLFSheet;
 import org.apache.poi.xslf.usermodel.XSLFSlide;
+import org.apache.poi.xslf.usermodel.XSLFSlideLayout;
 import org.apache.poi.xslf.usermodel.XSLFTable;
 import org.apache.poi.xslf.usermodel.XSLFTableCell;
 import org.apache.poi.xslf.usermodel.XSLFTableRow;
@@ -66,7 +69,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
 
-        XSLFSlide[] slides = slideShow.getSlides();
+        List<XSLFSlide> slides = slideShow.getSlides();
         for (XSLFSlide slide : slides) {
             String slideDesc;
             if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
@@ -80,7 +83,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             extractContent(slide.getShapes(), false, xhtml, slideDesc);
 
             // slide layout which is the master sheet for this slide
-            XSLFSheet slideLayout = slide.getMasterSheet();
+            XSLFSlideLayout slideLayout = slide.getMasterSheet();
             extractContent(slideLayout.getShapes(), true, xhtml, null);
 
             // slide master which is the master sheet for all text layouts
@@ -88,12 +91,12 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             extractContent(slideMaster.getShapes(), true, xhtml, null);
 
             // notes (if present)
-            XSLFSheet slideNotes = slide.getNotes();
+            XSLFNotes slideNotes = slide.getNotes();
             if (slideNotes != null) {
                 extractContent(slideNotes.getShapes(), false, xhtml, slideDesc);
 
                 // master sheet for this notes
-                XSLFSheet notesMaster = slideNotes.getMasterSheet();
+                XSLFNotesMaster notesMaster = slideNotes.getMasterSheet();
                 extractContent(notesMaster.getShapes(), true, xhtml, null);
             }
 
@@ -108,7 +111,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         }
     }
 
-    private void extractContent(XSLFShape[] shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml, String slideDesc)
+    private void extractContent(List<? extends XSLFShape> shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml, String slideDesc)
             throws SAXException {
         for (XSLFShape sh : shapes) {
             if (sh instanceof XSLFTextShape) {
@@ -126,7 +129,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 XSLFTable tbl = (XSLFTable) sh;
                 for (XSLFTableRow row : tbl) {
                     List<XSLFTableCell> cells = row.getCells();
-                    extractContent(cells.toArray(new XSLFTableCell[cells.size()]), skipPlaceholders, xhtml, slideDesc);
+                    extractContent(cells, skipPlaceholders, xhtml, slideDesc);
                 }
             } else if (sh instanceof XSLFGraphicFrame) {
                 XSLFGraphicFrame frame = (XSLFGraphicFrame) sh;
@@ -175,7 +178,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
      */
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
-        List<PackagePart> parts = new ArrayList<PackagePart>();
+        List<PackagePart> parts = new ArrayList<>();
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
         XSLFSlideShow document = null;
         try {
