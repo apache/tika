@@ -16,10 +16,13 @@ package org.apache.tika.batch.fs;
  * limitations under the License.
  */
 
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -37,14 +40,28 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
     }
 
     private final FSUtil.HANDLE_EXISTING handleExisting;
-    private final File outputRoot;
+    private final Path outputRoot;
     private final String suffix;
     private final COMPRESSION compression;
 
+    /**
+     *
+     * @param outputRoot
+     * @param handleExisting
+     * @param compression
+     * @param suffix
+     * @see #FSOutputStreamFactory(Path, FSUtil.HANDLE_EXISTING, COMPRESSION, String)
+     */
+    @Deprecated
     public FSOutputStreamFactory(File outputRoot, FSUtil.HANDLE_EXISTING handleExisting,
                                  COMPRESSION compression, String suffix) {
+        this(Paths.get(outputRoot.toURI()),
+                handleExisting, compression, suffix);
+    }
+    public FSOutputStreamFactory(Path outputRoot, FSUtil.HANDLE_EXISTING handleExisting,
+                                 COMPRESSION compression, String suffix) {
         this.handleExisting = handleExisting;
-        this.outputRoot = outputRoot.getAbsoluteFile();
+        this.outputRoot = outputRoot;
         this.suffix = suffix;
         this.compression = compression;
     }
@@ -68,27 +85,30 @@ public class FSOutputStreamFactory implements OutputStreamFactory {
     @Override
     public OutputStream getOutputStream(Metadata metadata) throws IOException {
         String initialRelativePath = metadata.get(FSProperties.FS_REL_PATH);
-        File outputFile = FSUtil.getOutputFile(outputRoot, initialRelativePath, handleExisting, suffix);
-        if (outputFile == null) {
+        Path outputPath = FSUtil.getOutputPath(outputRoot, initialRelativePath, handleExisting, suffix);
+        if (outputPath == null) {
             return null;
         }
-        if (! outputFile.getParentFile().isDirectory()) {
-            boolean success = outputFile.getParentFile().mkdirs();
-            //with multithreading, it is possible that the parent file was created between
-            //the test and the attempt to .mkdirs(); mkdirs() returns false if the dirs already exist
-            if (! success && ! outputFile.getParentFile().isDirectory()) {
-                throw new IOException("Couldn't create parent directory for:"+outputFile.getAbsolutePath());
+        if (!Files.isDirectory(outputPath.getParent())) {
+            Files.createDirectories(outputPath.getParent());
+            //TODO: shouldn't need this any more in java 7, right?
+            if (! Files.isDirectory(outputPath.getParent())) {
+                throw new IOException("Couldn't create parent directory for:"+outputPath.toAbsolutePath());
             }
         }
 
-        OutputStream os = new FileOutputStream(outputFile);
-        if (compression == COMPRESSION.BZIP2){
-            os = new BZip2CompressorOutputStream(os);
-        } else if (compression == COMPRESSION.GZIP) {
-            os = new GZIPOutputStream(os);
-        } else if (compression == COMPRESSION.ZIP) {
-            os = new ZipArchiveOutputStream(os);
+        OutputStream os = Files.newOutputStream(outputPath);
+        switch (compression) {
+            case BZIP2:
+                os = new BZip2CompressorOutputStream(os);
+                break;
+            case GZIP:
+                os = new GZIPOutputStream(os);
+                break;
+            case ZIP:
+                os = new ZipArchiveOutputStream(os);
+                break;
         }
-        return os;
+        return new BufferedOutputStream(os);
     }
 }

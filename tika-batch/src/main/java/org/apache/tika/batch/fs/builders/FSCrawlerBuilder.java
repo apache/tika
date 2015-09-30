@@ -18,7 +18,12 @@ package org.apache.tika.batch.fs.builders;
  */
 
 
-import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -30,6 +35,7 @@ import org.apache.tika.batch.builders.BatchProcessBuilder;
 import org.apache.tika.batch.builders.ICrawlerBuilder;
 import org.apache.tika.batch.fs.FSDirectoryCrawler;
 import org.apache.tika.batch.fs.FSDocumentSelector;
+import org.apache.tika.batch.fs.FSListCrawler;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.util.PropsUtil;
 import org.apache.tika.util.XMLDOMUtil;
@@ -62,7 +68,8 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
         Map<String, String> attributes = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
 
         int numConsumers = BatchProcessBuilder.getNumConsumers(runtimeAttributes);
-        File inputDir = PropsUtil.getFile(attributes.get(INPUT_DIR_ATTR), new File("input"));
+        Path inputDir = PropsUtil.getPath(attributes.get(INPUT_DIR_ATTR),
+                Paths.get("input"));
         FileResourceCrawler crawler = null;
         if (attributes.containsKey("fileList")) {
             String randomCrawlString = attributes.get(CRAWL_ORDER);
@@ -71,18 +78,23 @@ public class FSCrawlerBuilder implements ICrawlerBuilder {
                 //TODO: change to logger warn or throw RuntimeException?
                 System.err.println("randomCrawl attribute is ignored by FSListCrawler");
             }
-            File fileList = PropsUtil.getFile(attributes.get("fileList"), null);
-            String encoding = PropsUtil.getString(attributes.get("fileListEncoding"), "UTF-8");
+            Path fileList = PropsUtil.getPath(attributes.get("fileList"), null);
+            String encodingString = PropsUtil.getString(attributes.get("fileListEncoding"), "UTF-8");
+
             try {
-                crawler = new org.apache.tika.batch.fs.FSListCrawler(queue, numConsumers, inputDir, fileList, encoding);
-            } catch (java.io.FileNotFoundException e) {
-                throw new RuntimeException("fileList file not found for FSListCrawler: " + fileList.getAbsolutePath());
-            } catch (java.io.UnsupportedEncodingException e) {
-                throw new RuntimeException("fileList encoding not supported: "+encoding);
+                Charset encoding = Charset.forName(encodingString);
+                crawler = new FSListCrawler(queue, numConsumers, inputDir, fileList, encoding);
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException("fileList file not found for FSListCrawler: " +
+                        fileList.toAbsolutePath());
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("fileList encoding not supported: "+encodingString);
+            } catch (IOException e) {
+                throw new RuntimeException("IOException while trying to open fileList: " + e.getMessage());
             }
         } else {
             FSDirectoryCrawler.CRAWL_ORDER crawlOrder = getCrawlOrder(attributes.get(CRAWL_ORDER));
-            File startDir = PropsUtil.getFile(attributes.get(INPUT_START_DIR_ATTR), null);
+            Path startDir = PropsUtil.getPath(attributes.get(INPUT_START_DIR_ATTR), null);
             if (startDir == null) {
                 crawler = new FSDirectoryCrawler(queue, numConsumers, inputDir, crawlOrder);
             } else {

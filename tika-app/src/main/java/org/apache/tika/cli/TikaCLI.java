@@ -16,6 +16,8 @@
  */
 package org.apache.tika.cli;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
@@ -40,6 +42,9 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -105,8 +110,6 @@ import org.apache.tika.xmp.XMPMetadata;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Simple command line interface for Apache Tika.
@@ -650,9 +653,10 @@ public class TikaCLI {
     private boolean testForBatch(String[] args) {
         if (args.length == 2 && ! args[0].startsWith("-")
                 && ! args[1].startsWith("-")) {
-            File inputCand = new File(args[0]);
-            File outputCand = new File(args[1]);
-            if (inputCand.isDirectory() && !outputCand.isFile()) {
+            Path inputCand = Paths.get(args[0]);
+            Path outputCand = Paths.get(args[1]);
+            if (Files.isDirectory(inputCand) &&
+                    !Files.isRegularFile(outputCand)) {
                 return true;
             }
         }

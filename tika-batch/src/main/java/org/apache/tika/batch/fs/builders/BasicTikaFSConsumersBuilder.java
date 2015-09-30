@@ -17,7 +17,10 @@
 
 package org.apache.tika.batch.fs.builders;
 
-import java.io.File;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -86,8 +89,8 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
             }
         }
         if (tikaConfigPath != null) {
-            try {
-                config = new TikaConfig(new File(tikaConfigPath));
+            try (InputStream is = Files.newInputStream(Paths.get(tikaConfigPath))) {
+                config = new TikaConfig(is);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -166,7 +169,7 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
     private OutputStreamFactory getOutputStreamFactory(Node node, Map<String, String> runtimeAttributes) {
         Map<String, String> attrs = XMLDOMUtil.mapifyAttrs(node, runtimeAttributes);
 
-        File outputDir = PropsUtil.getFile(attrs.get("outputDir"), null);
+        Path outputDir = PropsUtil.getPath(attrs.get("outputDir"), null);
 /*        FSUtil.HANDLE_EXISTING handleExisting = null;
         String handleExistingString = attrs.get("handleExisting");
         if (handleExistingString == null) {
@@ -194,7 +197,7 @@ public class BasicTikaFSConsumersBuilder extends AbstractConsumersBuilder {
         }
         String suffix = attrs.get("outputSuffix");
 
-        //TODO: possibly open up the different handle existings in the future
+        //TODO: possibly open up the different handle-existings in the future
         //but for now, lock it down to require skip.  Too dangerous otherwise
         //if the driver restarts and this is set to overwrite...
         return new FSOutputStreamFactory(outputDir, FSUtil.HANDLE_EXISTING.SKIP,
