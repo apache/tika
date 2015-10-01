@@ -237,9 +237,10 @@ public class TikaInputStream extends TaggedInputStream {
      * @param file input file
      * @return a TikaInputStream instance
      * @throws FileNotFoundException if the file does not exist
-     * @deprecated use #get(Path). In Tika 2.0, this will be removed
+     * @deprecated use {@link #get(Path)}. In Tika 2.0, this will be removed
      * or modified to throw an IOException.
      */
+    @Deprecated
     public static TikaInputStream get(File file) throws FileNotFoundException {
         return get(file, new Metadata());
     }
@@ -256,9 +257,10 @@ public class TikaInputStream extends TaggedInputStream {
      * @return a TikaInputStream instance
      * @throws FileNotFoundException if the file does not exist
      * or cannot be opened for reading
-     * @deprecated use #get(Path, Metadata). In Tika 2.0,
+     * @deprecated use {@link #get(Path, Metadata)}. In Tika 2.0,
      * this will be removed or modified to throw an IOException.
      */
+    @Deprecated
     public static TikaInputStream get(File file, Metadata metadata)
             throws FileNotFoundException {
         metadata.set(Metadata.RESOURCE_NAME_KEY, file.getName());
@@ -488,8 +490,9 @@ public class TikaInputStream extends TaggedInputStream {
      *
      * @param file the file that contains the stream
      * @throws FileNotFoundException if the file does not exist
-     * @deprecated use #TikaInputStream(Path)
+     * @deprecated use {@link #TikaInputStream(Path)}
      */
+    @Deprecated
     private TikaInputStream(File file) throws FileNotFoundException {
         super(new BufferedInputStream(new FileInputStream(file)));
         this.path = file.toPath();
