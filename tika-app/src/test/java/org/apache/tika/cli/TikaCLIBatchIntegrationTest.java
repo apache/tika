@@ -23,16 +23,15 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -42,18 +41,17 @@ import org.junit.Test;
 
 public class TikaCLIBatchIntegrationTest {
 
-    private File testDataFile = new File("src/test/resources/test-data");
-
-    private File tempDir;
+    private Path testInputDir = Paths.get("src/test/resources/test-data");
+    private String testInputDirForCommandLine;
+    private Path tempOutputDir;
+    private String tempOutputDirForCommandLine;
     private OutputStream out = null;
     private OutputStream err = null;
     private ByteArrayOutputStream outBuffer = null;
 
     @Before
     public void setup() throws Exception {
-        tempDir = File.createTempFile("tika-cli-test-batch-", "");
-        tempDir.delete();
-        tempDir.mkdir();
+        tempOutputDir = Files.createTempDirectory("tika-cli-test-batch-");
         outBuffer = new ByteArrayOutputStream();
         PrintStream outWriter = new PrintStream(outBuffer, true, UTF_8.name());
         ByteArrayOutputStream errBuffer = new ByteArrayOutputStream();
@@ -62,85 +60,85 @@ public class TikaCLIBatchIntegrationTest {
         err = System.err;
         System.setOut(outWriter);
         System.setErr(errWriter);
+        testInputDirForCommandLine = testInputDir.toAbsolutePath().toString();
+        tempOutputDirForCommandLine = tempOutputDir.toAbsolutePath().toString();
     }
 
     @After
     public void tearDown() throws Exception {
         System.setOut(new PrintStream(out, true, UTF_8.name()));
         System.setErr(new PrintStream(err, true, UTF_8.name()));
-        FileUtils.deleteDirectory(tempDir);
+        //TODO: refactor to use our deleteDirectory with straight path
+        FileUtils.deleteDirectory(tempOutputDir.toFile());
     }
 
     @Test
     public void testSimplestBatchIntegration() throws Exception {
-        String[] params = {escape(testDataFile.getAbsolutePath()),
-                escape(tempDir.getAbsolutePath())};
+        String[] params = {testInputDirForCommandLine,
+                tempOutputDirForCommandLine};
         TikaCLI.main(params);
 
-        assertTrue("bad_xml.xml.xml", new File(tempDir, "bad_xml.xml.xml").isFile());
-        assertTrue("coffee.xls.xml", new File(tempDir, "coffee.xls.xml").exists());
+        assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
+        assertFileExists(tempOutputDir.resolve("coffee.xls.xml"));
     }
 
     @Test
     public void testBasicBatchIntegration() throws Exception {
-        String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
-                "-o", escape(tempDir.getAbsolutePath()),
+        String[] params = {"-i", testInputDirForCommandLine,
+                "-o", tempOutputDirForCommandLine,
                 "-numConsumers", "2"
         };
         TikaCLI.main(params);
 
-        assertTrue("bad_xml.xml.xml", new File(tempDir, "bad_xml.xml.xml").isFile());
-        assertTrue("coffee.xls.xml", new File(tempDir, "coffee.xls.xml").exists());
+        assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
+        assertFileExists(tempOutputDir.resolve("coffee.xls.xml"));
     }
 
     @Test
     public void testJsonRecursiveBatchIntegration() throws Exception {
-        Reader reader = null;
-        try {
-            String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
-                    "-o", escape(tempDir.getAbsolutePath()),
-                    "-numConsumers", "10",
-                    "-J", //recursive Json
-                    "-t" //plain text in content
-            };
-            TikaCLI.main(params);
-            reader = new InputStreamReader(
-                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), UTF_8);
+        String[] params = {"-i", testInputDirForCommandLine,
+                "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "10",
+                "-J", //recursive Json
+                "-t" //plain text in content
+        };
+        TikaCLI.main(params);
+
+        Path jsonFile = tempOutputDir.resolve("test_recursive_embedded.docx.json");
+        try (Reader reader = Files.newBufferedReader(jsonFile, UTF_8)) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
             assertTrue(metadataList.get(6).get(RecursiveParserWrapper.TIKA_CONTENT).contains("human events"));
-        } finally {
-            IOUtils.closeQuietly(reader);
         }
     }
 
     @Test
     public void testProcessLogFileConfig() throws Exception {
-        String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
-                "-o", escape(tempDir.getAbsolutePath()),
+        String[] params = {"-i", testInputDirForCommandLine,
+                "-o", tempOutputDirForCommandLine,
                 "-numConsumers", "2",
                 "-JDlog4j.configuration=log4j_batch_process_test.properties"};
         TikaCLI.main(params);
 
-        assertTrue("bad_xml.xml.xml", new File(tempDir, "bad_xml.xml.xml").isFile());
-        assertTrue("coffee.xls.xml", new File(tempDir, "coffee.xls.xml").exists());
+        assertFileExists(tempOutputDir.resolve("bad_xml.xml.xml"));
+        assertFileExists(tempOutputDir.resolve("coffee.xls.xml"));
         String sysOutString = new String(outBuffer.toByteArray(), UTF_8);
         assertTrue(sysOutString.contains("MY_CUSTOM_LOG_CONFIG"));
     }
 
     @Test
     public void testDigester() throws Exception {
-        Reader reader = null;
-/*        try {
+/*
+        try {
             String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
-                    "-o", escape(tempDir.getAbsolutePath()),
+                    "-o", escape(tempOutputDir.getAbsolutePath()),
                     "-numConsumers", "10",
                     "-J", //recursive Json
                     "-t" //plain text in content
             };
             TikaCLI.main(params);
             reader = new InputStreamReader(
-                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), UTF_8);
+                    new FileInputStream(new File(tempOutputDir, "test_recursive_embedded.docx.json")), UTF_8);
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
             assertEquals("59f626e09a8c16ab6dbc2800c685f772", metadataList.get(0).get("X-TIKA:digest:MD5"));
@@ -149,33 +147,28 @@ public class TikaCLIBatchIntegrationTest {
             IOUtils.closeQuietly(reader);
         }
 */
-        reader = null;
-        try {
-            String[] params = {"-i", escape(testDataFile.getAbsolutePath()),
-                    "-o", escape(tempDir.getAbsolutePath()),
-                    "-numConsumers", "10",
-                    "-J", //recursive Json
-                    "-t", //plain text in content
-                    "-digest", "sha512"
-            };
-            TikaCLI.main(params);
-            reader = new InputStreamReader(
-                    new FileInputStream(new File(tempDir, "test_recursive_embedded.docx.json")), UTF_8);
+        String[] params = {"-i", testInputDirForCommandLine,
+                "-o", tempOutputDirForCommandLine,
+                "-numConsumers", "10",
+                "-J", //recursive Json
+                "-t", //plain text in content
+                "-digest", "sha512"
+        };
+        TikaCLI.main(params);
+        Path jsonFile = tempOutputDir.resolve("test_recursive_embedded.docx.json");
+        try (Reader reader = Files.newBufferedReader(jsonFile, UTF_8)) {
+
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             assertEquals(12, metadataList.size());
             assertNotNull(metadataList.get(0).get("X-TIKA:digest:SHA512"));
             assertTrue(metadataList.get(0).get("X-TIKA:digest:SHA512").startsWith("ee46d973ee1852c01858"));
-        } finally {
-            IOUtils.closeQuietly(reader);
         }
-
     }
 
-    public static String escape(String path) {
-        if (path.indexOf(' ') > -1) {
-            return '"' + path + '"';
-        }
-        return path;
+    private void assertFileExists(Path path) {
+        assertTrue("File doesn't exist: "+path.toAbsolutePath(),
+                Files.isRegularFile(path));
     }
+
 
 }
