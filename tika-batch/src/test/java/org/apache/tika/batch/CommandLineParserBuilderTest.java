@@ -17,12 +17,9 @@ package org.apache.tika.batch;
  * limitations under the License.
  */
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
 
 import org.apache.commons.cli.Options;
-import org.apache.commons.io.IOUtils;
 import org.apache.tika.batch.builders.CommandLineParserBuilder;
 import org.apache.tika.batch.fs.FSBatchTestBase;
 import org.junit.Test;
@@ -32,16 +29,10 @@ public class CommandLineParserBuilderTest extends FSBatchTestBase {
 
     @Test
     public void testBasic() throws Exception {
-        String configFile = this.getClass().getResource(
-                "/tika-batch-config-test.xml").getFile();
-        InputStream is = null;
-        try {
-            is = new FileInputStream(new File(configFile));
+        try (InputStream is = this.getClass().getResourceAsStream("/tika-batch-config-test.xml")) {
             CommandLineParserBuilder builder = new CommandLineParserBuilder();
             Options options = builder.build(is);
             //TODO: insert actual tests :)
-        } finally {
-            IOUtils.closeQuietly(is);
         }
 
     }
