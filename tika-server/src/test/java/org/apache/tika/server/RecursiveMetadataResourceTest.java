@@ -63,7 +63,7 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
-        List<Object> providers = new ArrayList();
+        List<Object> providers = new ArrayList<>();
         providers.add(new MetadataListMessageBodyWriter());
         sf.setProviders(providers);
     }
