@@ -84,10 +84,9 @@ public class FSDirectoryCrawler extends FileResourceCrawler {
         }
 
         List<Path> files = new ArrayList<>();
-        try (DirectoryStream ds = Files.newDirectoryStream(directory)){
-            Iterator<Path> it = ds.iterator();
-            while (it.hasNext()) {
-                files.add(it.next());
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(directory)){
+            for (Path p : ds) {
+                files.add(p);
             }
         } catch (IOException e) {
             logger.warn("FSFileAdder couldn't read "+directory.toAbsolutePath() +
