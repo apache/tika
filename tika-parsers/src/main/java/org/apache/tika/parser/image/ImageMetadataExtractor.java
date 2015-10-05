@@ -96,8 +96,10 @@ public class ImageMetadataExtractor {
     private static String trimPixels(String s) {
         //if height/width appears as "100 pixels", trim " pixels"
         if (s != null) {
-            int i = s.lastIndexOf(" pixels");
-            s = s.substring(0, i);
+            int i = s.lastIndexOf("pixels");
+            if (i > -1) {
+                s = s.substring(0, i).trim();
+            }
         }
         return s;
     }

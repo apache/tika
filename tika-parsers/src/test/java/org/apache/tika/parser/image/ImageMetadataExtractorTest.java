@@ -16,10 +16,11 @@
  */
 package org.apache.tika.parser.image;
 
-
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -37,6 +38,7 @@ import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
+import com.drew.metadata.exif.ExifThumbnailDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -136,4 +138,33 @@ public class ImageMetadataExtractorTest {
         assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
     }
 
+    private void verifyExifDimensions(String exifWidth, String exifHeight,
+            String expectedMetadataWidth, String expectedMetadataHeight) {
+        Directory directory = mock(ExifIFD0Directory.class);
+
+        when(directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)).thenReturn(true);
+        when(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_WIDTH))
+                .thenReturn(exifWidth);
+
+        when(directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)).thenReturn(true);
+        when(directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT))
+                .thenReturn(exifHeight);
+
+        Metadata metadata = new Metadata();
+
+        new ImageMetadataExtractor.ExifHandler().handle(directory, metadata);
+
+        assertThat(metadata.get(Metadata.IMAGE_WIDTH), is(expectedMetadataWidth));
+        assertThat(metadata.get(Metadata.IMAGE_LENGTH), is(expectedMetadataHeight));
+    }
+
+    @Test
+    public void testExifDimensionsWithPixels() {
+        verifyExifDimensions("100 pixels", "75 pixels", "100", "75");
+    }
+
+    @Test
+    public void testExifDimensionsWithoutPixels() {
+        verifyExifDimensions("100", "75", "100", "75");
+    }
 }
