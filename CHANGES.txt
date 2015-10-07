@@ -1,5 +1,8 @@
 Release 1.11 - Current Development
   
+  * Include CTAKESConfig.properties within tika-parsers resources 
+    by default (TIKA-1741)
+  
   * Prevent infinite recursion when processing inline images
     in PDF files by limiting extraction of duplicate images
     within the same page (TIKA-1742).
