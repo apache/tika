@@ -1,4 +1,7 @@
 Release 1.11 - Current Development
+
+  * Upgrade to Jackcess Encrypt 2.1.1 to avoid binary incompatibility
+    with Bouncy Castle (TIKA-1736).
   
   * Make div and other markup more consistent between PPT and 
     PPTX (TIKA-1755).
