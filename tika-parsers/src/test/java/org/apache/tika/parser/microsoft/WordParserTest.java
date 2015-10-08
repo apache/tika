@@ -479,5 +479,18 @@ public class WordParserTest extends TikaTest {
         assertContains(">01..1 01..1", xml);
         assertContains(">02 02", xml);
     }
+
+    @Test
+    public void testMultiAuthorsManagers() throws Exception {
+        XMLResult r = getXML("testWORD_multi_authors.doc");
+        String[] authors = r.metadata.getValues(TikaCoreProperties.CREATOR);
+        assertEquals(3, authors.length);
+        assertEquals("author2", authors[1]);
+
+        String[] managers = r.metadata.getValues(OfficeOpenXMLExtended.MANAGER);
+        assertEquals(2, managers.length);
+        assertEquals("manager1", managers[0]);
+        assertEquals("manager2", managers[1]);
+    }
 }
 

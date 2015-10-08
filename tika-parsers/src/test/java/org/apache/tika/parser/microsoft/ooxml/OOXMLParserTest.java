@@ -1192,6 +1192,19 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("Footer - For Internal Use Only", content);
         assertContains("Footer - Author: John Smith", content);
     }
+
+    @Test
+    public void testMultiAuthorsManagers() throws Exception {
+        XMLResult r = getXML("testWORD_multi_authors.docx");
+        String[] authors = r.metadata.getValues(TikaCoreProperties.CREATOR);
+        assertEquals(3, authors.length);
+        assertEquals("author2", authors[1]);
+
+        String[] managers = r.metadata.getValues(OfficeOpenXMLExtended.MANAGER);
+        assertEquals(2, managers.length);
+        assertEquals("manager1", managers[0]);
+        assertEquals("manager2", managers[1]);
+    }
 }
 
 

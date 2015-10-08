@@ -334,7 +334,8 @@ public class Metadata implements CreativeCommons, Geographic, HttpHeaders,
              if (property.isMultiValuePermitted()) {
                  set(property, appendedValues(values, value));
              } else {
-                 throw new PropertyTypeException(property.getPropertyType());
+                 throw new PropertyTypeException(property.getName() +
+                         " : " + property.getPropertyType());
              }
         }
     }
