@@ -1,4 +1,7 @@
 Release 1.11 - Current Development
+
+  * Parse multiple authors from MSOffice's semi-colon delimited
+    author field (TIKA-1765).
   
   * Include CTAKESConfig.properties within tika-parsers resources 
     by default (TIKA-1741)

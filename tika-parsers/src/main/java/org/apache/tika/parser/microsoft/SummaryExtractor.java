@@ -19,6 +19,8 @@ package org.apache.tika.parser.microsoft;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -101,7 +103,7 @@ public class SummaryExtractor {
 
     private void parse(SummaryInformation summary) {
         set(TikaCoreProperties.TITLE, summary.getTitle());
-        set(TikaCoreProperties.CREATOR, summary.getAuthor());
+        addMulti(metadata, TikaCoreProperties.CREATOR, summary.getAuthor());
         set(TikaCoreProperties.KEYWORDS, summary.getKeywords());
         // TODO Move to OO subject in Tika 2.0
         set(TikaCoreProperties.TRANSITION_SUBJECT_TO_OO_SUBJECT, summary.getSubject());
@@ -137,7 +139,7 @@ public class SummaryExtractor {
 
     private void parse(DocumentSummaryInformation summary) {
         set(OfficeOpenXMLExtended.COMPANY, summary.getCompany());
-        set(OfficeOpenXMLExtended.MANAGER, summary.getManager());
+        addMulti(metadata, OfficeOpenXMLExtended.MANAGER, summary.getManager());
         set(TikaCoreProperties.LANGUAGE, getLanguage(summary));
         set(OfficeOpenXMLCore.CATEGORY, summary.getCategory());
 
@@ -231,4 +233,28 @@ public class SummaryExtractor {
             metadata.set(name, Long.toString(value));
         }
     }
+
+    //MS stores values that should be multiple values (e.g. dc:creator)
+    //as a semicolon-delimited list.  We need to split
+    //on semicolon to add each value.
+    public static void addMulti(Metadata metadata, Property property, String string) {
+        if (string == null) {
+            return;
+        }
+        String[] parts = string.split(";");
+        String[] current = metadata.getValues(property);
+        Set<String> seen = new HashSet<>();
+        if (current != null) {
+            for (String val : current) {
+                seen.add(val);
+            }
+        }
+        for (String part : parts) {
+            if (! seen.contains(part)) {
+                metadata.add(property, part);
+                seen.add(part);
+            }
+        }
+    }
+
 }

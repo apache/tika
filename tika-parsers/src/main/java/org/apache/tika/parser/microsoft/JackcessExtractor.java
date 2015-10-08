@@ -18,6 +18,8 @@
 package org.apache.tika.parser.microsoft;
 
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -49,8 +51,6 @@ import org.apache.tika.parser.html.HtmlParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.xml.sax.SAXException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Internal class.  Needs to be instantiated for each parse because of
@@ -109,8 +109,9 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 found.add(title.getName());
             }
             PropertyMap.Property author = summaryProperties.get(AUTHOR_PROP_KEY);
-            if (author != null) {
-                metadata.set(TikaCoreProperties.CREATOR, toString(author.getValue(), author.getType()));
+            if (author != null && author.getValue() != null) {
+                String authorString = toString(author.getValue(), author.getType());
+                SummaryExtractor.addMulti(metadata, TikaCoreProperties.CREATOR, authorString);
                 found.add(author.getName());
             }
             PropertyMap.Property company = summaryProperties.get(COMPANY_PROP_KEY);

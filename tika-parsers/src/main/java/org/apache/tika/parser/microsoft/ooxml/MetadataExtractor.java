@@ -35,6 +35,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.microsoft.SummaryExtractor;
 import org.openxmlformats.schemas.officeDocument.x2006.customProperties.CTProperty;
 import org.openxmlformats.schemas.officeDocument.x2006.extendedProperties.CTProperties;
 
@@ -72,7 +73,7 @@ public class MetadataExtractor {
                 .getContentStatusProperty());
         addProperty(metadata, TikaCoreProperties.CREATED, propsHolder
                 .getCreatedProperty());
-        addProperty(metadata, TikaCoreProperties.CREATOR, propsHolder
+        addMultiProperty(metadata, TikaCoreProperties.CREATOR, propsHolder
                 .getCreatorProperty());
         addProperty(metadata, TikaCoreProperties.DESCRIPTION, propsHolder
                 .getDescriptionProperty());
@@ -116,7 +117,7 @@ public class MetadataExtractor {
         addProperty(metadata, OfficeOpenXMLExtended.APP_VERSION, propsHolder.getAppVersion());
         addProperty(metadata, TikaCoreProperties.PUBLISHER, propsHolder.getCompany());
         addProperty(metadata, OfficeOpenXMLExtended.COMPANY, propsHolder.getCompany());
-        addProperty(metadata, OfficeOpenXMLExtended.MANAGER, propsHolder.getManager());
+        SummaryExtractor.addMulti(metadata, OfficeOpenXMLExtended.MANAGER, propsHolder.getManager());
         addProperty(metadata, OfficeOpenXMLExtended.NOTES, propsHolder.getNotes());
         addProperty(metadata, OfficeOpenXMLExtended.PRESENTATION_FORMAT, propsHolder.getPresentationFormat());
         addProperty(metadata, OfficeOpenXMLExtended.TEMPLATE, propsHolder.getTemplate());
@@ -283,4 +284,12 @@ public class MetadataExtractor {
             metadata.set(name, Integer.toString(value));
         }
     }
+
+    private void addMultiProperty(Metadata metadata, Property property, Nullable<String> value) {
+        if (value == null) {
+            return;
+        }
+        SummaryExtractor.addMulti(metadata, property, value.getValue());
+    }
+
 }
