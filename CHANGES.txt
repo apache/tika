@@ -1,10 +1,13 @@
 Release 1.11 - Current Development
+  
+  * Make div and other markup more consistent between PPT and 
+    PPTX (TIKA-1755).
 
   * Parse multiple authors from MSOffice's semi-colon delimited
     author field (TIKA-1765).
   
   * Include CTAKESConfig.properties within tika-parsers resources 
-    by default (TIKA-1741)
+    by default (TIKA-1741).
   
   * Prevent infinite recursion when processing inline images
     in PDF files by limiting extraction of duplicate images

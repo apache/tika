@@ -621,71 +621,71 @@ public class OOXMLParserTest extends TikaTest {
 
     @Test
     public void testVariousPPTX() throws Exception {
-        ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
-
-        try (InputStream stream = OOXMLParserTest.class.getResourceAsStream(
-                "/test-documents/testPPT_various.pptx")) {
-            new AutoDetectParser().parse(stream, handler, metadata, new ParseContext());
-        }
-
-        String content = handler.toString();
-        //content = content.replaceAll("\\s+"," ");
-        assertContains("Footnote appears here", content);
-        assertContains("This is a footnote.", content);
-        assertContains("This is the header text.", content);
-        assertContains("This is the footer text.", content);
-        assertContains("Here is a text box", content);
-        assertContains("Bold", content);
-        assertContains("italic", content);
-        assertContains("underline", content);
-        assertContains("superscript", content);
-        assertContains("subscript", content);
-        assertContains("Here is a citation:", content);
-        assertContains("Figure 1 This is a caption for Figure 1", content);
-        assertContains("(Kramer)", content);
-        assertContains("Row 1 Col 1 Row 1 Col 2 Row 1 Col 3 Row 2 Col 1 Row 2 Col 2 Row 2 Col 3", content.replaceAll("\\s+"," "));
-        assertContains("Row 1 column 1 Row 2 column 1 Row 1 column 2 Row 2 column 2", content.replaceAll("\\s+"," "));
-        assertContains("This is a hyperlink", content);
-        assertContains("Here is a list:", content);
+        String xml = getXML("testPPT_various.pptx", metadata).xml;
+        assertContains("<p>Footnote appears here", xml);
+        assertContains("<p>[1] This is a footnote.", xml);
+        assertContains("<p>This is the header text.</p>", xml);
+        assertContains("<p>This is the footer text.</p>", xml);
+        assertContains("<p>Here is a text box</p>", xml);
+        assertContains("<p>Bold", xml);
+        assertContains("italic", xml);
+        assertContains("underline", xml);
+        assertContains("superscript", xml);
+        assertContains("subscript", xml);
+        assertContains("<p>Here is a citation:", xml);
+        assertContains("Figure 1 This is a caption for Figure 1", xml);
+        assertContains("(Kramer)", xml);
+        assertContains("<table><tr>\t<td>Row 1 Col 1</td>", xml);
+        assertContains("<td>Row 2 Col 2</td>\t<td>Row 2 Col 3</td></tr>", xml);
+        assertContains("<p>Row 1 column 1</p>", xml);
+        assertContains("<p>Row 2 column 2</p>", xml);
+        assertContains("<p>This is a hyperlink", xml);
+        assertContains("<p>Here is a list:", xml);
         for(int row=1;row<=3;row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
-            assertContains("Bullet " + row, content);
+            assertContains("<p>Bullet " + row, xml);
         }
-        assertContains("Here is a numbered list:", content);
+        assertContains("Here is a numbered list:", xml);
         for(int row=1;row<=3;row++) {
             //assertContains(row + ")\tNumber bullet " + row, content);
             //assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
-            assertContains("Number bullet " + row, content);
+            assertContains("<p>Number bullet " + row, xml);
         }
 
         for(int row=1;row<=2;row++) {
             for(int col=1;col<=3;col++) {
-                assertContains("Row " + row + " Col " + col, content);
+                assertContains("Row " + row + " Col " + col, xml);
             }
         }
 
-        assertContains("Keyword1 Keyword2", content);
+        assertContains("Keyword1 Keyword2", xml);
         assertEquals("Keyword1 Keyword2",
-                     metadata.get(Metadata.KEYWORDS));
+                metadata.get(Metadata.KEYWORDS));
 
-        assertContains("Subject is here", content);
+        assertContains("Subject is here", xml);
         // TODO: Remove subject in Tika 2.0
         assertEquals("Subject is here",
                      metadata.get(Metadata.SUBJECT));
         assertEquals("Subject is here",
-                     metadata.get(OfficeOpenXMLCore.SUBJECT));
+                metadata.get(OfficeOpenXMLCore.SUBJECT));
 
-        assertContains("Suddenly some Japanese text:", content);
+        assertContains("Suddenly some Japanese text:", xml);
         // Special version of (GHQ)
-        assertContains("\uff08\uff27\uff28\uff31\uff09", content);
+        assertContains("\uff08\uff27\uff28\uff31\uff09", xml);
         // 6 other characters
-        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", content);
+        assertContains("\u30be\u30eb\u30b2\u3068\u5c3e\u5d0e\u3001\u6de1\u3005\u3068\u6700\u671f", xml);
 
-        assertContains("And then some Gothic text:", content);
-        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", content);
+        assertContains("And then some Gothic text:", xml);
+        assertContains("\uD800\uDF32\uD800\uDF3f\uD800\uDF44\uD800\uDF39\uD800\uDF43\uD800\uDF3A", xml);
+    }
+
+    @Test
+    public void testCommentPPTX() throws Exception {
+        XMLResult r = getXML("testPPT_comment.pptx");
+        assertContains("<p class=\"slide-comment\"><b>Allison, Timothy B. (ATB)", r.xml);
     }
 
     @Test
@@ -1046,9 +1046,8 @@ public class OOXMLParserTest extends TikaTest {
     @Test
     public void testPPTXThumbnail() throws Exception {
         String xml = getXML("testPPTX_Thumbnail.pptx").xml;
-        int a = xml.indexOf("<body><p>This file contains an embedded thumbnail</p>");
+        int a = xml.indexOf("<body><div class=\"slide-content\"><p>This file contains an embedded thumbnail");
         int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.jpeg\" />");
-
         assertTrue(a != -1);
         assertTrue(b != -1);
         assertTrue(a < b);
