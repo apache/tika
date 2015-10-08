@@ -106,16 +106,27 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             }
 
             // Comments, if present
+            StringBuilder authorStringBuilder = new StringBuilder();
             for (Comment comment : slide.getComments()) {
+                authorStringBuilder.setLength(0);
                 xhtml.startElement("p", "class", "slide-comment");
-                if (comment.getAuthor() != null) {
-                    xhtml.startElement("b");
-                    xhtml.characters(comment.getAuthor());
-                    xhtml.endElement("b");
 
-                    if (comment.getText() != null) {
-                        xhtml.characters(" - ");
+                if (comment.getAuthor() != null) {
+                    authorStringBuilder.append(comment.getAuthor());
+                }
+                if (comment.getAuthorInitials() != null) {
+                    if (authorStringBuilder.length() > 0) {
+                        authorStringBuilder.append(" ");
                     }
+                    authorStringBuilder.append("("+comment.getAuthorInitials()+")");
+                }
+                if (authorStringBuilder.length() > 0) {
+                    if (comment.getText() != null) {
+                        authorStringBuilder.append(" - ");
+                    }
+                    xhtml.startElement("b");
+                    xhtml.characters(authorStringBuilder.toString());
+                    xhtml.endElement("b");
                 }
                 if (comment.getText() != null) {
                     xhtml.characters(comment.getText());
@@ -136,7 +147,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         xhtml.endElement("div");
 
       /* notes */
-        xhtml.startElement("div", "class", "slideNotes");
+        xhtml.startElement("div", "class", "slide-notes");
         HashSet<Integer> seenNotes = new HashSet<>();
         HeadersFooters hf = ss.getNotesHeadersFooters();
 
