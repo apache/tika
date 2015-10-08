@@ -85,13 +85,7 @@
     <dependency>
       <groupId>com.healthmarketscience.jackcess</groupId>
       <artifactId>jackcess-encrypt</artifactId>
-      <version>2.1.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcprov-jdk15</artifactId>
-        </exclusion>
-      </exclusions>
+      <version>2.1.1</version>
     </dependency>
 
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
