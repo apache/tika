@@ -3937,7 +3937,9 @@
   </mime-type>
 
   <mime-type type="application/xhtml+xml">
-    <magic priority="50">
+    <!-- The magic priority for xhtml+xml needs to be lower than that of -->
+    <!--  files that contain HTML within them, e.g. mime emails -->
+    <magic priority="40">
       <match value="&lt;html xmlns=" type="string" offset="0:8192"/>
     </magic>
     <root-XML namespaceURI="http://www.w3.org/1999/xhtml" localName="html"/>
