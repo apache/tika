@@ -1,6 +1,8 @@
 package org.apache.tika.parser.pot;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
@@ -10,6 +12,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -52,7 +55,8 @@ public class PooledTimeSeriesParser extends AbstractParser {
         //  return SUPPORTED_TYPES;
         // else return Collections.empty()
 
-        return Collections.emptySet();
+        // FIXME: Resolve above TODO and remove this return statement
+        return SUPPORTED_TYPES;
     }
 
     /**
@@ -80,7 +84,36 @@ public class PooledTimeSeriesParser extends AbstractParser {
 
         // TODO
         // Setup deps/pre-rqs
-        // computePoT();
+
+        // TODO: Check for PooledTImeSeries and OpenCV
+        // if ( !hasOpenCV()) {
+        //  return;
+        // }
+        //
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+
+        TemporaryResources tmp = new TemporaryResources();
+        File output = null;
+        try {
+            TikaInputStream tikaStream = TikaInputStream.get(stream, tmp);
+            File input = tikaStream.getFile();
+
+            //long size = tikaStream.getLength();
+
+            output = tmp.createTemporaryFile();
+
+            computePoT(input, output);
+
+            doExtract(new FileInputStream(output), xhtml);
+
+        }
+        finally {
+            tmp.dispose();
+            if (output != null) {
+                output.delete();
+            }
+        }
     }
 
     private void computePoT(File input, File output /* TODO PooledTimeSeriesConfig() */) throws IOException, TikaException {
@@ -90,9 +123,6 @@ public class PooledTimeSeriesParser extends AbstractParser {
         // Question: Should we integrate the PoT code into Tika itself,
         // and handoff the inputstream to an instance of PoT?
         // (As opposed to invoking it form the cmd line)
-
-        // doExtract();
-
     }
 
 
