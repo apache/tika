@@ -33,14 +33,11 @@ public class PooledTimeSeriesConfig implements Serializable {
     // Path to OpenCV installation folder, if not on system path.
     private  String opencvPath = "";
 
-    // Minimum file size to submit file to ocr.
-    private  int minFileSizeForPoT = 0;
-
-    // Maximum file size to submit file to ocr.
-    private  int maxFileSizeForPoT = Integer.MAX_VALUE;
+    // Path to PooledTimeSeries program
+    private String pooledTimeSeriesPath = "";
 
     // Maximum time (seconds) to wait for the pot-ing process termination
-    private int timeout = 120;
+    private int timeout = 84600;
 
     /**
      * Default contructor.
@@ -80,10 +77,8 @@ public class PooledTimeSeriesConfig implements Serializable {
 
         setOpenCVPath(
                 getProp(props, "opencvPath", getOpenCVPath()));
-        setMinFileSizeForPoT(
-                getProp(props, "minFileSizeForPoT", getMinFileSizeForPoT()));
-        setMaxFileSizeForPoT(
-                getProp(props, "maxFileSizeForPoT", getMaxFileSizeForPoT()));
+        setPooledTimeSeriesPath(
+                getProp(props, "pooledTimeSeriesPath", getOpenCVPath()));
         setTimeout(
                 getProp(props, "timeout", getTimeout()));
 
@@ -104,30 +99,12 @@ public class PooledTimeSeriesConfig implements Serializable {
         this.opencvPath = opencvPath;
     }
 
-    /** @see #setMinFileSizeForPoT (int minFileSizeToOcr)*/
-    public int getMinFileSizeForPoT() {
-        return minFileSizeForPoT;
+    public String getPooledTimeSeriesPath() {
+        return pooledTimeSeriesPath;
     }
 
-    /**
-     * Set minimum file size to submit file to pot.
-     * Default is 0.
-     */
-    public void setMinFileSizeForPoT(int minFileSizeForPoT) {
-        this.minFileSizeForPoT = minFileSizeForPoT;
-    }
-
-    /** @see #setMaxFileSizeForPoT (int maxFileSizeToOcr)*/
-    public int getMaxFileSizeForPoT() {
-        return maxFileSizeForPoT;
-    }
-
-    /**
-     * Set maximum file size to submit file to ocr.
-     * Default is Integer.MAX_VALUE.
-     */
-    public void setMaxFileSizeForPoT(int maxFileSizeToOcr) {
-        this.maxFileSizeForPoT = maxFileSizeForPoT;
+    public void setPooledTimeSeriesPath(String pooledTimeSeriesPath) {
+        this.pooledTimeSeriesPath = pooledTimeSeriesPath;
     }
 
     /**
