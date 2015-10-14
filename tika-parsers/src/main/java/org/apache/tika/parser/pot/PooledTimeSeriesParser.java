@@ -24,7 +24,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<MediaType>(Arrays.asList(new MediaType[]{
-                    MediaType.video("avi"), MediaType.video("mpeg4")
+                    MediaType.video("avi"), MediaType.video("mp4")
                     // TODO: Add all supported video types
             })));
 
@@ -51,6 +51,8 @@ public class PooledTimeSeriesParser extends AbstractParser {
         // if yes, then advertise video mime types
         //  return SUPPORTED_TYPES;
         // else return Collections.empty()
+
+        return Collections.emptySet();
     }
 
     /**
@@ -78,10 +80,10 @@ public class PooledTimeSeriesParser extends AbstractParser {
 
         // TODO
         // Setup deps/pre-rqs
-        computePoT();
+        // computePoT();
     }
 
-    private void computePoT((File input, File output /* TODO PooledTimeSeriesConfig() */) throws IOException, TikaException {
+    private void computePoT(File input, File output /* TODO PooledTimeSeriesConfig() */) throws IOException, TikaException {
 
         // TODO
         // formulate cmd for PoT.java
@@ -89,7 +91,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
         // and handoff the inputstream to an instance of PoT?
         // (As opposed to invoking it form the cmd line)
 
-        doExtract();
+        // doExtract();
 
     }
 
@@ -107,7 +109,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
      * @throws IOException
      *           if an input error occurred
      */
-    private void doExtract(InputStream stream, XHTMLContentHandler xhtml) {
+    private void doExtract(InputStream stream, XHTMLContentHandler xhtml) throws SAXException, IOException {
         // TODO
         xhtml.startDocument();
 
