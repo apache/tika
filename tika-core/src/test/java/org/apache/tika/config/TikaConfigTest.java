@@ -21,8 +21,12 @@ import java.net.URI;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.tika.ResourceLoggingClassLoader;
+import org.apache.tika.config.DummyExecutor;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaConfigTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
@@ -242,5 +246,18 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         boolean dynamicValue = loader.isDynamic();
         
         assertTrue("Dynamic Service Loading Should be true", dynamicValue);
+    }
+    
+    @Test
+    public void testTikaExecutorServiceFromConfig() throws Exception {
+        URL url = TikaConfigTest.class.getResource("TIKA-1762-executors.xml");
+        
+        TikaConfig config = new TikaConfig(url);
+        
+        ThreadPoolExecutor executorService = (ThreadPoolExecutor)config.getExecutorService();
+        
+        assertTrue("Should use Dummy Executor", (executorService instanceof DummyExecutor));
+        assertEquals("Should have configured Core Threads", 3, executorService.getCorePoolSize());
+        assertEquals("Should have configured Max Threads", 10, executorService.getMaximumPoolSize());
     }
 }

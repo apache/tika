@@ -29,12 +29,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import javax.imageio.spi.ServiceRegistry;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.tika.concurrent.ConfigurableThreadPoolExecutor;
+import org.apache.tika.concurrent.SimpleThreadPoolExecutor;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -79,12 +82,18 @@ public class TikaConfig {
     private static Translator getDefaultTranslator(ServiceLoader loader) {
         return new DefaultTranslator(loader);
     }
+
+    private static ConfigurableThreadPoolExecutor getDefaultExecutorService() {
+        return new SimpleThreadPoolExecutor();
+    }
+
     private final ServiceLoader serviceLoader;
     private final CompositeParser parser;
     private final CompositeDetector detector;
     private final Translator translator;
 
     private final MimeTypes mimeTypes;
+    private final ExecutorService executorService;
 
     public TikaConfig(String file)
             throws TikaException, IOException, SAXException {
@@ -139,11 +148,13 @@ public class TikaConfig {
         ParserXmlLoader parserLoader = new ParserXmlLoader();
         DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
         TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
+        ExecutorServiceXmlLoader executorLoader = new ExecutorServiceXmlLoader();
         
         this.mimeTypes = typesFromDomElement(element);
         this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
         this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
         this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
+        this.executorService = executorLoader.loadOverall(element, mimeTypes, loader);
         this.serviceLoader = loader;
     }
 
@@ -166,6 +177,7 @@ public class TikaConfig {
         this.detector = getDefaultDetector(mimeTypes, serviceLoader);
         this.parser = getDefaultParser(mimeTypes, serviceLoader);
         this.translator = getDefaultTranslator(serviceLoader);
+        this.executorService = getDefaultExecutorService();
     }
 
     /**
@@ -198,6 +210,7 @@ public class TikaConfig {
             this.parser = getDefaultParser(mimeTypes, serviceLoader);
             this.detector = getDefaultDetector(mimeTypes, serviceLoader);
             this.translator = getDefaultTranslator(serviceLoader);
+            this.executorService = getDefaultExecutorService();
         } else {
             // Locate the given configuration file
             InputStream stream = null;
@@ -224,11 +237,13 @@ public class TikaConfig {
                 ParserXmlLoader parserLoader = new ParserXmlLoader();
                 DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
                 TranslatorXmlLoader translatorLoader = new TranslatorXmlLoader();
+                ExecutorServiceXmlLoader executorLoader = new ExecutorServiceXmlLoader();
                 
                 this.mimeTypes = typesFromDomElement(element);
                 this.parser = parserLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.detector = detectorLoader.loadOverall(element, mimeTypes, serviceLoader);
                 this.translator = translatorLoader.loadOverall(element, mimeTypes, serviceLoader);
+                this.executorService = executorLoader.loadOverall(element, mimeTypes, serviceLoader);
             } catch (SAXException e) {
                 throw new TikaException(
                         "Specified Tika configuration has syntax errors: "
@@ -286,6 +301,10 @@ public class TikaConfig {
      */
     public Translator getTranslator() {
         return translator;
+    }
+    
+    public ExecutorService getExecutorService() {
+        return executorService;
     }
 
     public MimeTypes getMimeRepository(){
@@ -787,5 +806,78 @@ public class TikaConfig {
         Translator decorate(Translator created, Element element) {
             return created; // No decoration of Translators
         }        
+    }
+    
+    private static class ExecutorServiceXmlLoader extends XmlLoader<ConfigurableThreadPoolExecutor,ConfigurableThreadPoolExecutor> {
+        @Override
+        ConfigurableThreadPoolExecutor createComposite(
+                Class<? extends ConfigurableThreadPoolExecutor> compositeClass,
+                List<ConfigurableThreadPoolExecutor> children,
+                Set<Class<? extends ConfigurableThreadPoolExecutor>> excludeChildren,
+                MimeTypes mimeTypes, ServiceLoader loader)
+                throws InvocationTargetException, IllegalAccessException,
+                InstantiationException {
+            throw new InstantiationException("Only one executor service supported");
+        }
+        
+        @Override
+        ConfigurableThreadPoolExecutor createComposite(List<ConfigurableThreadPoolExecutor> loaded,
+                MimeTypes mimeTypes, ServiceLoader loader) {
+            return loaded.get(0);
+        }
+        
+        @Override
+        ConfigurableThreadPoolExecutor createDefault(MimeTypes mimeTypes, ServiceLoader loader) {
+            return getDefaultExecutorService();
+        }
+        
+        @Override
+        ConfigurableThreadPoolExecutor decorate(ConfigurableThreadPoolExecutor created, Element element)
+                throws IOException, TikaException {
+            Element coreThreadElement = getChild(element, "core-threads");
+            if(coreThreadElement != null)
+            {
+                created.setCorePoolSize(Integer.parseInt(getText(coreThreadElement)));
+            }
+            Element maxThreadElement = getChild(element, "max-threads");
+            if(maxThreadElement != null)
+            {
+                created.setMaximumPoolSize(Integer.parseInt(getText(maxThreadElement)));
+            }
+            return created;
+        }
+        
+        @Override
+        Class<? extends ConfigurableThreadPoolExecutor> getLoaderClass() {
+            return ConfigurableThreadPoolExecutor.class;
+        }
+        
+        @Override
+        ConfigurableThreadPoolExecutor loadOne(Element element, MimeTypes mimeTypes,
+                ServiceLoader loader) throws TikaException, IOException {
+            return super.loadOne(element, mimeTypes, loader);
+        }
+
+        @Override
+        boolean supportsComposite() {return false;}
+
+        @Override
+        String getParentTagName() {return null;}
+
+        @Override
+        String getLoaderTagName() {return "executor-service";}
+
+        @Override
+        boolean isComposite(ConfigurableThreadPoolExecutor loaded) {return false;}
+
+        @Override
+        boolean isComposite(Class<? extends ConfigurableThreadPoolExecutor> loadedClass) {return false;}
+
+        @Override
+        ConfigurableThreadPoolExecutor preLoadOne(
+                Class<? extends ConfigurableThreadPoolExecutor> loadedClass, String classname,
+                MimeTypes mimeTypes) throws TikaException {
+            return null;
+        }
     }
 }
