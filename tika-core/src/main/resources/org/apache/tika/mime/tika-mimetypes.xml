@@ -5538,6 +5538,13 @@
     <glob pattern="*.wmls"/>
   </mime-type>
 
+  <mime-type type="text/vtt">
+    <_comment>Web Video Text Tracks Format</_comment>
+    <acronym>WebVTT</acronym>
+    <glob pattern="*.vtt"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
   <mime-type type="text/x-awk">
     <_comment>AWK script</_comment>
     <magic priority="50">
