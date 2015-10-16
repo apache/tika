@@ -394,6 +394,10 @@ public class TestMimeTypes {
         assertTypeByName("image/jpeg", "x.jif");
         assertTypeByName("image/jpeg", "x.jfif");
         assertTypeByName("image/jpeg", "x.jfi");
+        
+        assertType("image/jp2", "testJPEG.jp2");
+        assertTypeByData("image/jp2", "testJPEG.jp2");
+        assertTypeByName("image/jp2", "x.jp2");
     }
 
     @Test
