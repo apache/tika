@@ -962,6 +962,12 @@ public class TestMimeTypes {
         assertTypeByData("text/x-matlab", "testMATLAB_barcast.m");
     }
 
+    @Test
+    public void testWebVTT() throws Exception {
+        assertType("text/vtt", "testWebVTT.vtt");
+        assertTypeByData("text/vtt", "testWebVTT.vtt");
+    }
+    
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
