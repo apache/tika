@@ -1,5 +1,8 @@
 Release 1.11 - Current Development
 
+  * MIME support was added for WebVTT: The Web Video Text Tracks Format
+    files (TIKA-1772).
+
   * MIME magic improved to ensure emails detected as message/rfc822
     (TIKA-1771).
 
