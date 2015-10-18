@@ -1,5 +1,8 @@
 Release 1.11 - Current Development
 
+  * MIME magic improved to ensure emails detected as message/rfc822
+    (TIKA-1771).
+
   * Upgrade to Jackcess Encrypt 2.1.1 to avoid binary incompatibility
     with Bouncy Castle (TIKA-1736).
   
