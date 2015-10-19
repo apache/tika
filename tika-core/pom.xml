@@ -25,7 +25,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>1.11</version>
+    <version>1.12-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -162,9 +162,9 @@
     <url>http://www.apache.org</url>
   </organization>
   <scm>
-    <url>http://svn.apache.org/viewvc/tika/tags/1.11-rc1/core</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/tags/1.11-rc1/core</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/tags/1.11-rc1/core</developerConnection>
+    <url>http://svn.apache.org/viewvc/tika/trunk/core</url>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/core</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/core</developerConnection>
   </scm>
   <issueManagement>
     <system>JIRA</system>
