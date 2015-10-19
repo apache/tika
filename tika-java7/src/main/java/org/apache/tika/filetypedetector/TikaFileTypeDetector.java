@@ -18,7 +18,6 @@
 package org.apache.tika.filetypedetector;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.spi.FileTypeDetector;
 
@@ -41,7 +40,7 @@ public class TikaFileTypeDetector extends FileTypeDetector {
         }
         
         // Then check the file content if necessary
-        String fileContentDetect = tika.detect(path.toFile());
+        String fileContentDetect = tika.detect(path);
         if(!fileContentDetect.equals(MimeTypes.OCTET_STREAM)) {
             return fileContentDetect;
         }
