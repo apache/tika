@@ -1,4 +1,4 @@
-Release 1.11 - Current Development
+Release 1.11 - 10/18/2015
 
   * Java7 API support for allowing java.nio.file.Path as method arguments
     was added to Tika and to ParsingReader, TikaFileTypeDetector, and to
