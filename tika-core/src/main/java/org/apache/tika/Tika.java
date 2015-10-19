@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.net.URL;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import org.apache.tika.config.TikaConfig;
@@ -250,6 +251,25 @@ public class Tika {
     }
 
     /**
+     * Detects the media type of the file at the given path. The type
+     * detection is based on the document content and a potential known
+     * file extension.
+     * <p>
+     * Use the {@link #detect(String)} method when you want to detect the
+     * type of the document without actually accessing the file.
+     *
+     * @param path the path of the file
+     * @return detected media type
+     * @throws IOException if the file can not be read
+     */
+    public String detect(Path path) throws IOException {
+        Metadata metadata = new Metadata();
+        try (InputStream stream = TikaInputStream.get(path, metadata)) {
+            return detect(stream, metadata);
+        }
+    }
+
+    /**
      * Detects the media type of the given file. The type detection is
      * based on the document content and a potential known file extension.
      * <p>
@@ -259,6 +279,7 @@ public class Tika {
      * @param file the file
      * @return detected media type
      * @throws IOException if the file can not be read
+     * @see #detect(Path)
      */
     public String detect(File file) throws IOException {
         Metadata metadata = new Metadata();
@@ -405,11 +426,25 @@ public class Tika {
     }
 
     /**
+     * Parses the file at the given path and returns the extracted text content.
+     *
+     * @param path the path of the file to be parsed
+     * @return extracted text content
+     * @throws IOException if the file can not be read or parsed
+     */
+    public Reader parse(Path path) throws IOException {
+        Metadata metadata = new Metadata();
+        InputStream stream = TikaInputStream.get(path, metadata);
+        return parse(stream, metadata);
+    }
+
+    /**
      * Parses the given file and returns the extracted text content.
      *
      * @param file the file to be parsed
      * @return extracted text content
      * @throws IOException if the file can not be read or parsed
+     * @see #parse(Path)
      */
     public Reader parse(File file) throws IOException {
         Metadata metadata = new Metadata();
@@ -537,6 +572,25 @@ public class Tika {
     }
 
     /**
+     * Parses the file at the given path and returns the extracted text content.
+     * <p>
+     * To avoid unpredictable excess memory use, the returned string contains
+     * only up to {@link #getMaxStringLength()} first characters extracted
+     * from the input document. Use the {@link #setMaxStringLength(int)}
+     * method to adjust this limitation.
+     *
+     * @param path the path of the file to be parsed
+     * @return extracted text content
+     * @throws IOException if the file can not be read
+     * @throws TikaException if the file can not be parsed
+     */
+    public String parseToString(Path path) throws IOException, TikaException {
+        Metadata metadata = new Metadata();
+        InputStream stream = TikaInputStream.get(path, metadata);
+        return parseToString(stream, metadata);
+    }
+
+    /**
      * Parses the given file and returns the extracted text content.
      * <p>
      * To avoid unpredictable excess memory use, the returned string contains
@@ -548,6 +602,7 @@ public class Tika {
      * @return extracted text content
      * @throws IOException if the file can not be read
      * @throws TikaException if the file can not be parsed
+     * @see #parseToString(Path)
      */
     public String parseToString(File file) throws IOException, TikaException {
         Metadata metadata = new Metadata();
