@@ -17,12 +17,14 @@
 package org.apache.tika.config;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -97,7 +99,16 @@ public class TikaConfig {
 
     public TikaConfig(String file)
             throws TikaException, IOException, SAXException {
-        this(new File(file));
+        this(Paths.get(file));
+    }
+
+    public TikaConfig(Path path)
+            throws TikaException, IOException, SAXException {
+        this(path, new ServiceLoader());
+    }
+    public TikaConfig(Path path, ServiceLoader loader)
+            throws TikaException, IOException, SAXException {
+        this(getBuilder().parse(path.toFile()), loader);
     }
 
     public TikaConfig(File file)
@@ -212,27 +223,7 @@ public class TikaConfig {
             this.translator = getDefaultTranslator(serviceLoader);
             this.executorService = getDefaultExecutorService();
         } else {
-            // Locate the given configuration file
-            InputStream stream = null;
-            File file = new File(config);
-            if (file.isFile()) {
-                stream = new FileInputStream(file);
-            }
-            if (stream == null) {
-                try {
-                    stream = new URL(config).openStream();
-                } catch (IOException ignore) {
-                }
-            }
-            if (stream == null) {
-                stream = serviceLoader.getResourceAsStream(config);
-            }
-            if (stream == null) {
-                throw new TikaException(
-                        "Specified Tika configuration not found: " + config);
-            }
-
-            try {
+            try (InputStream stream = getConfigInputStream(config, serviceLoader)) {
                 Element element = getBuilder().parse(stream).getDocumentElement();
                 ParserXmlLoader parserLoader = new ParserXmlLoader();
                 DetectorXmlLoader detectorLoader = new DetectorXmlLoader();
@@ -248,10 +239,31 @@ public class TikaConfig {
                 throw new TikaException(
                         "Specified Tika configuration has syntax errors: "
                                 + config, e);
-            } finally {
-                stream.close();
             }
         }
+    }
+
+    private static InputStream getConfigInputStream(String config, ServiceLoader serviceLoader)
+            throws TikaException, IOException {
+        InputStream stream = null;
+        try {
+            stream = new URL(config).openStream();
+        } catch (IOException ignore) {
+        }
+        if (stream == null) {
+            stream = serviceLoader.getResourceAsStream(config);
+        }
+        if (stream == null) {
+            Path file = Paths.get(config);
+            if (Files.isRegularFile(file)) {
+                stream = Files.newInputStream(file);
+            }
+        }
+        if (stream == null) {
+            throw new TikaException(
+                    "Specified Tika configuration not found: " + config);
+        }
+        return stream;
     }
 
     private static String getText(Node node) {
@@ -417,7 +429,7 @@ public class TikaConfig {
                     String mime = getText(cElement);
                     MediaType type = MediaType.parse(mime);
                     if (type != null) {
-                        if (types == null) types = new HashSet<MediaType>();
+                        if (types == null) types = new HashSet<>();
                         types.add(type);
                     } else {
                         throw new TikaException(
@@ -432,8 +444,8 @@ public class TikaConfig {
     
     private static ServiceLoader serviceLoaderFromDomElement(Element element, ClassLoader loader) {
         Element serviceLoaderElement = getChild(element, "service-loader");
-        ServiceLoader serviceLoader = null;
-        if(serviceLoaderElement != null) {
+        ServiceLoader serviceLoader;
+        if (serviceLoaderElement != null) {
             boolean dynamic = Boolean.parseBoolean(serviceLoaderElement.getAttribute("dynamic"));
             LoadErrorHandler loadErrorHandler = LoadErrorHandler.IGNORE;
             String loadErrorHandleConfig = serviceLoaderElement.getAttribute("loadErrorHandler");
@@ -728,7 +740,7 @@ public class TikaConfig {
                 throws InvocationTargetException, IllegalAccessException,
                 InstantiationException {
             Detector detector = null;
-            Constructor<? extends Detector> c = null;
+            Constructor<? extends Detector> c;
             MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
             
             // Try the possible default and composite detector constructors

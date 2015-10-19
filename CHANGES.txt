@@ -1,8 +1,8 @@
 Release 1.11 - Current Development
 
   * Java7 API support for allowing java.nio.file.Path as method arguments
-    was added to Tika and to ParsingReader, TikaFileTypeDetector 
-    (TIKA-1745, TIKA-1746).
+    was added to Tika and to ParsingReader, TikaFileTypeDetector, and to
+    Tika Config (TIKA-1745, TIKA-1746, TIKA-1751).
 
   * MIME support was added for WebVTT: The Web Video Text Tracks Format
     files (TIKA-1772).
