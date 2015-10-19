@@ -16,9 +16,10 @@
  */
 package org.apache.tika.config;
 
-import java.io.File;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -77,7 +78,7 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
                 getClass().getClassLoader(), LoadErrorHandler.WARN);
         ServiceLoader throwLoader = new ServiceLoader(
                 getClass().getClassLoader(), LoadErrorHandler.THROW);
-        File configPath = new File(new URI(getConfigPath("TIKA-1700-unknown-parser.xml")));
+        Path configPath = Paths.get(new URI(getConfigPath("TIKA-1700-unknown-parser.xml")));
         
         TikaConfig ignore = new TikaConfig(configPath, ignoreLoader);
         assertNotNull(ignore);
