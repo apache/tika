@@ -629,10 +629,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<p>This is the footer text.</p>", xml);
         assertContains("<p>Here is a text box</p>", xml);
         assertContains("<p>Bold", xml);
-        assertContains("italic", xml);
-        assertContains("underline", xml);
-        assertContains("superscript", xml);
-        assertContains("subscript", xml);
+        assertContains("italic underline superscript subscript", xml);
         assertContains("<p>Here is a citation:", xml);
         assertContains("Figure 1 This is a caption for Figure 1", xml);
         assertContains("(Kramer)", xml);

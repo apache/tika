@@ -238,28 +238,56 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             // = TextHeaderAtom.TITLE_TYPE, 1 = TextHeaderAtom.BODY_TYPE):
             //if (!isMaster || (run.getRunType() != 0 && run.getRunType() != 1)) {
 
-        	for (HSLFTextParagraph htp : run) {
-        		xhtml.startElement("p");
+            boolean isBullet = false;
+            for (HSLFTextParagraph htp : run) {
+                boolean nextBullet = htp.isBullet();
+                // TODO: identify bullet/list type
+                if (isBullet != nextBullet) {
+                    isBullet = nextBullet;
+                    if (isBullet) {
+                        xhtml.startElement("ul");
+                    } else {
+                        xhtml.endElement("ul");
+                    }
+                }
 
-        		for (HSLFTextRun htr : htp.getTextRuns()) {
-        			String line = htr.getRawText();
-        			if (line != null) {
-        				boolean isfirst = true;
-        				for (String fragment : line.split("\\u000b")){
-        					if (!isfirst)  {
-        	                    xhtml.startElement("br");
-        	                    xhtml.endElement("br");
-        					}
-        					isfirst = false;
-        					xhtml.characters(fragment.trim());
-        				}
-        			}
-        		}
-                xhtml.endElement("p");
+                List<HSLFTextRun> textRuns = htp.getTextRuns();
+                String firstLine = removePBreak(textRuns.get(0).getRawText());
+                boolean showBullet = (isBullet && (textRuns.size() > 1 || !"".equals(firstLine)));
+                String paraTag = showBullet ? "li" : "p";
 
+                xhtml.startElement(paraTag);
+                for (HSLFTextRun htr : textRuns) {
+                    String line = htr.getRawText();
+                    if (line != null) {
+                        boolean isfirst = true;
+                        for (String fragment : line.split("\\u000b")) {
+                            if (!isfirst) {
+                                xhtml.startElement("br");
+                                xhtml.endElement("br");
+                            }
+                            isfirst = false;
+                            xhtml.characters(removePBreak(fragment));
+                        }
+                        if (line.endsWith("\u000b")) {
+                            xhtml.startElement("br");
+                            xhtml.endElement("br");
+                        }
+                    }
+                }
+                xhtml.endElement(paraTag);
             }
-        	
+            if (isBullet) {
+                xhtml.endElement("ul");
+            }
         }
+    }
+
+    // remove trailing paragraph break
+    private static String removePBreak(String fragment) {
+        // the last text run of a text paragraph contains the paragraph break (\r)
+        // line breaks (\\u000b) can happen more often
+        return fragment.replaceFirst("\\r$", "");
     }
 
     private void handleSlideEmbeddedPictures(HSLFSlideShow slideshow, XHTMLContentHandler xhtml)
@@ -278,8 +306,8 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     mediaType = "image/bmp";
                     break;
                 default:
-            		mediaType = pic.getContentType();
-            		break;
+                    mediaType = pic.getContentType();
+                    break;
             }
 
             handleEmbeddedResource(
