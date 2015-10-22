@@ -58,12 +58,12 @@ public class PowerPointParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String xml = getXML("testPPT_various.ppt", metadata).xml;
         assertContains("<p>Footnote appears here", xml);
-        assertContains("<p>[1]This is a footnote.", xml);
+        assertContains("<p>[1] This is a footnote.", xml);
         assertContains("<p>This is the header text.</p>", xml);
         assertContains("<p>This is the footer text.</p>", xml);
         assertContains("<p>Here is a text box</p>", xml);
-        //TODO: fix this spacing: assertContains("<p>Bold ", xml);
-        assertContains("italic", xml);
+        assertContains("<p>Bold ", xml);
+        assertContains("italic underline superscript subscript", xml);
         assertContains("underline", xml);
         assertContains("superscript", xml);
         assertContains("subscript", xml);
