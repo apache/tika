@@ -1,9 +1,9 @@
 Release 1.12 - Current Development
 
+  * Fix regression with spacing in PPT via Andreas Beeker (TIKA-1777).
+
 
 Release 1.11 - 10/18/2015
-
-  * Fix regression with spacing in PPT via Andreas Beeker (TIKA-1777).
 
   * Java7 API support for allowing java.nio.file.Path as method arguments
     was added to Tika and to ParsingReader, TikaFileTypeDetector, and to
