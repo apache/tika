@@ -1,5 +1,8 @@
 Release 1.12 - Current Development
 
+  * Allow XHTMLContentHandler to pass attributes of html element 
+    via Markus Jelsma (TIKA-1782).
+
   * Fix regression with spacing in PPT via Andreas Beeker (TIKA-1777).
 
 
