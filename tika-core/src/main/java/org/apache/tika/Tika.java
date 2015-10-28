@@ -283,7 +283,8 @@ public class Tika {
      */
     public String detect(File file) throws IOException {
         Metadata metadata = new Metadata();
-        try (InputStream stream = TikaInputStream.get(file, metadata)) {
+        try (@SuppressWarnings("deprecation")
+        InputStream stream = TikaInputStream.get(file, metadata)) {
             return detect(stream, metadata);
         }
     }
@@ -399,7 +400,7 @@ public class Tika {
      * the time when the {@link Reader#close()} method is called.
      *
      * @param stream the document to be parsed
-     * @param metadata document metadata
+     * @param metadata where document's metadata will be populated
      * @return extracted text content
      * @throws IOException if the document can not be read or parsed
      */
@@ -427,14 +428,46 @@ public class Tika {
 
     /**
      * Parses the file at the given path and returns the extracted text content.
+     * <p>
+     * Metadata information extracted from the document is returned in 
+     *  the supplied metadata instance.
+     *
+     * @param path the path of the file to be parsed
+     * @param metadata where document's metadata will be populated
+     * @return extracted text content
+     * @throws IOException if the file can not be read or parsed
+     */
+    public Reader parse(Path path, Metadata metadata) throws IOException {
+        InputStream stream = TikaInputStream.get(path, metadata);
+        return parse(stream, metadata);
+    }
+    
+    /**
+     * Parses the file at the given path and returns the extracted text content.
      *
      * @param path the path of the file to be parsed
      * @return extracted text content
      * @throws IOException if the file can not be read or parsed
      */
     public Reader parse(Path path) throws IOException {
-        Metadata metadata = new Metadata();
-        InputStream stream = TikaInputStream.get(path, metadata);
+        return parse(path, new Metadata());
+    }
+
+    /**
+     * Parses the given file and returns the extracted text content.
+     * <p>
+     * Metadata information extracted from the document is returned in 
+     *  the supplied metadata instance.
+     *
+     * @param file the file to be parsed
+     * @param metadata where document's metadata will be populated
+     * @return extracted text content
+     * @throws IOException if the file can not be read or parsed
+     * @see #parse(Path)
+     */
+    public Reader parse(File file, Metadata metadata) throws IOException {
+        @SuppressWarnings("deprecation")
+        InputStream stream = TikaInputStream.get(file, metadata);
         return parse(stream, metadata);
     }
 
@@ -447,11 +480,9 @@ public class Tika {
      * @see #parse(Path)
      */
     public Reader parse(File file) throws IOException {
-        Metadata metadata = new Metadata();
-        InputStream stream = TikaInputStream.get(file, metadata);
-        return parse(stream, metadata);
+        return parse(file, new Metadata());
     }
-
+    
     /**
      * Parses the resource at the given URL and returns the extracted
      * text content.
@@ -606,6 +637,7 @@ public class Tika {
      */
     public String parseToString(File file) throws IOException, TikaException {
         Metadata metadata = new Metadata();
+        @SuppressWarnings("deprecation")
         InputStream stream = TikaInputStream.get(file, metadata);
         return parseToString(stream, metadata);
     }
