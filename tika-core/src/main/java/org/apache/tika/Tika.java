@@ -413,6 +413,21 @@ public class Tika {
 
     /**
      * Parses the given document and returns the extracted text content.
+     * Metadata information extracted from the document is returned in that
+     * same metadata instance.
+     * <p>
+     *
+     * @param file the document to be parsed
+     * @param metadata document metadata
+     * @return extracted text content
+     * @throws IOException if the document can not be read or parsed
+     */
+    public Reader parse(File file, Metadata metadata) throws IOException {
+        return parse(TikaInputStream.get(file.toPath(), metadata), metadata);
+    }
+
+    /**
+     * Parses the given document and returns the extracted text content.
      * <p>
      * The returned reader will be responsible for closing the given stream.
      * The stream and any associated resources will be closed at or before
