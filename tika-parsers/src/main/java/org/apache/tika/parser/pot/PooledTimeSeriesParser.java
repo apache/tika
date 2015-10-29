@@ -13,18 +13,35 @@ import org.xml.sax.SAXException;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.LogFactory;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.io.TikaInputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Created by Aditya on 9/15/15.
  */
 public class PooledTimeSeriesParser extends AbstractParser {
-
+    private static final PooledTimeSeriesConfig DEFAULT_CONFIG = new PooledTimeSeriesConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<MediaType>(Arrays.asList(new MediaType[]{
                     MediaType.video("avi"), MediaType.video("mp4")
@@ -84,6 +101,8 @@ public class PooledTimeSeriesParser extends AbstractParser {
 
         // TODO
         // Setup deps/pre-rqs
+        PooledTimeSeriesConfig config = context.get(PooledTimeSeriesConfig.class, DEFAULT_CONFIG);
+
 
         // TODO: Check for PooledTImeSeries and OpenCV
         // if ( !hasOpenCV()) {
@@ -103,7 +122,11 @@ public class PooledTimeSeriesParser extends AbstractParser {
 
             output = tmp.createTemporaryFile();
 
-            computePoT(input, output);
+            computePoT(input, output, config);
+
+            // Output is same as inputfilename with .of.txt as suffix
+            // TODO: Repeast for .hog.txt
+            output = new File(input.getAbsoluteFile() + ".of.txt");
 
             doExtract(new FileInputStream(output), xhtml);
 
@@ -116,13 +139,60 @@ public class PooledTimeSeriesParser extends AbstractParser {
         }
     }
 
-    private void computePoT(File input, File output /* TODO PooledTimeSeriesConfig() */) throws IOException, TikaException {
+    private void computePoT(File input, File output, PooledTimeSeriesConfig config) throws IOException, TikaException {
 
         // TODO
         // formulate cmd for PoT.java
         // Question: Should we integrate the PoT code into Tika itself,
         // and handoff the inputstream to an instance of PoT?
         // (As opposed to invoking it form the cmd line)
+
+
+        String[] cmd = {"java","-Djava.library.path ", config.getOpenCVPath(), " -jar "
+                , config.getPooledTimeSeriesPath() + getPooledTimeSeriesProg(),
+                input.getPath()
+        };
+
+        
+        System.out.println(Arrays.asList(cmd));
+
+        ProcessBuilder pb = new ProcessBuilder(cmd);
+        final Process process = pb.start();
+
+        process.getOutputStream().close();
+        InputStream out = process.getInputStream();
+        InputStream err = process.getErrorStream();
+
+        //logStream("OCR MSG", out, input);
+        //logStream("OCR ERROR", err, input);
+
+        FutureTask<Integer> waitTask = new FutureTask<Integer>(new Callable<Integer>() {
+            public Integer call() throws Exception {
+                return process.waitFor();
+            }
+        });
+
+        Thread waitThread = new Thread(waitTask);
+        waitThread.start();
+
+        try {
+            waitTask.get(config.getTimeout(), TimeUnit.SECONDS);
+
+        } catch (InterruptedException e) {
+            waitThread.interrupt();
+            process.destroy();
+            Thread.currentThread().interrupt();
+            throw new TikaException("PooledTimeSeriesParser interrupted", e);
+
+        } catch (ExecutionException e) {
+            // should not be thrown
+
+        } catch (TimeoutException e) {
+            waitThread.interrupt();
+            process.destroy();
+            throw new TikaException("PooledTimeSeriesParser timeout", e);
+        }
+
     }
 
 
@@ -147,9 +217,18 @@ public class PooledTimeSeriesParser extends AbstractParser {
         // TODO : extract feature vector from PoT output
         //      - i.e OF.txt and HOG.txt
 
+        BufferedReader reader = new BufferedReader(new InputStreamReader(stream, UTF_8));
+        String line = reader.readLine();
+
+        xhtml.characters(line);
+
         xhtml.endElement("table");
         xhtml.endDocument();
     }
 
+    static String getPooledTimeSeriesProg() {
+        // TODO: Seperate out target/ folder from excutable jar
+        return "target/pooled-time-series-1.0-SNAPSHOT-jar-with-dependencies.jar";
+    }
 
 }
