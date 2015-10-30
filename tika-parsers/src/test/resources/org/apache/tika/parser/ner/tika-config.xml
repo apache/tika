@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<properties>
+    <parsers>
+        <parser class="org.apache.tika.parser.ner.NamedEntityParser">
+            <mime>text/plain</mime>
+            <mime>text/html</mime>
+            <mime>application/xhtml+xml</mime>
+        </parser>
+    </parsers>
+
+</properties>
