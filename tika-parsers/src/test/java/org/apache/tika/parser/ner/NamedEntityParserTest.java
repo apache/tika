@@ -22,6 +22,7 @@ import org.apache.tika.metadata.Metadata;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 
@@ -44,7 +45,7 @@ public class NamedEntityParserTest {
                 " located in Los Angeles . USC's football team is called by name Trojans." +
                 " Mr. John McKay was a head coach of the team from 1960 - 1975";
         Metadata md = new Metadata();
-        tika.parse(new ByteArrayInputStream(text.getBytes()), md);
+        tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
 
         HashSet<String> set = new HashSet<String>();
         set.addAll(Arrays.asList(md.getValues("X-Parsed-By")));
