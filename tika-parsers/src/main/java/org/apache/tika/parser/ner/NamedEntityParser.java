@@ -18,6 +18,8 @@
 package org.apache.tika.parser.ner;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -31,6 +33,8 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,6 +57,8 @@ public class NamedEntityParser extends AbstractParser {
     public static final String DEFAULT_NER_IMPL = OpenNLPNERecogniser.class.getName();
     public static final String SYS_PROP_NER_IMPL = "ner.impl.class";
 
+    public Tika secondaryParser;
+
     static {
         MEDIA_TYPES.add(MediaType.TEXT_PLAIN);
     }
@@ -73,6 +79,8 @@ public class NamedEntityParser extends AbstractParser {
         try {
             recogniser = (NERecogniser) Class.forName(className).newInstance();
             this.available = recogniser.isAvailable();
+            TikaConfig config = new TikaConfig();
+            this.secondaryParser = new Tika(config);
         } catch (Exception e) {
             LOG.error(e.getMessage(), e);
             this.available = false;
@@ -87,11 +95,6 @@ public class NamedEntityParser extends AbstractParser {
                       Metadata metadata, ParseContext parseContext)
             throws IOException, SAXException, TikaException {
 
-        if (!MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE))) {
-            //TODO: get text content from stream
-            LOG.warn("Transform Content type {} to text/plain for better results",
-                    metadata.get(Metadata.CONTENT_TYPE));
-        }
         if (!initialized) {
             initialize(parseContext);
         }
@@ -99,7 +102,12 @@ public class NamedEntityParser extends AbstractParser {
             return;
         }
 
-        String text = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
+        Reader reader = MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE))
+                ? new InputStreamReader(inputStream, StandardCharsets.UTF_8)
+                : secondaryParser.parse(inputStream);
+
+        String text = IOUtils.toString(reader);
+        IOUtils.closeQuietly(reader);
         Map<String, Set<String>> names = recogniser.recognise(text);
 
         for (Map.Entry<String, Set<String>> entry : names.entrySet()) {
