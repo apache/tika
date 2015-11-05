@@ -1,0 +1,4 @@
+ner.model=classifiers/english.conll.4class.distsim.crf.ser.gz,classifiers/english.muc.7class.distsim.crf.ser.gz,classifiers/english.all.3class.distsim.crf.ser.gz
+ner.useSUTime=false
+ner.combinationMode=HIGH_RECALL
+serializeTo=example.serialized.ncc.ncc.ser.gz
