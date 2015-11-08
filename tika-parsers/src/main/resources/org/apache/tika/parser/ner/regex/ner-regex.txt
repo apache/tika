@@ -1,0 +1,8 @@
+# comments starts with #
+
+# there can be spaces
+# The pattern as follows
+# type = regex
+# the first occurrence of '=' separates type from its regex
+
+#WEEK_DAY=(?i)((sun)|(mon)|(tues)|(thurs)|(fri)|((sat)(ur)?))(day)?

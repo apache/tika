@@ -1,0 +1,1 @@
+WEEK_DAY=(?i)((sun)|(mon)|(tues)|(thurs)|(fri)|((sat)(ur)?))(day)?
