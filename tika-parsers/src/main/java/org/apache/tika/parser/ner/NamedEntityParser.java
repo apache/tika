@@ -36,9 +36,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
@@ -63,7 +61,7 @@ public class NamedEntityParser extends AbstractParser {
         MEDIA_TYPES.add(MediaType.TEXT_PLAIN);
     }
 
-    private NERecogniser recogniser;
+    private List<NERecogniser> nerChain;
     private volatile boolean initialized = false;
     private volatile boolean available = false;
 
@@ -74,14 +72,29 @@ public class NamedEntityParser extends AbstractParser {
         initialized = true;
 
         //TODO: read class name from context or config
-        String className = System.getProperty(SYS_PROP_NER_IMPL, DEFAULT_NER_IMPL);
-        LOG.info("going to load, instantiate and bind the instance of {}", className);
+        //There can be multiple classes in the form of comma separated class names;
+        String classNamesString = System.getProperty(SYS_PROP_NER_IMPL, DEFAULT_NER_IMPL);
+        String[] classNames = classNamesString.split(",");
+        this.nerChain = new ArrayList<>(classNames.length);
+        for (String className : classNames) {
+            className = className.trim();
+            LOG.info("going to load, instantiate and bind the instance of {}", className);
+            try {
+                NERecogniser recogniser = (NERecogniser) Class.forName(className).newInstance();
+                LOG.info("{} is available ? {}", className, recogniser.isAvailable());
+                if (recogniser.isAvailable()) {
+                    nerChain.add(recogniser);
+                }
+            } catch (Exception e) {
+                LOG.error(e.getMessage(), e);
+            }
+        }
         try {
-            recogniser = (NERecogniser) Class.forName(className).newInstance();
-            this.available = recogniser.isAvailable();
             TikaConfig config = new TikaConfig();
             this.secondaryParser = new Tika(config);
-        } catch (Exception e) {
+            this.available = !nerChain.isEmpty();
+            LOG.info("Number of NERecognisers in chain {}", nerChain.size());
+        } catch (Exception e){
             LOG.error(e.getMessage(), e);
             this.available = false;
         }
@@ -108,13 +121,17 @@ public class NamedEntityParser extends AbstractParser {
 
         String text = IOUtils.toString(reader);
         IOUtils.closeQuietly(reader);
-        Map<String, Set<String>> names = recogniser.recognise(text);
 
-        for (Map.Entry<String, Set<String>> entry : names.entrySet()) {
-            if (entry.getValue() != null) {
-                String mdKey = MD_KEY_PREFIX + entry.getKey();
-                for (String name : entry.getValue()) {
-                    metadata.add(mdKey, name);
+        for (NERecogniser ner : nerChain) {
+            Map<String, Set<String>> names = ner.recognise(text);
+            if (names != null) {
+                for (Map.Entry<String, Set<String>> entry : names.entrySet()) {
+                    if (entry.getValue() != null) {
+                        String mdKey = MD_KEY_PREFIX + entry.getKey();
+                        for (String name : entry.getValue()) {
+                            metadata.add(mdKey, name);
+                        }
+                    }
                 }
             }
         }

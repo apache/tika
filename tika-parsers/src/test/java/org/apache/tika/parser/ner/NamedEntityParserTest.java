@@ -19,6 +19,8 @@ package org.apache.tika.parser.ner;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
+import org.apache.tika.parser.ner.regex.RegexNERecogniser;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
@@ -68,6 +70,22 @@ public class NamedEntityParserTest {
         set.addAll(Arrays.asList(md.getValues("NER_DATE")));
         assertTrue(set.contains("1960 - 1975"));
         //assertTrue(set.contains("1960"));
+
+    }
+
+    @Test
+    public void testNerChain() throws Exception {
+        String classNames = OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
+        System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, classNames);
+        TikaConfig config = new TikaConfig(getClass().getResourceAsStream(CONFIG_FILE));
+        Tika tika = new Tika(config);
+        String text = "University of Southern California (USC), is located in Los Angeles ." +
+                " Campus is busy from monday to saturday";
+        Metadata md = new Metadata();
+        tika.parse(new ByteArrayInputStream(text.getBytes(Charset.defaultCharset())), md);
+        HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
+        assertTrue(keys.contains("NER_WEEK_DAY"));
+        assertTrue(keys.contains("NER_LOCATION"));
 
     }
 }
