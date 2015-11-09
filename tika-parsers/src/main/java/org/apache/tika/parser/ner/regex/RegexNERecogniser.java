@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,7 +54,7 @@ public class RegexNERecogniser implements NERecogniser {
     public RegexNERecogniser(InputStream stream){
         try {
             patterns = new HashMap<>();
-            List<String> lines = IOUtils.readLines(stream);
+            List<String> lines = IOUtils.readLines(stream, StandardCharsets.UTF_8);
             IOUtils.closeQuietly(stream);
             for (String line : lines) {
                 line = line.trim();
