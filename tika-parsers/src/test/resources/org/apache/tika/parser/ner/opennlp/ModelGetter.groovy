@@ -1,4 +1,3 @@
-package org.apache.tika.parser.ner.opennlp
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,6 +14,11 @@ package org.apache.tika.parser.ner.opennlp
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/*
+ * This file downloads open nlp model for testing the NamedEntityParser
+ */
+
 import org.apache.commons.io.IOUtils
 
 /**
@@ -79,10 +83,7 @@ def modelFiles = //filePath : url
         [ (prefixPath + "ner-person.bin"): (urlPrefix + "/en-ner-person.bin"),
           (prefixPath + "ner-location.bin"): (urlPrefix + "/en-ner-location.bin"),
           (prefixPath + "ner-organization.bin"): (urlPrefix + "/en-ner-organization.bin"),
-          (prefixPath + "ner-date.bin"): (urlPrefix + "/en-ner-date.bin")/*,
-          (prefixPath + "ner-time.bin"): (urlPrefix + "/en-ner-time.bin"),
-          (prefixPath + "ner-money.bin"): (urlPrefix + "/en-ner-money.bin"),
-          (prefixPath + "ner-percentage.bin"): (urlPrefix + "/en-ner-percentage.bin")*/]
+          (prefixPath + "ner-date.bin"): (urlPrefix + "/en-ner-date.bin")]
 
 for (def entry : modelFiles) {
     File file = new File(entry.key)

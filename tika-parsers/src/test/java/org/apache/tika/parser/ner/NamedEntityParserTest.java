@@ -28,10 +28,10 @@ import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Created by tg on 10/30/15.
+ *Test case for {@link NamedEntityParser}
  */
 public class NamedEntityParserTest {
 
@@ -60,7 +60,6 @@ public class NamedEntityParserTest {
         set.clear();
         set.addAll(Arrays.asList(md.getValues("NER_LOCATION")));
         assertTrue(set.contains("Los Angeles"));
-        //assertTrue(set.contains("California"));
 
         set.clear();
         set.addAll(Arrays.asList(md.getValues("NER_ORGANIZATION")));
@@ -69,13 +68,13 @@ public class NamedEntityParserTest {
         set.clear();
         set.addAll(Arrays.asList(md.getValues("NER_DATE")));
         assertTrue(set.contains("1960 - 1975"));
-        //assertTrue(set.contains("1960"));
 
     }
 
     @Test
     public void testNerChain() throws Exception {
-        String classNames = OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
+        String classNames = OpenNLPNERecogniser.class.getName()
+                + "," + RegexNERecogniser.class.getName();
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, classNames);
         TikaConfig config = new TikaConfig(getClass().getResourceAsStream(CONFIG_FILE));
         Tika tika = new Tika(config);
