@@ -66,10 +66,15 @@ public class GeoParser extends AbstractParser {
 		return SUPPORTED_TYPES;
 	}
 
-
+	/**
+	 * Initializes this parser
+	 * @param context the parse context
+     */
 	public void initialize(ParseContext context) {
 		initialized = true;
-		config = context.get(GeoParserConfig.class, config);
+		if (context != null) {
+			config = context.get(GeoParserConfig.class, config);
+		}
 		URL modelUrl= config.getNerModelUrl();
 		//if NER model is available and lucene-geo-gazetteer is available
 		this.available = modelUrl != null &&
@@ -173,6 +178,9 @@ public class GeoParser extends AbstractParser {
 	}
 
 	public boolean isAvailable() {
+		if (!initialized) {
+			initialize(null);
+		}
 		return this.available;
 	}
 

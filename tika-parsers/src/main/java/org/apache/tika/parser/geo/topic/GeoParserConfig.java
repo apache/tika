@@ -20,7 +20,6 @@ package org.apache.tika.parser.geo.topic;
 import java.io.File;
 import java.io.Serializable;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 
 public class GeoParserConfig implements Serializable {

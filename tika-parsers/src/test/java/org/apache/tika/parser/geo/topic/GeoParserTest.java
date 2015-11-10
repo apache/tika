@@ -35,8 +35,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
 
 public class GeoParserTest {
-	private GeoParser geoparser = new GeoParser();
-
+	private Parser geoparser = new GeoParser();
 
 	@Test
 	public void testFunctions() throws UnsupportedEncodingException,
@@ -53,11 +52,12 @@ public class GeoParserTest {
 		ParseContext context = new ParseContext();
 		GeoParserConfig config = new GeoParserConfig();
 		context.set(GeoParserConfig.class, config);
-		geoparser.initialize(context);
+
 		InputStream s = new ByteArrayInputStream(text.getBytes(UTF_8));
 		/* if it's not available no tests to run */
-		if (!geoparser.isAvailable())
+		if (!((GeoParser) geoparser).isAvailable())
 			return;
+
 		geoparser.parse(s, new BodyContentHandler(), metadata, context);
 
 		assertNotNull(metadata.get("Geographic_NAME"));
@@ -81,8 +81,6 @@ public class GeoParserTest {
 		ParseContext context = new ParseContext();
 		GeoParserConfig config = new GeoParserConfig();
 		context.set(GeoParserConfig.class, config);
-
-		geoparser.initialize(context);
 		geoparser.parse(new ByteArrayInputStream(text.getBytes(UTF_8)),
 				new BodyContentHandler(), metadata, context);
 		assertNull(metadata.get("Geographic_NAME"));
