@@ -997,8 +997,8 @@
     <acronym>ASiC-E</acronym>
     <_comment>Extended Associated Signature Container</_comment>
     <sub-class-of type="application/zip"/>
-    <!-- Only works if the mimetype file is the first zip entry -->
-    <magic priority="50">
+    <!-- Spec says the Mimetype entry should be the first in the zip -->
+    <magic priority="60">
       <match value="PK\003\004" type="string" offset="0">
         <match value="mimetypeapplication/vnd.etsi.asic-e+zip" type="string" offset="30" />
       </match>
@@ -1010,8 +1010,8 @@
     <acronym>ASiC-S</acronym>
     <_comment>Simple Associated Signature Container</_comment>
     <sub-class-of type="application/zip"/>
-    <!-- Only works if the mimetype file is the first zip entry -->
-    <magic priority="50">
+    <!-- Spec says the Mimetype entry should be the first in the zip -->
+    <magic priority="60">
       <match value="PK\003\004" type="string" offset="0">
         <match value="mimetypeapplication/vnd.etsi.asic-s+zip" type="string" offset="30" />
       </match>
