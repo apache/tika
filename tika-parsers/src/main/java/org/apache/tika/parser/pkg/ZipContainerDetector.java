@@ -180,9 +180,9 @@ public class ZipContainerDetector implements Detector {
     }
 
     /**
-     * OpenDocument files, along with EPub files, have a mimetype
-     *  entry in the root of their Zip file. This entry contains the
-     *  mimetype of the overall file, stored as a single string.  
+     * OpenDocument files, along with EPub files and ASiC ones, have a 
+     *  mimetype entry in the root of their Zip file. This entry contains
+     *  the mimetype of the overall file, stored as a single string.  
      */
     private static MediaType detectOpenDocument(ZipFile zip) {
         try {
