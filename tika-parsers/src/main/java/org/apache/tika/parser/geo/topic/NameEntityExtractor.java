@@ -17,38 +17,31 @@
 
 package org.apache.tika.parser.geo.topic;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import opennlp.tools.namefind.NameFinderME;
 import opennlp.tools.namefind.TokenNameFinderModel;
-import opennlp.tools.util.InvalidFormatException;
 import opennlp.tools.util.Span;
-
 import org.apache.commons.io.IOUtils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class NameEntityExtractor {
-	private String nerModelPath = null;
+
 	ArrayList<String> locationNameEntities;
 	String bestNameEntity;
 	private HashMap<String, Integer> tf;
+	private final NameFinderME nameFinder;
 
-	public NameEntityExtractor(String nerModelpath) {
+	public NameEntityExtractor(URL modelUrl) throws IOException {
 		this.locationNameEntities = new ArrayList<String>();
 		this.bestNameEntity = null;
-		this.nerModelPath = nerModelpath;
-		tf = new HashMap<String, Integer>();
-
+		TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
+		this.nameFinder = new NameFinderME(model);
+		this.tf = new HashMap<String, Integer>();
 	}
 
 	/*
@@ -60,24 +53,27 @@ public class NameEntityExtractor {
 	 */
 
 	public void getAllNameEntitiesfromInput(InputStream stream)
-			throws InvalidFormatException, IOException {
+			throws IOException {
 
-		InputStream modelIn = new FileInputStream(nerModelPath);
-		TokenNameFinderModel model = new TokenNameFinderModel(modelIn);
-		NameFinderME nameFinder = new NameFinderME(model);
+
 		String[] in = IOUtils.toString(stream, UTF_8).split(" ");
-
-		Span nameE[] = nameFinder.find(in);
+		Span nameE[];
+		//name finder is not thread safe https://opennlp.apache.org/documentation/1.5.2-incubating/manual/opennlp.html#tools.namefind
+		synchronized (nameFinder) {
+			nameE = nameFinder.find(in);
+			//the same name finder is reused, so clear adaptive data
+			nameFinder.clearAdaptiveData();
+		}
 
 		String spanNames = Arrays.toString(Span.spansToStrings(nameE, in));
 		spanNames = spanNames.substring(1, spanNames.length() - 1);
-		modelIn.close();
 		String[] tmp = spanNames.split(",");
 
 		for (String name : tmp) {
 			name = name.trim();
 			this.locationNameEntities.add(name);
 		}
+
 
 	}
 
@@ -123,5 +119,4 @@ public class NameEntityExtractor {
 			}
 		}
 	}
-
 }

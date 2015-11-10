@@ -19,22 +19,17 @@ package org.apache.tika.parser.geo.topic;
 
 import java.io.File;
 import java.io.Serializable;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 
 public class GeoParserConfig implements Serializable {
 
-	private static final long serialVersionUID = 1L;
-	private String nerModelPath = null;
+	private static final long serialVersionUID = 2L;
+	private URL nerModelUrl = null;
 
 	public GeoParserConfig() {
-		try {
-			if (GeoParserConfig.class.getResource("en-ner-location.bin") != null) {
-				this.nerModelPath = new File(GeoParserConfig.class.getResource(
-						"en-ner-location.bin").toURI()).getAbsolutePath();
-			}
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
+		this.nerModelUrl = GeoParserConfig.class.getResource("en-ner-location.bin");
 	}
 
 	public void setNERModelPath(String path) {
@@ -44,11 +39,19 @@ public class GeoParserConfig implements Serializable {
 		if (file.isDirectory() || !file.exists()) {
 			return;
 		}
-		nerModelPath = path;
+		try {
+			this.nerModelUrl = file.toURI().toURL();
+		} catch (MalformedURLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
-	public String getNERPath() {
-		return nerModelPath;
+	public void setNerModelUrl(URL url) {
+		this.nerModelUrl = url;
+	}
+
+	public URL getNerModelUrl() {
+		return nerModelUrl;
 	}
 
 }
