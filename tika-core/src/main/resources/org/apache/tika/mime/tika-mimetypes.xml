@@ -992,6 +992,33 @@
     <glob pattern="*.es3"/>
     <glob pattern="*.et3"/>
   </mime-type>
+
+  <mime-type type="application/vnd.etsi.asic-e+zip">
+    <acronym>ASiC-E</acronym>
+    <_comment>Extended Associated Signature Container</_comment>
+    <sub-class-of type="application/zip"/>
+    <!-- Only works if the mimetype file is the first zip entry -->
+    <magic priority="50">
+      <match value="PK\003\004" type="string" offset="0">
+        <match value="mimetypeapplication/vnd.etsi.asic-e+zip" type="string" offset="30" />
+      </match>
+    </magic>
+    <glob pattern="*.asice" />
+  </mime-type>
+
+  <mime-type type="application/vnd.etsi.asic-s+zip">
+    <acronym>ASiC-S</acronym>
+    <_comment>Simple Associated Signature Container</_comment>
+    <sub-class-of type="application/zip"/>
+    <!-- Only works if the mimetype file is the first zip entry -->
+    <magic priority="50">
+      <match value="PK\003\004" type="string" offset="0">
+        <match value="mimetypeapplication/vnd.etsi.asic-s+zip" type="string" offset="30" />
+      </match>
+    </magic>
+    <glob pattern="*.asics" />
+  </mime-type>
+
   <mime-type type="application/vnd.etsi.aoc+xml"/>
   <mime-type type="application/vnd.etsi.cug+xml"/>
   <mime-type type="application/vnd.etsi.iptvcommand+xml"/>
@@ -3834,6 +3861,7 @@
   <!-- =================================================================== -->
   <mime-type type="application/x-tika-ooxml">
     <sub-class-of type="application/zip"/>
+    <!-- Only works if the Content Types file is the first zip entry -->
     <magic priority="50">
       <match value="PK\003\004" type="string" offset="0">
         <match value="[Content_Types].xml" type="string" offset="30"/>
