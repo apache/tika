@@ -57,7 +57,7 @@ public class GeoParser extends AbstractParser {
 			.getName());
 
 	private boolean initialized;
-
+	private URL modelUrl;
 	private NameEntityExtractor extractor;
 	private boolean available;
 
@@ -68,25 +68,27 @@ public class GeoParser extends AbstractParser {
 
 	/**
 	 * Initializes this parser
-	 * @param context the parse context
+	 * @param modelUrl the URL to NER model
      */
-	public void initialize(ParseContext context) {
-		initialized = true;
-		if (context != null) {
-			config = context.get(GeoParserConfig.class, config);
+	public void initialize(URL modelUrl) {
+
+		if (this.modelUrl != null && this.modelUrl.equals(modelUrl)) {
+			//previously initialized for the same URL
+			return;
 		}
-		URL modelUrl= config.getNerModelUrl();
+		this.modelUrl = modelUrl;
 		//if NER model is available and lucene-geo-gazetteer is available
 		this.available = modelUrl != null &&
 				ExternalParser.check(new String[] { "lucene-geo-gazetteer", "--help" }, -1);
 		if (this.available) {
 			try {
 				this.extractor = new NameEntityExtractor(modelUrl);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				this.available = false;
 			}
 		}
+		initialized = true;
 
 	}
 
@@ -97,11 +99,8 @@ public class GeoParser extends AbstractParser {
 
 		/*----------------configure this parser by ParseContext Object---------------------*/
 
-		if (!initialized) {
-			//lazy initialization
-			initialize(context);
-		}
-
+		this.config = context.get(GeoParserConfig.class, config);
+		initialize(this.config.getNerModelUrl());
 		if (!isAvailable()) {
 			return;
 		}
@@ -179,7 +178,7 @@ public class GeoParser extends AbstractParser {
 
 	public boolean isAvailable() {
 		if (!initialized) {
-			initialize(null);
+			initialize(config.getNerModelUrl());
 		}
 		return this.available;
 	}
