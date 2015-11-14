@@ -5157,6 +5157,8 @@
   <mime-type type="message/rfc822">
     <magic priority="50">
       <match value="Status:" type="string" offset="0"/>
+      <match value="X-Mozilla-Status:" type="string" offset="0"/>
+      <match value="X-Mozilla-Status2:" type="string" offset="0"/>
       <match value="Relay-Version:" type="stringignorecase" offset="0"/>
       <match value="#!\ rnews" type="string" offset="0"/>
       <match value="N#!\ rnews" type="string" offset="0"/>
@@ -5167,6 +5169,7 @@
       <match value="Received:" type="stringignorecase" offset="0"/>
       <match value="Message-ID:" type="stringignorecase" offset="0"/>
       <match value="Date:" type="string" offset="0"/>
+      <match value="User-Agent:" type="string" offset="0"/>
       <match value="MIME-Version:" type="stringignorecase" offset="0"/>
       <match value="X-Notes-Item:" type="string" offset="0">
         <match value="Message-ID:" type="string" offset="0:8192"/>
