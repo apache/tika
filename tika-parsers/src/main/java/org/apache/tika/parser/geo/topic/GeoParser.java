@@ -20,6 +20,7 @@ package org.apache.tika.parser.geo.topic;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -45,36 +46,64 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class GeoParser extends AbstractParser {
-
 	private static final long serialVersionUID = -2241391757440215491L;
-	private static final MediaType MEDIA_TYPE = MediaType
-			.application("geotopic");
-	private static final Set<MediaType> SUPPORTED_TYPES = Collections
-			.singleton(MEDIA_TYPE);
+        private static final Logger LOG = Logger.getLogger(GeoParser.class.getName());
+	private static final MediaType MEDIA_TYPE = 
+	                            MediaType.application("geotopic");
+	private static final Set<MediaType> SUPPORTED_TYPES = 
+	                            Collections.singleton(MEDIA_TYPE);
 	private GeoParserConfig config = new GeoParserConfig();
-	private static final Logger LOG = Logger.getLogger(GeoParser.class
-			.getName());
+
+	private boolean initialized;
+	private URL modelUrl;
+	private NameEntityExtractor extractor;
+	private boolean available;
 
 	@Override
 	public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
 		return SUPPORTED_TYPES;
 	}
 
+	/**
+	 * Initializes this parser
+	 * @param modelUrl the URL to NER model
+	 */
+	public void initialize(URL modelUrl) {
+
+		if (this.modelUrl != null && this.modelUrl.equals(modelUrl)) {
+			//previously initialized for the same URL
+			return;
+		}
+		this.modelUrl = modelUrl;
+		//if NER model is available and lucene-geo-gazetteer is available
+		this.available = modelUrl != null &&
+				ExternalParser.check(new String[] { "lucene-geo-gazetteer", "--help" }, -1);
+		if (this.available) {
+			try {
+				this.extractor = new NameEntityExtractor(modelUrl);
+			} catch (Exception e) {
+				e.printStackTrace();
+				this.available = false;
+			}
+		}
+		initialized = true;
+
+	}
+
 	@Override
 	public void parse(InputStream stream, ContentHandler handler,
-			Metadata metadata, ParseContext context) throws IOException,
+					  Metadata metadata, ParseContext context) throws IOException,
 			SAXException, TikaException {
 
 		/*----------------configure this parser by ParseContext Object---------------------*/
-		config = context.get(GeoParserConfig.class, config);
-		String nerModelPath = config.getNERPath();
 
+		this.config = context.get(GeoParserConfig.class, config);
+		initialize(this.config.getNerModelUrl());
 		if (!isAvailable()) {
 			return;
 		}
 
 		/*----------------get locationNameEntities and best nameEntity for the input stream---------------------*/
-		NameEntityExtractor extractor = new NameEntityExtractor(nerModelPath);
 		extractor.getAllNameEntitiesfromInput(stream);
 		extractor.getBestNameEntity();
 		ArrayList<String> locationNameEntities = extractor.locationNameEntities;
@@ -146,10 +175,10 @@ public class GeoParser extends AbstractParser {
 	}
 
 	public boolean isAvailable() {
-		return ExternalParser.check(new String[] { "lucene-geo-gazetteer",
-				"--help" }, -1)
-				&& config.getNERPath() != null
-				&& !config.getNERPath().equals("");
+		if (!initialized) {
+			initialize(config.getNerModelUrl());
+		}
+		return this.available;
 	}
 
 }
