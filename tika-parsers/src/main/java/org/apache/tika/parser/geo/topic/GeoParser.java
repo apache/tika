@@ -71,24 +71,25 @@ public class GeoParser extends AbstractParser {
      */
     public void initialize(URL modelUrl) {
         if (this.modelUrl != null && this.modelUrl.equals(modelUrl)) {
-            // Previously initialized for the same URL
+            // Previously initialized for the same URL, no initialization needed
             return;
         }
         
         this.modelUrl = modelUrl;
-        //if NER model is available and lucene-geo-gazetteer is available
-        this.available = modelUrl != null &&
-                ExternalParser.check(new String[] { "lucene-geo-gazetteer", "--help" }, -1);
+        
+        // Check if the NER model is available, and if the
+        //  lucene-geo-gazetteer is available
+        this.available = modelUrl != null && ExternalParser.check(
+                new String[] { "lucene-geo-gazetteer", "--help" }, -1);
         if (this.available) {
             try {
                 this.extractor = new NameEntityExtractor(modelUrl);
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.warning("Named Entity Extractor setup failed: " + e);
                 this.available = false;
             }
         }
         initialized = true;
-
     }
 
     @Override
@@ -126,9 +127,9 @@ public class GeoParser extends AbstractParser {
             GeoTag alter = (GeoTag) geotag.alternatives.get(i);
             metadata.add("Optional_NAME" + (i + 1), alter.Geographic_NAME);
             metadata.add("Optional_LONGITUDE" + (i + 1),
-                    alter.Geographic_LONGTITUDE);
+                         alter.Geographic_LONGTITUDE);
             metadata.add("Optional_LATITUDE" + (i + 1),
-                    alter.Geographic_LATITUDE);
+                         alter.Geographic_LATITUDE);
         }
     }
 
@@ -149,8 +150,7 @@ public class GeoParser extends AbstractParser {
         exec.setWatchdog(watchdog);
         PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
         exec.setStreamHandler(streamHandler);
-        int exitValue = exec.execute(cmdLine,
-                EnvironmentUtils.getProcEnvironment());
+        int exitValue = exec.execute(cmdLine, EnvironmentUtils.getProcEnvironment());
         String outputJson = outputStream.toString("UTF-8");
         JSONArray json = (JSONArray) JSONValue.parse(outputJson);
 
@@ -172,7 +172,6 @@ public class GeoParser extends AbstractParser {
         }
 
         return returnHash;
-
     }
 
     public boolean isAvailable() {
