@@ -23,34 +23,31 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 public class GeoParserConfig implements Serializable {
+    private static final long serialVersionUID = -3167692634278575818L;
+    private URL nerModelUrl = null;
 
-	private static final long serialVersionUID = 2L;
-	private URL nerModelUrl = null;
+    public GeoParserConfig() {
+        this.nerModelUrl = GeoParserConfig.class.getResource("en-ner-location.bin");
+    }
 
-	public GeoParserConfig() {
-		this.nerModelUrl = GeoParserConfig.class.getResource("en-ner-location.bin");
-	}
+    public void setNERModelPath(String path) {
+        if (path == null)
+            return;
+        File file = new File(path);
+        if (file.isDirectory() || !file.exists()) {
+            return;
+        }
+        try {
+            this.nerModelUrl = file.toURI().toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	public void setNERModelPath(String path) {
-		if (path == null)
-			return;
-		File file = new File(path);
-		if (file.isDirectory() || !file.exists()) {
-			return;
-		}
-		try {
-			this.nerModelUrl = file.toURI().toURL();
-		} catch (MalformedURLException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	public void setNerModelUrl(URL url) {
-		this.nerModelUrl = url;
-	}
-
-	public URL getNerModelUrl() {
-		return nerModelUrl;
-	}
-
+    public void setNerModelUrl(URL url) {
+        this.nerModelUrl = url;
+    }
+    public URL getNerModelUrl() {
+        return nerModelUrl;
+    }
 }
