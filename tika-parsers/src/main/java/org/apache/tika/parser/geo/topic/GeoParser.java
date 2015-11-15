@@ -46,139 +46,139 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 public class GeoParser extends AbstractParser {
-	private static final long serialVersionUID = -2241391757440215491L;
-        private static final Logger LOG = Logger.getLogger(GeoParser.class.getName());
-	private static final MediaType MEDIA_TYPE = 
-	                            MediaType.application("geotopic");
-	private static final Set<MediaType> SUPPORTED_TYPES = 
-	                            Collections.singleton(MEDIA_TYPE);
-	private GeoParserConfig config = new GeoParserConfig();
+    private static final long serialVersionUID = -2241391757440215491L;
+    private static final Logger LOG = Logger.getLogger(GeoParser.class.getName());
+    private static final MediaType MEDIA_TYPE = 
+                                    MediaType.application("geotopic");
+    private static final Set<MediaType> SUPPORTED_TYPES = 
+                                    Collections.singleton(MEDIA_TYPE);
+    
+    private GeoParserConfig config = new GeoParserConfig();
 
-	private boolean initialized;
-	private URL modelUrl;
-	private NameEntityExtractor extractor;
-	private boolean available;
+    private boolean initialized;
+    private URL modelUrl;
+    private NameEntityExtractor extractor;
+    private boolean available;
 
-	@Override
-	public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
-		return SUPPORTED_TYPES;
-	}
+    @Override
+    public Set<MediaType> getSupportedTypes(ParseContext parseContext) {
+        return SUPPORTED_TYPES;
+    }
 
-	/**
-	 * Initializes this parser
-	 * @param modelUrl the URL to NER model
-	 */
-	public void initialize(URL modelUrl) {
+    /**
+     * Initializes this parser
+     * @param modelUrl the URL to NER model
+     */
+    public void initialize(URL modelUrl) {
+        if (this.modelUrl != null && this.modelUrl.equals(modelUrl)) {
+            // Previously initialized for the same URL
+            return;
+        }
+        
+        this.modelUrl = modelUrl;
+        //if NER model is available and lucene-geo-gazetteer is available
+        this.available = modelUrl != null &&
+                ExternalParser.check(new String[] { "lucene-geo-gazetteer", "--help" }, -1);
+        if (this.available) {
+            try {
+                this.extractor = new NameEntityExtractor(modelUrl);
+            } catch (Exception e) {
+                e.printStackTrace();
+                this.available = false;
+            }
+        }
+        initialized = true;
 
-		if (this.modelUrl != null && this.modelUrl.equals(modelUrl)) {
-			//previously initialized for the same URL
-			return;
-		}
-		this.modelUrl = modelUrl;
-		//if NER model is available and lucene-geo-gazetteer is available
-		this.available = modelUrl != null &&
-				ExternalParser.check(new String[] { "lucene-geo-gazetteer", "--help" }, -1);
-		if (this.available) {
-			try {
-				this.extractor = new NameEntityExtractor(modelUrl);
-			} catch (Exception e) {
-				e.printStackTrace();
-				this.available = false;
-			}
-		}
-		initialized = true;
+    }
 
-	}
+    @Override
+    public void parse(InputStream stream, ContentHandler handler,
+            Metadata metadata, ParseContext context) throws IOException,
+            SAXException, TikaException {
 
-	@Override
-	public void parse(InputStream stream, ContentHandler handler,
-					  Metadata metadata, ParseContext context) throws IOException,
-			SAXException, TikaException {
+        /*----------------configure this parser by ParseContext Object---------------------*/
 
-		/*----------------configure this parser by ParseContext Object---------------------*/
+        this.config = context.get(GeoParserConfig.class, config);
+        initialize(this.config.getNerModelUrl());
+        if (!isAvailable()) {
+            return;
+        }
 
-		this.config = context.get(GeoParserConfig.class, config);
-		initialize(this.config.getNerModelUrl());
-		if (!isAvailable()) {
-			return;
-		}
+        /*----------------get locationNameEntities and best nameEntity for the input stream---------------------*/
+        extractor.getAllNameEntitiesfromInput(stream);
+        extractor.getBestNameEntity();
+        ArrayList<String> locationNameEntities = extractor.locationNameEntities;
+        String bestner = extractor.bestNameEntity;
 
-		/*----------------get locationNameEntities and best nameEntity for the input stream---------------------*/
-		extractor.getAllNameEntitiesfromInput(stream);
-		extractor.getBestNameEntity();
-		ArrayList<String> locationNameEntities = extractor.locationNameEntities;
-		String bestner = extractor.bestNameEntity;
+        /*------------------------resolve geonames for each ner, store results in a hashmap---------------------*/
+        HashMap<String, ArrayList<String>> resolvedGeonames = searchGeoNames(locationNameEntities);
 
-		/*------------------------resolve geonames for each ner, store results in a hashmap---------------------*/
-		HashMap<String, ArrayList<String>> resolvedGeonames = searchGeoNames(locationNameEntities);
+        /*----------------store locationNameEntities and their geonames in a geotag, each input has one geotag---------------------*/
+        GeoTag geotag = new GeoTag();
+        geotag.toGeoTag(resolvedGeonames, bestner);
 
-		/*----------------store locationNameEntities and their geonames in a geotag, each input has one geotag---------------------*/
-		GeoTag geotag = new GeoTag();
-		geotag.toGeoTag(resolvedGeonames, bestner);
+        /* add resolved entities in metadata */
 
-		/* add resolved entities in metadata */
+        metadata.add("Geographic_NAME", geotag.Geographic_NAME);
+        metadata.add("Geographic_LONGITUDE", geotag.Geographic_LONGTITUDE);
+        metadata.add("Geographic_LATITUDE", geotag.Geographic_LATITUDE);
+        for (int i = 0; i < geotag.alternatives.size(); ++i) {
+            GeoTag alter = (GeoTag) geotag.alternatives.get(i);
+            metadata.add("Optional_NAME" + (i + 1), alter.Geographic_NAME);
+            metadata.add("Optional_LONGITUDE" + (i + 1),
+                    alter.Geographic_LONGTITUDE);
+            metadata.add("Optional_LATITUDE" + (i + 1),
+                    alter.Geographic_LATITUDE);
+        }
+    }
 
-		metadata.add("Geographic_NAME", geotag.Geographic_NAME);
-		metadata.add("Geographic_LONGITUDE", geotag.Geographic_LONGTITUDE);
-		metadata.add("Geographic_LATITUDE", geotag.Geographic_LATITUDE);
-		for (int i = 0; i < geotag.alternatives.size(); ++i) {
-			GeoTag alter = (GeoTag) geotag.alternatives.get(i);
-			metadata.add("Optional_NAME" + (i + 1), alter.Geographic_NAME);
-			metadata.add("Optional_LONGITUDE" + (i + 1),
-					alter.Geographic_LONGTITUDE);
-			metadata.add("Optional_LATITUDE" + (i + 1),
-					alter.Geographic_LATITUDE);
-		}
-	}
+    public HashMap<String, ArrayList<String>> searchGeoNames(
+            ArrayList<String> locationNameEntities) throws ExecuteException,
+            IOException {
+        CommandLine cmdLine = new CommandLine("lucene-geo-gazetteer");
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        cmdLine.addArgument("-s");
+        for (String name : locationNameEntities) {
+            cmdLine.addArgument(name);
+        }
 
-	public HashMap<String, ArrayList<String>> searchGeoNames(
-			ArrayList<String> locationNameEntities) throws ExecuteException,
-			IOException {
-		CommandLine cmdLine = new CommandLine("lucene-geo-gazetteer");
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		cmdLine.addArgument("-s");
-		for (String name : locationNameEntities) {
-			cmdLine.addArgument(name);
-		}
+        LOG.fine("Executing: " + cmdLine);
+        DefaultExecutor exec = new DefaultExecutor();
+        exec.setExitValue(0);
+        ExecuteWatchdog watchdog = new ExecuteWatchdog(60000);
+        exec.setWatchdog(watchdog);
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+        exec.setStreamHandler(streamHandler);
+        int exitValue = exec.execute(cmdLine,
+                EnvironmentUtils.getProcEnvironment());
+        String outputJson = outputStream.toString("UTF-8");
+        JSONArray json = (JSONArray) JSONValue.parse(outputJson);
 
-		LOG.fine("Executing: " + cmdLine);
-		DefaultExecutor exec = new DefaultExecutor();
-		exec.setExitValue(0);
-		ExecuteWatchdog watchdog = new ExecuteWatchdog(60000);
-		exec.setWatchdog(watchdog);
-		PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-		exec.setStreamHandler(streamHandler);
-		int exitValue = exec.execute(cmdLine,
-				EnvironmentUtils.getProcEnvironment());
-		String outputJson = outputStream.toString("UTF-8");
-		JSONArray json = (JSONArray) JSONValue.parse(outputJson);
+        HashMap<String, ArrayList<String>> returnHash = new HashMap<String, ArrayList<String>>();
+        for (int i = 0; i < json.size(); i++) {
+            JSONObject obj = (JSONObject) json.get(i);
+            for (Object key : obj.keySet()) {
+                String theKey = (String) key;
+                JSONArray vals = (JSONArray) obj.get(theKey);
+                ArrayList<String> stringVals = new ArrayList<String>(
+                        vals.size());
+                for (int j = 0; j < vals.size(); j++) {
+                    String val = (String) vals.get(j);
+                    stringVals.add(val);
+                }
 
-		HashMap<String, ArrayList<String>> returnHash = new HashMap<String, ArrayList<String>>();
-		for (int i = 0; i < json.size(); i++) {
-			JSONObject obj = (JSONObject) json.get(i);
-			for (Object key : obj.keySet()) {
-				String theKey = (String) key;
-				JSONArray vals = (JSONArray) obj.get(theKey);
-				ArrayList<String> stringVals = new ArrayList<String>(
-						vals.size());
-				for (int j = 0; j < vals.size(); j++) {
-					String val = (String) vals.get(j);
-					stringVals.add(val);
-				}
+                returnHash.put(theKey, stringVals);
+            }
+        }
 
-				returnHash.put(theKey, stringVals);
-			}
-		}
+        return returnHash;
 
-		return returnHash;
+    }
 
-	}
-
-	public boolean isAvailable() {
-		if (!initialized) {
-			initialize(config.getNerModelUrl());
-		}
-		return this.available;
-	}
-
+    public boolean isAvailable() {
+        if (!initialized) {
+            initialize(config.getNerModelUrl());
+        }
+        return this.available;
+    }
 }
