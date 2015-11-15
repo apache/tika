@@ -8,6 +8,8 @@ Release 1.12 - Current Development
   * Tika Facade parse methods for Path and File added which take a
     Metadata object, to mirror the existing InputStream one (GitHub-60)
 
+  * GeoParser fix for loading the NER model from a jar file (TIKA-1791)
+
 
 Release 1.11 - 10/18/2015
 
