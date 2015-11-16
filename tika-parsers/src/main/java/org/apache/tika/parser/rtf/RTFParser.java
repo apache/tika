@@ -78,13 +78,13 @@ public class RTFParser extends AbstractParser {
             InputStream stream, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
+        metadata.set(Metadata.CONTENT_TYPE, "application/rtf");
         TaggedInputStream tagged = new TaggedInputStream(stream);
         try {
             XHTMLContentHandler xhtmlHandler = new XHTMLContentHandler(handler, metadata);
             RTFEmbObjHandler embObjHandler = new RTFEmbObjHandler(xhtmlHandler, metadata, context);
             final TextExtractor ert = new TextExtractor(xhtmlHandler, metadata, embObjHandler);
             ert.extract(stream);
-            metadata.add(Metadata.CONTENT_TYPE, "application/rtf");
         } catch (IOException e) {
             tagged.throwIfCauseOf(e);
             throw new TikaException("Error parsing an RTF document", e);
