@@ -1,7 +1,7 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright owlocationNameEntitieship.
+ * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
@@ -34,14 +34,17 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- *  An implementation of {@link NERecogniser} is powered by
- *  Stanford CoreNLP's CRF classifier with NER models.
+ *  This class offers an implementation of {@link NERecogniser} based on
+ *  CRF classifiers from Stanford CoreNLP. This NER requires additional setup,
+ *  due to runtime binding to Stanford CoreNLP.
+ *  See <a href="http://wiki.apache.org/tika/TikaAndNER#CoreNLP">
+ *      Tika NER Wiki</a> for configuring this recogniser.
  *  @see NERecogniser
  *
  */
 public class CoreNLPNERecogniser implements NERecogniser {
 
-    public static final Logger LOG = LoggerFactory.getLogger(CoreNLPNERecogniser.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CoreNLPNERecogniser.class);
 
     //default model paths
     public static final String NER_3CLASS_MODEL = "edu/stanford/nlp/models/ner/english.all.3class.distsim.crf.ser.gz";
@@ -52,6 +55,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
      */
     public static final String DEFAULT_MODEL_PATH = NER_7CLASS_MODEL;
     public static final String MODEL_PROP_NAME = "ner.corenlp.model";
+
     public static final Set<String> ENTITY_TYPES = new HashSet<String>(){{
         add(PERSON);
         add(TIME);
@@ -61,6 +65,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
         add(PERCENT);
         add(DATE);
     }};
+    private static final String CLASSIFIER_CLASS_NAME = "edu.stanford.nlp.ie.crf.CRFClassifier";
 
     private boolean available = false;
     private Field firstField;
@@ -80,14 +85,12 @@ public class CoreNLPNERecogniser implements NERecogniser {
     public CoreNLPNERecogniser(String modelPath) {
         try {
             Properties props = new Properties();
-            String CRF_CLASSIFIER = "edu.stanford.nlp.ie.crf.CRFClassifier";
-            Class<?> classifierClass = Class.forName(CRF_CLASSIFIER);
+            Class<?> classifierClass = Class.forName(CLASSIFIER_CLASS_NAME);
             Method loadMethod = classifierClass.getMethod("getClassifier", String.class, Properties.class);
             classifierInstance = loadMethod.invoke(classifierClass, modelPath, props);
             classifyMethod = classifierClass.getMethod("classifyToCharacterOffsets", String.class);
-            ///this.nerClassifier = CRFClassifier.getClassifier(modelPath, props);
 
-            ///these are for accessing result
+            //these fields are for accessing result
             Class<?> tripleClass = Class.forName("edu.stanford.nlp.util.Triple");
             this.firstField = tripleClass.getField("first");
             this.secondField = tripleClass.getField("second");
@@ -101,19 +104,26 @@ public class CoreNLPNERecogniser implements NERecogniser {
 
     /**
      *
-     * @return true if model was available, valid and was able to initialise the classifier
+     * @return {@code true} if model was available, valid and was able to initialise the classifier.
+     * returns {@code false} when this recogniser is not available for service.
      */
     public boolean isAvailable() {
         return available;
     }
 
     /**
+     * Gets set of entity types recognised by this recogniser
      * @return set of entity classes/types
      */
     public Set<String> getEntityTypes() {
         return ENTITY_TYPES;
     }
 
+    /**
+     * recognises names of entities in the text
+     * @param text text which possibly contains names
+     * @return map of entity type -> set of names
+     */
     public Map<String, Set<String>> recognise(String text) {
         Map<String, Set<String>> names = new HashMap<>();
         try {
@@ -135,7 +145,7 @@ public class CoreNLPNERecogniser implements NERecogniser {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.debug(e.getMessage(), e);
         }
         return names;
     }
@@ -147,10 +157,13 @@ public class CoreNLPNERecogniser implements NERecogniser {
             System.err.println("Usage: <path/to/text/file>");
             return;
         }
-        String text = IOUtils.toString(new FileInputStream(args[0]));
-        CoreNLPNERecogniser ner = new CoreNLPNERecogniser();
-        Map<String, Set<String>> names = ner.recognise(text);
-        JSONObject jNames = new JSONObject(names);
-        System.out.println(jNames.toString(2));
+
+        try (FileInputStream stream = new FileInputStream(args[0])) {
+            String text = IOUtils.toString(stream);
+            CoreNLPNERecogniser ner = new CoreNLPNERecogniser();
+            Map<String, Set<String>> names = ner.recognise(text);
+            JSONObject jNames = new JSONObject(names);
+            System.out.println(jNames.toString(2));
+        }
     }
 }

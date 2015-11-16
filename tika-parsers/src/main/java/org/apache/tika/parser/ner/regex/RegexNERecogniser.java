@@ -1,7 +1,7 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright owlocationNameEntitieship.
+ * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
@@ -33,17 +33,29 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Entity name recogniser using regex
- * An implementation of {@link NERecogniser}
+ * This class offers an implementation of {@link NERecogniser} based on
+ * Regular Expressions.
+ *<p>
+ * The default configuration file {@value NER_REGEX_FILE} is used when no
+ * argument constructor is used to instantiate this class. The regex file is
+ * loaded via {@link Class#getResourceAsStream(String)}, so the file should be
+ * placed in the same package path as of this class.
+ * </p>
+ * The format of regex configuration as follows:
+ * <pre>
+ * ENTITY_TYPE1=REGEX1
+ * ENTITY_TYPE2=REGEX2
+ * </pre>
  *
+ * <i>For example, to extract week day from text:</i>
+ * <pre>WEEK_DAY=(?i)((sun)|(mon)|(tues)|(thurs)|(fri)|((sat)(ur)?))(day)?
+ * </pre>
  * @since Nov. 7, 2015
  */
 public class RegexNERecogniser implements NERecogniser {
 
+    public static final String NER_REGEX_FILE = "ner-regex.txt";
     private static Logger LOG = LoggerFactory.getLogger(RegexNERecogniser.class);
-
-
-    private static final String NER_REGEX_FILE = "ner-regex.txt";
 
     public Set<String> entityTypes = new HashSet<>();
     public Map<String, Pattern> patterns;
@@ -63,14 +75,13 @@ public class RegexNERecogniser implements NERecogniser {
             for (String line : lines) {
                 line = line.trim();
                 if (line.isEmpty() || line.startsWith("#")){ //empty or comment
-                    //skip
-                    continue;
+                    continue;                                //skip
                 }
 
                 int delim = line.indexOf('=');
                 if (delim < 0) { //delim not found
                     //skip
-                    LOG.error("Skip : Invalid config : " + line);
+                    LOG.error("Skipped : Invalid config : {} ", line);
                     continue;
                 }
                 String type = line.substring(0, delim).trim();

@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,7 +17,7 @@
  */
 
 /*
- * This file downloads open nlp model for testing the NamedEntityParser
+ * This file downloads Apache OpenNLP NER models for testing the NamedEntityParser
  */
 
 import org.apache.commons.io.IOUtils
@@ -24,8 +25,8 @@ import org.apache.commons.io.IOUtils
 /**
  * Copies input stream to output stream, additionally printing the progress.
  * NOTE: this is optimized for large content
- * @param inStr
- * @param outStr
+ * @param inStr source stream
+ * @param outStr target stream
  * @param totalLength the total length of the content (used to calculate progress)
  * @return
  */
@@ -62,7 +63,6 @@ def downloadFile(String urlStr, File file) {
     file.getParentFile().mkdirs()
     inStream = urlConn.getInputStream()
     outStream = new FileOutputStream(file)
-    //IOUtils.copyLarge(inStream, outStream)
     copyWithProgress(inStream, outStream, contentLength)
     IOUtils.closeQuietly(outStream)
     IOUtils.closeQuietly(inStream)

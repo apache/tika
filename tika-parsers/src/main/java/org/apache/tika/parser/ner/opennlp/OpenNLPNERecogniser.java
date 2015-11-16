@@ -30,32 +30,73 @@ import java.util.Set;
 
 /**
  *
- * This implementation of {@link NERecogniser} chains an array of {@link OpenNLPNameFinder}s for which NER models are
- * available in classpath
+ * This implementation of {@link NERecogniser} chains an array of
+ * {@link OpenNLPNameFinder}s for which NER models are
+ * available in classpath.
  *
+ * The following models are scanned during initialization via class loader.:
+ *
+ * <table>
+ *     <tr>
+ *         <th>Entity Type</th><th>Path</th>
+ *     </tr>
+ *     <tr>
+ *         <td>{@value PERSON}</td><td> {@value PERSON_FILE}</td>
+ *     </tr>
+ *     <tr>
+ *         <td>{@value LOCATION}</td><td>{@value LOCATION_FILE}</td>
+ *     </tr>
+ *     <tr>
+ *         <td>{@value ORGANIZATION}</td><td>{@value ORGANIZATION_FILE}</td>
+ *     </tr>
+ *     <tr>
+ *         <td>{@value TIME}</td><td>{@value TIME_FILE}</td>
+ *     </tr>
+ *     <tr>
+ *         <td>{@value DATE}</td><td>{@value DATE_FILE}</td>
+ *     </tr>
+ *     <tr>
+ *         <td>{@value PERCENT}</td><td>{@value PERCENT_FILE}</td>
+ *     </tr>
+ *     <tr>
+ *         <td>{@value MONEY}</td><td>{@value MONEY_FILE}</td>
+ *     </tr>
+ * </table>
+ *
+ * @see org.apache.tika.parser.ner.NamedEntityParser#DEFAULT_NER_IMPL
  */
 public class OpenNLPNERecogniser implements NERecogniser {
 
-    public static final String MODELS_DIR = OpenNLPNERecogniser.class.getPackage().getName().replace(".", "/");
+    public static final String MODELS_DIR = OpenNLPNERecogniser.class
+            .getPackage().getName().replace(".", "/");
+    public static final String PERSON_FILE = "ner-person.bin";
+    public static final String LOCATION_FILE = "ner-location.bin";
+    public static final String ORGANIZATION_FILE = "ner-organization.bin";
+    public static final String TIME_FILE = "ner-time.bin";
+    public static final String DATE_FILE = "ner-date.bin";
+    public static final String PERCENT_FILE = "ner-percentage.bin";
+    public static final String MONEY_FILE = "ner-money.bin";
+
 
     //Default (English) Models for the common 7 classes of named types
-    public static final String NER_PERSON_MODEL = MODELS_DIR + "/ner-person.bin";
-    public static final String NER_LOCATION_MODEL = MODELS_DIR + "/ner-location.bin";
-    public static final String NER_ORGANIZATION_MODEL = MODELS_DIR + "/ner-organization.bin";
-    public static final String NER_TIME_MODEL = MODELS_DIR + "/ner-time.bin";
-    public static final String NER_DATE_MODEL = MODELS_DIR + "/ner-date.bin";
-    public static final String NER_PERCENT_MODEL = MODELS_DIR + "/ner-percentage.bin";
-    public static final String NER_MOONEY_MODEL = MODELS_DIR + "/ner-money.bin";
+    public static final String NER_PERSON_MODEL = MODELS_DIR + "/" + PERSON_FILE;
+    public static final String NER_LOCATION_MODEL = MODELS_DIR + "/" + LOCATION_FILE;
+    public static final String NER_ORGANIZATION_MODEL = MODELS_DIR + "/" + ORGANIZATION_FILE;
+    public static final String NER_TIME_MODEL = MODELS_DIR + "/" + TIME_FILE;
+    public static final String NER_DATE_MODEL = MODELS_DIR + "/" + DATE_FILE;
+    public static final String NER_PERCENT_MODEL = MODELS_DIR + "/" + PERCENT_FILE;
+    public static final String NER_MONEY_MODEL = MODELS_DIR + "/" + MONEY_FILE;
 
-    public static final Map<String, String> DEFAULT_MODELS = new HashMap<String, String>(){{
-        put(PERSON, NER_PERSON_MODEL);
-        put(LOCATION, NER_LOCATION_MODEL);
-        put(ORGANIZATION, NER_ORGANIZATION_MODEL);
-        put(TIME, NER_TIME_MODEL);
-        put(DATE, NER_DATE_MODEL);
-        put(PERCENT, NER_PERCENT_MODEL);
-        put(MONEY, NER_MOONEY_MODEL);
-    }};
+    public static final Map<String, String> DEFAULT_MODELS =
+            new HashMap<String, String>(){{
+                put(PERSON, NER_PERSON_MODEL);
+                put(LOCATION, NER_LOCATION_MODEL);
+                put(ORGANIZATION, NER_ORGANIZATION_MODEL);
+                put(TIME, NER_TIME_MODEL);
+                put(DATE, NER_DATE_MODEL);
+                put(PERCENT, NER_PERCENT_MODEL);
+                put(MONEY, NER_MONEY_MODEL);
+            }};
 
     private Set<String> entityTypes;
     private List<OpenNLPNameFinder> nameFinders;
@@ -74,10 +115,11 @@ public class OpenNLPNERecogniser implements NERecogniser {
      * NOTE: the model path should be known to class loader.
      */
     public OpenNLPNERecogniser(Map<String, String> models){
-        this.nameFinders = new ArrayList<OpenNLPNameFinder>();
+        this.nameFinders = new ArrayList<>();
         this.entityTypes = new HashSet<>();
         for (Map.Entry<String, String> entry : models.entrySet()) {
-            OpenNLPNameFinder finder = new OpenNLPNameFinder(entry.getKey(), entry.getValue());
+            OpenNLPNameFinder finder =
+                    new OpenNLPNameFinder(entry.getKey(), entry.getValue());
             if (finder.isAvailable()) {
                 this.nameFinders.add(finder);
                 this.entityTypes.add(entry.getKey());
@@ -85,15 +127,6 @@ public class OpenNLPNERecogniser implements NERecogniser {
         }
         this.entityTypes = Collections.unmodifiableSet(this.entityTypes);
         this.available = nameFinders.size() > 0; //at least one finder is present
-    }
-
-    /**
-     * Checks if a resource is known to classloader
-     * @param pathOrName the resource name or tail path
-     * @return true if resource is present in classpath and known to class loader
-     */
-    private boolean resourceExists(String pathOrName){
-        return getClass().getClassLoader().getResource(pathOrName) != null;
     }
 
     @Override

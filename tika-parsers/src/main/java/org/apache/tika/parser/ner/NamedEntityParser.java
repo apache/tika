@@ -1,7 +1,7 @@
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright owlocationNameEntitieship.
+ * this work for additional information regarding copyright ownership.
  * The ASF licenses this file to You under the Apache License, Version 2.0
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
@@ -44,17 +44,20 @@ import java.util.Set;
 
 /**
  *
- * This implementation of {@link org.apache.tika.parser.Parser} extracts entity names from text content and adds it to
- * the metadata.
+ * This implementation of {@link org.apache.tika.parser.Parser} extracts
+ * entity names from text content and adds it to the metadata.
  * <p>All the metadata keys will have a common suffix {@value #MD_KEY_PREFIX}</p>
- * <p>The Named Entity recogniser implementation can be changed by setting the system property {@value #SYS_PROP_NER_IMPL}
- * value to a name of class that implements {@link NERecogniser} contract</p>
+ * <p>The Named Entity recogniser implementation can be changed by setting the
+ * system property {@value #SYS_PROP_NER_IMPL} value to a name of class that
+ * implements {@link NERecogniser} contract</p>
  * @see OpenNLPNERecogniser
+ * @see NERecogniser
+ *
  */
 public class NamedEntityParser extends AbstractParser {
 
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
-    public static final Set<MediaType> MEDIA_TYPES = new HashSet<MediaType>();
+    public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
     public static final String MD_KEY_PREFIX = "NER_";
     public static final String DEFAULT_NER_IMPL = OpenNLPNERecogniser.class.getName();
     public static final String SYS_PROP_NER_IMPL = "ner.impl.class";
@@ -77,15 +80,19 @@ public class NamedEntityParser extends AbstractParser {
 
         //TODO: read class name from context or config
         //There can be multiple classes in the form of comma separated class names;
-        String classNamesString = System.getProperty(SYS_PROP_NER_IMPL, DEFAULT_NER_IMPL);
+        String classNamesString = System.getProperty(SYS_PROP_NER_IMPL,
+                DEFAULT_NER_IMPL);
         String[] classNames = classNamesString.split(",");
         this.nerChain = new ArrayList<>(classNames.length);
         for (String className : classNames) {
             className = className.trim();
-            LOG.info("going to load, instantiate and bind the instance of {}", className);
+            LOG.info("going to load, instantiate and bind the instance of {}",
+                    className);
             try {
-                NERecogniser recogniser = (NERecogniser) Class.forName(className).newInstance();
-                LOG.info("{} is available ? {}", className, recogniser.isAvailable());
+                NERecogniser recogniser =
+                        (NERecogniser) Class.forName(className).newInstance();
+                LOG.info("{} is available ? {}", className,
+                        recogniser.isAvailable());
                 if (recogniser.isAvailable()) {
                     nerChain.add(recogniser);
                 }
@@ -119,7 +126,8 @@ public class NamedEntityParser extends AbstractParser {
             return;
         }
 
-        Reader reader = MediaType.TEXT_PLAIN.toString().equals(metadata.get(Metadata.CONTENT_TYPE))
+        Reader reader = MediaType.TEXT_PLAIN.toString()
+                .equals(metadata.get(Metadata.CONTENT_TYPE))
                 ? new InputStreamReader(inputStream, StandardCharsets.UTF_8)
                 : secondaryParser.parse(inputStream);
 
