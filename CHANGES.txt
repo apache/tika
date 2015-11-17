@@ -1,5 +1,9 @@
 Release 1.12 - Current Development
 
+  * Provide NamedEntityParser which exposes Named Entity Recognition
+    from OpenNLP and Stanford NER providers (TIKA-1787, GitHub-61,
+    GitHub-62).
+
   * Allow XHTMLContentHandler to pass attributes of html element 
     via Markus Jelsma (TIKA-1782).
 
