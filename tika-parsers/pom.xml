@@ -475,7 +475,7 @@
             <executions>
               <execution>
                 <id>testSetup</id>
-                <phase>test-compile</phase>
+                <phase>generate-test-resources</phase>
                 <goals>
                   <goal>execute</goal>
                 </goals>
