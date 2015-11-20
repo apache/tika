@@ -19,36 +19,35 @@ package org.apache.tika.parser.geo.topic;
 
 import java.io.File;
 import java.io.Serializable;
-import java.net.URISyntaxException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class GeoParserConfig implements Serializable {
+    private static final long serialVersionUID = -3167692634278575818L;
+    private URL nerModelUrl = null;
 
-	private static final long serialVersionUID = 1L;
-	private String nerModelPath = null;
+    public GeoParserConfig() {
+        this.nerModelUrl = GeoParserConfig.class.getResource("en-ner-location.bin");
+    }
 
-	public GeoParserConfig() {
-		try {
-			if (GeoParserConfig.class.getResource("en-ner-location.bin") != null) {
-				this.nerModelPath = new File(GeoParserConfig.class.getResource(
-						"en-ner-location.bin").toURI()).getAbsolutePath();
-			}
-		} catch (URISyntaxException e) {
-			e.printStackTrace();
-		}
-	}
+    public void setNERModelPath(String path) {
+        if (path == null)
+            return;
+        File file = new File(path);
+        if (file.isDirectory() || !file.exists()) {
+            return;
+        }
+        try {
+            this.nerModelUrl = file.toURI().toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-	public void setNERModelPath(String path) {
-		if (path == null)
-			return;
-		File file = new File(path);
-		if (file.isDirectory() || !file.exists()) {
-			return;
-		}
-		nerModelPath = path;
-	}
-
-	public String getNERPath() {
-		return nerModelPath;
-	}
-
+    public void setNerModelUrl(URL url) {
+        this.nerModelUrl = url;
+    }
+    public URL getNerModelUrl() {
+        return nerModelUrl;
+    }
 }
