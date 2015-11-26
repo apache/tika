@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tika.parser.pot;
 
 import org.apache.tika.exception.TikaException;
@@ -59,9 +60,7 @@ import java.util.Set;
 import jlibs.core.lang.JavaProcessBuilder;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-/**
- * Created by Aditya on 9/15/15.
- */
+
 public class PooledTimeSeriesParser extends AbstractParser {
     private static final PooledTimeSeriesConfig DEFAULT_CONFIG = new PooledTimeSeriesConfig();
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
@@ -163,7 +162,6 @@ public class PooledTimeSeriesParser extends AbstractParser {
 
     private void computePoT(File input, File output, PooledTimeSeriesConfig config) throws IOException, TikaException {    	
     	JavaProcessBuilder jvm = new JavaProcessBuilder();
-    	//jvm.javaHome(new File("/Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home")); // configure java home
     	jvm.javaHome(new File(System.getProperty("java.home"))); // configure java home
 		jvm.workingDir(new File(config.getPooledTimeSeriesPath())); // to configure working directory to configure various attributes:
 
@@ -269,11 +267,6 @@ public class PooledTimeSeriesParser extends AbstractParser {
         xhtml.endElement("ol");
         
         xhtml.endDocument();
-    }
-
-    static String getPooledTimeSeriesProg() {
-        // TODO: Seperate out target/ folder from excutable jar
-        return "target/pooled-time-series-1.0-SNAPSHOT-jar-with-dependencies.jar";
     }
 
 }
