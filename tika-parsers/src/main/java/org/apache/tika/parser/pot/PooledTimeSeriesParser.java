@@ -163,7 +163,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
     private void computePoT(File input, File output, PooledTimeSeriesConfig config) throws IOException, TikaException {    	
     	JavaProcessBuilder jvm = new JavaProcessBuilder();
     	jvm.javaHome(new File(System.getProperty("java.home"))); // configure java home
-		jvm.workingDir(new File(config.getPooledTimeSeriesPath())); // to configure working directory to configure various attributes:
+	jvm.workingDir(new File(config.getPooledTimeSeriesPath()).getParentFile()); // to configure working directory to configure various attributes:
 
 		// to configure heap and vmtype
 		jvm.initialHeap(512); // or jvm.initialHeap("512m");
