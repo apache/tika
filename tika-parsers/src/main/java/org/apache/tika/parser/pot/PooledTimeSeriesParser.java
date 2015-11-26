@@ -170,7 +170,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
 		jvm.maxHeap(1024); // or jvm.maxHeap("1024m");
 
 		jvm.jvmArg("-jar");
-		jvm.jvmArg(getPooledTimeSeriesProg());
+		jvm.jvmArg(config.getPooledTimeSeriesPath());
 		
 		jvm.libraryPath(config.getOpenCVPath());
 		
