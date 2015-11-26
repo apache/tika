@@ -186,6 +186,7 @@
               javax.xml.stream.events;version="[1.0,2)";resolution:=optional,
               javax.xml.stream.util;version="[1.0,2)";resolution:=optional,
 	      javax.ws.rs.core;resolution:=optional,
+	      jlibs.core.lang;resolution:=optional,
               net.sf.ehcache;resolution:=optional,
               nu.xom;resolution:=optional,
               opendap.dap.http;resolution:=optional,
