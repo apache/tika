@@ -137,9 +137,9 @@ public class PooledTimeSeriesParser extends AbstractParser {
       extractHeaderOutput(ofStream, metadata, "of");
       extractHeaderOutput(ogStream, metadata, "og");
       xhtml.startDocument();
-      doExtract(ofStream, xhtml, "Histogram of Optical Flow (HOF)",
+      doExtract(ofStream, xhtml, "Histogram of Optical Flows (HOF)",
           metadata.get("of_frames"), metadata.get("of_vecSize"));
-      doExtract(ogStream, xhtml, "Histogram of Optical Gradients (HOG)",
+      doExtract(ogStream, xhtml, "Histogram of Oriented Gradients (HOG)",
           metadata.get("og_frames"), metadata.get("og_vecSize"));
       xhtml.endDocument();
 
