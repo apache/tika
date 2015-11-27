@@ -1,5 +1,9 @@
 Release 1.12 - Current Development
 
+  * A parser to compute motion properties in Videos, e.g., 
+    Histogram of Oriented Gradients and Histogram of Optical Flows
+    using the Pooled Time Series algorithm, was added (TIKA-1798).
+
   * Provide NamedEntityParser which exposes Named Entity Recognition
     from OpenNLP and Stanford NER providers (TIKA-1787, GitHub-61,
     GitHub-62).
