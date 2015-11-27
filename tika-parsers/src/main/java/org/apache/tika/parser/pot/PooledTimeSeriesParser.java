@@ -36,14 +36,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
-
+import java.util.logging.Logger;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.exec.environment.EnvironmentUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.xml.sax.helpers.AttributesImpl;
 
 import java.util.Arrays;
@@ -62,8 +60,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
       // TODO: Add all supported video types
           })));
 
-  private static final Log LOG = LogFactory
-      .getLog(PooledTimeSeriesParser.class);
+  private static final Logger LOG = Logger.getLogger(PooledTimeSeriesParser.class.getName());
 
   public boolean isAvailable() {
     return ExternalParser.check(
@@ -117,7 +114,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
       SAXException, TikaException {
 
     if (!isAvailable()) {
-      LogFactory.getLog(PooledTimeSeriesParser.class).warn(
+      LOG.warning(
           "PooledTimeSeries not installed!");
       return;
     }
@@ -158,7 +155,7 @@ public class PooledTimeSeriesParser extends AbstractParser {
     ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
     cmdLine.addArgument("-f");
     cmdLine.addArgument(input.getAbsolutePath());
-    LOG.debug("Executing: " + cmdLine);
+    LOG.fine("Executing: " + cmdLine);
     DefaultExecutor exec = new DefaultExecutor();
     exec.setExitValue(0);
     ExecuteWatchdog watchdog = new ExecuteWatchdog(60000);
