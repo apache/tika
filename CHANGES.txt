@@ -1,3 +1,11 @@
+Release 2.0 - Future Development
+
+  * The default LoadErrorHandler is now WARN, to alert you to missing
+    parser classes and their dependencies. To keep the old behaviour,
+    set your LoadErrorHandler to IGNORE. (TIKA-1805)
+
+  * (Something about more specific parser bundles, plus an overall one)
+
 Release 1.12 - Current Development
 
   * A parser to compute motion properties in Videos, e.g., 
