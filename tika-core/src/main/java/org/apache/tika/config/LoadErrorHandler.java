@@ -39,12 +39,24 @@ public interface LoadErrorHandler {
      * @param throwable the encountered problem
      */
     void handleLoadError(String classname, Throwable throwable);
+    
+    /**
+     * Handles the case of no occurrences of the specified service interface
+     * being found. The implementation can log or otherwise process
+     * the given error information. If the method returns normally, then
+     * the service loader simply returns an empty list to the caller.
+     *
+     * @param interfacename name of the service interface with no occurrences
+     */
+    void handleNoOccurrences(String interfacename);
 
     /**
      * Strategy that simply ignores all problems.
      */
     LoadErrorHandler IGNORE = new LoadErrorHandler() {
         public void handleLoadError(String classname, Throwable throwable) {
+        }
+        public void handleNoOccurrences(String interfacename) {
         }
         @Override
         public String toString() {
@@ -61,6 +73,10 @@ public interface LoadErrorHandler {
             Logger.getLogger(classname).log(
                     Level.WARNING, "Unable to load " + classname, throwable);
         }
+        public void handleNoOccurrences(String interfacename) {
+            Logger.getLogger(interfacename).log(
+                    Level.WARNING, "No occurrences found of " + interfacename);
+        }
         @Override
         public String toString() {
             return "WARN";
@@ -75,6 +91,9 @@ public interface LoadErrorHandler {
     LoadErrorHandler THROW = new LoadErrorHandler() {
         public void handleLoadError(String classname, Throwable throwable) {
             throw new RuntimeException("Unable to load " + classname, throwable);
+        }
+        public void handleNoOccurrences(String interfacename) {
+            throw new RuntimeException("No occurrences found of " + interfacename);
         }
         @Override
         public String toString() {

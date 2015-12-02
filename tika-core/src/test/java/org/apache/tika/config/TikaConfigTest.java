@@ -36,6 +36,7 @@ import org.apache.tika.parser.EmptyParser;
 import org.apache.tika.parser.ErrorParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -51,6 +52,20 @@ import static org.junit.Assert.fail;
  *  testing using real parsers and detectors.
  */
 public class TikaConfigTest extends AbstractTikaConfigTest {
+    private ServiceLoader ignoreLoader;
+    private ServiceLoader warnLoader;
+    private ServiceLoader throwLoader;
+    
+    @Before
+    public void setup() {
+        ignoreLoader = new ServiceLoader(getClass().getClassLoader(), 
+                                         LoadErrorHandler.IGNORE);
+        warnLoader = new ServiceLoader(getClass().getClassLoader(), 
+                                       LoadErrorHandler.WARN);
+        throwLoader = new ServiceLoader(getClass().getClassLoader(), 
+                                        LoadErrorHandler.THROW);
+    }
+    
     /**
      * Make sure that a configuration file can't reference the
      * {@link AutoDetectParser} class a &lt;parser&gt; configuration element.
@@ -72,12 +87,6 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
      */
     @Test
     public void testUnknownParser() throws Exception {
-        ServiceLoader ignoreLoader = new ServiceLoader(
-                getClass().getClassLoader(), LoadErrorHandler.IGNORE);
-        ServiceLoader warnLoader = new ServiceLoader(
-                getClass().getClassLoader(), LoadErrorHandler.WARN);
-        ServiceLoader throwLoader = new ServiceLoader(
-                getClass().getClassLoader(), LoadErrorHandler.THROW);
         Path configPath = Paths.get(new URI(getConfigPath("TIKA-1700-unknown-parser.xml")));
         
         TikaConfig ignore = new TikaConfig(configPath, ignoreLoader);
@@ -94,6 +103,24 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
             new TikaConfig(configPath, throwLoader);
             fail("Shouldn't get here, invalid parser class");
         } catch (TikaException expected) {}
+    }
+    
+    /**
+     * If there are no (eg) Parsers, then the service loader should
+     *  alert that via the Load Error Handler. This mimics what
+     *  DefaultParser / DefaultDetector will do
+     */
+    @Test
+    public void testNoInstancesOfService() throws Exception {
+        // Ignore does as it says
+        ignoreLoader.loadServiceProviders(EmptyParser.class);
+        // Warn will log, as we don't have any of this
+        warnLoader.loadServiceProviders(EmptyParser.class);
+        // Throw will object
+        try {
+            throwLoader.loadServiceProviders(EmptyParser.class);
+            fail("Shouldn't get here, no instances of the service");
+        } catch (RuntimeException expected) {}
     }
 
     /**
