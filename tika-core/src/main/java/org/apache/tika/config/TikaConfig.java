@@ -162,8 +162,8 @@ public class TikaConfig {
         ExecutorServiceXmlLoader executorLoader = new ExecutorServiceXmlLoader();
         
         this.mimeTypes = typesFromDomElement(element);
-        this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
         this.parser = parserLoader.loadOverall(element, mimeTypes, loader);
+        this.detector = detectorLoader.loadOverall(element, mimeTypes, loader);
         this.translator = translatorLoader.loadOverall(element, mimeTypes, loader);
         this.executorService = executorLoader.loadOverall(element, mimeTypes, loader);
         this.serviceLoader = loader;

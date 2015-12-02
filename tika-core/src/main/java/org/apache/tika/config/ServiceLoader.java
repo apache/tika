@@ -334,6 +334,9 @@ public class ServiceLoader {
                 }
             }
         }
+        if (providers.isEmpty()) {
+            handler.handleNoOccurrences(iface.getName());
+        }
         return providers;
     }
 
