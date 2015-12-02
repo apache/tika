@@ -112,19 +112,15 @@
             </goals>
             <configuration>
               <excludes>
-                <exlude>org/apache/tika/config/TikaActivator</exlude>
-                <exlude>org/apache/tika/metadata/Property$PropertyType</exlude>
-                <exlude>org/apache/tika/metadata/Property$ValueType</exlude>
-                <exlude>org/apache/tika/metadata/DublinCore</exlude>
-                <exlude>org/apache/tika/metadata/Metadata</exlude>
-                <exlude>org/apache/tika/metadata/MSOffice</exlude>
-                <exlude>org/apache/tika/parser/EmptyParser</exlude>
+                <exlude>org/apache/tika/config/LoadErrorHandler</exlude>
               </excludes>
               <comparisonArtifacts>
                 <comparisonArtifact>
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-core</artifactId>
-                  <version>1.0</version>
+                  <!-- Check against 1.11 for now, switch to 2.0 post-release -->
+                  <!-- We expect to have broken things since 1.0! -->
+                  <version>1.11</version>
                   <type>jar</type>
                 </comparisonArtifact>
               </comparisonArtifacts>
