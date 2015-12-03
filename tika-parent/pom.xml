@@ -229,6 +229,14 @@
         <role>committer</role>
       </roles>
     </developer>
+    <developer>
+      <name>Bob Paulin</name>
+      <id>bob</id>
+      <timezone>-6</timezone>
+      <roles>
+        <role>committer</role>
+      </roles>
+    </developer>
   </developers>
   <contributors>
     <contributor>
@@ -294,7 +302,44 @@
         <artifactId>jcl-over-slf4j</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.ops4j.pax.exam</groupId>
+        <artifactId>pax-exam-junit4</artifactId>
+        <version>${pax.exam.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.ops4j.pax.exam</groupId>
+        <artifactId>pax-exam-container-native</artifactId>
+        <version>${pax.exam.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>org.apache.felix.framework</artifactId>
+        <version>4.6.0</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.ops4j.pax.exam</groupId>
+        <artifactId>pax-exam-link-assembly</artifactId>
+        <version>${pax.exam.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.ops4j.pax.url</groupId>
+        <artifactId>pax-url-aether</artifactId>
+        <version>2.3.0</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>javax.inject</groupId>
+        <artifactId>javax.inject</artifactId>
+        <version>1</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
+   
   </dependencyManagement>
 
   <properties>
@@ -304,6 +349,7 @@
     <commons.compress.version>1.10</commons.compress.version>
     <commons.io.version>2.4</commons.io.version>
     <slf4j.version>1.7.12</slf4j.version>
+    <pax.exam.version>4.4.0</pax.exam.version>
   </properties>
 
   <build>
