@@ -1,5 +1,13 @@
 Release 1.12 - Current Development
 
+  * A parser to compute motion properties in Videos, e.g., 
+    Histogram of Oriented Gradients and Histogram of Optical Flows
+    using the Pooled Time Series algorithm, was added (TIKA-1798).
+
+  * Provide NamedEntityParser which exposes Named Entity Recognition
+    from OpenNLP and Stanford NER providers (TIKA-1787, GitHub-61,
+    GitHub-62).
+
   * Allow XHTMLContentHandler to pass attributes of html element 
     via Markus Jelsma (TIKA-1782).
 
@@ -7,6 +15,8 @@ Release 1.12 - Current Development
 
   * Tika Facade parse methods for Path and File added which take a
     Metadata object, to mirror the existing InputStream one (GitHub-60)
+
+  * GeoParser fix for loading the NER model from a jar file (TIKA-1791)
 
 
 Release 1.11 - 10/18/2015
