@@ -39,14 +39,12 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
-      <version>4.0.0</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.compendium</artifactId>
-      <version>4.0.0</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -60,6 +58,42 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+     <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-junit4</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-container-native</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.felix</groupId>
+      <artifactId>org.apache.felix.framework</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.exam</groupId>
+      <artifactId>pax-exam-link-assembly</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ops4j.pax.url</groupId>
+      <artifactId>pax-url-aether</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>javax.inject</groupId>
+      <artifactId>javax.inject</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
@@ -72,9 +106,7 @@
         <configuration>
           <instructions>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
-            <Bundle-Activator>
-              org.apache.tika.config.TikaActivator
-            </Bundle-Activator>
+            <Bundle-Activator>org.apache.tika.config.TikaActivator</Bundle-Activator>
             <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
           </instructions>
         </configuration>
@@ -129,24 +161,34 @@
         </executions>
       </plugin>
       <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>2.10</version>
-        <configuration>
-          <additionalClasspathElements>
-            <additionalClasspathElement>
-              ${project.build.directory}/${project.build.finalName}.jar
-            </additionalClasspathElement>
-          </additionalClasspathElements>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>integration-test</goal>
+                  <goal>verify</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <additionalClasspathElements>
+	            <additionalClasspathElement>
+	              ${project.build.directory}/${project.build.finalName}.jar
+	            </additionalClasspathElement>
+              </additionalClasspathElements>
+              <systemPropertyVariables>
+                <org.ops4j.pax.logging.DefaultServiceLog.level>
+                  WARN
+                </org.ops4j.pax.logging.DefaultServiceLog.level>
+              </systemPropertyVariables>
+              <systemProperties>
+                <property>
+                    <name>project.bundle.file</name>
+                    <value>target/${project.build.finalName}.jar</value>
+                </property>
+              </systemProperties>
+            </configuration>
+          </plugin>
     </plugins>
   </build>
 
