@@ -17,6 +17,8 @@
 package org.apache.tika.config;
 
 import org.apache.tika.detect.Detector;
+import org.apache.tika.osgi.TikaService;
+import org.apache.tika.osgi.internal.TikaServiceImpl;
 import org.apache.tika.parser.Parser;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -53,6 +55,7 @@ public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer 
 
         detectorTracker.open();
         parserTracker.open();
+        context.registerService(TikaService.class, new TikaServiceImpl(), null);
     }
 
     public void stop(BundleContext context) throws Exception {
