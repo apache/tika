@@ -57,6 +57,7 @@
     <module>tika-translate</module>
     <module>tika-example</module>
     <module>tika-java7</module>
+    <module>tika-parser-modules</module>
   </modules>
 
   <profiles>
