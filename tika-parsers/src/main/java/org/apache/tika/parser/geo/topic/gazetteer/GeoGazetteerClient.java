@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -71,7 +72,7 @@ public class GeoGazetteerClient {
 			HttpGet httpGet = new HttpGet(uri.build());
 			
 			HttpResponse resp = httpClient.execute(httpGet);
-			String respJson = IOUtils.toString(resp.getEntity().getContent());
+			String respJson = IOUtils.toString(resp.getEntity().getContent(), Charsets.UTF_8);
 			
 			@SuppressWarnings("serial")
 			Type typeDef = new TypeToken<Map<String, List<Location>>>(){}.getType();
