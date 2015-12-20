@@ -26,6 +26,8 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ner.opennlp.OpenNLPNERecogniser;
+import org.apache.tika.parser.ner.regex.RegexNERecogniser;
+import org.apache.tika.sax.XHTMLContentHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -59,7 +61,8 @@ public class NamedEntityParser extends AbstractParser {
     public static final Logger LOG = LoggerFactory.getLogger(NamedEntityParser.class);
     public static final Set<MediaType> MEDIA_TYPES = new HashSet<>();
     public static final String MD_KEY_PREFIX = "NER_";
-    public static final String DEFAULT_NER_IMPL = OpenNLPNERecogniser.class.getName();
+    public static final String DEFAULT_NER_IMPL =
+            OpenNLPNERecogniser.class.getName() + "," + RegexNERecogniser.class.getName();
     public static final String SYS_PROP_NER_IMPL = "ner.impl.class";
 
     public Tika secondaryParser;
@@ -147,5 +150,27 @@ public class NamedEntityParser extends AbstractParser {
                 }
             }
         }
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(contentHandler, metadata);
+        extractOutput(text.trim(), xhtml);
+    }
+
+    /**
+     * writes the content to the given XHTML
+     * content handler
+     *
+     * @param content
+     *          the content which needs to be written
+     * @param xhtml
+     *          XHTML content handler
+     * @throws SAXException
+     *           if the XHTML SAX events could not be handled
+     *
+     */
+    private void extractOutput(String content, XHTMLContentHandler xhtml) throws SAXException{
+        xhtml.startDocument();
+        xhtml.startElement("div");
+        xhtml.characters(content);
+        xhtml.endElement("div");
+        xhtml.endDocument();
     }
 }
