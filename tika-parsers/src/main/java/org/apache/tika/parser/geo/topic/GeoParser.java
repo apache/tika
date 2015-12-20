@@ -17,31 +17,23 @@
 
 package org.apache.tika.parser.geo.topic;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.exec.ExecuteWatchdog;
-import org.apache.commons.exec.PumpStreamHandler;
-import org.apache.commons.exec.environment.EnvironmentUtils;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.external.ExternalParser;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONValue;
+import org.apache.tika.parser.geo.topic.gazetteer.GeoGazetteerClient;
+import org.apache.tika.parser.geo.topic.gazetteer.Location;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -54,7 +46,8 @@ public class GeoParser extends AbstractParser {
                                     Collections.singleton(MEDIA_TYPE);
     
     private GeoParserConfig config = new GeoParserConfig();
-
+    private GeoGazetteerClient gazetteerClient;
+    
     private boolean initialized;
     private URL modelUrl;
     private NameEntityExtractor extractor;
@@ -76,11 +69,12 @@ public class GeoParser extends AbstractParser {
         }
         
         this.modelUrl = modelUrl;
+        gazetteerClient = new GeoGazetteerClient(config);
         
         // Check if the NER model is available, and if the
         //  lucene-geo-gazetteer is available
-        this.available = modelUrl != null && ExternalParser.check(
-                new String[] { "lucene-geo-gazetteer", "--help" }, -1);
+        this.available = modelUrl != null && gazetteerClient.checkAvail();
+        
         if (this.available) {
             try {
                 this.extractor = new NameEntityExtractor(modelUrl);
@@ -112,7 +106,7 @@ public class GeoParser extends AbstractParser {
         String bestner = extractor.bestNameEntity;
 
         /*------------------------resolve geonames for each ner, store results in a hashmap---------------------*/
-        HashMap<String, ArrayList<String>> resolvedGeonames = searchGeoNames(locationNameEntities);
+        Map<String, List<Location>> resolvedGeonames = searchGeoNames(locationNameEntities);
 
         /*----------------store locationNameEntities and their geonames in a geotag, each input has one geotag---------------------*/
         GeoTag geotag = new GeoTag();
@@ -120,58 +114,22 @@ public class GeoParser extends AbstractParser {
 
         /* add resolved entities in metadata */
 
-        metadata.add("Geographic_NAME", geotag.Geographic_NAME);
-        metadata.add("Geographic_LONGITUDE", geotag.Geographic_LONGTITUDE);
-        metadata.add("Geographic_LATITUDE", geotag.Geographic_LATITUDE);
+        metadata.add("Geographic_NAME", geotag.location.getName());
+        metadata.add("Geographic_LONGITUDE", geotag.location.getLongitude());
+        metadata.add("Geographic_LATITUDE", geotag.location.getLatitude());
         for (int i = 0; i < geotag.alternatives.size(); ++i) {
             GeoTag alter = (GeoTag) geotag.alternatives.get(i);
-            metadata.add("Optional_NAME" + (i + 1), alter.Geographic_NAME);
+            metadata.add("Optional_NAME" + (i + 1), alter.location.getName());
             metadata.add("Optional_LONGITUDE" + (i + 1),
-                         alter.Geographic_LONGTITUDE);
+                         alter.location.getLongitude());
             metadata.add("Optional_LATITUDE" + (i + 1),
-                         alter.Geographic_LATITUDE);
+                         alter.location.getLatitude());
         }
     }
 
-    public HashMap<String, ArrayList<String>> searchGeoNames(
-            ArrayList<String> locationNameEntities) throws ExecuteException,
-            IOException {
-        CommandLine cmdLine = new CommandLine("lucene-geo-gazetteer");
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        cmdLine.addArgument("-s");
-        for (String name : locationNameEntities) {
-            cmdLine.addArgument(name);
-        }
-
-        LOG.fine("Executing: " + cmdLine);
-        DefaultExecutor exec = new DefaultExecutor();
-        exec.setExitValue(0);
-        ExecuteWatchdog watchdog = new ExecuteWatchdog(60000);
-        exec.setWatchdog(watchdog);
-        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-        exec.setStreamHandler(streamHandler);
-        int exitValue = exec.execute(cmdLine, EnvironmentUtils.getProcEnvironment());
-        String outputJson = outputStream.toString("UTF-8");
-        JSONArray json = (JSONArray) JSONValue.parse(outputJson);
-
-        HashMap<String, ArrayList<String>> returnHash = new HashMap<String, ArrayList<String>>();
-        for (int i = 0; i < json.size(); i++) {
-            JSONObject obj = (JSONObject) json.get(i);
-            for (Object key : obj.keySet()) {
-                String theKey = (String) key;
-                JSONArray vals = (JSONArray) obj.get(theKey);
-                ArrayList<String> stringVals = new ArrayList<String>(
-                        vals.size());
-                for (int j = 0; j < vals.size(); j++) {
-                    String val = (String) vals.get(j);
-                    stringVals.add(val);
-                }
-
-                returnHash.put(theKey, stringVals);
-            }
-        }
-
-        return returnHash;
+    public Map<String, List<Location>> searchGeoNames(
+            ArrayList<String> locationNameEntities) {
+    	return gazetteerClient.getLocations(locationNameEntities);
     }
 
     public boolean isAvailable() {
