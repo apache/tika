@@ -1,5 +1,8 @@
 Release 1.12 - Current Development
 
+  * The NamedEntityParser was enhanced to generate text content
+    in addition to metadata (TIKA-1815).
+
   * A significant speed-up is made to the GeoTopicParser by
     using the new REST server capabilities from Lucene Geo
     Gazetteer (TIKA-1803).
