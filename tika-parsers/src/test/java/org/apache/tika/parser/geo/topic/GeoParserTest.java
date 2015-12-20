@@ -63,10 +63,10 @@ public class GeoParserTest {
 		assertNotNull(metadata.get("Geographic_NAME"));
 		assertNotNull(metadata.get("Geographic_LONGITUDE"));
 		assertNotNull(metadata.get("Geographic_LATITUDE"));
-		assertEquals("China", metadata.get("Geographic_NAME"));
+		assertEquals("People’s Republic of China", metadata.get("Geographic_NAME"));
 		assertEquals("United States", metadata.get("Optional_NAME1"));
-		assertEquals("27.33931", metadata.get("Geographic_LATITUDE"));
-		assertEquals("-108.60288", metadata.get("Geographic_LONGITUDE"));
+		assertEquals("35.0", metadata.get("Geographic_LATITUDE"));
+		assertEquals("105.0", metadata.get("Geographic_LONGITUDE"));
 		assertEquals("39.76", metadata.get("Optional_LATITUDE1"));
 		assertEquals("-98.5", metadata.get("Optional_LONGITUDE1"));
 

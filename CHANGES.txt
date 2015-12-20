@@ -1,5 +1,9 @@
 Release 1.12 - Current Development
 
+  * A significant speed-up is made to the GeoTopicParser by
+    using the new REST server capabilities from Lucene Geo
+    Gazetteer (TIKA-1803).
+
   * A parser to compute motion properties in Videos, e.g., 
     Histogram of Oriented Gradients and Histogram of Optical Flows
     using the Pooled Time Series algorithm, was added (TIKA-1798).
