@@ -4795,12 +4795,41 @@
     </magic>
   </mime-type>
 
+  <mime-type type="image/vnd.dxb">
+    <acronym>DXB</acronym>
+    <_comment>AutoCAD DXF simplified Binary</_comment>
+    <tika:link>http://en.wikipedia.org/wiki/AutoCAD_DXF</tika:link>
+    <magic priority="50">
+      <match value="AutoCAD DXB 1.0\r\n0x1A00" type="string" offset="0"/>
+    </magic>
+    <glob pattern="*.dxb"/>
+  </mime-type>
+
   <mime-type type="image/vnd.dxf">
     <acronym>DXF</acronym>
     <_comment>AutoCAD DXF</_comment>
     <tika:link>http://en.wikipedia.org/wiki/AutoCAD_DXF</tika:link>
+    <!-- DXF can be the text or binary representation -->
     <glob pattern="*.dxf"/>
   </mime-type>
+  <mime-type type="image/vnd.dxf;format=binary">
+    <sub-class-of type="image/vnd.dxf"/>
+    <_comment>AutoCAD DXF in Binary form</_comment>
+    <magic priority="50">
+      <match value="AutoCAD Binary DXF\r\n0x1A00" type="string" offset="0"/>
+    </magic>
+  </mime-type>
+  <mime-type type="image/vnd.dxf;format=ascii">
+    <sub-class-of type="image/vnd.dxf"/>
+    <_comment>AutoCAD DXF in ASCII Text form</_comment>
+    <magic priority="50">
+      <!-- Variable number of spaces before the code groups -->
+      <match value="0\r\nSECTION\r\n" offset="0:3">
+        <match value="2\r\nHEADER\r\n" offset="12:18"/>
+      </match>
+    </magic>
+  </mime-type>
+
   <mime-type type="image/vnd.fastbidsheet">
     <glob pattern="*.fbs"/>
   </mime-type>
