@@ -531,11 +531,17 @@ public class TestMimeTypes {
     }
 
     @Test
-    public void testDwgDetection() throws Exception {
+    public void testAutoCADDetection() throws Exception {
         assertTypeByName("image/vnd.dwg", "x.dwg");
         assertTypeByData("image/vnd.dwg", "testDWG2004.dwg");
         assertTypeByData("image/vnd.dwg", "testDWG2007.dwg");
         assertTypeByData("image/vnd.dwg", "testDWG2010.dwg");
+        
+        // From name, gets the common parent type
+        assertTypeByName("image/vnd.dxf", "x.dxf");
+        // With the data, can work out it's the ASCII flavour
+        assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii.dxf");
+        // TODO Get a sample Binary DXF file and test
     }
 
     @Test
