@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE concept PUBLIC "-//OASIS//DTD DITA Concept//EN" "http://docs.oasis-open.org/dita/v1.1/OS/dtd/concept.dtd">
+<concept id="tika-arch">
+ <title>Apache Tika Architecture</title>
+ <shortdesc>This section describes the Apache Tika architecture.</shortdesc>
+ <prolog>
+  <author>Apache Software Foundation</author>
+  <copyright>
+   <copyryear year="2011"/>
+   <copyrholder>Apache Software Foundation</copyrholder>
+  </copyright>
+  <metadata>
+      <audience experiencelevel="expert" job="Customizing" type="Coder"/>
+      <category>Metadata</category>
+      <keywords>
+          <keyword>Tika</keyword>
+          <keyword>Content</keyword>
+      </keywords>
+      <prodinfo>
+          <prodname>Apache Tika</prodname>
+          <vrmlist>
+              <vrm version="1.x" release="Final" modification="2011/11/11"/>
+          </vrmlist>
+      </prodinfo>
+  </metadata>
+ </prolog>
+ <conbody>
+  <p>The Detector Interface</p>
+
+  <p>The org.apache.tika.detect.Detector interface is the basis for most of the content type detection in Apache Tika. All the different ways of detecting content all implement the same common method:</p>
+  <image href="http://tika.apache.org/tika.png" id="tika_logo" />
+ </conbody>
+</concept>
