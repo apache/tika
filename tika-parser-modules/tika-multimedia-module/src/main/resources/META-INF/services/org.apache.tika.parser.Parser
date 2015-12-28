@@ -14,5 +14,14 @@
 #  limitations under the License.
 
 
+org.apache.tika.parser.image.BPGParser
 org.apache.tika.parser.image.ImageParser
+org.apache.tika.parser.image.PSDParser
+org.apache.tika.parser.image.TiffParser
+org.apache.tika.parser.image.WebPParser
 org.apache.tika.parser.jpeg.JpegParser
+org.apache.tika.parser.audio.AudioParser
+org.apache.tika.parser.audio.MidiParser
+org.apache.tika.parser.mp3.Mp3Parser
+org.apache.tika.parser.mp4.MP4Parser
+org.apache.tika.parser.video.FLVParser
