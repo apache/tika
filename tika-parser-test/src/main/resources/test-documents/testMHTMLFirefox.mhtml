@@ -1,0 +1,455 @@
+From: <Saved by Mozilla 5.0 (Windows; en-US)>
+Subject: Aperture Framework
+Date: Fri Mar 10 2006 13:40:00 GMT+0100
+MIME-Version: 1.0
+Content-Location: http://aperture.sourceforge.net/
+Content-Type: multipart/related;
+	boundary="----=_NextPart_000_0000_B40804DE.BBCA09DC";
+	type="text/html"
+X-MAF: Produced By MAF MHT Archive Handler V0.4.1
+
+This is a multi-part message in MIME format.
+
+------=_NextPart_000_0000_B40804DE.BBCA09DC
+Content-Type: text/html
+Content-Transfer-Encoding: quoted-printable
+Content-Location: http://aperture.sourceforge.net/
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/=
+TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html><head><!-- This document is inspired by the content style at http://ww=
+w.csszengarden.com -->
+
+
+
+<meta http-equiv=3D"content-type" content=3D"text/html; charset=3Diso-8859-1=
+">
+<meta name=3D"author" content=3D"Leo Sauermann, Christiaan Fluit">
+<meta name=3D"keywords" content=3D"aperture, rdf, data"><title>Aperture Fram=
+ework</title>
+
+<script type=3D"text/javascript"></script>
+<link title=3D"Default" rel=3D"stylesheet" type=3D"text/css" href=3D"index_f=
+iles/frontpage.css" media=3D"screen">
+<link title=3D"Default" rel=3D"stylesheet" type=3D"text/css" href=3D"index_f=
+iles/print.css" media=3D"print">
+<link title=3D"Basic" rel=3D"alternate stylesheet" type=3D"text/css" href=3D=
+"index_files/all.css" media=3D"all"></head><body>
+
+<div id=3D"header">
+
+<h1>Aperture</h1>
+<h2>a Java framework for getting data and metadata</h2>
+
+</div>  <!-- header -->
+
+<div id=3D"content">
+
+<div id=3D"preamble">
+
+<p>
+<b>Project name</b>
+</p>
+
+<p>
+From <a class=3D"ext-link" title=3D"http://www.webster.com/" href=3D"http://=
+www.webster.com/">Merriam-Webster Online</a>:
+</p>
+
+<p>
+Main Entry: <strong>ap=B7er=B7ture</strong>
+(sounds like <a class=3D"ext-link" title=3D"http://cougar.eb.com/sound/a/ape=
+rtu01.wav" href=3D"http://cougar.eb.com/sound/a/apertu01.wav">this</a>)<br>
+Pronunciation: 'ap-&amp;(r)-"chur, -ch&amp;r, -"tyur, -"tur<br>
+Function: noun<br>
+Etymology: Middle English, from Latin apertura, from apertus, past
+participle of aperire to open<br>
+</p>
+
+<ol>
+<li>an opening or open space : HOLE</li>
+<li>a : the opening in a photographic lens that admits the light<br>
+b : the diameter of the stop in an optical system that determines the diamet=
+er
+of the bundle of rays traversing the instrument<br>
+c : the diameter of the objective lens or mirror of a telescope</li>
+</ol>
+
+</div> <!-- preamble -->
+
+<h2>News</h2>
+
+<p>
+<b>March 6, 2006:</b> <a href=3D"https://sourceforge.net/project/showfiles.p=
+hp?group_id=3D150969">Aperture
+2006.1 alpha 2</a> released!
+</p>
+
+<p>
+This release adds support for crawling file systems, web sites, IMAP and Out=
+look mail boxes.
+Furthermore, the number of supported file formats has increased significantl=
+y.
+</p>
+
+<h2>Features</h2>
+
+<ul>
+<li>Crawl information systems such as file systems, websites, mail boxes and=
+ mail servers</li>
+<li>Extract full-text and metadata from many common file formats</li>
+<li>View files in their native applications</li>
+<li>Ease of use: easy to learn, easy to code, easy to deploy in industrial p=
+rojects</li>
+<li>Flexible architecture: can be extended with custom file formats, data so=
+urces, etc.,
+    with support for deployment on OSGi platforms</li>
+<li>Data exchange based on Semantic Web standards (e.g. RDF, SPARQL, ...)</l=
+i>
+</ul>
+
+<h2>Supported File Formats</h2>
+
+<ul>
+<li>Plain text</li>
+<li>HTML, XHTML</li>
+<li>XML</li>
+<li>PDF (Portable Document Format)</li>
+<li>RTF (Rich Text Format)</li>
+<li>Microsoft Office: Word, Excel, Powerpoint, Visio, Publisher</li>
+<li>Microsoft Works</li>
+<li>OpenOffice 1.x: Writer, Calc, Impress, Draw</li>
+<li>StarOffice 6.x - 7.x+: Writer, Calc, Impress, Draw</li>
+<li>OpenDocument (OpenOffice 2.x, StarOffice 8.x)</li>
+<li>Corel WordPerfect, Quattro, Presentations</li>
+<li>Emails (.eml files)</li>
+</ul>
+
+<h2>Crawlers</h2>
+
+<p>
+Crawlers support the extraction of information from heterogenous data source=
+s.
+At the moment we support the following source types:</p>
+
+<ul>
+<li>File Systems (local, remote, removeable media)</li>
+<li>Websites and intranets</li>
+<li>IMAP e-mail servers</li>
+<li>Microsoft Outlook (alpha)</li>
+</ul>
+
+<h2><a name=3D"support"></a>Support</h2>
+
+<p>
+At this moment the project is still in alpha stage and we provide only limit=
+ed support.
+If you have any questions about the project, feel free to join the
+<a href=3D"https://sourceforge.net/mail/?group_id=3D150969">development mail=
+inglist</a> and ask us.
+</p>
+
+<h2><a name=3D"development"></a>Development</h2>
+
+<p>
+To use Aperture in your own projects, read the <a href=3D"http://aperture.so=
+urceforge.net/documentation.html">documentation</a>
+for information about requirements and code examples.
+</p>
+
+<p>
+If you are interested in contributing, feel free to contact the project admi=
+ns or join the
+<a href=3D"https://sourceforge.net/mail/?group_id=3D150969">development mail=
+inglist</a>.
+We are very interested in new extractors and other contributions including c=
+rawlers.
+</p>
+
+</div>  <!-- content -->
+
+<div id=3D"sideBar">
+
+<p>
+Aperture is a Java framework for extracting and querying full-text
+content and metadata from various information systems (e.g. file systems,
+web sites, mail boxes) and the file formats (e.g. documents, images)
+occurring in these systems.
+</p>
+
+<h2>Contents</h2>
+
+<ul>
+<li><a href=3D"http://aperture.sourceforge.net/index.html">Home</a></li>
+<li><a href=3D"https://sourceforge.net/project/showfiles.php?group_id=3D1509=
+69">Download</a></li>
+<li><a href=3D"http://aperture.sourceforge.net/doc/javadoc/index.html">Javad=
+oc</a></li>
+<li><a href=3D"http://aperture.sourceforge.net/documentation.html">Documenta=
+tion</a></li>
+<li><a href=3D"http://aperture.sourceforge.net/faq.html">FAQ</a></li>
+<li><a href=3D"http://aperture.sourceforge.net/index.html#support">Support</=
+a></li>
+<li><a href=3D"http://aperture.sourceforge.net/index.html#development">Devel=
+opment</a></li>
+<li><a href=3D"http://aperture.sourceforge.net/license.html">License</a></li=
+>
+</ul>
+
+<h2>Developed By</h2>
+
+<ul>
+<li><a href=3D"http://aduna.biz/">Aduna</a></li>
+<li><a href=3D"http://www.dfki.de/">DFKI</a></li>
+</ul>
+
+<h2>Site Info</h2>
+
+<p>
+Hosted by <a href=3D"http://sourceforge.net/">SourceForge.net</a>
+</p>
+
+<p>
+<a href=3D"http://sourceforge.net/"><img class=3D"logo" src=3D"index_files/s=
+flogo.png" alt=3D"SourceForge.net Logo" height=3D"37" width=3D"125"></a>
+</p>
+
+<p>
+<br>
+Graphical design by <a href=3D"http://www.pixul.net/">Pixul.net</a>. Used wi=
+th permission.
+</p>
+
+</div>  <!-- sideBar -->
+
+<div id=3D"footer">
+<a href=3D"http://validator.w3.org/check/referer" title=3D"Check the validit=
+y of this site&#8217;s XHTML">xhtml</a>
+=A0<a href=3D"http://jigsaw.w3.org/css-validator/check/referer" title=3D"Che=
+ck the validity of this site&#8217;s CSS">css</a>
+</div>  <!-- footer -->
+
+</body></html>
+
+
+------=_NextPart_000_0000_B40804DE.BBCA09DC
+Content-Type: text/css
+Content-Transfer-Encoding: quoted-printable
+Content-Location: index_files/all.css
+
+@import url(../w3-html40-recommended.css);
+
+img {
+=09border: 0;
+}
+
+
+
+------=_NextPart_000_0000_B40804DE.BBCA09DC
+Content-Type: text/css
+Content-Transfer-Encoding: quoted-printable
+Content-Location: index_files/frontpage.css
+
+/*
+ Parts of this style-sheet are copied from the=20
+ css Zen Garden submission 164 - 'Chien', by Alex Miller, http://www.pixul.n=
+et/=20
+ http://www.csszengarden.com/?cssfile=3D/164/164.css&page=3D2
+=20
+ css released under Creative Commons License - http://creativecommons.org/li=
+censes/by-nc-sa/1.0/=20
+*/
+
+@import url(../w3-html40-recommended.css);
+
+html, body, div, ul, ol, p, li {
+=09margin: 0;
+=09border: 0;
+=09padding: 0;
+}
+
+html {
+=09background-image: url(img/background.gif);
+=09font-family: verdana, arial, serif;
+=09font-size: 82%;
+=09line-height: 120%;
+=09color: #333;
+}
+
+body {
+=09background-image: url(img/containerbackground.gif);
+=09background-repeat: repeat-y;
+=09width: 590px;
+=09margin-left: auto;
+=09margin-right: auto;
+=09padding: 0 38px 0 37px;
+}
+
+ul, ol, p {
+=09padding: 0 12px 10px 12px;
+}
+
+ul, ol {
+=09list-style-position: outside;
+=09padding-left: 16px;
+=09margin-left: 0px;
+}
+
+li {
+=09margin-left: 15px;
+=09margin-bottom: 8px;
+}
+
+h2 {
+=09margin: 20px 0 15px 0;
+=09padding: 0;
+=09text-align: center;
+=09font-size: 130%;
+}
+
+img {
+=09border: 0;
+}
+
+a:link {
+=09text-decoration: none;
+=09color: #CC0000;
+}
+=09
+a:visited {
+=09text-decoration: none;
+=09color: #CC6666;
+}
+=09
+a:hover {
+=09text-decoration: underline;
+=09color: #CC0000;
+}
+
+#header {
+=09color: #d88;
+=09background-color: rgb(156,26,0);
+=09padding: 20px;
+=09margin-bottom: 20px;
+}
+
+#header h1 {
+ =09color: #eaa;
+}
+
+#content {
+=09float: left;
+=09width: 389px;
+}
+
+#content h2 {
+=09text-align:center;
+=09color: #ffffff;
+=09background-image: url(img/bgheader-content.png);
+=09background-position: left;
+=09height: 28px;
+=09padding-top: 6px;
+}
+
+#sideBar {
+=09float: right;
+=09width: 192px;
+}
+
+#sideBar h2 {
+=09background-color: #f7b356;
+=09color: #fff;
+=09background-image: url(img/bgheader-sidebar.png);
+=09background-position: left;
+=09height: 28px;
+=09padding-top: 6px;
+}
+
+#preamble {
+=09font-size: 82%;
+=09color: #996666;
+}
+
+#footer {
+=09clear: both;
+=09border-top: 1px solid #999;
+=09padding: 6px 0 6px 0;
+=09background-color: #FFF;
+=09font-weight: bold;
+=09text-align: center;
+}
+
+
+
+------=_NextPart_000_0000_B40804DE.BBCA09DC
+Content-Type: text/css
+Content-Transfer-Encoding: quoted-printable
+Content-Location: index_files/print.css
+
+html, body {
+=09color: #000;
+=09background: #fff;
+=09font-family: "Times New Roman", "Times", serif;
+=09font-size: 100%;
+=09line-height: 110%;
+}
+
+
+------=_NextPart_000_0000_B40804DE.BBCA09DC
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-Location: index_files/sflogo.png
+
+iVBORw0KGgoAAAANSUhEUgAAAH0AAAAlCAIAAADgP3HoAAAABGdBTUEAALGLDJGlHAAAACBjSFJN
+AABumgAAdA8AAPQkAACEzwAAbV8AAOhsAAA8iwAAG1jJR08cAAAK3ElEQVR4nGJgGAUDAQACiBGI
+////P9DOGFmAkZERIICGZ7j/f/+C4eRsxo9XGATEGeRMGLiFGDj5GTglGbjkGJjYSDLq6dOnT548
+effunZCQkKqqKpCk3HnAcAcIoCEW7kD/T548GUhilZ04cSKQ/HVo379dU9h1JBi96xh4JZAVfP/8
+cumKdZev3EDTyMnJqaKi4unpKS0tDRc8efLkjh07gHYBBXV1dYERcOfOHUi4Q9QfPHjw+/fvWF3i
+4eEBNC0xMfEBGKxfv97R0fH9+/cQWWC4AwTQEAt3COjq6gKGAgPMewzgVAmMj5SUFKnrT74vmMQb
+ZM0WXYxd8/9/c+bOvXz5CgMsng4cOAAMF4hkbm4uMECBjGXLlgHDHciIiooyNzeHyAJDGagSKA5U
+A1QJjAagpRApiFEMsJRhZmYGdNgBMHj48OEFMICHMzDcAQKICZffINGLKQ60+w4YkBZUhADEWEho
+EgTA5IYmAkySwDhguvnybeF0ZnlFnIEOBIxM0dExyMWFg4MDPJkDgwlIQgIXIgUPdIi9wGgApn0I
+FxJDaABosr29PYQtICCgoKAA5BoYGBQUFCArAwjARxnbMBACQZDAAZIzx9SAvhVISdD34w5ISWmG
+Hr4LSx6xMnoZ/V904pbjdhfdY72JBDjGLrPW1lpphLdmONFao6qHKYEJIQiPz4yVUlK19w6AEtdR
+BCbk0ANDH+89hyKvtpNGKQWMc46tSuk1QoNhzPyPa6DREd4fY555vxT9Jx+fkfHmCURkOUNCROoT
+U8FzxBjZMDf9mUTJNoIk5/yH+QrAVx3bMBDCUBhOky4NQpkiUhbIXvRslEFS0bLGDZBPedLpCnJU
+xgbr8RvDgjtGAcpW7ehLI+Ol4FlGOka999Ya3KJU7neBYep9FELKYdgUx/ZQwGpj0qrBrlVanlIK
+p+Rp2ITU8uS0kG3vz+11vz4fJ8sypD1yn3PGqLXmpl9+PbT8RTkD55+MMcaxS5bjK4CwlDNv376F
+VxdAOyDehiRDeKBDADBMGcAJH8IFxhamacg1FdxMYJQ8BQOgXqACeKBDADB6IMrQNALjEldiB8bl
+9sbpQAaLpBhWBZgAYhTQp8DUDUnsQA8CIxtehGKWZsQAoGmnTp0iqAwggLCkd0icA1McJMSB7gNy
+gR7DjGSgy4A5ACgLjCpcFmB1/Y8fPxjAgQX0MKaxkOIIUxekMYcssgMMoLqe/tZhYGA31sLlEkyQ
+n58PZwNNBuY/ZHuBZR15RuFKHMgAIACjZXACAAjDQOd3CkdxDX/O4cvDQCiiYt8iaZOmOcwdztkU
++oE3u8QNB/SkNZF/iPCEKNhErOb2redL9pIAJUxdmgjVeabmwvPR+j8SQojvEC0ALG7elhGxXwF2
+RTDKM7LThwpdUwBhKWcgMQ8JbmBRCy/v8AB4yxQ/ANafwCIb2EQDGo5WZOECQD/cBgP8hTswi0Q2
+FgIZf5+/JsZYBnBUMYDLLmDkQUSAQQYMa3g6QAs+iDJIWw6oF1IYogFI0U9MRgEIIOztSEgbBhg0
+wHwHDCZIsYA1GiFSkFRPEADdWl9fD0zpQKcDEy8kU8PrNKwA0p0BAqBjgJUhPp8IcLEbyP++8+Dv
+S8JBD3QAPDkD0zgke0Ga5/CmAVqjFtJXgrClwQCryUBlwKAnWAAABBCWcIdXLMAAghS+UlJSQPLu
+3buYioElEqQDDWSjZUNcAGgmUAswcQErEiAXay2ENXUTbCQI1wcDya9z5xF0w/bt25G58CQPzNxA
+t8GrXPyZDBcABjpyYwkrAAggLOEOTInwtACsNhnARTDQZUA3oXWXgCqBdkBah8B4RnYl3NGYXSFI
+Mx+oAGggMHGBmiKooYBpEdxMNJWQ3AYHPAGmPBEOv8+e/HNyDx4/79i+DV5nQESAMQpPv8AgA/Z7
+ITkAWDDiSbnIXoM7GGgmpDuCHwAEoLvsVRiEgTje0jhUqqtbwdG14OTWl/B1fJTOrqFbpDTg6iT4
+DGbooFMxYH9wLZRCB8NxufzvI3c5b8dXVdU3q23bYRiSJPHe13WdpmlRFJLRlKFSKo5j6XJN0zAR
+SGFGUcQ0IfXLca01pjvn4Idh2HUdNPMxNxQEAVu0BJhoAY2UF7vxxFrLKkO2oE3TJK8qmMj3fc9B
+MXUcx2VZSAswhbM/5+vDrfaiDs/t8fTr7urvN6Ov78vDTrSDCc0qlUeggS3LEr2M+DDneSYUCOMv
+xObzx0x82RIokgwBhI0xnCJfsyz7F3Sa3EsAYRmfARoBDBdgAcIALuiRczfQTUBxSDIBSgFNR254
+AcMLogsoCNQFaSRAuPCUBW8jAkUg6QUoAjEWogBoJlAELosGgJZiJkDMdue/q0cZj/Uw8rIxqLsw
+SBkycPAxMPxmYOb4/o/76asvyCqBGuEpHWgjcscFYhfQYcAkAixCgaUisBqDj0oiK8bqTjwjl8D0
+BxBAQ3JcjFjw5QXDt9cMLMwMzCwMnCIMbFQYwqUKAIY7QADhHBcbDoBHgkFMl0FIi4FfjZ6BDiyZ
+4SM8uABAAA3rcB8IAKwsHzx4QFAZQACNhjs1ATCZA+tMYlQCBNBouFMNbNiwAc84JRoACCAQ+j/C
+wPnz54F9VAUFBYj/gV1ooCCQhIsYGBgAW8yYGvfv3x8QEAAPN6Cy+fPnQ6SA2pGDFCjlAAMFBQVo
+5gAVAATQSEzvwPBFDuWPHz8aGhouXLgQGKbAMBIQELhw4QIw5QLTL7KuxMRER0dHfX19YLMSEnkQ
+QSCAm4k842EPA0AtmG4ACCAQomniGrQAmHjhIQDs/UFCEwiADGDQQ4ISrhiSnIHKkE0AqoREHiTH
+/EdK9UDD8VgNVAAQQKPhDkqbaFLwuVBI8N2/fx/CBaZxrCqB8QThEh/uAAGEZfx9WIGfnxle3/r/
+l4lBTJWRkwerEn9/fzQRfn5+ZO6CBQsgjA1ggCwFLJGA5IcPH4AtGbRZM/wAIICGdbifX8BwYzWw
+v8r4+evvx3/+qMZxRiWTYQyeWWxICc4ALpRIMhMggIZvuB+bxPD2CIOGPgMbL8Pb+6xM9/6cWfnx
+wQ/+qmyyjUQbQKQEAATQ8GzP/P/wguHaOgZhMQYZdwbFaAYxNQY+Xha+X993Hfh14QHZxhLTESUS
+AATQ8Az3f7cvMfz9z/D3N8Ov9ww/XzP8+c7w79//fwwMfxm+bDhDqmmQ5g0DbFUTVQBAAA3PcP/9
+9O3ft/8YXjxneLCL4fZShic3GN5++PWG889LJjKGXuEVL7CNj0sNqVkBIICGZ7gziip/vSPw9+57
+huvXGa5e/H/70Y87bN/ucP98zMgkwE2qacBmO6TaBKb3CRMmYCoAdp0gbR54zkCOBqxRAhBAwzPc
+WXW1v94Q+XBa9PNprq9n2D6eFvxwSuDrKZZ/HDz8CdCld5AmIBA8fPgQTTuwBwthwAuW9evXQ8K0
+sLAQWLsCG44QcSADGOhAoyANefgoAlAZRC+w3QnsDMPtggOAAAIhavVEBhX4sv7UXd7whzJhjxTD
+7ouE32aOuMEQ+WH+wf+w8RnkEICPtABJNCkgFyIF7D3BpYBxABl7gTDgfV2ICcjagQrgYzhwABQH
+CKDhPN/07cC19xN3QCpSdgN5sf5YLgfQajJgIsVMgApgAFmujlUKwgZqBCZkeHoHJnDIylNkAFQD
+6V4BAx1YRsELHzhgZGQECCCKPTcKyAIAAQYA/CfxcS2gFiUAAAAASUVORK5CYII=
+
+------=_NextPart_000_0000_B40804DE.BBCA09DC--
