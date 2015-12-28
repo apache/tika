@@ -33,59 +33,28 @@
   <name>Apache Tika Parser Modules</name>
   <url>http://tika.apache.org/</url>
   
-  <modules>
+  <properties>
+    <poi.version>3.13</poi.version>
+    <!-- NOTE: sync codec version with POI -->
+    <codec.version>1.9</codec.version>
+    <pdfbox.version>1.8.10</pdfbox.version>
+  </properties>
+  
+  <!-- <modules>
     <module>tika-multimedia-module</module>
   </modules>
-  
+   -->
   <dependencies>
-    <!-- Optional OSGi dependencies, used only when running within OSGi -->
-    <dependency>
-      <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.core</artifactId>
-      <scope>provided</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.compendium</artifactId>
-      <scope>provided</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parsers</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
     <!-- Test dependencies -->
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
-     <dependency>
-      <groupId>org.ops4j.pax.exam</groupId>
-      <artifactId>pax-exam-junit4</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
-      <groupId>org.ops4j.pax.exam</groupId>
-      <artifactId>pax-exam-container-native</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.felix</groupId>
-      <artifactId>org.apache.felix.framework</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ops4j.pax.exam</groupId>
-      <artifactId>pax-exam-link-assembly</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ops4j.pax.url</groupId>
-      <artifactId>pax-url-aether</artifactId>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>1.7</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -93,10 +62,37 @@
       <artifactId>slf4j-simple</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>javax.inject</groupId>
-      <artifactId>javax.inject</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies> 
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>2.10</version>
+          <executions>
+            <execution>
+              <id>unpack</id>
+              <phase>compile</phase>
+              <goals>
+                <goal>unpack</goal>
+              </goals>
+              <configuration>
+                <artifactItems>
+                  <artifactItem>
+                    <groupId>${project.groupId}</groupId>
+                    <artifactId>tika-parser-test</artifactId>
+                    <version>${project.version}</version>
+                    <type>jar</type>
+                    <overWrite>true</overWrite>
+                    <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+                  </artifactItem>
+                </artifactItems>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>
