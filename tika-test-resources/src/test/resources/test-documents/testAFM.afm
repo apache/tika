@@ -1,0 +1,50 @@
+StartFontMetrics 4.1
+
+Comment This is a comment in a sample file
+
+Comment Creation Date: Fri Jul 15 17:50:51 2011
+
+Comment UniqueID 12345
+
+Comment VMusage 30820 39997
+
+FontName TestFontName
+
+FullName TestFullName
+
+FamilyName TestSymbol
+
+Weight Medium
+
+ItalicAngle 0
+
+IsFixedPitch false
+
+CharacterSet Special
+
+FontBBox -180 -293 1010 1090 
+
+UnderlinePosition -100
+
+UnderlineThickness 50
+
+Version 001.008
+
+Notice This is a sample file
+
+EncodingScheme FontSpecific
+
+StdHW 91
+
+StdVW 86
+
+StartCharMetrics 2
+
+C 32 ; WX 250 ; N space ; B 0 0 0 0 ;
+
+C 33 ; WX 313 ; N exclam ; B 128 -17 240 672 ;
+
+EndCharMetrics
+
+EndFontMetrics
+

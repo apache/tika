@@ -81,9 +81,9 @@
                 <artifactItems>
                   <artifactItem>
                     <groupId>${project.groupId}</groupId>
-                    <artifactId>tika-parser-test</artifactId>
+                    <artifactId>tika-test-resources</artifactId>
                     <version>${project.version}</version>
-                    <type>jar</type>
+                    <type>test-jar</type>
                     <overWrite>true</overWrite>
                     <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
                   </artifactItem>

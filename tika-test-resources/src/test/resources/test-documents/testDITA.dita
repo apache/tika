@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE task PUBLIC "-//OASIS//DTD DITA Task//EN" "task.dtd">
+<task id="apache-tika">
+    <title>Apache Tika</title>
+    <shortdesc>Apache Tika - a content analysis toolkit.</shortdesc>
+    <prolog>
+        <author>Apache Software Foundation</author>
+        <copyright>
+            <copyryear year="2011"/>
+            <copyrholder>Apache Software Foundation</copyrholder>
+        </copyright>
+        <metadata>
+            <audience experiencelevel="expert" job="Customizing" type="Coder"/>
+            <category>Metadata</category>
+            <keywords>
+                <keyword>Tika</keyword>
+                <keyword>Content</keyword>
+            </keywords>
+            <prodinfo>
+                <prodname>Apache Tika</prodname>
+                <vrmlist>
+                    <vrm version="1.x" release="Final" modification="2011/11/11"/>
+                </vrmlist>
+            </prodinfo>
+        </metadata>
+    </prolog>
+    <taskbody>
+        <context>
+            <p>The Apache Tika toolkit detects and extracts metadata and structured text content from various documents using existing parser libraries. You can find the latest release on the download page. See the Getting Started guide for instructions on how to start using Tika.</p>
+
+            <p>Tika is a project of the Apache Software Foundation, and was formerly a subproject of Apache Lucene.</p>
+        </context>
+    </taskbody>
+</task>

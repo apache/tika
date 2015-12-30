@@ -107,8 +107,9 @@
     </dependency>
     <dependency>
       <groupId>org.apache.tika</groupId>
-      <artifactId>tika-parser-test</artifactId>
+      <artifactId>tika-test-resources</artifactId>
       <version>${project.version}</version>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
   </dependencies> 
