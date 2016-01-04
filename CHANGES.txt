@@ -1,5 +1,8 @@
 Release 1.12 - Current Development
 
+  * Upgrade rome to 1.5.1 && Downgrade Rome dependency to 0.9 to avoid 
+    nasty NPE (TIKA-1820, TIKA-1516)
+
   * The NamedEntityParser was enhanced to generate text content
     in addition to metadata (TIKA-1815, TIKA-1816).
 
