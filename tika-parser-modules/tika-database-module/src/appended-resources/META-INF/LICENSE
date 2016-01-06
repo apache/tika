@@ -1,0 +1,9 @@
+APACHE TIKA SUBCOMPONENTS
+
+Apache Tika includes a number of subcomponents with separate copyright notices
+and license terms. Your use of these subcomponents is subject to the terms and
+conditions of the following licenses.
+
+Sqlite (included in the "provided" org.xerial's sqlite-jdbc)
+    Sqlite is in the Public Domain.  For details
+    see: https://www.sqlite.org/copyright.html
