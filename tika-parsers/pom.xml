@@ -317,6 +317,9 @@
               <goal>shade</goal>
             </goals>
             <configuration>
+              <createDependencyReducedPom>
+                false
+              </createDependencyReducedPom>
               <artifactSet>
                 <includes>
                   <include>org.apache.tika:tika-multimedia-module</include>
