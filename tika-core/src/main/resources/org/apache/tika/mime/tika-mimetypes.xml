@@ -524,15 +524,29 @@
   <mime-type type="application/pkcs7-signature">
     <glob pattern="*.p7s"/>
     <magic priority="50">
+      <!-- PEM encoded -->
       <match value="-----BEGIN PKCS7" type="string" offset="0"/>
-      <match value="0x3083FFFFFF06092a864886f70d0107FFa0" type="string"
-              mask="0xFFFF000000FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
-      <match value="0x3082FFFF06092a864886f70d0107FFa0" type="string"
-              mask="0xFFFF0000FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
-      <match value="0x3081FF06092a864886f70d0107FFa0" type="string"
-              mask="0xFFFF00FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
-      <match value="0x308006092a864886f70d0107FFa0" type="string"
-              mask="0xFFFFFFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
+      <!-- DER encoded, sequence+length, object=pkcs7-signedData -->
+      <match value="0x3080" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="2"/>
+      </match>
+      <match value="0x3081" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="3"/>
+      </match>
+      <match value="0x3082" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="4"/>
+      </match>
+      <match value="0x3083" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="5"/>
+      </match>
+      <match value="0x3084" offset="0">
+         <match value="0x06092a864886f70d0107FFa0" type="string"
+                 mask="0xFFFFFFFFFFFFFFFFFFFF00FF" offset="6"/>
+      </match>
     </magic>
   </mime-type>
 
