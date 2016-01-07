@@ -525,8 +525,12 @@
     <glob pattern="*.p7s"/>
     <magic priority="50">
       <match value="-----BEGIN PKCS7" type="string" offset="0"/>
+      <match value="0x3083FFFFFF06092a864886f70d0107FFa0" type="string"
+              mask="0xFFFF000000FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
       <match value="0x3082FFFF06092a864886f70d0107FFa0" type="string"
               mask="0xFFFF0000FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
+      <match value="0x3081FF06092a864886f70d0107FFa0" type="string"
+              mask="0xFFFF00FFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
       <match value="0x308006092a864886f70d0107FFa0" type="string"
               mask="0xFFFFFFFFFFFFFFFFFFFFFFFF00FF" offset="0"/>
     </magic>
