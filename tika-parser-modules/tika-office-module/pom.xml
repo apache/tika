@@ -73,6 +73,11 @@
       <version>2.1.1</version>
     </dependency>
     <dependency>
+      <groupId>com.pff</groupId>
+      <artifactId>java-libpst</artifactId>
+      <version>0.8.1</version>
+    </dependency>
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-package-module</artifactId>
       <version>${project.version}</version>
