@@ -152,15 +152,30 @@ public class PSDParser extends AbstractParser {
             textFields[i] = "";
         }
         int layers = 0;
-        long readMarker;
+
+        short channelCount;
         int tempNumber;
+        int stringSize;
+        int nameLength;
+        int additionalLayerInfoSize;
+        long readMarker;
+        long extraDataFieldLength;
+        long maskAdjustmentLength;
+        long layerBlendingLength;
+        long textSpan;
+
+        byte[] anyBytes;
+        byte[] fourBytes = new byte[4];
+        byte[] additionalDataBytes;
+
+        String keyString;
 
         while (read < layerInfoSectionSize && layers < layerCount) {
             // 16 bytes - object coordinates
             read += stream.skip(16);
 
             // 2 byes - number of channels in layer (retrieve)
-            long channelCount = EndianUtils.readShortBE(stream);
+            channelCount = EndianUtils.readShortBE(stream);
             read += 2;
 
             // 6 * number of channels - channel info
@@ -177,61 +192,58 @@ public class PSDParser extends AbstractParser {
             read += stream.skip(12);
 
             // 4 bytes - length of extra data field (retrieve)
-            long extraDataFieldLength = EndianUtils.readIntBE(stream);
+            extraDataFieldLength = EndianUtils.readIntBE(stream);
             read += 4;
             readMarker = read;
 
             // 4 bytes - length of mask/adjustment layer (retrieve and skip)
-            long maskAdjustmentLength = EndianUtils.readIntBE(stream);
+            maskAdjustmentLength = EndianUtils.readIntBE(stream);
             // 4 bytes - length of layer blending ranges (retrieve and skip)
-            long layerBlendingLength = EndianUtils.readIntBE(stream);
+            layerBlendingLength = EndianUtils.readIntBE(stream);
             read += 8;
             read += stream.skip(maskAdjustmentLength+layerBlendingLength);
 
             // Get the size of the name string
-            int stringSize = stream.read();
+            stringSize = stream.read();
 //            System.out.printf("\n\nstringSize: %d\n", stringSize);
             read += 1;
             // Read name string bytes into array
-            byte[] nameBytes = new byte[stringSize];
-            read += stream.read(nameBytes);
+            anyBytes = new byte[stringSize];
+            read += stream.read(anyBytes);
 //            System.out.printf("nameBytes: %s\n", new String(nameBytes));
             // Convert the bytes into string
-            String layerName = new String(nameBytes, "UTF-8");
+            String layerName = new String(anyBytes, "UTF-8");
 //            System.out.printf("layerName: %s\n", layerName);
 
             // Consume the remainder of the name section
-            int nameLength = layerName.length() + 1;
-            int skipSize;
+            nameLength = layerName.length() + 1;
             if (nameLength%4 != 0) {
-                skipSize = 4 - nameLength%4;
+                tempNumber = 4 - nameLength%4;
 //                System.out.printf("skipSize: %d", skipSize);
-                read += stream.skip(skipSize);
+                read += stream.skip(tempNumber);
             }
 
 //            System.out.printf("extraDataFieldLength: %d, read: %d, readMarker: %d\n", extraDataFieldLength, read, readMarker);
 
             // The additional layer information begins with a 4 byte signature
-            byte[] extraBytesSignature = new byte[4];
-            read += stream.read(extraBytesSignature);
-            String additionalLayerInfoSignature = new String(extraBytesSignature, "UTF-8");
+            read += stream.read(fourBytes);
+            keyString = new String(fourBytes, "UTF-8");
 //            System.out.println("additionalLayerInfoSignature: "+additionalLayerInfoSignature);
-            if (additionalLayerInfoSignature.equals("8BIM")) {
+            if (keyString.equals("8BIM")) {
                 // Get the key for this info -- 4 bytes
-                byte[] infoKeyBytes = new byte[4];
-                read += stream.read(infoKeyBytes);
-                String infoKey = new String(infoKeyBytes, "UTF-8");
+                read += stream.read(fourBytes);
+                keyString = new String(fourBytes, "UTF-8");
 //                System.out.println("infoKey: "+infoKey);
-                if (infoKey.equals("TySh")) {
+                if (keyString.equals("TySh")) {
                     // 4 bytes give size of additional layer info
-                    int additionalLayerInfoSize = EndianUtils.readIntBE(stream);
+                    additionalLayerInfoSize = EndianUtils.readIntBE(stream);
                     additionalLayerInfoSize = (additionalLayerInfoSize + 1) & ~0x01;
                     read += 4;
 //                    System.out.printf("additionalLayerInfoSize: %d\n", additionalLayerInfoSize);
 
 
                     // WORKS, kind of **************************
-                    byte[] additionalDataBytes = new byte[additionalLayerInfoSize];
+                    additionalDataBytes = new byte[additionalLayerInfoSize];
                     read += stream.read(additionalDataBytes);
 
                     // Get the index where the four bytes "TEXT" begin.
@@ -242,11 +254,11 @@ public class PSDParser extends AbstractParser {
 //                    System.out.printf("textKey: %s\n", new String(textKey));
 
                     // Isolate the bytes which tell us the size of the unicode string
-                    byte[] textSize = Arrays.copyOfRange(additionalDataBytes, tempNumber+4, tempNumber+8);
+                    fourBytes = Arrays.copyOfRange(additionalDataBytes, tempNumber+4, tempNumber+8);
 //                    System.out.printf("textSize: %d\n", EndianUtils.getIntBE(textSize));
 
                     // Get the number of bytes the text spans
-                    long textSpan = EndianUtils.getIntBE(textSize)*2;
+                    textSpan = EndianUtils.getIntBE(fourBytes)*2;
 
                     if (textSpan > 0 && textSpan <= Integer.MAX_VALUE ) {
 
@@ -361,8 +373,8 @@ public class PSDParser extends AbstractParser {
             // Consume unread data so the next iteration wont be fucked
 //            System.out.printf("extraDataFieldLength: %d, read: %d, readMarker: %d", extraDataFieldLength, read, readMarker);
             if (extraDataFieldLength - (read-readMarker) > 0) {
-                byte[] extraBytes = new byte[(int) (extraDataFieldLength - (read - readMarker))];
-                read += stream.read(extraBytes);
+                anyBytes = new byte[(int) (extraDataFieldLength - (read - readMarker))];
+                read += stream.read(anyBytes);
             }
 //            System.out.printf("extraBytes:\nlength: %d\ncontent: %s\n", extraBytes.length, new String(extraBytes));
 
