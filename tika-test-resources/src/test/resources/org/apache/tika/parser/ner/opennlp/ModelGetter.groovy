@@ -74,9 +74,9 @@ def urlPrefix = "http://opennlp.sourceforge.net/models-1.5"
 def prefixPath = "src/test/resources/org/apache/tika/parser/ner/opennlp/"
 
 // detecting proper path for test resources
-if (new File("tika-parser-test").exists() && new File("tika-app").exists()  ) {
+if (new File("tika-test-resources").exists() && new File("tika-app").exists()  ) {
     // running from parent maven project, but resources should go to sub-module
-    prefixPath = "tika-parser-test/" + prefixPath
+    prefixPath = "tika-test-resources/" + prefixPath
 }
 
 def modelFiles = //filePath : url
