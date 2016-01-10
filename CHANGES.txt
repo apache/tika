@@ -1,5 +1,7 @@
 Release 2.0 - Future Development
 
+  * Upgrade rome to 1.5.1 (TIKA-1820)
+
   * The default LoadErrorHandler is now WARN, to alert you to missing
     parser classes and their dependencies. To keep the old behaviour,
     set your LoadErrorHandler to IGNORE. (TIKA-1805)
