@@ -391,7 +391,7 @@ public class PSDParser extends AbstractParser {
         for (String name : names) {
             csvNames += (name + ",");
         }
-        metadata.set(PSD.LAYER_NAMES, csvNames);
+        metadata.set(Photoshop.LAYER_NAMES, csvNames);
         // Finally we have Image Data
         // We can't do anything with these parts
 

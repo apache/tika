@@ -85,4 +85,7 @@ public interface Photoshop {
     Property URGENCY = Property.internalText(
             PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "Urgency");
 
+    Property LAYER_NAMES = Property.internalText(
+            PREFIX_PHOTOSHOP + Metadata.NAMESPACE_PREFIX_DELIMITER + "LayerNames");
+
 }
