@@ -359,10 +359,12 @@ public class TikaGUI extends JFrame
         String[] names = md.names();
         Arrays.sort(names);
         for (String name : names) {
-            metadataBuffer.append(name);
-            metadataBuffer.append(": ");
-            metadataBuffer.append(md.get(name));
-            metadataBuffer.append("\n");
+            for (String val : md.getValues(name)) {
+                metadataBuffer.append(name);
+                metadataBuffer.append(": ");
+                metadataBuffer.append(val);
+                metadataBuffer.append("\n");
+            }
         }
 
         String name = md.get(Metadata.RESOURCE_NAME_KEY);
