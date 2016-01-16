@@ -19,9 +19,14 @@
     <version>2.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tika-database-module</artifactId>
-  <name>Apache Tika Database Module</name>
+  <artifactId>tika-package-parser-module</artifactId>
+  <name>Apache Tika Package Parser Module</name>
   <url>http://tika.apache.org/</url>
+  
+  <properties>
+    <!-- NOTE: sync tukaani version with commons-compress -->
+    <tukaani.version>1.5</tukaani.version>
+  </properties>
   
   <dependencies>
     <dependency>
@@ -37,12 +42,30 @@
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
-    <!-- Provided dependencies -->
     <dependency>
-      <groupId>org.xerial</groupId>
-      <artifactId>sqlite-jdbc</artifactId>
-      <version>3.8.10.1</version> 
-      <scope>provided</scope>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>${poi.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>stax</groupId>
+          <artifactId>stax-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>xml-apis</groupId>
+          <artifactId>xml-apis</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.tukaani</groupId>
+      <artifactId>xz</artifactId>
+      <version>${tukaani.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.github.junrar</groupId>
+      <artifactId>junrar</artifactId>
+      <version>0.7</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
@@ -50,10 +73,9 @@
       <version>${commons.io.version}</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-office-module</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-compress</artifactId>
+      <version>${commons.compress.version}</version>
     </dependency>
   </dependencies>
   

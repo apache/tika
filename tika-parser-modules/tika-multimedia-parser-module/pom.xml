@@ -19,12 +19,14 @@
     <version>2.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tika-scientific-module</artifactId>
-  <name>Apache Tika Scientific Module</name>
+  <artifactId>tika-multimedia-parser-module</artifactId>
+  <name>Apache Tika Multimedia Parser Module</name>
   <url>http://tika.apache.org/</url>
   
   <properties>
-    <netcdf-java.version>4.5.5</netcdf-java.version>
+    <metadata.extractor.version>2.8.0</metadata.extractor.version>
+    <isoparser.version>1.0.2</isoparser.version>
+    <commons.logging.version>1.1.3</commons.logging.version>
   </properties>
   
   <dependencies>
@@ -42,90 +44,80 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-exec</artifactId>
-      <version>1.3</version>
+      <groupId>com.drewnoakes</groupId>
+      <artifactId>metadata-extractor</artifactId>
+      <version>${metadata.extractor.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.googlecode.json-simple</groupId>
-      <artifactId>json-simple</artifactId>
-      <version>1.1.1</version>
-      <exclusions>
-        <exclusion>
-          <groupId>junit</groupId>
-          <artifactId>junit</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.sis.core</groupId>
-      <artifactId>sis-utility</artifactId>
-      <version>0.5</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.sis.storage</groupId>
-      <artifactId>sis-netcdf</artifactId>
-      <version>0.5</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.sis.core</groupId>
-      <artifactId>sis-metadata</artifactId>
-      <version>0.5</version>
-    </dependency>
-    <!-- edu.ucar dependencies -->
-    <dependency>
-      <groupId>edu.ucar</groupId>
-      <artifactId>netcdf4</artifactId>
-      <version>${netcdf-java.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.ucar</groupId>
-      <artifactId>grib</artifactId>
-      <version>${netcdf-java.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>edu.ucar</groupId>
-      <artifactId>cdm</artifactId>
-      <version>${netcdf-java.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>jcl-over-slf4j</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>edu.ucar</groupId>
-      <artifactId>httpservices</artifactId>
-      <version>${netcdf-java.version}</version>
-    </dependency>
-    <!-- Apache cTAKES -->
-    <dependency>
-      <groupId>org.apache.ctakes</groupId>
-      <artifactId>ctakes-core</artifactId>
-      <version>3.2.2</version>
-      <scope>provided</scope>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${codec.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
       <version>${commons.io.version}</version>
     </dependency>
-    <!-- Upstream parser libraries -->
     <dependency>
-      <groupId>net.sourceforge.jmatio</groupId>
-      <artifactId>jmatio</artifactId>
-      <version>1.0</version>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi</artifactId>
+      <version>${poi.version}</version>
     </dependency>
-    <!-- Apache Commons CSV -->
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-csv</artifactId>
-      <version>1.0</version>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-scratchpad</artifactId>
+      <version>${poi.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>${poi.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>stax</groupId>
+          <artifactId>stax-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>xml-apis</groupId>
+          <artifactId>xml-apis</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.googlecode.mp4parser</groupId>
+      <artifactId>isoparser</artifactId>
+      <version>${isoparser.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>jempbox</artifactId>
+      <version>${pdfbox.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.pdfbox</groupId>
+      <artifactId>fontbox</artifactId>
+      <version>${pdfbox.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>${commons.logging.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-text-module</artifactId>
+      <artifactId>tika-web-parser-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pdf-parser-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-office-parser-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

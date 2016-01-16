@@ -147,67 +147,67 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-multimedia-module</artifactId>
+      <artifactId>tika-multimedia-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-advanced-module</artifactId>
+      <artifactId>tika-advanced-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-cad-module</artifactId>
+      <artifactId>tika-cad-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-code-module</artifactId>
+      <artifactId>tika-code-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-database-module</artifactId>
+      <artifactId>tika-database-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-ebook-module</artifactId>
+      <artifactId>tika-ebook-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-journal-module</artifactId>
+      <artifactId>tika-journal-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-office-module</artifactId>
+      <artifactId>tika-office-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-package-module</artifactId>
+      <artifactId>tika-package-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pdf-module</artifactId>
+      <artifactId>tika-pdf-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-scientific-module</artifactId>
+      <artifactId>tika-scientific-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-text-module</artifactId>
+      <artifactId>tika-text-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-web-module</artifactId>
+      <artifactId>tika-web-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -322,19 +322,19 @@
               </createDependencyReducedPom>
               <artifactSet>
                 <includes>
-                  <include>org.apache.tika:tika-multimedia-module</include>
-                  <include>org.apache.tika:tika-advanced-module</include>
-                  <include>org.apache.tika:tika-cad-module</include>
-                  <include>org.apache.tika:tika-code-module</include>
-                  <include>org.apache.tika:tika-database-module</include>
-                  <include>org.apache.tika:tika-ebook-module</include>
-                  <include>org.apache.tika:tika-journal-module</include>
-                  <include>org.apache.tika:tika-office-module</include>
-                  <include>org.apache.tika:tika-package-module</include>
-                  <include>org.apache.tika:tika-pdf-module</include>
-                  <include>org.apache.tika:tika-scientific-module</include>
-                  <include>org.apache.tika:tika-text-module</include>
-                  <include>org.apache.tika:tika-web-module</include>
+                  <include>org.apache.tika:tika-multimedia-parser-module</include>
+                  <include>org.apache.tika:tika-advanced-parser-module</include>
+                  <include>org.apache.tika:tika-cad-parser-module</include>
+                  <include>org.apache.tika:tika-code-parser-module</include>
+                  <include>org.apache.tika:tika-database-parser-module</include>
+                  <include>org.apache.tika:tika-ebook-parser-module</include>
+                  <include>org.apache.tika:tika-journal-parser-module</include>
+                  <include>org.apache.tika:tika-office-parser-module</include>
+                  <include>org.apache.tika:tika-package-parser-module</include>
+                  <include>org.apache.tika:tika-pdf-parser-module</include>
+                  <include>org.apache.tika:tika-scientific-parser-module</include>
+                  <include>org.apache.tika:tika-text-parser-module</include>
+                  <include>org.apache.tika:tika-web-parser-module</include>
                 </includes>
               </artifactSet>
               <transformers>

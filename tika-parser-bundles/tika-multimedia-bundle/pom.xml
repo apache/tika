@@ -27,7 +27,7 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-multimedia-module</artifactId>
+      <artifactId>tika-multimedia-parser-module</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>
@@ -52,7 +52,7 @@
               poi,
               isoparser,
               aspectjrt,
-              tika-multimedia-module;inline=true
+              tika-multimedia-parser-module;inline=true
             </Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Export-Package>
