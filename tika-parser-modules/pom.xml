@@ -31,7 +31,7 @@
 
   <artifactId>tika-parser-modules</artifactId>
   <packaging>pom</packaging>
-  <name>Apache Tika Parser Modules</name>
+  <name>Apache Tika parser modules</name>
   <url>http://tika.apache.org/</url>
   
   <properties>
