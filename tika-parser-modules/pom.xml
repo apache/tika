@@ -42,19 +42,19 @@
   </properties>
 
   <modules>
-    <module>tika-advanced-parser-module</module>
-    <module>tika-cad-parser-module</module>
-    <module>tika-code-parser-module</module>
-    <module>tika-database-parser-module</module>
-    <module>tika-ebook-parser-module</module>
-    <module>tika-journal-parser-module</module>
-    <module>tika-multimedia-parser-module</module>
-    <module>tika-office-parser-module</module>
-    <module>tika-package-parser-module</module>
-    <module>tika-pdf-parser-module</module>
-    <module>tika-scientific-parser-module</module>
-    <module>tika-text-parser-module</module>
-    <module>tika-web-parser-module</module>
+    <module>tika-parser-advanced-module</module>
+    <module>tika-parser-cad-module</module>
+    <module>tika-parser-code-module</module>
+    <module>tika-parser-database-module</module>
+    <module>tika-parser-ebook-module</module>
+    <module>tika-parser-journal-module</module>
+    <module>tika-parser-multimedia-module</module>
+    <module>tika-parser-office-module</module>
+    <module>tika-parser-package-module</module>
+    <module>tika-parser-pdf-module</module>
+    <module>tika-parser-scientific-module</module>
+    <module>tika-parser-text-module</module>
+    <module>tika-parser-web-module</module>
   </modules>
 
   <dependencies>

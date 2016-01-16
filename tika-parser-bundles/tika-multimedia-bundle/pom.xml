@@ -27,7 +27,7 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-multimedia-parser-module</artifactId>
+      <artifactId>tika-parser-multimedia-module</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

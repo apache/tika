@@ -19,8 +19,8 @@
     <version>2.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tika-pdf-parser-module</artifactId>
-  <name>Apache Tika PDF Parser Module</name>
+  <artifactId>tika-parser-pdf-module</artifactId>
+  <name>Apache Tika parser pdf module</name>
   <url>http://tika.apache.org/</url>
   
   <properties>
@@ -76,19 +76,19 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-package-parser-module</artifactId>
+      <artifactId>tika-parser-package-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-text-parser-module</artifactId>
+      <artifactId>tika-parser-text-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-office-parser-module</artifactId>
+      <artifactId>tika-parser-office-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

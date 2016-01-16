@@ -19,9 +19,13 @@
     <version>2.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tika-cad-parser-module</artifactId>
-  <name>Apache Tika CAD Parser Module</name>
+  <artifactId>tika-parser-text-module</artifactId>
+  <name>Apache Tika parser text module</name>
   <url>http://tika.apache.org/</url>
+  
+  <properties>
+    <commons.logging.version>1.1.3</commons.logging.version>
+  </properties>
   
   <dependencies>
     <dependency>
@@ -38,15 +42,24 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.poi</groupId>
-      <artifactId>poi</artifactId>
-      <version>${poi.version}</version>
+      <groupId>com.googlecode.juniversalchardet</groupId>
+      <artifactId>juniversalchardet</artifactId>
+      <version>1.0.3</version>
     </dependency>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-text-parser-module</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <version>${commons.io.version}</version>
+    </dependency>
+        <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>${commons.logging.version}</version>
     </dependency>
   </dependencies>
   

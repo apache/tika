@@ -19,8 +19,8 @@
     <version>2.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>tika-multimedia-parser-module</artifactId>
-  <name>Apache Tika Multimedia Parser Module</name>
+  <artifactId>tika-parser-multimedia-module</artifactId>
+  <name>Apache Tika parser multimedia module</name>
   <url>http://tika.apache.org/</url>
   
   <properties>
@@ -105,19 +105,19 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-web-parser-module</artifactId>
+      <artifactId>tika-parser-web-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pdf-parser-module</artifactId>
+      <artifactId>tika-parser-pdf-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>tika-office-parser-module</artifactId>
+      <artifactId>tika-parser-office-module</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
