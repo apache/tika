@@ -45,6 +45,7 @@
     <module>tika-parser-advanced-module</module>
     <module>tika-parser-cad-module</module>
     <module>tika-parser-code-module</module>
+    <module>tika-parser-crypto-module</module>
     <module>tika-parser-database-module</module>
     <module>tika-parser-ebook-module</module>
     <module>tika-parser-journal-module</module>

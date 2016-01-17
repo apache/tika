@@ -167,6 +167,11 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-crypto-module</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-parser-database-module</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -326,6 +331,7 @@
                   <include>org.apache.tika:tika-parser-advanced-module</include>
                   <include>org.apache.tika:tika-parser-cad-module</include>
                   <include>org.apache.tika:tika-parser-code-module</include>
+                  <include>org.apache.tika:tika-parser-crypto-module</include>
                   <include>org.apache.tika:tika-parser-database-module</include>
                   <include>org.apache.tika:tika-parser-ebook-module</include>
                   <include>org.apache.tika:tika-parser-journal-module</include>
