@@ -37,6 +37,9 @@ import org.apache.tika.parser.geo.topic.gazetteer.Location;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.namefind.TokenNameFinderModel;
+
 public class GeoParser extends AbstractParser {
     private static final long serialVersionUID = -2241391757440215491L;
     private static final Logger LOG = Logger.getLogger(GeoParser.class.getName());
@@ -50,7 +53,7 @@ public class GeoParser extends AbstractParser {
     
     private boolean initialized;
     private URL modelUrl;
-    private NameEntityExtractor extractor;
+    private NameFinderME nameFinder;
     private boolean available;
 
     @Override
@@ -76,12 +79,14 @@ public class GeoParser extends AbstractParser {
         this.available = modelUrl != null && gazetteerClient.checkAvail();
         
         if (this.available) {
-            try {
-                this.extractor = new NameEntityExtractor(modelUrl);
+        	try {
+        		TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
+                this.nameFinder = new NameFinderME(model);
             } catch (Exception e) {
                 LOG.warning("Named Entity Extractor setup failed: " + e);
                 this.available = false;
             }
+        	
         }
         initialized = true;
     }
@@ -96,6 +101,14 @@ public class GeoParser extends AbstractParser {
         this.config = context.get(GeoParserConfig.class, config);
         initialize(this.config.getNerModelUrl());
         if (!isAvailable()) {
+            return;
+        }
+        NameEntityExtractor extractor = null;
+        
+        try {
+            extractor = new NameEntityExtractor(nameFinder);
+        } catch (Exception e) {
+            LOG.warning("Named Entity Extractor setup failed: " + e);
             return;
         }
 

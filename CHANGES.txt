@@ -1,5 +1,8 @@
 Release 1.12 - Current Development
 
+  * Fix bug in GeoTopicParser where NER is reused instead of instantiated
+    with each request (TIKA-1834).
+
   * Upgrade rome to 1.5.1 && Downgrade Rome dependency to 0.9 to avoid 
     nasty NPE (TIKA-1820, TIKA-1516)
 
