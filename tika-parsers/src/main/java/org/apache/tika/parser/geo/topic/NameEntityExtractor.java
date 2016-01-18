@@ -18,9 +18,10 @@
 package org.apache.tika.parser.geo.topic;
 
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,12 +30,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import opennlp.tools.namefind.NameFinderME;
-import opennlp.tools.namefind.TokenNameFinderModel;
-import opennlp.tools.util.Span;
 import org.apache.commons.io.IOUtils;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
+import opennlp.tools.namefind.NameFinderME;
+import opennlp.tools.util.Span;
 
 public class NameEntityExtractor {
     ArrayList<String> locationNameEntities;
@@ -42,11 +41,10 @@ public class NameEntityExtractor {
     private HashMap<String, Integer> tf;
     private final NameFinderME nameFinder;
 
-    public NameEntityExtractor(URL modelUrl) throws IOException {
+    public NameEntityExtractor(NameFinderME nameFinder) throws IOException {
         this.locationNameEntities = new ArrayList<String>();
         this.bestNameEntity = null;
-        TokenNameFinderModel model = new TokenNameFinderModel(modelUrl);
-        this.nameFinder = new NameFinderME(model);
+        this.nameFinder = nameFinder;
         this.tf = new HashMap<String, Integer>();
     }
 
