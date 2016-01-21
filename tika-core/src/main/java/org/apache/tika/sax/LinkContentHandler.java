@@ -85,6 +85,15 @@ public class LinkContentHandler extends DefaultHandler {
                 builder.setTitle(attributes.getValue("", "title"));
                 builder.setRel(attributes.getValue("", "rel"));
                 builderStack.addFirst(builder);
+            } else if ("link".equals(local)) {
+                LinkBuilder builder = new LinkBuilder("link");
+                builder.setURI(attributes.getValue("", "href"));
+                builder.setRel(attributes.getValue("", "rel"));
+                builderStack.addFirst(builder);
+            } else if ("iframe".equals(local)) {
+                LinkBuilder builder = new LinkBuilder("iframe");
+                builder.setURI(attributes.getValue("", "src"));
+                builderStack.addFirst(builder);
             } else if ("img".equals(local)) {
                 LinkBuilder builder = new LinkBuilder("img");
                 builder.setURI(attributes.getValue("", "src"));
@@ -116,7 +125,7 @@ public class LinkContentHandler extends DefaultHandler {
     @Override
     public void endElement(String uri, String local, String name) {
         if (XHTML.equals(uri)) {
-            if ("a".equals(local) || "img".equals(local)) {
+            if ("a".equals(local) || "img".equals(local) || "link".equals(local) || "iframe".equals(local)) {
                 links.add(builderStack.removeFirst().getLink(collapseWhitespaceInAnchor));
             }
         }
