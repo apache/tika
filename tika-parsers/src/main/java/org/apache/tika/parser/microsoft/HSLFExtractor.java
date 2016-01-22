@@ -138,16 +138,16 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             handleSlideEmbeddedResources(slide, xhtml);
 
            
-			 // TODO Find the Notes for this slide and extract inline
-			HSLFNotes notes = slide.getNotes();
-			if (notes != null) {
+            // Find the Notes for this slide and extract inline
+            HSLFNotes notes = slide.getNotes();
+            if (notes != null) {
                 xhtml.startElement("div", "class", "slide-notes");
 
                 textRunsToText(xhtml, notes.getTextParagraphs());
        
                 xhtml.endElement("div");
             }
-			
+            
 
             // Slide complete
             xhtml.endElement("div");
@@ -208,7 +208,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         for (HSLFShape shape : shapes) {
             if (shape != null && !HSLFMasterSheet.isPlaceholder(shape)) {
                 if (shape instanceof HSLFTextShape) {
-                	HSLFTextShape tsh = (HSLFTextShape) shape;
+                    HSLFTextShape tsh = (HSLFTextShape) shape;
                     String text = tsh.getText();
                     if (text != null) {
                         xhtml.element("p", text);
