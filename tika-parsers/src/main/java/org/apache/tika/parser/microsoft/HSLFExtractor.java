@@ -137,7 +137,17 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             // Now any embedded resources
             handleSlideEmbeddedResources(slide, xhtml);
 
-            // TODO Find the Notes for this slide and extract inline
+           
+			 // TODO Find the Notes for this slide and extract inline
+			HSLFNotes notes = slide.getNotes();
+			if (notes != null) {
+                xhtml.startElement("div", "class", "slide-notes");
+
+                textRunsToText(xhtml, notes.getTextParagraphs());
+       
+                xhtml.endElement("div");
+            }
+			
 
             // Slide complete
             xhtml.endElement("div");
