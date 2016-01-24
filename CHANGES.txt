@@ -1,5 +1,8 @@
 Release 1.12 - Current Development
 
+  * JSON tests in Tika server were updated to remove impossible casts
+    (Github-73).
+
   * Fix bug in GeoTopicParser where NER is reused instead of instantiated
     with each request (TIKA-1834).
 
