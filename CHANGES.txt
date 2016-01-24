@@ -1,5 +1,8 @@
 Release 1.12 - Current Development
 
+  * Slide notes are now linked to the slide XHTML in the PPT output
+    (TIKA-1840).
+
   * JSON tests in Tika server were updated to remove impossible casts
     (Github-73).
 
