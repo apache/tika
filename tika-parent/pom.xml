@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>1.12-SNAPSHOT</version>
+  <version>1.12</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -415,7 +415,7 @@
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/</developerConnection>
     <url>https://github.com/apache/tika</url>
-    <tag>HEAD</tag>
+    <tag>1.12-rc1</tag>
   </scm>
 
 </project>
