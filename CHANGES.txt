@@ -1,4 +1,4 @@
-Release 1.12 - Current Development
+Release 1.12 - 01/24/2016
 
   * Slide notes are now linked to the slide XHTML in the PPT output
     (TIKA-1840).
