@@ -405,8 +405,8 @@
   </profiles>
 
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/tika.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/tika.git</developerConnection>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/</developerConnection>
     <url>https://github.com/apache/tika</url>
     <tag>HEAD</tag>
   </scm>
