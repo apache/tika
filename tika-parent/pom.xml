@@ -405,8 +405,10 @@
   </profiles>
 
   <scm>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/maven/pom/trunk/tika-parent</developerConnection>
-    <url>http://svn.apache.org/viewvc/maven/pom/trunk/tika-parent</url>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/tika.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/tika.git</developerConnection>
+    <url>https://github.com/apache/tika</url>
+    <tag>HEAD</tag>
   </scm>
+
 </project>

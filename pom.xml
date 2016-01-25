@@ -34,16 +34,6 @@
   <name>Apache Tika</name>
   <url>http://tika.apache.org</url>
 
-  <scm>
-    <connection>
-      scm:svn:http://svn.apache.org/repos/asf/tika/trunk
-    </connection>
-    <developerConnection>
-      scm:svn:https://svn.apache.org/repos/asf/tika/trunk
-    </developerConnection>
-    <url>http://svn.apache.org/viewvc/tika/trunk</url>
-  </scm>
-
   <modules>
     <module>tika-parent</module>
     <module>tika-core</module>

@@ -144,11 +144,6 @@
     <name>The Apache Software Foundation</name>
     <url>http://www.apache.org</url>
   </organization>
-  <scm>
-    <url>http://svn.apache.org/viewvc/tika/trunk/tika-translate</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/tika-translate</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/tika-translate</developerConnection>
-  </scm>
   <issueManagement>
     <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/TIKA</url>

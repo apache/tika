@@ -161,11 +161,6 @@
     <name>The Apache Software Foundation</name>
     <url>http://www.apache.org</url>
   </organization>
-  <scm>
-    <url>http://svn.apache.org/viewvc/tika/trunk/core</url>
-    <connection>scm:svn:http://svn.apache.org/repos/asf/tika/trunk/core</connection>
-    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/tika/trunk/core</developerConnection>
-  </scm>
   <issueManagement>
     <system>JIRA</system>
     <url>https://issues.apache.org/jira/browse/TIKA</url>
