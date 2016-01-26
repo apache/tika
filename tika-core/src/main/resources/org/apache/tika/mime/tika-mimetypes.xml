@@ -5250,8 +5250,38 @@
   </mime-type>
 
   <mime-type type="model/vnd.dwf">
+    <acronym>DWF</acronym>
+    <_comment>AutoCAD Design Web Format</_comment>
+    <alias type="drawing/x-dwf"/>
+    <magic priority="50">
+      <match type="string" offset="0" value="(DWF V">
+         <match type="string" offset="8" value=".">
+            <match type="string" offset="11" value=")" />
+         </match>
+      </match>
+    </magic>
     <glob pattern="*.dwf"/>
   </mime-type>
+  <mime-type type="model/vnd.dwf;version=6">
+    <!-- Zip file with DWF header on the front -->
+    <magic priority="60">
+      <match type="string" offset="0" value="(DWF V06.">
+         <match type="string" offset="11" value=")PK" />
+      </match>
+    </magic>
+    <sub-class-of type="model/vnd.dwf"/>
+  </mime-type>
+  <mime-type type="model/vnd.dwf;version=5">
+    <magic priority="60">
+      <match type="string" offset="0" value="(DWF V00.55)"/>
+    </magic>
+  </mime-type>
+  <mime-type type="model/vnd.dwf;version=2">
+    <magic priority="60">
+      <match type="string" offset="0" value="(DWF V00.22)"/>
+    </magic>
+  </mime-type>
+
   <mime-type type="model/vnd.dwfx+xps">
     <_comment>AutoCAD Design Web Format</_comment>
     <glob pattern="*.dwfx"/>

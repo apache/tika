@@ -538,6 +538,11 @@ public class TestMimeTypes {
         assertTypeByData("image/vnd.dwg", "testDWG2010.dwg");
         
         // From name, gets the common parent type
+        assertTypeByName("model/vnd.dwf", "x.dwf");
+        // With the data, can work out it's the v6 zip-based flavour
+        assertTypeByData("model/vnd.dwf; version=6", "testDWF2010.dwf");
+        
+        // From name, gets the common parent type
         assertTypeByName("image/vnd.dxf", "x.dxf");
         // With the data, can work out it's the ASCII flavour
         assertTypeByData("image/vnd.dxf; format=ascii", "testDXF_ascii.dxf");
