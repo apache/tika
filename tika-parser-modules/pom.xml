@@ -38,7 +38,7 @@
     <poi.version>3.13</poi.version>
     <!-- NOTE: sync codec version with POI -->
     <codec.version>1.9</codec.version>
-    <pdfbox.version>1.8.10</pdfbox.version>
+    <pdfbox.version>1.8.11</pdfbox.version>
   </properties>
 
   <modules>

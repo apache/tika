@@ -8,7 +8,11 @@ Release 2.0 - Future Development
 
   * (Something about more specific parser bundles, plus an overall one)
 
-Release 1.12 - Current Development
+Release 1.13 - ???
+
+  * Upgrade to PDFBox 1.8.11 (TIKA-1830).
+
+Release 1.12 - 01/24/2016
 
   * A parser to compute motion properties in Videos, e.g., 
     Histogram of Oriented Gradients and Histogram of Optical Flows
