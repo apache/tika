@@ -44,11 +44,9 @@ import org.apache.http.message.BasicNameValuePair;
 
 /**
  *  This class offers an implementation of {@link NERecogniser} based on
- *  CRF classifiers from Stanford CoreNLP. This NER requires additional setup,
- *  due to runtime binding to Stanford CoreNLP.
+ *  ne_chunk() module of NLTK. This NER requires additional setup,
+ *  due to Http requests to an endpoint server that runs NLTK.
  *  See <a href="http://wiki.apache.org/tika/TikaAndNER#NLTK">
- *      Tika NER Wiki</a> for configuring this recogniser.
- *  @see NERecogniser
  *
  */
 public class NLTKNERecogniser implements NERecogniser {
@@ -56,6 +54,10 @@ public class NLTKNERecogniser implements NERecogniser {
     private static final Logger LOG = LoggerFactory.getLogger(NLTKNERecogniser.class);
     private final static String USER_AGENT = "Mozilla/5.0";
     private static boolean available = false;
+    
+     /**
+     * some common entities identified by NLTK
+     */
     public static final Set<String> ENTITY_TYPES = new HashSet<String>(){{
         add(PERSON);
         add(TIME);
@@ -70,7 +72,6 @@ public class NLTKNERecogniser implements NERecogniser {
 
     public NLTKNERecogniser(){
         try {
-
             String url = "http://localhost:5000/";
             HttpClient client = HttpClientBuilder.create().build();
             HttpGet get = new HttpGet(url);
@@ -93,9 +94,8 @@ public class NLTKNERecogniser implements NERecogniser {
 
 
     /**
-     *
-     * @return {@code true} if model was available, valid and was able to initialise the classifier.
-     * returns {@code false} when this recogniser is not available for service.
+     * @return {@code true} if server endpoint is available.
+     * returns {@code false} if server endpoint is not avaliable for service.
      */
     public boolean isAvailable() {
         return available;
@@ -120,7 +120,6 @@ public class NLTKNERecogniser implements NERecogniser {
             String url = "http://localhost:5000/nltk";
             HttpClient client = HttpClientBuilder.create().build();
             HttpPost post = new HttpPost(url);
-            // add header
             post.setHeader("User-Agent", USER_AGENT);
             List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
             urlParameters.add(new BasicNameValuePair("text", text));
@@ -153,7 +152,6 @@ public class NLTKNERecogniser implements NERecogniser {
         }
         ENTITY_TYPES.clear();
         ENTITY_TYPES.addAll(entities.keySet());
-        LOG.info("returning this:" + entities.keySet().toString());
         return entities;
     }
 
