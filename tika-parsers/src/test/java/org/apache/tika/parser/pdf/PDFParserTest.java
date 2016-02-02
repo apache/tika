@@ -633,13 +633,9 @@ public class PDFParserTest extends TikaTest {
 
         File testDocs = new File(this.getClass().getResource("/test-documents").toURI());
         int pdfs = 0;
+        //empty as of PDFBox 1.8.11
+        //leave this in for the 1.8.x series in case something new happens
         Set<String> knownMetadataDiffs = new HashSet<String>();
-        //PDFBox-1792/Tika-1203
-        knownMetadataDiffs.add("testAnnotations.pdf");
-        // Added for TIKA-93.
-        knownMetadataDiffs.add("testOCR.pdf");
-        // Added for TIKA-1085
-        knownMetadataDiffs.add("testPDF_bom.pdf");
 
         //empty for now
         Set<String> knownContentDiffs = new HashSet<String>();
