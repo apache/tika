@@ -1,8 +1,5 @@
 package org.apache.tika.parser.ner.nltk;
 
-/**
- * Created by manali on 2/1/16.
- */
 import org.apache.commons.logging.Log;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
