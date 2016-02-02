@@ -10,6 +10,8 @@ Release 2.0 - Future Development
 
 Release 1.13 - ???
 
+  * Upgrade to POI 3.14-beta1 (TIKA-1799).
+
   * Upgrade to PDFBox 1.8.11 (TIKA-1830).
 
 Release 1.12 - 01/24/2016
