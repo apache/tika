@@ -79,14 +79,14 @@ public class PowerPointParserTest extends TikaTest {
         for(int row=1;row<=3;row++) {
             //assertContains("·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
-            assertContains("<p>Bullet " + row, xml);
+            assertContains("<li>Bullet " + row, xml);
         }
         assertContains("Here is a numbered list:", xml);
         for(int row=1;row<=3;row++) {
             //assertContains(row + ")\tNumber bullet " + row, content);
             //assertContains(row + ") Number bullet " + row, content);
             // TODO: OOXMLExtractor fails to number the bullets:
-            assertContains("<p>Number bullet " + row, xml);
+            assertContains("<li>Number bullet " + row, xml);
         }
 
         for(int row=1;row<=2;row++) {
