@@ -229,7 +229,6 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
     @Override
     protected List<PackagePart> getMainDocumentParts() throws TikaException {
         List<PackagePart> parts = new ArrayList<>();
-        XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
         XSLFSlideShow document = null;
         try {
             document = new XSLFSlideShow(extractor.getPackage());
