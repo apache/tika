@@ -1,0 +1,40 @@
+package org.apache.tika.parser.ner.nltk;
+
+/**
+ * Created by manali on 2/1/16.
+ */
+import org.apache.commons.logging.Log;
+import org.apache.tika.Tika;
+import org.apache.tika.config.TikaConfig;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ner.NamedEntityParser;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.Assert.assertTrue;
+
+public class NLTKNERecogniserTest {
+    @Test
+    public void testGetEntityTypes() throws Exception {
+
+        String text = "America";
+        System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, NLTKNERecogniser.class.getName());
+
+        Tika tika = new Tika(new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
+        Metadata md = new Metadata();
+        tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
+
+
+        Set<String> gpe = new HashSet<>(Arrays.asList(md.getValues("NER_GPE")));
+        if(gpe.size() == 0) return;
+        else {
+            assertTrue(gpe.contains("America"));
+            assertTrue(gpe.size() == 1); //and nothing else
+        }
+    }
+}
