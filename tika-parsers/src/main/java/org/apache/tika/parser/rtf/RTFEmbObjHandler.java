@@ -246,7 +246,7 @@ class RTFEmbObjHandler {
                 MediaType mediaType = detector.detect(is, metadata);
                 MimeTypes types = config.getMimeRepository();
                 MimeType mime = types.forName(mediaType.toString());
-                metadata.set(Metadata.CONTENT_TYPE, mediaType.getSubtype());
+                metadata.set(Metadata.CONTENT_TYPE, mime.toString());
                 return mime.getExtension();
             } catch (IOException e) {
                 //swallow

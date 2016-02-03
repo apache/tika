@@ -17,6 +17,8 @@
 
 package org.apache.tika.server.resource;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import javax.mail.internet.ContentDisposition;
 import javax.mail.internet.ParseException;
 import javax.ws.rs.Consumes;
@@ -37,7 +39,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -75,8 +76,6 @@ import org.apache.tika.server.RichTextContentHandler;
 import org.apache.tika.server.TikaServerParseException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Path("/tika")
 public class TikaResource {
@@ -228,9 +227,14 @@ public class TikaResource {
             setDetector(parser, new Detector() {
                 public MediaType detect(InputStream inputStream, Metadata metadata) throws IOException {
                     String ct = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
-
+                    //make sure never to return null -- TIKA-1845
+                    MediaType type = null;
                     if (ct != null) {
-                        return MediaType.parse(ct);
+                        //this can return null if ct is not a valid mime type
+                        type = MediaType.parse(ct);
+                    }
+                    if (type != null) {
+                        return type;
                     } else {
                         return detector.detect(inputStream, metadata);
                     }
