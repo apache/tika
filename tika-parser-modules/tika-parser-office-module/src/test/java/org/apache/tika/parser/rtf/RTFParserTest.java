@@ -27,7 +27,6 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -510,15 +509,18 @@ public class RTFParserTest extends TikaTest {
 
         assertTrue(meta_jpg_exif != null);
         assertTrue(meta_jpg != null);
-        assertTrue(Arrays.asList(meta_jpg_exif.getValues("dc:subject")).contains("serbor"));
-        assertTrue(meta_jpg.get("Comments").contains("Licensed to the Apache"));
+        // had to comment these out (when moving from 1.x to 2.x
+        // because AutoDetectParser within this module does not include image parsing.
+
+//        assertTrue(Arrays.asList(meta_jpg_exif.getValues("dc:subject")).contains("serbor"));
+//        assertTrue(meta_jpg.get("Comments").contains("Licensed to the Apache"));
         //make sure old metadata doesn't linger between objects
-        assertFalse(Arrays.asList(meta_jpg.getValues("dc:subject")).contains("serbor"));
+//        assertFalse(Arrays.asList(meta_jpg.getValues("dc:subject")).contains("serbor"));
         assertEquals("false", meta_jpg.get(RTFMetadata.THUMBNAIL));
         assertEquals("false", meta_jpg_exif.get(RTFMetadata.THUMBNAIL));
 
-        assertEquals(46, meta_jpg.names().length);
-        assertEquals(110, meta_jpg_exif.names().length);
+        assertEquals(25, meta_jpg.names().length);
+        assertEquals(25, meta_jpg_exif.names().length);
     }
 
     @Test
