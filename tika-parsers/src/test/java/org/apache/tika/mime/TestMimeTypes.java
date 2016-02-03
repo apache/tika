@@ -971,6 +971,18 @@ public class TestMimeTypes {
         assertTypeByData("text/x-matlab", "testMATLAB.m");
         assertTypeByData("text/x-matlab", "testMATLAB_wtsgaus.m");
         assertTypeByData("text/x-matlab", "testMATLAB_barcast.m");
+        
+        // By name, or by name+data, gets it as JS
+        assertTypeByName("application/javascript", "testJS.js");
+        assertTypeByName("application/javascript", "testJS_HTML.js");
+        assertType("application/javascript", "testJS.js");
+        assertType("application/javascript", "testJS_HTML.js");
+        
+        // With data only, because we have no JS file magic, can't be
+        //  detected. One will come through as plain text, the other
+        //  as HTML due to <html> in it. TODO Add JS magic. See TIKA-1141 
+        //assertTypeByData("application/javascript", "testJS.js");
+        //assertTypeByData("application/javascript", "testJS_HTML.js");
     }
 
     @Test
