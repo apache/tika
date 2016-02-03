@@ -979,6 +979,19 @@ public class TestMimeTypes {
         assertTypeByData("text/vtt", "testWebVTT.vtt");
     }
     
+    @Test
+    public void testPKCSSignatures() throws Exception {
+        // PKCS7 Signed XML files
+        assertType("application/pkcs7-signature", "testPKCS17Sig.xml.p7m");
+        assertType("application/pkcs7-signature", "testPKCS17Sig-v2.xml.p7m");
+        assertType("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
+        assertType("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v2.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v3.xml.p7m");
+        assertTypeByData("application/pkcs7-signature", "testPKCS17Sig-v4.xml.p7m");
+    }
+    
     private void assertText(byte[] prefix) throws IOException {
         assertMagic("text/plain", prefix);
     }
