@@ -29,15 +29,7 @@
       <artifactId>tika-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-        <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcmail-jdk15on</artifactId>
       <version>1.52</version>

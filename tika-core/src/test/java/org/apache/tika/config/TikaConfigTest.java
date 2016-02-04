@@ -16,6 +16,11 @@
  */
 package org.apache.tika.config;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
@@ -25,9 +30,6 @@ import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 
 import org.apache.tika.ResourceLoggingClassLoader;
-import org.apache.tika.config.DummyExecutor;
-import org.apache.tika.config.TikaConfig;
-import org.apache.tika.config.TikaConfigTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
@@ -39,26 +41,21 @@ import org.apache.tika.parser.ParserDecorator;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 /**
  * Tests for the Tika Config, which don't require real parsers /
  *  detectors / etc.
- * There's also {@link TikaParserConfigTest} and {@link TikaDetectorConfigTest}
+ * There's also TikaParserConfigTest and TikaDetectorConfigTest
  *  over in the Tika Parsers project, which do further Tika Config
  *  testing using real parsers and detectors.
  */
-public class TikaConfigTest extends AbstractTikaConfigTest {
+public class TikaConfigTest {
     private ServiceLoader ignoreLoader;
     private ServiceLoader warnLoader;
     private ServiceLoader throwLoader;
     
     @Before
     public void setup() {
-        ignoreLoader = new ServiceLoader(getClass().getClassLoader(), 
+        ignoreLoader = new ServiceLoader(this.getClass().getClassLoader(),
                                          LoadErrorHandler.IGNORE);
         warnLoader = new ServiceLoader(getClass().getClassLoader(), 
                                        LoadErrorHandler.WARN);
@@ -287,5 +284,15 @@ public class TikaConfigTest extends AbstractTikaConfigTest {
         assertTrue("Should use Dummy Executor", (executorService instanceof DummyExecutor));
         assertEquals("Should have configured Core Threads", 3, executorService.getCorePoolSize());
         assertEquals("Should have configured Max Threads", 10, executorService.getMaximumPoolSize());
+    }
+
+    protected static String getConfigPath(String config) throws Exception {
+        URL url = TikaConfig.class.getResource(config);
+        assertNotNull("Test Tika Config not found: " + config, url);
+        return url.toExternalForm();
+    }
+    protected static TikaConfig getConfig(String config) throws Exception {
+        System.setProperty("tika.config", getConfigPath(config));
+        return new TikaConfig();
     }
 }

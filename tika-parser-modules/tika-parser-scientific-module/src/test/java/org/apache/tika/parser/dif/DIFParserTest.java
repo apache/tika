@@ -16,6 +16,10 @@
  */
 package org.apache.tika.parser.dif;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.InputStream;
+
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -23,10 +27,6 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.junit.Test;
 import org.xml.sax.ContentHandler;
-
-import java.io.InputStream;
-
-import static org.junit.Assert.assertEquals;
 
 public class DIFParserTest extends TikaTest {
 

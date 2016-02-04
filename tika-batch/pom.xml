@@ -69,14 +69,7 @@
       <version>${commons.io.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.tika</groupId>
-      <artifactId>tika-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.tika</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>tika-parsers</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
@@ -85,6 +78,12 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-test-resources</artifactId>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

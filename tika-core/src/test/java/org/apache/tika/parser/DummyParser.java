@@ -19,8 +19,8 @@ package org.apache.tika.parser;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -30,16 +30,16 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 /**
- * A Dummy Parser for use with unit tests.
+ * A Dummy Parser for use with unit tests in core.
  * <p>
- * See also {@link org.apache.tika.parser.mock.MockParser}.
+ * See also the MockParser in tika-test-resources.
  */
-public class DummyParser extends AbstractParser {
+class DummyParser extends AbstractParser {
    private Set<MediaType> types;
    private Map<String,String> metadata;
    private String xmlText;
 
-   public DummyParser(Set<MediaType> types, Map<String, String> metadata,
+   DummyParser(Set<MediaType> types, Map<String, String> metadata,
          String xmlText) {
       this.types = types;
       this.metadata = metadata;

@@ -27,7 +27,7 @@ import org.junit.After;
 /**
  * Parent of Junit test classes for {@link TikaConfig}, including
  *  Tika Core based ones, and ones in Tika Parsers that do things 
- *  that {@link TikaConfigTest} can't, do due to a need for the
+ *  that tika-core's can't, do due to a need for the
  *  full set of "real" classes of parsers / detectors
  */
 public abstract class AbstractTikaConfigTest extends TikaTest {

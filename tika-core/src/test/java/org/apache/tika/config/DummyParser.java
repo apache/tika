@@ -22,7 +22,7 @@ import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.Parser;
 
-public class DummyParser extends CompositeParser implements Parser {
+class DummyParser extends CompositeParser implements Parser {
     private static final long serialVersionUID = 7179782154785528555L;
     
     private ServiceLoader loader;

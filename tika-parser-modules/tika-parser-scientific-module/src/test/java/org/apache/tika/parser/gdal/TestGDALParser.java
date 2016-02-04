@@ -19,27 +19,23 @@ package org.apache.tika.parser.gdal;
 
 //JDK imports
 
-import java.io.IOException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
+
 import java.io.InputStream;
 
-
-//Tika imports
 import org.apache.tika.TikaTest;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.external.ExternalParser;
 import org.apache.tika.sax.BodyContentHandler;
-
-//Junit imports
 import org.junit.Test;
-import org.xml.sax.SAXException;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
+//Tika imports
+//Junit imports
 
 /**
  * Test harness for the GDAL parser.

@@ -28,9 +28,9 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Date;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.IOUtils;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
