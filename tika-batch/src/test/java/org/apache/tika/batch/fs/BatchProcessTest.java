@@ -53,7 +53,7 @@ public class BatchProcessTest extends FSBatchTestBase {
     }
 
 
-    @Test(timeout = 15000)
+    @Test(timeout = 60000)
     public void allHeavyHangsTest() throws Exception {
         //each of the three threads hits a heavy hang.  The BatchProcess runs into
         //all timedouts and shuts down.
