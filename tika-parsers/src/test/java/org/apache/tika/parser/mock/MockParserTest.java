@@ -36,6 +36,10 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.Parser;
 import org.junit.Test;
 
+/**
+ * Somewhat bizarrely, we can't put the test of this test resource in tika-test-resources
+ * or else it will be called by every module that uses it.  Um, Yossarian!!!
+ */
 public class MockParserTest extends TikaTest {
     private final static String M = "/test-documents/mock/";
     private final static Parser PARSER = new AutoDetectParser();

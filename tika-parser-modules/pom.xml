@@ -61,9 +61,10 @@
   <dependencies>
     <!-- Test dependencies -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>org.apache.tika</groupId>
       <artifactId>tika-test-resources</artifactId>
       <version>${project.version}</version>
+      <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
