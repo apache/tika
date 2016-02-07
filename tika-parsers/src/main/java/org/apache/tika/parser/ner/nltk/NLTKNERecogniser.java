@@ -41,6 +41,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
 
+import javax.ws.rs.core.Form;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 
 /**
  *  This class offers an implementation of {@link NERecogniser} based on
@@ -73,13 +80,8 @@ public class NLTKNERecogniser implements NERecogniser {
     public NLTKNERecogniser(){
         try {
             String url = "http://localhost:5000/";
-            HttpClient client = HttpClientBuilder.create().build();
-            HttpGet get = new HttpGet(url);
-
-            // add header
-            get.setHeader("User-Agent", USER_AGENT);
-            HttpResponse response = client.execute(get);
-            int responseCode = response.getStatusLine().getStatusCode();
+            Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).get();
+            int responseCode = response.getStatus();
             if(responseCode == 200){
                 available = true;
             }
@@ -118,22 +120,10 @@ public class NLTKNERecogniser implements NERecogniser {
         Map<String, Set<String>> entities = new HashMap<>();
         try {
             String url = "http://localhost:5000/nltk";
-            HttpClient client = HttpClientBuilder.create().build();
-            HttpPost post = new HttpPost(url);
-            post.setHeader("User-Agent", USER_AGENT);
-            List<NameValuePair> urlParameters = new ArrayList<NameValuePair>();
-            urlParameters.add(new BasicNameValuePair("text", text));
-            post.setEntity(new UrlEncodedFormEntity(urlParameters));
-
-            HttpResponse response = client.execute(post);
-
-            int responseCode = response.getStatusLine().getStatusCode();
+            Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).form(new Form().param("text",text));
+            int responseCode = response.getStatus();
             if (responseCode == 200) {
-                BufferedReader rd = new BufferedReader(
-                        new InputStreamReader(response.getEntity().getContent()));
-
-                String result = rd.readLine();
-
+                String result = response.readEntity(String.class);
                 JSONParser parser = new JSONParser();
                 JSONObject j = (JSONObject) parser.parse(result);
                 JSONArray aa = new JSONArray();

@@ -36,6 +36,8 @@ public interface NERecogniser {
     String DATE = "DATE";
     String PERCENT = "PERCENT";
     String MONEY = "MONEY";
+    String FACILITY = "FACILITY";
+    String GPE = "GPE";
 
     /**
      * checks if this Named Entity recogniser is available for service
