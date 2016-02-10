@@ -119,8 +119,8 @@
       <id>kkrugler</id>
       <email>kkrugler@apache.org</email>
       <url>http://ken-blog.krugler.org</url>
-      <organization>Bixo Labs</organization>
-      <organizationUrl>http://bixolabs.com</organizationUrl>
+      <organization>Scale Unlimited</organization>
+      <organizationUrl>http://www.scaleunlimited.com</organizationUrl>
       <roles>
         <role>committer</role>
       </roles>
@@ -300,6 +300,7 @@
   <properties>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
     <commons.compress.version>1.10</commons.compress.version>
     <commons.io.version>2.4</commons.io.version>
