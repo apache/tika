@@ -33,7 +33,7 @@
   <packaging>bundle</packaging>
   <name>Apache Tika language detection</name>
   <url>http://tika.apache.org/</url>
-
+  
   <dependencies>
     <dependency>
       <groupId>org.apache.tika</groupId>
