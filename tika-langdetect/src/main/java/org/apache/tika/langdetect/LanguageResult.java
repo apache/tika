@@ -4,6 +4,9 @@ import java.util.Locale;
 
 public class LanguageResult {
 
+	// A result that indicates no match. Used when no language was detected.
+	public static final LanguageResult NULL = new LanguageResult("", LanguageConfidence.NONE, 0.0f);
+	
 	private String language;
 	
 	private LanguageConfidence confidence;
@@ -37,6 +40,10 @@ public class LanguageResult {
 	
 	public boolean isReasonablyCertain() {
 		return confidence == LanguageConfidence.HIGH;
+	}
+	
+	public boolean isUnknown() {
+		return confidence == LanguageConfidence.NONE;
 	}
 	
 	/**

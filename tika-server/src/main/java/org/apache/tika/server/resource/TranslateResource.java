@@ -17,15 +17,18 @@
 
 package org.apache.tika.server.resource;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -33,11 +36,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.LanguageIdentifier;
-import org.apache.tika.language.LanguageProfile;
+import org.apache.tika.langdetect.LanguageConfidence;
+import org.apache.tika.langdetect.LanguageResult;
+import org.apache.tika.langdetect.OptimaizeLangDetector;
 import org.apache.tika.language.translate.Translator;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Path("/translate")
 public class TranslateResource {
@@ -77,8 +79,11 @@ public class TranslateResource {
 			@PathParam("translator") String translator,
 			@PathParam("dest") String dLang) throws TikaException, IOException {
 		final String content = IOUtils.toString(is, UTF_8);
-		LanguageIdentifier language = new LanguageIdentifier(
-				new LanguageProfile(content));
+		LanguageResult language = new OptimaizeLangDetector().loadModels().detect(content);
+		if (language.isUnknown()) {
+			throw new TikaException("Unable to detect language to use for translation of text");
+		}
+		
 		String sLang = language.getLanguage();
 		logger.info("LanguageIdentifier: detected source lang: [" + sLang + "]");
 		return doTranslate(content, translator, sLang, dLang);

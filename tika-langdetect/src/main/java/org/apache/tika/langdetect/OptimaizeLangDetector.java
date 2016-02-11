@@ -83,10 +83,10 @@ public class OptimaizeLangDetector extends LanguageDetector {
 	}
 
 	private com.optimaize.langdetect.LanguageDetector createDetector(List<LanguageProfile> languageProfiles) {
-		// FUTURE decide whether we really want to use the short text algorithm when dealing with mixed languages,
-		// as that would get really, really slow for big chunks of text.
+		// FUTURE currently the short text algorithm doesn't normalize probabilities until the end, which
+		// means you can often get 0 probabilities. So we pick a very short length for this limit.
 		LanguageDetectorBuilder builder = LanguageDetectorBuilder.create(NgramExtractors.standard())
-				.shortTextAlgorithm(mixedLanguages ? Integer.MAX_VALUE : 100)
+				.shortTextAlgorithm(30)
 		        .withProfiles(languageProfiles);
 		
 		if (languageProbabilities != null) {
@@ -149,6 +149,10 @@ public class OptimaizeLangDetector extends LanguageDetector {
 			result.add(new LanguageResult(makeLanguageName(rawResult.getLocale()), confidence, (float)rawResult.getProbability()));
 		}
 
+		if (result.isEmpty()) {
+			result.add(LanguageResult.NULL);
+		}
+		
 		return result;
 	}
 

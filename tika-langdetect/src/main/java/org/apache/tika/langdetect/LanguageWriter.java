@@ -44,6 +44,15 @@ public class LanguageWriter extends Writer {
         return detector;
     }
 
+    /**
+     * Returns the detected language based on text written thus far.
+     * 
+     * @return LanguageResult
+     */
+    public LanguageResult getLanguage() {
+    	return detector.detect();
+    }
+    
     @Override
     public void write(char[] cbuf, int off, int len) {
     	detector.addText(cbuf, off, len);

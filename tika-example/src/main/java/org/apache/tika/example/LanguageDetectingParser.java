@@ -21,9 +21,10 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.LanguageIdentifier;
-import org.apache.tika.language.ProfilingHandler;
+import org.apache.tika.langdetect.LanguageHandler;
+import org.apache.tika.langdetect.LanguageResult;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DelegatingParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.TeeContentHandler;
@@ -37,14 +38,14 @@ public class LanguageDetectingParser extends DelegatingParser {
     public void parse(InputStream stream, ContentHandler handler,
                       final Metadata metadata, ParseContext context) throws SAXException,
             IOException, TikaException {
-        ProfilingHandler profiler = new ProfilingHandler();
-        ContentHandler tee = new TeeContentHandler(handler, profiler);
+        LanguageHandler langHandler = new LanguageHandler();
+        ContentHandler tee = new TeeContentHandler(handler, langHandler);
 
         super.parse(stream, tee, metadata, context);
 
-        LanguageIdentifier identifier = profiler.getLanguage();
-        if (identifier.isReasonablyCertain()) {
-            metadata.set(Metadata.LANGUAGE, identifier.getLanguage());
+        LanguageResult result = langHandler.getLanguage();
+        if (result.isReasonablyCertain()) {
+            metadata.set(TikaCoreProperties.LANGUAGE, result.getLanguage());
         }
     }
 }
