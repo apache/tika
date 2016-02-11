@@ -18,11 +18,6 @@ package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -57,6 +52,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -81,8 +82,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.fork.ForkParser;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.language.LanguageProfilerBuilder;
-import org.apache.tika.language.ProfilingHandler;
+import org.apache.tika.langdetect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.serialization.JsonMetadata;
 import org.apache.tika.metadata.serialization.JsonMetadataList;
@@ -282,7 +282,7 @@ public class TikaCLI {
                 OutputStream output, Metadata metadata) throws Exception {
             final PrintWriter writer =
                 new PrintWriter(getOutputWriter(output, encoding));
-            return new ProfilingHandler() {
+            return new LanguageHandler() {
                 public void endDocument() {
                     writer.println(getLanguage().getLanguage());
                     writer.flush();
@@ -304,22 +304,6 @@ public class TikaCLI {
     };
     
     
-    /* Creates ngram profile */
-    private final OutputType CREATE_PROFILE = new OutputType() {
-        @Override
-        public void process(
-                InputStream stream, OutputStream output, Metadata metadata)
-                throws Exception {
-            ngp = LanguageProfilerBuilder.create(profileName, stream, encoding);
-            FileOutputStream fos = new FileOutputStream(new File(profileName + ".ngp"));
-            ngp.save(fos);//saves ngram profile
-            fos.close();
-            PrintWriter writer = new PrintWriter(getOutputWriter(output, encoding));
-            writer.println("ngram profile location:=" + new File(ngp.getName()).getCanonicalPath());
-            writer.flush();
-        }
-    };
-
     private ParseContext context;
     
     private Detector detector;
@@ -332,8 +316,6 @@ public class TikaCLI {
 
     private boolean recursiveJSON = false;
     
-    private LanguageProfilerBuilder ngp = null;
-
     /**
      * Output character encoding, or <code>null</code> for platform default
      */
@@ -351,8 +333,6 @@ public class TikaCLI {
     private boolean serverMode = false;
 
     private boolean fork = false;
-
-    private String profileName = null;
 
     private boolean prettyPrint;
     
@@ -462,9 +442,6 @@ public class TikaCLI {
         } else if (arg.startsWith("--client=")) {
             URI uri = new URI(arg.substring("--client=".length()));
             parser = new NetworkParser(uri);
-        } else if(arg.startsWith("--create-profile=")){
-            profileName = arg.substring("--create-profile=".length());
-            type = CREATE_PROFILE;
         } else {
             pipeMode = false;
             if (serverMode) {
@@ -564,8 +541,6 @@ public class TikaCLI {
         out.println("    -r  or --pretty-print  For JSON, XML and XHTML outputs, adds newlines and");
         out.println("                           whitespace, for better readability");
         out.println();
-        out.println("    --create-profile=X");
-        out.println("         Create NGram profile, where X is a profile name");
         out.println("    --list-parsers");
         out.println("         List the available document parsers");
         out.println("    --list-parser-details");

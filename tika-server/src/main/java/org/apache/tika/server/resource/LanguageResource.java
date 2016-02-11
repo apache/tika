@@ -17,21 +17,22 @@
 
 package org.apache.tika.server.resource;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.IOException;
+import java.io.InputStream;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.tika.language.LanguageIdentifier;
-import org.apache.tika.language.LanguageProfile;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import org.apache.tika.langdetect.LanguageResult;
+import org.apache.tika.langdetect.OptimaizeLangDetector;
 
 @Path("/language")
 public class LanguageResource {
@@ -45,13 +46,9 @@ public class LanguageResource {
 	@Consumes("*/*")
 	@Produces("text/plain")
 	public String detect(final InputStream is) throws IOException {
-		// comme çi comme ça
-		// this is English!
 		String fileTxt = IOUtils.toString(is, UTF_8);
-		logger.debug("File: " + fileTxt);
-		LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
-				fileTxt));
-		String detectedLang = lang.getLanguage();
+		LanguageResult language = new OptimaizeLangDetector().loadModels().detect(fileTxt);
+		String detectedLang = language.getLanguage();
 		logger.info("Detecting language for incoming resource: ["
 				+ detectedLang + "]");
 		return detectedLang;
@@ -63,10 +60,8 @@ public class LanguageResource {
 	@Consumes("*/*")
 	@Produces("text/plain")
 	public String detect(final String string) throws IOException {
-		logger.debug("String: " + string);
-		LanguageIdentifier lang = new LanguageIdentifier(new LanguageProfile(
-				string));
-		String detectedLang = lang.getLanguage();
+		LanguageResult language = new OptimaizeLangDetector().loadModels().detect(string);
+		String detectedLang = language.getLanguage();
 		logger.info("Detecting language for incoming resource: ["
 				+ detectedLang + "]");
 		return detectedLang;

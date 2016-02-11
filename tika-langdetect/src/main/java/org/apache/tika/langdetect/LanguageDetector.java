@@ -150,14 +150,15 @@ public abstract class LanguageDetector {
 	/**
 	 * Detect languages based on previously submitted text (via addText calls).
 	 * 
-	 * @return list of all possible languages with at least medium confidence,
-	 * 			sorted by confidence from highest to lowest.
+	 * @return	list of all possible languages with at least medium confidence,
+	 * 			sorted by confidence from highest to lowest. There will always
+	 * 			be at least one result, which might have a confidence of NONE.
 	 */
 	public abstract List<LanguageResult> detectAll();
 	
 	public LanguageResult detect() {
 		List<LanguageResult> results = detectAll();
-		return results.isEmpty() ? null : results.get(0);
+		return results.get(0);
 	}
 
 	/**

@@ -16,6 +16,8 @@
  */
 package org.apache.tika.langdetect;
 
+import java.io.IOException;
+
 import org.apache.tika.sax.WriteOutContentHandler;
 
 /**
@@ -28,6 +30,10 @@ public class LanguageHandler extends WriteOutContentHandler {
 
     private final LanguageWriter writer;
 
+    public LanguageHandler() throws IOException {
+    	this(new LanguageWriter(new OptimaizeLangDetector().loadModels()));
+    }
+    
     public LanguageHandler(LanguageWriter writer) {
         super(writer);
         
@@ -49,4 +55,12 @@ public class LanguageHandler extends WriteOutContentHandler {
         return writer.getDetector();
     }
 
+    /**
+     * Returns the detected language based on text handled thus far.
+     * 
+     * @return LanguageResult
+     */
+    public LanguageResult getLanguage() {
+    	return writer.getLanguage();
+    }
 }

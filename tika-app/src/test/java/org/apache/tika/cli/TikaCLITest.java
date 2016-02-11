@@ -54,18 +54,6 @@ public class TikaCLITest {
     }
 
     /**
-     * Creates a welsh language profile
-     * 
-     * @throws Exception
-     */
-    @Test
-    public void testCreateProfile() throws Exception {
-        String[] params = {"--create-profile=welsh", "-eUTF-8", resourcePrefix + "welsh_corpus.txt"};
-        TikaCLI.main(params);
-        assertTrue(profile.exists());
-    }
-
-    /**
      * Tests --list-parser-detail option of the cli
      * 
      * @throws Exception

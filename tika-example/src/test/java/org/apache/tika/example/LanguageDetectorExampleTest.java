@@ -17,11 +17,23 @@
 
 package org.apache.tika.example;
 
-import org.apache.tika.language.LanguageIdentifier;
+import java.io.IOException;
 
-public class LanguageIdentifierExample {
-    public String identifyLanguage(String text) {
-        LanguageIdentifier identifier = new LanguageIdentifier(text);
-        return identifier.getLanguage();
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
+public class LanguageDetectorExampleTest {
+    LanguageDetectorExample languageDetectorExample;
+    @Before
+    public void setUp() {
+        languageDetectorExample = new LanguageDetectorExample();
+    }
+
+    @Test
+    public void testDetectLanguage() throws IOException {
+        String text = "This is some text that should be identified as English.";
+        assertEquals("en", languageDetectorExample.detectLanguage(text));
     }
 }
