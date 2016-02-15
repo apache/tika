@@ -583,7 +583,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("This is a hyperlink", content);
         assertContains("Here is a list:", content);
         for(int row=1;row<=3;row++) {
-            //assertContains("·\tBullet " + row, content);
+            //assertContains("Â·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
             assertContains("Bullet " + row, content);
         }
@@ -643,7 +643,7 @@ public class OOXMLParserTest extends TikaTest {
         assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
         assertContains("<p>Here is a list:", xml);
         for(int row=1;row<=3;row++) {
-            //assertContains("·\tBullet " + row, content);
+            //assertContains("Â·\tBullet " + row, content);
             //assertContains("\u00b7\tBullet " + row, content);
             assertContains("<p>Bullet " + row, xml);
         }
@@ -685,7 +685,7 @@ public class OOXMLParserTest extends TikaTest {
     @Test
     public void testCommentPPTX() throws Exception {
         XMLResult r = getXML("testPPT_comment.pptx");
-        assertContains("<p class=\"slide-comment\"><b>Allison, Timothy B. (ATB)", r.xml);
+        assertContains("<p><b>Allison, Timothy B. (ATB)", r.xml); //todo
     }
 
     @Test
@@ -1041,7 +1041,7 @@ public class OOXMLParserTest extends TikaTest {
     @Test
     public void testPPTXThumbnail() throws Exception {
         String xml = getXML("testPPTX_Thumbnail.pptx").xml;
-        int a = xml.indexOf("<body><div class=\"slide-content\"><p>This file contains an embedded thumbnail");
+        int a = xml.indexOf("<div class=\"slide-content\"><p>This file contains an embedded thumbnail");
         int b = xml.indexOf("<div class=\"embedded\" id=\"/docProps/thumbnail.jpeg\" />");
         assertTrue(a != -1);
         assertTrue(b != -1);

@@ -19,7 +19,10 @@ package org.apache.tika.parser.microsoft.ooxml;
 import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Stack;
 
 import org.apache.poi.common.usermodel.Hyperlink;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
@@ -53,12 +56,18 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
      * @see org.apache.poi.xslf.extractor.XSLFPowerPointExtractor#getText()
      */
     protected void buildXHTML(XHTMLContentHandler xhtml) throws SAXException, IOException {
+		
         XMLSlideShow slideShow = (XMLSlideShow) extractor.getDocument();
         XSLFCommentAuthors commentAuthors = slideShow.getCommentAuthors();
 
+		xhtml.startElement("div", "class", "slideShow");
+		
         List<XSLFSlide> slides = slideShow.getSlides();
         for (XSLFSlide slide : slides) {
-            String slideDesc;
+			
+			xhtml.startElement("div", "class", "slide");
+			
+			String slideDesc;
             if (slide.getPackagePart() != null && slide.getPackagePart().getPartName() != null) {
                 slideDesc = getJustFileName(slide.getPackagePart().getPartName().toString());
                 slideDesc += "_";
@@ -66,42 +75,45 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 slideDesc = null;
             }
 
+			
+            xhtml.startElement("div", "class", "slide-master-content");
+			{
+				// slide layout which is the master sheet for this slide
+				XSLFSlideLayout slideLayout = slide.getMasterSheet();
+				extractContent(slideLayout.getShapes(), true, xhtml, null, null);
+			
+				// slide master which is the master sheet for all text layouts
+				XSLFSheet slideMaster = slideLayout.getMasterSheet();
+				extractContent(slideMaster.getShapes(), true, xhtml, null, null);
+			}
+            xhtml.endElement("div");
+			
             // slide content
             xhtml.startElement("div", "class", "slide-content");
-            extractContent(slide.getShapes(), false, xhtml, slideDesc);
+            extractContent(slide.getShapes(), false, xhtml, slideDesc, "slide");
             xhtml.endElement("div");
-
-            // slide layout which is the master sheet for this slide
-            xhtml.startElement("div", "class", "slide-master-content");
-            XSLFSlideLayout slideLayout = slide.getMasterSheet();
-            extractContent(slideLayout.getShapes(), true, xhtml, null);
-            xhtml.endElement("div");
-
-            // slide master which is the master sheet for all text layouts
-            XSLFSheet slideMaster = slideLayout.getMasterSheet();
-            extractContent(slideMaster.getShapes(), true, xhtml, null);
 
             // notes (if present)
             XSLFNotes slideNotes = slide.getNotes();
             if (slideNotes != null) {
                 xhtml.startElement("div", "class", "slide-notes");
 
-                extractContent(slideNotes.getShapes(), false, xhtml, slideDesc);
-
-                // master sheet for this notes
-                XSLFNotesMaster notesMaster = slideNotes.getMasterSheet();
-                extractContent(notesMaster.getShapes(), true, xhtml, null);
+                extractContent(slideNotes.getShapes(), false, xhtml, slideDesc, "slide-notes");
+				
                 xhtml.endElement("div");
             }
 
             // comments (if present)
             XSLFComments comments = slide.getComments();
             if (comments != null) {
+				
+				xhtml.startElement("div", "class", "slide-comments");
+				
                 StringBuilder authorStringBuilder = new StringBuilder();
                 for (int i = 0; i < comments.getNumberOfComments(); i++) {
                     authorStringBuilder.setLength(0);
                     CTComment comment = comments.getCommentAt(i);
-                    xhtml.startElement("p", "class", "slide-comment");
+                    xhtml.startElement("p");
                     CTCommentAuthor cta = commentAuthors.getAuthorById(comment.getAuthorId());
                     if (cta != null) {
                         if (cta.getName() != null) {
@@ -111,7 +123,7 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                             if (authorStringBuilder.length() > 0) {
                                 authorStringBuilder.append(" ");
                             }
-                            authorStringBuilder.append("("+cta.getInitials()+")");
+                            authorStringBuilder.append("(").append(cta.getInitials()).append(")");
                         }
                         if (comment.getText() != null && authorStringBuilder.length() > 0) {
                             authorStringBuilder.append(" - ");
@@ -125,11 +137,15 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     xhtml.characters(comment.getText());
                     xhtml.endElement("p");
                 }
+				xhtml.endElement("div"); //end of slide-comments
             }
+			xhtml.endElement("div"); //end of slide
         }
+		// All slides done
+        xhtml.endElement("div"); //end of slideshow
     }
 
-    private void extractContent(List<? extends XSLFShape> shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml, String slideDesc)
+    private void extractContent(List<? extends XSLFShape> shapes, boolean skipPlaceholders, XHTMLContentHandler xhtml, String slideDesc, String classPrefix)
             throws SAXException {
         for (XSLFShape sh : shapes) {
             if (sh instanceof XSLFTextShape) {
@@ -140,7 +156,16 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 }
                 boolean inHyperlink = false;
                 for (XSLFTextParagraph p : txt.getTextParagraphs()) {
-                    xhtml.startElement("p");
+					if (ph != null && Arrays.asList("FOOTER", "HEADER", "TITLE").contains(ph.toString())){
+						String type = ph.toString().toLowerCase(Locale.ENGLISH);
+						type = (classPrefix == null || classPrefix.isEmpty())? type : classPrefix + "-" + type;
+						
+						xhtml.startElement("p", "class", type);
+					
+					} else {
+						xhtml.startElement("p");
+					}
+                    
 
                     for (XSLFTextRun run : p.getTextRuns()) {
                         //TODO: add check for targetmode=external into POI
@@ -159,12 +184,13 @@ public class XSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         }
                         inHyperlink = false;
                     }
+
                     xhtml.endElement("p");
                 }
             } else if (sh instanceof XSLFGroupShape) {
                 // recurse into groups of shapes
                 XSLFGroupShape group = (XSLFGroupShape) sh;
-                extractContent(group.getShapes(), skipPlaceholders, xhtml, slideDesc);
+                extractContent(group.getShapes(), skipPlaceholders, xhtml, slideDesc, null);
             } else if (sh instanceof XSLFTable) {
                 //unlike tables in Word, ppt/x can't have recursive tables...I don't think
                 extractTable((XSLFTable)sh, xhtml);

@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 
 import org.apache.poi.common.usermodel.Hyperlink;
@@ -73,12 +72,12 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
 
             // Slide header, if present
             HeadersFooters hf = slide.getHeadersFooters();
-            if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
-                xhtml.startElement("p", "class", "slide-header");
+            if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null && !hf.getHeaderText().isEmpty()) {
+                xhtml.startElement("div", "class", "slide-header");
 
                 xhtml.characters(hf.getHeaderText());
 
-                xhtml.endElement("p");
+                xhtml.endElement("div");
             }
 
             // Slide master, if present
@@ -89,113 +88,106 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                 xhtml.startElement("div", "class", "slide-content");
 
                 textRunsToText(xhtml, slide.getTextParagraphs());
+				
 
+				// Table text
+				for (HSLFShape shape : slide.getShapes()) {
+					if (shape instanceof HSLFTable) {
+						extractTableText(xhtml, (HSLFTable) shape);
+					}
+				}
+				
                 xhtml.endElement("div");
             }
 
-            // Table text
-            for (HSLFShape shape : slide.getShapes()) {
-                if (shape instanceof HSLFTable) {
-                    extractTableText(xhtml, (HSLFTable) shape);
-                }
-            }
-
-            // Slide footer, if present
-            if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
-                xhtml.startElement("p", "class", "slide-footer");
+			// Slide footer, if present
+            if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null && !hf.getFooterText().isEmpty()) {
+                xhtml.startElement("div", "class", "slide-footer");
 
                 xhtml.characters(hf.getFooterText());
 
-                xhtml.endElement("p");
+                xhtml.endElement("div"); //end slide-footer
             }
+			
+			// Find the Notes for this slide and extract inline
+			HSLFNotes notes = slide.getNotes();
+			HeadersFooters nhf = ss.getNotesHeadersFooters();
+
+            if (notes != null) {
+                xhtml.startElement("div", "class", "slide-notes");
+
+				
+				
+				// Notes text
+                textRunsToText(xhtml, notes.getTextParagraphs());
+				
+				// Note headers/footers can be extracted, but content will be duplicate
+				// Repeat the notes footer, if set
+				/*if (nhf != null && nhf.isFooterVisible() && nhf.getFooterText() != null) {
+					xhtml.startElement("p", "class", "footer");
+					xhtml.characters(nhf.getFooterText()); //is this just a repetition of the footers?
+					xhtml.endElement("p");
+				}
+				
+				// Repeat the Notes header, if set
+				if (nhf != null && nhf.isHeaderVisible() && nhf.getHeaderText() != null) {
+					xhtml.startElement("p", "class", "header");
+					xhtml.characters(nhf.getHeaderText());
+					xhtml.endElement("p");
+				}*/
+       
+                xhtml.endElement("div");
+            }
+
 
             // Comments, if present
             StringBuilder authorStringBuilder = new StringBuilder();
-            for (Comment comment : slide.getComments()) {
-                authorStringBuilder.setLength(0);
-                xhtml.startElement("p", "class", "slide-comment");
+			
+			Comment[] comments = slide.getComments();
+			if (comments.length > 0) {
+			
+				xhtml.startElement("div", "class", "slide-comments");
+				
+				for (Comment comment : comments) {
+					authorStringBuilder.setLength(0);
+					xhtml.startElement("p"); //start single slide-comment
 
-                if (comment.getAuthor() != null) {
-                    authorStringBuilder.append(comment.getAuthor());
-                }
-                if (comment.getAuthorInitials() != null) {
-                    if (authorStringBuilder.length() > 0) {
-                        authorStringBuilder.append(" ");
-                    }
-                    authorStringBuilder.append("("+comment.getAuthorInitials()+")");
-                }
-                if (authorStringBuilder.length() > 0) {
-                    if (comment.getText() != null) {
-                        authorStringBuilder.append(" - ");
-                    }
-                    xhtml.startElement("b");
-                    xhtml.characters(authorStringBuilder.toString());
-                    xhtml.endElement("b");
-                }
-                if (comment.getText() != null) {
-                    xhtml.characters(comment.getText());
-                }
-                xhtml.endElement("p");
-            }
+					if (comment.getAuthor() != null) {
+						authorStringBuilder.append(comment.getAuthor());
+					}
+					if (comment.getAuthorInitials() != null) {
+						if (authorStringBuilder.length() > 0) {
+							authorStringBuilder.append(" ");
+						}
+						authorStringBuilder.append("(").append(comment.getAuthorInitials()).append(")");
+					}
+					if (authorStringBuilder.length() > 0) {
+						if (comment.getText() != null) {
+							authorStringBuilder.append(" - ");
+						}
+						xhtml.startElement("b");
+						xhtml.characters(authorStringBuilder.toString());
+						xhtml.endElement("b");
+					}
+					if (comment.getText() != null) {
+						xhtml.characters(comment.getText());
+					}
+					xhtml.endElement("p"); //end single slide-comment
+				}
+				
+				xhtml.endElement("div"); // end slide-comments
+			}
 
             // Now any embedded resources
             handleSlideEmbeddedResources(slide, xhtml);
 
-           
-            // Find the Notes for this slide and extract inline
-            HSLFNotes notes = slide.getNotes();
-            if (notes != null) {
-                xhtml.startElement("div", "class", "slide-notes");
-
-                textRunsToText(xhtml, notes.getTextParagraphs());
-       
-                xhtml.endElement("div");
-            }
-            
-
             // Slide complete
-            xhtml.endElement("div");
-        }
-
-        // All slides done
-        xhtml.endElement("div");
-
-      /* notes */
-        xhtml.startElement("div", "class", "slide-notes");
-        HashSet<Integer> seenNotes = new HashSet<>();
-        HeadersFooters hf = ss.getNotesHeadersFooters();
-
-        for (HSLFSlide slide : _slides) {
-            HSLFNotes notes = slide.getNotes();
-            if (notes == null) {
-                continue;
-            }
-            Integer id = notes._getSheetNumber();
-            if (seenNotes.contains(id)) {
-                continue;
-            }
-            seenNotes.add(id);
-
-            // Repeat the Notes header, if set
-            if (hf != null && hf.isHeaderVisible() && hf.getHeaderText() != null) {
-                xhtml.startElement("p", "class", "slide-note-header");
-                xhtml.characters(hf.getHeaderText());
-                xhtml.endElement("p");
-            }
-
-            // Notes text
-            textRunsToText(xhtml, notes.getTextParagraphs());
-
-            // Repeat the notes footer, if set
-            if (hf != null && hf.isFooterVisible() && hf.getFooterText() != null) {
-                xhtml.startElement("p", "class", "slide-note-footer");
-                xhtml.characters(hf.getFooterText());
-                xhtml.endElement("p");
-            }
+            xhtml.endElement("div"); //end slide
         }
 
         handleSlideEmbeddedPictures(ss, xhtml);
 
+		// All slides done
         xhtml.endElement("div");
     }
 
