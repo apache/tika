@@ -6,6 +6,9 @@ Release 1.13 - ???
 
 Release 1.12 - 01/24/2016
 
+  * Support for iFrames and element link extraction is provided in
+    the link Content Handler (TIKA-1835).
+
   * Slide notes are now linked to the slide XHTML in the PPT output
     (TIKA-1840).
 
