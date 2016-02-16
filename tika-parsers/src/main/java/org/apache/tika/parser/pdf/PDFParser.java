@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pdf;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -24,8 +26,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.jempbox.xmp.XMPSchema;
 import org.apache.jempbox.xmp.XMPSchemaDublinCore;
 import org.apache.jempbox.xmp.pdfa.XMPSchemaPDFAId;
@@ -39,9 +45,12 @@ import org.apache.pdfbox.io.RandomAccess;
 import org.apache.pdfbox.io.RandomAccessBuffer;
 import org.apache.pdfbox.io.RandomAccessFile;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDDocumentCatalog;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
 import org.apache.pdfbox.pdmodel.encryption.AccessPermission;
 import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDXFA;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -56,6 +65,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.txt.TXTParser;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -96,6 +106,12 @@ public class PDFParser extends AbstractParser {
             Collections.singleton(MEDIA_TYPE);
     private PDFParserConfig defaultConfig = new PDFParserConfig();
 
+    private static final Pattern PATTERN_XFA_TEXT = Pattern.compile(
+            "<\\s*(speak|text|exData)\\b([^>]*)(?<!/)>(.*?)<\\s*/\\s*\\1\\s*>",
+            Pattern.DOTALL);
+    private static final Pattern PATTERN_XFA_STRIP_MARKUP = 
+            Pattern.compile("<.*?>", Pattern.DOTALL);    
+    
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -134,6 +150,8 @@ public class PDFParser extends AbstractParser {
             }
             metadata.set("pdf:encrypted", Boolean.toString(pdfDocument.isEncrypted()));
 
+            pdfDocument.setAllSecurityToBeRemoved(true);
+            
             //if using the classic parser and the doc is encrypted, we must manually decrypt
             if (!localConfig.getUseNonSequentialParser() && pdfDocument.isEncrypted()) {
                 pdfDocument.decrypt(password);
@@ -145,7 +163,17 @@ public class PDFParser extends AbstractParser {
             AccessChecker checker = localConfig.getAccessChecker();
             checker.check(metadata);
             if (handler != null) {
-                PDF2XHTML.process(pdfDocument, handler, context, metadata, localConfig);
+                String xfaXml = extractXFAText(pdfDocument);
+                if (xfaXml != null) {
+                    try (BufferedInputStream is = new BufferedInputStream(
+                            new ByteArrayInputStream(xfaXml.getBytes()))) {
+                        new TXTParser().parse(is, handler, metadata, context);
+                    }
+                    metadata.set(Metadata.CONTENT_TYPE, "application/pdf");
+                } else {
+                    PDF2XHTML.process(pdfDocument, 
+                            handler, context, metadata, localConfig);
+                }
             }
 
         } catch (CryptographyException e) {
@@ -171,6 +199,60 @@ public class PDFParser extends AbstractParser {
         }
     }
 
+    private String extractXFAText(PDDocument pdfDocument) throws IOException {
+        PDDocumentCatalog catalog = pdfDocument.getDocumentCatalog();
+        String xfaXml = null;
+        if (catalog != null) {
+            PDAcroForm acroForm = catalog.getAcroForm();
+            if (acroForm != null) {
+                PDXFA xfa = acroForm.getXFA();
+                if (xfa != null) {
+                    //TODO consider streaming and writing as we read along
+                    //to preserve memory.
+                    //See and replicate how xfa getBytes() does it.
+                    xfaXml = new String(xfa.getBytes());
+                }
+            }
+        }
+        // No XFA, do nothing
+        if (xfaXml == null) {
+            return null;
+        }
+
+        // Extract text from XFA 
+        StringBuilder b = new StringBuilder();
+        Matcher m = PATTERN_XFA_TEXT.matcher(xfaXml);
+        while(m.find()) {
+            String tag = getMatchGroup(m, 1);
+            boolean isText = "text".equals(tag);
+            String attribs = getMatchGroup(m, 2);
+            String value = getMatchGroup(m, 3);
+            
+            // Reject href text
+            if (isText && attribs.contains("name=\"embeddedHref\"")) {
+                continue;
+            }
+            
+            // Get text from free-form exData
+            if ("exData".equals(tag)) {
+                if (attribs.contains("contentType=\"application/xml\"")
+                        || attribs.contains("contentType=\"text/html\"")
+                        || attribs.contains("contentType=\"text/xml\"")) {
+                    value = PATTERN_XFA_STRIP_MARKUP.matcher(
+                            value).replaceAll(" ");
+                }
+            }
+            b.append(value);
+            b.append("\n");
+        }
+        return b.toString();
+    }
+    
+    private String getMatchGroup(Matcher m, int group) {
+        return StringEscapeUtils.unescapeHtml(
+                StringUtils.trimToEmpty(m.group(group)));
+    }    
+    
     private String getPassword(Metadata metadata, ParseContext context) {
         String password = null;
 
