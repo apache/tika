@@ -41,7 +41,7 @@
     <!-- NOTE: sync tukaani version with commons-compress -->
     <tukaani.version>1.5</tukaani.version>
     <mime4j.version>0.7.2</mime4j.version>
-    <vorbis.version>0.6</vorbis.version>
+    <vorbis.version>0.8</vorbis.version>
     <pdfbox.version>1.8.11</pdfbox.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <cxf.version>3.0.3</cxf.version>
