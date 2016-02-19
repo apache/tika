@@ -122,6 +122,7 @@
           </excludes>
         </configuration>
       </plugin>
+      <!-- Don't check for missing APIs, since we're breaking things
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>clirr-maven-plugin</artifactId>
@@ -139,8 +140,6 @@
                 <comparisonArtifact>
                   <groupId>org.apache.tika</groupId>
                   <artifactId>tika-core</artifactId>
-                  <!-- Check against 1.11 for now, switch to 2.0 post-release -->
-                  <!-- We expect to have broken things since 1.0! -->
                   <version>1.11</version>
                   <type>jar</type>
                 </comparisonArtifact>
@@ -149,6 +148,7 @@
           </execution>
         </executions>
       </plugin>
+      -->
       <plugin>
             <artifactId>maven-failsafe-plugin</artifactId>
             <executions>

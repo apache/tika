@@ -196,11 +196,11 @@ public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
     	// First verify that we get no result with empty or very short text.
 		LanguageWriter writer = new LanguageWriter(detector);
 		writer.append("");
-		assertNull(detector.detect());
+		assertEquals(LanguageConfidence.NONE, detector.detect().getConfidence());
 		
 		writer.reset();
 		writer.append("  ");
-		assertNull(detector.detect());
+		assertEquals(LanguageConfidence.NONE, detector.detect().getConfidence());
 
     	for (String language : getTestLanguages()) {
     		// Short pieces of Japanese are detected as Chinese

@@ -4,5 +4,6 @@ public enum LanguageConfidence {
 
 	HIGH,
 	MEDIUM,
-	LOW
+	LOW,
+	NONE		// Special value when no language is detected
 }

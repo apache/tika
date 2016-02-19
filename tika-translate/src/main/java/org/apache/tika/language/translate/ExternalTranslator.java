@@ -17,17 +17,14 @@
 
 package org.apache.tika.language.translate;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.language.LanguageIdentifier;
-import org.apache.tika.language.LanguageProfile;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.Locale;
+
+import org.apache.tika.exception.TikaException;
 
 /**
  * Abstract class used to interact with command line/external Translators.
@@ -36,7 +33,7 @@ import java.util.Locale;
  *
  * @since Tika 1.7
  */
-public abstract class ExternalTranslator implements Translator {
+public abstract class ExternalTranslator extends AbstractTranslator {
 
     /**
      * Run the given command and return the output written to standard out.
@@ -93,9 +90,7 @@ public abstract class ExternalTranslator implements Translator {
      */
     @Override
     public String translate(String text, String targetLanguage) throws TikaException, IOException {
-        LanguageIdentifier language = new LanguageIdentifier(
-                new LanguageProfile(text));
-        String sourceLanguage = language.getLanguage();
+        String sourceLanguage = detectLanguage(text).getLanguage();
         return translate(text, sourceLanguage, targetLanguage);
     }
 }

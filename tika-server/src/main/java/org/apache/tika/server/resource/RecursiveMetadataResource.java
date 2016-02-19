@@ -17,6 +17,8 @@
 
 package org.apache.tika.server.resource;
 
+import java.io.InputStream;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -28,12 +30,11 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.io.InputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.tika.language.ProfilingHandler;
+import org.apache.tika.langdetect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -136,7 +137,7 @@ public class RecursiveMetadataResource {
 		TikaResource.fillParseContext(context, httpHeaders, null);
 		TikaResource.logRequest(logger, info, metadata);
 		TikaResource.parse(wrapper, logger, info.getPath(), is,
-				new ProfilingHandler() {
+				new LanguageHandler() {
 					public void endDocument() {
 						metadata.set("language", getLanguage().getLanguage());
 					}
