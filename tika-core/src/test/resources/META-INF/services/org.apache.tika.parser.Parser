@@ -14,3 +14,4 @@
 #  limitations under the License.
 
 org.apache.tika.parser.external.CompositeExternalParser
+org.apache.tika.parser.mock.MockParser
