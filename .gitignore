@@ -10,3 +10,4 @@ target
 *.bin
 nbactions.xml
 nb-configuration.xml
+/bin/
