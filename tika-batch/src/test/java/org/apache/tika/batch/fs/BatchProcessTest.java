@@ -120,7 +120,7 @@ public class BatchProcessTest extends FSBatchTestBase {
         assertContains("Crawler timed out", streamStrings.getErrString());
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 30000)
     public void outOfMemory() throws Exception {
         //the first consumer should sleep for 10 seconds
         //the second should be tied up in a heavy hang

@@ -98,7 +98,7 @@ public class BatchDriverTest extends FSBatchTestBase {
         assertFalse("test3_ok.xml", Files.exists(test3));
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 30000)
     public void restartOnOOMTest() throws Exception {
         //batch runner hits more heavy hangs than threads; needs to restart
         Path outputDir = getNewOutputDir("daemon-");
