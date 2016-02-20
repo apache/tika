@@ -38,6 +38,12 @@
 -->
 <mime-info>
 
+  <mime-type type="application/dicom">
+    <_comment>DICOM medical imaging data</_comment>
+    <magic priority="50">
+      <match value="DICM" type="string" offset="128"/>
+    </magic>
+  </mime-type>
   <mime-type type="application/activemessage"/>
   <mime-type type="application/andrew-inset">
     <glob pattern="*.ez"/>
@@ -112,12 +118,7 @@
   <mime-type type="application/dec-dx"/>
   <mime-type type="application/dialog-info+xml"/>
 
-  <mime-type type="application/dicom">
-    <_comment>DICOM medical imaging data</_comment>
-    <magic priority="50">
-      <match value="DICM" type="string" offset="128"/>
-    </magic>
-  </mime-type>
+
 
   <mime-type type="application/dita+xml">
     <sub-class-of type="application/xml"/>

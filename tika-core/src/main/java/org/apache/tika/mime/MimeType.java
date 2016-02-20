@@ -270,6 +270,7 @@ public final class MimeType implements Comparable<MimeType>, Serializable {
         }
     }
 
+
     void addMagic(Magic magic) {
         if (magic == null) {
             return;

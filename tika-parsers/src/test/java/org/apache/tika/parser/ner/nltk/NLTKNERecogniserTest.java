@@ -25,6 +25,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -37,7 +38,6 @@ public class NLTKNERecogniserTest {
     public void testGetEntityTypes() throws Exception {
         String text = "America";
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, NLTKNERecogniser.class.getName());
-
         Tika tika = new Tika(new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
         Metadata md = new Metadata();
         tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
