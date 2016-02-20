@@ -51,6 +51,13 @@ import java.util.Set;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+/**
+ * Uses the Pooled Time Series algorithm + command line tool, to
+ *  generate a numeric representation of the video suitable for
+ *  similarity searches.
+ * <p>See https://wiki.apache.org/tika/PooledTimeSeriesParser for
+ *  more details and setup instructions.
+ */
 public class PooledTimeSeriesParser extends AbstractParser {
 
   private static final long serialVersionUID = -2855917932512164988L;
