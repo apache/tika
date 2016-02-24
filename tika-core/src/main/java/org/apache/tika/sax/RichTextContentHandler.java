@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.sax;
 
 import java.io.Writer;
 
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
