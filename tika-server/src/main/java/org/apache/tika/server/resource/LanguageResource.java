@@ -31,8 +31,8 @@ import javax.ws.rs.Produces;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.tika.langdetect.LanguageResult;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageResult;
 
 @Path("/language")
 public class LanguageResource {

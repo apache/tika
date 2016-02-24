@@ -17,7 +17,7 @@ public abstract class LanguageDetectorTest {
     protected String[] getTestLanguages() throws IOException {
     	List<String> result = new ArrayList<>();
     	
-    	List<String> lines = IOUtils.readLines(LanguageDetector.class.getResourceAsStream("language-codes.txt"));
+    	List<String> lines = IOUtils.readLines(LanguageDetectorTest.class.getResourceAsStream("language-codes.txt"));
     	for (String line : lines) {
     		line = line.trim();
     		if (line.isEmpty() || line.startsWith("#")) {

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.langdetect;
+package org.apache.tika.language.detect;
 
 import java.io.IOException;
 
@@ -31,7 +31,7 @@ public class LanguageHandler extends WriteOutContentHandler {
     private final LanguageWriter writer;
 
     public LanguageHandler() throws IOException {
-    	this(new LanguageWriter(new OptimaizeLangDetector().loadModels()));
+    	this(new LanguageWriter(LanguageDetector.getDefaultLanguageDetector().loadModels()));
     }
     
     public LanguageHandler(LanguageWriter writer) {

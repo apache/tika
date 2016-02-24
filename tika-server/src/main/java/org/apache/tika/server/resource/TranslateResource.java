@@ -36,9 +36,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tika.config.LoadErrorHandler;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.langdetect.LanguageConfidence;
-import org.apache.tika.langdetect.LanguageResult;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageResult;
 import org.apache.tika.language.translate.Translator;
 
 @Path("/translate")

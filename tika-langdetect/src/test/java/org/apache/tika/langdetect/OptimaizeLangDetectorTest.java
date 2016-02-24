@@ -13,6 +13,10 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tika.io.IOUtils;
+import org.apache.tika.language.detect.LanguageConfidence;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.detect.LanguageWriter;
 import org.junit.Test;
 
 public class OptimaizeLangDetectorTest extends LanguageDetectorTest {
