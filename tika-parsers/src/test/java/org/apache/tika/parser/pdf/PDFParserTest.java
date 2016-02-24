@@ -1328,18 +1328,6 @@ public class PDFParserTest extends TikaTest {
         assertEquals("Microsoft", r.metadata.get(TikaCoreProperties.TITLE));
     }
 
-
-//TODO create test file for XFA (the one used by author is not public)
-//    @Test
-//    public void testXFA() throws Exception {
-//        Parser parser = new AutoDetectParser();
-//        InputStream stream = PDFParserTest.class.getResourceAsStream(
-//                "/test-documents/TBD-xfa.pdf");
-//        String content = getText(stream, parser);
-//        content = content.replaceAll("\\s+", " ");
-//        assertContains("TODO", content);
-//    }
-    
     private void assertException(String path, Parser parser, ParseContext context, Class expected) {
         boolean noEx = false;
         InputStream is = getResourceAsStream(path);
