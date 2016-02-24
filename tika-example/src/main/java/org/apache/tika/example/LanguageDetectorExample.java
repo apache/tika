@@ -19,9 +19,9 @@ package org.apache.tika.example;
 
 import java.io.IOException;
 
-import org.apache.tika.langdetect.LanguageDetector;
-import org.apache.tika.langdetect.LanguageResult;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageResult;
 
 public class LanguageDetectorExample {
 	

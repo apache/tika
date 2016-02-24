@@ -19,11 +19,11 @@ package org.apache.tika.example;
 
 import java.io.IOException;
 
-import org.apache.tika.langdetect.LanguageDetector;
-import org.apache.tika.langdetect.LanguageHandler;
-import org.apache.tika.langdetect.LanguageResult;
-import org.apache.tika.langdetect.LanguageWriter;
 import org.apache.tika.langdetect.OptimaizeLangDetector;
+import org.apache.tika.language.detect.LanguageDetector;
+import org.apache.tika.language.detect.LanguageHandler;
+import org.apache.tika.language.detect.LanguageResult;
+import org.apache.tika.language.detect.LanguageWriter;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;

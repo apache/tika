@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.langdetect.LanguageResult;
+import org.apache.tika.language.detect.LanguageResult;
 
 import com.fasterxml.jackson.databind.util.LRUMap;
 

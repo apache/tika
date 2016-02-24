@@ -1,9 +1,14 @@
-package org.apache.tika.langdetect;
+package org.apache.tika.language.detect;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.tika.config.ServiceLoader;
+import org.apache.tika.language.translate.Translator;
 
 // We should use the IANA registry for primary language names...see
 // http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
@@ -28,6 +33,8 @@ import java.util.Set;
 
 public abstract class LanguageDetector {
 
+	private static final ServiceLoader DEFAULT_SERVICE_LOADER = new ServiceLoader();
+
 	// True if text is expected to be a mix of languages, and thus higher-resolution
 	// detection must be done to avoid under-sampling the text.
 	protected boolean mixedLanguages = false;
@@ -35,6 +42,40 @@ public abstract class LanguageDetector {
 	// True if the text is expected to be 'short' (typically less than 100 chars), and
 	// thus a different algorithm and/or set of profiles should be used.
 	protected boolean shortText = false;
+	
+	public static LanguageDetector getDefaultLanguageDetector() {
+		List<LanguageDetector> detectors = getLanguageDetectors();
+		if (detectors.isEmpty()) {
+			throw new IllegalStateException("No language detectors available");
+		} else {
+			return detectors.get(0);
+		}
+	}
+	
+	public static List<LanguageDetector> getLanguageDetectors() {
+		return getLanguageDetectors(DEFAULT_SERVICE_LOADER);
+	}
+	
+	public static List<LanguageDetector> getLanguageDetectors(ServiceLoader loader) {
+        List<LanguageDetector> detectors = loader.loadStaticServiceProviders(LanguageDetector.class);
+        Collections.sort(detectors, new Comparator<LanguageDetector>() {
+            public int compare(LanguageDetector d1, LanguageDetector d2) {
+                String n1 = d1.getClass().getName();
+                String n2 = d2.getClass().getName();
+                boolean tika1 = n1.startsWith("org.apache.tika.");
+                boolean tika2 = n2.startsWith("org.apache.tika.");
+                if (tika1 == tika2) {
+                    return n1.compareTo(n2);
+                } else if (tika1) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+        });
+        
+        return detectors;
+	}
 	
 	public boolean isMixedLanguages() {
 		return mixedLanguages;

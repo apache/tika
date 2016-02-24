@@ -1,4 +1,4 @@
-package org.apache.tika.langdetect;
+package org.apache.tika.language.detect;
 
 import java.util.Locale;
 
