@@ -7,6 +7,8 @@ Release 1.13 - ???
 
   * Upgrade to PDFBox 1.8.11 (TIKA-1830).
 
+  * Upgrade to Jackson 2.7.1 (TIKA-1869).
+
 Release 1.12 - 01/24/2016
 
   * Support for iFrames and element link extraction is provided in
