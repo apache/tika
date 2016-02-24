@@ -163,6 +163,12 @@
               <createDependencyReducedPom>
                 false
               </createDependencyReducedPom>
+              <shadedArtifactAttached>
+                true
+              </shadedArtifactAttached>
+              <shadedClassifierName>
+                standalone
+              </shadedClassifierName>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
