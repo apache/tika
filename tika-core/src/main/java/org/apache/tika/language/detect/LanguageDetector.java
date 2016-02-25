@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.tika.config.ServiceLoader;
-import org.apache.tika.language.translate.Translator;
 
 // We should use the IANA registry for primary language names...see
 // http://www.iana.org/assignments/language-subtag-registry/language-subtag-registry
