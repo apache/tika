@@ -15,15 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.tika.server;
+package org.apache.tika.sax;
 
 import java.io.Writer;
 
-import org.apache.tika.sax.WriteOutContentHandler;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+/**
+ * Content handler for Rich Text, it will extract XHTML &lt;img/&gt;
+ * tag &lt;alt/&gt; attribute and XHTML &lt;a/&gt; tag &lt;name/&gt;
+ * attribute into the output.
+ */
 public class RichTextContentHandler extends WriteOutContentHandler {
+
+    /**
+     * Creates a content handler that writes XHTML body character events to
+     * the given writer.
+     *
+     * @param writer writer
+     */
     public RichTextContentHandler(Writer writer) {
         super(writer);
     }

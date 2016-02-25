@@ -72,7 +72,7 @@ import org.apache.tika.parser.ocr.TesseractOCRConfig;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ExpandedTitleContentHandler;
-import org.apache.tika.server.RichTextContentHandler;
+import org.apache.tika.sax.RichTextContentHandler;
 import org.apache.tika.server.TikaServerParseException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
