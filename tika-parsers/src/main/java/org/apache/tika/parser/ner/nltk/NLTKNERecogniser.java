@@ -16,38 +16,18 @@
  */
 package org.apache.tika.parser.ner.nltk;
 
-import org.apache.http.client.methods.HttpGet;
 import org.apache.tika.parser.ner.NERecogniser;
-import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
-
-import javax.ws.rs.core.Form;
+import java.io.*;
+import java.util.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
-import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 
 /**
  *  This class offers an implementation of {@link NERecogniser} based on
@@ -59,9 +39,8 @@ import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 public class NLTKNERecogniser implements NERecogniser {
 
     private static final Logger LOG = LoggerFactory.getLogger(NLTKNERecogniser.class);
-    private final static String USER_AGENT = "Mozilla/5.0";
     private static boolean available = false;
-    
+    private static final String NLTK_REST_HOST = "http://localhost:8881";
      /**
      * some common entities identified by NLTK
      */
@@ -75,12 +54,31 @@ public class NLTKNERecogniser implements NERecogniser {
         add(DATE);
         add(FACILITY);
         add(GPE);
+        add("NAMES");
     }};
 
+    String restHostUrlStr;
     public NLTKNERecogniser(){
         try {
-            String url = "http://localhost:5000/";
-            Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).get();
+
+            String restHostUrlStr="";
+            try {
+                restHostUrlStr = readRestUrl();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (restHostUrlStr == null
+                    || (restHostUrlStr != null && restHostUrlStr.equals(""))) {
+                this.restHostUrlStr = NLTK_REST_HOST;
+            } else {
+                this.restHostUrlStr = restHostUrlStr;
+            }
+
+
+
+
+            Response response = WebClient.create(restHostUrlStr).accept(MediaType.TEXT_HTML).get();
             int responseCode = response.getStatus();
             if(responseCode == 200){
                 available = true;
@@ -94,6 +92,13 @@ public class NLTKNERecogniser implements NERecogniser {
         }
     }
 
+    private static String readRestUrl() throws IOException {
+        Properties nltkProperties = new Properties();
+        nltkProperties.load(NLTKNERecogniser.class
+                .getResourceAsStream("NLTKServer.properties"));
+
+        return nltkProperties.getProperty("nltk.server.url");
+    }
 
     /**
      * @return {@code true} if server endpoint is available.
@@ -119,22 +124,15 @@ public class NLTKNERecogniser implements NERecogniser {
     public Map<String, Set<String>> recognise(String text) {
         Map<String, Set<String>> entities = new HashMap<>();
         try {
-            String url = "http://localhost:5000/nltk";
-            Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).form(new Form().param("text",text));
+            int port = 8881;
+            String url = restHostUrlStr + "/nltk";
+            Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).post(text);
             int responseCode = response.getStatus();
             if (responseCode == 200) {
                 String result = response.readEntity(String.class);
                 JSONParser parser = new JSONParser();
                 JSONObject j = (JSONObject) parser.parse(result);
-                JSONArray aa = new JSONArray();
-                for (Object x : j.keySet()) {
-                    aa = (JSONArray) j.get(x.toString());
-                    Set s = new HashSet();
-                    for (Object y : aa) {
-                        s.add(y.toString());
-                    }
-                    entities.put(x.toString(), s);
-                }
+                Set s = entities.put("NAMES", new HashSet((Collection) j.get("names")));
             }
         }
         catch (Exception e) {

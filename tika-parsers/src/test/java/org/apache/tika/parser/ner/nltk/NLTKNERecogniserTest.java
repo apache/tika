@@ -42,13 +42,13 @@ public class NLTKNERecogniserTest {
         Metadata md = new Metadata();
         tika.parse(new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)), md);
 
-        Set<String> gpe = new HashSet<>(Arrays.asList(md.getValues("NER_GPE")));
-        if(gpe.size() == 0) {
+        Set<String> names = new HashSet<>(Arrays.asList(md.getValues("NER_NAMES")));
+        if(names.size() == 0) {
             return;
         }
         else {
-            assertTrue(gpe.contains("America"));
-            assertTrue(gpe.size() == 1); //and nothing else
+            assertTrue(names.contains("America"));
+            assertTrue(names.size() == 1); //and nothing else
         }
     }
 }

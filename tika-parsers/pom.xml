@@ -88,13 +88,6 @@
       <version>2.1.1</version>
     </dependency>
 
-
-    <!-- manali added this-->
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>4.5.1</version>
-    </dependency>
     <!-- Optional OSGi dependencies, used only when running within OSGi -->
     <dependency>
       <groupId>org.apache.felix</groupId>
@@ -366,6 +359,14 @@
       <version>3.2.2</version>
       <scope>provided</scope>
     </dependency>
+
+    <!--Jackson parse String to JSON-->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>2.7.1</version>
+    </dependency>
+
   </dependencies>
 
   <build>
