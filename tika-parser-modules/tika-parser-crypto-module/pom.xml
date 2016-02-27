@@ -20,6 +20,7 @@
   </parent>
 
   <artifactId>tika-parser-crypto-module</artifactId>
+  <packaging>bundle</packaging>
   <name>Apache Tika parser crypto module</name>
   <url>http://tika.apache.org/</url>
   
@@ -46,6 +47,46 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <classifier>bundle</classifier>
+          <instructions>
+            <Bundle-Activator>org.apache.tika.module.crypto.internal.Activator</Bundle-Activator>
+            <Embed-Dependency>
+              bcmail-jdk15on;inline=true,
+              bcprov-jdk15on;inline=true,
+              bcpkix-jdk15on;inline=true,
+              commons-io;inline=true
+            </Embed-Dependency> 
+            <Embed-Transitive>true</Embed-Transitive>
+            <Export-Package>
+              org.apache.tika.parser.crypto.*,
+            </Export-Package>
+            <Import-Package>
+              *,
+              javax.mail;resolution:=optional,
+              javax.mail.internet;resolution:=optional,
+              org.bouncycastle.cert;resolution:=optional,
+              org.bouncycastle.cert.jcajce;resolution:=optional,
+              org.bouncycastle.cert.ocsp;resolution:=optional,
+              org.bouncycastle.cms.bc;resolution:=optional,
+              org.bouncycastle.operator;resolution:=optional,
+              org.bouncycastle.operator.bc;resolution:=optional,
+              org.bouncycastle.tsp;resolution:=optional
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

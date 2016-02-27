@@ -173,6 +173,49 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              <configuration>
+                <useDefaultManifestFile>true</useDefaultManifestFile>
+                <includes>
+                  <include>org/apache/tika/**</include>
+                  <include>META-INF/**</include>
+                </includes>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <systemPropertyVariables>
+              <org.ops4j.pax.logging.DefaultServiceLog.level>
+                WARN
+              </org.ops4j.pax.logging.DefaultServiceLog.level>
+            </systemPropertyVariables>
+            <systemProperties>
+              <property>
+                <name>project.bundle.file</name>
+                <value>target/${project.build.finalName}-bundle.jar</value>
+              </property>
+            </systemProperties>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>

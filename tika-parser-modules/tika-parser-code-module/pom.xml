@@ -20,6 +20,7 @@
   </parent>
 
   <artifactId>tika-parser-code-module</artifactId>
+  <packaging>bundle</packaging>
   <name>Apache Tika parser code module</name>
   <url>http://tika.apache.org/</url>
   
@@ -67,6 +68,43 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <classifier>bundle</classifier>
+          <instructions>
+            <Bundle-Activator>org.apache.tika.module.code.internal.Activator</Bundle-Activator>
+            <Embed-Dependency>
+              asm;inline=true,
+              tagsoup;inline=true,
+              jhighlight;inline=true,
+              commons-io;inline=true,
+              commons-codec;inline=true,
+              poi;inline=true
+            </Embed-Dependency> 
+            <Embed-Transitive>true</Embed-Transitive>
+            <Export-Package>
+              org.apache.tika.parser.asm.*,
+              org.apache.tika.parser.code.*,
+              org.apache.tika.parser.executable.*
+            </Export-Package>
+            <Import-Package>
+              *,
+              javax.servlet;resolution:=optional,
+              javax.servlet.http;resolution:=optional
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

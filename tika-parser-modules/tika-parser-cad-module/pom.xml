@@ -20,6 +20,7 @@
   </parent>
 
   <artifactId>tika-parser-cad-module</artifactId>
+  <packaging>bundle</packaging>
   <name>Apache Tika parser CAD module</name>
   <url>http://tika.apache.org/</url>
   
@@ -47,6 +48,36 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <classifier>bundle</classifier>
+          <instructions>
+            <Bundle-Activator>org.apache.tika.module.cad.internal.Activator</Bundle-Activator>
+            <Embed-Dependency>
+              poi;inline=true,
+              commons-codec;inline=true
+            </Embed-Dependency> 
+            <Embed-Transitive>true</Embed-Transitive>
+            <Export-Package>
+              org.apache.tika.parser.dwg.*,
+              org.apache.tika.parser.prt.*
+            </Export-Package>
+            <Import-Package>
+              *
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
