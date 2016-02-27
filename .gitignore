@@ -9,4 +9,4 @@ target
 *.iws
 *.bin
 nbactions.xml
-nb-configuration.xml
+nb-configuration.xml*.DS_Store
