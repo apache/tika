@@ -45,15 +45,6 @@ public class NLTKNERecogniser implements NERecogniser {
      * some common entities identified by NLTK
      */
     public static final Set<String> ENTITY_TYPES = new HashSet<String>(){{
-        add(PERSON);
-        add(TIME);
-        add(LOCATION);
-        add(ORGANIZATION);
-        add(MONEY);
-        add(PERCENT);
-        add(DATE);
-        add(FACILITY);
-        add(GPE);
         add("NAMES");
     }};
 

@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 public class NLTKNERecogniserTest {
     @Test
     public void testGetEntityTypes() throws Exception {
-        String text = "America";
+        String text = "America is a big country.";
         System.setProperty(NamedEntityParser.SYS_PROP_NER_IMPL, NLTKNERecogniser.class.getName());
         Tika tika = new Tika(new TikaConfig(NamedEntityParser.class.getResourceAsStream("tika-config.xml")));
         Metadata md = new Metadata();
