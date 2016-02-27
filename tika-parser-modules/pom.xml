@@ -192,7 +192,7 @@
             </execution>
           </executions>
         </plugin>
-        <!-- <plugin>
+        <plugin>
           <artifactId>maven-failsafe-plugin</artifactId>
           <executions>
             <execution>
@@ -215,7 +215,7 @@
               </property>
             </systemProperties>
           </configuration>
-        </plugin>-->
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
