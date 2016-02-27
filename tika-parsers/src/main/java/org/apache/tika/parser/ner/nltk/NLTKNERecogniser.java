@@ -68,7 +68,7 @@ public class NLTKNERecogniser implements NERecogniser {
                 this.restHostUrlStr = restHostUrlStr;
             }
             //check if nltkrest is running 
-            Response response = WebClient.create(restHostUrlStr).accept(MediaType.TEXT_HTML).get();
+            Response response = WebClient.create(restHostUrlStr).get();
             int responseCode = response.getStatus();
             if(responseCode == 200){
                 available = true;
@@ -116,7 +116,7 @@ public class NLTKNERecogniser implements NERecogniser {
         try {
             int port = 8881;
             String url = restHostUrlStr + "/nltk";
-            Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).post(text);
+            Response response = WebClient.create(url).post(text);
             int responseCode = response.getStatus();
             if (responseCode == 200) {
                 String result = response.readEntity(String.class);
