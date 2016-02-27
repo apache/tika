@@ -9,6 +9,8 @@ Release 1.13 - ???
 
   * Upgrade to Jackson 2.7.1 (TIKA-1869).
 
+  * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
+
 Release 1.12 - 01/24/2016
 
   * Support for iFrames and element link extraction is provided in
