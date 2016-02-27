@@ -22,6 +22,7 @@
   <artifactId>tika-parser-multimedia-module</artifactId>
   <name>Apache Tika parser multimedia module</name>
   <url>http://tika.apache.org/</url>
+  <packaging>bundle</packaging>
   
   <properties>
     <metadata.extractor.version>2.8.0</metadata.extractor.version>
@@ -120,6 +121,88 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+            <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <classifier>bundle</classifier>
+          <instructions>
+            <Bundle-Activator>org.apache.tika.module.multimedia.internal.Activator</Bundle-Activator>
+            <_runsystempackages>com.sun.xml.bind.marshaller,
+              com.sun.xml.internal.bind.marshaller</_runsystempackages>
+            <Embed-Dependency>
+              metadata-extractor;inline=true,
+              xmpcore;inline=true,
+              commons-codec;inline=true,
+              commons-io;inline=true,
+              jempbox;inline=true,
+              fontbox;inline=true,
+              poi;inline=true,
+              isoparser;inline=true,
+              aspectjrt;inline=true
+            </Embed-Dependency> 
+            <Embed-Transitive>true</Embed-Transitive>
+            <Export-Package>
+              org.apache.tika.parser.image.*,
+              org.apache.tika.parser.jpeg.*,
+              org.apache.tika.parser.audio.*,
+              org.apache.tika.parser.video.*,
+              org.apache.tika.parser.mp3.*,
+              org.apache.tika.parser.mp4.*
+            </Export-Package>
+            <Import-Package>
+              *,
+              com.adobe.xmp;resolution:=optional,
+              com.adobe.xmp.properties;resolution:=optional,
+              android.util;resolution:=optional
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <useDefaultManifestFile>true</useDefaultManifestFile>
+              <includes>
+                <include>org/apache/tika/**</include>
+                <include>META-INF/**</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <systemPropertyVariables>
+            <org.ops4j.pax.logging.DefaultServiceLog.level>
+              WARN
+            </org.ops4j.pax.logging.DefaultServiceLog.level>
+          </systemPropertyVariables>
+          <systemProperties>
+            <property>
+              <name>project.bundle.file</name>
+              <value>target/${project.build.finalName}-bundle.jar</value>
+            </property>
+          </systemProperties>
+        </configuration>
       </plugin>
     </plugins>
   </build>
