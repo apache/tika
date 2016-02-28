@@ -192,7 +192,7 @@
             </execution>
           </executions>
         </plugin>
-        <!-- <plugin>
+        <plugin>
           <artifactId>maven-failsafe-plugin</artifactId>
           <executions>
             <execution>
@@ -213,9 +213,13 @@
                 <name>project.bundle.file</name>
                 <value>target/${project.build.finalName}-bundle.jar</value>
               </property>
+              <property>
+                <name>tika.core.version</name>
+                <value>${project.version}</value>
+              </property>
             </systemProperties>
           </configuration>
-        </plugin> -->
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>

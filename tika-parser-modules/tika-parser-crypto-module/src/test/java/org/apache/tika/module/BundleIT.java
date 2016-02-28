@@ -57,13 +57,16 @@ import org.xml.sax.ContentHandler;
 public class BundleIT {
 
     private static final String BUNDLE_JAR_SYS_PROP = "project.bundle.file";
+    
+    private static final String TIKA_CORE_VERSION = "tika.core.version";
     @Inject
     private BundleContext bc;
 
     @Configuration
     public Option[] configuration() throws IOException, URISyntaxException {
         String bundleFileName = System.getProperty(BUNDLE_JAR_SYS_PROP);
-        return options(junitBundles(), mavenBundle("org.apache.tika", "tika-core"),
+        String tikaCoreVersion = System.getProperty(TIKA_CORE_VERSION);
+        return options(junitBundles(), mavenBundle("org.apache.tika", "tika-core", tikaCoreVersion),
                 bundle(new File(bundleFileName).toURI().toString()));
     }
 
