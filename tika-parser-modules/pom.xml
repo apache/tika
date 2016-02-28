@@ -213,12 +213,24 @@
                 <name>project.bundle.file</name>
                 <value>target/${project.build.finalName}-bundle.jar</value>
               </property>
-              <property>
-                <name>tika.core.version</name>
-                <value>${project.version}</value>
-              </property>
             </systemProperties>
           </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <executions>
+            <execution>
+              <phase>pre-integration-test</phase>
+              <goals>
+                <goal>single</goal>
+              </goals>
+              <configuration>
+                <descriptor>test-bundles.xml</descriptor>
+                <finalName>test</finalName>
+                <attach>false</attach>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>
