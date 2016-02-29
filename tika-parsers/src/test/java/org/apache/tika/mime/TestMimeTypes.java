@@ -380,6 +380,7 @@ public class TestMimeTypes {
         assertType("application/fits", "testFITS.fits");
         assertTypeByData("application/fits", "testFITS.fits");
         assertTypeByName("application/fits", "testFITS.fits");
+        assertTypeByData("application/fits", "4E8D6B46E2366D7063DE3926AF0F976A0DCCD57A7E3B53B7D54768F16DD23984");
     }
 
     @Test
