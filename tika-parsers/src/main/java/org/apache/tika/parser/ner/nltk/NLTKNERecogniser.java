@@ -22,8 +22,13 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Collection;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Properties;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -41,6 +46,7 @@ public class NLTKNERecogniser implements NERecogniser {
     private static final Logger LOG = LoggerFactory.getLogger(NLTKNERecogniser.class);
     private static boolean available = false;
     private static final String NLTK_REST_HOST = "http://localhost:8881";
+    private String restHostUrlStr;
      /**
      * some common entities identified by NLTK
      */
@@ -48,7 +54,7 @@ public class NLTKNERecogniser implements NERecogniser {
         add("NAMES");
     }};
 
-    String restHostUrlStr;
+
     public NLTKNERecogniser(){
         try {
 
@@ -59,8 +65,7 @@ public class NLTKNERecogniser implements NERecogniser {
                 e.printStackTrace();
             }
 
-            if (restHostUrlStr == null
-                    || (restHostUrlStr != null && restHostUrlStr.equals(""))) {
+            if (restHostUrlStr == null || restHostUrlStr.equals("")) {
                 this.restHostUrlStr = NLTK_REST_HOST;
             } else {
                 this.restHostUrlStr = restHostUrlStr;
@@ -115,7 +120,6 @@ public class NLTKNERecogniser implements NERecogniser {
     public Map<String, Set<String>> recognise(String text) {
         Map<String, Set<String>> entities = new HashMap<>();
         try {
-            int port = 8881;
             String url = restHostUrlStr + "/nltk";
             Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).post(text);
             int responseCode = response.getStatus();

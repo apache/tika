@@ -48,7 +48,7 @@ public class NLTKNERecogniserTest {
         }
         else {
             assertTrue(names.contains("America"));
-            assertTrue(names.size() == 1); //and nothing else
+            assertTrue(names.size() == 1); 
         }
     }
 }
