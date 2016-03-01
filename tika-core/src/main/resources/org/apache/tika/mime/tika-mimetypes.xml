@@ -1505,6 +1505,10 @@
   </mime-type>
   <mime-type type="application/vnd.ms-asf"/>
   <mime-type type="application/vnd.ms-cab-compressed">
+   <magic priority="50">
+      <match value="0x4d534346" type="string" offset="0"> <!-- value="MCSF"-->
+      </match>
+    </magic>
     <glob pattern="*.cab"/>
   </mime-type>
 
@@ -2528,6 +2532,10 @@
   <mime-type type="application/vnd.wv.csp+xml"/>
   <mime-type type="application/vnd.wv.ssp+xml"/>
   <mime-type type="application/vnd.xara">
+   <magic priority="50">
+     <match value="0x78617221" type="string" offset="0"> <!-- value="xar!"-->
+     </match>
+    </magic>
     <glob pattern="*.xar"/>
   </mime-type>
   <mime-type type="application/vnd.xfdl">
@@ -3392,6 +3400,10 @@
   </mime-type>
 
   <mime-type type="application/x-mobipocket-ebook">
+   <magic priority="50">
+      <match value="0x424f4f4b4d4f4249" type="string" offset="60"> <!-- value="BOOKMOBI"-->
+     </match>
+    </magic>
     <glob pattern="*.prc"/>
     <glob pattern="*.mobi"/>
   </mime-type>
@@ -6368,6 +6380,8 @@
     <magic priority="50">
       <match value="moov" type="string" offset="4"/>
       <match value="mdat" type="string" offset="4"/>
+      <match value="wide" type="string" offset="4"/>
+      <match value="free" type="string" offset="4"/>
       <!-- General match, specific ftypXXX ones present for subtypes -->
       <match value="ftyp" type="string" offset="4"/>
     </magic>
