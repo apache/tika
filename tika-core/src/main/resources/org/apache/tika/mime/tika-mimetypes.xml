@@ -58,6 +58,9 @@
   <mime-type type="application/atom+xml">
     <root-XML localName="feed" namespaceURI="http://purl.org/atom/ns#"/>
     <root-XML localName="feed" namespaceURI="http://www.w3.org/2005/Atom"/>
+    <magic priority="50">			
+       <match value="0x66656564" type="string" offset="5:50"/>  <!-- feed -->
+    </magic>
     <glob pattern="*.atom"/>
   </mime-type>
 
@@ -574,6 +577,7 @@
       <match value="\004%!" type="string" offset="0" />
       <!-- Windows format EPS -->
       <match value="0xc5d0d3c6" type="string" offset="0"/>
+      <match value="0x252150532D41646F" type="string" offset="0"/> <!-- %!PS-Adobe-3.0 EPSF-3.0 -->
     </magic>
     <glob pattern="*.ps"/>
     <glob pattern="*.eps"/>
@@ -595,6 +599,9 @@
     <sub-class-of type="application/xml"/>
     <acronym>RDF/XML</acronym>
     <_comment>XML syntax for RDF graphs</_comment>
+    <magic priority="50">
+      <match value="0x726466" type="string" offset="5:400"/>   <!-- rdf -->
+    </magic>
     <glob pattern="*.rdf"/>
     <glob pattern="*.owl"/>
     <glob pattern="^rdf$" isregex="true"/>
@@ -629,6 +636,9 @@
     <alias type="text/rss"/>
     <root-XML localName="rss"/>
     <root-XML namespaceURI="http://purl.org/rss/1.0/"/>
+    <magic priority="50">
+       <match value="0x727373" type="string" offset="5:50"/>   <!-- rss -->
+    </magic>
     <glob pattern="*.rss"/>
   </mime-type>
 
@@ -2515,6 +2525,9 @@
   <mime-type type="application/vnd.wmf.bootstrap"/>
   <mime-type type="application/vnd.wordperfect">
     <alias type="application/wordperfect"/>
+    <magic priority="50">
+      <match value="0xFF575043" type="string" offset="0:3"/> <!-- ÿWPC -->
+    </magic>
     <glob pattern="*.wpd"/>
   </mime-type>
   <mime-type type="application/vnd.wqd">
@@ -4753,6 +4766,8 @@
       <match value="MM\x00\x2a" type="string" offset="0"/>
       <!-- II*. = Little endian (I=Intel) and 0x002a in little endian -->
       <match value="II\x2a\x00" type="string" offset="0"/>
+      <!-- MM.+ = Big endian (M=Motorola) and 0x002a in big endian-->
+      <match value="MM\x00\x2b" type="string" offset="0"/>  
     </magic>
     <glob pattern="*.tiff"/>
     <glob pattern="*.tif"/>
