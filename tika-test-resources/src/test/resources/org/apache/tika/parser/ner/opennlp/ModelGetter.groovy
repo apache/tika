@@ -20,7 +20,26 @@
  * This file downloads Apache OpenNLP NER models for testing the NamedEntityParser
  */
 
-import org.apache.commons.io.IOUtils
+import org.apache.maven.settings.Proxy as MvnProxy
+import java.net.Proxy as JDKProxy
+import groovy.transform.Field
+
+//BEGIN: Global context ; ${settings} is injected by the plugin
+List<MvnProxy> mvnProxies = settings.getProxies()?.findAll{it.isActive()}
+@Field JDKProxy proxy = null
+if (mvnProxies && mvnProxies.size() > 0) {
+    mvnProxy = mvnProxies.get(0)
+    println "Using the first Proxy setting : ${mvnProxy.username}@ ${mvnProxy.host} : ${mvnProxy.port} "
+    proxy = new JDKProxy(JDKProxy.Type.HTTP, new InetSocketAddress(mvnProxy.host, mvnProxy.port))
+    Authenticator.setDefault(new Authenticator(){
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication(){
+            return new PasswordAuthentication(mvnProxy.username, mvnProxy.password?.toCharArray())
+        }
+    })
+    println "Proxy is configured"
+}
+//END : Global Context
 
 /**
  * Copies input stream to output stream, additionally printing the progress.
@@ -45,8 +64,8 @@ def copyWithProgress(InputStream inStr, OutputStream outStr, long totalLength){
         }
     }
     println "Copy complete. "
-    IOUtils.closeQuietly(inStr)
-    IOUtils.closeQuietly(outStr)
+    inStr.close()
+    outStr.close()
 }
 
 /**
@@ -56,16 +75,18 @@ def copyWithProgress(InputStream inStr, OutputStream outStr, long totalLength){
  * @return
  */
 def downloadFile(String urlStr, File file) {
-    println "GET : $urlStr -> $file"
-    urlConn = new URL(urlStr).openConnection()
+    println "GET : $urlStr -> $file (Using proxy? ${proxy != null})"
+    url = new URL(urlStr)
+
+    urlConn =  proxy ? url.openConnection(proxy) : url.openConnection()
     contentLength = urlConn.getContentLengthLong()
 
     file.getParentFile().mkdirs()
     inStream = urlConn.getInputStream()
     outStream = new FileOutputStream(file)
     copyWithProgress(inStream, outStream, contentLength)
-    IOUtils.closeQuietly(outStream)
-    IOUtils.closeQuietly(inStream)
+    outStream.close()
+    inStream.close()
     println "Download Complete.."
 }
 
