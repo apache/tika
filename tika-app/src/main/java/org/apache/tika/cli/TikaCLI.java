@@ -18,6 +18,11 @@ package org.apache.tika.cli;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -52,12 +57,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-import javax.xml.transform.stream.StreamResult;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CloseShieldInputStream;
@@ -74,6 +73,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.tika.Tika;
 import org.apache.tika.batch.BatchProcessDriverCLI;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.config.TikaConfigSerializer;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -310,6 +310,7 @@ public class TikaCLI {
 
     private Parser parser;
 
+    private TikaConfig config;
     private String configFilePath;
 
     private OutputType type = XML;
@@ -385,6 +386,15 @@ public class TikaCLI {
         } else if (arg.startsWith("--compare-file-magic=")) {
             pipeMode = false;
             compareFileMagic(arg.substring(arg.indexOf('=')+1));
+        } else if (arg.equals("--dump-minimal-config")) {
+            pipeMode = false;
+            dumpConfig(TikaConfigSerializer.Mode.MINIMAL);
+        } else if (arg.equals("--dump-current-config")) {
+            pipeMode = false;
+            dumpConfig(TikaConfigSerializer.Mode.CURRENT);
+        } else if (arg.equals("--dump-static-config")) {
+            pipeMode = false;
+            dumpConfig(TikaConfigSerializer.Mode.STATIC);
         } else if (arg.equals("--container-aware")
                 || arg.equals("--container-aware-detector")) {
             // ignore, as container-aware detectors are now always used
@@ -518,7 +528,10 @@ public class TikaCLI {
         out.println("    -f  or --fork          Use Fork Mode for out-of-process extraction");
         out.println();
         out.println("    --config=<tika-config.xml>");
-        out.println("        TikaConfig file. Must be specified before -g, -s or -f!");
+        out.println("        TikaConfig file. Must be specified before -g, -s, -f or the dump-x-config !");
+        out.println("    --dump-minimal-config  Print minimal TikaConfig");
+        out.println("    --dump-current-config  Print current TikaConfig");
+        out.println("    --dump-static-config   Print static config");
         out.println("");
         out.println("    -x  or --xml           Output XHTML content (default)");
         out.println("    -h  or --html          Output HTML content");
@@ -612,6 +625,12 @@ public class TikaCLI {
         out.println("    -JXmx4g or -JDlog4j.configuration=file:log4j.xml.");
     }
 
+    private void dumpConfig(TikaConfigSerializer.Mode mode) throws Exception {
+        TikaConfig localConfig = (config == null) ? TikaConfig.getDefaultConfig() : config;
+
+        TikaConfigSerializer.serialize(localConfig, mode,
+                new OutputStreamWriter(System.out, UTF_8), UTF_8);
+    }
     private void version() {
         System.out.println(new Tika().toString());
     }
@@ -648,7 +667,7 @@ public class TikaCLI {
 
     private void configure(String configFilePath) throws Exception {
         this.configFilePath = configFilePath;
-        TikaConfig config = new TikaConfig(new File(configFilePath));
+        config = new TikaConfig(new File(configFilePath));
         parser = new AutoDetectParser(config);
         if (digester != null) {
             parser = new DigestingParser(parser, digester);

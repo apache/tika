@@ -9,6 +9,9 @@ Release 2.0 - Future Development
   * (Something about more specific parser bundles, plus an overall one)
 
 Release 1.13 - ???
+  * Move serialization of TikaConfig to tika-core and enable dumping
+    of the config file via tika-app (TIKA-1657).
+
   * Add support for XFA extraction via Pascal Essiembre (TIKA-1857).
 
   * Upgrade to sqlite-jdbc 3.8.11.2 (TIKA-1861).  NOTE: this dependency
