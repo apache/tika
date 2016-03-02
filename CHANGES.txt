@@ -1,5 +1,8 @@
 Release 1.13 - ???
 
+  * Move serialization of TikaConfig to tika-core and enable dumping
+    of the config file via tika-app (TIKA-1657).
+
   * Tika now incorporates the Natural Language Toolkit (NLTK) from the
     Python community as an option for Named Entity Recognition (TIKA-1876).
 
