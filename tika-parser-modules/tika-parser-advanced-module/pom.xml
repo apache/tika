@@ -20,7 +20,6 @@
   </parent>
 
   <artifactId>tika-parser-advanced-module</artifactId>
-  <packaging>bundle</packaging>
   <name>Apache Tika parser advanced module</name>
   <url>http://tika.apache.org/</url>
   
@@ -63,49 +62,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <classifier>bundle</classifier>
-          <instructions>
-            <Bundle-Activator>org.apache.tika.module.advanced.internal.Activator</Bundle-Activator>
-            <Embed-Dependency>
-              opennlp-tools;inline=true,
-              opennlp-maxent;inline=true,
-              commons-io;inline=true,
-              jwnl;inline=true
-            </Embed-Dependency> 
-            <Embed-Transitive>true</Embed-Transitive>
-            <Export-Package>
-              org.apache.tika.parser.ner.*,
-              org.apache.tika.parser.ner.corenlp.*,
-              org.apache.tika.parser.ner.opennlp.*,
-              org.apache.tika.parser.ner.regex.*
-            </Export-Package>
-            <Import-Package>
-              *,
-              opennlp.maxent;resolution:=optional,
-              opennlp.tools.namefind;resolution:=optional,
-              org.apache.commons.io;resolution:=optional,
-              org.json;resolution:=optional,
-              org.osgi.framework;resolution:=optional,
-              net.didion.jwnl;resolution:=optional
-            </Import-Package>
-          </instructions>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-failsafe-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

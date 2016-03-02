@@ -22,12 +22,12 @@
   <artifactId>tika-parser-package-module</artifactId>
   <name>Apache Tika parser package module</name>
   <url>http://tika.apache.org/</url>
-  
+
   <properties>
     <!-- NOTE: sync tukaani version with commons-compress -->
     <tukaani.version>1.5</tukaani.version>
   </properties>
-  
+
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -70,7 +70,7 @@
       <version>${commons.compress.version}</version>
     </dependency>
   </dependencies>
-  
+
   <build>
     <plugins>
       <plugin>
